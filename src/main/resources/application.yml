@@ -1,0 +1,11 @@
+server.port: 8080
+spring.jackson.default-property-inclusion: non_null
+
+gameyfin:
+  root: ""
+  igdb:
+    config:
+      preferred-platform: 6
+    api:
+      client-id: ""
+      client-secret: ""

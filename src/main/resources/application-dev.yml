@@ -1,0 +1,10 @@
+gameyfin:
+  root: F:\Spiele
+  igdb:
+    api:
+      client-id: 23l3l5qshx4dwjuao6yb8jyf1qrd08
+      client-secret: hf4iivmkzgne552j17p2d64xm03die
+
+logging:
+  level:
+    de.grimsi: debug
