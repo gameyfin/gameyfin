@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.igdb;
 
-import de.grimsi.gameyfin.dto.GameDto;
+import de.grimsi.gameyfin.igdb.dto.IgdbAccessToken;
+import de.grimsi.gameyfin.igdb.dto.IgdbGame;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -10,7 +11,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +37,7 @@ public class IgdbWrapper {
     @PostConstruct
     public void init() {
         authenticate();
+        initIgdbClient();
     }
 
     public void authenticate() {
@@ -58,8 +59,23 @@ public class IgdbWrapper {
         log.info("Successfully authenticated.");
     }
 
+    public IgdbGame findGameByTitle(String title) {
+        return searchForGameByTitle(title).orElseThrow(() -> new RuntimeException("Could not find game with title: \"%s\"".formatted(title)));
+    }
+
+    private Optional<IgdbGame> getGameById(Long id) {
+        return Optional.ofNullable(
+                igdbApiClient.post()
+                        .uri("games")
+                        .bodyValue("fields *; where id = %d;".formatted(id))
+                        .retrieve()
+                        .bodyToMono(IgdbGame.class)
+                        .block()
+        );
+    }
+
     private void initIgdbClient() {
-        if(accessToken == null) {
+        if (accessToken == null) {
             authenticate();
         }
 
@@ -70,46 +86,33 @@ public class IgdbWrapper {
                 .build();
     }
 
-    public GameDto findGameByTitle(String title) {
-        if (igdbApiClient == null) {
-            initIgdbClient();
-        }
-
-        IgdbSearchResultDto searchResult = searchForGameByTitle(title).orElseThrow(() -> new RuntimeException("Could not find game with title : \"%s\"".formatted(title)));
-
-        return GameDto.builder()
-                .name(searchResult.getName())
-                .releaseDate(Instant.ofEpochSecond(searchResult.getPublishedAt()))
-                .igdbGameId(searchResult.getGame())
-                .build();
-    }
-
-    public Optional<IgdbSearchResultDto> searchForGameByTitle(String searchTerm) {
-        List<IgdbSearchResultDto> searchResults = new ArrayList<>();
+    private Optional<IgdbGame> searchForGameByTitle(String searchTerm) {
+        List<IgdbGame> games = new ArrayList<>();
 
         igdbApiClient.post()
-                .uri("search")
-                .bodyValue("fields *; search \"%s\"; limit 50;".formatted(searchTerm))
+                .uri("games")
+                .bodyValue("fields *; search \"%s\";".formatted(searchTerm))
                 .retrieve()
-                .bodyToFlux(IgdbSearchResultDto.class)
-                .doOnNext(searchResults::add)
+                .bodyToFlux(IgdbGame.class)
+                .doOnNext(games::add)
                 .blockLast();
 
-        if(searchResults.isEmpty()) return Optional.empty();
+        if (games.isEmpty()) return Optional.empty();
 
         // First check if there are any matches with the exact search term
         // If no exact match has been found, check if there are matches where the name ends with the search term
         // This will filter out most DLCs and similiar stuff, but will detect a game even when your search term is not exactly the title
+        // If that also returns nothing, just return the first search result
         //
         // Example: Searching for "Rainbow Six Siege" will result in returning "Tom Clancy's Rainbow Six Siege" (the game we want)
         //          If we just used the first result from IGDB we would get something like "Tom Clancy's Rainbow Six Siege Demon Veil" as a result
 
-        Optional<IgdbSearchResultDto> srExactTitleMatch = searchResults.stream().filter(s -> s.getName().equals(searchTerm)).findFirst();
-        if(srExactTitleMatch.isPresent()) return srExactTitleMatch;
+        Optional<IgdbGame> srExactTitleMatch = games.stream().filter(s -> s.getName().equals(searchTerm)).findFirst();
+        if (srExactTitleMatch.isPresent()) return srExactTitleMatch;
 
-        Optional<IgdbSearchResultDto> srTitleEndsWithMatch = searchResults.stream().filter(s -> s.getName().endsWith(searchTerm)).findFirst();
-        if(srTitleEndsWithMatch.isPresent()) return srTitleEndsWithMatch;
+        Optional<IgdbGame> srTitleEndsWithMatch = games.stream().filter(s -> s.getName().endsWith(searchTerm)).findFirst();
+        if (srTitleEndsWithMatch.isPresent()) return srTitleEndsWithMatch;
 
-        return Optional.of(searchResults.get(0));
+        return Optional.of(games.get(0));
     }
 }

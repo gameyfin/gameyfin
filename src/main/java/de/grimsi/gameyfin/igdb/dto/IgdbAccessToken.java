@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.igdb;
+package de.grimsi.gameyfin.igdb.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

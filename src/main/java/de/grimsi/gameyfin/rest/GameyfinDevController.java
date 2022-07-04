@@ -9,16 +9,15 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-public class GameyfinController {
+public class GameyfinDevController {
 
     @Autowired
     IgdbWrapper igdbWrapper;
 
-    @GetMapping(value = "/findGameByTitle/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/dev/findGameByTitle/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
     public GameDto findGameByTitle(@PathVariable("title") String title) {
         IgdbGame game;
 
