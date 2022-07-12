@@ -5,9 +5,11 @@ import de.grimsi.gameyfin.igdb.dto.IgdbGame;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.netty.http.client.HttpClient;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
@@ -28,7 +30,9 @@ public class IgdbWrapper {
     @Value("${gameyfin.igdb.config.preferred-platform}")
     private int preferredPlatform;
 
-    private final WebClient twitchApiClient = WebClient.create();
+    private final WebClient twitchApiClient = WebClient.builder()
+            .clientConnector(new ReactorClientHttpConnector(HttpClient.create().proxyWithSystemProperties()))
+            .build();
 
     private WebClient igdbApiClient;
 
@@ -80,6 +84,7 @@ public class IgdbWrapper {
         }
 
         igdbApiClient = WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().proxyWithSystemProperties()))
                 .baseUrl("https://api.igdb.com/v4/")
                 .defaultHeader("Client-ID", clientId)
                 .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))

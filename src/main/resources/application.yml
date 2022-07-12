@@ -3,6 +3,7 @@ spring.jackson.default-property-inclusion: non_null
 
 gameyfin:
   root: ""
+  file-extensions: iso, zip, rar, 7z, exe
   igdb:
     config:
       preferred-platform: 6
