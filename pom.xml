@@ -18,6 +18,7 @@
 
 	<properties>
 		<java.version>18</java.version>
+		<protoc.plugin.version>3.11.4</protoc.plugin.version>
 	</properties>
 
 	<dependencies>
@@ -48,6 +49,19 @@
 			<artifactId>commons-io</artifactId>
 			<version>2.11.0</version>
 		</dependency>
+
+		<!-- Protobuf dependencies -->
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>3.21.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java-util</artifactId>
+			<version>3.21.1</version>
+		</dependency>
+
 
 		<!-- Test -->
 		<dependency>
@@ -88,6 +102,34 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+
+			<!-- Protobuf source generation plugin -->
+			<plugin>
+				<groupId>com.github.os72</groupId>
+				<artifactId>protoc-jar-maven-plugin</artifactId>
+				<version>${protoc.plugin.version}</version>
+				<executions>
+					<execution>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<includeStdTypes>true</includeStdTypes>
+							<inputDirectories>
+								<include>${project.basedir}/src/main/resources/proto</include>
+							</inputDirectories>
+							<outputTargets>
+								<outputTarget>
+									<type>java</type>
+									<outputDirectory>${project.build.directory}/generated-sources/protobuf
+									</outputDirectory>
+								</outputTarget>
+							</outputTargets>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

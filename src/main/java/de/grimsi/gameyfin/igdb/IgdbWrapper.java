@@ -1,15 +1,17 @@
 package de.grimsi.gameyfin.igdb;
 
-import de.grimsi.gameyfin.igdb.dto.IgdbAccessToken;
-import de.grimsi.gameyfin.igdb.dto.IgdbGame;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.igdb.proto.Game;
+import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.converter.protobuf.ProtobufHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
-import reactor.netty.http.client.HttpClient;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
@@ -30,16 +32,18 @@ public class IgdbWrapper {
     @Value("${gameyfin.igdb.config.preferred-platform}")
     private int preferredPlatform;
 
-    private final WebClient twitchApiClient = WebClient.builder()
-            .clientConnector(new ReactorClientHttpConnector(HttpClient.create().proxyWithSystemProperties()))
-            .build();
+    @Autowired
+    private WebClient.Builder webclientBuilder;
+
+    private WebClient twitchApiClient;
 
     private WebClient igdbApiClient;
 
-    private IgdbAccessToken accessToken;
+    private TwitchOAuthTokenDto accessToken;
 
     @PostConstruct
     public void init() {
+        twitchApiClient = webclientBuilder.build();
         authenticate();
         initIgdbClient();
     }
@@ -57,25 +61,29 @@ public class IgdbWrapper {
                 .uri(url)
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(IgdbAccessToken.class)
+                .bodyToMono(TwitchOAuthTokenDto.class)
                 .block();
 
         log.info("Successfully authenticated.");
     }
 
-    public IgdbGame findGameByTitle(String title) {
+    public Game findGameByTitle(String title) {
         return searchForGameByTitle(title).orElseThrow(() -> new RuntimeException("Could not find game with title: \"%s\"".formatted(title)));
     }
 
-    private Optional<IgdbGame> getGameById(Long id) {
-        return Optional.ofNullable(
-                igdbApiClient.post()
-                        .uri("games")
+    public Optional<Game> getGameById(Long id) {
+        byte[] gameBytes = igdbApiClient.post()
+                        .uri("games.pb")
                         .bodyValue("fields *; where id = %d;".formatted(id))
                         .retrieve()
-                        .bodyToMono(IgdbGame.class)
-                        .block()
-        );
+                        .bodyToMono(byte[].class)
+                        .block();
+
+        try {
+            return Optional.ofNullable(Game.parseFrom(gameBytes));
+        } catch (InvalidProtocolBufferException e) {
+            return Optional.empty();
+        }
     }
 
     private void initIgdbClient() {
@@ -83,22 +91,21 @@ public class IgdbWrapper {
             authenticate();
         }
 
-        igdbApiClient = WebClient.builder()
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.create().proxyWithSystemProperties()))
+        igdbApiClient = webclientBuilder
                 .baseUrl("https://api.igdb.com/v4/")
                 .defaultHeader("Client-ID", clientId)
                 .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))
                 .build();
     }
 
-    private Optional<IgdbGame> searchForGameByTitle(String searchTerm) {
-        List<IgdbGame> games = new ArrayList<>();
+    private Optional<Game> searchForGameByTitle(String searchTerm) {
+        List<Game> games = new ArrayList<>();
 
         igdbApiClient.post()
-                .uri("games")
+                .uri("games.pb")
                 .bodyValue("fields *; search \"%s\";".formatted(searchTerm))
                 .retrieve()
-                .bodyToFlux(IgdbGame.class)
+                .bodyToFlux(Game.class)
                 .doOnNext(games::add)
                 .blockLast();
 
@@ -112,10 +119,10 @@ public class IgdbWrapper {
         // Example: Searching for "Rainbow Six Siege" will result in returning "Tom Clancy's Rainbow Six Siege" (the game we want)
         //          If we just used the first result from IGDB we would get something like "Tom Clancy's Rainbow Six Siege Demon Veil" as a result
 
-        Optional<IgdbGame> srExactTitleMatch = games.stream().filter(s -> s.getName().equals(searchTerm)).findFirst();
+        Optional<Game> srExactTitleMatch = games.stream().filter(s -> s.getName().equals(searchTerm)).findFirst();
         if (srExactTitleMatch.isPresent()) return srExactTitleMatch;
 
-        Optional<IgdbGame> srTitleEndsWithMatch = games.stream().filter(s -> s.getName().endsWith(searchTerm)).findFirst();
+        Optional<Game> srTitleEndsWithMatch = games.stream().filter(s -> s.getName().endsWith(searchTerm)).findFirst();
         if (srTitleEndsWithMatch.isPresent()) return srTitleEndsWithMatch;
 
         return Optional.of(games.get(0));

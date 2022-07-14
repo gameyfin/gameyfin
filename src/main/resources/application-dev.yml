@@ -1,5 +1,7 @@
 gameyfin:
   root: C:\Projects\privat\gameyfin-library
+  cache: C:\Projects\privat\gameyfin-library\.gameyfin
+  db: C:\Projects\privat\gameyfin-library\.gameyfin
   igdb:
     api:
       client-id: 23l3l5qshx4dwjuao6yb8jyf1qrd08

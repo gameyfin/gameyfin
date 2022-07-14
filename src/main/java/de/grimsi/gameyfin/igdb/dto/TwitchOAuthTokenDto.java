@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class IgdbAccessToken {
+public class TwitchOAuthTokenDto {
     private String accessToken;
     private Long expiresIn;
     private String tokenType;

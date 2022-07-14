@@ -1,10 +1,10 @@
 package de.grimsi.gameyfin.rest;
 
+import com.igdb.proto.Game;
 import de.grimsi.gameyfin.dto.GameDto;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
-import de.grimsi.gameyfin.igdb.dto.IgdbGame;
 import de.grimsi.gameyfin.service.FilesystemService;
-import org.apache.commons.io.FilenameUtils;
+import de.grimsi.gameyfin.util.ProtobufUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,7 +15,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 public class GameyfinDevController {
@@ -28,7 +27,7 @@ public class GameyfinDevController {
 
     @GetMapping(value = "/dev/findGameByTitle/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
     public GameDto findGameByTitle(@PathVariable("title") String title) {
-        IgdbGame game;
+        Game game;
 
         try {
             game = igdbWrapper.findGameByTitle(title);
@@ -36,7 +35,10 @@ public class GameyfinDevController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
 
-        return GameDto.builder().name(game.getName()).releaseDate(game.getFirstReleaseDate()).build();
+        return GameDto.builder()
+                .name(game.getName())
+                .releaseDate(ProtobufUtils.toInstant(game.getFirstReleaseDate()))
+                .build();
     }
 
     @GetMapping(value = "/dev/gameFiles", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -48,7 +50,10 @@ public class GameyfinDevController {
     public List<GameDto> getAllGames() {
         return filesystemService.getGameFileNames().stream()
                 .map(t -> igdbWrapper.findGameByTitle(t))
-                .map(g -> GameDto.builder().name(g.getName()).releaseDate(g.getFirstReleaseDate()).build())
+                .map(g -> GameDto.builder()
+                        .name(g.getName())
+                        .releaseDate(ProtobufUtils.toInstant(g.getFirstReleaseDate()))
+                        .build())
                 .toList();
     }
 }
