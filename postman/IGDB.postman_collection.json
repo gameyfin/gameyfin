@@ -1,0 +1,248 @@
+{
+	"info": {
+		"_postman_id": "498dc2dc-229f-494d-8a85-e7a3aecd59dc",
+		"name": "IGDB",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get Access Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let token = pm.response.json().access_token;\r",
+							"pm.collectionVariables.set(\"twitch_access_token\", token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "https://id.twitch.tv/oauth2/token?client_id={{twitch_client_id}}&client_secret={{twitch_client_secret}}&grant_type=client_credentials",
+					"protocol": "https",
+					"host": [
+						"id",
+						"twitch",
+						"tv"
+					],
+					"path": [
+						"oauth2",
+						"token"
+					],
+					"query": [
+						{
+							"key": "client_id",
+							"value": "{{twitch_client_id}}"
+						},
+						{
+							"key": "client_secret",
+							"value": "{{twitch_client_secret}}"
+						},
+						{
+							"key": "grant_type",
+							"value": "client_credentials"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "IGDB - Search",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "fields name; search \"Rainbow Six Siege\"; limit 10;"
+				},
+				"url": {
+					"raw": "https://api.igdb.com/v4/search",
+					"protocol": "https",
+					"host": [
+						"api",
+						"igdb",
+						"com"
+					],
+					"path": [
+						"v4",
+						"search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "IGDB - Games",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "fields name; search \"Rainbow Six Siege\"; limit 50;"
+				},
+				"url": {
+					"raw": "https://api.igdb.com/v4/games",
+					"protocol": "https",
+					"host": [
+						"api",
+						"igdb",
+						"com"
+					],
+					"path": [
+						"v4",
+						"games"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "IGDB - Release dates",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "fields *; where id = 367573;"
+				},
+				"url": {
+					"raw": "https://api.igdb.com/v4/release_dates",
+					"protocol": "https",
+					"host": [
+						"api",
+						"igdb",
+						"com"
+					],
+					"path": [
+						"v4",
+						"release_dates"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Gameyfin - Find game by title",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/dev/findGameByTitle/Rainbow Six Siege",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"dev",
+						"findGameByTitle",
+						"Rainbow Six Siege"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "IGDB - Tags",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "fields *; where id = 268435469;"
+				},
+				"url": {
+					"raw": "https://api.igdb.com/v4/tags",
+					"protocol": "https",
+					"host": [
+						"api",
+						"igdb",
+						"com"
+					],
+					"path": [
+						"v4",
+						"tags"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "IGDB - Themes",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "fields *; limit 100;"
+				},
+				"url": {
+					"raw": "https://api.igdb.com/v4/themes",
+					"protocol": "https",
+					"host": [
+						"api",
+						"igdb",
+						"com"
+					],
+					"path": [
+						"v4",
+						"themes"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{twitch_access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.request.headers.add({key: 'Client-ID', value: '{{twitch_client_id}}' }) "
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "twitch_access_token",
+			"value": "",
+			"type": "default"
+		},
+		{
+			"key": "twitch_client_id",
+			"value": "23l3l5qshx4dwjuao6yb8jyf1qrd08",
+			"type": "default"
+		},
+		{
+			"key": "twitch_client_secret",
+			"value": "hf4iivmkzgne552j17p2d64xm03die",
+			"type": "default"
+		}
+	]
+}
