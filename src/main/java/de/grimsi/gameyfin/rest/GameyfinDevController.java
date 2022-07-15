@@ -2,8 +2,10 @@ package de.grimsi.gameyfin.rest;
 
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.GameDto;
+import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.service.FilesystemService;
+import de.grimsi.gameyfin.service.GameService;
 import de.grimsi.gameyfin.util.ProtobufUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,9 @@ public class GameyfinDevController {
 
     @Autowired
     private FilesystemService filesystemService;
+
+    @Autowired
+    private GameService gameService;
 
     @GetMapping(value = "/dev/findGameByTitle/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
     public GameDto findGameByTitle(@PathVariable("title") String title) {
@@ -54,14 +59,13 @@ public class GameyfinDevController {
     }
 
     @GetMapping(value = "/dev/games", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<GameDto> getAllGames() {
-        return filesystemService.getGameFileNames().parallelStream()
-                .map(t -> igdbWrapper.searchForGameByTitle(t).orElse(null))
-                .filter(Objects::nonNull)
-                .map(g -> GameDto.builder()
-                        .name(g.getName())
-                        .releaseDate(ProtobufUtils.toInstant(g.getFirstReleaseDate()))
-                        .build())
-                .toList();
+    public List<DetectedGame> getAllGames() {
+        return gameService.getAllDetectedGames();
     }
+
+    @GetMapping(value = "/dev/startScan", produces = MediaType.APPLICATION_JSON_VALUE)
+    public void scanLibrary() {
+        filesystemService.scanGameLibrary();
+    }
+
 }

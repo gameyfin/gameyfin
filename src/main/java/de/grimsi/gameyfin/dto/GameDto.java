@@ -16,7 +16,7 @@ import java.util.List;
 public class GameDto {
     private String name;
     private String publisher;
-    private Long igdbGameId;
+    private String slug;
     private Instant releaseDate;
 
     private List<File> files;

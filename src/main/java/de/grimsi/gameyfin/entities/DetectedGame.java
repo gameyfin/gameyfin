@@ -14,6 +14,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @ToString
+@AllArgsConstructor
 @RequiredArgsConstructor
 public class DetectedGame {
 
@@ -24,6 +25,8 @@ public class DetectedGame {
     @Column(nullable = false)
     private String title;
 
+    @Lob
+    @Column(columnDefinition="CLOB")
     private String summary;
 
     private Instant releaseDate;

@@ -1,5 +1,5 @@
 gameyfin:
-  root: C:\Projects\privat\gameyfin-library
+  root: D:\Games
   cache: C:\Projects\privat\gameyfin-library\.gameyfin
   db: C:\Projects\privat\gameyfin-library\.gameyfin
   igdb:

@@ -20,7 +20,7 @@ public class WebClientConfig implements WebClientCustomizer {
     @Override
     public void customize(WebClient.Builder webClientBuilder) {
         HttpClient httpClient = HttpClient.create()
-                .wiretap(this.getClass().getCanonicalName(), LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL) // Enable full request / response logging (active only in DEV profile)
+                .wiretap(this.getClass().getCanonicalName(), LogLevel.TRACE, AdvancedByteBufFormat.TEXTUAL) // Enable full request / response logging in TRACE
                 .proxyWithSystemProperties(); // Enable use of system proxy
 
         webClientBuilder.clientConnector(new ReactorClientHttpConnector(httpClient));

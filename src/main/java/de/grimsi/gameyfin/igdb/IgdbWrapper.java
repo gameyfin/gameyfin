@@ -87,7 +87,10 @@ public class IgdbWrapper {
                 .bodyToMono(Igdb.GameResult.class)
                 .block();
 
-        if (gameResult == null) return Optional.empty();
+        if (gameResult == null) {
+            log.warn("Could not find game for title '{}'", searchTerm);
+            return Optional.empty();
+        }
 
         List<Igdb.Game> games = gameResult.getGamesList();
 
