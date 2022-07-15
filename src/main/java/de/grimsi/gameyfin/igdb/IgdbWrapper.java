@@ -20,14 +20,16 @@ import java.util.Optional;
 @Service
 public class IgdbWrapper {
 
+    private static final int MAIN_GAME_CATEGORY_VALUE = 0;
+
     @Value("${gameyfin.igdb.api.client-id}")
     private String clientId;
 
     @Value("${gameyfin.igdb.api.client-secret}")
     private String clientSecret;
 
-    @Value("${gameyfin.igdb.config.preferred-platform}")
-    private int preferredPlatform;
+    @Value("${gameyfin.igdb.config.preferred-platforms:6}")
+    private String preferredPlatforms;
 
     @Autowired
     private WebClient.Builder webclientBuilder;
@@ -64,14 +66,10 @@ public class IgdbWrapper {
         log.info("Successfully authenticated.");
     }
 
-    public Igdb.Game findGameByTitle(String title) {
-        return searchForGameByTitle(title).orElseThrow(() -> new RuntimeException("Could not find game with title: \"%s\"".formatted(title)));
-    }
-
     public Optional<Igdb.Game> getGameById(Long id) {
         Igdb.GameResult gameResult = igdbApiClient.post()
                 .uri("games.pb")
-                .bodyValue("fields *; where id = %d; limit 1;".formatted(id))
+                .bodyValue("fields *; where id = %d & category = %d; limit 1;".formatted(id, MAIN_GAME_CATEGORY_VALUE))
                 .retrieve()
                 .bodyToMono(Igdb.GameResult.class)
                 .block();
@@ -81,23 +79,10 @@ public class IgdbWrapper {
         return Optional.of(gameResult.getGames(0));
     }
 
-    private void initIgdbClient() {
-        if (accessToken == null) {
-            authenticate();
-        }
-
-        igdbApiClient = webclientBuilder
-                .baseUrl("https://api.igdb.com/v4/")
-                .defaultHeader("Client-ID", clientId)
-                .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))
-                .filter(WebClientConfig.fixProtobufContentTypeInterceptor())
-                .build();
-    }
-
-    private Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {
+    public Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {
         Igdb.GameResult gameResult = igdbApiClient.post()
                 .uri("games.pb")
-                .bodyValue("fields *; search \"%s\";".formatted(searchTerm))
+                .bodyValue("fields *; search \"%s\"; where platforms = (%s) & category = %d;".formatted(searchTerm, preferredPlatforms, MAIN_GAME_CATEGORY_VALUE))
                 .retrieve()
                 .bodyToMono(Igdb.GameResult.class)
                 .block();
@@ -105,6 +90,9 @@ public class IgdbWrapper {
         if (gameResult == null) return Optional.empty();
 
         List<Igdb.Game> games = gameResult.getGamesList();
+
+        // If we only get one game, we don't have to check for exact matches, so return it directly
+        if(games.size() == 1) return Optional.ofNullable(games.get(0));
 
         // First check if there are any matches with the exact search term
         // If no exact match has been found, check if there are matches where the name ends with the search term
@@ -121,5 +109,18 @@ public class IgdbWrapper {
         if (srTitleEndsWithMatch.isPresent()) return srTitleEndsWithMatch;
 
         return Optional.of(games.get(0));
+    }
+
+    private void initIgdbClient() {
+        if (accessToken == null) {
+            authenticate();
+        }
+
+        igdbApiClient = webclientBuilder
+                .baseUrl("https://api.igdb.com/v4/")
+                .defaultHeader("Client-ID", clientId)
+                .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))
+                .filter(WebClientConfig.fixProtobufContentTypeInterceptor())
+                .build();
     }
 }

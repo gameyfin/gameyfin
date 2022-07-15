@@ -6,7 +6,7 @@ gameyfin:
   file-extensions: iso, zip, rar, 7z, exe
   igdb:
     config:
-      preferred-platform: 6
+      preferred-platforms: 6
     api:
       client-id: ""
       client-secret: ""

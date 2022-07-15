@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 @RestController
 public class GameyfinDevController {
@@ -28,13 +28,8 @@ public class GameyfinDevController {
 
     @GetMapping(value = "/dev/findGameByTitle/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
     public GameDto findGameByTitle(@PathVariable("title") String title) {
-        Igdb.Game game;
-
-        try {
-            game = igdbWrapper.findGameByTitle(title);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
+        Igdb.Game game = igdbWrapper.searchForGameByTitle(title)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find game with title: \"%s\"".formatted(title)));
 
         return GameDto.builder()
                 .name(game.getName())
@@ -44,15 +39,8 @@ public class GameyfinDevController {
 
     @GetMapping(value = "/dev/getGameById/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public GameDto findGameByTitle(@PathVariable("id") Long id) {
-        Optional<Igdb.Game> gameOptional;
-
-        try {
-            gameOptional = igdbWrapper.getGameById(id);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-        }
-
-        Igdb.Game game = gameOptional.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with id %d not found".formatted(id)));
+        Igdb.Game game = igdbWrapper.getGameById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find game with id: %d".formatted(id)));
 
         return GameDto.builder()
                 .name(game.getName())
@@ -67,8 +55,9 @@ public class GameyfinDevController {
 
     @GetMapping(value = "/dev/games", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<GameDto> getAllGames() {
-        return filesystemService.getGameFileNames().stream()
-                .map(t -> igdbWrapper.findGameByTitle(t))
+        return filesystemService.getGameFileNames().parallelStream()
+                .map(t -> igdbWrapper.searchForGameByTitle(t).orElse(null))
+                .filter(Objects::nonNull)
                 .map(g -> GameDto.builder()
                         .name(g.getName())
                         .releaseDate(ProtobufUtils.toInstant(g.getFirstReleaseDate()))
