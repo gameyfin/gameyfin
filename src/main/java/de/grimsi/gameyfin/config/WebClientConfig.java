@@ -25,7 +25,7 @@ public class WebClientConfig implements WebClientCustomizer {
     }
 
     /**
-     * This fixes the wrong Content-Type in reponses of the IGDB API by overwriting it so the WebClient is able to parse it automatically
+     * This fixes the wrong Content-Type in responses of the IGDB API by overwriting it so the WebClient is able to parse it automatically
      * They return "application/protobuf", correct would be "application/x-protobuf"
      * @return the filter function
      */
