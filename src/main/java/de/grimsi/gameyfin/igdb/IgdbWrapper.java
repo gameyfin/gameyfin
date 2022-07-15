@@ -1,21 +1,18 @@
 package de.grimsi.gameyfin.igdb;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.igdb.proto.Game;
+import com.igdb.proto.Igdb;
+import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.protobuf.ProtobufHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,23 +64,21 @@ public class IgdbWrapper {
         log.info("Successfully authenticated.");
     }
 
-    public Game findGameByTitle(String title) {
+    public Igdb.Game findGameByTitle(String title) {
         return searchForGameByTitle(title).orElseThrow(() -> new RuntimeException("Could not find game with title: \"%s\"".formatted(title)));
     }
 
-    public Optional<Game> getGameById(Long id) {
-        byte[] gameBytes = igdbApiClient.post()
-                        .uri("games.pb")
-                        .bodyValue("fields *; where id = %d;".formatted(id))
-                        .retrieve()
-                        .bodyToMono(byte[].class)
-                        .block();
+    public Optional<Igdb.Game> getGameById(Long id) {
+        Igdb.GameResult gameResult = igdbApiClient.post()
+                .uri("games.pb")
+                .bodyValue("fields *; where id = %d; limit 1;".formatted(id))
+                .retrieve()
+                .bodyToMono(Igdb.GameResult.class)
+                .block();
 
-        try {
-            return Optional.ofNullable(Game.parseFrom(gameBytes));
-        } catch (InvalidProtocolBufferException e) {
-            return Optional.empty();
-        }
+        if (gameResult == null) return Optional.empty();
+
+        return Optional.of(gameResult.getGames(0));
     }
 
     private void initIgdbClient() {
@@ -95,21 +90,21 @@ public class IgdbWrapper {
                 .baseUrl("https://api.igdb.com/v4/")
                 .defaultHeader("Client-ID", clientId)
                 .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))
+                .filter(WebClientConfig.fixProtobufContentTypeInterceptor())
                 .build();
     }
 
-    private Optional<Game> searchForGameByTitle(String searchTerm) {
-        List<Game> games = new ArrayList<>();
-
-        igdbApiClient.post()
+    private Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {
+        Igdb.GameResult gameResult = igdbApiClient.post()
                 .uri("games.pb")
                 .bodyValue("fields *; search \"%s\";".formatted(searchTerm))
                 .retrieve()
-                .bodyToFlux(Game.class)
-                .doOnNext(games::add)
-                .blockLast();
+                .bodyToMono(Igdb.GameResult.class)
+                .block();
 
-        if (games.isEmpty()) return Optional.empty();
+        if (gameResult == null) return Optional.empty();
+
+        List<Igdb.Game> games = gameResult.getGamesList();
 
         // First check if there are any matches with the exact search term
         // If no exact match has been found, check if there are matches where the name ends with the search term
@@ -119,10 +114,10 @@ public class IgdbWrapper {
         // Example: Searching for "Rainbow Six Siege" will result in returning "Tom Clancy's Rainbow Six Siege" (the game we want)
         //          If we just used the first result from IGDB we would get something like "Tom Clancy's Rainbow Six Siege Demon Veil" as a result
 
-        Optional<Game> srExactTitleMatch = games.stream().filter(s -> s.getName().equals(searchTerm)).findFirst();
+        Optional<Igdb.Game> srExactTitleMatch = games.stream().filter(s -> s.getName().equals(searchTerm)).findFirst();
         if (srExactTitleMatch.isPresent()) return srExactTitleMatch;
 
-        Optional<Game> srTitleEndsWithMatch = games.stream().filter(s -> s.getName().endsWith(searchTerm)).findFirst();
+        Optional<Igdb.Game> srTitleEndsWithMatch = games.stream().filter(s -> s.getName().endsWith(searchTerm)).findFirst();
         if (srTitleEndsWithMatch.isPresent()) return srTitleEndsWithMatch;
 
         return Optional.of(games.get(0));

@@ -4,8 +4,8 @@ package com.igdb.proto;
 
 import "google/protobuf/timestamp.proto";
 
-//option java_outer_classname = "Igdb";
-option java_multiple_files = true; // Must be true because of private access in files.
+option java_outer_classname = "Igdb";
+//option java_multiple_files = true; // Must be true because of private access in files.
 option optimize_for = CODE_SIZE;
 
 message Count {

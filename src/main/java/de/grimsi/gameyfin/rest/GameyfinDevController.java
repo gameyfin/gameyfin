@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.rest;
 
-import com.igdb.proto.Game;
+import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.GameDto;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.service.FilesystemService;
@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class GameyfinDevController {
@@ -27,13 +28,31 @@ public class GameyfinDevController {
 
     @GetMapping(value = "/dev/findGameByTitle/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
     public GameDto findGameByTitle(@PathVariable("title") String title) {
-        Game game;
+        Igdb.Game game;
 
         try {
             game = igdbWrapper.findGameByTitle(title);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
+
+        return GameDto.builder()
+                .name(game.getName())
+                .releaseDate(ProtobufUtils.toInstant(game.getFirstReleaseDate()))
+                .build();
+    }
+
+    @GetMapping(value = "/dev/getGameById/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public GameDto findGameByTitle(@PathVariable("id") Long id) {
+        Optional<Igdb.Game> gameOptional;
+
+        try {
+            gameOptional = igdbWrapper.getGameById(id);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+
+        Igdb.Game game = gameOptional.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with id %d not found".formatted(id)));
 
         return GameDto.builder()
                 .name(game.getName())
