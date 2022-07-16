@@ -74,6 +74,12 @@ public class FilesystemService {
         // This would include renamed files, but they will be re-detected by the next step
         List<DetectedGame> deletedGames = detectedGameRepository.getAllByPathNotIn(gameFiles);
         detectedGameRepository.deleteAll(deletedGames);
+        deletedGames.forEach(g -> log.info("Game '{}' has been moved or deleted.", g.getPath()));
+
+        // Now check if there are any unmapped files that have been removed from the file system
+        List<UnmappableFile> deletedUnmappableFiles = unmappableFileRepository.getAllByPathNotIn(gameFiles);
+        unmappableFileRepository.deleteAll(deletedUnmappableFiles);
+        deletedUnmappableFiles.forEach(g -> log.info("Unmapped file '{}' has been moved or deleted.", g.getPath()));
 
         // Filter out the games we already know and the ones we already tried to map to a game without success
         gameFiles = gameFiles.stream()
@@ -104,13 +110,8 @@ public class FilesystemService {
 
         stopWatch.stop();
 
-        String scanDuration = "%dmin : %ds".formatted(
-                TimeUnit.MILLISECONDS.toMinutes(stopWatch.getLastTaskTimeMillis()),
-                TimeUnit.MILLISECONDS.toSeconds(stopWatch.getLastTaskTimeMillis()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(stopWatch.getLastTaskTimeMillis()))
-        );
-
-        log.info("Scan finished in {}: Found {} new games, deleted {} games, could not map {} files/folders, {} games total.",
-                scanDuration, newDetectedGames.size(), deletedGames.size(), newUnmappedFilesCounter.get(), detectedGameRepository.count());
+        log.info("Scan finished in {} seconds: Found {} new games, deleted {} games, could not map {} files/folders, {} games total.",
+                (int) stopWatch.getTotalTimeSeconds(), newDetectedGames.size(), deletedGames.size() + deletedUnmappableFiles.size(), newUnmappedFilesCounter.get(), detectedGameRepository.count());
     }
 
     private String getFilename(Path p) {

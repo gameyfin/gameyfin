@@ -32,3 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 /.mvn/
+
+### Custom ###
+/data/

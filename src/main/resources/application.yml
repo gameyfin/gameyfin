@@ -1,5 +1,17 @@
-server.port: 8080
-spring.jackson.default-property-inclusion: non_null
+server:
+  port: 8080
+  error.include-stacktrace: never
+
+spring:
+  jackson.default-property-inclusion: non_null
+  datasource.db-name: gameyfin_db
+  datasource.url: jdbc:h2:file:./data/${spring.datasource.db-name};AUTO_SERVER=TRUE
+  datasource.username: gfadmin
+  datasource.password: gameyfin
+  datasource.driverClassName: org.h2.Driver
+  jpa.database-platform: org.hibernate.dialect.H2Dialect
+  jpa.hibernate.ddl-auto: update
+  jpa.open-in-view: true
 
 gameyfin:
   root: ""
