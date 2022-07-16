@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -37,8 +38,7 @@ public class DetectedGame {
 
     private Integer totalRating;
 
-    @ManyToOne
-    private Category category;
+    private String category;
 
     private boolean offlineCoop;
 
@@ -57,23 +57,23 @@ public class DetectedGame {
     @ElementCollection
     private List<Long> videoIds;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     @ToString.Exclude
     private List<Company> companies;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     @ToString.Exclude
     private List<Genre> genres;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     @ToString.Exclude
     private List<Keyword> keywords;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     @ToString.Exclude
     private List<Theme> themes;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     @ToString.Exclude
     private List<PlayerPerspective> playerPerspectives;
 

@@ -1,12 +1,11 @@
 package de.grimsi.gameyfin.mapper;
 
 import com.igdb.proto.Igdb;
-import de.grimsi.gameyfin.entities.Category;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.entities.PlayerPerspective;
 import de.grimsi.gameyfin.util.ProtobufUtils;
 
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 
 public class GameMapper {
@@ -24,7 +23,7 @@ public class GameMapper {
                 .userRating((int) g.getRating())
                 .criticsRating((int) g.getAggregatedRating())
                 .totalRating((int) g.getTotalRating())
-                //.category()
+                .category(g.getCategory().name())
                 .offlineCoop(hasOfflineCoop(multiplayerModes))
                 .onlineCoop(hasOnlineCoop(multiplayerModes))
                 .lanSupport(hasLanSupport(multiplayerModes))
@@ -32,11 +31,11 @@ public class GameMapper {
                 .coverId(g.getCover().getId())
                 .screenshotIds(screenshotIds)
                 .videoIds(videoIds)
-                //.companies()
-                //.genres()
-                //.keywords()
-                //.themes()
-                //.playerPerspectives()
+                .companies(CompanyMapper.toCompanies(g.getInvolvedCompaniesList()))
+                .genres(GenreMapper.toGenres(g.getGenresList()))
+                .keywords(KeywordMapper.toKeywords(g.getKeywordsList()))
+                .themes(ThemeMapper.toThemes(g.getThemesList()))
+                .playerPerspectives(PlayerPerspectiveMapper.toPlayerPerspectives(g.getPlayerPerspectivesList()))
                 .path(path.toString())
                 .isFolder(path.toFile().isDirectory())
                 .build();

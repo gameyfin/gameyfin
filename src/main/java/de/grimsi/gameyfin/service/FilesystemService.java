@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,6 +20,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -59,11 +61,19 @@ public class FilesystemService {
     }
 
     public void scanGameLibrary() {
-        log.info("Starting scan...");
+        StopWatch stopWatch = new StopWatch();
 
-        AtomicInteger newBlacklistCounter = new AtomicInteger();
+        log.info("Starting scan...");
+        stopWatch.start();
+
+        AtomicInteger newUnmappedFilesCounter = new AtomicInteger();
 
         List<Path> gameFiles = getGameFiles();
+
+        // Check if any games that are in the library have been removed from the file system
+        // This would include renamed files, but they will be re-detected by the next step
+        List<DetectedGame> deletedGames = detectedGameRepository.getAllByPathNotIn(gameFiles);
+        detectedGameRepository.deleteAll(deletedGames);
 
         // Filter out the games we already know and the ones we already tried to map to a game without success
         gameFiles = gameFiles.stream()
@@ -74,12 +84,13 @@ public class FilesystemService {
 
         // For each new game, load the info from IGDB
         // If a game is not found on IGDB, add it to the list of unmapped files so we won't query the API later on for the same path
+        // If a game is not found on IGDB, blacklist the path, so we won't query the API later for the same path
         List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
                 .map(p -> {
                     Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilename(p));
                     return optionalGame.map(game -> Map.entry(p, game)).or(() -> {
                         unmappableFileRepository.save(new UnmappableFile(p.toString()));
-                        newBlacklistCounter.getAndIncrement();
+                        newUnmappedFilesCounter.getAndIncrement();
                         log.info("Added path '{}' to blacklist", p);
                         return Optional.empty();
                     });
@@ -91,7 +102,15 @@ public class FilesystemService {
 
         newDetectedGames = detectedGameRepository.saveAll(newDetectedGames);
 
-        log.info("Scan finished: Found {} new games, deleted {} games, could not map {} files/folders, {} games total.", newDetectedGames.size(), "NOT_IMPLEMENTED_YET", newBlacklistCounter.get(), detectedGameRepository.count());
+        stopWatch.stop();
+
+        String scanDuration = "%dmin : %ds".formatted(
+                TimeUnit.MILLISECONDS.toMinutes(stopWatch.getLastTaskTimeMillis()),
+                TimeUnit.MILLISECONDS.toSeconds(stopWatch.getLastTaskTimeMillis()) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(stopWatch.getLastTaskTimeMillis()))
+        );
+
+        log.info("Scan finished in {}: Found {} new games, deleted {} games, could not map {} files/folders, {} games total.",
+                scanDuration, newDetectedGames.size(), deletedGames.size(), newUnmappedFilesCounter.get(), detectedGameRepository.count());
     }
 
     private String getFilename(Path p) {

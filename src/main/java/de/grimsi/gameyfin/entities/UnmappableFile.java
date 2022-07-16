@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.hibernate.Hibernate;
 
@@ -7,7 +8,6 @@ import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "blacklist")
 @Getter
 @Setter
 @ToString

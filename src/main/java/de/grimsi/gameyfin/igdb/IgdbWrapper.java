@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.igdb;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
+import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,6 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class IgdbWrapper {
-
     @Value("${gameyfin.igdb.api.client-id}")
     private String clientId;
 
@@ -66,13 +66,11 @@ public class IgdbWrapper {
     }
 
     public Optional<Igdb.Game> getGameById(Long id) {
-        Igdb.GameResult gameResult = igdbApiClient.post()
-                .uri("games.pb")
-                .bodyValue("fields *; where id = %d; limit 1;".formatted(id))
-                .retrieve()
-                .bodyToMono(Igdb.GameResult.class)
-                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
-                .block();
+        Igdb.GameResult gameResult = queryIgdbApi(
+                IgdbApiProperties.IGDB_ENPOINT_GAMES_PROTOBUF,
+                "fields *; where id = %d; limit 1;".formatted(id),
+                Igdb.GameResult.class
+        );
 
         if (gameResult == null) return Optional.empty();
 
@@ -80,13 +78,11 @@ public class IgdbWrapper {
     }
 
     public Optional<Igdb.Game> getGameBySlug(String slug) {
-        Igdb.GameResult gameResult = igdbApiClient.post()
-                .uri("games.pb")
-                .bodyValue("fields *; where slug = \"%s\"; limit 1;".formatted(slug))
-                .retrieve()
-                .bodyToMono(Igdb.GameResult.class)
-                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
-                .block();
+        Igdb.GameResult gameResult = queryIgdbApi(
+                IgdbApiProperties.IGDB_ENPOINT_GAMES_PROTOBUF,
+                "fields *; where slug = \"%s\"; limit 1;".formatted(slug),
+                Igdb.GameResult.class
+        );
 
         if (gameResult == null) return Optional.empty();
 
@@ -94,13 +90,12 @@ public class IgdbWrapper {
     }
 
     public Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {
-        Igdb.GameResult gameResult = igdbApiClient.post()
-                .uri("games.pb")
-                .bodyValue("fields *; search \"%s\"; where platforms = (%s);".formatted(searchTerm, preferredPlatforms))
-                .retrieve()
-                .bodyToMono(Igdb.GameResult.class)
-                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
-                .block();
+        Igdb.GameResult gameResult = queryIgdbApi(
+                IgdbApiProperties.IGDB_ENPOINT_GAMES_PROTOBUF,
+                "search \"%s\"; fields %s; where platforms = (%s);"
+                        .formatted(searchTerm, String.join(",", IgdbApiProperties.GAME_QUERY_FIELDS), preferredPlatforms),
+                Igdb.GameResult.class
+        );
 
         if (gameResult == null) {
             log.warn("Could not find game for title '{}'", searchTerm);
@@ -110,7 +105,7 @@ public class IgdbWrapper {
         List<Igdb.Game> games = gameResult.getGamesList();
 
         // If we only get one game, we don't have to check for exact matches, so return it directly
-        if(games.size() == 1) return Optional.ofNullable(games.get(0));
+        if (games.size() == 1) return Optional.ofNullable(games.get(0));
 
         // First check if there are any matches with the exact search term
         // If no exact match has been found, check if there are matches where the name ends with the search term
@@ -140,5 +135,16 @@ public class IgdbWrapper {
                 .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))
                 .filter(WebClientConfig.fixProtobufContentTypeInterceptor())
                 .build();
+    }
+
+    private <T> T queryIgdbApi(String endpoint, String query, Class<T> responseClass) {
+        return igdbApiClient.post()
+                .uri(endpoint)
+                .bodyValue(query)
+                .retrieve()
+                .bodyToMono(responseClass)
+                .transformDeferred(BulkheadOperator.of(WebClientConfig.IGDB_CONCURRENCY_LIMITER))
+                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
+                .block();
     }
 }
