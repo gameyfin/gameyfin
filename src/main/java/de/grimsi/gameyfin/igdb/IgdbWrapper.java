@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.igdb;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
+import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,6 +73,7 @@ public class IgdbWrapper {
                 .bodyValue("fields *; where id = %d & category = %d; limit 1;".formatted(id, MAIN_GAME_CATEGORY_VALUE))
                 .retrieve()
                 .bodyToMono(Igdb.GameResult.class)
+                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
                 .block();
 
         if (gameResult == null) return Optional.empty();
@@ -85,6 +87,7 @@ public class IgdbWrapper {
                 .bodyValue("fields *; search \"%s\"; where platforms = (%s) & category = %d;".formatted(searchTerm, preferredPlatforms, MAIN_GAME_CATEGORY_VALUE))
                 .retrieve()
                 .bodyToMono(Igdb.GameResult.class)
+                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
                 .block();
 
         if (gameResult == null) {

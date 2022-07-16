@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.rest;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.GameDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.service.FilesystemService;
 import de.grimsi.gameyfin.service.GameService;
@@ -66,6 +67,11 @@ public class GameyfinDevController {
     @GetMapping(value = "/dev/startScan", produces = MediaType.APPLICATION_JSON_VALUE)
     public void scanLibrary() {
         filesystemService.scanGameLibrary();
+    }
+
+    @GetMapping(value = "/dev/unmappedFiles", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<UnmappableFile> getUnmappedFiles() {
+        return gameService.getAllUnmappedFiles();
     }
 
 }

@@ -1,5 +1,5 @@
 gameyfin:
-  root: D:\Games
+  root: \\NAS-Simon\Öffentlich\Spiele
   cache: C:\Projects\privat\gameyfin-library\.gameyfin
   db: C:\Projects\privat\gameyfin-library\.gameyfin
   igdb:

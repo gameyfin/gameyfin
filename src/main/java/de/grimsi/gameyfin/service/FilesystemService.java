@@ -1,11 +1,11 @@
 package de.grimsi.gameyfin.service;
 
 import com.igdb.proto.Igdb;
-import de.grimsi.gameyfin.entities.BlacklistEntry;
+import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
-import de.grimsi.gameyfin.repositories.BlacklistRepository;
+import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
@@ -38,7 +38,7 @@ public class FilesystemService {
     private DetectedGameRepository detectedGameRepository;
 
     @Autowired
-    private BlacklistRepository blacklistRepository;
+    private UnmappableFileRepository unmappableFileRepository;
 
     public List<Path> getGameFiles() {
 
@@ -68,7 +68,7 @@ public class FilesystemService {
         // Filter out the games we already know and the ones we already tried to map to a game without success
         gameFiles = gameFiles.stream()
                 .filter(g -> !detectedGameRepository.existsByPath(g.toString()))
-                .filter(g -> !blacklistRepository.existsByPath(g.toString()))
+                .filter(g -> !unmappableFileRepository.existsByPath(g.toString()))
                 .peek(p -> log.info("Found new potential game: {}", p))
                 .toList();
 
@@ -78,7 +78,7 @@ public class FilesystemService {
                 .map(p -> {
                     Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilename(p));
                     return optionalGame.map(game -> Map.entry(p, game)).or(() -> {
-                        blacklistRepository.save(new BlacklistEntry(p.toString()));
+                        unmappableFileRepository.save(new UnmappableFile(p.toString()));
                         newBlacklistCounter.getAndIncrement();
                         log.info("Added path '{}' to blacklist", p);
                         return Optional.empty();

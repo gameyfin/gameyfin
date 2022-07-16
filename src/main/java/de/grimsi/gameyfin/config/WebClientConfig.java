@@ -1,5 +1,7 @@
 package de.grimsi.gameyfin.config;
 
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.netty.handler.logging.LogLevel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.reactive.function.client.WebClientCustomizer;
@@ -13,9 +15,18 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.logging.AdvancedByteBufFormat;
 
+import java.time.Duration;
+
 @Slf4j
 @Configuration
 public class WebClientConfig implements WebClientCustomizer {
+
+    public static final RateLimiter IGDB_RATE_LIMITER = RateLimiter.of("igdb-rate-limiter",
+            RateLimiterConfig.custom()
+                    .limitRefreshPeriod(Duration.ofSeconds(1))
+                    .limitForPeriod(4)
+                    .timeoutDuration(Duration.ofMinutes(1)) // max wait time for a request, if reached then error
+            .build());
 
     @Override
     public void customize(WebClient.Builder webClientBuilder) {
