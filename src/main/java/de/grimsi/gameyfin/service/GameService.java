@@ -36,8 +36,12 @@ public class GameService {
     }
 
     public DetectedGame mapUnmappedFile(Long unmappedGameId, String igdbSlug) {
+
         UnmappableFile unmappableFile = unmappableFileRepository.findById(unmappedGameId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unmapped file with id '%d' does not exist.".formatted(unmappedGameId)));
+
+        if(detectedGameRepository.existsBySlug(igdbSlug))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Game with slug '%s' already exists in database.".formatted(igdbSlug));
 
         Igdb.Game igdbGame = igdbWrapper.getGameBySlug(igdbSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(igdbSlug)));
