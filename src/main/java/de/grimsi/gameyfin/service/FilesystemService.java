@@ -73,7 +73,7 @@ public class FilesystemService {
                 .toList();
 
         // For each new game, load the info from IGDB
-        // If a game is not found on IGDB, blacklist the path so we won't query the API later on for the same path
+        // If a game is not found on IGDB, add it to the list of unmapped files so we won't query the API later on for the same path
         List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
                 .map(p -> {
                     Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilename(p));
@@ -91,7 +91,7 @@ public class FilesystemService {
 
         newDetectedGames = detectedGameRepository.saveAll(newDetectedGames);
 
-        log.info("Scan finished: Found {} new games, deleted {} games, backlisted {} files/folders, {} games total.", newDetectedGames.size(), "NOT_IMPLEMENTED_YET", newBlacklistCounter.get(), detectedGameRepository.count());
+        log.info("Scan finished: Found {} new games, deleted {} games, could not map {} files/folders, {} games total.", newDetectedGames.size(), "NOT_IMPLEMENTED_YET", newBlacklistCounter.get(), detectedGameRepository.count());
     }
 
     private String getFilename(Path p) {

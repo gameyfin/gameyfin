@@ -21,8 +21,6 @@ import java.util.Optional;
 @Service
 public class IgdbWrapper {
 
-    private static final int MAIN_GAME_CATEGORY_VALUE = 0;
-
     @Value("${gameyfin.igdb.api.client-id}")
     private String clientId;
 
@@ -70,7 +68,21 @@ public class IgdbWrapper {
     public Optional<Igdb.Game> getGameById(Long id) {
         Igdb.GameResult gameResult = igdbApiClient.post()
                 .uri("games.pb")
-                .bodyValue("fields *; where id = %d & category = %d; limit 1;".formatted(id, MAIN_GAME_CATEGORY_VALUE))
+                .bodyValue("fields *; where id = %d; limit 1;".formatted(id))
+                .retrieve()
+                .bodyToMono(Igdb.GameResult.class)
+                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
+                .block();
+
+        if (gameResult == null) return Optional.empty();
+
+        return Optional.of(gameResult.getGames(0));
+    }
+
+    public Optional<Igdb.Game> getGameBySlug(String slug) {
+        Igdb.GameResult gameResult = igdbApiClient.post()
+                .uri("games.pb")
+                .bodyValue("fields *; where slug = \"%s\"; limit 1;".formatted(slug))
                 .retrieve()
                 .bodyToMono(Igdb.GameResult.class)
                 .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
@@ -84,7 +96,7 @@ public class IgdbWrapper {
     public Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {
         Igdb.GameResult gameResult = igdbApiClient.post()
                 .uri("games.pb")
-                .bodyValue("fields *; search \"%s\"; where platforms = (%s) & category = %d;".formatted(searchTerm, preferredPlatforms, MAIN_GAME_CATEGORY_VALUE))
+                .bodyValue("fields *; search \"%s\"; where platforms = (%s);".formatted(searchTerm, preferredPlatforms))
                 .retrieve()
                 .bodyToMono(Igdb.GameResult.class)
                 .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
