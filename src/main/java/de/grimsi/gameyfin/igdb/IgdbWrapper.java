@@ -67,7 +67,7 @@ public class IgdbWrapper {
 
     public Optional<Igdb.Game> getGameById(Long id) {
         Igdb.GameResult gameResult = queryIgdbApi(
-                IgdbApiProperties.IGDB_ENPOINT_GAMES_PROTOBUF,
+                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
                 "fields %s; where id = %d; limit 1;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, id),
                 Igdb.GameResult.class
         );
@@ -79,7 +79,7 @@ public class IgdbWrapper {
 
     public Optional<Igdb.Game> getGameBySlug(String slug) {
         Igdb.GameResult gameResult = queryIgdbApi(
-                IgdbApiProperties.IGDB_ENPOINT_GAMES_PROTOBUF,
+                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
                 "fields %s; where slug = \"%s\"; limit 1;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, slug),
                 Igdb.GameResult.class
         );
@@ -91,7 +91,7 @@ public class IgdbWrapper {
 
     public Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {
         Igdb.GameResult gameResult = queryIgdbApi(
-                IgdbApiProperties.IGDB_ENPOINT_GAMES_PROTOBUF,
+                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
                 "search \"%s\"; fields %s; where platforms = (%s);"
                         .formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING, preferredPlatforms),
                 Igdb.GameResult.class

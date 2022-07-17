@@ -49,13 +49,13 @@ public class DetectedGame {
     private int maxPlayers;
 
     @Column(nullable = false)
-    private Long coverId;
+    private String coverId;
 
     @ElementCollection
-    private List<Long> screenshotIds;
+    private List<String> screenshotIds;
 
     @ElementCollection
-    private List<Long> videoIds;
+    private List<String> videoIds;
 
     @ManyToMany(cascade = CascadeType.MERGE)
     @ToString.Exclude

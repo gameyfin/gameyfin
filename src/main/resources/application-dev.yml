@@ -1,7 +1,7 @@
 gameyfin:
-  root: D:\Games
-  cache: C:\Projects\privat\gameyfin-library\.gameyfin
-  db: C:\Projects\privat\gameyfin-library\.gameyfin
+  root: \\NAS-Simon\Öffentlich\Spiele
+  cache: ${gameyfin.root}\.gameyfin\cache
+  db: ${gameyfin.root}\.gameyfin\db # Currently unused
   igdb:
     api:
       client-id: 23l3l5qshx4dwjuao6yb8jyf1qrd08
@@ -10,6 +10,6 @@ gameyfin:
 logging:
   level:
     de.grimsi: debug
-    org.springframework.web.reactive.function.client.ExchangeFunctions: debug
+    # org.springframework.web.reactive.function.client.ExchangeFunctions: debug
 
 spring.mvc.log-request-details: true

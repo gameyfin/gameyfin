@@ -24,7 +24,7 @@ public class Company {
     @Column(nullable = false)
     private String name;
 
-    private Long logoId;
+    private String logoId;
 
     @Override
     public boolean equals(Object o) {

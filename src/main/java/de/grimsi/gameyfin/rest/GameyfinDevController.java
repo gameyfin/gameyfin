@@ -11,12 +11,15 @@ import de.grimsi.gameyfin.util.ProtobufUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 @RestController
 public class GameyfinDevController {
@@ -67,15 +70,27 @@ public class GameyfinDevController {
         filesystemService.scanGameLibrary();
     }
 
+    @GetMapping(value = "/dev/downloadCovers")
+    public void downloadCovers() {
+        filesystemService.downloadGameCovers();
+        filesystemService.downloadGameScreenshots();
+        filesystemService.downloadCompanyLogos();
+    }
+
+
     @GetMapping(value = "/dev/unmappedFiles", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<UnmappableFile> getUnmappedFiles() {
         return gameService.getAllUnmappedFiles();
+    }
+
+    @GetMapping(value = "/dev/gameMappings", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, String> getGameMappings() {
+        return gameService.getAllMappings();
     }
 
     @PostMapping(value = "/dev/unmappedFiles/{unmappedGameId}/mapTo/{igdbSlug}", produces = MediaType.APPLICATION_JSON_VALUE)
     public DetectedGame mapGameManually(@PathVariable Long unmappedGameId, @PathVariable String igdbSlug) {
         return gameService.mapUnmappedFile(unmappedGameId, igdbSlug);
     }
-
 
 }

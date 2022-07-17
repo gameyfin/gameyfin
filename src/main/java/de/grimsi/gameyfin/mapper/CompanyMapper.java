@@ -11,7 +11,7 @@ public class CompanyMapper {
         return Company.builder()
                 .slug(c.getCompany().getSlug())
                 .name(c.getCompany().getName())
-                .logoId(c.getCompany().getLogo().getId())
+                .logoId(c.getCompany().getLogo().getImageId())
                 .build();
     }
 

@@ -9,9 +9,13 @@ spring:
   datasource.username: gfadmin
   datasource.password: gameyfin
   datasource.driverClassName: org.h2.Driver
-  jpa.database-platform: org.hibernate.dialect.H2Dialect
-  jpa.hibernate.ddl-auto: update
-  jpa.open-in-view: true
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate.ddl-auto: update
+    open-in-view: true
+    properties:
+      hibernate:
+        event.merge.entity_copy_observer: allow
 
 gameyfin:
   root: ""

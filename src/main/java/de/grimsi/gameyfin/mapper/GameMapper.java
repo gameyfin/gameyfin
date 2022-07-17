@@ -12,8 +12,8 @@ public class GameMapper {
 
     public static DetectedGame toDetectedGame(Igdb.Game g, Path path) {
         List<Igdb.MultiplayerMode> multiplayerModes = g.getMultiplayerModesList();
-        List<Long> screenshotIds = g.getScreenshotsList().stream().map(Igdb.Screenshot::getId).toList();
-        List<Long> videoIds = g.getVideosList().stream().map(Igdb.GameVideo::getId).toList();
+        List<String> screenshotIds = g.getScreenshotsList().stream().map(Igdb.Screenshot::getImageId).toList();
+        List<String> videoIds = g.getVideosList().stream().map(Igdb.GameVideo::getVideoId).toList();
 
         return DetectedGame.builder()
                 .slug(g.getSlug())
@@ -28,7 +28,7 @@ public class GameMapper {
                 .onlineCoop(hasOnlineCoop(multiplayerModes))
                 .lanSupport(hasLanSupport(multiplayerModes))
                 .maxPlayers(getMaxPlayers(multiplayerModes))
-                .coverId(g.getCover().getId())
+                .coverId(g.getCover().getImageId())
                 .screenshotIds(screenshotIds)
                 .videoIds(videoIds)
                 .companies(CompanyMapper.toCompanies(g.getInvolvedCompaniesList()))
