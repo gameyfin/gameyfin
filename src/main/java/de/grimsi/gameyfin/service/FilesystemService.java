@@ -7,12 +7,15 @@ import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbApiProperties;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
+import de.grimsi.gameyfin.repositories.CompanyRepository;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpStatus;
@@ -29,6 +32,7 @@ import reactor.core.publisher.Flux;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.List;
@@ -184,6 +188,16 @@ public class FilesystemService {
         log.info("Downloaded {} company logos in {} seconds.", downloadCount, (int) stopWatch.getTotalTimeSeconds());
     }
 
+    public Resource getImage(String imageId) {
+        String filename = "%s.png".formatted(imageId);
+
+        try {
+            return new ByteArrayResource(Files.readAllBytes(Paths.get("%s/%s".formatted(cacheFolderPath, filename))));
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find image file %s".formatted(filename));
+        }
+    }
+
     private String getFilename(Path p) {
         return FilenameUtils.getBaseName(p.toString());
     }
@@ -201,9 +215,9 @@ public class FilesystemService {
         entityToImageIds.entrySet().parallelStream().forEach(entry ->
                 entry.getValue().forEach(imageId -> {
 
-                    if(!StringUtils.hasText(imageId)) return;
+                    if (!StringUtils.hasText(imageId)) return;
 
-                    String imgFileName = "%s.jpg".formatted(imageId);
+                    String imgFileName = "%s.png".formatted(imageId);
                     String imgUrl = "t_%s/%s".formatted(imageSize, imgFileName);
 
                     if (Files.exists(Path.of(cacheFolderPath, imgFileName))) {
