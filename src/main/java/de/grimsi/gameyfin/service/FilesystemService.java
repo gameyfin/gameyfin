@@ -7,7 +7,6 @@ import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbApiProperties;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
-import de.grimsi.gameyfin.repositories.CompanyRepository;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +28,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -64,7 +64,14 @@ public class FilesystemService {
     @Autowired
     private UnmappableFileRepository unmappableFileRepository;
 
-    private WebClient igdbImageClient = WebClient.create(IgdbApiProperties.IMAGES_BASE_URL);
+    @Autowired
+    private WebClient.Builder webclientBuilder;
+    private WebClient igdbImageClient;
+
+    @PostConstruct
+    public void init() {
+        igdbImageClient = webclientBuilder.baseUrl(IgdbApiProperties.IMAGES_BASE_URL).build();
+    }
 
     public List<Path> getGameFiles() {
 
@@ -141,11 +148,11 @@ public class FilesystemService {
         log.info("Starting game cover download...");
         stopWatch.start();
 
-        MultiValueMap<String, String> multiValueMap = new LinkedMultiValueMap<>(
+        MultiValueMap<String, String> gameToImageIds = new LinkedMultiValueMap<>(
                 detectedGameRepository.findAll().stream()
                         .collect(Collectors.toMap(DetectedGame::getTitle, g -> Collections.singletonList(g.getCoverId()))));
 
-        int downloadCount = downloadImagesIntoCache(multiValueMap, IgdbApiProperties.COVER_IMAGE_SIZE, "cover", "game");
+        int downloadCount = downloadImagesIntoCache(gameToImageIds, IgdbApiProperties.COVER_IMAGE_SIZE, "cover", "game");
 
         stopWatch.stop();
 
@@ -175,13 +182,13 @@ public class FilesystemService {
         log.info("Starting company logo download...");
         stopWatch.start();
 
-        Map<String, List<String>> test = detectedGameRepository.findAll().stream()
+        Map<String, List<String>> companyToLogoIdMap = detectedGameRepository.findAll().stream()
                 .flatMap(g -> g.getCompanies().stream())
                 .collect(Collectors.toMap(Company::getName, c -> Collections.singletonList(c.getLogoId()), (c1, c2) -> c1));
 
-        MultiValueMap<String, String> gamesToImageIds = new LinkedMultiValueMap<>(test);
+        MultiValueMap<String, String> companiesToLogoIds = new LinkedMultiValueMap<>(companyToLogoIdMap);
 
-        int downloadCount = downloadImagesIntoCache(gamesToImageIds, IgdbApiProperties.LOGO_IMAGE_SIZE, "logo", "company");
+        int downloadCount = downloadImagesIntoCache(companiesToLogoIds, IgdbApiProperties.LOGO_IMAGE_SIZE, "logo", "company");
 
         stopWatch.stop();
 

@@ -2,7 +2,6 @@ package de.grimsi.gameyfin.rest;
 
 import de.grimsi.gameyfin.service.FilesystemService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,14 +22,14 @@ public class LibraryController {
     private final FilesystemService filesystemService;
 
     @GetMapping(value = "/scan", produces = MediaType.APPLICATION_JSON_VALUE)
-    public void scanLibrary(@RequestParam("download_images") boolean downloadImages) {
+    public void scanLibrary(@RequestParam(value = "download_images", defaultValue = "true") boolean downloadImages) {
         filesystemService.scanGameLibrary();
 
-        if(downloadImages) populateCache();
+        if(downloadImages) downloadImages();
     }
 
-    @GetMapping(value = "/populate-cache")
-    public void populateCache() {
+    @GetMapping(value = "/download_images")
+    public void downloadImages() {
         filesystemService.downloadGameCovers();
         filesystemService.downloadGameScreenshots();
         filesystemService.downloadCompanyLogos();

@@ -36,6 +36,13 @@
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
+		<!-- OpenAPI -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>1.6.9</version>
+		</dependency>
+
 		<!-- Webclient Rate limiter -->
 		<dependency>
 			<groupId>io.github.resilience4j</groupId>
