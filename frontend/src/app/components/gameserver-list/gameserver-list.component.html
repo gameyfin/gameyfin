@@ -1,0 +1,14 @@
+<div fxFlexFill>
+  <div class="fullscreen-overlay" *ngIf="this.loading" fxLayout="column" fxLayoutAlign="center center">
+    <mat-spinner></mat-spinner>
+    <h2>Loading library...</h2>
+  </div>
+  <div fxLayout="row" fxLayoutAlign="center center">
+    <div *ngIf="!this.loading && this.detectedGames.length === 0">
+      <h2>No games in library.</h2>
+    </div>
+    <div fxFlexFill *ngIf="!this.loading && this.detectedGames.length > 0">
+      <img *ngFor="let game of detectedGames" src="{{'http://localhost:8080/v1/images/' + game.coverId}}">
+    </div>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+<mat-toolbar role="heading">
+
+  <object type="image/svg+xml" data="../../../assets/graphics/game-radar-logo-tilted-interactive.svg" class="logo">
+    Game-Radar Logo
+  </object>
+
+  <nav mat-tab-nav-bar>
+    <a mat-tab-link *ngFor="let item of tabNavItems"
+       (click)="setActiveItem(item)"
+       [disabled]="!item.enabled"
+       routerLink="{{item.route}}"
+       routerLinkActive #rla="routerLinkActive"
+       [active]="rla.isActive">
+      <mat-icon class="menu-item-icon">{{item.icon}}</mat-icon>
+      {{item.title}}
+    </a>
+  </nav>
+
+  <span class="spacer"></span>
+
+  <p id="username" class="mat-hint">TestUser</p>
+
+  <button mat-icon-button [matMenuTriggerFor]="headerDropDown">
+    <mat-icon>more_vert</mat-icon>
+  </button>
+  <mat-menu #headerDropDown="matMenu">
+    <button mat-menu-item *ngFor="let item of dropDownItems"
+            (click)="item.action()">
+      <mat-icon>{{item.icon}}</mat-icon>
+      <span>{{item.title}}</span>
+    </button>
+  </mat-menu>
+</mat-toolbar>

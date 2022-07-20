@@ -1,0 +1,27 @@
+.menu-item-icon {
+  margin-right: 10px;
+}
+
+.logo {
+  width: 45px;
+  padding-right: 30px;
+  padding-left: 30px;
+}
+
+.drop-down {
+  float: right;
+}
+
+.mat-tab-nav-bar, .mat-tab-links, .mat-tab-link {
+  height: 64px;
+  user-select: none;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+#username {
+  margin-right: 10px;
+  user-select: none;
+}
