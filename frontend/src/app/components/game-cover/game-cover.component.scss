@@ -1,0 +1,11 @@
+@use '@angular/material' as mat;
+
+.game-cover-container img {
+
+  @include mat.elevation-transition();
+  @include mat.elevation(4);
+
+  &:hover {
+    @include mat.elevation(12);
+  }
+}

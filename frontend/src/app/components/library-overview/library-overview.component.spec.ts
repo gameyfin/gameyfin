@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { GameserverListComponent } from './gameserver-list.component';
+import { LibraryOverviewComponent } from './library-overview.component';
 
-describe('GameserverListComponent', () => {
-  let component: GameserverListComponent;
-  let fixture: ComponentFixture<GameserverListComponent>;
+describe('LibraryOverviewComponent', () => {
+  let component: LibraryOverviewComponent;
+  let fixture: ComponentFixture<LibraryOverviewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ GameserverListComponent ]
+      declarations: [ LibraryOverviewComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(GameserverListComponent);
+    fixture = TestBed.createComponent(LibraryOverviewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

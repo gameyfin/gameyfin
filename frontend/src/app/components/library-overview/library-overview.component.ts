@@ -4,10 +4,10 @@ import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 
 @Component({
   selector: 'app-gameserver-list',
-  templateUrl: './gameserver-list.component.html',
-  styleUrls: ['./gameserver-list.component.css']
+  templateUrl: './library-overview.component.html',
+  styleUrls: ['./library-overview.component.css']
 })
-export class GameserverListComponent implements AfterViewInit {
+export class LibraryOverviewComponent implements AfterViewInit {
 
   detectedGames: DetectedGameDto[] = [];
   loading: boolean = true;

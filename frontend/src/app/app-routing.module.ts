@@ -4,7 +4,7 @@ import {FullpageLayoutComponent} from "./layouts/fullpage-layout/fullpage-layout
 import {PageNotFoundComponent} from "./components/page-not-found/page-not-found.component";
 import {NavbarLayoutComponent} from "./layouts/navbar-layout/navbar-layout.component";
 import {NotImplementedComponent} from "./components/not-implemented/not-implemented.component";
-import {GameserverListComponent} from "./components/gameserver-list/gameserver-list.component";
+import {LibraryOverviewComponent} from "./components/library-overview/library-overview.component";
 
 const appRoutes: Routes = [
   {
@@ -13,7 +13,7 @@ const appRoutes: Routes = [
     children: [
       {
         path: 'library',
-        component: GameserverListComponent
+        component: LibraryOverviewComponent
       },
       {
         path: 'games',
