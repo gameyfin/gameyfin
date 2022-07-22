@@ -5,6 +5,7 @@ import {PageNotFoundComponent} from "./components/page-not-found/page-not-found.
 import {NavbarLayoutComponent} from "./layouts/navbar-layout/navbar-layout.component";
 import {NotImplementedComponent} from "./components/not-implemented/not-implemented.component";
 import {LibraryOverviewComponent} from "./components/library-overview/library-overview.component";
+import {GameDetailViewComponent} from "./components/game-detail-view/game-detail-view.component";
 
 const appRoutes: Routes = [
   {
@@ -16,16 +17,8 @@ const appRoutes: Routes = [
         component: LibraryOverviewComponent
       },
       {
-        path: 'games',
-        component: NotImplementedComponent
-      },
-      {
-        path: 'info',
-        component: NotImplementedComponent
-      },
-      {
-        path: 'config',
-        component: NotImplementedComponent
+        path: 'game/:slug',
+        component: GameDetailViewComponent
       },
       {
         path: '',

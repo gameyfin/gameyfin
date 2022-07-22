@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.service;
 
 import com.igdb.proto.Igdb;
+import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
@@ -33,12 +34,20 @@ public class GameService {
         return detectedGameRepository.findAll();
     }
 
+    public DetectedGame getDetectedGame(String slug) {
+        return detectedGameRepository.findById(slug).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' not found in library.".formatted(slug)));
+    }
+
     public List<UnmappableFile> getAllUnmappedFiles() {
         return unmappableFileRepository.findAll();
     }
 
     public Map<String, String> getAllMappings() {
         return detectedGameRepository.findAll().stream().collect(Collectors.toMap(DetectedGame::getPath, DetectedGame::getTitle));
+    }
+
+    public List<GameOverviewDto> getGameOverviews() {
+        return detectedGameRepository.findAll().stream().map(GameMapper::toGameOverviewDto).toList();
     }
 
     public DetectedGame mapUnmappedFile(Long unmappedGameId, String igdbSlug) {

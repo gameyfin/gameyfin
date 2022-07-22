@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.mapper;
 
 import com.igdb.proto.Igdb;
+import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.util.ProtobufUtils;
 
@@ -37,6 +38,14 @@ public class GameMapper {
                 .playerPerspectives(PlayerPerspectiveMapper.toPlayerPerspectives(g.getPlayerPerspectivesList()))
                 .path(path.toString())
                 .isFolder(path.toFile().isDirectory())
+                .build();
+    }
+
+    public static GameOverviewDto toGameOverviewDto(DetectedGame game) {
+        return GameOverviewDto.builder()
+                .slug(game.getSlug())
+                .title(game.getTitle())
+                .coverId(game.getCoverId())
                 .build();
     }
 

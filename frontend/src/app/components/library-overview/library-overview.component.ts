@@ -1,6 +1,7 @@
 import {AfterViewInit, Component} from '@angular/core';
 import {GamesService} from "../../services/games.service";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
+import {GameOverviewDto} from "../../models/dtos/GameOverviewDto";
 
 @Component({
   selector: 'app-gameserver-list',
@@ -9,15 +10,15 @@ import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 })
 export class LibraryOverviewComponent implements AfterViewInit {
 
-  detectedGames: DetectedGameDto[] = [];
+  detectedGames: GameOverviewDto[] = [];
   loading: boolean = true;
 
   constructor(private gameServerService: GamesService) {
   }
 
   ngAfterViewInit(): void {
-    this.gameServerService.getAllGames().subscribe(
-      (detectedGames: DetectedGameDto[]) => {
+    this.gameServerService.getGameOverviews().subscribe(
+      (detectedGames: GameOverviewDto[]) => {
         this.detectedGames = detectedGames;
         this.loading = false;
       }
