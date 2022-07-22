@@ -28,7 +28,7 @@ public class LibraryController {
         if(downloadImages) downloadImages();
     }
 
-    @GetMapping(value = "/download_images")
+    @GetMapping(value = "/download-images")
     public void downloadImages() {
         filesystemService.downloadGameCovers();
         filesystemService.downloadGameScreenshots();

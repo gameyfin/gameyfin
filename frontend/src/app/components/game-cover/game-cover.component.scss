@@ -6,6 +6,6 @@
   @include mat.elevation(4);
 
   &:hover {
-    @include mat.elevation(12);
+    @include mat.elevation(24);
   }
 }

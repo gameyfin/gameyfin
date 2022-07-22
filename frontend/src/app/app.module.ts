@@ -31,6 +31,8 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatSortModule} from "@angular/material/sort";
 import { GameCoverComponent } from './components/game-cover/game-cover.component';
 import { GameDetailViewComponent } from './components/game-detail-view/game-detail-view.component';
+import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatGridListModule} from "@angular/material/grid-list";
 
 @NgModule({
   declarations: [
@@ -66,7 +68,9 @@ import { GameDetailViewComponent } from './components/game-detail-view/game-deta
     MatProgressSpinnerModule,
     MatTableModule,
     MatPaginatorModule,
-    MatSortModule
+    MatSortModule,
+    MatSnackBarModule,
+    MatGridListModule
   ],
   providers: [
     {

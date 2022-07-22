@@ -3,12 +3,16 @@
     <mat-spinner></mat-spinner>
     <h2>Loading library...</h2>
   </div>
-  <div fxLayout="row" fxLayoutAlign="center center">
-    <div *ngIf="!this.loading && this.detectedGames.length === 0">
-      <h2>Your game library is empty!</h2>
-    </div>
-    <div fxLayout="row" fxLayoutGap="12px" [style.margin-top.px]="12" *ngIf="!this.loading && this.detectedGames.length > 0">
-      <game-cover fxLayout="column" *ngFor="let game of detectedGames" [game]="game"></game-cover>
+
+  <div fxLayout="row" fxLayoutAlign="center center" *ngIf="!this.loading && this.detectedGames.length === 0">
+    <h2>Your game library is empty!</h2>
+  </div>
+
+  <div class="content">
+    <div fxLayout="row wrap" fxLayoutGap="16px grid">
+      <div fxFlex="25% 1" fxFlex.xs="100%" fxFlex.sm="33%" *ngFor="let game of detectedGames">
+        <game-cover [game]="game"></game-cover>
+      </div>
     </div>
   </div>
 </div>

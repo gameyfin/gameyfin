@@ -1,9 +1,8 @@
 import {Component, OnInit} from '@angular/core';
 import {NavMenuItem} from '../../models/objects/NavMenuItem';
-import {Title} from '@angular/platform-browser';
-import {Config} from '../../config/Config';
-import {Icon} from '../../models/enums/Icon';
-import {DropDownMenuItem} from "../../models/objects/DropDownMenuItem";
+import {LibraryService} from "../../services/library.service";
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {timeInterval} from "rxjs";
 
 @Component({
   selector: 'app-header',
@@ -12,29 +11,19 @@ import {DropDownMenuItem} from "../../models/objects/DropDownMenuItem";
 })
 export class HeaderComponent implements OnInit {
 
-  tabNavItems: NavMenuItem[] = [
-    new NavMenuItem('Servers', Icon.dns, '/servers', true),
-    new NavMenuItem('Games', Icon.controller, '/games', true),
-    new NavMenuItem('Info', Icon.info, '/info', true),
-    new NavMenuItem('Config', Icon.settings, '/config', true),
-  ];
-
-  dropDownItems: DropDownMenuItem[] = [
-    new DropDownMenuItem('Log out', Icon.lock_open, () => {
-      alert("Logout not implemented");
-    }, true)
-  ];
-
   activeItem: NavMenuItem | undefined;
 
-  constructor(private titleService: Title) {
+  constructor(private libraryService: LibraryService,
+              private snackBar: MatSnackBar) {
   }
 
   ngOnInit() {
   }
 
-  setActiveItem(item: NavMenuItem) {
-    this.activeItem = item;
-    this.titleService.setTitle(`${Config.baseTitle} - ${item.title}`);
+  reloadLibrary() {
+    this.libraryService.scanLibrary().pipe(timeInterval()).subscribe({
+      next: value => this.snackBar.open(`Library scan completed in ${Math.trunc(value.interval/1000)} seconds.`),
+      error: error => this.snackBar.open(`Error while scanning library: ${error}`)
+    })
   }
 }
