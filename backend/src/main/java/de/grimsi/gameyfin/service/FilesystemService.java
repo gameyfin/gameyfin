@@ -98,19 +98,6 @@ public class FilesystemService {
         Path path = Path.of(g.getPath());
 
         if(!path.toFile().isDirectory()) return getFilenameWithExtension(path);
-
-        Optional<Path> optionalGameArchive;
-        try (Stream<Path> filesStream = Files.list(path)) {
-            optionalGameArchive = filesStream.filter(this::hasGameArchiveExtension).findFirst();
-        } catch (IOException e) {
-            log.error("Error while accessing folder:", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while accessing folder '%s'.".formatted(path));
-        }
-
-        if(optionalGameArchive.isPresent()) {
-            return getFilenameWithExtension(optionalGameArchive.get());
-        }
-
         return getFilenameWithExtension(path) + ".zip";
     }
 
@@ -242,7 +229,7 @@ public class FilesystemService {
         Path path = Path.of(game.getPath());
 
         if(path.toFile().isDirectory()) {
-            downloadFromFolder(path, outputStream);
+            downloadFilesAsZip(path, outputStream);
         } else {
             downloadFile(path, outputStream);
         }
@@ -257,23 +244,6 @@ public class FilesystemService {
             Files.copy(path, outputStream);
         } catch (IOException e) {
             log.error("Error while downloading file:", e);
-        }
-    }
-
-    private void downloadFromFolder(Path path, OutputStream outputStream) {
-        Optional<Path> optionalGameArchive;
-
-        try (Stream<Path> filesStream = Files.list(path)) {
-            optionalGameArchive = filesStream.filter(this::hasGameArchiveExtension).findFirst();
-        } catch (IOException e) {
-            log.error("Error while accessing folder:", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while accessing folder '%s'.".formatted(path));
-        }
-
-        if(optionalGameArchive.isPresent()) {
-            downloadFile(optionalGameArchive.get(), outputStream);
-        } else {
-            downloadFilesAsZip(path, outputStream);
         }
     }
 
