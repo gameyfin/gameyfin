@@ -23,16 +23,19 @@ import {ErrorDialogComponent} from "./components/error-dialog/error-dialog.compo
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatButtonModule} from "@angular/material/button";
 import {MatInputModule} from "@angular/material/input";
-import {FlexModule} from "@angular/flex-layout";
+import {FlexLayoutModule, FlexModule, GridModule} from "@angular/flex-layout";
 import {LibraryOverviewComponent} from './components/library-overview/library-overview.component';
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {MatTableModule} from "@angular/material/table";
 import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatSortModule} from "@angular/material/sort";
-import { GameCoverComponent } from './components/game-cover/game-cover.component';
-import { GameDetailViewComponent } from './components/game-detail-view/game-detail-view.component';
+import {GameCoverComponent} from './components/game-cover/game-cover.component';
+import {GameDetailViewComponent} from './components/game-detail-view/game-detail-view.component';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatGridListModule} from "@angular/material/grid-list";
+import {GameScreenshotComponent} from './components/game-screenshot/game-screenshot.component';
+import {YouTubePlayerModule} from "@angular/youtube-player";
+import { GameVideoComponent } from './components/game-video/game-video.component';
 
 @NgModule({
   declarations: [
@@ -45,7 +48,9 @@ import {MatGridListModule} from "@angular/material/grid-list";
     ErrorDialogComponent,
     LibraryOverviewComponent,
     GameCoverComponent,
-    GameDetailViewComponent
+    GameDetailViewComponent,
+    GameScreenshotComponent,
+    GameVideoComponent
   ],
   imports: [
     BrowserModule,
@@ -70,7 +75,10 @@ import {MatGridListModule} from "@angular/material/grid-list";
     MatPaginatorModule,
     MatSortModule,
     MatSnackBarModule,
-    MatGridListModule
+    MatGridListModule,
+    FlexLayoutModule,
+    GridModule,
+    YouTubePlayerModule
   ],
   providers: [
     {

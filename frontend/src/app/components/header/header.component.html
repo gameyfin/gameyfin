@@ -1,4 +1,7 @@
-<mat-toolbar role="heading">
+<mat-toolbar style="position: sticky; top: 0; z-index: 99999">
+  <button mat-icon-button (click)="goToLibraryScreen()" *ngIf="notOnLibraryScreen()">
+    <mat-icon>home</mat-icon>
+  </button>
 
   <span class="spacer"></span>
 

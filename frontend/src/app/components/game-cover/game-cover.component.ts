@@ -1,5 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
-import {GameOverviewDto} from "../../models/dtos/GameOverviewDto";
+import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 
 @Component({
   selector: 'game-cover',
@@ -8,7 +8,7 @@ import {GameOverviewDto} from "../../models/dtos/GameOverviewDto";
 })
 export class GameCoverComponent implements OnInit {
 
-  @Input() game!: GameOverviewDto;
+  @Input() game!: DetectedGameDto;
 
   constructor() {
   }

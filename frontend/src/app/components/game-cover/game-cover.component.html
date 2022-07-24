@@ -1,5 +1,4 @@
-<div class="game-cover-container">
-  <a routerLink="/game/{{game.slug}}">
-    <img src="{{'v1/images/' + game.coverId}}" alt="Cover of {{game.title}}">
-  </a>
-</div>
+<a routerLink="/game/{{game.slug}}">
+  <div class="game-cover-container shine" [style.background-image]="'url(v1/images/' + game.coverId + ')'">
+  </div>
+</a>

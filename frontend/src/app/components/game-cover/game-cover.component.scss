@@ -1,11 +1,51 @@
 @use '@angular/material' as mat;
 
-.game-cover-container img {
+.game-cover-container {
+
+  height: 352px;
+  width: 264px;
+  background-repeat: no-repeat;
+  background-position: center bottom;
 
   @include mat.elevation-transition();
   @include mat.elevation(4);
 
   &:hover {
     @include mat.elevation(24);
+  }
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    background: linear-gradient(
+        to right,
+        fade_out(#fff, 1) 0%,
+        fade_out(#fff, 0.7) 100%
+    );
+    content: "";
+    display: block;
+    height: 100%;
+    left: -100%;
+    position: absolute;
+    top: 0;
+    transform: skewX(-25deg);
+    width: 50%;
+    z-index: 2;
+  }
+
+  &:hover,
+  &:focus {
+    &::before {
+      animation: shine 0.85s;
+    }
+  }
+
+  @keyframes shine {
+    100% {
+      left: 125%;
+    }
   }
 }

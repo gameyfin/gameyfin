@@ -2,7 +2,8 @@ gameyfin:
   #root: C:\Projects\privat\gameyfin-library
   root: \\NAS-Simon\Öffentlich\Spiele
   cache: ${gameyfin.root}\.gameyfin\cache
-  db: ${gameyfin.root}\.gameyfin\db # Currently unused
+  #db: ${gameyfin.root}\.gameyfin\db
+  db: ./data
   igdb:
     api:
       client-id: 23l3l5qshx4dwjuao6yb8jyf1qrd08

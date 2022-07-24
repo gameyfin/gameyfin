@@ -8,11 +8,14 @@
     <h2>Your game library is empty!</h2>
   </div>
 
-  <div class="content">
-    <div fxLayout="row wrap" fxLayoutGap="16px grid">
-      <div fxFlex="25% 1" fxFlex.xs="100%" fxFlex.sm="33%" *ngFor="let game of detectedGames">
+  <div class="content" fxLayout="row" fxFlexFill="100" *ngIf="!this.loading && this.detectedGames.length > 0">
+    <div fxFlex="10" fxHide fxShow.gt-md><!--SPACER--></div>
+    <div fxFlex="0 1 20"><!--FILTER--></div>
+    <div fxFlex fxLayout="row wrap" fxLayoutGap="16px grid">
+      <div *ngFor="let game of detectedGames">
         <game-cover [game]="game"></game-cover>
       </div>
     </div>
+    <div fxFlex="0 1 10" fxHide fxShow.gt-lg><!--SPACER--></div>
   </div>
 </div>
