@@ -2,7 +2,7 @@ package de.grimsi.gameyfin.rest;
 
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
-import de.grimsi.gameyfin.service.FilesystemService;
+import de.grimsi.gameyfin.service.DownloadService;
 import de.grimsi.gameyfin.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -22,8 +22,7 @@ import java.util.Map;
 public class GamesController {
 
     private final GameService gameService;
-
-    private final FilesystemService filesystemService;
+    private final DownloadService downloadService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<DetectedGame> getAllGames() {
@@ -50,12 +49,12 @@ public class GamesController {
 
         DetectedGame game = gameService.getDetectedGame(slug);
 
-        String downloadFileName = filesystemService.getDownloadFileName(game);
+        String downloadFileName = downloadService.getDownloadFileName(game);
 
         return ResponseEntity
                 .ok()
                 .header("Content-Disposition", "attachment; filename=\"%s\"".formatted(downloadFileName))
-                .body(out -> filesystemService.downloadGameFiles(game, out));
+                .body(out -> downloadService.downloadGameFiles(game, out));
     }
 
 }

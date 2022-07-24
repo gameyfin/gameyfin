@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.mapper;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
-import de.grimsi.gameyfin.util.ProtobufUtils;
+import de.grimsi.gameyfin.util.ProtobufUtil;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -19,7 +19,7 @@ public class GameMapper {
                 .slug(g.getSlug())
                 .title(g.getName())
                 .summary(g.getSummary())
-                .releaseDate(ProtobufUtils.toInstant(g.getFirstReleaseDate()))
+                .releaseDate(ProtobufUtil.toInstant(g.getFirstReleaseDate()))
                 .userRating((int) g.getRating())
                 .criticsRating((int) g.getAggregatedRating())
                 .totalRating((int) g.getTotalRating())

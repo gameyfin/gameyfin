@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.rest;
 
-import de.grimsi.gameyfin.service.FilesystemService;
+import de.grimsi.gameyfin.service.DownloadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ImageController {
 
-    private final FilesystemService filesystemService;
+    private final DownloadService downloadService;
 
     @GetMapping(value = "/{imageId}", produces = MediaType.IMAGE_PNG_VALUE)
     public Resource getCoverImageForGame(@PathVariable String imageId) {
-        return filesystemService.getImage(imageId);
+        return downloadService.downloadImage(imageId);
     }
 }

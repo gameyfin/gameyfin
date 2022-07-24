@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.rest;
 
-import de.grimsi.gameyfin.service.FilesystemService;
+import de.grimsi.gameyfin.service.DownloadService;
+import de.grimsi.gameyfin.service.LibraryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,24 +20,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LibraryController {
 
-    private final FilesystemService filesystemService;
+    private final LibraryService libraryService;
+    private final DownloadService downloadService;
 
     @GetMapping(value = "/scan", produces = MediaType.APPLICATION_JSON_VALUE)
     public void scanLibrary(@RequestParam(value = "download_images", defaultValue = "true") boolean downloadImages) {
-        filesystemService.scanGameLibrary();
+        libraryService.scanGameLibrary();
 
         if(downloadImages) downloadImages();
     }
 
     @GetMapping(value = "/download-images")
     public void downloadImages() {
-        filesystemService.downloadGameCovers();
-        filesystemService.downloadGameScreenshots();
-        filesystemService.downloadCompanyLogos();
+        downloadService.downloadGameCoversFromIgdb();
+        downloadService.downloadGameScreenshotsFromIgdb();
+        downloadService.downloadCompanyLogosFromIgdb();
     }
 
     @GetMapping(value = "/files", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<String> getAllFiles() {
-        return filesystemService.getGameFiles().stream().map(Path::toString).toList();
+        return libraryService.getGameFiles().stream().map(Path::toString).toList();
     }
 }
