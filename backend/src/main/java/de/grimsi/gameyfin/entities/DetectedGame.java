@@ -80,6 +80,9 @@ public class DetectedGame {
     @Column(nullable = false)
     private String path;
 
+    @Column(nullable = false)
+    private long diskSize;
+
     @Column(columnDefinition = "boolean default false")
     private boolean confirmedMatch;
 

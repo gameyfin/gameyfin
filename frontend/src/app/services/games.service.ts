@@ -24,7 +24,7 @@ export class GamesService implements GamesApi {
   }
 
   downloadGame(slug: String): void {
-    window.open(`v1/${this.apiPath}/game/${slug}/download`, '_top');
+    window.open(`v1${this.apiPath}/game/${slug}/download`, '_top');
   }
 
   getGameOverviews(): Observable<GameOverviewDto[]> {

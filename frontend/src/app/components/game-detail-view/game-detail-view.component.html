@@ -1,15 +1,37 @@
 <div fxLayout="row" fxLayoutAlign="center" style="margin-top: 16px;">
   <div fxLayout="column" fxFlex="0 1 70" fxLayoutGap="16px" fxFlex.lt-xl="95">
     <div fxLayout="row" fxLayoutGap="16px">
+
       <img src="v1/images/{{game.coverId}}" alt="Game cover">
-      <div fxFlex="30" fxLayout="column" id="game-details">
-        <h2>{{game.title}}</h2>
+
+      <div fxFlex="40" fxLayout="column" id="game-details">
+        <h1>{{game.title}}</h1>
         <p id="game-summary">{{game.summary}}</p>
       </div>
-      <div fxLayout="column" fxFlex>
-        <button mat-raised-button (click)="downloadGame()">
-          Download
+
+      <div fxFlex><!-- Spacer --></div>
+
+      <div fxLayout="column" fxFlex="40" fxLayoutGap="16px">
+
+        <button mat-raised-button color="primary" (click)="downloadGame()">
+          Download ({{bytesAsHumanReadableString(game.diskSize)}})
         </button>
+
+        <div fxLayout="column" fxLayoutGap="24px">
+          <div *ngIf="game.genres !== undefined && game.genres.length > 0">
+            <h2>Genres</h2>
+            <mat-chip-list>
+              <mat-chip *ngFor="let genre of game.genres">{{genre.name}}</mat-chip>
+            </mat-chip-list>
+          </div>
+
+          <div *ngIf="game.themes !== undefined && game.themes.length > 0">
+            <h2>Themes</h2>
+            <mat-chip-list>
+              <mat-chip *ngFor="let theme of game.themes">{{theme.name}}</mat-chip>
+            </mat-chip-list>
+          </div>
+        </div>
       </div>
     </div>
     <div fxLayout="column" fxLayoutGap="16px">

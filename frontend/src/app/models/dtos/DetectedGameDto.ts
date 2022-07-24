@@ -28,6 +28,6 @@ export class DetectedGameDto {
   playerPerspectives?: PlayerPerspectiveDto[];
 
   path!: string;
-  isFolder!: boolean;
+  diskSize!: number;
   confirmedMatch!: boolean;
 }

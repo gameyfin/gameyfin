@@ -3,11 +3,21 @@ package de.grimsi.gameyfin.mapper;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.service.LibraryService;
 import de.grimsi.gameyfin.util.ProtobufUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 
+@Slf4j
 public class GameMapper {
 
     public static DetectedGame toDetectedGame(Igdb.Game g, Path path) {
@@ -37,6 +47,7 @@ public class GameMapper {
                 .themes(ThemeMapper.toThemes(g.getThemesList()))
                 .playerPerspectives(PlayerPerspectiveMapper.toPlayerPerspectives(g.getPlayerPerspectivesList()))
                 .path(path.toString())
+                .diskSize(calculateDiskSize(path))
                 .build();
     }
 
@@ -62,5 +73,17 @@ public class GameMapper {
 
     private static int getMaxPlayers(List<Igdb.MultiplayerMode> modes) {
         return modes.stream().mapToInt(Igdb.MultiplayerMode::getOnlinecoopmax).max().orElse(0);
+    }
+
+    private static long calculateDiskSize(Path path) {
+        try(Stream<Path> pathStream = Files.walk(path)) {
+            return pathStream
+                    .filter(p -> p.toFile().isFile())
+                    .mapToLong(p -> p.toFile().length())
+                    .sum();
+        } catch (IOException e) {
+            log.error("Unable to calculate size for path '{}'.", path);
+            return -1;
+        }
     }
 }

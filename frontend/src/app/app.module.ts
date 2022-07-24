@@ -36,6 +36,7 @@ import {MatGridListModule} from "@angular/material/grid-list";
 import {GameScreenshotComponent} from './components/game-screenshot/game-screenshot.component';
 import {YouTubePlayerModule} from "@angular/youtube-player";
 import { GameVideoComponent } from './components/game-video/game-video.component';
+import {MatChipsModule} from "@angular/material/chips";
 
 @NgModule({
   declarations: [
@@ -52,34 +53,35 @@ import { GameVideoComponent } from './components/game-video/game-video.component
     GameScreenshotComponent,
     GameVideoComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    BrowserAnimationsModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatCardModule,
-    MatTabsModule,
-    MatToolbarModule,
-    MatMenuModule,
-    MatIconModule,
-    HttpClientModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatInputModule,
-    FlexModule,
-    MatProgressSpinnerModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatSnackBarModule,
-    MatGridListModule,
-    FlexLayoutModule,
-    GridModule,
-    YouTubePlayerModule
-  ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        MatFormFieldModule,
+        MatCardModule,
+        MatTabsModule,
+        MatToolbarModule,
+        MatMenuModule,
+        MatIconModule,
+        HttpClientModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatInputModule,
+        FlexModule,
+        MatProgressSpinnerModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSortModule,
+        MatSnackBarModule,
+        MatGridListModule,
+        FlexLayoutModule,
+        GridModule,
+        YouTubePlayerModule,
+        MatChipsModule
+    ],
   providers: [
     {
       provide: HTTP_INTERCEPTORS,
