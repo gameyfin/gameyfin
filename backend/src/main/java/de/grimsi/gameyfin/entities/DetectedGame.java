@@ -80,9 +80,6 @@ public class DetectedGame {
     @Column(nullable = false)
     private String path;
 
-    @Column(nullable = false)
-    private boolean isFolder;
-
     @Column(columnDefinition = "boolean default false")
     private boolean confirmedMatch;
 

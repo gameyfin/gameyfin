@@ -37,7 +37,6 @@ public class GameMapper {
                 .themes(ThemeMapper.toThemes(g.getThemesList()))
                 .playerPerspectives(PlayerPerspectiveMapper.toPlayerPerspectives(g.getPlayerPerspectivesList()))
                 .path(path.toString())
-                .isFolder(path.toFile().isDirectory())
                 .build();
     }
 

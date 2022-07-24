@@ -3,6 +3,7 @@ import {ActivatedRoute, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
 import {HttpErrorResponse} from "@angular/common/http";
+import {takeWhile} from "rxjs";
 
 @Component({
   selector: 'app-game-detail-view',
@@ -31,6 +32,10 @@ export class GameDetailViewComponent implements OnInit {
   }
 
   ngOnInit(): void {
+  }
+
+  downloadGame(): void {
+    this.gamesService.downloadGame(this.game.slug);
   }
 
 }

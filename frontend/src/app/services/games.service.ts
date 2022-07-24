@@ -23,6 +23,10 @@ export class GamesService implements GamesApi {
     return this.http.get<DetectedGameDto>(`${this.apiPath}/game/${slug}`);
   }
 
+  downloadGame(slug: String): void {
+    window.open(`v1/${this.apiPath}/game/${slug}/download`, '_top');
+  }
+
   getGameOverviews(): Observable<GameOverviewDto[]> {
     return this.http.get<GameOverviewDto[]>(`${this.apiPath}/game-overviews`);
   }

@@ -2,13 +2,13 @@ package de.grimsi.gameyfin.rest;
 
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.service.FilesystemService;
 import de.grimsi.gameyfin.service.GameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +22,8 @@ import java.util.Map;
 public class GamesController {
 
     private final GameService gameService;
+
+    private final FilesystemService filesystemService;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public List<DetectedGame> getAllGames() {
@@ -43,5 +45,17 @@ public class GamesController {
         return gameService.getAllMappings();
     }
 
+    @GetMapping(value="/game/{slug}/download")
+    public ResponseEntity<StreamingResponseBody> downloadGameFiles(@PathVariable String slug) {
+
+        DetectedGame game = gameService.getDetectedGame(slug);
+
+        String downloadFileName = filesystemService.getDownloadFileName(game);
+
+        return ResponseEntity
+                .ok()
+                .header("Content-Disposition", "attachment; filename=\"%s\"".formatted(downloadFileName))
+                .body(out -> filesystemService.downloadGameFiles(game, out));
+    }
 
 }

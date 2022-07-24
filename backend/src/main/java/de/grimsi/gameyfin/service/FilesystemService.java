@@ -9,7 +9,13 @@ import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.zip.ParallelScatterZipCreator;
+import org.apache.commons.compress.archivers.zip.Zip64Mode;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.parallel.InputStreamSupplier;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,17 +36,16 @@ import reactor.core.publisher.Flux;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
 
 @Slf4j
 @Service
@@ -80,11 +85,31 @@ public class FilesystemService {
         try (Stream<Path> stream = Files.list(rootFolder)) {
             // return all sub-folders (non-recursive) and files that have an extension that indicates that they are a downloadable file
             return stream
-                    .filter(p -> Files.isDirectory(p) || possibleGameFileExtensions.contains(FilenameUtils.getExtension(p.getFileName().toString())))
+                    .filter(p -> Files.isDirectory(p) || hasGameArchiveExtension(p))
                     .toList();
         } catch (IOException e) {
             throw new RuntimeException("Error while opening root folder", e);
         }
+    }
+
+    public String getDownloadFileName(DetectedGame g) {
+        Path path = Path.of(g.getPath());
+
+        if(!path.toFile().isDirectory()) return getFilenameWithExtension(path);
+
+        Optional<Path> optionalGameArchive;
+        try (Stream<Path> filesStream = Files.list(path)) {
+            optionalGameArchive = filesStream.filter(this::hasGameArchiveExtension).findFirst();
+        } catch (IOException e) {
+            log.error("Error while accessing folder:", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while accessing folder '%s'.".formatted(path));
+        }
+
+        if(optionalGameArchive.isPresent()) {
+            return getFilenameWithExtension(optionalGameArchive.get());
+        }
+
+        return getFilenameWithExtension(path) + ".zip";
     }
 
     public void scanGameLibrary() {
@@ -120,7 +145,7 @@ public class FilesystemService {
         // If a game is not found on IGDB, blacklist the path, so we won't query the API later for the same path
         List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
                 .map(p -> {
-                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilename(p));
+                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutExtension(p));
                     return optionalGame.map(game -> Map.entry(p, game)).or(() -> {
                         unmappableFileRepository.save(new UnmappableFile(p.toString()));
                         newUnmappedFilesCounter.getAndIncrement();
@@ -205,8 +230,97 @@ public class FilesystemService {
         }
     }
 
-    private String getFilename(Path p) {
+    public void downloadGameFiles(DetectedGame game, OutputStream outputStream) {
+
+        StopWatch stopWatch = new StopWatch();
+
+        log.info("Starting game file download...");
+        stopWatch.start();
+
+        Path path = Path.of(game.getPath());
+
+        if(path.toFile().isDirectory()) {
+            downloadFromFolder(path, outputStream);
+        } else {
+            downloadFile(path, outputStream);
+        }
+
+        stopWatch.stop();
+
+        log.info("Downloaded game files of {} in {} seconds.", game.getTitle(), (int) stopWatch.getTotalTimeSeconds());
+    }
+
+    private void downloadFile(Path path, OutputStream outputStream) {
+        try {
+            Files.copy(path, outputStream);
+        } catch (IOException e) {
+            log.error("Error while downloading file:", e);
+        }
+    }
+
+    private void downloadFromFolder(Path path, OutputStream outputStream) {
+        Optional<Path> optionalGameArchive;
+
+        try (Stream<Path> filesStream = Files.list(path)) {
+            optionalGameArchive = filesStream.filter(this::hasGameArchiveExtension).findFirst();
+        } catch (IOException e) {
+            log.error("Error while accessing folder:", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error while accessing folder '%s'.".formatted(path));
+        }
+
+        if(optionalGameArchive.isPresent()) {
+            downloadFile(optionalGameArchive.get(), outputStream);
+        } else {
+            downloadFilesAsZip(path, outputStream);
+        }
+    }
+
+    private void downloadFilesAsZip(Path path, OutputStream outputStream) {
+        final ParallelScatterZipCreator scatterZipCreator = new ParallelScatterZipCreator();
+
+        ZipArchiveOutputStream zipArchiveOutputStream;
+
+            zipArchiveOutputStream = new ZipArchiveOutputStream(outputStream);
+            zipArchiveOutputStream.setUseZip64(Zip64Mode.AsNeeded);
+
+        try {
+            Files.walkFileTree(path, new SimpleFileVisitor<>() {
+                @SneakyThrows
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    InputStreamSupplier streamSupplier = () -> {
+                        InputStream is = null;
+                        try {
+                            is = Files.newInputStream(file);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        return is;
+                    };
+
+                    ZipArchiveEntry zipArchiveEntry = new ZipArchiveEntry(path.relativize(file).toString());
+                    zipArchiveEntry.setMethod(ZipEntry.STORED);
+                    scatterZipCreator.addArchiveEntry(zipArchiveEntry, streamSupplier);
+
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            scatterZipCreator.writeTo(zipArchiveOutputStream);
+            zipArchiveOutputStream.close();
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            log.error("Error while zipping files:", e);
+        }
+    }
+
+    private String getFilenameWithoutExtension(Path p) {
         return FilenameUtils.getBaseName(p.toString());
+    }
+
+    private String getFilenameWithExtension(Path p) {
+        return FilenameUtils.getName(p.toString());
+    }
+
+    private boolean hasGameArchiveExtension(Path p) {
+        return possibleGameFileExtensions.contains(FilenameUtils.getExtension(p.getFileName().toString()));
     }
 
     private int downloadImagesIntoCache(MultiValueMap<String, String> entityToImageIds, String imageSize, String imageType, String entityType) {

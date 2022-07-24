@@ -1,26 +1,32 @@
 <div fxLayout="row" fxLayoutAlign="center" style="margin-top: 16px;">
   <div fxLayout="column" fxFlex="0 1 70" fxLayoutGap="16px" fxFlex.lt-xl="95">
-    <div fxLayout="row" fxLayoutGap="16px" style="background: aqua">
+    <div fxLayout="row" fxLayoutGap="16px">
       <img src="v1/images/{{game.coverId}}" alt="Game cover">
-      <div fxFlex="30" fxLayout="column" id="game-details" style="background: darkolivegreen">
+      <div fxFlex="30" fxLayout="column" id="game-details">
         <h2>{{game.title}}</h2>
         <p id="game-summary">{{game.summary}}</p>
       </div>
-      <div fxLayout="column" fxFlex style="background: coral">
-
+      <div fxLayout="column" fxFlex>
+        <button mat-raised-button (click)="downloadGame()">
+          Download
+        </button>
       </div>
     </div>
     <div fxLayout="column" fxLayoutGap="16px">
-      <h2>Screenshots</h2>
-      <div fxLayout="row wrap" fxLayoutGap="8px">
-        <div *ngFor="let screenshotId of game.screenshotIds">
-          <game-screenshot [screenshotId]="screenshotId"></game-screenshot>
+      <div *ngIf="game.screenshotIds !== undefined && game.screenshotIds.length > 0">
+        <h2>Screenshots</h2>
+        <div fxLayout="row wrap" fxLayoutGap="8px">
+          <div *ngFor="let screenshotId of game.screenshotIds">
+            <game-screenshot [screenshotId]="screenshotId"></game-screenshot>
+          </div>
         </div>
       </div>
-      <h2>Videos</h2>
-      <div fxLayout="row wrap" fxLayoutGap="8px">
-        <div *ngFor="let videoId of game.videoIds">
-          <game-video [videoId]="videoId" [width]="555" [height]="312"></game-video>
+      <div *ngIf="game.videoIds !== undefined && game.videoIds.length > 0">
+        <h2>Videos</h2>
+        <div fxLayout="row wrap" fxLayoutGap="8px">
+          <div *ngFor="let videoId of game.videoIds">
+            <game-video [videoId]="videoId" [width]="555" [height]="312"></game-video>
+          </div>
         </div>
       </div>
     </div>

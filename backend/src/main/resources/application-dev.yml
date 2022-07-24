@@ -1,6 +1,7 @@
 gameyfin:
   #root: C:\Projects\privat\gameyfin-library
-  root: \\NAS-Simon\Öffentlich\Spiele
+  #root: \\NAS-Simon\Öffentlich\Spiele
+  root: C:\gameyfin-library
   cache: ${gameyfin.root}\.gameyfin\cache
   #db: ${gameyfin.root}\.gameyfin\db
   db: ./data

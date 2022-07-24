@@ -20,6 +20,7 @@
         <protoc.plugin.version>3.11.4</protoc.plugin.version>
         <protobuf-java.version>3.21.2</protobuf-java.version>
         <gameyfin-frontend.version>0.0.1-SNAPSHOT</gameyfin-frontend.version>
+        <commons-compress.version>1.21</commons-compress.version>
     </properties>
 
     <dependencies>
@@ -74,6 +75,11 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>${commons-compress.version}</version>
         </dependency>
 
         <!-- Protobuf dependencies -->
