@@ -45,7 +45,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
@@ -276,37 +278,24 @@ public class FilesystemService {
     }
 
     private void downloadFilesAsZip(Path path, OutputStream outputStream) {
-        final ParallelScatterZipCreator scatterZipCreator = new ParallelScatterZipCreator();
-
-        ZipArchiveOutputStream zipArchiveOutputStream;
-
-            zipArchiveOutputStream = new ZipArchiveOutputStream(outputStream);
-            zipArchiveOutputStream.setUseZip64(Zip64Mode.AsNeeded);
+        ZipOutputStream zos = new ZipOutputStream(outputStream){{
+            def.setLevel(Deflater.NO_COMPRESSION);
+        }};
 
         try {
             Files.walkFileTree(path, new SimpleFileVisitor<>() {
                 @SneakyThrows
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    InputStreamSupplier streamSupplier = () -> {
-                        InputStream is = null;
-                        try {
-                            is = Files.newInputStream(file);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        return is;
-                    };
-
-                    ZipArchiveEntry zipArchiveEntry = new ZipArchiveEntry(path.relativize(file).toString());
-                    zipArchiveEntry.setMethod(ZipEntry.STORED);
-                    scatterZipCreator.addArchiveEntry(zipArchiveEntry, streamSupplier);
+                    zos.putNextEntry(new ZipEntry(path.relativize(file).toString()));
+                    Files.copy(file, zos);
+                    zos.closeEntry();
 
                     return FileVisitResult.CONTINUE;
                 }
             });
-            scatterZipCreator.writeTo(zipArchiveOutputStream);
-            zipArchiveOutputStream.close();
-        } catch (IOException | InterruptedException | ExecutionException e) {
+
+            zos.close();
+        } catch (IOException e) {
             log.error("Error while zipping files:", e);
         }
     }

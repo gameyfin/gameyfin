@@ -3,6 +3,8 @@ server:
   error.include-stacktrace: never
 
 spring:
+  mvc:
+    async.request-timeout: -1
   jackson.default-property-inclusion: non_null
   datasource.db-name: gameyfin_db
   datasource.url: jdbc:h2:file:${gameyfin.db}/${spring.datasource.db-name};AUTO_SERVER=TRUE
