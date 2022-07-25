@@ -16,14 +16,4 @@ public class UnmappedFileController {
 
     private final GameService gameService;
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<UnmappableFile> getUnmappedFiles() {
-        return gameService.getAllUnmappedFiles();
-    }
-
-    @PostMapping(value = "/{unmappedFileId}/map-to/{igdbSlug}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public DetectedGame mapGameManually(@PathVariable Long unmappedFileId, @PathVariable String igdbSlug) {
-        return gameService.mapUnmappedFile(unmappedFileId, igdbSlug);
-    }
-
 }

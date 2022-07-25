@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,22 +50,56 @@ public class GameService {
     public List<GameOverviewDto> getGameOverviews() {
         return detectedGameRepository.findAll().stream().map(GameMapper::toGameOverviewDto).toList();
     }
+    
+    public void deleteGame(String slug) {
+        detectedGameRepository.deleteById(slug);
+    }
 
-    public DetectedGame mapUnmappedFile(Long unmappedGameId, String igdbSlug) {
+    public DetectedGame confirmGame(String slug, boolean confirm) {
+        DetectedGame g = getDetectedGame(slug);
+        g.setConfirmedMatch(confirm);
+        return detectedGameRepository.save(g);
+    }
 
-        UnmappableFile unmappableFile = unmappableFileRepository.findById(unmappedGameId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unmapped file with id '%d' does not exist.".formatted(unmappedGameId)));
+    public DetectedGame mapPathToGame(String path, String slug) {
 
-        if(detectedGameRepository.existsBySlug(igdbSlug))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Game with slug '%s' already exists in database.".formatted(igdbSlug));
+        if(detectedGameRepository.existsBySlug(slug))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Game with slug '%s' already exists in database.".formatted(slug));
 
-        Igdb.Game igdbGame = igdbWrapper.getGameBySlug(igdbSlug)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(igdbSlug)));
+        Optional<UnmappableFile> optionalUnmappableFile = unmappableFileRepository.findByPath(path);
+        Optional<DetectedGame> optionalDetectedGame = detectedGameRepository.findByPath(path);
+
+        if(optionalUnmappableFile.isPresent()) {
+            return mapUnmappableFile(optionalUnmappableFile.get(), slug);
+        }
+
+        if(optionalDetectedGame.isPresent()) {
+            return mapDetectedGame(optionalDetectedGame.get(), slug);
+        }
+
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Path '%s' not in database".formatted(path));
+    }
+
+    private DetectedGame mapUnmappableFile(UnmappableFile unmappableFile, String slug) {
+        Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
 
         DetectedGame game = GameMapper.toDetectedGame(igdbGame, Path.of(unmappableFile.getPath()));
         game = detectedGameRepository.save(game);
 
         unmappableFileRepository.delete(unmappableFile);
+
+        return game;
+    }
+
+    private DetectedGame mapDetectedGame(DetectedGame existingGame, String slug) {
+        Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
+
+        DetectedGame game = GameMapper.toDetectedGame(igdbGame, Path.of(existingGame.getPath()));
+        game = detectedGameRepository.save(game);
+
+        detectedGameRepository.deleteById(existingGame.getSlug());
 
         return game;
     }

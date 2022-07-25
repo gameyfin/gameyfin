@@ -1,25 +1,16 @@
 server:
   port: 8080
-  error.include-stacktrace: never
 
 spring:
-  mvc:
-    async.request-timeout: -1
-  jackson.default-property-inclusion: non_null
   datasource.db-name: gameyfin_db
   datasource.url: jdbc:h2:file:${gameyfin.db}/${spring.datasource.db-name};AUTO_SERVER=TRUE
   datasource.username: gfadmin
   datasource.password: gameyfin
   datasource.driverClassName: org.h2.Driver
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate.ddl-auto: update
-    open-in-view: true
-    properties:
-      hibernate:
-        event.merge.entity_copy_observer: allow
 
 gameyfin:
+  user: ""
+  password: ""
   root: ""
   cache: ${gameyfin.root}\.gameyfin\cache
   db: ${gameyfin.root}\.gameyfin\db # Currently unused

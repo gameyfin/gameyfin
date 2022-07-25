@@ -1,4 +1,6 @@
 gameyfin:
+  user: admin
+  password: 112
   root: C:\Projects\privat\gameyfin-library
   #root: \\NAS-Simon\Öffentlich\Spiele
   cache: ${gameyfin.root}\.gameyfin\cache
