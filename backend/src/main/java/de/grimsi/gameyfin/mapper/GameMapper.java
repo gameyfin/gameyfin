@@ -8,6 +8,7 @@ import de.grimsi.gameyfin.util.ProtobufUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -38,7 +39,7 @@ public class GameMapper {
                 .onlineCoop(hasOnlineCoop(multiplayerModes))
                 .lanSupport(hasLanSupport(multiplayerModes))
                 .maxPlayers(getMaxPlayers(multiplayerModes))
-                .coverId(g.getCover().getImageId())
+                .coverId(getCoverId(g))
                 .screenshotIds(screenshotIds)
                 .videoIds(videoIds)
                 .companies(CompanyMapper.toCompanies(g.getInvolvedCompaniesList()))
@@ -57,6 +58,14 @@ public class GameMapper {
                 .title(game.getTitle())
                 .coverId(game.getCoverId())
                 .build();
+    }
+
+    private static String getCoverId(Igdb.Game g) {
+        String coverId = g.getCover().getImageId();
+
+        if(StringUtils.hasText(coverId)) return coverId;
+
+        return "nocover";
     }
 
     private static boolean hasOfflineCoop(List<Igdb.MultiplayerMode> modes) {

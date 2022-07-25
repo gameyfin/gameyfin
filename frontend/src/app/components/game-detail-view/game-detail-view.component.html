@@ -1,8 +1,8 @@
 <div fxLayout="row" fxLayoutAlign="center" style="margin-top: 16px;">
   <div fxLayout="column" fxFlex="0 1 70" fxLayoutGap="16px" fxFlex.lt-xl="95">
-    <div fxLayout="row" fxLayoutGap="16px">
+    <div fxLayout="row" fxLayout.lt-lg="column" fxLayoutGap="16px">
 
-      <img src="v1/images/{{game.coverId}}" alt="Game cover">
+      <img style="max-width: 352px;" src="v1/images/{{game.coverId}}" alt="Game cover">
 
       <div fxFlex="40" fxLayout="column" id="game-details">
         <h1>{{game.title}}</h1>
@@ -13,9 +13,12 @@
 
       <div fxLayout="column" fxFlex="40" fxLayoutGap="16px">
 
-        <button mat-raised-button color="primary" (click)="downloadGame()">
-          Download ({{bytesAsHumanReadableString(game.diskSize)}})
-        </button>
+        <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="16px">
+          <button mat-raised-button color="primary" (click)="downloadGame()">
+            <mat-icon>download</mat-icon>
+          </button>
+          <b style="font-size: 24px">Download ({{bytesAsHumanReadableString(game.diskSize)}})</b>
+        </div>
 
         <div fxLayout="column" fxLayoutGap="24px">
           <div *ngIf="game.genres !== undefined && game.genres.length > 0">
