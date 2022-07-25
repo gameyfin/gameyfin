@@ -5,7 +5,11 @@
 
   <span class="spacer"></span>
 
-  <button mat-icon-button (click)="reloadLibrary()">
+  <button mat-icon-button (click)="reloadLibrary()" *ngIf="onLibraryManagementScreen()">
     <mat-icon>youtube_searched_for</mat-icon>
+  </button>
+
+  <button mat-icon-button (click)="goToLibraryManagementScreen()">
+    <mat-icon>settings</mat-icon>
   </button>
 </mat-toolbar>

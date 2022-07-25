@@ -28,6 +28,11 @@ public class LibraryManagementController {
         gameService.deleteGame(slug);
     }
 
+    @DeleteMapping(value = "/delete-unmapped-file/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public void deleteUnmappedFile(@PathVariable Long id) {
+        gameService.deleteUnmappedFile(id);
+    }
+
     @GetMapping(value = "/confirm-game/{slug}", produces = MediaType.APPLICATION_JSON_VALUE)
     public DetectedGame confirmMatch(@PathVariable String slug, @RequestParam(required = false, defaultValue = "true") boolean confirm) {
         return gameService.confirmGame(slug, confirm);

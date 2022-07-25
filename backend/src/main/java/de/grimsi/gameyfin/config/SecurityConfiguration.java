@@ -32,22 +32,8 @@ public class SecurityConfiguration {
 
     @Bean
     protected SecurityFilterChain httpSecurity(HttpSecurity http) throws Exception {
-
-        // TODO: Try to enable CSRF
         http.csrf().disable();
-
-        // Allow GET-Requests on *all* URLs (Frontend will handle 404 and permission)
-        // except paths under "/v1/library-management"
-        http.authorizeRequests()
-                .antMatchers("**").permitAll()
-                .antMatchers("/v1/library-management").authenticated()
-                .anyRequest().denyAll();
-
         http.httpBasic(Customizer.withDefaults());
-
-        http.exceptionHandling()
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
-
         return http.build();
     }
 

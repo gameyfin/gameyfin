@@ -19,7 +19,7 @@ export class HeaderComponent {
   reloadLibrary(): void {
     this.libraryService.scanLibrary().pipe(timeInterval()).subscribe({
       next: value => this.snackBar.open(`Library scan completed in ${Math.trunc(value.interval / 1000)} seconds.`, undefined, {duration: 2000}),
-      error: error => this.snackBar.open(`Error while scanning library: ${error}`, undefined, {duration: 5000})
+      error: error => this.snackBar.open(`Error while scanning library: ${error.error.message}`, undefined, {duration: 5000})
     })
   }
 
@@ -27,8 +27,16 @@ export class HeaderComponent {
     this.router.navigate(['/']);
   }
 
+  goToLibraryManagementScreen(): void {
+    this.router.navigate(['/library-management']);
+  }
+
   notOnLibraryScreen(): boolean {
     return !(this.router.url === "/library");
+  }
+
+  onLibraryManagementScreen(): boolean {
+    return this.router.url === "/library-management";
   }
 
 }

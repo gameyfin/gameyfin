@@ -2,10 +2,8 @@ import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 
 import {AppComponent} from './app.component';
-import {FullpageLayoutComponent} from "./layouts/fullpage-layout/fullpage-layout.component";
 import {NavbarLayoutComponent} from "./layouts/navbar-layout/navbar-layout.component";
 import {PageNotFoundComponent} from "./components/page-not-found/page-not-found.component";
-import {NotImplementedComponent} from "./components/not-implemented/not-implemented.component";
 import {HeaderComponent} from "./components/header/header.component";
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
@@ -35,53 +33,57 @@ import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatGridListModule} from "@angular/material/grid-list";
 import {GameScreenshotComponent} from './components/game-screenshot/game-screenshot.component';
 import {YouTubePlayerModule} from "@angular/youtube-player";
-import { GameVideoComponent } from './components/game-video/game-video.component';
+import {GameVideoComponent} from './components/game-video/game-video.component';
 import {MatChipsModule} from "@angular/material/chips";
+import { LibraryManagementComponent } from './components/library-management/library-management.component';
+import {MatTooltipModule} from "@angular/material/tooltip";
+import {MapGameDialogComponent} from "./components/map-game-dialog/map-game-dialog.component";
 
 @NgModule({
   declarations: [
     AppComponent,
     HeaderComponent,
-    FullpageLayoutComponent,
     NavbarLayoutComponent,
     PageNotFoundComponent,
-    NotImplementedComponent,
     ErrorDialogComponent,
     LibraryOverviewComponent,
     GameCoverComponent,
     GameDetailViewComponent,
     GameScreenshotComponent,
-    GameVideoComponent
+    GameVideoComponent,
+    LibraryManagementComponent,
+    MapGameDialogComponent
   ],
-    imports: [
-        BrowserModule,
-        AppRoutingModule,
-        BrowserAnimationsModule,
-        FormsModule,
-        MatFormFieldModule,
-        MatCardModule,
-        MatTabsModule,
-        MatToolbarModule,
-        MatMenuModule,
-        MatIconModule,
-        HttpClientModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatDialogModule,
-        MatButtonModule,
-        MatInputModule,
-        FlexModule,
-        MatProgressSpinnerModule,
-        MatTableModule,
-        MatPaginatorModule,
-        MatSortModule,
-        MatSnackBarModule,
-        MatGridListModule,
-        FlexLayoutModule,
-        GridModule,
-        YouTubePlayerModule,
-        MatChipsModule
-    ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatCardModule,
+    MatTabsModule,
+    MatToolbarModule,
+    MatMenuModule,
+    MatIconModule,
+    HttpClientModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatInputModule,
+    FlexModule,
+    MatProgressSpinnerModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatSnackBarModule,
+    MatGridListModule,
+    FlexLayoutModule,
+    GridModule,
+    YouTubePlayerModule,
+    MatChipsModule,
+    MatTooltipModule
+  ],
   providers: [
     {
       provide: HTTP_INTERCEPTORS,

@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {GamesApi} from "../api/GamesApi";
 import {HttpClient} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {map, Observable} from "rxjs";
 import {DetectedGameDto} from "../models/dtos/DetectedGameDto";
 import {GameOverviewDto} from "../models/dtos/GameOverviewDto";
 
@@ -16,7 +16,7 @@ export class GamesService implements GamesApi {
   }
 
   getAllGames(): Observable<DetectedGameDto[]> {
-    return this.http.get<DetectedGameDto[]>(this.apiPath);
+    return this.http.get<DetectedGameDto[]>(this.apiPath).pipe(map(games => games.sort((g1, g2) => g1.title.localeCompare(g2.title))));
   }
 
   getGame(slug: String): Observable<DetectedGameDto> {

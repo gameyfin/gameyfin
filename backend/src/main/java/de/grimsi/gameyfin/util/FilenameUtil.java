@@ -18,6 +18,11 @@ public class FilenameUtil {
     }
 
     public static String getFilenameWithoutExtension(Path p) {
+
+        // If the path points to a folder, return the folder name
+        // Folders like "Counter Strike 1.6" would otherwise be returned as "Counter Strike 1"
+        if(p.toFile().isDirectory()) return FilenameUtils.getName(p.toString());
+
         return FilenameUtils.getBaseName(p.toString());
     }
 

@@ -6,8 +6,8 @@ import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
-import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
+import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -50,9 +50,19 @@ public class GameService {
     public List<GameOverviewDto> getGameOverviews() {
         return detectedGameRepository.findAll().stream().map(GameMapper::toGameOverviewDto).toList();
     }
-    
+
     public void deleteGame(String slug) {
+        DetectedGame gameToBeDeleted = getDetectedGame(slug);
+
+        // Add the path of the game to be deleted to the unmappable files
+        // so it doesn't get re-indexed on the next library scan
+        unmappableFileRepository.save(new UnmappableFile(gameToBeDeleted.getPath()));
+
         detectedGameRepository.deleteById(slug);
+    }
+
+    public void deleteUnmappedFile(Long id) {
+        unmappableFileRepository.deleteById(id);
     }
 
     public DetectedGame confirmGame(String slug, boolean confirm) {
@@ -63,17 +73,17 @@ public class GameService {
 
     public DetectedGame mapPathToGame(String path, String slug) {
 
-        if(detectedGameRepository.existsBySlug(slug))
+        if (detectedGameRepository.existsBySlug(slug))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Game with slug '%s' already exists in database.".formatted(slug));
 
         Optional<UnmappableFile> optionalUnmappableFile = unmappableFileRepository.findByPath(path);
         Optional<DetectedGame> optionalDetectedGame = detectedGameRepository.findByPath(path);
 
-        if(optionalUnmappableFile.isPresent()) {
+        if (optionalUnmappableFile.isPresent()) {
             return mapUnmappableFile(optionalUnmappableFile.get(), slug);
         }
 
-        if(optionalDetectedGame.isPresent()) {
+        if (optionalDetectedGame.isPresent()) {
             return mapDetectedGame(optionalDetectedGame.get(), slug);
         }
 

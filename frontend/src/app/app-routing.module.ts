@@ -1,11 +1,10 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
-import {FullpageLayoutComponent} from "./layouts/fullpage-layout/fullpage-layout.component";
 import {PageNotFoundComponent} from "./components/page-not-found/page-not-found.component";
 import {NavbarLayoutComponent} from "./layouts/navbar-layout/navbar-layout.component";
-import {NotImplementedComponent} from "./components/not-implemented/not-implemented.component";
 import {LibraryOverviewComponent} from "./components/library-overview/library-overview.component";
 import {GameDetailViewComponent} from "./components/game-detail-view/game-detail-view.component";
+import {LibraryManagementComponent} from "./components/library-management/library-management.component";
 
 const appRoutes: Routes = [
   {
@@ -21,19 +20,12 @@ const appRoutes: Routes = [
         component: GameDetailViewComponent
       },
       {
-        path: '',
-        redirectTo: '/library',
-        pathMatch: 'full'
-      }
-    ]
-  },
-  {
-    path: '',
-    component: FullpageLayoutComponent,
-    children: [
+        path: 'library-management',
+        component: LibraryManagementComponent
+      },
       {
         path: '',
-        redirectTo: '/login',
+        redirectTo: '/library',
         pathMatch: 'full'
       }
     ]
