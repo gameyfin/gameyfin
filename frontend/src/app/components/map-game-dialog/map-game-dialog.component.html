@@ -1,0 +1,15 @@
+<h3 mat-dialog-title>Map game to IGDB slug</h3>
+<mat-dialog-content>
+  <form fxLayout="column" fxLayoutAlign="space-evenly stretch">
+
+    <p>Path: {{path}}</p>
+    <mat-form-field>
+      <input matInput type="text" placeholder="IGDB Slug" [formControl]="newSlugInput" [value]="currentSlug"/>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-raised-button mat-dialog-close color="accent">Cancel</button>
+  <button mat-raised-button (click)="submit()">OK</button>
+</mat-dialog-actions>
