@@ -1,0 +1,41 @@
+@use 'sass:map';
+@use '@angular/material' as mat;
+@import '../../theme/default-theme';
+
+.fullscreen-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.library-management-hint {
+
+  @include mat.elevation(16);
+
+  $config: mat.get-color-config($custom-theme);
+  $background: map.get($config, background);
+  position: absolute;
+  right: 56px;
+  top: 72px;
+  width: 250px;
+  border-radius: 6px;
+  background: mat.get-color-from-palette($background, app-bar);
+  border-color: mat.get-color-from-palette($background, app-bar);
+  border-style: solid;
+  color: white;
+
+  p {
+    padding: 0 12px 12px 16px;
+   }
+}
+
+.content {
+  padding: 16px;
+}

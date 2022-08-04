@@ -1,3 +1,18 @@
+@use 'sass:map';
+@use '@angular/material' as mat;
+@import '../../theme/default-theme';
+
 td, th {
   padding: 16px !important;
+}
+
+table {
+  min-width: 50vw;
+}
+
+mat-tab-group {
+  $config: mat.get-color-config($custom-theme);
+  $background: map.get($config, background);
+  background: mat.get-color-from-palette($background, app-bar);
+
 }

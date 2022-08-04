@@ -9,7 +9,7 @@
     <mat-icon>youtube_searched_for</mat-icon>
   </button>
 
-  <button mat-icon-button (click)="goToLibraryManagementScreen()">
+  <button mat-icon-button (click)="goToLibraryManagementScreen()" *ngIf="!onLibraryManagementScreen()">
     <mat-icon>settings</mat-icon>
   </button>
 </mat-toolbar>

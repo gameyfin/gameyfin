@@ -5,7 +5,7 @@ import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 @Component({
   selector: 'app-gameserver-list',
   templateUrl: './library-overview.component.html',
-  styleUrls: ['./library-overview.component.css']
+  styleUrls: ['./library-overview.component.scss']
 })
 export class LibraryOverviewComponent implements AfterViewInit {
 

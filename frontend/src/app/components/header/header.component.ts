@@ -21,6 +21,7 @@ export class HeaderComponent {
       next: value => this.snackBar.open(`Library scan completed in ${Math.trunc(value.interval / 1000)} seconds.`, undefined, {duration: 2000}),
       error: error => this.snackBar.open(`Error while scanning library: ${error.error.message}`, undefined, {duration: 5000})
     })
+    this.snackBar.open('Library scan started in the background. This could take some time.', undefined, {duration: 5000})
   }
 
   goToLibraryScreen(): void {

@@ -1,9 +1,6 @@
 import {Injectable} from '@angular/core';
-import {GamesApi} from "../api/GamesApi";
 import {HttpClient, HttpResponse} from "@angular/common/http";
 import {Observable} from "rxjs";
-import {DetectedGameDto} from "../models/dtos/DetectedGameDto";
-import {GameOverviewDto} from "../models/dtos/GameOverviewDto";
 import {LibraryApi} from "../api/LibraryApi";
 
 @Injectable({

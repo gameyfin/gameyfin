@@ -4,8 +4,16 @@
     <h2>Loading library...</h2>
   </div>
 
-  <div fxLayout="row" fxLayoutAlign="center center" *ngIf="!this.loading && this.detectedGames.length === 0">
-    <h2>Your game library is empty!</h2>
+  <div *ngIf="!this.loading && this.detectedGames.length === 0" fxFlex fxLayout="column" fxLayoutAlign="center center" style="height: calc(100vh - 64px)">
+    <div class="library-management-hint" fxLayout="column" fxLayoutAlign="start end">
+      <mat-icon fontSet="material-icons-outlined">north_east</mat-icon>
+      <p>Use the library management to scan your file system for games</p>
+    </div>
+
+    <div fxLayout="column" fxLayoutAlign="center center">
+      <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">videogame_asset_off</mat-icon>
+      <h1>Your game library is empty!</h1>
+    </div>
   </div>
 
   <div class="content" fxLayout="row" fxFlexFill="100" *ngIf="!this.loading && this.detectedGames.length > 0">

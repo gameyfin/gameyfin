@@ -1,4 +1,4 @@
-<div *ngIf="loggedIn" fxLayoutAlign="center center">
+<div *ngIf="loggedIn" fxFlexFill fxLayoutAlign="center center">
   <div>
     <mat-tab-group>
       <mat-tab label="Game mappings">
@@ -67,5 +67,11 @@
       </mat-tab>
     </mat-tab-group>
   </div>
+</div>
 
+<div *ngIf="!loggedIn" fxFlex fxLayout="column" fxLayoutAlign="center center" style="height: calc(100vh - 64px)">
+  <div fxLayout="column" fxLayoutAlign="center center">
+    <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">lock</mat-icon>
+    <h1>Please log in to manage your game library</h1>
+  </div>
 </div>
