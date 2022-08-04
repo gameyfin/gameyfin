@@ -19,6 +19,8 @@ export class LibraryManagementComponent implements OnInit {
   mappedGames!: DetectedGameDto[];
   unmappedFiles!: UnmappedFileDto[];
 
+  loggedIn: boolean = false;
+
   constructor(private gameService: GamesService,
               private libraryManagementService: LibraryManagementService,
               private dialogService: DialogService) {
@@ -50,7 +52,10 @@ export class LibraryManagementComponent implements OnInit {
   }
 
   refreshUnmappedFilesList(): void {
-    this.libraryManagementService.getUnmappedFiles().subscribe(unmappedFiles => this.unmappedFiles = unmappedFiles);
+    this.libraryManagementService.getUnmappedFiles().subscribe(unmappedFiles => {
+      this.unmappedFiles = unmappedFiles;
+      this.loggedIn = true;
+    });
   }
 
   deleteUnmappedFile(unmappedFile: UnmappedFileDto): void {
