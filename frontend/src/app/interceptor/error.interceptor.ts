@@ -20,17 +20,15 @@ export class ErrorInterceptor implements HttpInterceptor {
             this.dialogService.showErrorDialog(err.error.message);
           }
           break;
-        case 401:
-          this.dialogService.showErrorDialog(err.error.message);
-          break;
         case 409:
         case 500:
+        case 401:
+          this.dialogService.showErrorDialog(err.error.message);
           this.dialogService.showErrorDialog(err.error.message);
           break;
         case 503:
         case 504:
-          this.dialogService.showErrorDialog('Can\'t reach the backend at the moment.\n' +
-            'Please ensure that the backend is running and try again');
+          this.dialogService.showErrorDialog(`Can't reach the backend at the moment.<br>Please ensure that the backend is running and reload this page`);
           break;
       }
       return throwError(err);

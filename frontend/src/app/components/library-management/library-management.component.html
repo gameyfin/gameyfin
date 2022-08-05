@@ -1,77 +1,91 @@
-<div *ngIf="loggedIn" fxFlexFill fxLayoutAlign="center center">
-  <div>
-    <mat-tab-group>
-      <mat-tab label="Game mappings">
-        <table mat-table [dataSource]="mappedGames" class="mat-elevation-z8">
-          <ng-container matColumnDef="path">
-            <th mat-header-cell *matHeaderCellDef> Path </th>
-            <td mat-cell *matCellDef="let element"> {{element.path}} </td>
-          </ng-container>
+<div *ngIf="loggedIn && (this.unmappedFiles.length > 0 || this.mappedGames.length > 0)" fxFlexFill fxLayoutAlign="center start">
+  <mat-tab-group>
+    <mat-tab label="Game mappings">
+      <table mat-table [dataSource]="mappedGames" class="mat-elevation-z8">
+        <ng-container matColumnDef="path">
+          <th mat-header-cell *matHeaderCellDef> Path</th>
+          <td mat-cell *matCellDef="let element"> {{element.path}} </td>
+        </ng-container>
 
-          <ng-container matColumnDef="game">
-            <th mat-header-cell *matHeaderCellDef> Game </th>
-            <td mat-cell *matCellDef="let element"> {{element.title}} ({{getFullYearFromTimestamp(element.releaseDate)}})</td>
-          </ng-container>
+        <ng-container matColumnDef="game">
+          <th mat-header-cell *matHeaderCellDef> Game</th>
+          <td mat-cell *matCellDef="let element"> {{element.title}} ({{getFullYearFromTimestamp(element.releaseDate)}}
+            )
+          </td>
+        </ng-container>
 
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>
-              <button mat-icon-button (click)="refreshMappedGamesList()">
-                <mat-icon>refresh</mat-icon>
-              </button>
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <button mat-icon-button (click)="confirmGameMapping(element)" [disabled]="element.confirmedMatch">
-                <mat-icon>check</mat-icon>
-              </button>
-              <button mat-icon-button (click)="openCorrectMappingDialog(element)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button (click)="deleteGameMapping(element)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </td>
-          </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+            <button mat-icon-button (click)="refreshMappedGamesList()">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <button mat-icon-button (click)="confirmGameMapping(element)" [disabled]="element.confirmedMatch">
+              <mat-icon>check</mat-icon>
+            </button>
+            <button mat-icon-button (click)="openCorrectMappingDialog(element)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button (click)="deleteGameMapping(element)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="gameMappingTableColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: gameMappingTableColumns;"></tr>
-        </table>
-      </mat-tab>
+        <tr mat-header-row *matHeaderRowDef="gameMappingTableColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: gameMappingTableColumns;"></tr>
+      </table>
+    </mat-tab>
 
 
-      <mat-tab label="Unmapped files">
-        <table mat-table [dataSource]="unmappedFiles" class="mat-elevation-z8">
-          <ng-container matColumnDef="path">
-            <th mat-header-cell *matHeaderCellDef> Path </th>
-            <td mat-cell *matCellDef="let element"> {{element.path}} </td>
-          </ng-container>
+    <mat-tab label="Unmapped files">
+      <table mat-table [dataSource]="unmappedFiles" class="mat-elevation-z8">
+        <ng-container matColumnDef="path">
+          <th mat-header-cell *matHeaderCellDef> Path</th>
+          <td mat-cell *matCellDef="let element"> {{element.path}} </td>
+        </ng-container>
 
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>
-              <button mat-icon-button (click)="refreshUnmappedFilesList()">
-                <mat-icon>refresh</mat-icon>
-              </button>
-            </th>
-            <td mat-cell *matCellDef="let element">
-              <button mat-icon-button (click)="openMapUnmappedFileDialog(element)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button (click)="deleteUnmappedFile(element)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </td>
-          </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>
+            <button mat-icon-button (click)="refreshUnmappedFilesList()">
+              <mat-icon>refresh</mat-icon>
+            </button>
+          </th>
+          <td mat-cell *matCellDef="let element">
+            <button mat-icon-button (click)="openMapUnmappedFileDialog(element)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button (click)="deleteUnmappedFile(element)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="unmappedGameTableColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: unmappedGameTableColumns;"></tr>
-        </table>
-      </mat-tab>
-    </mat-tab-group>
-  </div>
+        <tr mat-header-row *matHeaderRowDef="unmappedGameTableColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: unmappedGameTableColumns;"></tr>
+      </table>
+    </mat-tab>
+  </mat-tab-group>
 </div>
 
 <div *ngIf="!loggedIn" fxFlex fxLayout="column" fxLayoutAlign="center center" style="height: calc(100vh - 64px)">
   <div fxLayout="column" fxLayoutAlign="center center">
-    <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">lock</mat-icon>
+    <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">
+      lock
+    </mat-icon>
     <h1>Please log in to manage your game library</h1>
+  </div>
+</div>
+
+<div *ngIf="loggedIn && this.unmappedFiles.length === 0 && this.mappedGames.length === 0" fxFlex fxLayout="column" fxLayoutAlign="center center" style="height: calc(100vh - 64px)">
+  <div class="library-management-hint" fxLayout="column" fxLayoutAlign="start end">
+    <mat-icon fontSet="material-icons-outlined">north_east</mat-icon>
+    <p>Use the library management to scan your file system for games</p>
+  </div>
+
+  <div fxLayout="column" fxLayoutAlign="center center">
+    <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">videogame_asset_off</mat-icon>
+    <h1>Your game library is empty!</h1>
   </div>
 </div>

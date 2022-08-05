@@ -12,14 +12,33 @@ export class GamesService implements GamesApi {
 
   private readonly apiPath = '/games';
 
+  private cache: Map<string, DetectedGameDto> = new Map<string, DetectedGameDto>();
+
   constructor(private http: HttpClient) {
   }
 
-  getAllGames(): Observable<DetectedGameDto[]> {
-    return this.http.get<DetectedGameDto[]>(this.apiPath).pipe(map(games => games.sort((g1, g2) => g1.title.localeCompare(g2.title))));
+  getAllGames(forceReloadFromServer: boolean = false): Observable<DetectedGameDto[]> {
+
+    if (this.cache.size === 0 || forceReloadFromServer) {
+      let gamesObservable: Observable<DetectedGameDto[]> = this.http.get<DetectedGameDto[]>(this.apiPath).pipe(map(games => games.sort((g1, g2) => g1.title.localeCompare(g2.title))));
+      gamesObservable.subscribe(g => this.cacheGames(g));
+      return gamesObservable;
+    }
+
+    return new Observable<DetectedGameDto[]>(subscriber => {
+      subscriber.next(Array.from(this.cache.values()));
+      subscriber.complete();
+    });
   }
 
-  getGame(slug: String): Observable<DetectedGameDto> {
+  getGame(slug: string): Observable<DetectedGameDto> {
+    if (this.cache.has(slug)) {
+      return new Observable<DetectedGameDto>(subscriber => {
+        subscriber.next(this.cache.get(slug));
+        subscriber.complete();
+      });
+    }
+
     return this.http.get<DetectedGameDto>(`${this.apiPath}/game/${slug}`);
   }
 
@@ -33,5 +52,10 @@ export class GamesService implements GamesApi {
 
   getAllGameMappings(): Observable<Map<string, string>> {
     return this.http.get<Map<string, string>>(`${this.apiPath}/game-mappings`);
+  }
+
+  private cacheGames(gameList: DetectedGameDto[]): void {
+    this.cache.clear();
+    gameList.forEach(game => this.cache.set(game.slug, game));
   }
 }

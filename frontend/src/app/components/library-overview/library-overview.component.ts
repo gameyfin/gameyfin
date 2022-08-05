@@ -1,4 +1,4 @@
-import {AfterViewInit, Component} from '@angular/core';
+import {AfterContentInit, AfterViewInit, Component} from '@angular/core';
 import {GamesService} from "../../services/games.service";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 
@@ -7,7 +7,7 @@ import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
   templateUrl: './library-overview.component.html',
   styleUrls: ['./library-overview.component.scss']
 })
-export class LibraryOverviewComponent implements AfterViewInit {
+export class LibraryOverviewComponent implements AfterContentInit {
 
   detectedGames: DetectedGameDto[] = [];
   loading: boolean = true;
@@ -15,7 +15,7 @@ export class LibraryOverviewComponent implements AfterViewInit {
   constructor(private gameServerService: GamesService) {
   }
 
-  ngAfterViewInit(): void {
+  ngAfterContentInit(): void {
     this.gameServerService.getAllGames().subscribe(
       (detectedGames: DetectedGameDto[]) => {
         this.detectedGames = detectedGames;

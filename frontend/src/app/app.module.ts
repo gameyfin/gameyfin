@@ -29,7 +29,7 @@ import {MatPaginatorModule} from "@angular/material/paginator";
 import {MatSortModule} from "@angular/material/sort";
 import {GameCoverComponent} from './components/game-cover/game-cover.component';
 import {GameDetailViewComponent} from './components/game-detail-view/game-detail-view.component';
-import {MatSnackBarModule} from '@angular/material/snack-bar';
+import {MAT_SNACK_BAR_DEFAULT_OPTIONS, MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatGridListModule} from "@angular/material/grid-list";
 import {GameScreenshotComponent} from './components/game-screenshot/game-screenshot.component';
 import {YouTubePlayerModule} from "@angular/youtube-player";
@@ -94,6 +94,10 @@ import {MapGameDialogComponent} from "./components/map-game-dialog/map-game-dial
       provide: HTTP_INTERCEPTORS,
       useClass: ErrorInterceptor,
       multi: true
+    },
+    {
+      provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
+      useValue: { panelClass: ['snackbar-dark'] },
     }
   ],
   bootstrap: [AppComponent]

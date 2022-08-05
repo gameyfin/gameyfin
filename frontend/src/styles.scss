@@ -1,5 +1,6 @@
 // Custom Theming for Angular Material
 // For more information: https://material.angular.io/guide/theming
+@use 'sass:map';
 @use '@angular/material' as mat;
 
 // Plus imports for other components in your app.
@@ -18,3 +19,13 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.snackbar-dark {
+  color: white;
+  $config: mat.get-color-config($custom-theme);
+  $background: map.get($config, background);
+  background: mat.get-color-from-palette($background, app-bar);
+
+  // add support for formatting (newlines)
+  white-space: pre-wrap;
+}

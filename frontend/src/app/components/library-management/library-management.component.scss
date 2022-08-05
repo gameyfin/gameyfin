@@ -1,6 +1,7 @@
 @use 'sass:map';
 @use '@angular/material' as mat;
-@import '../../theme/default-theme';
+@import 'src/app/theme/default-theme';
+@import 'src/app/components/library-overview/library-overview.component';
 
 td, th {
   padding: 16px !important;

@@ -5,9 +5,7 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
   selector: 'app-error-dialog',
   template: `
     <h1 mat-dialog-title>Error</h1>
-    <mat-dialog-content>
-      {{message}}
-    </mat-dialog-content>
+    <mat-dialog-content [innerHTML]="message"></mat-dialog-content>
     <mat-dialog-actions style="justify-content: end">
       <button mat-raised-button color="primary" (click)="onClick()">OK</button>
     </mat-dialog-actions>

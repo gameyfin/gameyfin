@@ -8,6 +8,7 @@
 
       <div fxFlex="40" fxLayout="column" id="game-details">
         <h1>{{game.title}}</h1>
+        <h3>Release: {{game.releaseDate | date: 'longDate'}}</h3>
         <p id="game-summary">{{game.summary}}</p>
       </div>
 
