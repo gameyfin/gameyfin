@@ -1,19 +1,23 @@
 <mat-toolbar style="position: sticky; top: 0; z-index: 99999">
-  <button mat-icon-button (click)="goToLibraryScreen()" *ngIf="!onLibraryScreen()">
+  <button mat-icon-button matTooltip="Home" (click)="goToLibraryScreen()" *ngIf="!onLibraryScreen()">
     <mat-icon>home</mat-icon>
   </button>
 
   <span class="spacer"></span>
 
-  <button mat-icon-button (click)="reloadLibrary()" *ngIf="onLibraryScreen()">
+  <button mat-icon-button matTooltip="Toggle dark mode" (click)="toggleTheme()">
+    <mat-icon>brightness_medium</mat-icon>
+  </button>
+
+  <button mat-icon-button matTooltip="Reload library" (click)="reloadLibrary()" *ngIf="onLibraryScreen()">
     <mat-icon>refresh</mat-icon>
   </button>
 
-  <button mat-icon-button (click)="scanLibrary()" *ngIf="onLibraryManagementScreen()">
+  <button mat-icon-button matTooltip="Scan library" (click)="scanLibrary()" *ngIf="onLibraryManagementScreen()">
     <mat-icon>youtube_searched_for</mat-icon>
   </button>
 
-  <button mat-icon-button (click)="goToLibraryManagementScreen()" *ngIf="!onLibraryManagementScreen()">
+  <button mat-icon-button matTooltip="Library management" (click)="goToLibraryManagementScreen()" *ngIf="!onLibraryManagementScreen()">
     <mat-icon>settings</mat-icon>
   </button>
 </mat-toolbar>
