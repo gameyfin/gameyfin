@@ -39,3 +39,29 @@
 .content {
   padding: 16px;
 }
+
+.filter-category-title {
+  margin-bottom: 0;
+}
+
+.filter-category-content {
+  margin-left: 6px;
+}
+
+::ng-deep .mat-checkbox-frame {
+  $config: mat.get-color-config($custom-theme);
+  $primary-palette: map.get($config, 'primary');
+  border-color: mat.get-color-from-palette($primary-palette, 500);
+}
+
+::ng-deep .mat-form-field-underline {
+  $config: mat.get-color-config($custom-theme);
+  $primary-palette: map.get($config, 'primary');
+  background-color: mat.get-color-from-palette($primary-palette, 500) !important;
+}
+
+.sticky {
+  position: sticky;
+  align-self: flex-start;
+  top: 80px; //64px height of app-header + 16px padding of content
+}

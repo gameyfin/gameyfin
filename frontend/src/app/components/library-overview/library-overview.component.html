@@ -4,26 +4,80 @@
     <h2>Loading library...</h2>
   </div>
 
-  <div *ngIf="!this.loading && this.detectedGames.length === 0" fxFlex fxLayout="column" fxLayoutAlign="center center" style="height: calc(100vh - 64px)">
+  <div *ngIf="!this.loading && this.gameLibraryIsEmpty" fxFlex fxLayout="column" fxLayoutAlign="center center"
+       style="height: calc(100vh - 64px)">
     <div class="library-management-hint" fxLayout="column" fxLayoutAlign="start end">
       <mat-icon fontSet="material-icons-outlined">north_east</mat-icon>
       <p>Use the library management to scan your file system for games</p>
     </div>
 
     <div fxLayout="column" fxLayoutAlign="center center">
-      <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">videogame_asset_off</mat-icon>
+      <mat-icon fontSet="material-icons-outlined" color="primary"
+                style="font-size: 128px; height: 128px; width: 128px;">videogame_asset_off
+      </mat-icon>
       <h1>Your game library is empty!</h1>
     </div>
   </div>
 
-  <div class="content" fxLayout="row" fxFlexFill="100" *ngIf="!this.loading && this.detectedGames.length > 0">
+  <div class="content" fxLayout="row" fxLayout.lt-lg="column" fxFlexFill="100"
+       *ngIf="!this.loading && !this.gameLibraryIsEmpty">
     <div fxFlex="10" fxHide fxShow.gt-md><!--SPACER--></div>
-    <div fxFlex="0 1 20"><!--FILTER--></div>
+
+    <div fxFlex.gt-md="0 1 15" fxLayout="column" fxLayoutGap="16px" fxLayoutAlign.lt-lg="start center" fxFlex.lt-lg="100" [ngClass.gt-md]="'sticky'">
+
+      <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="6px">
+        <mat-icon matTooltip="Search for games by title">search</mat-icon>
+        <mat-form-field fxFlex="80" class="filter-category-content">
+          <input type="text" matInput [matAutocomplete]="auto" [(ngModel)]="searchTerm" (ngModelChange)="filterGames()">
+          <mat-autocomplete #auto="matAutocomplete">
+            <mat-option *ngFor="let game of games" [value]="game.title">
+              {{game.title}}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+
+      <div>
+        <div fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="6px">
+          <h3 class="filter-category-title">Gamemodes</h3>
+          <mat-icon matTooltip="Filter may not work correctly, working on a fix" color="warn">error</mat-icon>
+        </div>
+        <div fxLayout="column" class="filter-category-content">
+          <mat-checkbox [(ngModel)]="offlineCoopFilterEnabled" (change)="filterGames()" color="primary">Offline Co-op
+          </mat-checkbox>
+          <mat-checkbox [(ngModel)]="onlineCoopFilterEnabled" (change)="filterGames()" color="primary">Online Co-op
+          </mat-checkbox>
+          <mat-checkbox [(ngModel)]="lanSupportFilterEnabled" (change)="filterGames()" color="primary">LAN Support
+          </mat-checkbox>
+        </div>
+      </div>
+
+      <div *ngIf="availableGenres.length > 0">
+        <h3 class="filter-category-title">Genres</h3>
+        <div fxLayout="column" class="filter-category-content">
+          <mat-checkbox *ngFor="let genre of availableGenres" (change)="toggleGenreFilter(genre.slug)"
+                        [checked]="activeGenreFilters.includes(genre.slug)"
+                        color="primary">{{genre.name}}</mat-checkbox>
+        </div>
+      </div>
+
+      <div *ngIf="availableThemes.length > 0">
+        <h3 class="filter-category-title">Themes</h3>
+        <div fxLayout="column" class="filter-category-content">
+          <mat-checkbox *ngFor="let theme of availableThemes" (change)="toggleThemeFilter(theme.slug)"
+                        [checked]="activeThemeFilters.includes(theme.slug)"
+                        color="primary">{{theme.name}}</mat-checkbox>
+        </div>
+      </div>
+
+    </div>
+
     <div fxFlex fxLayout="row wrap" fxLayoutGap="16px grid">
-      <div *ngFor="let game of detectedGames">
+      <div *ngFor="let game of games">
         <game-cover [game]="game"></game-cover>
       </div>
     </div>
+
     <div fxFlex="0 1 10" fxHide fxShow.gt-lg><!--SPACER--></div>
   </div>
 </div>

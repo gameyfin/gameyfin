@@ -44,6 +44,9 @@ import {A11yModule} from "@angular/cdk/a11y";
 import { MappedGamesTableComponent } from './components/mapped-games-table/mapped-games-table.component';
 import {MatTableFilterModule} from "mat-table-filter";
 import { UnmappedFilesTableComponent } from './components/unmapped-files-table/unmapped-files-table.component';
+import {MatDividerModule} from "@angular/material/divider";
+import {MatListModule} from "@angular/material/list";
+import {MatAutocompleteModule} from "@angular/material/autocomplete";
 
 @NgModule({
   declarations: [
@@ -62,40 +65,43 @@ import { UnmappedFilesTableComponent } from './components/unmapped-files-table/u
     MappedGamesTableComponent,
     UnmappedFilesTableComponent
   ],
-    imports: [
-        BrowserModule,
-        AppRoutingModule,
-        BrowserAnimationsModule,
-        FormsModule,
-        MatFormFieldModule,
-        MatCardModule,
-        MatTabsModule,
-        MatToolbarModule,
-        MatMenuModule,
-        MatIconModule,
-        HttpClientModule,
-        FormsModule,
-        ReactiveFormsModule,
-        MatDialogModule,
-        MatButtonModule,
-        MatInputModule,
-        FlexModule,
-        MatProgressSpinnerModule,
-        MatTableModule,
-        MatPaginatorModule,
-        MatSortModule,
-        MatSnackBarModule,
-        MatGridListModule,
-        FlexLayoutModule,
-        GridModule,
-        YouTubePlayerModule,
-        MatChipsModule,
-        MatTooltipModule,
-        MatSlideToggleModule,
-        MatCheckboxModule,
-        A11yModule,
-        MatTableFilterModule
-    ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatCardModule,
+    MatTabsModule,
+    MatToolbarModule,
+    MatMenuModule,
+    MatIconModule,
+    HttpClientModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatInputModule,
+    FlexModule,
+    MatProgressSpinnerModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatSnackBarModule,
+    MatGridListModule,
+    FlexLayoutModule,
+    GridModule,
+    YouTubePlayerModule,
+    MatChipsModule,
+    MatTooltipModule,
+    MatSlideToggleModule,
+    MatCheckboxModule,
+    A11yModule,
+    MatTableFilterModule,
+    MatDividerModule,
+    MatListModule,
+    MatAutocompleteModule
+  ],
   providers: [
     {
       provide: HTTP_INTERCEPTORS,
