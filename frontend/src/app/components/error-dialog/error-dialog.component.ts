@@ -10,11 +10,7 @@ import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
       <button mat-raised-button color="primary" (click)="onClick()">OK</button>
     </mat-dialog-actions>
   `,
-  styles: [`
-    mat-dialog-content {
-      min-width: 250px;
-    }
-  `]
+  styles: []
 })
 export class ErrorDialogComponent implements OnInit {
 

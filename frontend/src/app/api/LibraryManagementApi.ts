@@ -6,7 +6,7 @@ import {UnmappedFileDto} from "../models/dtos/UnmappedFileDto";
 export interface LibraryManagementApi {
   mapGame(pathToSlugDto: PathToSlugDto): Observable<DetectedGameDto>;
   getUnmappedFiles(): Observable<UnmappedFileDto[]>;
-  confirmGameMapping(slug: string): Observable<DetectedGameDto>;
+  confirmGameMapping(slug: string, confirm: boolean): Observable<DetectedGameDto>;
   deleteGame(slug: string): Observable<Response>;
   deleteUnmappedFile(id: number): Observable<Response>;
 }

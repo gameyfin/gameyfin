@@ -3,17 +3,8 @@
 @import 'src/app/theme/default-theme';
 @import 'src/app/components/library-overview/library-overview.component';
 
-td, th {
-  padding: 16px !important;
-}
-
-table {
-  min-width: 50vw;
-}
-
 mat-tab-group {
   $config: mat.get-color-config($custom-theme);
   $background: map.get($config, background);
   background: mat.get-color-from-palette($background, app-bar);
-
 }

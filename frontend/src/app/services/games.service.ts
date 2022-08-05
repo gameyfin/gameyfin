@@ -54,6 +54,10 @@ export class GamesService implements GamesApi {
     return this.http.get<Map<string, string>>(`${this.apiPath}/game-mappings`);
   }
 
+  removeGameFromCache(slug: string): void {
+    this.cache.delete(slug);
+  }
+
   private cacheGames(gameList: DetectedGameDto[]): void {
     this.cache.clear();
     gameList.forEach(game => this.cache.set(game.slug, game));

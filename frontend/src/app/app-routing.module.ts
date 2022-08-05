@@ -5,6 +5,7 @@ import {NavbarLayoutComponent} from "./layouts/navbar-layout/navbar-layout.compo
 import {LibraryOverviewComponent} from "./components/library-overview/library-overview.component";
 import {GameDetailViewComponent} from "./components/game-detail-view/game-detail-view.component";
 import {LibraryManagementComponent} from "./components/library-management/library-management.component";
+import {MappedGamesTableComponent} from "./components/mapped-games-table/mapped-games-table.component";
 
 const appRoutes: Routes = [
   {
@@ -22,6 +23,10 @@ const appRoutes: Routes = [
       {
         path: 'library-management',
         component: LibraryManagementComponent
+      },
+      {
+        path: 'test',
+        component: MappedGamesTableComponent
       },
       {
         path: '',

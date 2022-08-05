@@ -38,6 +38,12 @@ import {MatChipsModule} from "@angular/material/chips";
 import { LibraryManagementComponent } from './components/library-management/library-management.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MapGameDialogComponent} from "./components/map-game-dialog/map-game-dialog.component";
+import {MatSlideToggleModule} from "@angular/material/slide-toggle";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {A11yModule} from "@angular/cdk/a11y";
+import { MappedGamesTableComponent } from './components/mapped-games-table/mapped-games-table.component';
+import {MatTableFilterModule} from "mat-table-filter";
+import { UnmappedFilesTableComponent } from './components/unmapped-files-table/unmapped-files-table.component';
 
 @NgModule({
   declarations: [
@@ -52,38 +58,44 @@ import {MapGameDialogComponent} from "./components/map-game-dialog/map-game-dial
     GameScreenshotComponent,
     GameVideoComponent,
     LibraryManagementComponent,
-    MapGameDialogComponent
+    MapGameDialogComponent,
+    MappedGamesTableComponent,
+    UnmappedFilesTableComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    BrowserAnimationsModule,
-    FormsModule,
-    MatFormFieldModule,
-    MatCardModule,
-    MatTabsModule,
-    MatToolbarModule,
-    MatMenuModule,
-    MatIconModule,
-    HttpClientModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    MatButtonModule,
-    MatInputModule,
-    FlexModule,
-    MatProgressSpinnerModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatSnackBarModule,
-    MatGridListModule,
-    FlexLayoutModule,
-    GridModule,
-    YouTubePlayerModule,
-    MatChipsModule,
-    MatTooltipModule
-  ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        BrowserAnimationsModule,
+        FormsModule,
+        MatFormFieldModule,
+        MatCardModule,
+        MatTabsModule,
+        MatToolbarModule,
+        MatMenuModule,
+        MatIconModule,
+        HttpClientModule,
+        FormsModule,
+        ReactiveFormsModule,
+        MatDialogModule,
+        MatButtonModule,
+        MatInputModule,
+        FlexModule,
+        MatProgressSpinnerModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSortModule,
+        MatSnackBarModule,
+        MatGridListModule,
+        FlexLayoutModule,
+        GridModule,
+        YouTubePlayerModule,
+        MatChipsModule,
+        MatTooltipModule,
+        MatSlideToggleModule,
+        MatCheckboxModule,
+        A11yModule,
+        MatTableFilterModule
+    ],
   providers: [
     {
       provide: HTTP_INTERCEPTORS,

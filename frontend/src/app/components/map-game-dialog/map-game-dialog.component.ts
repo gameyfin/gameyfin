@@ -27,11 +27,11 @@ export class MapGameDialogComponent implements OnInit {
   ngOnInit() {
   }
 
-  close() {
-    this.dialogRef.close();
-  }
-
   submit(): void {
-    this.libraryManagementService.mapGame(new PathToSlugDto(this.newSlugInput.value, this.path)).subscribe(() => this.close())
+    this.libraryManagementService.mapGame(new PathToSlugDto(this.newSlugInput.value, this.path)).subscribe({
+        next: () => this.dialogRef.close(true),
+        error: () => this.dialogRef.close(false)
+      }
+    )
   }
 }

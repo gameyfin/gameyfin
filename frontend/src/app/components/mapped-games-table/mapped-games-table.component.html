@@ -1,0 +1,50 @@
+<div class="mat-elevation-z8">
+  <table mat-table matSort matTableFilter [dataSource]="dataSource" [exampleEntity]="filter" [debounceTime]="0">
+    <!-- Path column -->
+    <ng-container matColumnDef="path">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Path</th>
+      <td mat-cell *matCellDef="let element"> {{element.path}} </td>
+    </ng-container>
+
+    <!-- Game column -->
+    <ng-container matColumnDef="game">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Game</th>
+      <td mat-cell *matCellDef="let element"> {{element.title}} ({{getFullYearFromTimestamp(element.releaseDate)}})</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>
+        <button mat-icon-button (click)="toggleShowOnlyUnconfirmedMatches()">
+          <mat-icon *ngIf="showOnlyUnconfirmedMatches" matTooltip="Show all game mappings" matTooltipPosition="below" color="warn">playlist_add_check_circle</mat-icon>
+          <mat-icon *ngIf="!showOnlyUnconfirmedMatches" matTooltip="Show only unconfirmed game mappings" matTooltipPosition="below" fontSet="material-icons-outlined">playlist_add_check_circle</mat-icon>
+        </button>
+        <button mat-icon-button (click)="refreshMappedGamesList()">
+          <mat-icon matTooltip="Refresh game list" matTooltipPosition="below">refresh</mat-icon>
+        </button>
+      </th>
+
+      <!-- Action column -->
+      <td mat-cell *matCellDef="let element">
+        <button mat-icon-button (click)="toggleConfirmGameMapping(element)" [color]="element.confirmedMatch ? 'primary' : 'warn'">
+          <mat-icon [matTooltip]="element.confirmedMatch ? 'Unconfirm match':'Confirm match'" matTooltipPosition="below">check</mat-icon>
+        </button>
+        <button mat-icon-button (click)="openCorrectMappingDialog(element)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button (click)="deleteGameMapping(element)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <mat-paginator
+      [length]="dataSource?.data?.length"
+      [pageIndex]="0"
+      [pageSize]="15"
+      [pageSizeOptions]="[10, 15, 25, 50]">
+  </mat-paginator>
+</div>

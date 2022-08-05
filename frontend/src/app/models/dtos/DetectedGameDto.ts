@@ -29,5 +29,5 @@ export class DetectedGameDto {
 
   path!: string;
   diskSize!: number;
-  confirmedMatch!: boolean;
+  confirmedMatch!: boolean | undefined;
 }
