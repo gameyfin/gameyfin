@@ -34,6 +34,7 @@ export class LibraryOverviewComponent implements AfterContentInit {
       detectedGames => {
         if(detectedGames.length === 0) {
           this.gameLibraryIsEmpty = true;
+          this.loading = false;
           return;
         }
 
