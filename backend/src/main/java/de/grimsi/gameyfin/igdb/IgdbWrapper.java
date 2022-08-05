@@ -17,6 +17,8 @@ import javax.annotation.PostConstruct;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -99,6 +101,18 @@ public class IgdbWrapper {
 
         if (gameResult == null) {
             log.warn("Could not find game for title '{}'", searchTerm);
+
+            // Try to remove brackets (and their content) at the end of the search term and search again
+            // Although this process is recursive, we will only end up with a maximum recursion depth of two
+            Pattern brackets = Pattern.compile ("[()<>{}\\[\\]]");
+            Matcher hasBrackets = brackets.matcher(searchTerm);
+
+            if(hasBrackets.find()) {
+                String searchTermWithoutBrackets = searchTerm.split(brackets.pattern())[0].trim();
+                log.warn("Trying again with search term '{}'", searchTermWithoutBrackets);
+                return searchForGameByTitle(searchTermWithoutBrackets);
+            }
+
             return Optional.empty();
         }
 
@@ -121,6 +135,7 @@ public class IgdbWrapper {
         Optional<Igdb.Game> srTitleEndsWithMatch = games.stream().filter(s -> s.getName().endsWith(searchTerm)).findFirst();
         if (srTitleEndsWithMatch.isPresent()) return srTitleEndsWithMatch;
 
+        // Just return the first result and hope that IGDBs search algorithm is somewhat helpful this time
         return Optional.of(games.get(0));
     }
 
