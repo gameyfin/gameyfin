@@ -41,23 +41,23 @@
         </div>
       </div>
     </div>
+
     <div fxLayout="column" fxLayoutGap="16px">
+
       <div *ngIf="game.screenshotIds !== undefined && game.screenshotIds.length > 0">
         <h2>Screenshots</h2>
-        <div fxLayout="row wrap" fxLayoutGap="8px">
-          <div *ngFor="let screenshotId of game.screenshotIds">
-            <game-screenshot [screenshotId]="screenshotId"></game-screenshot>
-          </div>
+        <div fxLayout="row wrap" fxLayoutGap="8px grid">
+          <game-screenshot *ngFor="let screenshotId of game.screenshotIds" [screenshotId]="screenshotId" style="margin-bottom: -6px"></game-screenshot>
         </div>
       </div>
+
       <div *ngIf="game.videoIds !== undefined && game.videoIds.length > 0">
         <h2>Videos</h2>
-        <div fxLayout="row wrap" fxLayoutGap="8px">
-          <div *ngFor="let videoId of game.videoIds">
-            <game-video [videoId]="videoId" [width]="555" [height]="312"></game-video>
-          </div>
+        <div fxLayout="row wrap" fxLayoutGap="8px grid">
+          <game-video *ngFor="let videoId of game.videoIds" [videoId]="videoId" [width]="555" [height]="312"></game-video>
         </div>
       </div>
+
     </div>
   </div>
 </div>
