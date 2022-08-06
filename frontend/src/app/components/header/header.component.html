@@ -5,12 +5,12 @@
 
   <span class="spacer"></span>
 
-  <button mat-icon-button matTooltip="Toggle dark mode" (click)="toggleTheme()">
-    <mat-icon>brightness_medium</mat-icon>
-  </button>
-
   <button mat-icon-button matTooltip="Reload library" (click)="reloadLibrary()" *ngIf="onLibraryScreen()">
     <mat-icon>refresh</mat-icon>
+  </button>
+
+  <button mat-icon-button matTooltip="Toggle dark mode" (click)="toggleTheme()">
+    <mat-icon>brightness_medium</mat-icon>
   </button>
 
   <button mat-icon-button matTooltip="Scan library" (click)="scanLibrary()" *ngIf="onLibraryManagementScreen()">

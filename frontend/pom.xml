@@ -9,7 +9,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>frontend</artifactId>
+  <artifactId>gameyfin-frontend</artifactId>
 
   <packaging>jar</packaging>
 
@@ -72,8 +72,8 @@
 
     <resources>
       <resource>
-        <!-- we copy the content of the frontend directory in the final artifact -->
-        <directory>dist/frontend</directory>
+        <directory>./dist/frontend</directory>
+        <targetPath>static</targetPath>
       </resource>
     </resources>
   </build>

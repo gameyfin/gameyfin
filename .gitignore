@@ -35,3 +35,4 @@ build/
 
 ### Custom ###
 /data/
+/backend/src/main/resources/static/

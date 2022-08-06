@@ -10,7 +10,9 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>backend</artifactId>
+    <artifactId>gameyfin-backend</artifactId>
+
+    <packaging>jar</packaging>
 
     <properties>
         <java.version>18</java.version>
@@ -23,6 +25,14 @@
     </properties>
 
     <dependencies>
+        <!-- Frontend -->
+        <dependency>
+            <groupId>de.grimsi</groupId>
+            <artifactId>gameyfin-frontend</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -133,9 +143,11 @@
                     <include>**/*.js</include>
                     <include>**/*.css</include>
                     <include>**/*.html</include>
+                    <include>**/*.ico</include>
                 </includes>
             </resource>
         </resources>
+
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -151,30 +163,26 @@
             </plugin>
 
             <!-- Import the compiled frontend -->
-            <!--<plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>merge</id>
-                        <phase>initialize</phase>
+                        <id>copy-resources</id>
+                        <phase>validate</phase>
                         <goals>
-                            <goal>unpack</goal>
+                            <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>de.grimsi.gameyfin</groupId>
-                                    <artifactId>frontend</artifactId>
-                                    <version>${gameyfin-frontend.version}</version>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/classes/static</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
+                            <outputDirectory>${basedir}/src/main/resources/static</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.parent.basedir}/frontend/dist/frontend/</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>-->
+            </plugin>
 
             <!-- Protobuf source generation plugin -->
             <plugin>
