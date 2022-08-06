@@ -36,3 +36,4 @@ build/
 ### Custom ###
 /data/
 /backend/src/main/resources/static/
+/docker/docker-compose.yml

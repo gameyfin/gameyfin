@@ -1,0 +1,14 @@
+version: "3"
+services:
+  gameyfin:
+    image: grimsi/gameyfin:latest
+    container_name: gameyfin
+    environment:
+      - gameyfin.user=<your username here>
+      - gameyfin.password=<your password here>
+      - ameyfin.igdb.api.client-id=<your twitch client-id here>
+      - gameyfin.igdb.api.client-secret=<your twitch client-secret here>
+    volumes:
+      - <path to your game library>:/opt/gameyfin-library
+    ports:
+      - "8080:8080"
