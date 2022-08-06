@@ -7,7 +7,7 @@
     <parent>
         <artifactId>gameyfin</artifactId>
         <groupId>de.grimsi</groupId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <artifactId>backend</artifactId>
@@ -15,13 +15,11 @@
     <properties>
         <java.version>18</java.version>
         <springdoc-openapi-ui.version>1.6.9</springdoc-openapi-ui.version>
-        <resilience4j-reactor.version>1.7.1</resilience4j-reactor.version>
+        <resilience4j.version>1.7.1</resilience4j.version>
         <commons-io.version>2.11.0</commons-io.version>
-        <protoc.plugin.version>3.11.4</protoc.plugin.version>
-        <protobuf-java.version>3.21.2</protobuf-java.version>
-        <gameyfin-frontend.version>0.0.1-SNAPSHOT</gameyfin-frontend.version>
         <commons-compress.version>1.21</commons-compress.version>
-        <java-jwt.version>4.0.0</java-jwt.version>
+        <protoc.plugin.version>3.11.4</protoc.plugin.version>
+        <protobuf-java.version>3.21.3</protobuf-java.version>
     </properties>
 
     <dependencies>
@@ -50,17 +48,17 @@
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-reactor</artifactId>
-            <version>${resilience4j-reactor.version}</version>
+            <version>${resilience4j.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-ratelimiter</artifactId>
-            <version>${resilience4j-reactor.version}</version>
+            <version>${resilience4j.version}</version>
         </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-bulkhead</artifactId>
-            <version>${resilience4j-reactor.version}</version>
+            <version>${resilience4j.version}</version>
         </dependency>
 
         <!-- Security -->
@@ -123,6 +121,21 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.yml</include>
+                    <include>**/*.yaml</include>
+                    <include>**/*.txt</include>
+                    <include>**/*.js</include>
+                    <include>**/*.css</include>
+                    <include>**/*.html</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>

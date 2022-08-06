@@ -1,15 +1,8 @@
 gameyfin:
   user: admin
-  password: 112
-  #root: C:\Projects\privat\gameyfin-library
-  root: \\NAS-Simon\Öffentlich\Spiele
+  password: password
   cache: ${gameyfin.root}\.gameyfin\cache
   db: ${gameyfin.root}\.gameyfin\db
-  #db: ./data
-  igdb:
-    api:
-      client-id: 23l3l5qshx4dwjuao6yb8jyf1qrd08
-      client-secret: hf4iivmkzgne552j17p2d64xm03die
 
 logging:
   level:

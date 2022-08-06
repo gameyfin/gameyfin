@@ -1,8 +1,10 @@
 import {Component, Inject, OnInit} from '@angular/core';
-import {FormBuilder, FormControl} from "@angular/forms";
 import {LibraryManagementService} from "../../services/library-management.service";
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {PathToSlugDto} from "../../models/dtos/PathToSlugDto";
+import {DialogService} from "../../services/dialog.service";
+import {ApiErrorResponse} from "../../models/dtos/ApiErrorResponse";
+import {AutocompleteSuggestionDto} from "../../models/dtos/AutocompleteSuggestionDto";
 
 @Component({
   selector: 'app-map-game-dialog',
@@ -12,26 +14,71 @@ import {PathToSlugDto} from "../../models/dtos/PathToSlugDto";
 export class MapGameDialogComponent implements OnInit {
 
   path: string;
-  currentSlug?: string;
-  newSlugInput: FormControl;
+  slug: string;
 
-  constructor(private fb: FormBuilder,
-              private libraryManagementService: LibraryManagementService,
+  autocompleteSuggestions: AutocompleteSuggestionDto[] = [];
+
+  submitLoading: boolean = false;
+  suggestionsLoading: boolean = false;
+
+  constructor(private libraryManagementService: LibraryManagementService,
+              private dialogService: DialogService,
               public dialogRef: MatDialogRef<MapGameDialogComponent>,
               @Inject(MAT_DIALOG_DATA) data: any) {
     this.path = data.path;
-    this.currentSlug = data.slug;
-    this.newSlugInput = new FormControl(this.currentSlug);
+    this.slug = data.slug ?? '';
   }
 
   ngOnInit() {
+    this.loadInitialSuggestions();
   }
 
   submit(): void {
-    this.libraryManagementService.mapGame(new PathToSlugDto(this.newSlugInput.value, this.path)).subscribe({
+    this.submitLoading = true;
+    this.libraryManagementService.mapGame(new PathToSlugDto(this.slug, this.path)).subscribe({
         next: () => this.dialogRef.close(true),
-        error: () => this.dialogRef.close(false)
+        error: (error: ApiErrorResponse) => {
+          this.dialogRef.close(false);
+          this.dialogService.showErrorDialog(error.error.message);
+        }
       }
     )
+  }
+
+  loadInitialSuggestions(): void {
+    this.suggestionsLoading = true;
+
+    // Extract the last path element (folder name / file name)
+    let extractedTitleFromPath: string = this.path.match(/([^\\/]*)[\\/]*$/)![1];
+    // Match it until the first special characters
+    extractedTitleFromPath = extractedTitleFromPath.match(/^[a-zA-Z0-9:\- ]+/)![0];
+
+    if(extractedTitleFromPath == null) {
+      this.suggestionsLoading = false;
+      return;
+    }
+
+    this.libraryManagementService.getAutocompleteSuggestions(extractedTitleFromPath, 10).subscribe({
+      next: suggestions => {
+        this.autocompleteSuggestions = suggestions;
+        this.suggestionsLoading = false;
+      },
+      error: () => this.suggestionsLoading = false
+    })
+  }
+
+  loadSuggestions(): void {
+    this.suggestionsLoading = true;
+    this.libraryManagementService.getAutocompleteSuggestions(this.slug, 50).subscribe({
+      next: suggestions => {
+        this.autocompleteSuggestions = suggestions;
+        this.suggestionsLoading = false;
+      },
+      error: () => this.suggestionsLoading = false
+    })
+  }
+
+  getFullYearFromTimestamp(timestamp: number): number {
+    return new Date(timestamp).getFullYear();
   }
 }

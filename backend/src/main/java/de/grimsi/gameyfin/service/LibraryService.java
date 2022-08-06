@@ -1,12 +1,14 @@
 package de.grimsi.gameyfin.service;
 
 import com.igdb.proto.Igdb;
+import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,21 +26,15 @@ import static de.grimsi.gameyfin.util.FilenameUtil.hasGameArchiveExtension;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class LibraryService {
 
     @Value("${gameyfin.root}")
     private String rootFolderPath;
 
-    @Value("${gameyfin.cache}")
-    private String cacheFolderPath;
-    @Autowired
-    private IgdbWrapper igdbWrapper;
-
-    @Autowired
-    private DetectedGameRepository detectedGameRepository;
-
-    @Autowired
-    private UnmappableFileRepository unmappableFileRepository;
+    private final IgdbWrapper igdbWrapper;
+    private final DetectedGameRepository detectedGameRepository;
+    private final UnmappableFileRepository unmappableFileRepository;
 
     public List<Path> getGameFiles() {
 
@@ -107,5 +103,9 @@ public class LibraryService {
 
         log.info("Scan finished in {} seconds: Found {} new games, deleted {} games, could not map {} files/folders, {} games total.",
                 (int) stopWatch.getTotalTimeSeconds(), newDetectedGames.size(), deletedGames.size() + deletedUnmappableFiles.size(), newUnmappedFilesCounter.get(), detectedGameRepository.count());
+    }
+
+    public List<AutocompleteSuggestionDto> getAutocompleteSuggestions(String searchTerm, int limit) {
+        return igdbWrapper.findPossibleMatchingTitles(searchTerm, limit);
     }
 }

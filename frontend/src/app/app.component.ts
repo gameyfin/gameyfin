@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
-import {ActivatedRoute, NavigationEnd, Router} from "@angular/router";
+import {Component} from '@angular/core';
+import {NavigationEnd, Router} from "@angular/router";
+import {Config} from "./config/Config";
+import {Title} from "@angular/platform-browser";
 
 @Component({
   selector: 'app-root',
@@ -7,16 +9,16 @@ import {ActivatedRoute, NavigationEnd, Router} from "@angular/router";
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'frontend';
-  mySubscription;
 
-  constructor(private router: Router, private activatedRoute: ActivatedRoute){
+  constructor(private router: Router, private title: Title) {
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
-    this.mySubscription = this.router.events.subscribe((event) => {
+    this.router.events.subscribe((event) => {
       if (event instanceof NavigationEnd) {
         // Trick the Router into believing it's last link wasn't previously loaded
         this.router.navigated = false;
       }
     });
+
+    title.setTitle(Config.baseTitle);
   }
 }

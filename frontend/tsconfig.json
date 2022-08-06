@@ -29,6 +29,12 @@
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "strictTemplates": true,
+    "extendedDiagnostics": {
+      "checks": {
+        // Currently buggy, see https://github.com/angular/angular/issues/46918
+        "optionalChainNotNullable": "suppress"
+      }
+    }
   }
 }

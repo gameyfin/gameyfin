@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.rest;
 import de.grimsi.gameyfin.service.DownloadService;
 import de.grimsi.gameyfin.service.LibraryService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +21,7 @@ import java.util.List;
 @RequestMapping("/v1/library")
 @PreAuthorize("hasAuthority('ADMIN_API_ACCESS')")
 @RequiredArgsConstructor
+@Slf4j
 public class LibraryController {
 
     private final LibraryService libraryService;
@@ -37,6 +39,8 @@ public class LibraryController {
         downloadService.downloadGameCoversFromIgdb();
         downloadService.downloadGameScreenshotsFromIgdb();
         downloadService.downloadCompanyLogosFromIgdb();
+
+        log.info("Downloading images completed.");
     }
 
     @GetMapping(value = "/files", produces = MediaType.APPLICATION_JSON_VALUE)

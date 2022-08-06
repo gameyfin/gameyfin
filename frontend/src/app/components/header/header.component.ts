@@ -53,7 +53,12 @@ export class HeaderComponent {
 
   scanLibrary(): void {
     this.libraryService.scanLibrary().pipe(timeInterval()).subscribe({
-      next: value => this.snackBar.open(`Library scan completed in ${Math.trunc(value.interval / 1000)} seconds.`, undefined, {duration: 2000}),
+      next: value => {
+        // Refresh the current page "angular style"
+        this.router.navigate([this.router.url]).then(() =>
+          this.snackBar.open(`Library scan completed in ${Math.trunc(value.interval / 1000)} seconds.`, undefined, {duration: 5000})
+         )
+      },
       error: error => this.snackBar.open(`Error while scanning library: ${error.error.message}`, undefined, {duration: 5000})
     })
     this.snackBar.open('Library scan started in the background. This could take some time.\nYou will get another notification once it\'s done', undefined, {duration: 5000})

@@ -6,6 +6,7 @@ import {PathToSlugDto} from "../models/dtos/PathToSlugDto";
 import {UnmappedFileDto} from "../models/dtos/UnmappedFileDto";
 import {LibraryManagementApi} from "../api/LibraryManagementApi";
 import {GamesService} from "./games.service";
+import {AutocompleteSuggestionDto} from "../models/dtos/AutocompleteSuggestionDto";
 
 @Injectable({
   providedIn: 'root'
@@ -42,4 +43,11 @@ export class LibraryManagementService implements LibraryManagementApi {
     return this.http.delete<Response>(`${this.apiPath}/delete-unmapped-file/${id}`);
   }
 
+  getAutocompleteSuggestions(searchTerm: string, limit: number): Observable<AutocompleteSuggestionDto[]> {
+    let queryParams = new HttpParams();
+    queryParams = queryParams.append("searchTerm", searchTerm);
+    queryParams = queryParams.append("limit", limit);
+
+    return this.http.get<AutocompleteSuggestionDto[]>(`${this.apiPath}/autocomplete-suggestions`, {params:queryParams})
+  }
 }

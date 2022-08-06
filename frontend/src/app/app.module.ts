@@ -47,6 +47,8 @@ import { UnmappedFilesTableComponent } from './components/unmapped-files-table/u
 import {MatDividerModule} from "@angular/material/divider";
 import {MatListModule} from "@angular/material/list";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
+import { NgModelChangeDebouncedDirective } from './directives/ng-model-change-debounced.directive';
+import { FooterComponent } from './components/footer/footer.component';
 
 @NgModule({
   declarations: [
@@ -63,7 +65,9 @@ import {MatAutocompleteModule} from "@angular/material/autocomplete";
     LibraryManagementComponent,
     MapGameDialogComponent,
     MappedGamesTableComponent,
-    UnmappedFilesTableComponent
+    UnmappedFilesTableComponent,
+    NgModelChangeDebouncedDirective,
+    FooterComponent
   ],
   imports: [
     BrowserModule,

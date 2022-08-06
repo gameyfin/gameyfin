@@ -2,7 +2,9 @@ package de.grimsi.gameyfin.igdb;
 
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
+import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
+import de.grimsi.gameyfin.mapper.GameMapper;
 import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -89,6 +92,18 @@ public class IgdbWrapper {
         if (gameResult == null) return Optional.empty();
 
         return Optional.of(gameResult.getGames(0));
+    }
+
+    public List<AutocompleteSuggestionDto> findPossibleMatchingTitles(String searchTerm, int limit) {
+        Igdb.GameResult gameResult = queryIgdbApi(
+                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
+                "search \"%s\"; fields slug,name,first_release_date; where platforms = (%s); limit %d;".formatted(searchTerm, preferredPlatforms, limit),
+                Igdb.GameResult.class
+        );
+
+        if(gameResult == null) return Collections.emptyList();
+
+        return gameResult.getGamesList().stream().map(GameMapper::toAutocompleteSuggestionDto).toList();
     }
 
     public Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {

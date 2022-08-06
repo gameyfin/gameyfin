@@ -1,12 +1,14 @@
 package de.grimsi.gameyfin.rest;
 
 
+import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.dto.PathToSlugDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.service.DownloadService;
 import de.grimsi.gameyfin.service.GameService;
+import de.grimsi.gameyfin.service.LibraryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +24,8 @@ public class LibraryManagementController {
 
     private final GameService gameService;
     private final DownloadService downloadService;
+
+    private final LibraryService libraryService;
 
     @DeleteMapping(value = "/delete-game/{slug}", produces = MediaType.APPLICATION_JSON_VALUE)
     public void deleteGame(@PathVariable String slug) {
@@ -52,5 +56,10 @@ public class LibraryManagementController {
     @GetMapping(value = "/unmapped-files", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<UnmappableFile> getUnmappedFiles() {
         return gameService.getAllUnmappedFiles();
+    }
+
+    @GetMapping(value = "/autocomplete-suggestions", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<AutocompleteSuggestionDto> getAutocompleteSuggestions(@RequestParam String searchTerm, @RequestParam(required = false, defaultValue = "10") int limit) {
+        return libraryService.getAutocompleteSuggestions(searchTerm, limit);
     }
 }

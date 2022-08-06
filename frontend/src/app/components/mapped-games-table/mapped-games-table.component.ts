@@ -74,7 +74,9 @@ export class MappedGamesTableComponent implements AfterViewInit, OnChanges {
   }
 
   openCorrectMappingDialog(mappedGame: DetectedGameDto): void {
-    this.dialogService.correctGameMappingDialog(mappedGame);
+    this.dialogService.correctGameMappingDialog(mappedGame).subscribe(gameSuccessfullyMapped => {
+      if (gameSuccessfullyMapped) this.refreshMappedGamesList();
+    })
   }
 
   private refreshData(newData: DetectedGameDto[]): void {

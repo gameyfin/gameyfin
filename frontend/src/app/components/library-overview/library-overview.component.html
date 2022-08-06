@@ -28,8 +28,8 @@
       <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="6px">
         <mat-icon matTooltip="Search for games by title">search</mat-icon>
         <mat-form-field fxFlex="80" class="filter-category-content">
-          <input type="text" matInput [matAutocomplete]="auto" [(ngModel)]="searchTerm" (ngModelChange)="filterGames()">
-          <mat-autocomplete #auto="matAutocomplete">
+          <input type="text" matInput [matAutocomplete]="librarySearchAutocomplete" [(ngModel)]="searchTerm" (ngModelChange)="filterGames()">
+          <mat-autocomplete #librarySearchAutocomplete="matAutocomplete">
             <mat-option *ngFor="let game of games" [value]="game.title">
               {{game.title}}
             </mat-option>

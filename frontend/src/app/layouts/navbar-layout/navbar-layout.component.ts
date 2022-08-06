@@ -3,16 +3,23 @@ import {Component, OnInit} from '@angular/core';
 @Component({
   selector: 'app-navbar-layout',
   template: `
-    <div fxFlexFill>
-      <app-header></app-header>
-      <div fxLayout="column" fxLayoutAlign="space-around stretch">
-        <div fxFlex>
-          <router-outlet class="hidden-router"></router-outlet>
-        </div>
+    <div class="main-container" fxLayout="column">
+      <div fxFlex="none" style="position: sticky; top: 0; z-index: 99999">
+        <app-header></app-header>
+      </div>
+      <div fxFlex>
+        <router-outlet></router-outlet><!-- class="hidden-router" -->
+      </div>
+      <div fxLayout="row" fxLayoutAlign="center center">
+        <app-footer></app-footer>
       </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    .main-container {
+      min-height: 100vh;
+    }
+  `]
 })
 export class NavbarLayoutComponent implements OnInit {
 

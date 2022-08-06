@@ -1,4 +1,4 @@
 export class Config {
-  public static baseTitle = 'Game-Radar';
+  public static baseTitle = 'Gameyfin';
   public static apiBasePath = '/v1';
 }

@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.mapper;
 
 import com.igdb.proto.Igdb;
+import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.service.LibraryService;
@@ -57,6 +58,14 @@ public class GameMapper {
                 .slug(game.getSlug())
                 .title(game.getTitle())
                 .coverId(game.getCoverId())
+                .build();
+    }
+
+    public static AutocompleteSuggestionDto toAutocompleteSuggestionDto(Igdb.Game game) {
+        return AutocompleteSuggestionDto.builder()
+                .slug(game.getSlug())
+                .title(game.getName())
+                .releaseDate(ProtobufUtil.toInstant(game.getFirstReleaseDate()))
                 .build();
     }
 

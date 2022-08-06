@@ -3,13 +3,28 @@
   <form fxLayout="column" fxLayoutAlign="space-evenly stretch">
 
     <p>Path: {{path}}</p>
+
     <mat-form-field>
-      <input matInput type="text" placeholder="IGDB Slug" [formControl]="newSlugInput" [value]="currentSlug"/>
+      <div fxLayout="row">
+        <input type="text" placeholder="IGDB Slug" matInput [matAutocomplete]="igdbSlugAutocomplete" [(ngModel)]="slug" (ngModelChangeDebounced)="loadSuggestions()" [ngModelOptions]="{standalone: true}">
+        <mat-spinner *ngIf="suggestionsLoading" [diameter]="16"></mat-spinner>
+      </div>
+
+      <mat-autocomplete #igdbSlugAutocomplete="matAutocomplete">
+        <mat-option *ngFor="let suggestion of autocompleteSuggestions" [value]="suggestion.slug">
+          {{suggestion.title}} ({{getFullYearFromTimestamp(suggestion.releaseDate)}})
+        </mat-option>
+      </mat-autocomplete>
     </mat-form-field>
 
   </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button mat-raised-button [mat-dialog-close]="false" color="accent">Cancel</button>
-  <button mat-raised-button (click)="submit()" [disabled]="newSlugInput?.value?.length < 1" color="primary">OK</button>
+  <button mat-raised-button [mat-dialog-close]="false" color="accent" [disabled]="submitLoading">Cancel</button>
+  <button mat-raised-button (click)="submit()" [disabled]="slug.length < 1 || submitLoading" color="primary">
+    <span *ngIf="!submitLoading">OK</span>
+    <div *ngIf="submitLoading" fxLayout="column" fxLayoutAlign="center center" style="height: 36px;">
+      <mat-spinner [diameter]="24"></mat-spinner>
+    </div>
+  </button>
 </mat-dialog-actions>
