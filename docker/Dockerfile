@@ -13,4 +13,4 @@ COPY ${JAR_FILE} /opt/gameyfin/gameyfin.jar
 
 WORKDIR /opt/gameyfin
 
-ENTRYPOINT ["java", "-Dspring.config.name=application,gameyfin,database,secure", "-jar", "gameyfin.jar"]
+ENTRYPOINT ["java", "-jar", "gameyfin.jar"]
