@@ -107,7 +107,7 @@ public class GameMapper {
 
         stopWatch.stop();
 
-        log.info("Calculated disk size for game {} in {} seconds", g.getName(), (int) stopWatch.getTotalTimeSeconds());
+        log.info("Calculated disk size for game '{}' in {} seconds", g.getName(), (int) stopWatch.getTotalTimeSeconds());
         return fileSize;
     }
 }
