@@ -38,10 +38,9 @@ Since Gameyfin loads information from IGDB, you need to register yourself there.
 ### Bare metal
 
 1. Make sure you have a JRE or JDK with version 18 or greater installed
-2. Download the latest .jar and `gameyfin.properties` file from the releases page
+2. Download the latest `gameyfin.jar` and `gameyfin.properties` file from the releases page
 3. Edit the config options in the `gameyfin.properties` file
-4. Use the following command to start Gameyfin: `java "-Dspring.config.name=application,database,gameyfin,secure" -jar <name of the downloaded jar file>.jar`
-   (note the quotation marks around the first argument)
+4. Use the following command to start Gameyfin: `java -jar gameyfin.jar`
 5. Open the address of your Gameyfin host in your browser, Gameyfin runs under port 8080 by default
 
 ## Screenshots
