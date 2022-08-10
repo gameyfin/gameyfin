@@ -7,7 +7,7 @@
     <parent>
         <artifactId>gameyfin</artifactId>
         <groupId>de.grimsi</groupId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>gameyfin-backend</artifactId>
@@ -131,6 +131,7 @@
     </dependencies>
 
     <build>
+        <finalName>gameyfin-${project.parent.version}</finalName>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/resources</directory>

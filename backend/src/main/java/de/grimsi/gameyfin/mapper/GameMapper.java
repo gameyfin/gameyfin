@@ -8,9 +8,12 @@ import de.grimsi.gameyfin.service.LibraryService;
 import de.grimsi.gameyfin.util.ProtobufUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StopWatch;
 import org.springframework.util.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -49,7 +52,7 @@ public class GameMapper {
                 .themes(ThemeMapper.toThemes(g.getThemesList()))
                 .playerPerspectives(PlayerPerspectiveMapper.toPlayerPerspectives(g.getPlayerPerspectivesList()))
                 .path(path.toString())
-                .diskSize(calculateDiskSize(path))
+                .diskSize(calculateDiskSize(g, path))
                 .build();
     }
 
@@ -93,15 +96,18 @@ public class GameMapper {
         return modes.stream().mapToInt(Igdb.MultiplayerMode::getOnlinecoopmax).max().orElse(0);
     }
 
-    private static long calculateDiskSize(Path path) {
-        try(Stream<Path> pathStream = Files.walk(path)) {
-            return pathStream
-                    .filter(p -> p.toFile().isFile())
-                    .mapToLong(p -> p.toFile().length())
-                    .sum();
-        } catch (IOException e) {
-            log.error("Unable to calculate size for path '{}'.", path);
-            return -1;
-        }
+    private static long calculateDiskSize(Igdb.Game g, Path path) {
+        StopWatch stopWatch = new StopWatch();
+        log.info("Calculating disk size for game '{}'...", g.getName());
+
+        stopWatch.start();
+
+        // Some benchmarks I did have shown that trying to parallelize this process makes it slower instead of faster
+        long fileSize = FileUtils.sizeOfDirectory(path.toFile());
+
+        stopWatch.stop();
+
+        log.info("Calculated disk size for game '{}' in {} seconds", g.getName(), (int) stopWatch.getTotalTimeSeconds());
+        return fileSize;
     }
 }

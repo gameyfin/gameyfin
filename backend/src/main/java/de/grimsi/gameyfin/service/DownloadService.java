@@ -2,18 +2,19 @@ package de.grimsi.gameyfin.service;
 
 import de.grimsi.gameyfin.entities.Company;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.exceptions.DownloadAbortedException;
 import de.grimsi.gameyfin.igdb.IgdbApiProperties;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.data.repository.core.RepositoryCreationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -63,7 +64,7 @@ public class DownloadService {
     public String getDownloadFileName(DetectedGame g) {
         Path path = Path.of(g.getPath());
 
-        if(!path.toFile().isDirectory()) return getFilenameWithExtension(path);
+        if (!path.toFile().isDirectory()) return getFilenameWithExtension(path);
         return getFilenameWithExtension(path) + ".zip";
     }
 
@@ -87,8 +88,16 @@ public class DownloadService {
 
         Path path = Path.of(game.getPath());
 
-        if(path.toFile().isDirectory()) {
-            downloadFilesAsZip(path, outputStream);
+        if (path.toFile().isDirectory()) {
+
+            try {
+                downloadFilesAsZip(path, outputStream);
+            } catch(DownloadAbortedException e) {
+                stopWatch.stop();
+                log.info("Download of game {} was aborted by client after {} seconds", game.getTitle(), (int) stopWatch.getTotalTimeSeconds());
+                return;
+            }
+
         } else {
             downloadFile(path, outputStream);
         }
@@ -97,7 +106,6 @@ public class DownloadService {
 
         log.info("Downloaded game files of {} in {} seconds.", game.getTitle(), (int) stopWatch.getTotalTimeSeconds());
     }
-
 
 
     public void downloadGameCoversFromIgdb() {
@@ -163,7 +171,7 @@ public class DownloadService {
     }
 
     private void downloadFilesAsZip(Path path, OutputStream outputStream) {
-        ZipOutputStream zos = new ZipOutputStream(outputStream){{
+        ZipOutputStream zos = new ZipOutputStream(outputStream) {{
             def.setLevel(Deflater.NO_COMPRESSION);
         }};
 
@@ -180,6 +188,9 @@ public class DownloadService {
             });
 
             zos.close();
+        } catch (ClientAbortException e) {
+            // Aborted downloads will be handled gracefully
+            throw new DownloadAbortedException();
         } catch (IOException e) {
             log.error("Error while zipping files:", e);
         }
