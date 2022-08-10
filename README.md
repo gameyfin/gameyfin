@@ -1,3 +1,5 @@
+![Gameyfin Logo](assets/Gameyfin_Logo_White_Border.svg | height=256px)
+
 # Gameyfin
 A simple game library manager.
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
