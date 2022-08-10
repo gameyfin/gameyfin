@@ -1,4 +1,4 @@
-![Gameyfin Logo](assets/Gameyfin_Logo_White_Border.svg | height=256px)
+<img src="https://raw.githubusercontent.com/grimsi/gameyfin/v1.0.1/assets/Gameyfin_Logo_White_Border.svg" data-canonical-src="https://gyazo.com/eb5c5741b6a9a16c692170a41a49c858.png" height="128px" alt="Gameyfin Logo"/>
 
 # Gameyfin
 A simple game library manager.
