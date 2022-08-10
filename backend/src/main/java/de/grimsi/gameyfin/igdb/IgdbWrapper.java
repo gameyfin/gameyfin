@@ -38,6 +38,9 @@ public class IgdbWrapper {
     @Autowired
     private WebClient.Builder webclientBuilder;
 
+    @Autowired
+    private WebClientConfig webClientConfig;
+
     private WebClient twitchApiClient;
 
     private WebClient igdbApiClient;
@@ -173,8 +176,8 @@ public class IgdbWrapper {
                 .bodyValue(query)
                 .retrieve()
                 .bodyToMono(responseClass)
-                .transformDeferred(BulkheadOperator.of(WebClientConfig.IGDB_CONCURRENCY_LIMITER))
-                .transformDeferred(RateLimiterOperator.of(WebClientConfig.IGDB_RATE_LIMITER))
+                .transformDeferred(BulkheadOperator.of(webClientConfig.getIgdbConcurrencyLimiter()))
+                .transformDeferred(RateLimiterOperator.of(webClientConfig.getIgdbRateLimiter()))
                 .block();
     }
 }
