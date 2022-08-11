@@ -1,7 +1,13 @@
-<img src="https://raw.githubusercontent.com/grimsi/gameyfin/v1.0.1/assets/Gameyfin_Logo_White_Border.svg" data-canonical-src="https://gyazo.com/eb5c5741b6a9a16c692170a41a49c858.png" height="128px" alt="Gameyfin Logo"/>
+<div align="center">
+  <img src="assets/Gameyfin_Logo_White_Border.svg" height="128px" width="auto" alt="Gameyfin Logo">
+  <h1>Gameyfin</h1>
+  <p align="center">A simple game library manager.</p>
+</div>
 
-# Gameyfin
-A simple game library manager.
+<img />
+
+# Overview
+
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 
 ## Features
