@@ -2,7 +2,7 @@ gameyfin:
   user:
   password:
 
-  root: //NAS-Simon/Öffentlich/Spiele, C:/gameyfin-library
+  root:
 
   db: ./.gameyfin/db
   cache: ./.gameyfin/cache
