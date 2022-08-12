@@ -10,14 +10,17 @@ import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -30,24 +33,28 @@ import static de.grimsi.gameyfin.util.FilenameUtil.hasGameArchiveExtension;
 public class LibraryService {
 
     @Value("${gameyfin.root}")
-    private String rootFolderPath;
+    private List<String> libraryFolders;
 
     private final IgdbWrapper igdbWrapper;
     private final DetectedGameRepository detectedGameRepository;
     private final UnmappableFileRepository unmappableFileRepository;
 
     public List<Path> getGameFiles() {
+        List<Path> gamefiles = new ArrayList<>();
 
-        Path rootFolder = Path.of(rootFolderPath);
+        libraryFolders.parallelStream().map(Path::of).forEach(folder -> {
+                    try (Stream<Path> stream = Files.list(folder)) {
+                        // return all sub-folders (non-recursive) and files that have an extension that indicates that they are a downloadable file
+                        List<Path> gameFilesFromThisFolder = stream.filter(p -> Files.isDirectory(p) || hasGameArchiveExtension(p)).toList();
+                        gamefiles.addAll(gameFilesFromThisFolder);
 
-        try (Stream<Path> stream = Files.list(rootFolder)) {
-            // return all sub-folders (non-recursive) and files that have an extension that indicates that they are a downloadable file
-            return stream
-                    .filter(p -> Files.isDirectory(p) || hasGameArchiveExtension(p))
-                    .toList();
-        } catch (IOException e) {
-            throw new RuntimeException("Error while opening root folder", e);
-        }
+                    } catch (IOException e) {
+                        throw new RuntimeException("Error while opening library folder '%s'".formatted(folder), e);
+                    }
+                }
+        );
+
+        return gamefiles;
     }
 
     public void scanGameLibrary() {
