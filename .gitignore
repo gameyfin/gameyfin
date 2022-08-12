@@ -37,3 +37,4 @@ build/
 /data/
 /backend/src/main/resources/static/
 /docker/docker-compose.yml
+/.gameyfin/

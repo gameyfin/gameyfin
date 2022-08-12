@@ -17,10 +17,7 @@ import org.springframework.util.StopWatch;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -42,7 +39,8 @@ public class LibraryService {
     public List<Path> getGameFiles() {
         List<Path> gamefiles = new ArrayList<>();
 
-        libraryFolders.parallelStream().map(Path::of).forEach(folder -> {
+        libraryFolders.parallelStream().map(Path::of).forEach(
+                folder -> {
                     try (Stream<Path> stream = Files.list(folder)) {
                         // return all sub-folders (non-recursive) and files that have an extension that indicates that they are a downloadable file
                         List<Path> gameFilesFromThisFolder = stream.filter(p -> Files.isDirectory(p) || hasGameArchiveExtension(p)).toList();

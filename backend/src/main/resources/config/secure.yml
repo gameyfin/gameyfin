@@ -1,0 +1,27 @@
+application:
+  version: '@project.version@'
+  name: Gameyfin
+
+server:
+  servlet:
+    context-path: /
+  error:
+    include-stacktrace: never
+
+spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+    mapper:
+      accept-case-insensitive-enums: true
+  mvc:
+    async:
+      request-timeout: -1
+
+management:
+  endpoint:
+    health:
+      enabled: true
+  endpoints:
+    enabled-by-default: false

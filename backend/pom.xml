@@ -16,12 +16,16 @@
 
     <properties>
         <java.version>18</java.version>
+
         <springdoc-openapi-ui.version>1.6.9</springdoc-openapi-ui.version>
         <resilience4j.version>1.7.1</resilience4j.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-compress.version>1.21</commons-compress.version>
         <protoc.plugin.version>3.11.4</protoc.plugin.version>
         <protobuf-java.version>3.21.3</protobuf-java.version>
+
+        <!-- Use older version because the newer versions have problems with non-ASCII characters in properties files (umlauts etc.) -->
+        <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
     </properties>
 
     <dependencies>
@@ -140,6 +144,7 @@
                     <include>**/*.properties</include>
                     <include>**/*.yml</include>
                     <include>**/*.yaml</include>
+                    <include>**/*.json</include>
                     <include>**/*.txt</include>
                     <include>**/*.js</include>
                     <include>**/*.css</include>
@@ -166,6 +171,7 @@
             <!-- Import the compiled frontend -->
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
+                <version>${maven-resources-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>copy-resources</id>
