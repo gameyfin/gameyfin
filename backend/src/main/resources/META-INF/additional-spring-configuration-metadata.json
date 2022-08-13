@@ -1,7 +1,7 @@
 {
   "properties": [
     {
-      "name": "gameyfin.root",
+      "name": "gameyfin.sources",
       "type": "java.lang.String[]",
       "description": "List of directories Gameyfin should scan for games."
     }

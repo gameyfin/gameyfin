@@ -29,9 +29,8 @@ import static de.grimsi.gameyfin.util.FilenameUtil.hasGameArchiveExtension;
 @RequiredArgsConstructor
 public class LibraryService {
 
-    @Value("${gameyfin.root}")
+    @Value("${gameyfin.sources}")
     private List<String> libraryFolders;
-
     private final IgdbWrapper igdbWrapper;
     private final DetectedGameRepository detectedGameRepository;
     private final UnmappableFileRepository unmappableFileRepository;

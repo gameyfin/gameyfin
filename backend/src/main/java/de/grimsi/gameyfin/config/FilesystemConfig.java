@@ -18,7 +18,7 @@ import java.util.stream.StreamSupport;
 @Configuration
 public class FilesystemConfig {
 
-    @Value("#{'${gameyfin.root}'.split(',')[0]}")
+    @Value("#{'${gameyfin.sources}'.split(',')[0]}")
     private String firstLibraryPath;
 
     @Autowired
