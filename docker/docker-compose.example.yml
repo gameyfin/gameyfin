@@ -8,10 +8,6 @@ services:
       - gameyfin.password=<your password here>
       - gameyfin.igdb.api.client-id=<your twitch client-id here>
       - gameyfin.igdb.api.client-secret=<your twitch client-secret here>
-      # The following  two environment variables only need to be set if you have more than one library folder.
-      # If you have just one you can safely delete them.
-      - gameyfin.cache=<path to your game library>/.gameyfin/cache
-      - gameyfin.db=<path to your game library>/.gameyfin/db
     volumes:
       - <path to your game library>:/opt/gameyfin-library
     ports:

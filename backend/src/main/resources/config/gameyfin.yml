@@ -1,14 +1,5 @@
 gameyfin:
-  user:
-  password:
-
-  root:
-
-  db: ./.gameyfin/db
-  cache: ./.gameyfin/cache
-
   file-extensions: iso, zip, rar, 7z, exe
-
   igdb:
     api:
       client-id:

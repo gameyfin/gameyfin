@@ -1,9 +1,9 @@
 spring:
   jpa:
-    open-in-view: 'true'
+    open-in-view: true
     properties:
       hibernate:
-        enable_lazy_load_no_trans: 'true'
+        enable_lazy_load_no_trans: true
         event:
           merge:
             entity_copy_observer: allow
@@ -12,7 +12,7 @@ spring:
       ddl-auto: update
   datasource:
     username: gfadmin
+    password: gameyfin
+    db-name: gameyfin_db
     url: jdbc:h2:file:${gameyfin.db}/${spring.datasource.db-name}
     driverClassName: org.h2.Driver
-    db-name: gameyfin_db
-    password: gameyfin

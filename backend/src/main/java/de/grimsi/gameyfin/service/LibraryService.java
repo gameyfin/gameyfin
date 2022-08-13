@@ -39,7 +39,7 @@ public class LibraryService {
     public List<Path> getGameFiles() {
         List<Path> gamefiles = new ArrayList<>();
 
-        libraryFolders.parallelStream().map(Path::of).forEach(
+        libraryFolders.stream().map(Path::of).forEach(
                 folder -> {
                     try (Stream<Path> stream = Files.list(folder)) {
                         // return all sub-folders (non-recursive) and files that have an extension that indicates that they are a downloadable file
