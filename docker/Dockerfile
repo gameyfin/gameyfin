@@ -1,10 +1,10 @@
 FROM openjdk:18
 
-ENV GAMEYFIN_ROOT=/opt/gameyfin-library
+ENV GAMEYFIN_SOURCES=/opt/gameyfin-library
 
 RUN groupadd gameyfin && useradd gameyfin -g gameyfin && \
-    mkdir -p /opt/gameyfin ${GAMEYFIN_ROOT} && \
-    chown -R gameyfin:gameyfin /opt/gameyfin ${GAMEYFIN_ROOT}
+    mkdir -p /opt/gameyfin ${GAMEYFIN_SOURCES} && \
+    chown -R gameyfin:gameyfin /opt/gameyfin ${GAMEYFIN_SOURCES}
 
 USER gameyfin:gameyfin
 

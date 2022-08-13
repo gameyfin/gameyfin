@@ -16,7 +16,7 @@ public class SecureProperties {
     @Autowired
     public void setConfigurableEnvironment(ConfigurableEnvironment env) {
         try {
-            Resource resource = new ClassPathResource("/config/secure.properties");
+            Resource resource = new ClassPathResource("/config/secure.yml");
             env.getPropertySources().addFirst(new PropertiesPropertySource(Objects.requireNonNull(resource.getFilename()), PropertiesLoaderUtils.loadProperties(resource)));
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage(), ex);
