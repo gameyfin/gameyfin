@@ -44,10 +44,6 @@
   margin-bottom: 0;
 }
 
-.filter-category-content {
-  margin-left: 6px;
-}
-
 ::ng-deep .mat-checkbox-frame {
   $config: mat.get-color-config($custom-theme);
   $primary-palette: map.get($config, 'primary');
