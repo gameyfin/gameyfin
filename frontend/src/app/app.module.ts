@@ -121,7 +121,7 @@ import {MatExpansionModule} from "@angular/material/expansion";
     },
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
-      useValue: { panelClass: ['snackbar-dark'] },
+      useValue: { panelClass: ['formatted-snackbar'] },
     }
   ],
   bootstrap: [AppComponent]

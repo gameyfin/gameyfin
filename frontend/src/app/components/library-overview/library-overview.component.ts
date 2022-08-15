@@ -46,11 +46,20 @@ export class LibraryOverviewComponent implements AfterContentInit {
         forkJoin([themeObservable, genreObservable]).subscribe(result => {
           this.availableThemes = result[0];
           this.availableGenres = result[1];
-          this.filterGames();
+          this.refreshLibraryView();
           this.loading = false;
         });
       }
     );
+  }
+
+  refreshLibraryView(): void {
+    this.filterGames();
+  }
+
+  clearSearchTerm(): void {
+    this.searchTerm = "";
+    this.refreshLibraryView();
   }
 
   filterGames(): void {

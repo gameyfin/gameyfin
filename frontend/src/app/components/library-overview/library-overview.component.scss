@@ -1,6 +1,6 @@
 @use 'sass:map';
 @use '@angular/material' as mat;
-@import '../../theme/default-theme';
+@import 'src/app/themes/dark-theme';
 
 .fullscreen-overlay {
   position: absolute;
@@ -19,21 +19,15 @@
 
   @include mat.elevation(16);
 
-  $config: mat.get-color-config($custom-theme);
-  $background: map.get($config, background);
   position: absolute;
   right: 56px;
   top: 72px;
   width: 250px;
   border-radius: 6px;
-  background: mat.get-color-from-palette($background, app-bar);
-  border-color: mat.get-color-from-palette($background, app-bar);
-  border-style: solid;
-  color: white;
 
   p {
     padding: 0 12px 12px 16px;
-   }
+  }
 }
 
 .content {
@@ -45,13 +39,13 @@
 }
 
 ::ng-deep .mat-checkbox-frame {
-  $config: mat.get-color-config($custom-theme);
+  $config: mat.get-color-config($dark-theme);
   $primary-palette: map.get($config, 'primary');
-  border-color: mat.get-color-from-palette($primary-palette, 500);
+  border-color: mat.get-color-from-palette($primary-palette, 500) !important;
 }
 
 ::ng-deep .mat-form-field-underline {
-  $config: mat.get-color-config($custom-theme);
+  $config: mat.get-color-config($dark-theme);
   $primary-palette: map.get($config, 'primary');
   background-color: mat.get-color-from-palette($primary-palette, 500) !important;
 }

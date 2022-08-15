@@ -23,19 +23,28 @@
        *ngIf="!this.loading && !this.gameLibraryIsEmpty">
     <div fxFlex="10" fxHide fxShow.gt-md><!--SPACER--></div>
 
-    <div fxFlex.gt-md="0 1 15" fxLayout="column" fxLayoutGap="16px" fxLayoutAlign.lt-lg="start center" fxFlex.lt-lg="100" [ngClass.gt-md]="'sticky'">
+    <div fxFlex.gt-md="0 1 15" fxLayout="column" fxLayoutGap="16px" fxLayoutAlign.lt-lg="start center"
+         fxFlex.lt-lg="100" [ngClass.gt-md]="'sticky'">
 
-      <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="6px">
-        <mat-icon matTooltip="Search for games by title">search</mat-icon>
-        <mat-form-field fxFlex="100" class="filter-category-content">
-          <input type="text" matInput [matAutocomplete]="librarySearchAutocomplete" [(ngModel)]="searchTerm" (ngModelChange)="filterGames()">
+      <mat-card fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="6px" style="height: 48px">
+        <button mat-icon-button *ngIf="searchTerm.length > 0" matTooltip="Clear search input" (click)="clearSearchTerm()">
+          <mat-icon>close</mat-icon>
+        </button>
+
+        <button mat-icon-button *ngIf="searchTerm.length === 0" matTooltip="Search for games by title">
+          <mat-icon>search</mat-icon>
+        </button>
+
+        <mat-form-field fxFlex>
+          <input type="text" matInput [matAutocomplete]="librarySearchAutocomplete" [(ngModel)]="searchTerm"
+                 (ngModelChange)="refreshLibraryView()">
           <mat-autocomplete #librarySearchAutocomplete="matAutocomplete">
             <mat-option *ngFor="let game of games" [value]="game.title">
               {{game.title}}
             </mat-option>
           </mat-autocomplete>
         </mat-form-field>
-      </div>
+      </mat-card>
 
       <mat-expansion-panel>
         <mat-expansion-panel-header>
@@ -46,11 +55,11 @@
         </mat-expansion-panel-header>
 
         <div fxLayout="column">
-          <mat-checkbox [(ngModel)]="offlineCoopFilterEnabled" (change)="filterGames()" color="primary">Offline Co-op
+          <mat-checkbox [(ngModel)]="offlineCoopFilterEnabled" (change)="refreshLibraryView()" color="primary">Offline Co-op
           </mat-checkbox>
-          <mat-checkbox [(ngModel)]="onlineCoopFilterEnabled" (change)="filterGames()" color="primary">Online Co-op
+          <mat-checkbox [(ngModel)]="onlineCoopFilterEnabled" (change)="refreshLibraryView()" color="primary">Online Co-op
           </mat-checkbox>
-          <mat-checkbox [(ngModel)]="lanSupportFilterEnabled" (change)="filterGames()" color="primary">LAN Support
+          <mat-checkbox [(ngModel)]="lanSupportFilterEnabled" (change)="refreshLibraryView()" color="primary">LAN Support
           </mat-checkbox>
         </div>
       </mat-expansion-panel>
@@ -80,7 +89,7 @@
       </mat-expansion-panel>
     </div>
 
-    <div fxFlex="0 1 1" fxHide fxShow.gt-lg><!--SPACER--></div>
+    <div fxFlex="0 1 1"><!--SPACER--></div>
 
     <div fxFlex fxLayout="row wrap" fxLayoutGap="16px grid">
       <div *ngFor="let game of games">

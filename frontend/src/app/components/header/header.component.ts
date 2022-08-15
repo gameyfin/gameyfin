@@ -1,9 +1,11 @@
-import {Component} from '@angular/core';
+import {Component, Inject} from '@angular/core';
 import {LibraryService} from "../../services/library.service";
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {timeInterval} from "rxjs";
 import {Router} from "@angular/router";
 import {GamesService} from "../../services/games.service";
+import {ThemingService} from "../../services/theming.service";
+import {DOCUMENT} from '@angular/common';
 
 @Component({
   selector: 'app-header',
@@ -12,43 +14,14 @@ import {GamesService} from "../../services/games.service";
 })
 export class HeaderComponent {
 
-  darkmodeEnabled: boolean;
+  // Maybe bad practice? IDK, but I need to access the document from the template of this component
+  document: Document = document;
 
   constructor(private libraryService: LibraryService,
               private gameService: GamesService,
+              private themingService: ThemingService,
               private snackBar: MatSnackBar,
               private router: Router) {
-
-    if(this.getCookie("darkmode") !== null) {
-      this.darkmodeEnabled = this.getCookie("darkmode") === "true";
-    } else
-      if (window.matchMedia) {
-      this.darkmodeEnabled = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    } else {
-      this.darkmodeEnabled = false;
-    }
-
-    this.setTheme();
-  }
-
-  toggleTheme(): void {
-    this.darkmodeEnabled = !this.darkmodeEnabled;
-    this.setTheme();
-  }
-
-  private setTheme(): void {
-    this.darkmodeEnabled ? this.setDarkmode() : this.setLightmode();
-    this.setCookie("darkmode", this.darkmodeEnabled);
-  }
-
-  private setDarkmode(): void {
-    document.body.style.background = "#303030";
-    document.body.style.color = "white";
-  }
-
-  private setLightmode(): void {
-    document.body.style.background = "white";
-    document.body.style.color = "black";
   }
 
   scanLibrary(): void {
@@ -57,7 +30,7 @@ export class HeaderComponent {
         // Refresh the current page "angular style"
         this.router.navigate([this.router.url]).then(() =>
           this.snackBar.open(`Library scan completed in ${Math.trunc(value.interval / 1000)} seconds.`, undefined, {duration: 5000})
-         )
+        )
       },
       error: error => this.snackBar.open(`Error while scanning library: ${error.error.message}`, undefined, {duration: 5000})
     })
@@ -84,31 +57,7 @@ export class HeaderComponent {
     return this.router.url === "/library-management";
   }
 
-  private setCookie(name: string, value: any): void {
-    let d:Date = new Date();
-    document.cookie = `${name}=${value.toString()};`;
+  toggleTheme(): void {
+    this.themingService.toggleTheme();
   }
-
-  private getCookie(name: string): string | null {
-    var dc = document.cookie;
-    var prefix = name + "=";
-    var begin = dc.indexOf("; " + prefix);
-    if (begin == -1) {
-      begin = dc.indexOf(prefix);
-      if (begin != 0) return null;
-    }
-    else
-    {
-      begin += 2;
-      var end = document.cookie.indexOf(";", begin);
-      if (end == -1) {
-        end = dc.length;
-      }
-    }
-    // because unescape has been deprecated, replaced with decodeURI
-    //return unescape(dc.substring(begin + prefix.length, end));
-    // @ts-ignore
-    return decodeURI(dc.substring(begin + prefix.length, end));
-  }
-
 }
