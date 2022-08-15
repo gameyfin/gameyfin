@@ -38,6 +38,10 @@
   margin-bottom: 0;
 }
 
+.mat-card-48 {
+  height: 48px;
+}
+
 ::ng-deep .mat-checkbox-frame {
   $config: mat.get-color-config($dark-theme);
   $primary-palette: map.get($config, 'primary');

@@ -1,9 +1,22 @@
-import {AfterContentInit, AfterViewInit, Component, Input} from '@angular/core';
+import {AfterContentInit, Component} from '@angular/core';
 import {GamesService} from "../../services/games.service";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GenreDto} from "../../models/dtos/GenreDto";
 import {ThemeDto} from "../../models/dtos/ThemeDto";
-import {forkJoin, Observable} from "rxjs";
+import {firstValueFrom, forkJoin, Observable, pipe} from "rxjs";
+import {SortDirection} from "@angular/material/sort";
+
+class SortOption {
+  title: string;
+  field: string;
+  direction: SortDirection;
+
+  constructor(title: string, field: string, direction: SortDirection) {
+    this.title = title;
+    this.field = field;
+    this.direction = direction;
+  }
+}
 
 @Component({
   selector: 'app-gameserver-list',
@@ -12,7 +25,24 @@ import {forkJoin, Observable} from "rxjs";
 })
 export class LibraryOverviewComponent implements AfterContentInit {
 
+  defaultSortOption: SortOption = new SortOption("Title (A-Z)", "title", "asc");
+
+  sortOptions: SortOption[] = [
+    this.defaultSortOption,
+    new SortOption("Title (Z-A)", "title", "desc"),
+
+    new SortOption("Release (newest first)", "releaseDate", "desc"),
+    new SortOption("Release (oldest first)", "releaseDate", "asc"),
+
+    new SortOption("Added to library (newest first)", "addedToLibrary", "desc"),
+    new SortOption("Added to library (oldest first)", "addedToLibrary", "asc"),
+
+    new SortOption("Rating (highest first)", "totalRating", "desc"),
+    new SortOption("Rating (lowest first)", "totalRating", "asc")
+  ];
+
   searchTerm: string = "";
+  selectedSortOption: SortOption = this.defaultSortOption;
   offlineCoopFilterEnabled: boolean = false;
   onlineCoopFilterEnabled: boolean = false;
   lanSupportFilterEnabled: boolean = false;
@@ -32,7 +62,7 @@ export class LibraryOverviewComponent implements AfterContentInit {
   ngAfterContentInit(): void {
     this.gameServerService.getAllGames().subscribe(
       detectedGames => {
-        if(detectedGames.length === 0) {
+        if (detectedGames.length === 0) {
           this.gameLibraryIsEmpty = true;
           this.loading = false;
           return;
@@ -46,15 +76,15 @@ export class LibraryOverviewComponent implements AfterContentInit {
         forkJoin([themeObservable, genreObservable]).subscribe(result => {
           this.availableThemes = result[0];
           this.availableGenres = result[1];
-          this.refreshLibraryView();
-          this.loading = false;
+          this.refreshLibraryView().then(() => this.loading = false);
         });
       }
     );
   }
 
-  refreshLibraryView(): void {
-    this.filterGames();
+  async refreshLibraryView(): Promise<void> {
+    let games: DetectedGameDto[] = await firstValueFrom(this.gameServerService.getAllGames());
+    this.games =  this.sortGames(this.filterGames(games));
   }
 
   clearSearchTerm(): void {
@@ -62,32 +92,43 @@ export class LibraryOverviewComponent implements AfterContentInit {
     this.refreshLibraryView();
   }
 
-  filterGames(): void {
-    this.gameServerService.getAllGames().subscribe(games => {
-      let filteredGames: DetectedGameDto[] = games;
+  filterGames(games: DetectedGameDto[]): DetectedGameDto[] {
+    if (this.searchTerm.trim().toLowerCase().length > 0) {
+      games = games.filter(game => game.title.trim().toLowerCase().includes(this.searchTerm.trim().toLowerCase()));
+    }
 
-      if(this.searchTerm.trim().toLowerCase().length > 0) {
-        filteredGames = filteredGames.filter(game => game.title.trim().toLowerCase().includes(this.searchTerm.trim().toLowerCase()));
-      }
+    if (this.offlineCoopFilterEnabled || this.onlineCoopFilterEnabled || this.lanSupportFilterEnabled) {
+      games = games.filter(game => (game.offlineCoop === this.offlineCoopFilterEnabled || game.onlineCoop === this.onlineCoopFilterEnabled || game.lanSupport === this.lanSupportFilterEnabled));
+    }
 
-      if(this.offlineCoopFilterEnabled || this.onlineCoopFilterEnabled || this.lanSupportFilterEnabled) {
-        filteredGames = filteredGames.filter(game => (game.offlineCoop === this.offlineCoopFilterEnabled || game.onlineCoop === this.onlineCoopFilterEnabled || game.lanSupport === this.lanSupportFilterEnabled));
-      }
+    if (this.activeGenreFilters.length > 0) {
+      games = games.filter(game => this.activeGenreFilters.every(activeGenreFilter => game.genres?.map(g => g.slug).includes(activeGenreFilter)));
+    }
 
-      if(this.activeGenreFilters.length > 0) {
-        filteredGames = filteredGames.filter(game => this.activeGenreFilters.every(activeGenreFilter => game.genres?.map(g => g.slug).includes(activeGenreFilter)));
-      }
+    if (this.activeThemeFilters.length > 0) {
+      games = games.filter(game => this.activeThemeFilters.every(activeThemeFilter => game.themes?.map(g => g.slug).includes(activeThemeFilter)));
+    }
 
-      if(this.activeThemeFilters.length > 0) {
-        filteredGames = filteredGames.filter(game => this.activeThemeFilters.every(activeThemeFilter => game.themes?.map(g => g.slug).includes(activeThemeFilter)));
-      }
+    return games;
+  }
 
-      this.games = filteredGames;
-    })
+  sortGames(games: DetectedGameDto[]): DetectedGameDto[] {
+    games = games.sort((g1, g2) => {
+      // @ts-ignore
+      let f1 = g1[this.selectedSortOption.field];
+      // @ts-ignore
+      let f2 = g2[this.selectedSortOption.field];
+
+      if(f1 > f2) return 1;
+      if(f1 < f2) return -1;
+      return 0;
+    });
+    if(this.selectedSortOption.direction === "desc") games = games.reverse();
+    return games;
   }
 
   toggleGenreFilter(slug: string): void {
-    if(this.activeGenreFilters.includes(slug)) {
+    if (this.activeGenreFilters.includes(slug)) {
 
       const index = this.activeGenreFilters.indexOf(slug, 0);
       if (index > -1) {
@@ -98,11 +139,11 @@ export class LibraryOverviewComponent implements AfterContentInit {
       this.activeGenreFilters.push(slug);
     }
 
-    this.filterGames();
+    this.refreshLibraryView();
   }
 
   toggleThemeFilter(slug: string) {
-    if(this.activeThemeFilters.includes(slug)) {
+    if (this.activeThemeFilters.includes(slug)) {
 
       const index = this.activeThemeFilters.indexOf(slug, 0);
       if (index > -1) {
@@ -113,7 +154,7 @@ export class LibraryOverviewComponent implements AfterContentInit {
       this.activeThemeFilters.push(slug);
     }
 
-    this.filterGames();
+    this.refreshLibraryView();
   }
 
 }
