@@ -6,9 +6,8 @@ import {ThemeDto} from "../../models/dtos/ThemeDto";
 import {firstValueFrom, forkJoin, Observable} from "rxjs";
 import {SortDirection} from "@angular/material/sort";
 import {PlayerPerspectiveDto} from "../../models/dtos/PlayerPerspectiveDto";
-import {ActivatedRoute, Params, Router} from "@angular/router";
+import {ActivatedRoute, ActivatedRouteSnapshot, Params, Router} from "@angular/router";
 import {Location} from "@angular/common";
-import {HttpParams} from "@angular/common/http";
 
 class SortOption {
   title: string;
@@ -61,6 +60,7 @@ export class LibraryOverviewComponent implements AfterContentInit {
 
   loading: boolean = true;
   gameLibraryIsEmpty: boolean = false;
+  private previousStateParams: Params = {};
 
   constructor(private gameServerService: GamesService,
               private route: ActivatedRoute,
@@ -88,16 +88,15 @@ export class LibraryOverviewComponent implements AfterContentInit {
           this.availableThemes = result[1];
           this.availablePlayerPerspectives = result[2];
 
-          this.route.queryParams.subscribe(params => {
-            if (params['search'] !== undefined) this.searchTerm = params['search'];
-            if (params['sort'] !== undefined) this.selectedSortOption = this.matchSelectedSortOptionFromParam(params['sort']);
-            if (params['gamemodes'] !== undefined) this.setSelectedGamemodesFromParam(params['gamemodes']);
-            if (params['genres'] !== undefined) this.activeGenreFilters = this.matchSelectedFilters(this.availableGenres, params['genres']);
-            if (params['themes'] !== undefined) this.activeThemeFilters = this.matchSelectedFilters(this.availableThemes, params['themes']);
-            if (params['playerPerspectives'] !== undefined) this.activePlayerPerspectiveFilters = this.matchSelectedFilters(this.availablePlayerPerspectives, params['playerPerspectives']);
+          this.previousStateParams = this.route.snapshot.queryParams;
+          if (this.previousStateParams['search'] !== undefined) this.searchTerm = this.previousStateParams['search'];
+          if (this.previousStateParams['sort'] !== undefined) this.selectedSortOption = this.matchSelectedSortOptionFromParam(this.previousStateParams['sort']);
+          if (this.previousStateParams['gamemodes'] !== undefined) this.setSelectedGamemodesFromParam(this.previousStateParams['gamemodes']);
+          if (this.previousStateParams['genres'] !== undefined) this.activeGenreFilters = this.matchSelectedFilters(this.availableGenres, this.previousStateParams['genres']);
+          if (this.previousStateParams['themes'] !== undefined) this.activeThemeFilters = this.matchSelectedFilters(this.availableThemes, this.previousStateParams['themes']);
+          if (this.previousStateParams['playerPerspectives'] !== undefined) this.activePlayerPerspectiveFilters = this.matchSelectedFilters(this.availablePlayerPerspectives, this.previousStateParams['playerPerspectives']);
 
-            this.refreshLibraryView().then(() => this.loading = false);
-          });
+          this.refreshLibraryView().then(() => this.loading = false);
         });
       }
     );
@@ -199,25 +198,29 @@ export class LibraryOverviewComponent implements AfterContentInit {
   }
 
   private saveStateToRoute(): void {
-    let stateParams: Params = {};
+    let newStateParams: Params = {};
 
-    if (this.searchTerm.trim().length > 0) stateParams['search'] = this.searchTerm;
-    if (this.selectedSortOption !== this.defaultSortOption) stateParams['sort'] = this.toParam(this.selectedSortOption);
-    if (this.getActiveGameModesFilters().length > 0) stateParams['gamemodes'] = this.getActiveGameModesFilters().join(',');
-    if (this.activeGenreFilters.length > 0) stateParams['genres'] = this.activeGenreFilters.join(',');
-    if (this.activeThemeFilters.length > 0) stateParams['themes'] = this.activeThemeFilters.join(',');
-    if (this.activePlayerPerspectiveFilters.length > 0) stateParams['playerPerspectives'] = this.activePlayerPerspectiveFilters.join(',');
+    if (this.searchTerm.trim().length > 0) newStateParams['search'] = this.searchTerm;
+    if (this.selectedSortOption !== this.defaultSortOption) newStateParams['sort'] = LibraryOverviewComponent.toParam(this.selectedSortOption);
+    if (this.getActiveGameModesFilters().length > 0) newStateParams['gamemodes'] = this.getActiveGameModesFilters().join(',');
+    if (this.activeGenreFilters.length > 0) newStateParams['genres'] = this.activeGenreFilters.join(',');
+    if (this.activeThemeFilters.length > 0) newStateParams['themes'] = this.activeThemeFilters.join(',');
+    if (this.activePlayerPerspectiveFilters.length > 0) newStateParams['playerPerspectives'] = this.activePlayerPerspectiveFilters.join(',');
 
-    const url = this.router.createUrlTree([], {relativeTo: this.route, queryParams: stateParams}).toString();
-    this.location.go(url);
+    // only update the route if it changed
+    if (JSON.stringify(this.previousStateParams) !== JSON.stringify(newStateParams)) {
+      const url = this.router.createUrlTree([], {relativeTo: this.route, queryParams: newStateParams}).toString();
+      this.previousStateParams = newStateParams;
+      this.location.go(url);
+    }
   }
 
-  private toParam(sortOption: SortOption): string {
+  private static toParam(sortOption: SortOption): string {
     return `${sortOption.field}_${sortOption.direction}`;
   }
 
   private matchSelectedSortOptionFromParam(sortParam: string): SortOption {
-    return this.sortOptions.find(s => sortParam === this.toParam(s)) ?? this.defaultSortOption;
+    return this.sortOptions.find(s => sortParam === LibraryOverviewComponent.toParam(s)) ?? this.defaultSortOption;
   }
 
   private matchSelectedFilters(options: any[], paramString: string): string[] {

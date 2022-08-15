@@ -28,14 +28,14 @@
           <div *ngIf="game.genres !== undefined && game.genres.length > 0">
             <h2>Genres</h2>
             <mat-chip-list>
-              <mat-chip *ngFor="let genre of game.genres">{{genre.name}}</mat-chip>
+              <mat-chip *ngFor="let genre of game.genres" (click)="goToLibraryWithFilter('genres', genre.slug)">{{genre.name}}</mat-chip>
             </mat-chip-list>
           </div>
 
           <div *ngIf="game.themes !== undefined && game.themes.length > 0">
             <h2>Themes</h2>
             <mat-chip-list>
-              <mat-chip *ngFor="let theme of game.themes">{{theme.name}}</mat-chip>
+              <mat-chip *ngFor="let theme of game.themes" (click)="goToLibraryWithFilter('themes', theme.slug)">{{theme.name}}</mat-chip>
             </mat-chip-list>
           </div>
         </div>

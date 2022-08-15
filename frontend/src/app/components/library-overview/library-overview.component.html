@@ -4,23 +4,21 @@
     <h2>Loading library...</h2>
   </div>
 
-  <div *ngIf="!this.loading && this.gameLibraryIsEmpty" fxFlex fxLayout="column" fxLayoutAlign="center center"
-       style="height: calc(100vh - 64px)">
+  <div *ngIf="!this.loading && this.gameLibraryIsEmpty" fxFlex fxLayout="column" fxLayoutAlign="center center">
     <div class="library-management-hint" fxLayout="column" fxLayoutAlign="start end">
       <mat-icon fontSet="material-icons-outlined">north_east</mat-icon>
       <p>Use the library management to scan your file system for games</p>
     </div>
 
     <div fxLayout="column" fxLayoutAlign="center center">
-      <mat-icon fontSet="material-icons-outlined" color="primary"
-                style="font-size: 128px; height: 128px; width: 128px;">videogame_asset_off
+      <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">
+        videogame_asset_off
       </mat-icon>
       <h1>Your game library is empty!</h1>
     </div>
   </div>
 
-  <div class="content" fxLayout="row" fxLayout.lt-lg="column" fxFlexFill="100"
-       *ngIf="!this.loading && !this.gameLibraryIsEmpty">
+  <div class="content" fxLayout="row" fxLayout.lt-lg="column" fxFlexFill="100" *ngIf="!this.loading && !this.gameLibraryIsEmpty">
     <div fxFlex="10" fxHide fxShow.gt-md><!--SPACER--></div>
 
     <div fxFlex.gt-md="0 1 15" fxLayout="column" fxLayoutGap="16px" fxLayoutAlign.lt-lg="start center"
@@ -56,7 +54,7 @@
         </mat-select>
       </mat-card>
 
-      <mat-expansion-panel>
+      <mat-expansion-panel [expanded]="offlineCoopFilterEnabled || onlineCoopFilterEnabled || lanSupportFilterEnabled">
         <mat-expansion-panel-header>
           <mat-panel-title fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="6px">
             <h3 class="filter-category-title">Gamemodes</h3>
@@ -77,7 +75,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel *ngIf="availableGenres.length > 0">
+      <mat-expansion-panel *ngIf="availableGenres.length > 0" [expanded]="activeGenreFilters.length > 0">
         <mat-expansion-panel-header>
           <h3 class="filter-category-title">Genres</h3>
         </mat-expansion-panel-header>
@@ -89,7 +87,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel *ngIf="availableThemes.length > 0">
+      <mat-expansion-panel *ngIf="availableThemes.length > 0" [expanded]="activeThemeFilters.length > 0">
         <mat-expansion-panel-header>
           <h3 class="filter-category-title">Themes</h3>
         </mat-expansion-panel-header>
@@ -101,7 +99,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel *ngIf="availablePlayerPerspectives.length > 0">
+      <mat-expansion-panel *ngIf="availablePlayerPerspectives.length > 0" [expanded]="activePlayerPerspectiveFilters.length > 0">
         <mat-expansion-panel-header>
           <h3 class="filter-category-title">Player Perspectives</h3>
         </mat-expansion-panel-header>
