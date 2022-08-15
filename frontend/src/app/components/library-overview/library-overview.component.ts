@@ -5,6 +5,8 @@ import {GenreDto} from "../../models/dtos/GenreDto";
 import {ThemeDto} from "../../models/dtos/ThemeDto";
 import {firstValueFrom, forkJoin, Observable, pipe} from "rxjs";
 import {SortDirection} from "@angular/material/sort";
+import {CompanyDto} from "../../models/dtos/CompanyDto";
+import {PlayerPerspectiveDto} from "../../models/dtos/PlayerPerspectiveDto";
 
 class SortOption {
   title: string;
@@ -48,10 +50,12 @@ export class LibraryOverviewComponent implements AfterContentInit {
   lanSupportFilterEnabled: boolean = false;
   activeThemeFilters: string[] = [];
   activeGenreFilters: string[] = [];
+  activePlayerPerspectiveFilters: string[] = [];
 
   games: DetectedGameDto[] = [];
   availableGenres: GenreDto[] = [];
   availableThemes: ThemeDto[] = [];
+  availablePlayerPerspectives: PlayerPerspectiveDto[] = [];
 
   loading: boolean = true;
   gameLibraryIsEmpty: boolean = false;
@@ -72,10 +76,13 @@ export class LibraryOverviewComponent implements AfterContentInit {
 
         let genreObservable: Observable<ThemeDto[]> = this.gameServerService.getAvailableGenres();
         let themeObservable: Observable<GenreDto[]> = this.gameServerService.getAvailableThemes();
+        let playerPerspectiveObservable: Observable<PlayerPerspectiveDto[]> = this.gameServerService.getAvailablePlayerPerspectives();
 
-        forkJoin([themeObservable, genreObservable]).subscribe(result => {
-          this.availableThemes = result[0];
-          this.availableGenres = result[1];
+        forkJoin([genreObservable, themeObservable, playerPerspectiveObservable]).subscribe(result => {
+          this.availableGenres = result[0];
+          this.availableThemes = result[1];
+          this.availablePlayerPerspectives = result[2];
+
           this.refreshLibraryView().then(() => this.loading = false);
         });
       }
@@ -107,6 +114,10 @@ export class LibraryOverviewComponent implements AfterContentInit {
 
     if (this.activeThemeFilters.length > 0) {
       games = games.filter(game => this.activeThemeFilters.every(activeThemeFilter => game.themes?.map(g => g.slug).includes(activeThemeFilter)));
+    }
+
+    if (this.activePlayerPerspectiveFilters.length > 0) {
+      games = games.filter(game => this.activePlayerPerspectiveFilters.every(activePlayerPerspectiveFilter => game.playerPerspectives?.map(g => g.slug).includes(activePlayerPerspectiveFilter)));
     }
 
     return games;
@@ -152,6 +163,21 @@ export class LibraryOverviewComponent implements AfterContentInit {
 
     } else {
       this.activeThemeFilters.push(slug);
+    }
+
+    this.refreshLibraryView();
+  }
+
+  togglePlayerPerspectiveFilter(slug: string) {
+    if (this.activePlayerPerspectiveFilters.includes(slug)) {
+
+      const index = this.activePlayerPerspectiveFilters.indexOf(slug, 0);
+      if (index > -1) {
+        this.activePlayerPerspectiveFilters.splice(index, 1);
+      }
+
+    } else {
+      this.activePlayerPerspectiveFilters.push(slug);
     }
 
     this.refreshLibraryView();

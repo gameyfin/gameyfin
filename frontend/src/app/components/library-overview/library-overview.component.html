@@ -100,6 +100,18 @@
                         color="primary">{{theme.name}}</mat-checkbox>
         </div>
       </mat-expansion-panel>
+
+      <mat-expansion-panel *ngIf="availablePlayerPerspectives.length > 0">
+        <mat-expansion-panel-header>
+          <h3 class="filter-category-title">Player Perspectives</h3>
+        </mat-expansion-panel-header>
+
+        <div fxLayout="column">
+          <mat-checkbox *ngFor="let playerPerspective of availablePlayerPerspectives" (change)="togglePlayerPerspectiveFilter(playerPerspective.slug)"
+                        [checked]="activePlayerPerspectiveFilters.includes(playerPerspective.slug)"
+                        color="primary">{{playerPerspective.name}}</mat-checkbox>
+        </div>
+      </mat-expansion-panel>
     </div>
 
     <div fxFlex="0 1 1"><!--SPACER--></div>
