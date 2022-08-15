@@ -87,6 +87,11 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
 
         <!-- File handling -->
         <dependency>
@@ -144,8 +149,9 @@
                     <include>**/*.properties</include>
                     <include>**/*.yml</include>
                     <include>**/*.yaml</include>
-                    <include>**/*.json</include>
+                    <include>**/*.sql</include>
                     <include>**/*.txt</include>
+                    <include>**/*.json</include>
                     <include>**/*.js</include>
                     <include>**/*.css</include>
                     <include>**/*.html</include>

@@ -6,6 +6,8 @@ import {DetectedGameDto} from "../models/dtos/DetectedGameDto";
 import {GameOverviewDto} from "../models/dtos/GameOverviewDto";
 import {GenreDto} from "../models/dtos/GenreDto";
 import {ThemeDto} from "../models/dtos/ThemeDto";
+import {CompanyDto} from "../models/dtos/CompanyDto";
+import {PlayerPerspectiveDto} from "../models/dtos/PlayerPerspectiveDto";
 
 @Injectable({
   providedIn: 'root'
@@ -64,9 +66,23 @@ export class GamesService implements GamesApi {
     return this.getAllGames().pipe(
       map<DetectedGameDto[], ThemeDto[]>(
         games => {
-          let availableThemesMap: Map<string, ThemeDto> = new Map<string, GenreDto>;
+          let availableThemesMap: Map<string, ThemeDto> = new Map<string, ThemeDto>;
           games.map(game => game.themes === undefined ? [] : game.themes).flat().forEach(theme => availableThemesMap.set(theme.slug, theme));
           return Array.from(availableThemesMap.values()).sort((t1, t2) => t1.name.localeCompare(t2.name));
+        }
+      )
+    );
+  }
+
+  // TODO: This method of removing duplicates is most certainly an anti-pattern in RxJS
+  // TODO: However, I did not get the 'distinct()' pipe to work properly, so I have to take another look in the future
+  getAvailablePlayerPerspectives(): Observable<PlayerPerspectiveDto[]> {
+    return this.getAllGames().pipe(
+      map<DetectedGameDto[], PlayerPerspectiveDto[]>(
+        games => {
+          let availablePlayerPerspectivesMap: Map<string, PlayerPerspectiveDto> = new Map<string, PlayerPerspectiveDto>;
+          games.map(game => game.playerPerspectives === undefined ? [] : game.playerPerspectives).flat().forEach(playerPerspective => availablePlayerPerspectivesMap.set(playerPerspective.slug, playerPerspective));
+          return Array.from(availablePlayerPerspectivesMap.values()).sort((t1, t2) => t1.name.localeCompare(t2.name));
         }
       )
     );

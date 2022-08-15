@@ -49,6 +49,8 @@ import {MatListModule} from "@angular/material/list";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
 import { NgModelChangeDebouncedDirective } from './directives/ng-model-change-debounced.directive';
 import { FooterComponent } from './components/footer/footer.component';
+import {MatExpansionModule} from "@angular/material/expansion";
+import {MatSelectModule} from "@angular/material/select";
 
 @NgModule({
   declarations: [
@@ -104,7 +106,9 @@ import { FooterComponent } from './components/footer/footer.component';
     MatTableFilterModule,
     MatDividerModule,
     MatListModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    MatExpansionModule,
+    MatSelectModule
   ],
   providers: [
     {
@@ -119,7 +123,7 @@ import { FooterComponent } from './components/footer/footer.component';
     },
     {
       provide: MAT_SNACK_BAR_DEFAULT_OPTIONS,
-      useValue: { panelClass: ['snackbar-dark'] },
+      useValue: { panelClass: ['formatted-snackbar'] },
     }
   ],
   bootstrap: [AppComponent]
