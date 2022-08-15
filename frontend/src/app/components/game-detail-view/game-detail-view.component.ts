@@ -1,9 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-import {ActivatedRoute, Router} from "@angular/router";
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, Params, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
-import {HttpErrorResponse} from "@angular/common/http";
-import {takeWhile} from "rxjs";
 
 @Component({
   selector: 'app-game-detail-view',
@@ -56,6 +54,12 @@ export class GameDetailViewComponent implements OnInit {
     } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
 
     return bytes.toFixed(dp) + ' ' + units[u];
+  }
+
+  goToLibraryWithFilter(field: string, value: string) {
+    let params: Params = {};
+    params[field] = value;
+    this.router.navigate(['/library'], {queryParams: params});
   }
 
 }

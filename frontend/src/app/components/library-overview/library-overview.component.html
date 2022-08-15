@@ -54,7 +54,7 @@
         </mat-select>
       </mat-card>
 
-      <mat-expansion-panel>
+      <mat-expansion-panel [expanded]="offlineCoopFilterEnabled || onlineCoopFilterEnabled || lanSupportFilterEnabled">
         <mat-expansion-panel-header>
           <mat-panel-title fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="6px">
             <h3 class="filter-category-title">Gamemodes</h3>
@@ -75,7 +75,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel *ngIf="availableGenres.length > 0">
+      <mat-expansion-panel *ngIf="availableGenres.length > 0" [expanded]="activeGenreFilters.length > 0">
         <mat-expansion-panel-header>
           <h3 class="filter-category-title">Genres</h3>
         </mat-expansion-panel-header>
@@ -87,7 +87,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel *ngIf="availableThemes.length > 0">
+      <mat-expansion-panel *ngIf="availableThemes.length > 0" [expanded]="activeThemeFilters.length > 0">
         <mat-expansion-panel-header>
           <h3 class="filter-category-title">Themes</h3>
         </mat-expansion-panel-header>
@@ -99,7 +99,7 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel *ngIf="availablePlayerPerspectives.length > 0">
+      <mat-expansion-panel *ngIf="availablePlayerPerspectives.length > 0" [expanded]="activePlayerPerspectiveFilters.length > 0">
         <mat-expansion-panel-header>
           <h3 class="filter-category-title">Player Perspectives</h3>
         </mat-expansion-panel-header>
