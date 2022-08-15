@@ -51,7 +51,7 @@ export class HeaderComponent {
   }
 
   onLibraryScreen(): boolean {
-    return this.router.url === "/library";
+    return this.router.url.startsWith("/library");
   }
 
   onLibraryManagementScreen(): boolean {
