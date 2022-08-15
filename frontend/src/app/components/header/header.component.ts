@@ -5,7 +5,7 @@ import {timeInterval} from "rxjs";
 import {Router} from "@angular/router";
 import {GamesService} from "../../services/games.service";
 import {ThemingService} from "../../services/theming.service";
-import {DOCUMENT} from '@angular/common';
+import {DOCUMENT, Location} from '@angular/common';
 
 @Component({
   selector: 'app-header',
@@ -21,7 +21,8 @@ export class HeaderComponent {
               private gameService: GamesService,
               private themingService: ThemingService,
               private snackBar: MatSnackBar,
-              private router: Router) {
+              private router: Router,
+              private location: Location) {
   }
 
   scanLibrary(): void {
@@ -42,7 +43,7 @@ export class HeaderComponent {
   }
 
   goToLibraryScreen(): void {
-    this.router.navigate(['/']);
+    this.location.back();
   }
 
   goToLibraryManagementScreen(): void {

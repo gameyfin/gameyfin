@@ -3,10 +3,12 @@ import {GamesService} from "../../services/games.service";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GenreDto} from "../../models/dtos/GenreDto";
 import {ThemeDto} from "../../models/dtos/ThemeDto";
-import {firstValueFrom, forkJoin, Observable, pipe} from "rxjs";
+import {firstValueFrom, forkJoin, Observable} from "rxjs";
 import {SortDirection} from "@angular/material/sort";
-import {CompanyDto} from "../../models/dtos/CompanyDto";
 import {PlayerPerspectiveDto} from "../../models/dtos/PlayerPerspectiveDto";
+import {ActivatedRoute, Params, Router} from "@angular/router";
+import {Location} from "@angular/common";
+import {HttpParams} from "@angular/common/http";
 
 class SortOption {
   title: string;
@@ -60,7 +62,10 @@ export class LibraryOverviewComponent implements AfterContentInit {
   loading: boolean = true;
   gameLibraryIsEmpty: boolean = false;
 
-  constructor(private gameServerService: GamesService) {
+  constructor(private gameServerService: GamesService,
+              private route: ActivatedRoute,
+              private router: Router,
+              private location: Location) {
   }
 
   ngAfterContentInit(): void {
@@ -83,7 +88,16 @@ export class LibraryOverviewComponent implements AfterContentInit {
           this.availableThemes = result[1];
           this.availablePlayerPerspectives = result[2];
 
-          this.refreshLibraryView().then(() => this.loading = false);
+          this.route.queryParams.subscribe(params => {
+            if (params['search'] !== undefined) this.searchTerm = params['search'];
+            if (params['sort'] !== undefined) this.selectedSortOption = this.matchSelectedSortOptionFromParam(params['sort']);
+            if (params['gamemodes'] !== undefined) this.setSelectedGamemodesFromParam(params['gamemodes']);
+            if (params['genres'] !== undefined) this.activeGenreFilters = this.matchSelectedFilters(this.availableGenres, params['genres']);
+            if (params['themes'] !== undefined) this.activeThemeFilters = this.matchSelectedFilters(this.availableThemes, params['themes']);
+            if (params['playerPerspectives'] !== undefined) this.activePlayerPerspectiveFilters = this.matchSelectedFilters(this.availablePlayerPerspectives, params['playerPerspectives']);
+
+            this.refreshLibraryView().then(() => this.loading = false);
+          });
         });
       }
     );
@@ -91,7 +105,8 @@ export class LibraryOverviewComponent implements AfterContentInit {
 
   async refreshLibraryView(): Promise<void> {
     let games: DetectedGameDto[] = await firstValueFrom(this.gameServerService.getAllGames());
-    this.games =  this.sortGames(this.filterGames(games));
+    this.games = this.sortGames(this.filterGames(games));
+    this.saveStateToRoute();
   }
 
   clearSearchTerm(): void {
@@ -130,11 +145,11 @@ export class LibraryOverviewComponent implements AfterContentInit {
       // @ts-ignore
       let f2 = g2[this.selectedSortOption.field];
 
-      if(f1 > f2) return 1;
-      if(f1 < f2) return -1;
+      if (f1 > f2) return 1;
+      if (f1 < f2) return -1;
       return 0;
     });
-    if(this.selectedSortOption.direction === "desc") games = games.reverse();
+    if (this.selectedSortOption.direction === "desc") games = games.reverse();
     return games;
   }
 
@@ -181,6 +196,51 @@ export class LibraryOverviewComponent implements AfterContentInit {
     }
 
     this.refreshLibraryView();
+  }
+
+  private saveStateToRoute(): void {
+    let stateParams: Params = {};
+
+    if (this.searchTerm.trim().length > 0) stateParams['search'] = this.searchTerm;
+    if (this.selectedSortOption !== this.defaultSortOption) stateParams['sort'] = this.toParam(this.selectedSortOption);
+    if (this.getActiveGameModesFilters().length > 0) stateParams['gamemodes'] = this.getActiveGameModesFilters().join(',');
+    if (this.activeGenreFilters.length > 0) stateParams['genres'] = this.activeGenreFilters.join(',');
+    if (this.activeThemeFilters.length > 0) stateParams['themes'] = this.activeThemeFilters.join(',');
+    if (this.activePlayerPerspectiveFilters.length > 0) stateParams['playerPerspectives'] = this.activePlayerPerspectiveFilters.join(',');
+
+    const url = this.router.createUrlTree([], {relativeTo: this.route, queryParams: stateParams}).toString();
+    this.location.go(url);
+  }
+
+  private toParam(sortOption: SortOption): string {
+    return `${sortOption.field}_${sortOption.direction}`;
+  }
+
+  private matchSelectedSortOptionFromParam(sortParam: string): SortOption {
+    return this.sortOptions.find(s => sortParam === this.toParam(s)) ?? this.defaultSortOption;
+  }
+
+  private matchSelectedFilters(options: any[], paramString: string): string[] {
+    let params: string[] = paramString.split(",");
+    return options.filter(o => params.includes(o.slug)).map(o => o.slug);
+  }
+
+  private getActiveGameModesFilters(): string[] {
+    let activeFilters: string[] = [];
+
+    if (this.offlineCoopFilterEnabled) activeFilters.push('offlineCoop');
+    if (this.onlineCoopFilterEnabled) activeFilters.push('onlineCoop');
+    if (this.lanSupportFilterEnabled) activeFilters.push('lanSupport');
+
+    return activeFilters;
+  }
+
+  private setSelectedGamemodesFromParam(paramString: string): void {
+    let params: string[] = paramString.split(",");
+
+    if (params.includes('offlineCoop')) this.offlineCoopFilterEnabled = true;
+    if (params.includes('onlineCoop')) this.onlineCoopFilterEnabled = true;
+    if (params.includes('lanSupport')) this.lanSupportFilterEnabled = true;
   }
 
 }
