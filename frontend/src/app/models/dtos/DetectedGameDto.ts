@@ -30,4 +30,5 @@ export class DetectedGameDto {
   path!: string;
   diskSize!: number;
   confirmedMatch!: boolean | undefined;
+  addedToLibrary!: Date;
 }

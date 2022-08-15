@@ -12,8 +12,8 @@ import {UnmappedFileDto} from "../../models/dtos/UnmappedFileDto";
 export class LibraryManagementComponent implements OnInit {
   loggedIn: boolean = false;
 
-  mappedGames!: DetectedGameDto[];
-  unmappedFiles!: UnmappedFileDto[];
+  mappedGames: DetectedGameDto[] = [];
+  unmappedFiles: UnmappedFileDto[] = [];
 
   constructor(private gamesService: GamesService,
               private libraryManagementService: LibraryManagementService) {

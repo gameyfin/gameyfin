@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.entities;
 
 import lombok.*;
 import org.hibernate.Hibernate;
+import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
 import java.time.Instant;
@@ -85,6 +86,9 @@ public class DetectedGame {
 
     @Column(columnDefinition = "boolean default false")
     private boolean confirmedMatch;
+
+    @CreationTimestamp
+    private Instant addedToLibrary;
 
     @Override
     public boolean equals(Object o) {

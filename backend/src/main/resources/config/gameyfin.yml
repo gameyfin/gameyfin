@@ -1,0 +1,10 @@
+gameyfin:
+  file-extensions: iso, zip, rar, 7z, exe
+  igdb:
+    api:
+      client-id:
+      client-secret:
+      max-concurrent-requests: 2
+      max-requests-per-second: 4
+    config:
+      preferred-platforms: 6

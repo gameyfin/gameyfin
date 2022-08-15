@@ -5,7 +5,8 @@
 
   <span class="spacer"></span>
 
-  <img class="logo" src="assets/Gameyfin_Logo_256px.png" alt="Gameyfin Logo">
+  <img *ngIf="document.body.style.colorScheme == 'dark'" class="logo" src="assets/Gameyfin_Logo_256px.png" alt="Gameyfin Logo">
+  <img *ngIf="document.body.style.colorScheme == 'light'" class="logo" src="assets/Gameyfin_Logo_256px_dark.png" alt="Gameyfin Logo">
 
   <button mat-icon-button matTooltip="Reload library" (click)="reloadLibrary()" *ngIf="onLibraryScreen()">
     <mat-icon>refresh</mat-icon>

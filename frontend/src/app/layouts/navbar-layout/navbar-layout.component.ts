@@ -4,7 +4,7 @@ import {Component, OnInit} from '@angular/core';
   selector: 'app-navbar-layout',
   template: `
     <div class="main-container" fxLayout="column">
-      <div fxFlex="none" style="position: sticky; top: 0; z-index: 99999">
+      <div fxFlex="none" style="position: sticky; top: 0; z-index: 999">
         <app-header></app-header>
       </div>
       <div fxFlex>

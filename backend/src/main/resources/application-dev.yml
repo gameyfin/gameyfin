@@ -1,8 +1,6 @@
 gameyfin:
   user: admin
   password: password
-  cache: ${gameyfin.root}\.gameyfin\cache
-  db: ${gameyfin.root}\.gameyfin\db
 
 logging:
   level:

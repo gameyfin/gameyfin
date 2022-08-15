@@ -8,7 +8,7 @@ public class GameyfinApplication {
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(GameyfinApplication.class)
-                .properties("spring.config.name=application,gameyfin,database,secure")
+                .properties( "file.encoding=UTF-8", "spring.config.name=application,gameyfin,database,secure")
                 .build()
                 .run(args);
     }
