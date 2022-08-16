@@ -10,6 +10,10 @@
 
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 
+## Video
+
+Click [this link](https://youtu.be/BSaccEm0tpo) to watch how to install and set up Gameyfin on your machine.
+
 ## Features
 
 * Automatically scans your game library folder
