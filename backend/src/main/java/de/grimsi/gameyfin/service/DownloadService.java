@@ -116,7 +116,7 @@ public class DownloadService {
 
         MultiValueMap<String, String> gameToImageIds = new LinkedMultiValueMap<>(
                 detectedGameRepository.findAll().stream()
-                        .collect(Collectors.toMap(DetectedGame::getTitle, g -> Collections.singletonList(g.getCoverId()))));
+                        .collect(Collectors.toMap(DetectedGame::getSlug, g -> Collections.singletonList(g.getCoverId()))));
 
         int downloadCount = downloadImagesIntoCache(gameToImageIds, IgdbApiProperties.COVER_IMAGE_SIZE, "cover", "game");
 
@@ -133,7 +133,7 @@ public class DownloadService {
 
         MultiValueMap<String, String> gamesToImageIds = new LinkedMultiValueMap<>(
                 detectedGameRepository.findAll().stream()
-                        .collect(Collectors.toMap(DetectedGame::getTitle, DetectedGame::getScreenshotIds)));
+                        .collect(Collectors.toMap(DetectedGame::getSlug, DetectedGame::getScreenshotIds)));
 
         int downloadCount = downloadImagesIntoCache(gamesToImageIds, IgdbApiProperties.SCREENSHOT_IMAGE_SIZE, "screenshot", "game");
 
@@ -150,7 +150,7 @@ public class DownloadService {
 
         Map<String, List<String>> companyToLogoIdMap = detectedGameRepository.findAll().stream()
                 .flatMap(g -> g.getCompanies().stream())
-                .collect(Collectors.toMap(Company::getName, c -> Collections.singletonList(c.getLogoId()), (c1, c2) -> c1));
+                .collect(Collectors.toMap(Company::getSlug, c -> Collections.singletonList(c.getLogoId()), (c1, c2) -> c1));
 
         MultiValueMap<String, String> companiesToLogoIds = new LinkedMultiValueMap<>(companyToLogoIdMap);
 
@@ -215,12 +215,24 @@ public class DownloadService {
                     String imgUrl = "t_%s/%s".formatted(imageSize, imgFileName);
 
                     if (Files.exists(Path.of(cacheFolderPath, imgFileName))) {
-                        log.debug("{} for {} '{}' already downloaded ({}), skipping.",
-                                imageType.substring(0, 1).toUpperCase() + imageType.substring(1).toLowerCase(),
-                                entityType,
-                                entry.getKey(),
-                                imgFileName);
-                        return;
+
+                        Path existingImageFile = Path.of(cacheFolderPath, imgFileName);
+
+                        try {
+                            if(Files.size(existingImageFile) == 0L) {
+                                log.info("File '{}' is corrupt, retrying download...", imgFileName);
+                                Files.delete(existingImageFile);
+                            } else {
+                                log.debug("{} for {} '{}' already downloaded ({}), skipping.",
+                                        imageType.substring(0, 1).toUpperCase() + imageType.substring(1).toLowerCase(),
+                                        entityType,
+                                        entry.getKey(),
+                                        imgFileName);
+                                return;
+                            }
+                        } catch (IOException e) {
+                            log.error("Error while checking file '{}'.", existingImageFile);
+                        }
                     }
 
                     Flux<DataBuffer> dataBuffer = igdbImageClient.get()

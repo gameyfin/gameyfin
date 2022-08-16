@@ -19,6 +19,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -53,6 +54,7 @@ public class GameMapper {
                 .playerPerspectives(PlayerPerspectiveMapper.toPlayerPerspectives(g.getPlayerPerspectivesList()))
                 .path(path.toString())
                 .diskSize(calculateDiskSize(g, path))
+                .addedToLibrary(Instant.now())
                 .build();
     }
 
