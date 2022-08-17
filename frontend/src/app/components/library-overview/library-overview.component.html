@@ -11,14 +11,16 @@
     </div>
 
     <div fxLayout="column" fxLayoutAlign="center center">
-      <mat-icon fontSet="material-icons-outlined" color="primary" style="font-size: 128px; height: 128px; width: 128px;">
+      <mat-icon fontSet="material-icons-outlined" color="primary"
+                style="font-size: 128px; height: 128px; width: 128px;">
         videogame_asset_off
       </mat-icon>
       <h1>Your game library is empty!</h1>
     </div>
   </div>
 
-  <div class="content" fxLayout="row" fxLayout.lt-lg="column" fxFlexFill="100" *ngIf="!this.loading && !this.gameLibraryIsEmpty">
+  <div class="content" fxLayout="row" fxLayout.lt-lg="column" fxFlexFill="100"
+       *ngIf="!this.loading && !this.gameLibraryIsEmpty">
     <div fxFlex="10" fxHide fxShow.gt-md><!--SPACER--></div>
 
     <div fxFlex.gt-md="0 1 15" fxLayout="column" fxLayoutGap="16px" fxLayoutAlign.lt-lg="start center"
@@ -99,13 +101,15 @@
         </div>
       </mat-expansion-panel>
 
-      <mat-expansion-panel *ngIf="availablePlayerPerspectives.length > 0" [expanded]="activePlayerPerspectiveFilters.length > 0">
+      <mat-expansion-panel *ngIf="availablePlayerPerspectives.length > 0"
+                           [expanded]="activePlayerPerspectiveFilters.length > 0">
         <mat-expansion-panel-header>
           <h3 class="filter-category-title">Player Perspectives</h3>
         </mat-expansion-panel-header>
 
         <div fxLayout="column">
-          <mat-checkbox *ngFor="let playerPerspective of availablePlayerPerspectives" (change)="togglePlayerPerspectiveFilter(playerPerspective.slug)"
+          <mat-checkbox *ngFor="let playerPerspective of availablePlayerPerspectives"
+                        (change)="togglePlayerPerspectiveFilter(playerPerspective.slug)"
                         [checked]="activePlayerPerspectiveFilters.includes(playerPerspective.slug)"
                         color="primary">{{playerPerspective.name}}</mat-checkbox>
         </div>
@@ -114,12 +118,16 @@
 
     <div fxFlex="0 1 1"><!--SPACER--></div>
 
-    <div fxFlex fxLayout="row wrap" fxLayoutGap="16px grid">
-      <div *ngFor="let game of games">
-        <game-cover [game]="game"></game-cover>
+    <div fxFlex fxLayout="column">
+      <div fxFlex fxLayout="row wrap" fxLayoutGap="16px grid">
+        <div *ngFor="let game of games">
+          <game-cover [game]="game"></game-cover>
+        </div>
       </div>
+      <div fxFlex><!--SPACER--></div>
     </div>
 
     <div fxFlex="0 1 10" fxHide fxShow.gt-lg><!--SPACER--></div>
+
   </div>
 </div>
