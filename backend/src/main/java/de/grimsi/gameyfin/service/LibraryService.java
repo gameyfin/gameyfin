@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutExtension;
@@ -83,11 +84,17 @@ public class LibraryService {
                 .toList();
 
         // For each new game, load the info from IGDB
-        // If a game is not found on IGDB, add it to the list of unmapped files so we won't query the API later on for the same path
+        // If a game is not found on IGDB, add it to the list of unmapped files, so we won't query the API later on for the same path
         // If a game is not found on IGDB, blacklist the path, so we won't query the API later for the same path
         List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
                 .map(p -> {
                     Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutExtension(p));
+
+                    if(optionalGame.isPresent() && detectedGameRepository.existsBySlug(optionalGame.get().getSlug())) {
+                        log.warn("Game with slug '{}' already exists in database", optionalGame.get().getSlug());
+                        optionalGame = Optional.empty();
+                    }
+
                     return optionalGame.map(game -> Map.entry(p, game)).or(() -> {
                         unmappableFileRepository.save(new UnmappableFile(p.toString()));
                         newUnmappedFilesCounter.getAndIncrement();
@@ -99,7 +106,11 @@ public class LibraryService {
                 .map(Optional::get)
                 .peek(e -> log.info("Mapped file '{}' to game '{}' (slug: {})", e.getKey(), e.getValue().getName(), e.getValue().getSlug()))
                 .map(e -> GameMapper.toDetectedGame(e.getValue(), e.getKey()))
-                .toList();
+                .collect(Collectors.toList());
+
+        List<DetectedGame> duplicateGames = getDuplicates(newDetectedGames);
+        newUnmappedFilesCounter.getAndAdd(duplicateGames.size());
+        newDetectedGames.removeAll(duplicateGames);
 
         newDetectedGames = detectedGameRepository.saveAll(newDetectedGames);
 
@@ -111,5 +122,14 @@ public class LibraryService {
 
     public List<AutocompleteSuggestionDto> getAutocompleteSuggestions(String searchTerm, int limit) {
         return igdbWrapper.findPossibleMatchingTitles(searchTerm, limit);
+    }
+
+    private List<DetectedGame> getDuplicates(List<DetectedGame> gamesToFilter) {
+        return gamesToFilter.stream().filter(g -> Collections.frequency(gamesToFilter, g) >1)
+                .peek(d -> {
+                    log.warn("Found duplicate for game '{}' under path '{}'. Mapping must be done manually.", d.getTitle(), d.getPath());
+                    unmappableFileRepository.save(new UnmappableFile(d.getPath()));
+                })
+                .toList();
     }
 }
