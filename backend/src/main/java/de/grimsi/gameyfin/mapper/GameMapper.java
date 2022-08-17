@@ -104,8 +104,19 @@ public class GameMapper {
 
         stopWatch.start();
 
-        // Some benchmarks I did have shown that trying to parallelize this process makes it slower instead of faster
-        long fileSize = FileUtils.sizeOfDirectory(path.toFile());
+        long fileSize;
+
+        if(Files.isDirectory(path)) {
+            // Some benchmarks I did have shown that trying to parallelize this process makes it slower instead of faster
+            fileSize = FileUtils.sizeOfDirectory(path.toFile());
+        } else {
+            try{
+                fileSize = Files.size(path);
+            } catch (IOException e) {
+                log.error("Error while calculating size of file '{}'.", path);
+                fileSize = -1L;
+            }
+        }
 
         stopWatch.stop();
 
