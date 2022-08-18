@@ -54,7 +54,7 @@ public class GamesController {
         return ResponseEntity
                 .ok()
                 .header("Content-Disposition", "attachment; filename=\"%s\"".formatted(downloadFileName))
-                .body(out -> downloadService.downloadGameFiles(game, out));
+                .body(out -> downloadService.sendGamefilesToClient(game, out));
     }
 
 }

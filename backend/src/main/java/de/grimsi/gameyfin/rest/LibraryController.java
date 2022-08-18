@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.rest;
 
 import de.grimsi.gameyfin.service.DownloadService;
+import de.grimsi.gameyfin.service.ImageService;
 import de.grimsi.gameyfin.service.LibraryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ import java.util.List;
 public class LibraryController {
 
     private final LibraryService libraryService;
-    private final DownloadService downloadService;
+    private final ImageService imageService;
 
     @GetMapping(value = "/scan", produces = MediaType.APPLICATION_JSON_VALUE)
     public void scanLibrary(@RequestParam(value = "download_images", defaultValue = "true") boolean downloadImages) {
@@ -36,9 +37,9 @@ public class LibraryController {
 
     @GetMapping(value = "/download-images")
     public void downloadImages() {
-        downloadService.downloadGameCoversFromIgdb();
-        downloadService.downloadGameScreenshotsFromIgdb();
-        downloadService.downloadCompanyLogosFromIgdb();
+        imageService.downloadGameCoversFromIgdb();
+        imageService.downloadGameScreenshotsFromIgdb();
+        imageService.downloadCompanyLogosFromIgdb();
 
         log.info("Downloading images completed.");
     }

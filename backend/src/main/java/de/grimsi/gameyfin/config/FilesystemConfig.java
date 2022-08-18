@@ -39,7 +39,7 @@ public class FilesystemConfig {
             props.setProperty("gameyfin.db", "%s/.gameyfin/db".formatted(firstLibraryPath));
         }
 
-        if(StringUtils.hasText(cachePath)) {
+        if(!StringUtils.hasText(cachePath)) {
             props.setProperty("gameyfin.cache", "%s/.gameyfin/cache".formatted(firstLibraryPath));
         }
 

@@ -27,6 +27,6 @@ public class ImageController {
     public ResponseEntity<Resource> getCoverImageForGame(@PathVariable String imageId) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic())
-                .body(downloadService.downloadImage(imageId));
+                .body(downloadService.sendImageToClient(imageId));
     }
 }

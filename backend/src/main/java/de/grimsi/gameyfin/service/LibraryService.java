@@ -32,7 +32,9 @@ public class LibraryService {
 
     @Value("${gameyfin.sources}")
     private List<String> libraryFolders;
+
     private final IgdbWrapper igdbWrapper;
+    private final GameMapper gameMapper;
     private final DetectedGameRepository detectedGameRepository;
     private final UnmappableFileRepository unmappableFileRepository;
 
@@ -105,7 +107,7 @@ public class LibraryService {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .peek(e -> log.info("Mapped file '{}' to game '{}' (slug: {})", e.getKey(), e.getValue().getName(), e.getValue().getSlug()))
-                .map(e -> GameMapper.toDetectedGame(e.getValue(), e.getKey()))
+                .map(e -> gameMapper.toDetectedGame(e.getValue(), e.getKey()))
                 .collect(Collectors.toList());
 
         List<DetectedGame> duplicateGames = getDuplicates(newDetectedGames);
