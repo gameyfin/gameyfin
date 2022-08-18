@@ -6,12 +6,15 @@
   width: 264px;
   background-repeat: no-repeat;
   background-position: center bottom;
-
-  @include mat.elevation-transition();
   @include mat.elevation(4);
+}
 
-  &:hover {
-    @include mat.elevation(24);
+.enlarge {
+  transition: transform 280ms ease-out;
+
+  &:hover,
+  &:focus {
+    transform: scale(1.05);
   }
 }
 
