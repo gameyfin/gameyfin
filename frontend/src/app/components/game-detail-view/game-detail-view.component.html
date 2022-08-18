@@ -1,4 +1,5 @@
-<div fxLayout="row" fxLayoutAlign="center" style="margin-top: 16px;" *ngIf="this.game !== null && this.game !== undefined">
+<div fxLayout="row" fxLayoutAlign="center" style="margin-top: 16px;"
+     *ngIf="this.game !== null && this.game !== undefined">
   <div fxLayout="column" fxFlex="0 1 70" fxLayoutGap="16px" fxFlex.lt-xl="95">
     <div fxLayout="row" fxLayout.lt-lg="column" fxLayoutGap="16px">
 
@@ -9,16 +10,18 @@
       <div fxFlex="40" fxLayout="column" fxLayoutGap="16px">
         <h1>{{game.title}}</h1>
         <h3>Release: {{game.releaseDate | date: 'longDate'}}</h3>
+
+        <h2>Description</h2>
         <p>{{game.summary}}</p>
 
-        <div *ngIf="game.criticsRating !== undefined && game.criticsRating > 0">
-          <h2>Critics Rating <span style="font-weight: normal; font-size: medium">({{game.criticsRating}}/100)</span></h2>
-          <mat-progress-bar mode="determinate" [value]="game.criticsRating" [progressBarColor]="mapRatingToColor(game.criticsRating)"></mat-progress-bar>
-        </div>
-
-        <div *ngIf="game.userRating !== undefined && game.userRating > 0">
-          <h2>User Rating <span style="font-weight: normal; font-size: medium">({{game.userRating}}/100)</span></h2>
-          <mat-progress-bar mode="determinate" [value]="game.userRating" [progressBarColor]="mapRatingToColor(game.userRating)"></mat-progress-bar>
+        <div *ngIf="game.companies !== undefined && game.companies.length > 0">
+          <h2>Developed by</h2>
+          <div fxLayout="row wrap" fxLayoutGap="16px">
+            <div *ngFor="let company of game.companies">
+              <img *ngIf="company.logoId !== undefined && company.logoId.length > 0" style="height: 52px;"
+                   src="v1/images/{{company.logoId}}" alt="{{company.name}}">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -37,15 +40,32 @@
           <div *ngIf="game.genres !== undefined && game.genres.length > 0">
             <h2>Genres</h2>
             <mat-chip-list>
-              <mat-chip *ngFor="let genre of game.genres" (click)="goToLibraryWithFilter('genres', genre.slug)">{{genre.name}}</mat-chip>
+              <mat-chip *ngFor="let genre of game.genres"
+                        (click)="goToLibraryWithFilter('genres', genre.slug)">{{genre.name}}</mat-chip>
             </mat-chip-list>
           </div>
 
           <div *ngIf="game.themes !== undefined && game.themes.length > 0">
             <h2>Themes</h2>
             <mat-chip-list>
-              <mat-chip *ngFor="let theme of game.themes" (click)="goToLibraryWithFilter('themes', theme.slug)">{{theme.name}}</mat-chip>
+              <mat-chip *ngFor="let theme of game.themes"
+                        (click)="goToLibraryWithFilter('themes', theme.slug)">{{theme.name}}</mat-chip>
             </mat-chip-list>
+          </div>
+        </div>
+
+        <div fxFlex fxLayout="row" fxLayoutGap="16px">
+          <div fxFlex="40" *ngIf="game.criticsRating !== undefined && game.criticsRating > 0">
+            <h2>Critics Rating <span style="font-weight: normal; font-size: medium">({{game.criticsRating}}/100)</span>
+            </h2>
+            <mat-progress-bar mode="determinate" [value]="game.criticsRating"
+                              [progressBarColor]="mapRatingToColor(game.criticsRating)"></mat-progress-bar>
+          </div>
+
+          <div fxFlex="40" *ngIf="game.userRating !== undefined && game.userRating > 0">
+            <h2>User Rating <span style="font-weight: normal; font-size: medium">({{game.userRating}}/100)</span></h2>
+            <mat-progress-bar mode="determinate" [value]="game.userRating"
+                              [progressBarColor]="mapRatingToColor(game.userRating)"></mat-progress-bar>
           </div>
         </div>
       </div>
@@ -56,14 +76,16 @@
       <div *ngIf="game.screenshotIds !== undefined && game.screenshotIds.length > 0">
         <h2>Screenshots</h2>
         <div fxLayout="row wrap" fxLayoutGap="8px grid">
-          <game-screenshot *ngFor="let screenshotId of game.screenshotIds" [screenshotId]="screenshotId" style="margin-bottom: -6px"></game-screenshot>
+          <game-screenshot *ngFor="let screenshotId of game.screenshotIds" [screenshotId]="screenshotId"
+                           style="margin-bottom: -6px"></game-screenshot>
         </div>
       </div>
 
       <div *ngIf="game.videoIds !== undefined && game.videoIds.length > 0">
         <h2>Videos</h2>
         <div fxLayout="row wrap" fxLayoutGap="8px grid">
-          <game-video *ngFor="let videoId of game.videoIds" [videoId]="videoId" [width]="555" [height]="312"></game-video>
+          <game-video *ngFor="let videoId of game.videoIds" [videoId]="videoId" [width]="555"
+                      [height]="312"></game-video>
         </div>
       </div>
     </div>
