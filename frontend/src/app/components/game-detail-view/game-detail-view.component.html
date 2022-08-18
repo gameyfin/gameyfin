@@ -6,11 +6,20 @@
         <img style="max-width: 264px;" src="v1/images/{{game.coverId}}" alt="Game cover">
       </div>
 
-      <div fxFlex="40" fxLayout="column" id="game-details">
+      <div fxFlex="40" fxLayout="column" fxLayoutGap="16px">
         <h1>{{game.title}}</h1>
-        <h3>Rating: {{game.totalRating}}/100</h3>
         <h3>Release: {{game.releaseDate | date: 'longDate'}}</h3>
-        <p id="game-summary">{{game.summary}}</p>
+        <p>{{game.summary}}</p>
+
+        <div *ngIf="game.criticsRating !== undefined && game.criticsRating > 0">
+          <h2>Critics Rating <span style="font-weight: normal; font-size: medium">({{game.criticsRating}}/100)</span></h2>
+          <mat-progress-bar mode="determinate" [value]="game.criticsRating" [progressBarColor]="mapRatingToColor(game.criticsRating)"></mat-progress-bar>
+        </div>
+
+        <div *ngIf="game.userRating !== undefined && game.userRating > 0">
+          <h2>User Rating <span style="font-weight: normal; font-size: medium">({{game.userRating}}/100)</span></h2>
+          <mat-progress-bar mode="determinate" [value]="game.userRating" [progressBarColor]="mapRatingToColor(game.userRating)"></mat-progress-bar>
+        </div>
       </div>
 
       <div fxFlex><!-- Spacer --></div>
@@ -57,7 +66,6 @@
           <game-video *ngFor="let videoId of game.videoIds" [videoId]="videoId" [width]="555" [height]="312"></game-video>
         </div>
       </div>
-
     </div>
   </div>
 </div>

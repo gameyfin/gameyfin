@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component} from '@angular/core';
 import {ActivatedRoute, Params, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
@@ -8,28 +8,23 @@ import {GamesService} from "../../services/games.service";
   templateUrl: './game-detail-view.component.html',
   styleUrls: ['./game-detail-view.component.scss']
 })
-export class GameDetailViewComponent implements OnInit {
+export class GameDetailViewComponent {
 
   game!: DetectedGameDto;
 
   constructor(private route: ActivatedRoute,
               private router: Router,
               private gamesService: GamesService) {
-    this.route.params.subscribe( params => {
-      this.gamesService.getGame(params['slug']).subscribe({
-          next: game => this.game = game,
-          error: error => {
-            if(error.status === 404) {
-              this.router.navigate(['/library']);
-            } else {
-              console.error(error);
-            }
-          }
-        });
+    this.gamesService.getGame(this.route.snapshot.params['slug']).subscribe({
+      next: game => this.game = game,
+      error: error => {
+        if (error.status === 404) {
+          this.router.navigate(['/library']);
+        } else {
+          console.error(error);
+        }
+      }
     });
-  }
-
-  ngOnInit(): void {
   }
 
   public downloadGame(): void {
@@ -46,7 +41,7 @@ export class GameDetailViewComponent implements OnInit {
     const units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     const dp = 1;
     let u = -1;
-    const r = 10**dp;
+    const r = 10 ** dp;
 
     do {
       bytes /= thresh;
@@ -60,6 +55,13 @@ export class GameDetailViewComponent implements OnInit {
     let params: Params = {};
     params[field] = value;
     this.router.navigate(['/library'], {queryParams: params});
+  }
+
+  mapRatingToColor(rating: number): string {
+    if(rating >= 75) return '#388e3c';
+    if(rating >= 50) return '#fbc02d';
+    if(rating >= 25) return '#f57c00';
+    return '#d32f2f';
   }
 
 }
