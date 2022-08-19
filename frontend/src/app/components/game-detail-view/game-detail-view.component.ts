@@ -1,7 +1,8 @@
-import {Component} from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 import {ActivatedRoute, Params, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
+import {MediaObserver} from "@angular/flex-layout";
 
 @Component({
   selector: 'app-game-detail-view',
@@ -12,9 +13,12 @@ export class GameDetailViewComponent {
 
   game!: DetectedGameDto;
 
+  gridColumnCount: number;
+
   constructor(private route: ActivatedRoute,
               private router: Router,
-              private gamesService: GamesService) {
+              private gamesService: GamesService,
+              private mediaObserver: MediaObserver) {
     this.gamesService.getGame(this.route.snapshot.params['slug']).subscribe({
       next: game => this.game = game,
       error: error => {
@@ -25,6 +29,13 @@ export class GameDetailViewComponent {
         }
       }
     });
+
+    this.gridColumnCount = this.calculateColumnCount();
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.gridColumnCount = this.calculateColumnCount();
   }
 
   public downloadGame(): void {
@@ -58,10 +69,21 @@ export class GameDetailViewComponent {
   }
 
   mapRatingToColor(rating: number): string {
-    if(rating >= 75) return '#388e3c';
-    if(rating >= 50) return '#fbc02d';
-    if(rating >= 25) return '#f57c00';
+    if (rating >= 75) return '#388e3c';
+    if (rating >= 50) return '#fbc02d';
+    if (rating >= 25) return '#f57c00';
     return '#d32f2f';
+  }
+
+  private calculateColumnCount(): number {
+    const elementWidth: number = 555;
+    const containerWidth: number | undefined = document.getElementById('game-media')?.offsetWidth;
+    const defaultColumnCount = 3;
+
+    if (containerWidth === undefined) return defaultColumnCount
+    if (containerWidth < elementWidth) return 1;
+
+    return Math.floor(containerWidth / elementWidth);
   }
 
 }
