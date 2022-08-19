@@ -87,7 +87,7 @@
         </mat-grid-list>
       </div>
 
-      <div *ngIf="game.screenshotIds !== undefined && game.screenshotIds.length > 0">
+      <div *ngIf="game.videoIds !== undefined && game.videoIds.length > 0">
         <h2>Videos</h2>
         <mat-grid-list [cols]="gridColumnCount" gutterSize="8px" rowHeight="312px">
           <mat-grid-tile *ngFor="let videoId of game.videoIds" style="width: 555px; height: 312px;">
