@@ -2,7 +2,6 @@ import {Component, HostListener} from '@angular/core';
 import {ActivatedRoute, Params, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
-import {MediaObserver} from "@angular/flex-layout";
 
 @Component({
   selector: 'app-game-detail-view',
@@ -17,8 +16,7 @@ export class GameDetailViewComponent {
 
   constructor(private route: ActivatedRoute,
               private router: Router,
-              private gamesService: GamesService,
-              private mediaObserver: MediaObserver) {
+              private gamesService: GamesService) {
     this.gamesService.getGame(this.route.snapshot.params['slug']).subscribe({
       next: game => this.game = game,
       error: error => {
