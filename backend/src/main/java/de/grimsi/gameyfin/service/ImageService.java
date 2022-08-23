@@ -42,7 +42,7 @@ public class ImageService {
         igdbImageClient = webclientBuilder.baseUrl(IgdbApiProperties.IMAGES_BASE_URL).build();
     }
 
-    public void downloadGameCoversFromIgdb() {
+    public int downloadGameCoversFromIgdb() {
         StopWatch stopWatch = new StopWatch();
 
         log.info("Starting game cover download...");
@@ -57,9 +57,10 @@ public class ImageService {
         stopWatch.stop();
 
         log.info("Downloaded {} covers in {} seconds.", downloadCount, (int) stopWatch.getTotalTimeSeconds());
+        return downloadCount;
     }
 
-    public void downloadGameScreenshotsFromIgdb() {
+    public int downloadGameScreenshotsFromIgdb() {
         StopWatch stopWatch = new StopWatch();
 
         log.info("Starting game screenshot download...");
@@ -74,9 +75,10 @@ public class ImageService {
         stopWatch.stop();
 
         log.info("Downloaded {} screenshots in {} seconds.", downloadCount, (int) stopWatch.getTotalTimeSeconds());
+        return downloadCount;
     }
 
-    public void downloadCompanyLogosFromIgdb() {
+    public int downloadCompanyLogosFromIgdb() {
         StopWatch stopWatch = new StopWatch();
 
         log.info("Starting company logo download...");
@@ -93,6 +95,7 @@ public class ImageService {
         stopWatch.stop();
 
         log.info("Downloaded {} company logos in {} seconds.", downloadCount, (int) stopWatch.getTotalTimeSeconds());
+        return downloadCount;
     }
 
     private int saveImagesIntoCache(MultiValueMap<String, String> entityToImageIds, String imageSize, String imageType, String entityType) {

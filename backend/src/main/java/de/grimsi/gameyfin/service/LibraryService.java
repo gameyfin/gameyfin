@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.service;
 
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
+import de.grimsi.gameyfin.dto.LibraryScanResult;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
@@ -57,7 +58,7 @@ public class LibraryService {
         return gamefiles;
     }
 
-    public void scanGameLibrary() {
+    public LibraryScanResult scanGameLibrary() {
         StopWatch stopWatch = new StopWatch();
 
         log.info("Starting scan...");
@@ -120,6 +121,13 @@ public class LibraryService {
 
         log.info("Scan finished in {} seconds: Found {} new games, deleted {} games, could not map {} files/folders, {} games total.",
                 (int) stopWatch.getTotalTimeSeconds(), newDetectedGames.size(), deletedGames.size() + deletedUnmappableFiles.size(), newUnmappedFilesCounter.get(), detectedGameRepository.count());
+
+        return LibraryScanResult.builder()
+                .newGames(newDetectedGames.size())
+                .deletedGames(deletedGames.size() + deletedUnmappableFiles.size())
+                .newUnmappableFiles(newUnmappedFilesCounter.get())
+                .totalGames((int) detectedGameRepository.count())
+                .build();
     }
 
     public List<AutocompleteSuggestionDto> getAutocompleteSuggestions(String searchTerm, int limit) {

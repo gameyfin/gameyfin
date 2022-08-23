@@ -1,7 +1,6 @@
 import {Component} from '@angular/core';
 import {LibraryService} from "../../services/library.service";
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {timeInterval} from "rxjs";
 import {Router} from "@angular/router";
 import {GamesService} from "../../services/games.service";
 import {ThemingService} from "../../services/theming.service";
@@ -26,11 +25,27 @@ export class HeaderComponent {
   }
 
   scanLibrary(): void {
-    this.libraryService.scanLibrary().pipe(timeInterval()).subscribe({
-      next: value => {
+    this.libraryService.scanLibrary().subscribe({
+      next: result => {
         // Refresh the current page "angular style"
-        this.router.navigate([this.router.url]).then(() =>
-          this.snackBar.open(`Library scan completed in ${Math.trunc(value.interval / 1000)} seconds.`, undefined, {duration: 5000})
+        this.router.navigate([this.router.url]).then(() => {
+            const snackBarDuration: number = 10000;
+
+            let snackbarContent: string = 'Library scan completed in ' + result.scanDuration + ' seconds:\n' +
+              '- ' + result.newGames + ' new games\n' +
+              '- ' + result.deletedGames + ' games removed\n' +
+              '- ' + result.newUnmappableFiles + ' files/folders could not be mapped\n' +
+              '- ' + result.totalGames + ' games currently in your library';
+
+            if (result.companyLogoDownloads !== undefined && result.coverDownloads !== undefined && result.screenshotDownloads !== undefined) {
+              snackbarContent = snackbarContent.concat('\n' +
+                '- ' + result.coverDownloads + ' covers downloaded\n' +
+                '- ' + result.screenshotDownloads + ' screenshots downloaded\n' +
+                '- ' + result.companyLogoDownloads + ' company logos downloaded');
+            }
+
+            this.snackBar.open(snackbarContent, undefined, {duration: snackBarDuration});
+          }
         )
       },
       error: error => this.snackBar.open(`Error while scanning library: ${error.error.message}`, undefined, {duration: 5000})

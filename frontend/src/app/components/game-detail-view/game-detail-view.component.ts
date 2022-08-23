@@ -2,6 +2,7 @@ import {Component, HostListener} from '@angular/core';
 import {ActivatedRoute, Params, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
+import {CompanyDto} from "../../models/dtos/CompanyDto";
 
 @Component({
   selector: 'app-game-detail-view',
@@ -12,13 +13,20 @@ export class GameDetailViewComponent {
 
   game!: DetectedGameDto;
 
+  companiesWithLogo: CompanyDto[]= [];
+
   gridColumnCount: number;
 
   constructor(private route: ActivatedRoute,
               private router: Router,
               private gamesService: GamesService) {
     this.gamesService.getGame(this.route.snapshot.params['slug']).subscribe({
-      next: game => this.game = game,
+      next: game => {
+        this.game = game;
+        if(game.companies !== undefined) {
+          this.companiesWithLogo = game.companies.filter(c => c.logoId !== undefined && c.logoId.length > 0);
+        }
+      },
       error: error => {
         if (error.status === 404) {
           this.router.navigate(['/library']);

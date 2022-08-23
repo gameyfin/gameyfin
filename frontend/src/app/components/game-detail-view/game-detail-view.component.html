@@ -17,13 +17,11 @@
             <p>{{game.summary}}</p>
           </div>
 
-          <div *ngIf="game.companies !== undefined && game.companies.length > 0">
+          <div *ngIf="companiesWithLogo.length > 0">
             <h2>Developed by</h2>
             <div fxLayout="row wrap" fxLayoutGap="8px grid">
-              <div *ngFor="let company of game.companies">
-                <img *ngIf="company.logoId !== undefined && company.logoId.length > 0" style="height: 52px;"
-                     src="v1/images/{{company.logoId}}" alt="{{company.name}}">
-                <span *ngIf="company.logoId.length > 0">{{company.name}}</span>
+              <div *ngFor="let company of companiesWithLogo">
+                <img style="height: 52px;" src="v1/images/{{company.logoId}}" alt="{{company.name}}" [matTooltip]="company.name">
               </div>
             </div>
           </div>

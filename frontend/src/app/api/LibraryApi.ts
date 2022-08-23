@@ -1,8 +1,11 @@
 import {Observable} from "rxjs";
-import {HttpResponse} from "@angular/common/http";
+import {LibraryScanResultDto} from "../models/dtos/LibraryScanResultDto";
+import {ImageDownloadResultDto} from "../models/dtos/ImageDownloadResultDto";
 
 export interface LibraryApi {
-  scanLibrary(): Observable<HttpResponse<Response>>;
-  downloadImages(): Observable<HttpResponse<Response>>;
+  scanLibrary(): Observable<LibraryScanResultDto>;
+
+  downloadImages(): Observable<ImageDownloadResultDto>;
+
   getFiles(): Observable<string[]>;
 }
