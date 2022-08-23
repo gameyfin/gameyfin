@@ -8,7 +8,7 @@ import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,17 +19,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Service
 public class GameService {
 
-    @Autowired
-    private IgdbWrapper igdbWrapper;
-
-    @Autowired
-    private DetectedGameRepository detectedGameRepository;
-
-    @Autowired
-    private UnmappableFileRepository unmappableFileRepository;
+    private final IgdbWrapper igdbWrapper;
+    private final GameMapper gameMapper;
+    private final DetectedGameRepository detectedGameRepository;
+    private final UnmappableFileRepository unmappableFileRepository;
 
     public List<DetectedGame> getAllDetectedGames() {
         return detectedGameRepository.findAll();
@@ -48,13 +45,13 @@ public class GameService {
     }
 
     public List<GameOverviewDto> getGameOverviews() {
-        return detectedGameRepository.findAll().stream().map(GameMapper::toGameOverviewDto).toList();
+        return detectedGameRepository.findAll().stream().map(gameMapper::toGameOverviewDto).toList();
     }
 
     public void deleteGame(String slug) {
         DetectedGame gameToBeDeleted = getDetectedGame(slug);
 
-        // Add the path of the game to be deleted to the unmappable files
+        // Add the path of the game to be deleted to the unmappable files,
         // so it doesn't get re-indexed on the next library scan
         unmappableFileRepository.save(new UnmappableFile(gameToBeDeleted.getPath()));
 
@@ -94,7 +91,7 @@ public class GameService {
         Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
 
-        DetectedGame game = GameMapper.toDetectedGame(igdbGame, Path.of(unmappableFile.getPath()));
+        DetectedGame game = gameMapper.toDetectedGame(igdbGame, Path.of(unmappableFile.getPath()));
         game = detectedGameRepository.save(game);
 
         unmappableFileRepository.delete(unmappableFile);
@@ -106,7 +103,7 @@ public class GameService {
         Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
 
-        DetectedGame game = GameMapper.toDetectedGame(igdbGame, Path.of(existingGame.getPath()));
+        DetectedGame game = gameMapper.toDetectedGame(igdbGame, Path.of(existingGame.getPath()));
         game = detectedGameRepository.save(game);
 
         detectedGameRepository.deleteById(existingGame.getSlug());

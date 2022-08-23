@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.*;
 import org.springframework.util.PropertyPlaceholderHelper;
+import org.springframework.util.StringUtils;
 
 import javax.sql.DataSource;
 import java.util.Arrays;
@@ -21,14 +22,27 @@ public class FilesystemConfig {
     @Value("#{'${gameyfin.sources}'.split(',')[0]}")
     private String firstLibraryPath;
 
+    @Value("${gameyfin.db}")
+    private String dbPath;
+
+    @Value("${gameyfin.cache}")
+    private String cachePath;
+
     @Autowired
     Environment env;
 
     @Autowired
     public void setConfigurableEnvironment(ConfigurableEnvironment env) {
         Properties props = new Properties();
-        props.setProperty("gameyfin.db", "%s/.gameyfin/db".formatted(firstLibraryPath));
-        props.setProperty("gameyfin.cache", "%s/.gameyfin/cache".formatted(firstLibraryPath));
+
+        if(!StringUtils.hasText(dbPath)) {
+            props.setProperty("gameyfin.db", "%s/.gameyfin/db".formatted(firstLibraryPath));
+        }
+
+        if(!StringUtils.hasText(cachePath)) {
+            props.setProperty("gameyfin.cache", "%s/.gameyfin/cache".formatted(firstLibraryPath));
+        }
+
         env.getPropertySources().addFirst(new PropertiesPropertySource("gameyfinFilesystemProperties", props));
     }
 

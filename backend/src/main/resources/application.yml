@@ -1,3 +1,5 @@
 # General
 logging.level:
   root: info
+  # Hides an error log on the first aborted download
+  org.apache.catalina.core.ContainerBase: off

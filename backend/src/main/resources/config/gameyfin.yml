@@ -1,4 +1,6 @@
 gameyfin:
+  db: ""
+  cache: ""
   file-extensions: iso, zip, rar, 7z, exe
   igdb:
     api:

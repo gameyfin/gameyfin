@@ -8,6 +8,7 @@ import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.service.DownloadService;
 import de.grimsi.gameyfin.service.GameService;
+import de.grimsi.gameyfin.service.ImageService;
 import de.grimsi.gameyfin.service.LibraryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -23,8 +24,7 @@ import java.util.List;
 public class LibraryManagementController {
 
     private final GameService gameService;
-    private final DownloadService downloadService;
-
+    private final ImageService imageService;
     private final LibraryService libraryService;
 
     @DeleteMapping(value = "/delete-game/{slug}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -45,10 +45,10 @@ public class LibraryManagementController {
     @PostMapping(value = "/map-path", produces = MediaType.APPLICATION_JSON_VALUE)
     public DetectedGame manuallyMapPathToSlug(@RequestBody PathToSlugDto pathToSlugDto) {
         DetectedGame game = gameService.mapPathToGame(pathToSlugDto.getPath(), pathToSlugDto.getSlug());
-        
-        downloadService.downloadGameCoversFromIgdb();
-        downloadService.downloadGameScreenshotsFromIgdb();
-        downloadService.downloadCompanyLogosFromIgdb();
+
+        imageService.downloadGameCoversFromIgdb();
+        imageService.downloadGameScreenshotsFromIgdb();
+        imageService.downloadCompanyLogosFromIgdb();
 
         return game;
     }

@@ -1,7 +1,9 @@
 import {Injectable} from '@angular/core';
-import {HttpClient, HttpResponse} from "@angular/common/http";
+import {HttpClient} from "@angular/common/http";
 import {Observable} from "rxjs";
 import {LibraryApi} from "../api/LibraryApi";
+import {LibraryScanResultDto} from "../models/dtos/LibraryScanResultDto";
+import {ImageDownloadResultDto} from "../models/dtos/ImageDownloadResultDto";
 
 @Injectable({
   providedIn: 'root'
@@ -13,12 +15,12 @@ export class LibraryService implements LibraryApi {
   constructor(private http: HttpClient) {
   }
 
-  scanLibrary(): Observable<HttpResponse<Response>> {
-    return this.http.get<HttpResponse<Response>>(`${this.apiPath}/scan`);
+  scanLibrary(): Observable<LibraryScanResultDto> {
+    return this.http.get<LibraryScanResultDto>(`${this.apiPath}/scan`);
   }
 
-  downloadImages(): Observable<HttpResponse<Response>> {
-    return this.http.get<HttpResponse<Response>>(`${this.apiPath}/download-images`);
+  downloadImages(): Observable<ImageDownloadResultDto> {
+    return this.http.get<ImageDownloadResultDto>(`${this.apiPath}/download-images`);
   }
 
   getFiles(): Observable<string[]> {

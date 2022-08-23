@@ -4,6 +4,7 @@ import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.service.FilesystemService;
 import de.grimsi.gameyfin.service.LibraryService;
 import de.grimsi.gameyfin.util.ProtobufUtil;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,13 @@ import java.util.List;
 import java.util.stream.Stream;
 
 @Slf4j
+@RequiredArgsConstructor
+@Component
 public class GameMapper {
 
-    public static DetectedGame toDetectedGame(Igdb.Game g, Path path) {
+    private final FilesystemService filesystemService;
+
+    public DetectedGame toDetectedGame(Igdb.Game g, Path path) {
         List<Igdb.MultiplayerMode> multiplayerModes = g.getMultiplayerModesList();
         List<String> screenshotIds = g.getScreenshotsList().stream().map(Igdb.Screenshot::getImageId).toList();
         List<String> videoIds = g.getVideosList().stream().map(Igdb.GameVideo::getVideoId).toList();
@@ -58,7 +63,7 @@ public class GameMapper {
                 .build();
     }
 
-    public static GameOverviewDto toGameOverviewDto(DetectedGame game) {
+    public GameOverviewDto toGameOverviewDto(DetectedGame game) {
         return GameOverviewDto.builder()
                 .slug(game.getSlug())
                 .title(game.getTitle())
@@ -66,7 +71,7 @@ public class GameMapper {
                 .build();
     }
 
-    public static AutocompleteSuggestionDto toAutocompleteSuggestionDto(Igdb.Game game) {
+    public AutocompleteSuggestionDto toAutocompleteSuggestionDto(Igdb.Game game) {
         return AutocompleteSuggestionDto.builder()
                 .slug(game.getSlug())
                 .title(game.getName())
@@ -74,7 +79,7 @@ public class GameMapper {
                 .build();
     }
 
-    private static String getCoverId(Igdb.Game g) {
+    private String getCoverId(Igdb.Game g) {
         String coverId = g.getCover().getImageId();
 
         if(StringUtils.hasText(coverId)) return coverId;
@@ -82,23 +87,23 @@ public class GameMapper {
         return "nocover";
     }
 
-    private static boolean hasOfflineCoop(List<Igdb.MultiplayerMode> modes) {
+    private boolean hasOfflineCoop(List<Igdb.MultiplayerMode> modes) {
         return modes.stream().anyMatch(Igdb.MultiplayerMode::getOfflinecoop);
     }
 
-    private static boolean hasLanSupport(List<Igdb.MultiplayerMode> modes) {
+    private boolean hasLanSupport(List<Igdb.MultiplayerMode> modes) {
         return modes.stream().anyMatch(Igdb.MultiplayerMode::getLancoop);
     }
 
-    private static boolean hasOnlineCoop(List<Igdb.MultiplayerMode> modes) {
+    private boolean hasOnlineCoop(List<Igdb.MultiplayerMode> modes) {
         return modes.stream().anyMatch(Igdb.MultiplayerMode::getOnlinecoop);
     }
 
-    private static int getMaxPlayers(List<Igdb.MultiplayerMode> modes) {
+    private int getMaxPlayers(List<Igdb.MultiplayerMode> modes) {
         return modes.stream().mapToInt(Igdb.MultiplayerMode::getOnlinecoopmax).max().orElse(0);
     }
 
-    private static long calculateDiskSize(Igdb.Game g, Path path) {
+    private long calculateDiskSize(Igdb.Game g, Path path) {
         StopWatch stopWatch = new StopWatch();
         log.info("Calculating disk size for game '{}'...", g.getName());
 
@@ -106,16 +111,11 @@ public class GameMapper {
 
         long fileSize;
 
-        if(Files.isDirectory(path)) {
-            // Some benchmarks I did have shown that trying to parallelize this process makes it slower instead of faster
-            fileSize = FileUtils.sizeOfDirectory(path.toFile());
-        } else {
-            try{
-                fileSize = Files.size(path);
-            } catch (IOException e) {
-                log.error("Error while calculating size of file '{}'.", path);
-                fileSize = -1L;
-            }
+        try {
+            fileSize = filesystemService.getSizeOnDisk(path);
+        } catch(IOException e) {
+            log.error("Error while calculating disk size for game '{}'", g.getName());
+            fileSize = -1L;
         }
 
         stopWatch.stop();

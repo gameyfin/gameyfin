@@ -7,6 +7,7 @@ import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class IgdbWrapper {
     @Value("${gameyfin.igdb.api.client-id}")
@@ -35,11 +37,9 @@ public class IgdbWrapper {
     @Value("${gameyfin.igdb.config.preferred-platforms:6}")
     private String preferredPlatforms;
 
-    @Autowired
-    private WebClient.Builder webclientBuilder;
-
-    @Autowired
-    private WebClientConfig webClientConfig;
+    private final WebClient.Builder webclientBuilder;
+    private final WebClientConfig webClientConfig;
+    private final GameMapper gameMapper;
 
     private WebClient twitchApiClient;
 
@@ -106,7 +106,7 @@ public class IgdbWrapper {
 
         if(gameResult == null) return Collections.emptyList();
 
-        return gameResult.getGamesList().stream().map(GameMapper::toAutocompleteSuggestionDto).toList();
+        return gameResult.getGamesList().stream().map(gameMapper::toAutocompleteSuggestionDto).toList();
     }
 
     public Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {

@@ -51,6 +51,8 @@ import { NgModelChangeDebouncedDirective } from './directives/ng-model-change-de
 import { FooterComponent } from './components/footer/footer.component';
 import {MatExpansionModule} from "@angular/material/expansion";
 import {MatSelectModule} from "@angular/material/select";
+import {MatProgressBarModule} from "@angular/material/progress-bar";
+import { ProgressBarColorDirective } from './directives/progress-bar-color.directive';
 
 @NgModule({
   declarations: [
@@ -69,6 +71,7 @@ import {MatSelectModule} from "@angular/material/select";
     MappedGamesTableComponent,
     UnmappedFilesTableComponent,
     NgModelChangeDebouncedDirective,
+    ProgressBarColorDirective,
     FooterComponent
   ],
   imports: [
@@ -108,7 +111,8 @@ import {MatSelectModule} from "@angular/material/select";
     MatListModule,
     MatAutocompleteModule,
     MatExpansionModule,
-    MatSelectModule
+    MatSelectModule,
+    MatProgressBarModule,
   ],
   providers: [
     {

@@ -1,5 +1,5 @@
 <a routerLink="/game/{{game.slug}}">
-  <div class="game-cover-container shine" [style.background-image]="'url(v1/images/' + game.coverId + ')'" fxLayoutAlign="center end">
+  <div class="game-cover-container shine enlarge" [style.background-image]="'url(v1/images/' + game.coverId + ')'" fxLayoutAlign="center end">
     <h2 *ngIf="game.coverId === 'nocover'" class="no-link-stlying">{{game.title}}</h2>
   </div>
 </a>
