@@ -63,6 +63,17 @@
             </goals>
           </execution>
 
+          <!-- Update frontend version in package.json -->
+          <execution>
+            <id>npm version</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>version ${project.version}</arguments>
+            </configuration>
+          </execution>
+
           <!-- build app -->
           <execution>
             <id>npm run build</id>
