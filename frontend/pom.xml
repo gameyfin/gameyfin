@@ -5,7 +5,7 @@
   <parent>
     <artifactId>gameyfin</artifactId>
     <groupId>de.grimsi</groupId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -61,6 +61,17 @@
             <goals>
               <goal>npm</goal>
             </goals>
+          </execution>
+
+          <!-- Update frontend version in package.json -->
+          <execution>
+            <id>npm version</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <configuration>
+              <arguments>version ${project.version} --allow-same-version</arguments>
+            </configuration>
           </execution>
 
           <!-- build app -->
