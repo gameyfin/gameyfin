@@ -25,16 +25,6 @@ Click [this link](https://youtu.be/BSaccEm0tpo) to watch how to install and set 
 * Easy to host yourself thanks to native Docker support (alternatively it's only one .jar file to run on bare metal)
 * Light and dark theme
 
-### Differences to other game library software
-
-In the past I used [Grifter](https://github.com/terrybrash/grifter) to manage my game library, and I was (and still am) happy with it.  
-However, Grifter has some limitations that I could not work around, so I decided to develop my own app.
-
-Grifter does not support auto-discovery of games in your library folder. Instead, you have to manually add all files and their corresponding IGDB-slugs to a config file.
-Also, Grifter only supports to download one file per game. Since I also have games consisting of multiple files I was not able to download them from the browser with Grifter.
-Gameyfin fixes both these limitations: It can scan your library for games and automatically match them on IGDB to load additional information.
-It can also deal with games consisting of multiple files by packing them into a .zip folder in realtime if necessary.
-
 ## Installation
 
 ### General
