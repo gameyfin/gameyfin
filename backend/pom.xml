@@ -22,7 +22,7 @@
         <commons-io.version>2.11.0</commons-io.version>
         <commons-compress.version>1.21</commons-compress.version>
         <protoc.plugin.version>3.11.4</protoc.plugin.version>
-        <protobuf-java.version>3.21.3</protobuf-java.version>
+        <protobuf-java.version>3.21.7</protobuf-java.version>
 
         <!-- Use older version because the newer versions have problems with non-ASCII characters in properties files (umlauts etc.) -->
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
