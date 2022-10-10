@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutExtension;
+import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutAdditions;
 import static de.grimsi.gameyfin.util.FilenameUtil.hasGameArchiveExtension;
 
 @Slf4j
@@ -91,7 +91,7 @@ public class LibraryService {
         // If a game is not found on IGDB, blacklist the path, so we won't query the API later for the same path
         List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
                 .map(p -> {
-                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutExtension(p));
+                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutAdditions(p));
 
                     if(optionalGame.isPresent() && detectedGameRepository.existsBySlug(optionalGame.get().getSlug())) {
                         log.warn("Game with slug '{}' already exists in database", optionalGame.get().getSlug());
