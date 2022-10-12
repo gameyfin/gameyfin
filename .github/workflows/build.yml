@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Maven build
+    name: Build, Test & Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -19,26 +19,16 @@ jobs:
           java-version: '18'
           distribution: 'temurin'
           cache: 'maven'
-      - name: Build with Maven
+      - name: Maven build
         run: mvn --batch-mode --update-snapshots package
+      - name: SonarQube scan
+        uses: kitabisa/sonarqube-action@v1.2.0
+        with:
+          host: ${{ secrets.SONARQUBE_HOST }}
+          login: ${{ secrets.SONARQUBE_TOKEN }}
+          projectKey: ${{ secrets.SONARQUBE_PROJECTKEY }}
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
           name: backend
           path: backend/target/gameyfin-*.jar
-  sonarqube:
-    needs: [build]
-    name: Sonarqube scan
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checking out
-      uses: actions/checkout@master
-      with:
-        # Disabling shallow clone is recommended for improving relevancy of reporting
-        fetch-depth: 0
-    - name: SonarQube Scan
-      uses: kitabisa/sonarqube-action@v1.2.0
-      with:
-        host: ${{ secrets.SONARQUBE_HOST }}
-        login: ${{ secrets.SONARQUBE_TOKEN }}
-        projectKey: ${{ secrets.SONARQUBE_PROJECTKEY }}
