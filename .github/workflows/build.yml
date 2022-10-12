@@ -17,4 +17,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: backend
-          path: backend/target/backend-*.jar
+          path: backend/target/gameyfin-*.jar
