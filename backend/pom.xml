@@ -7,7 +7,7 @@
     <parent>
         <artifactId>gameyfin</artifactId>
         <groupId>de.grimsi</groupId>
-        <version>1.2.1</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>gameyfin-backend</artifactId>
@@ -17,7 +17,7 @@
     <properties>
         <java.version>18</java.version>
 
-        <springdoc-openapi-ui.version>1.6.9</springdoc-openapi-ui.version>
+        <springdoc-openapi-ui.version>1.6.11</springdoc-openapi-ui.version>
         <resilience4j.version>1.7.1</resilience4j.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-compress.version>1.21</commons-compress.version>

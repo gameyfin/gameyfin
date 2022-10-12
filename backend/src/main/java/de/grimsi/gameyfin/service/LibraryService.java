@@ -16,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -46,7 +48,28 @@ public class LibraryService {
                 folder -> {
                     try (Stream<Path> stream = Files.list(folder)) {
                         // return all sub-folders (non-recursive) and files that have an extension that indicates that they are a downloadable file
-                        List<Path> gameFilesFromThisFolder = stream.filter(p -> Files.isDirectory(p) || hasGameArchiveExtension(p)).toList();
+                        List<Path> gameFilesFromThisFolder = stream
+                                .filter(p -> Files.isDirectory(p) || hasGameArchiveExtension(p))
+                                // filter out all hidden files and folders
+                                .filter(p -> {
+                                    try {
+                                        return !(Files.isHidden(p));
+                                    } catch (IOException e) {
+                                        throw new RuntimeException("Error while checking if '%s' is hidden.".formatted(p), e);
+                                    }
+                                })
+                                // filter out all empty directories
+                                .filter(p -> {
+                                    if(!Files.isDirectory(p)) return true;
+
+                                    try(DirectoryStream<Path> s = Files.newDirectoryStream(p)) {
+                                        return s.iterator().hasNext();
+                                    } catch(IOException e) {
+                                        throw new RuntimeException("Error while checking if folder '%s' is empty.".formatted(p), e);
+                                    }
+                                })
+                                .toList();
+
                         gamefiles.addAll(gameFilesFromThisFolder);
 
                     } catch (IOException e) {
