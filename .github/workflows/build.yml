@@ -1,3 +1,5 @@
+name: Gameyfin CI Pipeline
+
 on:
   push:
     branches:
