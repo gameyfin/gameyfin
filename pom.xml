@@ -39,8 +39,8 @@
                     <scmCommentPrefix>[ci skip]</scmCommentPrefix>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                     <checkModificationExcludes>
-                        <checkModificationExclude>package.json</checkModificationExclude>
-                        <checkModificationExclude>package-lock.json</checkModificationExclude>
+                        <checkModificationExclude>frontend/package.json</checkModificationExclude>
+                        <checkModificationExclude>frontend/package-lock.json</checkModificationExclude>
                     </checkModificationExcludes>
                 </configuration>
             </plugin>
