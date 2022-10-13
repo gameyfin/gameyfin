@@ -59,6 +59,7 @@ jobs:
         with:
           repo_token: ${{ github.token }}
           prerelease: false
+          automatic_release_tag: v${{ github.event.inputs.releaseVersion }}
           files: |
             LICENSE.md
             backend/target/gameyfin-*.jar

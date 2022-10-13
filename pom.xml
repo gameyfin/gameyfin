@@ -36,7 +36,7 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>2.5.3</version>
                 <configuration>
-                    <scmCommentPrefix>[ci skip]</scmCommentPrefix>
+                    <scmCommentPrefix>[ci skip] </scmCommentPrefix>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                     <checkModificationExcludes>
                         <checkModificationExclude>frontend/package.json</checkModificationExclude>
