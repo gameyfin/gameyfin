@@ -12,7 +12,7 @@ jobs:
   build:
     name: Build, Test & Scan
     runs-on: ubuntu-latest
-    steps:
+    steps:        
       - name: Git checkout
         uses: actions/checkout@v3
         
@@ -22,14 +22,14 @@ jobs:
           java-version: '18'
           distribution: 'temurin'
           cache: 'maven'
+          
+      - name: Extract Maven project version
+        id: project
+        run: echo "GAMEYFIN_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
 
-      - name: Cache SonarQube packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
+      - name: Show extracted Maven project version
+        run: echo "${{ steps.project.outputs.GAMEYFIN_VERSION }}"
+        
       - name: Maven build
         run: mvn --batch-mode --update-snapshots package
         
@@ -43,5 +43,5 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
-          name: backend
+          name: gameyfin.jar
           path: backend/target/gameyfin-*.jar
