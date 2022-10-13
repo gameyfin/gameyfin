@@ -43,5 +43,5 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
-          name: gameyfin.jar
+          name: gameyfin-${{ steps.project.outputs.GAMEYFIN_VERSION }}.jar
           path: backend/target/gameyfin-*.jar
