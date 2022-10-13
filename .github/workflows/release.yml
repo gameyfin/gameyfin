@@ -67,7 +67,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            girmsi/gameyfin
+            grimsi/gameyfin
           tags: |
             type=semver,pattern={{version}},value=${{ github.event.inputs.releaseVersion }}
             type=semver,pattern={{major}}.{{minor}},value=${{ github.event.inputs.releaseVersion }}
