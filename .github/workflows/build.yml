@@ -6,27 +6,40 @@ on:
       - master
   pull_request:
       types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build, Test & Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Git checkout
+        uses: actions/checkout@v3
+
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '18'
           distribution: 'temurin'
           cache: 'maven'
+          
+      - name: Cache SonarQube packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       - name: Maven build
         run: mvn --batch-mode --update-snapshots package
+        
       - name: SonarQube scan
         uses: kitabisa/sonarqube-action@v1.2.0
         with:
-          host: ${{ secrets.SONARQUBE_HOST }}
+          host: https://sonarqube.grimsi.de
           login: ${{ secrets.SONARQUBE_TOKEN }}
-          projectKey: ${{ secrets.SONARQUBE_PROJECTKEY }}
+          projectKey: grimsi_gameyfin_AYPM67pzsxiaNzCh9BZd
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
