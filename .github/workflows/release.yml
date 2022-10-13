@@ -1,0 +1,65 @@
+name: Gameyfin Release
+
+on:
+  workflow_dispatch:
+    inputs:      
+      branch:
+        description: "The branch to checkout when cutting the release."
+        required: true
+        default: "main"
+      releaseVersion:
+        description: "Default version to use when preparing a release."
+        required: true
+        default: "X.Y.Z"
+      developmentVersion:
+        description: "Default version to use for new local working copy."
+        required: true
+        default: "X.Y.Z-SNAPSHOT"
+  
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '18'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Maven build
+        run: mvn --batch-mode --update-snapshots package -Dmaven.test.skip=true
+
+      - name: Configure Git User
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+
+      - name: Maven Release
+        run: mvn release:prepare release:perform -B -s .maven_settings.xml -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }}
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ github.token }}
+     
+      - name: Git tag
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ github.token }}
+          default_bump: false
+          custom_tag: ${{ github.event.inputs.releaseVersion }}
+          
+      - name: Github Release
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        with:
+          repo_token: ${{ github.token }}
+          prerelease: false
+          files: |
+            LICENSE.md
+            backend/target/gameyfin-*.jar
+            config/gameyfin.properties
