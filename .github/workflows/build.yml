@@ -6,29 +6,43 @@ on:
       - master
   pull_request:
       types: [opened, synchronize, reopened]
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build, Test & Scan
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+    steps:        
+      - name: Git checkout
+        uses: actions/checkout@v3
+        
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '18'
           distribution: 'temurin'
           cache: 'maven'
+          
+      - name: Extract Maven project version
+        id: project
+        run: echo "GAMEYFIN_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
+
+      - name: Show extracted Maven project version
+        run: echo "${{ steps.project.outputs.GAMEYFIN_VERSION }}"
+        
       - name: Maven build
         run: mvn --batch-mode --update-snapshots package
+        
       - name: SonarQube scan
         uses: kitabisa/sonarqube-action@v1.2.0
         with:
-          host: ${{ secrets.SONARQUBE_HOST }}
+          host: https://sonarqube.grimsi.de
           login: ${{ secrets.SONARQUBE_TOKEN }}
-          projectKey: ${{ secrets.SONARQUBE_PROJECTKEY }}
+          projectKey: grimsi_gameyfin_AYPM67pzsxiaNzCh9BZd
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
-          name: backend
+          name: gameyfin-${{ steps.project.outputs.GAMEYFIN_VERSION }}.jar
           path: backend/target/gameyfin-*.jar
