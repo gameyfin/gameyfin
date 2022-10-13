@@ -33,16 +33,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Maven build
-        run: mvn --batch-mode --update-snapshots package -Dmaven.test.skip=true
-
       - name: Configure Git User
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
 
       - name: Maven Release
-        run: mvn release:prepare release:perform -B -s .maven_settings.xml -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} -Darguments="-Dmaven.deploy.skip=true"
+        run: mvn release:prepare release:perform -B -s .maven_settings.xml -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ github.event.inputs.developmentVersion }} -Darguments="-Dmaven.deploy.skip=true -Dmaven.test.skip=true"
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ github.token }}
