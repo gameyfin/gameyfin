@@ -21,6 +21,8 @@
         <commons-compress.version>1.21</commons-compress.version>
         <protoc.plugin.version>3.11.4</protoc.plugin.version>
         <protobuf-java.version>3.21.7</protobuf-java.version>
+        <easy-random.version>5.0.0</easy-random.version>
+        <easy-random-protobuf.version>0.4.0</easy-random-protobuf.version>
 
         <!-- Use older version because the newer versions have problems with non-ASCII characters in properties files (umlauts etc.) -->
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
@@ -117,6 +119,29 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jeasy</groupId>
+            <artifactId>easy-random-core</artifactId>
+            <version>${easy-random.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.murdos</groupId>
+            <artifactId>easy-random-protobuf</artifactId>
+            <version>${easy-random-protobuf.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+
 
         <!-- Dev -->
         <dependency>

@@ -4,6 +4,9 @@ gameyfin:
   file-extensions: iso, zip, rar, 7z, exe
   igdb:
     api:
+      endpoints:
+        auth: https://id.twitch.tv/oauth2/token
+        base: https://api.igdb.com/v4/
       client-id:
       client-secret:
       max-concurrent-requests: 2

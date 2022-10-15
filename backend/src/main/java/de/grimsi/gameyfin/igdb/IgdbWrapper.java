@@ -37,6 +37,12 @@ public class IgdbWrapper {
     @Value("${gameyfin.igdb.config.preferred-platforms:6}")
     private String preferredPlatforms;
 
+    @Value("${gameyfin.igdb.api.endpoints.base}")
+    private String igdbApiBaseUrl;
+
+    @Value("${gameyfin.igdb.api.endpoints.auth}")
+    private String twitchAuthUrl;
+
     private final WebClient.Builder webclientBuilder;
     private final WebClientConfig webClientConfig;
     private final GameMapper gameMapper;
@@ -58,7 +64,8 @@ public class IgdbWrapper {
         log.info("Authenticating on Twitch API...");
 
         URI url = UriComponentsBuilder
-                .fromHttpUrl("https://id.twitch.tv/oauth2/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials")
+                .fromHttpUrl(twitchAuthUrl)
+                .query("client_id={client_id}").query("client_secret={client_secret}").query("grant_type=client_credentials")
                 .buildAndExpand(clientId, clientSecret)
                 .toUri();
 
@@ -163,7 +170,7 @@ public class IgdbWrapper {
         }
 
         igdbApiClient = webclientBuilder
-                .baseUrl("https://api.igdb.com/v4/")
+                .baseUrl(igdbApiBaseUrl)
                 .defaultHeader("Client-ID", clientId)
                 .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))
                 .filter(WebClientConfig.fixProtobufContentTypeInterceptor())
