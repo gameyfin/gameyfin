@@ -10,18 +10,16 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.*;
-import org.springframework.util.PropertyPlaceholderHelper;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.stream.StreamSupport;
 
@@ -48,9 +46,11 @@ public class FilesystemConfig {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void hideInternalFolderOnDOS() throws IOException {
+        if (!isRunningOnWindows()) return;
+
         Path internalFolder = Paths.get("%s/%s".formatted(firstLibraryPath, INTERNAL_FOLDER_NAME));
 
-        if(!Files.exists(internalFolder) || !Files.isDirectory(internalFolder)) return;
+        if (!Files.exists(internalFolder) || !Files.isDirectory(internalFolder)) return;
 
         Files.setAttribute(internalFolder, "dos:hidden", Boolean.TRUE, LinkOption.NOFOLLOW_LINKS);
     }
@@ -59,11 +59,11 @@ public class FilesystemConfig {
     public void setConfigurableEnvironment(ConfigurableEnvironment env) {
         Properties props = new Properties();
 
-        if(!StringUtils.hasText(dbPath)) {
+        if (!StringUtils.hasText(dbPath)) {
             props.setProperty("gameyfin.db", "%s/%s/db".formatted(firstLibraryPath, INTERNAL_FOLDER_NAME));
         }
 
-        if(!StringUtils.hasText(cachePath)) {
+        if (!StringUtils.hasText(cachePath)) {
             props.setProperty("gameyfin.cache", "%s/%s/cache".formatted(firstLibraryPath, INTERNAL_FOLDER_NAME));
         }
 
@@ -72,6 +72,7 @@ public class FilesystemConfig {
 
     /**
      * This bean is needed so Spring initializes the data source after we are done messing with the configuration environment
+     *
      * @return DataSource
      */
     @ConfigurationProperties(prefix = "spring.datasource")
@@ -99,6 +100,10 @@ public class FilesystemConfig {
                 .forEach(propName -> props.setProperty(propName, env.getProperty(propName)));
 
         return props;
+    }
+
+    private boolean isRunningOnWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
     }
 
 }
