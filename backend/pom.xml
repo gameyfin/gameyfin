@@ -208,6 +208,7 @@
                         </goals>
                         <configuration>
                             <includeStdTypes>true</includeStdTypes>
+                            <optimizeCodegen>false</optimizeCodegen>
                             <inputDirectories>
                                 <include>${project.basedir}/src/main/resources/proto</include>
                             </inputDirectories>
