@@ -35,7 +35,7 @@ class IgdbWrapperTest {
     @AfterAll
     static void tearDown() throws IOException {
         igdbApiMock.shutdown();
-        twitchApiMock.start();
+        twitchApiMock.shutdown();
     }
 
     @Test
