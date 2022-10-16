@@ -60,7 +60,7 @@ public class IgdbWrapper {
         initIgdbClient();
     }
 
-    public void authenticate() {
+    private void authenticate() {
         log.info("Authenticating on Twitch API...");
 
         URI url = UriComponentsBuilder
