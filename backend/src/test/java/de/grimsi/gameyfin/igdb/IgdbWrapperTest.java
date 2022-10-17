@@ -1,10 +1,11 @@
 package de.grimsi.gameyfin.igdb;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.Message;
+import com.google.protobuf.Timestamp;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
+import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import io.github.resilience4j.bulkhead.Bulkhead;
@@ -16,10 +17,8 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
 import org.jeasy.random.EasyRandom;
-import org.jeasy.random.EasyRandomParameters;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -27,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,7 +44,7 @@ class IgdbWrapperTest {
     private static IgdbWrapper target;
 
     @BeforeAll
-    static void setup() throws IOException {
+    static void setup() throws IOException, InterruptedException {
         WebClientConfig webClientConfigMock = mock(WebClientConfig.class);
         GameMapper gameMapperMock = mock(GameMapper.class);
 
@@ -57,20 +57,11 @@ class IgdbWrapperTest {
         ReflectionTestUtils.setField(target, "clientSecret", "client_secret_value");
         ReflectionTestUtils.setField(target, "igdbApiBaseUrl", "http://localhost:%s".formatted(igdbApiMock.getPort()));
         ReflectionTestUtils.setField(target, "twitchAuthUrl", "http://localhost:%s/oauth2/token".formatted(twitchApiMock.getPort()));
+        ReflectionTestUtils.setField(target, "preferredPlatforms", "preferred_platforms");
 
         when(webClientConfigMock.getIgdbConcurrencyLimiter()).thenReturn(Bulkhead.of("test_bulkhead", BulkheadConfig.ofDefaults()));
         when(webClientConfigMock.getIgdbRateLimiter()).thenReturn(RateLimiter.of("test_ratelimiter", RateLimiterConfig.ofDefaults()));
-    }
 
-    @AfterAll
-    static void tearDown() throws IOException {
-        igdbApiMock.shutdown();
-        twitchApiMock.shutdown();
-    }
-
-    @Test
-    @Order(0)
-    void init() throws JsonProcessingException, InterruptedException {
         TwitchOAuthTokenDto mockToken = easyRandom.nextObject(TwitchOAuthTokenDto.class);
 
         twitchApiMock.enqueue(new MockResponse()
@@ -87,11 +78,20 @@ class IgdbWrapperTest {
         assertThat(r.getRequestUrl().queryParameter("grant_type")).isEqualTo("client_credentials");
     }
 
+    @AfterAll
+    static void tearDown() throws IOException {
+        igdbApiMock.shutdown();
+        twitchApiMock.shutdown();
+    }
+
     @Test
     void getGameById() throws InterruptedException {
         //Igdb.GameResult gameResult = easyRandom.nextObject(Igdb.GameResult.class);
         Igdb.GameResult gameResult = Igdb.GameResult.newBuilder()
-                .addGames(Igdb.Game.newBuilder().setId(easyRandom.nextLong()))
+                .addAllGames(List.of(
+                        Igdb.Game.newBuilder().setId(easyRandom.nextLong()).build(),
+                        Igdb.Game.newBuilder().setId(easyRandom.nextLong()).build(),
+                        Igdb.Game.newBuilder().setId(easyRandom.nextLong()).build()))
                 .build();
 
         Long gameId = gameResult.getGames(0).getId();
@@ -119,11 +119,65 @@ class IgdbWrapperTest {
     }
 
     @Test
-    void getGameBySlug() {
+    void getGameBySlug() throws InterruptedException {
+        Igdb.GameResult gameResult = Igdb.GameResult.newBuilder()
+                .addAllGames(List.of(
+                        Igdb.Game.newBuilder().setSlug("game_slug_1").build(),
+                        Igdb.Game.newBuilder().setSlug("game_slug_2").build(),
+                        Igdb.Game.newBuilder().setSlug("game_slug_3").build()))
+                .build();
+
+        String gameSlug = gameResult.getGames(0).getSlug();
+
+        igdbApiMock.enqueue(new MockResponse()
+                .setBody(toBuffer(gameResult))
+                .setHeader("Content-Type", "application/protobuf")
+        );
+
+        Optional<Igdb.Game> gameOptional = target.getGameBySlug("game_slug_1");
+
+        assertThat(gameOptional).isPresent();
+
+        Igdb.Game game = gameOptional.get();
+
+        assertThat(game.getSlug()).isEqualTo(gameSlug);
+
+        RecordedRequest r = igdbApiMock.takeRequest();
+        assertThat(r.getRequestUrl()).isNotNull();
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+
+        String expectedQuery = "fields %s; where slug = \"%s\"; limit 1;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, gameSlug);
+
+        assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
 
     @Test
-    void findPossibleMatchingTitles() {
+    void findPossibleMatchingTitles() throws InterruptedException {
+        Igdb.GameResult gameResult = Igdb.GameResult.newBuilder()
+                .addAllGames(List.of(
+                        Igdb.Game.newBuilder().setSlug("game_slug_1").setName("title_1").setFirstReleaseDate(Timestamp.newBuilder().setSeconds(1)).build(),
+                        Igdb.Game.newBuilder().setSlug("game_slug_2").setName("title_2").setFirstReleaseDate(Timestamp.newBuilder().setSeconds(2)).build(),
+                        Igdb.Game.newBuilder().setSlug("game_slug_3").setName("title_3").setFirstReleaseDate(Timestamp.newBuilder().setSeconds(3)).build()))
+                .build();
+
+        String gameTitle = gameResult.getGames(0).getName();
+
+        igdbApiMock.enqueue(new MockResponse()
+                .setBody(toBuffer(gameResult))
+                .setHeader("Content-Type", "application/protobuf")
+        );
+
+        List<AutocompleteSuggestionDto> suggestions = target.findPossibleMatchingTitles(gameTitle, gameResult.getGamesCount());
+
+        assertThat(suggestions).hasSize(gameResult.getGamesCount());
+
+        RecordedRequest r = igdbApiMock.takeRequest();
+        assertThat(r.getRequestUrl()).isNotNull();
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+
+        String expectedQuery = "search \"%s\"; fields slug,name,first_release_date; where platforms = (preferred_platforms); limit %d;".formatted(gameTitle, gameResult.getGamesCount());
+
+        assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
 
     @Test
