@@ -28,6 +28,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -76,12 +78,13 @@ class IgdbWrapperTest {
         assertThat(r.getRequestUrl().queryParameter("client_id")).isEqualTo("client_id_value");
         assertThat(r.getRequestUrl().queryParameter("client_secret")).isEqualTo("client_secret_value");
         assertThat(r.getRequestUrl().queryParameter("grant_type")).isEqualTo("client_credentials");
+
+        twitchApiMock.shutdown();
     }
 
     @AfterAll
     static void tearDown() throws IOException {
         igdbApiMock.shutdown();
-        twitchApiMock.shutdown();
     }
 
     @Test
@@ -155,9 +158,9 @@ class IgdbWrapperTest {
     void findPossibleMatchingTitles() throws InterruptedException {
         Igdb.GameResult gameResult = Igdb.GameResult.newBuilder()
                 .addAllGames(List.of(
-                        Igdb.Game.newBuilder().setSlug("game_slug_1").setName("title_1").setFirstReleaseDate(Timestamp.newBuilder().setSeconds(1)).build(),
-                        Igdb.Game.newBuilder().setSlug("game_slug_2").setName("title_2").setFirstReleaseDate(Timestamp.newBuilder().setSeconds(2)).build(),
-                        Igdb.Game.newBuilder().setSlug("game_slug_3").setName("title_3").setFirstReleaseDate(Timestamp.newBuilder().setSeconds(3)).build()))
+                        Igdb.Game.newBuilder().setName("title_1").build(),
+                        Igdb.Game.newBuilder().setName("title_2").build(),
+                        Igdb.Game.newBuilder().setName("title_3").build()))
                 .build();
 
         String gameTitle = gameResult.getGames(0).getName();
@@ -181,7 +184,117 @@ class IgdbWrapperTest {
     }
 
     @Test
-    void searchForGameByTitle() {
+    void searchForGameByTitle_exactMatch() throws InterruptedException {
+        Igdb.GameResult gameResult = Igdb.GameResult.newBuilder()
+                .addAllGames(List.of(
+                        Igdb.Game.newBuilder().setName("title_1").build(),
+                        Igdb.Game.newBuilder().setName("title_2").build(),
+                        Igdb.Game.newBuilder().setName("title_3").build()))
+                .build();
+
+        String searchTerm = gameResult.getGames(0).getName();
+
+        igdbApiMock.enqueue(new MockResponse()
+                .setBody(toBuffer(gameResult))
+                .setHeader("Content-Type", "application/protobuf")
+        );
+
+        Optional<Igdb.Game> gameOptional = target.searchForGameByTitle(searchTerm);
+
+        assertThat(gameOptional).isPresent();
+
+        Igdb.Game game = gameOptional.get();
+
+        assertThat(game.getName()).isEqualTo(searchTerm);
+
+        RecordedRequest r = igdbApiMock.takeRequest();
+        assertThat(r.getRequestUrl()).isNotNull();
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+
+        String expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+
+        assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
+    }
+
+    @Test
+    void searchForGameByTitle_EndsWith() throws InterruptedException {
+        Igdb.GameResult gameResult = Igdb.GameResult.newBuilder()
+                .addAllGames(List.of(
+                        Igdb.Game.newBuilder().setName("some_prefix title_1").build(),
+                        Igdb.Game.newBuilder().setName("title_2)").build(),
+                        Igdb.Game.newBuilder().setName("title_3").build()))
+                .build();
+
+        String searchTerm = "title_1";
+
+        igdbApiMock.enqueue(new MockResponse()
+                .setBody(toBuffer(gameResult))
+                .setHeader("Content-Type", "application/protobuf")
+        );
+
+        Optional<Igdb.Game> gameOptional = target.searchForGameByTitle(searchTerm);
+
+        assertThat(gameOptional).isPresent();
+
+        Igdb.Game game = gameOptional.get();
+
+        assertThat(game.getName()).isEqualTo(gameResult.getGames(0).getName());
+
+        RecordedRequest r = igdbApiMock.takeRequest();
+        assertThat(r.getRequestUrl()).isNotNull();
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+
+        String expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+
+        assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
+    }
+
+    @Test
+    void searchForGameByTitle_Brackets() throws InterruptedException {
+        Igdb.GameResult gameResult = Igdb.GameResult.newBuilder()
+                .addAllGames(List.of(
+                        Igdb.Game.newBuilder().setName("title_1").build(),
+                        Igdb.Game.newBuilder().setName("title_2").build(),
+                        Igdb.Game.newBuilder().setName("title_3").build()))
+                .build();
+
+        String searchTerm = gameResult.getGames(0).getName() + " (Text in brackets should be ignored)";
+
+        // First request should result in an empty response
+        igdbApiMock.enqueue(new MockResponse().setHeader("Content-Type", "application/protobuf"));
+
+        // Second request should contain the same query, but with brackets removed
+        igdbApiMock.enqueue(new MockResponse()
+                .setBody(toBuffer(gameResult))
+                .setHeader("Content-Type", "application/protobuf")
+        );
+
+        Optional<Igdb.Game> gameOptional = target.searchForGameByTitle(searchTerm);
+
+        assertThat(gameOptional).isPresent();
+
+        Igdb.Game game = gameOptional.get();
+
+        // Result should be game with title equal to search term with brackets removed
+        assertThat(game.getName()).isEqualTo(gameResult.getGames(0).getName());
+
+        // First query (should contain brackets)
+        RecordedRequest r1 = igdbApiMock.takeRequest();
+        assertThat(r1.getRequestUrl()).isNotNull();
+        assertThat(r1.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+
+        String r1_expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+
+        assertThat(r1.getBody().readUtf8()).isEqualTo(r1_expectedQuery);
+
+        // Second query (should not contain brackets)
+        RecordedRequest r2 = igdbApiMock.takeRequest();
+        assertThat(r2.getRequestUrl()).isNotNull();
+        assertThat(r2.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+
+        String r2_expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(gameResult.getGames(0).getName(), IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+
+        assertThat(r2.getBody().readUtf8()).isEqualTo(r2_expectedQuery);
     }
 
     private static Buffer toBuffer(Message input) {
