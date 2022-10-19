@@ -6,6 +6,7 @@ import {ThemeDto} from "../../models/dtos/ThemeDto";
 import {firstValueFrom, forkJoin, Observable} from "rxjs";
 import {SortDirection} from "@angular/material/sort";
 import {PlayerPerspectiveDto} from "../../models/dtos/PlayerPerspectiveDto";
+import {PlatformDto} from "../../models/dtos/PlatformDto";
 import {ActivatedRoute, ActivatedRouteSnapshot, Params, Router} from "@angular/router";
 import {Location} from "@angular/common";
 
@@ -52,11 +53,13 @@ export class LibraryOverviewComponent implements AfterContentInit {
   activeThemeFilters: string[] = [];
   activeGenreFilters: string[] = [];
   activePlayerPerspectiveFilters: string[] = [];
+  activePlatformFilters: string[] = [];
 
   games: DetectedGameDto[] = [];
   availableGenres: GenreDto[] = [];
   availableThemes: ThemeDto[] = [];
   availablePlayerPerspectives: PlayerPerspectiveDto[] = [];
+  availablePlatforms: PlatformDto[] = [];
 
   loading: boolean = true;
   gameLibraryIsEmpty: boolean = false;
@@ -82,11 +85,13 @@ export class LibraryOverviewComponent implements AfterContentInit {
         let genreObservable: Observable<ThemeDto[]> = this.gameServerService.getAvailableGenres();
         let themeObservable: Observable<GenreDto[]> = this.gameServerService.getAvailableThemes();
         let playerPerspectiveObservable: Observable<PlayerPerspectiveDto[]> = this.gameServerService.getAvailablePlayerPerspectives();
+        let platformObservable: Observable<PlatformDto[]> = this.gameServerService.getAvailablePlatforms();
 
-        forkJoin([genreObservable, themeObservable, playerPerspectiveObservable]).subscribe(result => {
+        forkJoin([genreObservable, themeObservable, playerPerspectiveObservable, platformObservable]).subscribe(result => {
           this.availableGenres = result[0];
           this.availableThemes = result[1];
           this.availablePlayerPerspectives = result[2];
+          this.availablePlatforms = result[3];
 
           this.previousStateParams = this.route.snapshot.queryParams;
           if (this.previousStateParams['search'] !== undefined) this.searchTerm = this.previousStateParams['search'];
@@ -95,6 +100,7 @@ export class LibraryOverviewComponent implements AfterContentInit {
           if (this.previousStateParams['genres'] !== undefined) this.activeGenreFilters = this.matchSelectedFilters(this.availableGenres, this.previousStateParams['genres']);
           if (this.previousStateParams['themes'] !== undefined) this.activeThemeFilters = this.matchSelectedFilters(this.availableThemes, this.previousStateParams['themes']);
           if (this.previousStateParams['playerPerspectives'] !== undefined) this.activePlayerPerspectiveFilters = this.matchSelectedFilters(this.availablePlayerPerspectives, this.previousStateParams['playerPerspectives']);
+          if (this.previousStateParams['platforms'] !== undefined) this.activePlatformFilters = this.matchSelectedFilters(this.availablePlatforms, this.previousStateParams['platforms']);
 
           this.refreshLibraryView().then(() => this.loading = false);
         });
@@ -132,6 +138,11 @@ export class LibraryOverviewComponent implements AfterContentInit {
 
     if (this.activePlayerPerspectiveFilters.length > 0) {
       games = games.filter(game => this.activePlayerPerspectiveFilters.every(activePlayerPerspectiveFilter => game.playerPerspectives?.map(g => g.slug).includes(activePlayerPerspectiveFilter)));
+    }
+
+    if (this.activePlatformFilters.length > 0) {
+      games = games.filter(game => this.activePlatformFilters.some(activePlatformFilter =>
+        game?.library?.platforms?.map(g => g.slug).includes(activePlatformFilter) && game?.platforms?.map(g => g.slug).includes(activePlatformFilter)));
     }
 
     return games;
@@ -197,6 +208,21 @@ export class LibraryOverviewComponent implements AfterContentInit {
     this.refreshLibraryView();
   }
 
+  togglePlatformFilter(slug: string): void {
+    if (this.activePlatformFilters.includes(slug)) {
+
+      const index = this.activePlatformFilters.indexOf(slug, 0);
+      if (index > -1) {
+        this.activePlatformFilters.splice(index, 1);
+      }
+
+    } else {
+      this.activePlatformFilters.push(slug);
+    }
+
+    this.refreshLibraryView();
+  }
+
   private saveStateToRoute(): void {
     let newStateParams: Params = {};
 
@@ -206,6 +232,7 @@ export class LibraryOverviewComponent implements AfterContentInit {
     if (this.activeGenreFilters.length > 0) newStateParams['genres'] = this.activeGenreFilters.join(',');
     if (this.activeThemeFilters.length > 0) newStateParams['themes'] = this.activeThemeFilters.join(',');
     if (this.activePlayerPerspectiveFilters.length > 0) newStateParams['playerPerspectives'] = this.activePlayerPerspectiveFilters.join(',');
+    if (this.activePlatformFilters.length > 0) newStateParams['platforms'] = this.activePlatformFilters.join(',');
 
     // only update the route if it changed
     if (JSON.stringify(this.previousStateParams) !== JSON.stringify(newStateParams)) {
