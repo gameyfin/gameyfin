@@ -33,6 +33,9 @@
       <div fxLayout="column" fxFlex="40" fxLayoutGap="16px">
 
         <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="16px">
+          <button mat-raised-button color="secondary" (click)="refreshGame()" title="Refresh metadata">
+            <mat-icon>refresh</mat-icon>
+          </button>
           <button mat-raised-button color="primary" (click)="downloadGame()">
             <mat-icon>download</mat-icon>
           </button>

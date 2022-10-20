@@ -44,7 +44,7 @@ public class GamesController {
         return gameService.getAllMappings();
     }
 
-    @GetMapping(value="/game/{slug}/download")
+    @GetMapping(value = "/game/{slug}/download")
     public ResponseEntity<StreamingResponseBody> downloadGameFiles(@PathVariable String slug) {
 
         DetectedGame game = gameService.getDetectedGame(slug);
@@ -55,6 +55,11 @@ public class GamesController {
                 .ok()
                 .header("Content-Disposition", "attachment; filename=\"%s\"".formatted(downloadFileName))
                 .body(out -> downloadService.sendGamefilesToClient(game, out));
+    }
+
+    @GetMapping(value = "/game/{slug}/refresh", produces = MediaType.APPLICATION_JSON_VALUE)
+    public DetectedGame refreshGame(@PathVariable String slug) {
+        return gameService.refreshGame(slug);
     }
 
 }

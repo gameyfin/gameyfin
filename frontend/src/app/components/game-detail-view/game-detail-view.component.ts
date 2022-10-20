@@ -48,6 +48,24 @@ export class GameDetailViewComponent {
     this.gamesService.downloadGame(this.game.slug);
   }
 
+  public refreshGame(): void {
+    this.gamesService.refreshGame(this.game.slug).subscribe({
+      next: game => {
+        this.game = game;
+        if(game.companies !== undefined) {
+          this.companiesWithLogo = game.companies.filter(c => c.logoId !== undefined && c.logoId.length > 0);
+        }
+      },
+      error: error => {
+        if (error.status === 404) {
+          this.router.navigate(['/library']);
+        } else {
+          console.error(error);
+        }
+      }
+   });
+  }
+
   public bytesAsHumanReadableString(bytes: number): string {
     const thresh = 1024;
 
