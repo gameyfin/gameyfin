@@ -3,5 +3,3 @@ gameyfin:
     api:
       client-id: igdb_client_id
       client-secret: igdb_client_secret
-    config:
-      preferred-platforms: 6

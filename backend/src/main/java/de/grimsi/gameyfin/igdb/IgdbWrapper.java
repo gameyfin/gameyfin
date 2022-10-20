@@ -9,7 +9,6 @@ import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -111,7 +110,7 @@ public class IgdbWrapper {
                 Igdb.GameResult.class
         );
 
-        if(gameResult == null) return Collections.emptyList();
+        if (gameResult == null) return Collections.emptyList();
 
         return gameResult.getGamesList().stream().map(gameMapper::toAutocompleteSuggestionDto).toList();
     }
@@ -129,10 +128,10 @@ public class IgdbWrapper {
 
             // Try to remove brackets (and their content) at the end of the search term and search again
             // Although this process is recursive, we will only end up with a maximum recursion depth of two
-            Pattern brackets = Pattern.compile ("[()<>{}\\[\\]]");
+            Pattern brackets = Pattern.compile("[()<>{}\\[\\]]");
             Matcher hasBrackets = brackets.matcher(searchTerm);
 
-            if(hasBrackets.find()) {
+            if (hasBrackets.find()) {
                 String searchTermWithoutBrackets = searchTerm.split(brackets.pattern())[0].trim();
                 log.warn("Trying again with search term '{}'", searchTermWithoutBrackets);
                 return searchForGameByTitle(searchTermWithoutBrackets);
