@@ -3,7 +3,7 @@ name: Gameyfin CI Pipeline
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
