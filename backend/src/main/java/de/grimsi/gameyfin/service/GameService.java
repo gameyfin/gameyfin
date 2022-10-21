@@ -105,6 +105,8 @@ public class GameService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
 
         DetectedGame game = gameMapper.toDetectedGame(igdbGame, Path.of(unmappableFile.getPath()));
+        game.setConfirmedMatch(true);
+
         game = detectedGameRepository.save(game);
 
         unmappableFileRepository.delete(unmappableFile);
@@ -117,7 +119,11 @@ public class GameService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
 
         DetectedGame game = gameMapper.toDetectedGame(igdbGame, Path.of(existingGame.getPath()));
+        game.setConfirmedMatch(true);
+
         game = detectedGameRepository.save(game);
+
+        detectedGameRepository.delete(existingGame);
 
         return game;
     }
