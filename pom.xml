@@ -34,11 +34,6 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
 
-    <properties>
-        <sonar.organization>grimsi-github</sonar.organization>
-        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
