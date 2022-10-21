@@ -9,6 +9,7 @@ import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
+@Slf4j
 @Service
 public class GameService {
 
@@ -87,6 +89,17 @@ public class GameService {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Path '%s' not in database".formatted(path));
     }
 
+    public DetectedGame refreshGame(String slug) {
+        Optional<DetectedGame> optionalDetectedGame = detectedGameRepository.findById(slug);
+
+        if (optionalDetectedGame.isPresent()) {
+            log.info("Refreshing game with slug '{}'", slug);
+            return mapDetectedGame(optionalDetectedGame.get(), slug);
+        }
+
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' not found in database".formatted(slug));
+    }
+
     private DetectedGame mapUnmappableFile(UnmappableFile unmappableFile, String slug) {
         Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
@@ -105,8 +118,6 @@ public class GameService {
 
         DetectedGame game = gameMapper.toDetectedGame(igdbGame, Path.of(existingGame.getPath()));
         game = detectedGameRepository.save(game);
-
-        detectedGameRepository.deleteById(existingGame.getSlug());
 
         return game;
     }

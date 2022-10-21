@@ -7,4 +7,5 @@ export interface GamesApi {
   getGame(slug: String): Observable<DetectedGameDto>;
   getGameOverviews(): Observable<GameOverviewDto[]>;
   getAllGameMappings(): Observable<Map<string, string>>;
+  refreshGame(slug: String): Observable<DetectedGameDto>;
 }
