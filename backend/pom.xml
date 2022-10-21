@@ -15,6 +15,9 @@
     <properties>
         <java.version>18</java.version>
 
+        <sonar.projectKey>grimsi_gameyfin</sonar.projectKey>
+        <sonar.coverage.jacoco.xmlReportPaths>./backend/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
         <springdoc-openapi-ui.version>1.6.11</springdoc-openapi-ui.version>
         <resilience4j.version>1.7.1</resilience4j.version>
         <commons-io.version>2.11.0</commons-io.version>
