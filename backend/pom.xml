@@ -23,6 +23,7 @@
         <protobuf-java.version>3.21.7</protobuf-java.version>
         <easy-random.version>5.0.0</easy-random.version>
         <easy-random-protobuf.version>0.4.0</easy-random-protobuf.version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
 
         <!-- Use older version because the newer versions have problems with non-ASCII characters in properties files (umlauts etc.) -->
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
@@ -259,14 +260,20 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.8</version>
+                <version>${jacoco-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>report</id>
+                        <id>jacoco-initialize</id>
                         <goals>
-                            <goal>report-aggregate</goal>
+                            <goal>prepare-agent</goal>
                         </goals>
-                        <phase>verify</phase>
+                    </execution>
+                    <execution>
+                        <id>jacoco-site</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
