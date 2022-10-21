@@ -16,14 +16,23 @@ jobs:
     steps:        
       - name: Git checkout
         uses: actions/checkout@v3
-        
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '18'
           distribution: 'temurin'
           cache: 'maven'
-          
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       - name: Extract Maven project version
         id: project
         run: echo "GAMEYFIN_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
@@ -31,15 +40,11 @@ jobs:
       - name: Show extracted Maven project version
         run: echo "${{ steps.project.outputs.GAMEYFIN_VERSION }}"
         
-      - name: Maven build
-        run: mvn --batch-mode --update-snapshots package
-        
-      - name: SonarQube scan
-        uses: kitabisa/sonarqube-action@v1.2.0
-        with:
-          host: https://sonarqube.grimsi.de
-          login: ${{ secrets.SONARQUBE_TOKEN }}
-          projectKey: grimsi_gameyfin_AYPM67pzsxiaNzCh9BZd
+      - name: Build and analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=grimsi_gameyfin
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
