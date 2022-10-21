@@ -9,7 +9,6 @@ import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -37,6 +36,12 @@ public class IgdbWrapper {
     @Value("${gameyfin.igdb.config.preferred-platforms:6}")
     private String preferredPlatforms;
 
+    @Value("${gameyfin.igdb.api.endpoints.base}")
+    private String igdbApiBaseUrl;
+
+    @Value("${gameyfin.igdb.api.endpoints.auth}")
+    private String twitchAuthUrl;
+
     private final WebClient.Builder webclientBuilder;
     private final WebClientConfig webClientConfig;
     private final GameMapper gameMapper;
@@ -54,11 +59,12 @@ public class IgdbWrapper {
         initIgdbClient();
     }
 
-    public void authenticate() {
+    private void authenticate() {
         log.info("Authenticating on Twitch API...");
 
         URI url = UriComponentsBuilder
-                .fromHttpUrl("https://id.twitch.tv/oauth2/token?client_id={client_id}&client_secret={client_secret}&grant_type=client_credentials")
+                .fromHttpUrl(twitchAuthUrl)
+                .query("client_id={client_id}").query("client_secret={client_secret}").query("grant_type=client_credentials")
                 .buildAndExpand(clientId, clientSecret)
                 .toUri();
 
@@ -104,7 +110,7 @@ public class IgdbWrapper {
                 Igdb.GameResult.class
         );
 
-        if(gameResult == null) return Collections.emptyList();
+        if (gameResult == null) return Collections.emptyList();
 
         return gameResult.getGamesList().stream().map(gameMapper::toAutocompleteSuggestionDto).toList();
     }
@@ -122,10 +128,10 @@ public class IgdbWrapper {
 
             // Try to remove brackets (and their content) at the end of the search term and search again
             // Although this process is recursive, we will only end up with a maximum recursion depth of two
-            Pattern brackets = Pattern.compile ("[()<>{}\\[\\]]");
+            Pattern brackets = Pattern.compile("[()<>{}\\[\\]]");
             Matcher hasBrackets = brackets.matcher(searchTerm);
 
-            if(hasBrackets.find()) {
+            if (hasBrackets.find()) {
                 String searchTermWithoutBrackets = searchTerm.split(brackets.pattern())[0].trim();
                 log.warn("Trying again with search term '{}'", searchTermWithoutBrackets);
                 return searchForGameByTitle(searchTermWithoutBrackets);
@@ -163,7 +169,7 @@ public class IgdbWrapper {
         }
 
         igdbApiClient = webclientBuilder
-                .baseUrl("https://api.igdb.com/v4/")
+                .baseUrl(igdbApiBaseUrl)
                 .defaultHeader("Client-ID", clientId)
                 .defaultHeader("Authorization", "Bearer %s".formatted(accessToken.getAccessToken()))
                 .filter(WebClientConfig.fixProtobufContentTypeInterceptor())

@@ -5,7 +5,7 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, reopened]
+      types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
@@ -13,12 +13,12 @@ jobs:
     name: Build, Test & Scan
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, '[ci skip]')"
-    steps:
+    steps:        
       - name: Git checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-
+          
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -42,7 +42,7 @@ jobs:
       - name: Extract Maven project version
         id: project
         run: echo "GAMEYFIN_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_OUTPUT
-
+        
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
