@@ -1,18 +1,19 @@
-<h3 mat-dialog-title>Map game to IGDB slug</h3>
+<h3 mat-dialog-title>Map path to IGDB platform</h3>
 <mat-dialog-content>
   <form fxLayout="column" fxLayoutAlign="space-evenly stretch">
 
     <p>Path: {{path}}</p>
+    <p><a href="https://www.igdb.com/platforms" target="_blank">Available platforms</a></p>
 
     <mat-form-field>
       <div fxLayout="row">
-        <input type="text" placeholder="IGDB Slug" matInput [matAutocomplete]="igdbSlugAutocomplete" [(ngModel)]="slug" (ngModelChangeDebounced)="loadSuggestions()" [ngModelOptions]="{standalone: true}">
+        <input type="text" placeholder="IGDB Platform Slugs" matInput [matAutocomplete]="igdbPlatformSlugsAutocomplete" [(ngModel)]="slugs" (ngModelChangeDebounced)="loadSuggestions()" [ngModelOptions]="{standalone: true}">
         <mat-spinner *ngIf="suggestionsLoading" [diameter]="16"></mat-spinner>
       </div>
 
-      <mat-autocomplete #igdbSlugAutocomplete="matAutocomplete">
-        <mat-option *ngFor="let suggestion of autocompleteSuggestions" [value]="suggestion.slug">
-          {{suggestion.title}} ({{getFullYearFromTimestamp(suggestion.releaseDate)}}) - {{suggestion.platforms.join(', ')}}
+      <mat-autocomplete #igdbPlatformSlugsAutocomplete="matAutocomplete">
+        <mat-option *ngFor="let suggestion of autocompletePlatformSuggestions" [value]="previousSlugs+suggestion.slug">
+          {{suggestion.name}}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
@@ -21,7 +22,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button mat-raised-button [mat-dialog-close]="false" color="accent" [disabled]="submitLoading">Cancel</button>
-  <button mat-raised-button (click)="submit()" [disabled]="slug.length < 1 || submitLoading" color="primary">
+  <button mat-raised-button (click)="submit()" [disabled]="slugs.length < 1 || submitLoading" color="primary">
     <span *ngIf="!submitLoading">OK</span>
     <div *ngIf="submitLoading" fxLayout="column" fxLayoutAlign="center center" style="height: 36px;">
       <mat-spinner [diameter]="24"></mat-spinner>

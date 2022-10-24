@@ -114,6 +114,18 @@
                         color="primary">{{playerPerspective.name}}</mat-checkbox>
         </div>
       </mat-expansion-panel>
+
+      <mat-expansion-panel *ngIf="availablePlatforms.length > 0" [expanded]="activePlatformFilters.length > 0">
+        <mat-expansion-panel-header>
+          <h3 class="filter-category-title">Platforms</h3>
+        </mat-expansion-panel-header>
+
+        <div fxLayout="column">
+          <mat-checkbox *ngFor="let platform of availablePlatforms" (change)="togglePlatformFilter(platform.slug)"
+                        [checked]="activePlatformFilters.includes(platform.slug)"
+                        color="primary">{{platform.name}}</mat-checkbox>
+        </div>
+      </mat-expansion-panel>
     </div>
 
     <div fxFlex="0 1 1"><!--SPACER--></div>

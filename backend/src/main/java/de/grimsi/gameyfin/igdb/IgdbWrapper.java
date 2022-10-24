@@ -3,8 +3,11 @@ package de.grimsi.gameyfin.igdb;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
+import de.grimsi.gameyfin.entities.Platform;
+import de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.Condition;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
+import de.grimsi.gameyfin.mapper.PlatformMapper;
 import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
 import lombok.RequiredArgsConstructor;
@@ -17,35 +20,34 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static de.grimsi.gameyfin.igdb.IgdbApiProperties.GAME_QUERY_FIELDS_STRING;
+import static de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.*;
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class IgdbWrapper {
-    @Value("${gameyfin.igdb.api.client-id}")
-    private String clientId;
-
-    @Value("${gameyfin.igdb.api.client-secret}")
-    private String clientSecret;
-
-    @Value("${gameyfin.igdb.config.preferred-platforms:6}")
-    private String preferredPlatforms;
-
-    @Value("${gameyfin.igdb.api.endpoints.base}")
-    private String igdbApiBaseUrl;
-
-    @Value("${gameyfin.igdb.api.endpoints.auth}")
-    private String twitchAuthUrl;
-
     private final WebClient.Builder webclientBuilder;
     private final WebClientConfig webClientConfig;
     private final GameMapper gameMapper;
-
+    @Value("${gameyfin.igdb.api.client-id}")
+    private String clientId;
+    @Value("${gameyfin.igdb.api.client-secret}")
+    private String clientSecret;
+    @Value("${gameyfin.igdb.config.preferred-platforms:6}")
+    private List<Integer> preferredPlatforms;
+    @Value("${gameyfin.igdb.api.endpoints.base}")
+    private String igdbApiBaseUrl;
+    @Value("${gameyfin.igdb.api.endpoints.auth}")
+    private String twitchAuthUrl;
     private WebClient twitchApiClient;
 
     private WebClient igdbApiClient;
@@ -80,9 +82,13 @@ public class IgdbWrapper {
     }
 
     public Optional<Igdb.Game> getGameById(Long id) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
         Igdb.GameResult gameResult = queryIgdbApi(
-                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
-                "fields %s; where id = %d; limit 1;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, id),
+                IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF,
+                queryBuilder.fields(GAME_QUERY_FIELDS_STRING)
+                        .where(equal("id", id))
+                        .limit(1)
+                        .build(),
                 Igdb.GameResult.class
         );
 
@@ -92,9 +98,13 @@ public class IgdbWrapper {
     }
 
     public Optional<Igdb.Game> getGameBySlug(String slug) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
         Igdb.GameResult gameResult = queryIgdbApi(
-                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
-                "fields %s; where slug = \"%s\"; limit 1;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, slug),
+                IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF,
+                queryBuilder.fields(GAME_QUERY_FIELDS_STRING)
+                        .where(equal("slug", slug))
+                        .limit(1)
+                        .build(),
                 Igdb.GameResult.class
         );
 
@@ -104,9 +114,14 @@ public class IgdbWrapper {
     }
 
     public List<AutocompleteSuggestionDto> findPossibleMatchingTitles(String searchTerm, int limit) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
         Igdb.GameResult gameResult = queryIgdbApi(
-                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
-                "search \"%s\"; fields slug,name,first_release_date; where platforms = (%s); limit %d;".formatted(searchTerm, preferredPlatforms, limit),
+                IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF,
+                queryBuilder.search(searchTerm)
+                        .fields("slug,name,first_release_date,platforms.name")
+                        .where(in("platforms", preferredPlatforms))
+                        .limit(limit)
+                        .build(),
                 Igdb.GameResult.class
         );
 
@@ -116,10 +131,21 @@ public class IgdbWrapper {
     }
 
     public Optional<Igdb.Game> searchForGameByTitle(String searchTerm) {
+        return searchForGameByTitle(searchTerm, List.of());
+    }
+
+    public Optional<Igdb.Game> searchForGameByTitle(String searchTerm, Collection<String> platformSlugs) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
+        Condition platforms = isNotEmpty(platformSlugs) ?
+                and(in("platforms", preferredPlatforms), in("platforms.slug", platformSlugs)) :
+                in("platforms", preferredPlatforms);
+
         Igdb.GameResult gameResult = queryIgdbApi(
-                IgdbApiProperties.ENPOINT_GAMES_PROTOBUF,
-                "search \"%s\"; fields %s; where platforms = (%s);"
-                        .formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING, preferredPlatforms),
+                IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF,
+                queryBuilder.search(searchTerm)
+                        .fields(GAME_QUERY_FIELDS_STRING)
+                        .where(platforms)
+                        .build(),
                 Igdb.GameResult.class
         );
 
@@ -134,7 +160,7 @@ public class IgdbWrapper {
             if (hasBrackets.find()) {
                 String searchTermWithoutBrackets = searchTerm.split(brackets.pattern())[0].trim();
                 log.warn("Trying again with search term '{}'", searchTermWithoutBrackets);
-                return searchForGameByTitle(searchTermWithoutBrackets);
+                return searchForGameByTitle(searchTermWithoutBrackets, platformSlugs);
             }
 
             return Optional.empty();
@@ -185,5 +211,36 @@ public class IgdbWrapper {
                 .transformDeferred(BulkheadOperator.of(webClientConfig.getIgdbConcurrencyLimiter()))
                 .transformDeferred(RateLimiterOperator.of(webClientConfig.getIgdbRateLimiter()))
                 .block();
+    }
+
+    public List<Platform> findPlatforms(String searchTerm, int limit) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
+        Igdb.PlatformResult platformResult = queryIgdbApi(
+                IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF,
+                queryBuilder.search(searchTerm)
+                        .fields("slug,name")
+                        .limit(limit)
+                        .build(),
+                Igdb.PlatformResult.class
+        );
+
+        if (platformResult == null) return Collections.emptyList();
+
+        return platformResult.getPlatformsList().stream().map(PlatformMapper::toPlatform).toList();
+    }
+
+    public Platform getPlatformBySlug(String slug) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
+        Igdb.PlatformResult platformResult = queryIgdbApi(
+                IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF,
+                queryBuilder.fields("slug,name,platform_logo")
+                        .where(equal("slug", slug))
+                        .build(),
+                Igdb.PlatformResult.class
+        );
+
+        if (platformResult == null) return null;
+
+        return platformResult.getPlatformsList().stream().map(PlatformMapper::toPlatform).findFirst().orElse(null);
     }
 }

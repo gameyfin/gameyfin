@@ -3,6 +3,8 @@ import {ActivatedRoute, Params, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
 import {CompanyDto} from "../../models/dtos/CompanyDto";
+import {LibraryDto} from "../../models/dtos/LibraryDto";
+import {PlatformDto} from "../../models/dtos/PlatformDto";
 
 @Component({
   selector: 'app-game-detail-view',
@@ -108,6 +110,10 @@ export class GameDetailViewComponent {
     if (containerWidth < elementWidth) return 1;
 
     return Math.floor(containerWidth / elementWidth);
+  }
+
+  hasPlatform(library: LibraryDto, platform: PlatformDto) {
+    return library.platforms.some((libPlatform) => libPlatform.slug == platform.slug)
   }
 
 }

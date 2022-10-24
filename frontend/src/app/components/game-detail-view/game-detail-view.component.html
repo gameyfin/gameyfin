@@ -58,6 +58,14 @@
                         (click)="goToLibraryWithFilter('themes', theme.slug)">{{theme.name}}</mat-chip>
             </mat-chip-list>
           </div>
+
+          <div *ngIf="game.platforms !== undefined && game.platforms.length > 0">
+            <h2>Platforms</h2>
+            <mat-chip-list>
+              <mat-chip *ngFor="let platform of game.platforms" [disabled]="game.library == undefined || !hasPlatform(game.library, platform)"
+                        (click)="goToLibraryWithFilter('platforms', platform.slug)">{{platform.name}}</mat-chip>
+            </mat-chip-list>
+          </div>
         </div>
 
         <div fxFlex fxLayout="row" fxLayoutGap="16px">
