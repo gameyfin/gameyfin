@@ -238,11 +238,16 @@ public class LibraryService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find library for path %s".formatted(path)));
 
         Set<String> platformSlugs = Arrays.stream(slugs.split(",")).collect(toSet());
+
         List<Platform> platforms = platformSlugs.stream()
-                .map(slug -> platformRepository.findBySlug(slug).
-                        orElseGet(() -> igdbWrapper.getPlatformBySlug(slug)))
-                .filter(Objects::nonNull)
+                .map(slug -> {
+                    Optional<Platform> p = platformRepository.findBySlug(slug);
+                    return p.isPresent() ? p : igdbWrapper.getPlatformBySlug(slug);
+                })
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .toList();
+
         library.setPlatforms(platforms);
         libraryRepository.save(library);
 
