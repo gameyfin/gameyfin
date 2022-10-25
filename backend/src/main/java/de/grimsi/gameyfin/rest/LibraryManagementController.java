@@ -4,9 +4,9 @@ package de.grimsi.gameyfin.rest;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.dto.PathToSlugDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.entities.Library;
+import de.grimsi.gameyfin.entities.Platform;
 import de.grimsi.gameyfin.entities.UnmappableFile;
-import de.grimsi.gameyfin.repositories.DetectedGameRepository;
-import de.grimsi.gameyfin.service.DownloadService;
 import de.grimsi.gameyfin.service.GameService;
 import de.grimsi.gameyfin.service.ImageService;
 import de.grimsi.gameyfin.service.LibraryService;
@@ -62,4 +62,20 @@ public class LibraryManagementController {
     public List<AutocompleteSuggestionDto> getAutocompleteSuggestions(@RequestParam String searchTerm, @RequestParam(required = false, defaultValue = "10") int limit) {
         return libraryService.getAutocompleteSuggestions(searchTerm, limit);
     }
+
+    @GetMapping(value = "/platforms", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<Platform> getPlatforms(@RequestParam String searchTerm, @RequestParam(required = false, defaultValue = "10") int limit) {
+        return libraryService.getPlatforms(searchTerm, limit);
+    }
+
+    @GetMapping(value = "/libraries", produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<Library> getLibraries() {
+        return libraryService.getOrCreateLibraries();
+    }
+
+    @PostMapping(value = "/map-library", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Library mapPathToPlatform(@RequestBody PathToSlugDto pathToSlugDto) {
+        return libraryService.mapPlatformsToLibrary(pathToSlugDto.getPath(), pathToSlugDto.getSlug());
+    }
+
 }

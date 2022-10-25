@@ -7,6 +7,8 @@ import {UnmappedFileDto} from "../models/dtos/UnmappedFileDto";
 import {LibraryManagementApi} from "../api/LibraryManagementApi";
 import {GamesService} from "./games.service";
 import {AutocompleteSuggestionDto} from "../models/dtos/AutocompleteSuggestionDto";
+import {LibraryDto} from "../models/dtos/LibraryDto";
+import {PlatformDto} from "../models/dtos/PlatformDto";
 
 @Injectable({
   providedIn: 'root'
@@ -49,5 +51,21 @@ export class LibraryManagementService implements LibraryManagementApi {
     queryParams = queryParams.append("limit", limit);
 
     return this.http.get<AutocompleteSuggestionDto[]>(`${this.apiPath}/autocomplete-suggestions`, {params:queryParams})
+  }
+
+  getPlatforms(searchTerm: string, limit: number): Observable<PlatformDto[]> {
+    let queryParams = new HttpParams();
+    queryParams = queryParams.append("searchTerm", searchTerm);
+    queryParams = queryParams.append("limit", limit);
+
+    return this.http.get<PlatformDto[]>(`${this.apiPath}/platforms`, {params:queryParams})
+  }
+
+  mapLibrary(pathToSlugDto: PathToSlugDto): Observable<LibraryDto> {
+    return this.http.post<LibraryDto>(`${this.apiPath}/map-library`, pathToSlugDto);
+  }
+
+  getLibraries(): Observable<LibraryDto[]> {
+    return this.http.get<LibraryDto[]>(`${this.apiPath}/libraries`);
   }
 }

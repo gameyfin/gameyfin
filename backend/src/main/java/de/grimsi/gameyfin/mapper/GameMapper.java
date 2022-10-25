@@ -4,25 +4,23 @@ import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.entities.Library;
 import de.grimsi.gameyfin.service.FilesystemService;
 import de.grimsi.gameyfin.service.LibraryService;
 import de.grimsi.gameyfin.util.ProtobufUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -31,7 +29,7 @@ public class GameMapper {
 
     private final FilesystemService filesystemService;
 
-    public DetectedGame toDetectedGame(Igdb.Game g, Path path) {
+    public DetectedGame toDetectedGame(Igdb.Game g, Path path, Library library) {
         List<Igdb.MultiplayerMode> multiplayerModes = g.getMultiplayerModesList();
         List<String> screenshotIds = g.getScreenshotsList().stream().map(Igdb.Screenshot::getImageId).toList();
         List<String> videoIds = g.getVideosList().stream().map(Igdb.GameVideo::getVideoId).toList();
@@ -57,7 +55,9 @@ public class GameMapper {
                 .keywords(KeywordMapper.toKeywords(g.getKeywordsList()))
                 .themes(ThemeMapper.toThemes(g.getThemesList()))
                 .playerPerspectives(PlayerPerspectiveMapper.toPlayerPerspectives(g.getPlayerPerspectivesList()))
+                .platforms(PlatformMapper.toPlatforms(g.getPlatformsList()))
                 .path(path.toString())
+                .library(library)
                 .diskSize(calculateDiskSize(g, path))
                 .addedToLibrary(Instant.now())
                 .build();
@@ -76,13 +76,14 @@ public class GameMapper {
                 .slug(game.getSlug())
                 .title(game.getName())
                 .releaseDate(ProtobufUtil.toInstant(game.getFirstReleaseDate()))
+                .platforms(game.getPlatformsList().stream().map(Igdb.Platform::getName).toList())
                 .build();
     }
 
     private String getCoverId(Igdb.Game g) {
         String coverId = g.getCover().getImageId();
 
-        if(StringUtils.hasText(coverId)) return coverId;
+        if (StringUtils.hasText(coverId)) return coverId;
 
         return "nocover";
     }
@@ -113,7 +114,7 @@ public class GameMapper {
 
         try {
             fileSize = filesystemService.getSizeOnDisk(path);
-        } catch(IOException e) {
+        } catch (IOException e) {
             log.error("Error while calculating disk size for game '{}'", g.getName());
             fileSize = -1L;
         }

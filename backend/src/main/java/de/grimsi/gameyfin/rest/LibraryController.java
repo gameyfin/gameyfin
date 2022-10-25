@@ -1,9 +1,7 @@
 package de.grimsi.gameyfin.rest;
 
-import de.grimsi.gameyfin.dto.ImageDownloadResultDto;
-import de.grimsi.gameyfin.dto.LibraryScanResult;
-import de.grimsi.gameyfin.dto.LibraryScanResultDto;
-import de.grimsi.gameyfin.service.DownloadService;
+import de.grimsi.gameyfin.dto.*;
+import de.grimsi.gameyfin.entities.Library;
 import de.grimsi.gameyfin.service.ImageService;
 import de.grimsi.gameyfin.service.LibraryService;
 import lombok.RequiredArgsConstructor;
@@ -11,13 +9,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StopWatch;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Path;
 import java.util.List;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * This controller handles functionality of the library.
@@ -32,20 +29,23 @@ public class LibraryController {
     private final LibraryService libraryService;
     private final ImageService imageService;
 
-    @GetMapping(value = "/scan", produces = MediaType.APPLICATION_JSON_VALUE)
-    public LibraryScanResultDto scanLibrary(@RequestParam(value = "download_images", defaultValue = "true") boolean downloadImages) {
+    @PostMapping(value = "/scan", produces = MediaType.APPLICATION_JSON_VALUE)
+    public LibraryScanResultDto scanLibraries(@RequestBody LibraryScanRequestDto libraryScanRequest) {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
 
         LibraryScanResultDto lscDto = new LibraryScanResultDto();
 
-        LibraryScanResult lsc = libraryService.scanGameLibrary();
-        lscDto.setNewGames(lsc.getNewGames());
-        lscDto.setDeletedGames(lsc.getDeletedGames());
-        lscDto.setNewUnmappableFiles(lsc.getNewUnmappableFiles());
-        lscDto.setTotalGames(lsc.getTotalGames());
+        String path = libraryScanRequest.getPath();
+        List<Library> libraries = isNotBlank(path) ? List.of(libraryService.getLibrary(path)) : libraryService.getLibraries();
+        List<LibraryScanResult> libraryScanResults = libraries.stream().map(libraryService::scanGameLibrary).toList();
 
-        if(downloadImages) {
+        lscDto.setNewGames(libraryScanResults.stream().map(LibraryScanResult::getNewGames).reduce(0, Integer::sum));
+        lscDto.setDeletedGames(libraryScanResults.stream().map(LibraryScanResult::getDeletedGames).reduce(0, Integer::sum));
+        lscDto.setNewUnmappableFiles(libraryScanResults.stream().map(LibraryScanResult::getNewUnmappableFiles).reduce(0, Integer::sum));
+        lscDto.setTotalGames(libraryScanResults.stream().map(LibraryScanResult::getTotalGames).reduce(0, Integer::sum));
+
+        if (libraryScanRequest.isDownloadImages()) {
             ImageDownloadResultDto idrDto = downloadImages();
 
             lscDto.setCoverDownloads(idrDto.getCoverDownloads());

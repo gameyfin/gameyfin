@@ -26,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -59,7 +60,7 @@ class IgdbWrapperTest {
         ReflectionTestUtils.setField(target, "clientSecret", "client_secret_value");
         ReflectionTestUtils.setField(target, "igdbApiBaseUrl", "http://localhost:%s".formatted(igdbApiMock.getPort()));
         ReflectionTestUtils.setField(target, "twitchAuthUrl", "http://localhost:%s/oauth2/token".formatted(twitchApiMock.getPort()));
-        ReflectionTestUtils.setField(target, "preferredPlatforms", "preferred_platforms");
+        ReflectionTestUtils.setField(target, "preferredPlatforms", List.of(6));
 
         when(webClientConfigMock.getIgdbConcurrencyLimiter()).thenReturn(Bulkhead.of("test_bulkhead", BulkheadConfig.ofDefaults()));
         when(webClientConfigMock.getIgdbRateLimiter()).thenReturn(RateLimiter.of("test_ratelimiter", RateLimiterConfig.ofDefaults()));
@@ -114,9 +115,9 @@ class IgdbWrapperTest {
 
         RecordedRequest r = igdbApiMock.takeRequest();
         assertThat(r.getRequestUrl()).isNotNull();
-        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF));
 
-        String expectedQuery = "fields %s; where id = %d; limit 1;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, gameId);
+        String expectedQuery = "fields %s;limit 1;where id = %d;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, gameId);
 
         assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
@@ -147,9 +148,9 @@ class IgdbWrapperTest {
 
         RecordedRequest r = igdbApiMock.takeRequest();
         assertThat(r.getRequestUrl()).isNotNull();
-        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF));
 
-        String expectedQuery = "fields %s; where slug = \"%s\"; limit 1;".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, gameSlug);
+        String expectedQuery = "fields %s;limit 1;where slug = \"%s\";".formatted(IgdbApiProperties.GAME_QUERY_FIELDS_STRING, gameSlug);
 
         assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
@@ -176,9 +177,9 @@ class IgdbWrapperTest {
 
         RecordedRequest r = igdbApiMock.takeRequest();
         assertThat(r.getRequestUrl()).isNotNull();
-        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF));
 
-        String expectedQuery = "search \"%s\"; fields slug,name,first_release_date; where platforms = (preferred_platforms); limit %d;".formatted(gameTitle, gameResult.getGamesCount());
+        String expectedQuery = "search \"%s\";fields slug,name,first_release_date,platforms.name;limit %d;where platforms = (6);".formatted(gameTitle, gameResult.getGamesCount());
 
         assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
@@ -209,9 +210,9 @@ class IgdbWrapperTest {
 
         RecordedRequest r = igdbApiMock.takeRequest();
         assertThat(r.getRequestUrl()).isNotNull();
-        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF));
 
-        String expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+        String expectedQuery = "search \"%s\";fields %s;where platforms = (6);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
 
         assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
@@ -242,9 +243,9 @@ class IgdbWrapperTest {
 
         RecordedRequest r = igdbApiMock.takeRequest();
         assertThat(r.getRequestUrl()).isNotNull();
-        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF));
 
-        String expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+        String expectedQuery = "search \"%s\";fields %s;where platforms = (6);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
 
         assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
@@ -281,18 +282,18 @@ class IgdbWrapperTest {
         // First query (should contain brackets)
         RecordedRequest r1 = igdbApiMock.takeRequest();
         assertThat(r1.getRequestUrl()).isNotNull();
-        assertThat(r1.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+        assertThat(r1.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF));
 
-        String r1_expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+        String r1_expectedQuery = "search \"%s\";fields %s;where platforms = (6);".formatted(searchTerm, IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
 
         assertThat(r1.getBody().readUtf8()).isEqualTo(r1_expectedQuery);
 
         // Second query (should not contain brackets)
         RecordedRequest r2 = igdbApiMock.takeRequest();
         assertThat(r2.getRequestUrl()).isNotNull();
-        assertThat(r2.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENPOINT_GAMES_PROTOBUF));
+        assertThat(r2.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF));
 
-        String r2_expectedQuery = "search \"%s\"; fields %s; where platforms = (preferred_platforms);".formatted(gameResult.getGames(0).getName(), IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
+        String r2_expectedQuery = "search \"%s\";fields %s;where platforms = (6);".formatted(gameResult.getGames(0).getName(), IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
 
         assertThat(r2.getBody().readUtf8()).isEqualTo(r2_expectedQuery);
     }

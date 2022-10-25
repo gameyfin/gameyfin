@@ -3,10 +3,12 @@ package de.grimsi.gameyfin.service;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.dto.GameOverviewDto;
 import de.grimsi.gameyfin.entities.DetectedGame;
+import de.grimsi.gameyfin.entities.Library;
 import de.grimsi.gameyfin.entities.UnmappableFile;
 import de.grimsi.gameyfin.igdb.IgdbWrapper;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.repositories.DetectedGameRepository;
+import de.grimsi.gameyfin.repositories.LibraryRepository;
 import de.grimsi.gameyfin.repositories.UnmappableFileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +32,8 @@ public class GameService {
     private final GameMapper gameMapper;
     private final DetectedGameRepository detectedGameRepository;
     private final UnmappableFileRepository unmappableFileRepository;
+
+    private final LibraryRepository libraryRepository;
 
     public List<DetectedGame> getAllDetectedGames() {
         return detectedGameRepository.findAll();
@@ -104,7 +109,11 @@ public class GameService {
         Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
 
-        DetectedGame game = gameMapper.toDetectedGame(igdbGame, Path.of(unmappableFile.getPath()));
+        Path path = Path.of(unmappableFile.getPath());
+        // parent file should equal to the library
+        File libraryPath = path.toFile().getParentFile();
+        Library library = libraryRepository.findByPath(libraryPath.toString()).orElse(null);
+        DetectedGame game = gameMapper.toDetectedGame(igdbGame, path, library);
         game.setConfirmedMatch(true);
 
         game = detectedGameRepository.save(game);
@@ -118,13 +127,13 @@ public class GameService {
         Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
 
-        DetectedGame game = gameMapper.toDetectedGame(igdbGame, Path.of(existingGame.getPath()));
+        Path path = Path.of(existingGame.getPath());
+        // parent file should equal to the library
+        File libraryPath = path.toFile().getParentFile();
+        Library library = libraryRepository.findByPath(libraryPath.toString()).orElse(null);
+        DetectedGame game = gameMapper.toDetectedGame(igdbGame, path, library);
         game.setConfirmedMatch(true);
 
-        game = detectedGameRepository.save(game);
-
-        detectedGameRepository.delete(existingGame);
-
-        return game;
+        return detectedGameRepository.save(game);
     }
 }

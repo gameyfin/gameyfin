@@ -2,7 +2,9 @@ import {CompanyDto} from "./CompanyDto";
 import {GenreDto} from "./GenreDto";
 import {KeywordDto} from "./KeywordDto";
 import {PlayerPerspectiveDto} from "./PlayerPerspectiveDto";
+import {PlatformDto} from "./PlatformDto";
 import {ThemeDto} from "./ThemeDto";
+import {LibraryDto} from "./LibraryDto";
 
 export class DetectedGameDto {
 
@@ -26,6 +28,8 @@ export class DetectedGameDto {
   keywords?: KeywordDto[];
   themes?: ThemeDto[];
   playerPerspectives?: PlayerPerspectiveDto[];
+  platforms?: PlatformDto[];
+  library?: LibraryDto;
 
   path!: string;
   diskSize!: number;
