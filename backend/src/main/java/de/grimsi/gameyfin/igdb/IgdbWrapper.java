@@ -4,7 +4,7 @@ import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.entities.Platform;
-import de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.Condition;
+import de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.*;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.mapper.PlatformMapper;
@@ -214,6 +214,8 @@ public class IgdbWrapper {
                         .build(),
                 Igdb.PlatformResult.class
         );
+
+        if (platformResult == null) return Optional.empty();
 
         return platformResult.getPlatformsList().stream().map(PlatformMapper::toPlatform).findFirst();
     }
