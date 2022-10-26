@@ -3,3 +3,7 @@ gameyfin:
     api:
       client-id: igdb_client_id
       client-secret: igdb_client_secret
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:${spring.datasource.db-name}

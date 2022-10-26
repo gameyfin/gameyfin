@@ -27,7 +27,7 @@ public class DetectedGame {
     private String title;
 
     @Lob
-    @Column(columnDefinition="CLOB")
+    @Column(columnDefinition = "CLOB")
     private String summary;
 
     private Instant releaseDate;
@@ -81,8 +81,9 @@ public class DetectedGame {
     @ToString.Exclude
     private List<Platform> platforms;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.MERGE)
     @JoinColumn(name = "library")
+    @ToString.Exclude
     private Library library;
 
     // Technical properties
