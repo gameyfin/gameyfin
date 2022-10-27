@@ -159,7 +159,7 @@ public class LibraryService {
                 .map(Optional::get)
                 .peek(e -> log.info("Mapped file '{}' to game '{}' (slug: {})", e.getKey(), e.getValue().getName(), e.getValue().getSlug()))
                 .map(e -> gameMapper.toDetectedGame(e.getValue(), e.getKey(), library))
-                .toList();
+                .collect(toList());
 
         List<DetectedGame> duplicateGames = getDuplicates(newDetectedGames);
         newUnmappedFilesCounter.getAndAdd(duplicateGames.size());
@@ -242,7 +242,8 @@ public class LibraryService {
                 .map(slug -> platformRepository.findBySlug(slug).
                         orElseGet(() -> igdbWrapper.getPlatformBySlug(slug)))
                 .filter(Objects::nonNull)
-                .toList();
+                .collect(toList());
+
         library.setPlatforms(platforms);
         libraryRepository.save(library);
 
