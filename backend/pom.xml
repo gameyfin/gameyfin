@@ -12,6 +12,13 @@
 
     <packaging>jar</packaging>
 
+    <repositories>
+		<repository>
+		    <id>jitpack.io</id>
+		    <url>https://jitpack.io</url>
+		</repository>
+	</repositories>
+
     <properties>
         <java.version>18</java.version>
 
@@ -167,6 +174,11 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+	    <groupId>com.github.mpetazzoni</groupId>
+	    <artifactId>ttorrent</artifactId>
+	    <version>ttorrent-2.0</version>
+	</dependency>
     </dependencies>
 
     <build>

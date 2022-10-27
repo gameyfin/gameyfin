@@ -12,3 +12,4 @@ services:
       - <path to your game library>:/opt/gameyfin-library
     ports:
       - "8080:8080"
+      - "6969:6969"

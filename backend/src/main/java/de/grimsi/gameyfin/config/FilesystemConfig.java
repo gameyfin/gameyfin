@@ -37,6 +37,9 @@ public class FilesystemConfig {
     @Value("${gameyfin.cache}")
     private String cachePath;
 
+    @Value("${gameyfin.torrent}")
+    private String torrentPath;
+
     @Autowired
     Environment env;
 

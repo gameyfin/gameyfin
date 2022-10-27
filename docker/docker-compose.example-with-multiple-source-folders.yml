@@ -15,3 +15,4 @@ services:
       - <Path on your host to the 3rd source folder>:/opt/gameyfin-library/library-3
     ports:
       - "8080:8080"
+      - "6969:6969"

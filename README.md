@@ -44,3 +44,14 @@ Since Gameyfin loads information from IGDB, you need to register yourself there.
 3. Edit the config options in the `gameyfin.properties` file
 4. Use the following command to start Gameyfin: `java -jar gameyfin.jar`
 5. Open the address of your Gameyfin host in your browser, Gameyfin runs under port 8080 by default
+
+
+### Torrents
+
+Gameyfin also has an integrated torrent tracker running to easily share games with your friends. It runs per default on port 6969.
+To share games, press the "Torrent" button on the detail-page of the game you want to share and add the downloaded .torrent file to your client.
+Gameyfin then seeds the game until one client has successfully downloaded the whole game. After this, you can share the .torrent file with your friends and share the game via bittorrent.
+
+For security reasons, Gameyfin only accepts torrents it itself has created, but this data will be saved on the disk, so the .torrent files can be re-used even after a restart
+
+To use the bittorrent client, either set `gameyfin.torrent` in `gameyfin.properties` or the environment variable `GAMEYFIN_TORRENT` to a path where the torrent files should be stored

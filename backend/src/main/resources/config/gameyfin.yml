@@ -1,6 +1,8 @@
 gameyfin:
   db: ""
   cache: ""
+  torrent: ""
+  trackerport: 6969
   file-extensions: iso, zip, rar, 7z, exe
   igdb:
     api:
