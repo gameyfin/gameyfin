@@ -5,6 +5,7 @@ import {Router} from "@angular/router";
 import {GamesService} from "../../services/games.service";
 import {ThemingService} from "../../services/theming.service";
 import {Location} from '@angular/common';
+import {LibraryScanRequestDto} from "../../models/dtos/LibraryScanRequestDto";
 
 @Component({
   selector: 'app-header',
@@ -25,7 +26,9 @@ export class HeaderComponent {
   }
 
   scanLibrary(): void {
-    this.libraryService.scanLibrary().subscribe({
+    let request = new LibraryScanRequestDto();
+    request.downloadImages = true;
+    this.libraryService.scanLibrary(request).subscribe({
       next: result => {
         // Refresh the current page "angular style"
         this.router.navigate([this.router.url]).then(() => {

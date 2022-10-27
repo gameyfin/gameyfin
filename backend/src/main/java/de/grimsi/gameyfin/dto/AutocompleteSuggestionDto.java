@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @Builder
@@ -15,4 +16,5 @@ public class AutocompleteSuggestionDto {
     private String slug;
     private String title;
     private Instant releaseDate;
+    private List<String> platforms;
 }

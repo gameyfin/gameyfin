@@ -38,10 +38,12 @@ import {MatChipsModule} from "@angular/material/chips";
 import { LibraryManagementComponent } from './components/library-management/library-management.component';
 import {MatTooltipModule} from "@angular/material/tooltip";
 import {MapGameDialogComponent} from "./components/map-game-dialog/map-game-dialog.component";
+import {MapLibraryDialogComponent} from "./components/map-library-dialog/map-library-dialog.component";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {A11yModule} from "@angular/cdk/a11y";
 import { MappedGamesTableComponent } from './components/mapped-games-table/mapped-games-table.component';
+import { MappedLibrariesTableComponent } from './components/mapped-libraries-table/mapped-libraries-table.component';
 import {MatTableFilterModule} from "mat-table-filter";
 import { UnmappedFilesTableComponent } from './components/unmapped-files-table/unmapped-files-table.component';
 import {MatDividerModule} from "@angular/material/divider";
@@ -68,7 +70,9 @@ import { ProgressBarColorDirective } from './directives/progress-bar-color.direc
     GameVideoComponent,
     LibraryManagementComponent,
     MapGameDialogComponent,
+    MapLibraryDialogComponent,
     MappedGamesTableComponent,
+    MappedLibrariesTableComponent,
     UnmappedFilesTableComponent,
     NgModelChangeDebouncedDirective,
     ProgressBarColorDirective,

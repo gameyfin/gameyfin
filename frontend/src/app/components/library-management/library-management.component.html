@@ -1,6 +1,9 @@
 <div fxFlexFill>
-  <div *ngIf="loggedIn && (this.unmappedFiles.length > 0 || this.mappedGames.length > 0)" fxFlex fxLayoutAlign="center start">
+  <div *ngIf="loggedIn && (this.mappedLibraries.length > 0)" fxFlex fxLayoutAlign="center start">
     <mat-tab-group>
+      <mat-tab label="Library mappings">
+        <mapped-libraries-table [mappedLibraries]="mappedLibraries"></mapped-libraries-table>
+      </mat-tab>
       <mat-tab label="Game mappings">
         <mapped-games-table [mappedGames]="mappedGames"></mapped-games-table>
       </mat-tab>
@@ -19,7 +22,7 @@
     </div>
   </div>
 
-  <div *ngIf="loggedIn && this.unmappedFiles.length === 0 && this.mappedGames.length === 0" fxFlex fxLayout="column" fxLayoutAlign="center center">
+  <div *ngIf="loggedIn && this.mappedLibraries.length === 0" fxFlex fxLayout="column" fxLayoutAlign="center center">
     <div class="library-management-hint" fxLayout="column" fxLayoutAlign="start end">
       <mat-icon fontSet="material-icons-outlined">north_east</mat-icon>
       <p>Use the library management to scan your file system for games</p>

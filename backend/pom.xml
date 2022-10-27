@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <artifactId>gameyfin</artifactId>
         <groupId>de.grimsi</groupId>
-        <version>1.2.1</version>
+        <version>1.3.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>gameyfin-backend</artifactId>
@@ -17,12 +15,15 @@
     <properties>
         <java.version>18</java.version>
 
-        <springdoc-openapi-ui.version>1.6.9</springdoc-openapi-ui.version>
+        <springdoc-openapi-ui.version>1.6.11</springdoc-openapi-ui.version>
         <resilience4j.version>1.7.1</resilience4j.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-compress.version>1.21</commons-compress.version>
         <protoc.plugin.version>3.11.4</protoc.plugin.version>
         <protobuf-java.version>3.21.7</protobuf-java.version>
+        <easy-random.version>5.0.0</easy-random.version>
+        <easy-random-protobuf.version>0.4.0</easy-random-protobuf.version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
 
         <!-- Use older version because the newer versions have problems with non-ASCII characters in properties files (umlauts etc.) -->
         <maven-resources-plugin.version>3.1.0</maven-resources-plugin.version>
@@ -119,6 +120,35 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jeasy</groupId>
+            <artifactId>easy-random-core</artifactId>
+            <version>${easy-random.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.murdos</groupId>
+            <artifactId>easy-random-protobuf</artifactId>
+            <version>${easy-random-protobuf.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.jimfs</groupId>
+            <artifactId>jimfs</artifactId>
+            <version>1.2</version>
+            <scope>test</scope>
+        </dependency>
+
 
         <!-- Dev -->
         <dependency>
@@ -210,6 +240,7 @@
                         </goals>
                         <configuration>
                             <includeStdTypes>true</includeStdTypes>
+                            <optimizeCodegen>false</optimizeCodegen>
                             <inputDirectories>
                                 <include>${project.basedir}/src/main/resources/proto</include>
                             </inputDirectories>
@@ -221,6 +252,28 @@
                                 </outputTarget>
                             </outputTargets>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- JaCoCo coverage report -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-initialize</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-site</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

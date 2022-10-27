@@ -3,7 +3,8 @@ package de.grimsi.gameyfin.igdb;
 import java.util.List;
 
 public class IgdbApiProperties {
-    public static final String ENPOINT_GAMES_PROTOBUF = "games.pb";
+    public static final String ENDPOINT_GAMES_PROTOBUF = "games.pb";
+    public static final String ENDPOINT_PLATFORMS_PROTOBUF = "platforms.pb";
 
     private static final List<String> GAME_QUERY_FIELDS = List.of(
             "slug", "name", "summary", "first_release_date", "rating", "aggregated_rating", "total_rating", "category",
@@ -13,7 +14,8 @@ public class IgdbApiProperties {
             "genres.slug", "genres.name",
             "keywords.slug", "keywords.name",
             "themes.slug", "themes.name",
-            "player_perspectives.slug", "player_perspectives.name"
+            "player_perspectives.slug", "player_perspectives.name",
+            "platforms.slug", "platforms.name", "platforms.platform_logo.image_id"
     );
 
     public static final String GAME_QUERY_FIELDS_STRING = String.join(",", GAME_QUERY_FIELDS);
