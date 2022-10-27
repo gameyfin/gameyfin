@@ -77,6 +77,14 @@ public class DetectedGame {
     @ToString.Exclude
     private List<PlayerPerspective> playerPerspectives;
 
+    @ManyToMany(cascade = CascadeType.MERGE)
+    @ToString.Exclude
+    private List<Platform> platforms;
+
+    @ManyToOne
+    @JoinColumn(name = "library")
+    private Library library;
+
     // Technical properties
     @Column(nullable = false)
     private String path;

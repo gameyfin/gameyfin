@@ -3,6 +3,8 @@ import {ActivatedRoute, Params, Router} from "@angular/router";
 import {DetectedGameDto} from "../../models/dtos/DetectedGameDto";
 import {GamesService} from "../../services/games.service";
 import {CompanyDto} from "../../models/dtos/CompanyDto";
+import {LibraryDto} from "../../models/dtos/LibraryDto";
+import {PlatformDto} from "../../models/dtos/PlatformDto";
 
 @Component({
   selector: 'app-game-detail-view',
@@ -48,6 +50,24 @@ export class GameDetailViewComponent {
     this.gamesService.downloadGame(this.game.slug);
   }
 
+  public refreshGame(): void {
+    this.gamesService.refreshGame(this.game.slug).subscribe({
+      next: game => {
+        this.game = game;
+        if(game.companies !== undefined) {
+          this.companiesWithLogo = game.companies.filter(c => c.logoId !== undefined && c.logoId.length > 0);
+        }
+      },
+      error: error => {
+        if (error.status === 404) {
+          this.router.navigate(['/library']);
+        } else {
+          console.error(error);
+        }
+      }
+   });
+  }
+
   public bytesAsHumanReadableString(bytes: number): string {
     const thresh = 1024;
 
@@ -90,6 +110,10 @@ export class GameDetailViewComponent {
     if (containerWidth < elementWidth) return 1;
 
     return Math.floor(containerWidth / elementWidth);
+  }
+
+  hasPlatform(library: LibraryDto, platform: PlatformDto) {
+    return library.platforms.some((libPlatform) => libPlatform.slug == platform.slug)
   }
 
 }

@@ -5,6 +5,7 @@ import {distinct, map, Observable} from "rxjs";
 import {DetectedGameDto} from "../models/dtos/DetectedGameDto";
 import {GameOverviewDto} from "../models/dtos/GameOverviewDto";
 import {GenreDto} from "../models/dtos/GenreDto";
+import {PlatformDto} from "../models/dtos/PlatformDto";
 import {ThemeDto} from "../models/dtos/ThemeDto";
 import {CompanyDto} from "../models/dtos/CompanyDto";
 import {PlayerPerspectiveDto} from "../models/dtos/PlayerPerspectiveDto";
@@ -88,8 +89,26 @@ export class GamesService implements GamesApi {
     );
   }
 
+  // TODO: This method of removing duplicates is most certainly an anti-pattern in RxJS
+  // TODO: However, I did not get the 'distinct()' pipe to work properly, so I have to take another look in the future
+  getAvailablePlatforms(): Observable<PlatformDto[]> {
+    return this.getAllGames().pipe(
+      map<DetectedGameDto[], PlatformDto[]>(
+        games => {
+          let availablePlatformsMap: Map<string, PlatformDto> = new Map<string, PlatformDto>;
+          games.map(game => game.library !== undefined && game.library.platforms.length > 0 ? game.library.platforms : []).flat().forEach(platform => availablePlatformsMap.set(platform.slug, platform));
+          return Array.from(availablePlatformsMap.values()).sort((p1, p2) => p1.name.localeCompare(p2.name));
+        }
+      )
+    );
+  }
+
   downloadGame(slug: String): void {
     window.open(`v1${this.apiPath}/game/${slug}/download`, '_top');
+  }
+
+  refreshGame(slug: String): Observable<DetectedGameDto> {
+    return this.http.get<DetectedGameDto>(`${this.apiPath}/game/${slug}/refresh`);
   }
 
   getGameOverviews(): Observable<GameOverviewDto[]> {

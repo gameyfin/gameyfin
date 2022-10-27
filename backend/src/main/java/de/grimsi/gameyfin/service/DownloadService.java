@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
+import org.apache.commons.io.FileUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
@@ -32,6 +33,23 @@ public class DownloadService {
 
         if (!path.toFile().isDirectory()) return getFilenameWithExtension(path);
         return getFilenameWithExtension(path) + ".zip";
+    }
+
+    public long getDownloadFileSize(DetectedGame game) {
+        Path path = Path.of(game.getPath());
+
+        try {
+            if (!path.toFile().isDirectory()) {
+                long fileSize = filesystemService.getSizeOnDisk(path);
+                log.info("Calculated file size for {} ({} MB).", path, Math.divideExact(fileSize, 1000000L));
+                return fileSize;
+            } else {
+                // return zero since we cannot set content length for ZipOutputStreams that are used to archive directories
+                return 0;
+            }
+        } catch (IOException e) {
+            throw new DownloadAbortedException();
+        }
     }
 
     public Resource sendImageToClient(String imageId) {
@@ -78,6 +96,7 @@ public class DownloadService {
     }
 
     private void sendGamefilesAsZipToClient(Path path, OutputStream outputStream) {
+        log.info("Archiving game path {} for download...", path);
         ZipOutputStream zos = new ZipOutputStream(outputStream) {{
             def.setLevel(Deflater.NO_COMPRESSION);
         }};
@@ -87,6 +106,7 @@ public class DownloadService {
                 @SneakyThrows
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                     zos.putNextEntry(new ZipEntry(path.relativize(file).toString()));
+                    log.debug("Adding file {} to archive...", file);
                     Files.copy(file, zos);
                     zos.closeEntry();
 

@@ -1,0 +1,43 @@
+<div class="mat-elevation-z8">
+  <table mat-table matSort matTableFilter [dataSource]="dataSource" [exampleEntity]="filter" [debounceTime]="0">
+    <!-- Path column -->
+    <ng-container matColumnDef="path">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Path</th>
+      <td mat-cell *matCellDef="let element"> {{element.path}} </td>
+    </ng-container>
+
+    <!-- Platform column -->
+    <ng-container matColumnDef="platforms">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Platforms</th>
+      <td mat-cell *matCellDef="let element"><span *ngFor="let item of element.platforms; let isLast=last">{{item.name}}{{isLast ? '' : ', '}}</span></td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>
+        <button mat-icon-button (click)="refreshMappedLibrariesList()">
+          <mat-icon matTooltip="Refresh library list" matTooltipPosition="below">refresh</mat-icon>
+        </button>
+      </th>
+
+      <!-- Action column -->
+      <td mat-cell *matCellDef="let element">
+        <button mat-icon-button (click)="openLibraryMappingDialog(element)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="Scan this library" (click)="scanLibrary(element)">
+          <mat-icon>youtube_searched_for</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <mat-paginator
+      [length]="dataSource?.data?.length"
+      [pageIndex]="0"
+      [pageSize]="15"
+      [pageSizeOptions]="[10, 15, 25, 50]">
+  </mat-paginator>
+</div>

@@ -12,7 +12,7 @@
 
       <mat-autocomplete #igdbSlugAutocomplete="matAutocomplete">
         <mat-option *ngFor="let suggestion of autocompleteSuggestions" [value]="suggestion.slug">
-          {{suggestion.title}} ({{getFullYearFromTimestamp(suggestion.releaseDate)}})
+          {{suggestion.title}} ({{getFullYearFromTimestamp(suggestion.releaseDate)}}) - {{suggestion.platforms.join(', ')}}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
