@@ -16,9 +16,9 @@ public class FilenameUtil {
     private static List<String> possibleGameFileExtensions;
     private static List<String> possibleGameFileSuffixes;
     // matches v1.1.1 v1.1 v1 version numbers
-    private static Pattern versionPattern = Pattern.compile("v(\\d+\\.)?(\\d+\\.)?(\\d+)");
-    private static Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|[-_.])+$");
-    private static Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|[-_.])+");
+    private static final Pattern versionPattern = Pattern.compile("v(\\d+\\.)?(\\d+\\.)?(\\d+)");
+    private static final Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|[-_.])+$");
+    private static final Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|[-_.])+");
 
     @Value("${gameyfin.file-extensions}")
     public void setPossibleGameFileExtensions(List<String> possibleGameFileExtensions) {
@@ -27,9 +27,9 @@ public class FilenameUtil {
     
     @Value("${gameyfin.file-suffixes}")
     public void setPossibleGameFileSuffixes(List<String> possibleGameFileSuffixes) {
+        // Sort in descending length, so for example "windows" gets checked before "win"
+        possibleGameFileSuffixes.sort((s1,s2) -> Integer.compare(s2.length(), s1.length()));
         FilenameUtil.possibleGameFileSuffixes = possibleGameFileSuffixes;
-        // Sort in decending length, so for example "windows" gets checked before "win"
-        FilenameUtil.possibleGameFileSuffixes.sort((s1,s2) -> Integer.compare(s2.length(), s1.length()));
     }
 
     public static String getFilenameWithoutExtension(Path p) {
