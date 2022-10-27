@@ -37,6 +37,6 @@ class ImageControllerTest {
 
         verify(downloadServiceMock, times(1)).sendImageToClient(input);
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(result.getBody()).isEqualTo(input);
+        assertThat(result.getBody()).isEqualTo(resource);
     }
 }
