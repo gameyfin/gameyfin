@@ -106,30 +106,23 @@ public class GameService {
     }
 
     private DetectedGame mapUnmappableFile(UnmappableFile unmappableFile, String slug) {
-        Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
-
-        Path path = Path.of(unmappableFile.getPath());
-        // parent file should equal to the library
-        File libraryPath = path.toFile().getParentFile();
-        Library library = libraryRepository.findByPath(libraryPath.toString()).orElse(null);
-        DetectedGame game = gameMapper.toDetectedGame(igdbGame, path, library);
-        game.setConfirmedMatch(true);
-
-        game = detectedGameRepository.save(game);
-
+        DetectedGame game = mapPathToGame(Path.of(unmappableFile.getPath()), slug);
         unmappableFileRepository.delete(unmappableFile);
-
         return game;
     }
 
     private DetectedGame mapDetectedGame(DetectedGame existingGame, String slug) {
-        Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
+        DetectedGame game = mapPathToGame(Path.of(existingGame.getPath()), slug);
+        detectedGameRepository.delete(existingGame);
+        return game;
+    }
 
-        Path path = Path.of(existingGame.getPath());
-        // parent file should equal to the library
-        File libraryPath = path.toFile().getParentFile();
+    private DetectedGame mapPathToGame(Path path, String slug) {
+        Igdb.Game igdbGame = igdbWrapper.getGameBySlug(slug)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' does not exist on IGDB.".formatted(slug)));
+
+        // Parent folder should be the library
+        Path libraryPath = path.getParent();
         Library library = libraryRepository.findByPath(libraryPath.toString()).orElse(null);
         DetectedGame game = gameMapper.toDetectedGame(igdbGame, path, library);
         game.setConfirmedMatch(true);
