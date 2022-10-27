@@ -28,14 +28,14 @@ class ImageControllerTest {
     @Test
     void getImage() {
         byte[] content = "content".getBytes();
-        Resource input = new ByteArrayResource(content);
-        String imageId = "imageId";
+        Resource resource = new ByteArrayResource(content);
+        String input = "imageId";
 
-        doReturn(input).when(downloadServiceMock).sendImageToClient(imageId);
+        doReturn(resource).when(downloadServiceMock).sendImageToClient(input);
 
-        ResponseEntity<Resource> result = target.getImage(imageId);
+        ResponseEntity<Resource> result = target.getImage(input);
 
-        verify(downloadServiceMock, times(1)).sendImageToClient(imageId);
+        verify(downloadServiceMock, times(1)).sendImageToClient(input);
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(result.getBody()).isEqualTo(input);
     }
