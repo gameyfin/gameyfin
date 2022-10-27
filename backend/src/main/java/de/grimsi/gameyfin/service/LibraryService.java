@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutExtension;
+import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutAdditions;
 import static de.grimsi.gameyfin.util.FilenameUtil.hasGameArchiveExtension;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
