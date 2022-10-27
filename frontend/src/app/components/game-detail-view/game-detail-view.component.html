@@ -39,7 +39,12 @@
           <button mat-raised-button color="primary" (click)="downloadGame()">
             <mat-icon>download</mat-icon>
           </button>
-          <b style="font-size: 24px">Download ({{bytesAsHumanReadableString(game.diskSize)}})</b>
+          <b style="font-size: 24px">Direct download({{bytesAsHumanReadableString(game.diskSize)}})</b>
+          <br>
+          <button mat-raised-button color="primary" (click)="downloadTorrent()">
+            <mat-icon>arrow_circle_up</mat-icon>
+          </button>
+          <b style="font-size: 24px">Torrent download</b>
         </div>
 
         <div fxLayout="column" fxLayoutGap="24px">

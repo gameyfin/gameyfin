@@ -13,11 +13,16 @@
     <packaging>jar</packaging>
 
     <repositories>
-		<repository>
-		    <id>jitpack.io</id>
-		    <url>https://jitpack.io</url>
-		</repository>
-	</repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
+            <url>http://repo1.maven.org/maven2</url>
+        </repository>
+    </repositories>
 
     <properties>
         <java.version>18</java.version>
@@ -175,10 +180,15 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-	    <groupId>com.github.mpetazzoni</groupId>
-	    <artifactId>ttorrent</artifactId>
-	    <version>ttorrent-2.0</version>
-	</dependency>
+            <groupId>com.github.mpetazzoni</groupId>
+            <artifactId>ttorrent</artifactId>
+            <version>ttorrent-2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.atomashpolskiy</groupId>
+            <artifactId>bt-core</artifactId>
+            <version>1.10</version>
+        </dependency>
     </dependencies>
 
     <build>

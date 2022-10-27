@@ -50,6 +50,11 @@ export class GameDetailViewComponent {
     this.gamesService.downloadGame(this.game.slug);
   }
 
+  public downloadTorrent(): void {
+    this.gamesService.downloadTorrent(this.game.slug);
+  }
+
+
   public refreshGame(): void {
     this.gamesService.refreshGame(this.game.slug).subscribe({
       next: game => {

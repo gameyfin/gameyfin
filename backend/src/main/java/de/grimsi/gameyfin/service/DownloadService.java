@@ -35,6 +35,13 @@ public class DownloadService {
         return getFilenameWithExtension(path) + ".zip";
     }
 
+    public String getTorrentFileName(DetectedGame g) {
+        Path path = Path.of(g.getPath());
+
+        if (!path.toFile().isDirectory()) return getFilenameWithExtension(path) + ".torrent";
+        return getFilenameWithExtension(path) + ".torrent";
+    }
+
     public long getDownloadFileSize(DetectedGame game) {
         Path path = Path.of(game.getPath());
 
@@ -82,6 +89,36 @@ public class DownloadService {
         stopWatch.stop();
 
         log.info("Downloaded game files of {} in {} seconds.", game.getTitle(), (int) stopWatch.getTotalTimeSeconds());
+    }
+
+    public void sendTorrentToClient(DetectedGame game, Path torrentFile, OutputStream outputStream) {
+
+        StopWatch stopWatch = new StopWatch();
+
+        log.info("Starting torrent download for {}...", game.getTitle());
+
+        stopWatch.start();
+
+        try {
+            Files.copy(torrentFile, outputStream);
+        } catch (ClientAbortException e) {
+                stopWatch.stop();
+                log.info("Download of torrentfile {} was aborted by client after {} seconds", game.getTitle(), (int) stopWatch.getTotalTimeSeconds());
+                return;
+        } catch (IOException e) {
+            log.error("Error while downloading file:", e);
+        }
+
+        stopWatch.stop();
+
+        log.info("Downloaded torrentfile of {} in {} seconds.", game.getTitle(), (int) stopWatch.getTotalTimeSeconds());
+
+
+        //Starting new thread to seed torrent to one client
+        TorrentService.announceTorrent(torrentFile.toFile());
+        Runnable seedRunnable = new TorrentSeedService(torrentFile, game.getPath());
+        Thread seedThread = new Thread(seedRunnable);
+        seedThread.start();
     }
 
     private void sendGamefileToClient(Path path, OutputStream outputStream) {

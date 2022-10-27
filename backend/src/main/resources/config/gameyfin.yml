@@ -2,7 +2,9 @@ gameyfin:
   db: ""
   cache: ""
   torrent: ""
+  trackerhostname: localhost
   trackerport: 6969
+  trackerssl: false
   file-extensions: iso, zip, rar, 7z, exe
   igdb:
     api:

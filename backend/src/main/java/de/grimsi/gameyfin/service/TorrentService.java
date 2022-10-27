@@ -25,6 +25,9 @@ public class TorrentService implements ApplicationListener<ApplicationReadyEvent
     @Value("${gameyfin.torrent}")
     private String torrentFolderPath;
 
+    @Value("${gameyfin.trackerhostname}")
+    private String trackerHostname;
+
     @Value("${gameyfin.trackerport}")
     private int trackerPort;
 
@@ -32,11 +35,42 @@ public class TorrentService implements ApplicationListener<ApplicationReadyEvent
         Files.createDirectories(Path.of(torrentFolderPath));
     }
 
+    public static String getAnnounceURL(){
+        if(tracker != null)
+            return tracker.getAnnounceUrl();
+        return "";
+    }
+
+    public static boolean isTrackerEnabled(){
+        if(tracker != null)
+            return true;
+        return false;
+    }
+
+    public static boolean announceTorrent(File torrentFile) {
+        if (tracker == null) {
+            log.info("Failed to announce torrent file, tracker is not started");
+            return false;
+        } else {
+            try {
+                tracker.announce(TrackedTorrent.load(torrentFile));
+            } catch (IOException e) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        if(torrentFolderPath.equals("")){
+        if (torrentFolderPath.equals("")) {
             log.info("No torrent path set, not starting with torrent support");
             return;
+        }
+        try {
+            this.createTorrentFolder();
+        } catch (IOException e) {
+
         }
         log.info("Loading created torrents from {}", torrentFolderPath);
         try {
@@ -50,7 +84,7 @@ public class TorrentService implements ApplicationListener<ApplicationReadyEvent
             };
             for (File f : new File(torrentFolderPath).listFiles(filter)) {
                 log.info("Loaded torrentfile {}", f.toString());
-                tracker.announce(TrackedTorrent.load(f));
+                announceTorrent(f);
             }
             //Finally start the tracker
             tracker.start(true);

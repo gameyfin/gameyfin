@@ -107,6 +107,10 @@ export class GamesService implements GamesApi {
     window.open(`v1${this.apiPath}/game/${slug}/download`, '_top');
   }
 
+  downloadTorrent(slug: String): void {
+    window.open(`v1${this.apiPath}/game/${slug}/torrent`, '_top');
+  }
+
   refreshGame(slug: String): Observable<DetectedGameDto> {
     return this.http.get<DetectedGameDto>(`${this.apiPath}/game/${slug}/refresh`);
   }

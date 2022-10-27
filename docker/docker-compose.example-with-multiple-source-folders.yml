@@ -9,10 +9,12 @@ services:
       - GAMEYFIN_IGDB_API_CLIENT_ID=<your twitch client-id here>
       - GAMEYFIN_IGDB_API_CLIENT_SECRET=<your twitch client-secret here>
       - GAMEYFIN_SOURCES=/opt/gameyfin-library/library-1,/opt/gameyfin-library/library-2,/opt/gameyfin-library/library-3
+#      - GAMEYFIN_TORRENT=opt/gameyfin-torrents   #uncomment if you want to use torrents
     volumes:
       - <Path on your host to the 1st source folder>:/opt/gameyfin-library/library-1
       - <Path on your host to the 2nd source folder>:/opt/gameyfin-library/library-2
       - <Path on your host to the 3rd source folder>:/opt/gameyfin-library/library-3
+    #      - <path to your torrentcache>:/opt/gameyfin-torrents
     ports:
       - "8080:8080"
       - "6969:6969"

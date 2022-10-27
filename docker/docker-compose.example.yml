@@ -8,8 +8,10 @@ services:
       - GAMEYFIN_PASSWORD=<your password here>
       - GAMEYFIN_IGDB_API_CLIENT_ID=<your twitch client-id here>
       - GAMEYFIN_IGDB_API_CLIENT_SECRET=<your twitch client-secret here>
+#      - GAMEYFIN_TORRENT=opt/gameyfin-torrents   #uncomment if you want to use torrents
     volumes:
       - <path to your game library>:/opt/gameyfin-library
+#      - <path to your torrentcache>:/opt/gameyfin-torrents
     ports:
       - "8080:8080"
       - "6969:6969"

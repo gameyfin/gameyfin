@@ -55,3 +55,4 @@ Gameyfin then seeds the game until one client has successfully downloaded the wh
 For security reasons, Gameyfin only accepts torrents it itself has created, but this data will be saved on the disk, so the .torrent files can be re-used even after a restart
 
 To use the bittorrent client, either set `gameyfin.torrent` in `gameyfin.properties` or the environment variable `GAMEYFIN_TORRENT` to a path where the torrent files should be stored
+Also, if you want to use the torrent tracker externally or have set an unresolvable hostname on your machine, use `gameyfin.torrenthostname` or `GAMEYFIN_TORRENTHOSTNAME` to set a valid hostname which will be used for the announce URL of the torrents
