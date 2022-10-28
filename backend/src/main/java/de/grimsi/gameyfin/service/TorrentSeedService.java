@@ -14,45 +14,29 @@ import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class TorrentSeedService implements Runnable {
+public class TorrentSeedService{
 
-    private Path torrentPath;
-    private String gamePath;
+    private CommunicationManager comm;
 
-    public TorrentSeedService(Path torrentPath, String gamePath) {
-        this.torrentPath = torrentPath;
-        this.gamePath = gamePath;
-    }
-
-    public void run() {
+    public TorrentSeedService() {
         InetAddress seedAddress = new InetSocketAddress(0).getAddress();
 
         ExecutorService workingExecutor = Executors.newFixedThreadPool(8);
         ExecutorService validatorExecutor = Executors.newFixedThreadPool(8);
-        CommunicationManager cm = new CommunicationManager(workingExecutor, validatorExecutor);
-        try {
-            cm.start(seedAddress);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            cm.addTorrent(torrentPath.toString(), gamePath, FullyPieceStorageFactory.INSTANCE);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        this.comm = new CommunicationManager(workingExecutor, validatorExecutor);
 
-        while (true) {
-            for (SharedTorrent torrent : cm.getTorrents()) {
-                for (SharingPeer peer : cm.getPeersForTorrent(torrent.getHexInfoHash())) {
-                    System.out.println(peer.getIp());
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+        try {
+            this.comm.start(seedAddress);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
+    public void addTorrentToSeed(Path torrentPath, String gamePath){
+        try {
+            String torrentHash = this.comm.addTorrent(torrentPath.toString(), gamePath, FullyPieceStorageFactory.INSTANCE).getHexInfoHash();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

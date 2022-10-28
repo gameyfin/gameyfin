@@ -22,6 +22,12 @@ public class TorrentService implements ApplicationListener<ApplicationReadyEvent
 
     private static Tracker tracker;
 
+    public static TorrentSeedService getSeedService() {
+        return seedService;
+    }
+
+    private static TorrentSeedService seedService;
+
     @Value("${gameyfin.torrent}")
     private String torrentFolderPath;
 
@@ -91,5 +97,14 @@ public class TorrentService implements ApplicationListener<ApplicationReadyEvent
         } catch (IOException e) {
             log.error("Failed to start internal torrent tracker");
         }
+        log.info("Starting internal torrent seedservice");
+        try {
+            seedService = new TorrentSeedService();
+            log.info("Successfully started seedservice");
+        } catch (Exception e){
+            log.info("Failed to start seedservice: {}", e.toString());
+            log.info("Torrents will not be seeded this session");
+        }
+
     }
 }

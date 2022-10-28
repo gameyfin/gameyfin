@@ -114,11 +114,15 @@ public class DownloadService {
         log.info("Downloaded torrentfile of {} in {} seconds.", game.getTitle(), (int) stopWatch.getTotalTimeSeconds());
 
 
-        //Starting new thread to seed torrent to one client
+        //Adding torrent to tracker and starting to seed it
         TorrentService.announceTorrent(torrentFile.toFile());
-        Runnable seedRunnable = new TorrentSeedService(torrentFile, game.getPath());
-        Thread seedThread = new Thread(seedRunnable);
-        seedThread.start();
+        try {
+            TorrentService.getSeedService().addTorrentToSeed(torrentFile, game.getPath());
+        } catch (Exception e){
+            log.error("Failed to seed torrent: {}", e.toString());
+            return;
+        }
+        log.info("Successfully added torrent to tracker and starting to seed");
     }
 
     private void sendGamefileToClient(Path path, OutputStream outputStream) {
