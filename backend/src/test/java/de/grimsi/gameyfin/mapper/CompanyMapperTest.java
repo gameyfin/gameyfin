@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CompanyMapperTest extends RandomMapperTest<Igdb.InvolvedCompany, Company> {
 
     @Test
-    @Disabled
     void toCompany() {
         Igdb.InvolvedCompany input = generateRandomInput();
 
@@ -25,7 +24,6 @@ class CompanyMapperTest extends RandomMapperTest<Igdb.InvolvedCompany, Company> 
     }
 
     @Test
-    @Disabled
     void toCompanies() {
         List<Igdb.InvolvedCompany> input = List.of(generateRandomInput(), generateRandomInput(), generateRandomInput());
 
@@ -36,19 +34,5 @@ class CompanyMapperTest extends RandomMapperTest<Igdb.InvolvedCompany, Company> 
             assertThat(output.get(i).getName()).isEqualTo(input.get(i).getCompany().getName());
             assertThat(output.get(i).getLogoId()).isEqualTo(input.get(i).getCompany().getLogo().getImageId());
         }
-    }
-
-    private static Igdb.InvolvedCompany generateRandomInvolvedCompany() {
-        Igdb.Company c = Igdb.Company.newBuilder()
-                .setSlug(UUID.randomUUID().toString())
-                .setName(UUID.randomUUID().toString())
-                .setLogo(Igdb.CompanyLogo.newBuilder()
-                        .setImageId(UUID.randomUUID().toString())
-                        .build())
-                .build();
-
-        return Igdb.InvolvedCompany.newBuilder()
-                .setCompany(c)
-                .build();
     }
 }
