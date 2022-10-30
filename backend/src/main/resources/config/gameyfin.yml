@@ -2,6 +2,7 @@ gameyfin:
   db: ""
   cache: ""
   file-extensions: iso, zip, rar, 7z, exe
+  file-suffixes: windows, win, english, win32, win64, opengl, stable
   igdb:
     api:
       endpoints:
@@ -12,4 +13,4 @@ gameyfin:
       max-concurrent-requests: 2
       max-requests-per-second: 4
     config:
-      preferred-platforms: 6
+      preferred-platforms: 6,23,33,24,22,3,14,137,37,4,20,159,18,21,130,7,8,9,48,38,46,165,35,64,29,32,58,19,47,5,41,11,12

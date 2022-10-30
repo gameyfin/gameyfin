@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutExtension;
+import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutAdditions;
 import static de.grimsi.gameyfin.util.FilenameUtil.hasGameArchiveExtension;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -141,7 +141,7 @@ public class LibraryService {
         // If a game is not found on IGDB, blacklist the path, so we won't query the API later for the same path
         List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
                 .map(p -> {
-                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutExtension(p), platformsFilter);
+                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutAdditions(p), platformsFilter);
 
                     if (optionalGame.isPresent() && detectedGameRepository.existsBySlug(optionalGame.get().getSlug())) {
                         log.warn("Game with slug '{}' already exists in database", optionalGame.get().getSlug());
@@ -159,7 +159,7 @@ public class LibraryService {
                 .map(Optional::get)
                 .peek(e -> log.info("Mapped file '{}' to game '{}' (slug: {})", e.getKey(), e.getValue().getName(), e.getValue().getSlug()))
                 .map(e -> gameMapper.toDetectedGame(e.getValue(), e.getKey(), library))
-                .toList();
+                .collect(toList());
 
         List<DetectedGame> duplicateGames = getDuplicates(newDetectedGames);
         newUnmappedFilesCounter.getAndAdd(duplicateGames.size());
@@ -240,13 +240,10 @@ public class LibraryService {
         Set<String> platformSlugs = Arrays.stream(slugs.split(",")).collect(toSet());
 
         List<Platform> platforms = platformSlugs.stream()
-                .map(slug -> {
-                    Optional<Platform> p = platformRepository.findBySlug(slug);
-                    return p.isPresent() ? p : igdbWrapper.getPlatformBySlug(slug);
-                })
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .toList();
+                .map(slug -> platformRepository.findBySlug(slug).
+                        orElseGet(() -> igdbWrapper.getPlatformBySlug(slug)))
+                .filter(Objects::nonNull)
+                .collect(toList());
 
         library.setPlatforms(platforms);
         libraryRepository.save(library);
