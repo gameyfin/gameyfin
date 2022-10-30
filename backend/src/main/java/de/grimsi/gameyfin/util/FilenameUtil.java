@@ -17,8 +17,8 @@ public class FilenameUtil {
     private static List<String> possibleGameFileSuffixes;
     // matches v1.1.1 v1.1 v1 version numbers
     private static final Pattern versionPattern = Pattern.compile("v(\\d+\\.)?(\\d+\\.)?(\\d+)");
-    private static final Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|[-_.])+$");
-    private static final Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|[-_.])+");
+    private static final Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|\\[\\]|[-_.])+$");
+    private static final Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|\\[\\]|[-_.])+");
 
     @Value("${gameyfin.file-extensions}")
     public void setPossibleGameFileExtensions(List<String> possibleGameFileExtensions) {
