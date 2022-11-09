@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,23 +12,41 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 
+/**
+ * This class handles all filesystem operations for Gameyfin.
+ */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FilesystemService {
 
     @Value("${gameyfin.cache}")
     private String cacheFolderPath;
 
-    @PostConstruct
-    public void createCacheFolder() throws IOException {
-        Files.createDirectories(Path.of(cacheFolderPath));
+    private final FileSystem fileSystem;
+
+    public Path getPath(String path) {
+        return fileSystem.getPath(path);
+    }
+
+    /**
+     * This method will create the folder specified in the "gameyfin.cache" property.
+     */
+    public void createCacheFolder() {
+        log.debug("Creating cache folder...");
+
+        try {
+            fileSystem.provider().createDirectory(fileSystem.getPath(cacheFolderPath));
+            log.debug("Cache folder created.");
+
+        } catch (FileAlreadyExistsException e) {
+            log.debug("Cache folder already existed, no need to create it again.");
+        } catch (IOException e) {
+            log.error("Error while creating the cache folder.", e);
+        }
     }
 
     public void saveFileToCache(Flux<DataBuffer> dataBuffer, String filename) {
@@ -79,6 +98,6 @@ public class FilesystemService {
     }
 
     private Path getPathFromFilename(String filename) {
-        return Path.of(cacheFolderPath, filename);
+        return fileSystem.getPath(cacheFolderPath, filename);
     }
 }
