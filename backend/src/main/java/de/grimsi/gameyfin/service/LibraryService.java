@@ -51,6 +51,7 @@ public class LibraryService {
     private final UnmappableFileRepository unmappableFileRepository;
     private final LibraryRepository libraryRepository;
     private final PlatformRepository platformRepository;
+    private final FilesystemService filesystemService;
 
     public List<Path> getGameFiles() {
         return getGameFiles(null);
@@ -94,10 +95,6 @@ public class LibraryService {
         );
 
         return gamefiles;
-    }
-
-    private static Predicate<Path> allPathsOrSpecific(String path) {
-        return p -> isBlank(path) || p.equals(Path.of(path));
     }
 
     public LibraryScanResult scanGameLibrary(Library library) {
@@ -246,11 +243,15 @@ public class LibraryService {
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .toList();
+                .collect(toList());
 
         library.setPlatforms(platforms);
         libraryRepository.save(library);
 
         return library;
+    }
+
+    private Predicate<Path> allPathsOrSpecific(String path) {
+        return p -> isBlank(path) || p.equals(filesystemService.getPath(path));
     }
 }

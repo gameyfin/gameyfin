@@ -32,8 +32,8 @@ public class GameService {
     private final GameMapper gameMapper;
     private final DetectedGameRepository detectedGameRepository;
     private final UnmappableFileRepository unmappableFileRepository;
-
     private final LibraryRepository libraryRepository;
+    private final FilesystemService filesystemService;
 
     public List<DetectedGame> getAllDetectedGames() {
         return detectedGameRepository.findAll();
@@ -106,13 +106,13 @@ public class GameService {
     }
 
     private DetectedGame mapUnmappableFile(UnmappableFile unmappableFile, String slug) {
-        DetectedGame game = mapPathToGame(Path.of(unmappableFile.getPath()), slug);
+        DetectedGame game = mapPathToGame(filesystemService.getPath(unmappableFile.getPath()), slug);
         unmappableFileRepository.delete(unmappableFile);
         return game;
     }
 
     private DetectedGame mapDetectedGame(DetectedGame existingGame, String slug) {
-        DetectedGame game = mapPathToGame(Path.of(existingGame.getPath()), slug);
+        DetectedGame game = mapPathToGame(filesystemService.getPath(existingGame.getPath()), slug);
         detectedGameRepository.delete(existingGame);
         return game;
     }

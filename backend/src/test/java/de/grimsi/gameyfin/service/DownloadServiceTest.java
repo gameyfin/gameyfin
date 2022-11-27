@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,6 +35,7 @@ class DownloadServiceTest {
             DetectedGame input = easyRandom.nextObject(DetectedGame.class);
 
             filesMock.when(() -> Files.isDirectory(any())).thenReturn(false);
+            when(filesystemServiceMock.getPath(any())).thenReturn(Path.of(input.getPath()));
 
             String result = target.getDownloadFileName(input);
 
@@ -47,6 +49,7 @@ class DownloadServiceTest {
             filesMock.when(() -> Files.isDirectory(any())).thenReturn(true);
 
             DetectedGame input = easyRandom.nextObject(DetectedGame.class);
+            when(filesystemServiceMock.getPath(any())).thenReturn(Path.of(input.getPath()));
 
             String result = target.getDownloadFileName(input);
 

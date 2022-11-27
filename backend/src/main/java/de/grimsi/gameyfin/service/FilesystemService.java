@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.*;
 
 /**
@@ -28,35 +29,38 @@ public class FilesystemService {
 
     private final FileSystem fileSystem;
 
-    public Path getPath(String path) {
-        return fileSystem.getPath(path);
+    /**
+     * Returns the given path on the configured filesystem.
+     * Basically just another way of doing {@link Path#of(String, String...)}, but easier to mock.
+     * @return The path
+     */
+    public Path getPath(String first, String... more) {
+        return fileSystem.getPath(first, more);
     }
 
     /**
      * This method will create the folder specified in the "gameyfin.cache" property.
+     * If the folder already exists, nothing will happen.
      */
     public void createCacheFolder() {
         log.debug("Creating cache folder...");
 
         try {
-            fileSystem.provider().createDirectory(fileSystem.getPath(cacheFolderPath));
+            Files.createDirectories(getPath(cacheFolderPath));
             log.debug("Cache folder created.");
-
-        } catch (FileAlreadyExistsException e) {
-            log.debug("Cache folder already existed, no need to create it again.");
         } catch (IOException e) {
             log.error("Error while creating the cache folder.", e);
         }
     }
 
     public void saveFileToCache(Flux<DataBuffer> dataBuffer, String filename) {
-        DataBufferUtils.write(dataBuffer, Path.of(cacheFolderPath).resolve(filename), StandardOpenOption.CREATE)
+        DataBufferUtils.write(dataBuffer, getPath(cacheFolderPath).resolve(filename), StandardOpenOption.CREATE)
                 .share().block();
     }
 
     public ByteArrayResource getFileFromCache(String filename) {
         try {
-            return new ByteArrayResource(Files.readAllBytes(Paths.get("%s/%s".formatted(cacheFolderPath, filename))));
+            return new ByteArrayResource(Files.readAllBytes(getPath(cacheFolderPath, filename)));
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find image file %s".formatted(filename));
         }
@@ -98,6 +102,6 @@ public class FilesystemService {
     }
 
     private Path getPathFromFilename(String filename) {
-        return fileSystem.getPath(cacheFolderPath, filename);
+        return getPath(cacheFolderPath, filename);
     }
 }
