@@ -200,8 +200,7 @@ class FilesystemServiceTest {
         Files.deleteIfExists(savedFilePath);
     }
 
-    // Disabled due to JimFS not supporting the "Path.toFile()" call
-    @Disabled
+    @Disabled("Due to JimFS not supporting the \"Path.toFile()\" call")
     @ParameterizedTest
     @MethodSource("fileSystems")
     void getSizeOnDisk_Directory(FileSystem fileSystem) throws IOException {
@@ -225,8 +224,7 @@ class FilesystemServiceTest {
         assertThat(directorySize).isEqualTo(fileSize * fileCount);
     }
 
-    // Disabled due to JimFS not supporting the "Path.toFile()" call
-    @Disabled
+    @Disabled("Due to JimFS not supporting the \"Path.toFile()\" call")
     @ParameterizedTest
     @MethodSource("fileSystems")
     void getSizeOnDisk_File(FileSystem fileSystem) throws IOException {

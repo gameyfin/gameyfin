@@ -80,7 +80,7 @@ class DownloadServiceTest {
 
             Long result = target.getDownloadFileSize(input);
 
-            assertThat(result).isEqualTo(0L);
+            assertThat(result).isZero();
         }
     }
 }

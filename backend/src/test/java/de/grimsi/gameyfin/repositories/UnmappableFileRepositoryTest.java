@@ -80,7 +80,8 @@ class UnmappableFileRepositoryTest {
         target.saveAll(deletedGames);
 
         List<UnmappableFile> result = target.getAllByPathNotInAndPathStartsWith(gamePaths, libraryPath);
-        assertThat(result).hasSize(2);
-        assertThat(result).containsOnlyOnceElementsOf(deletedGames);
+        assertThat(result)
+                .hasSize(2)
+                .containsOnlyOnceElementsOf(deletedGames);
     }
 }

@@ -2,27 +2,18 @@ package de.grimsi.gameyfin.config;
 
 import de.grimsi.gameyfin.service.FilesystemService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.env.*;
-import org.springframework.util.StringUtils;
+import org.springframework.core.env.ConfigurableEnvironment;
 
-import javax.sql.DataSource;
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.util.Locale;
-import java.util.Properties;
-import java.util.stream.StreamSupport;
 
 /**
  * This class contains logic to the configuration of the filesystem which Gameyfin works on.

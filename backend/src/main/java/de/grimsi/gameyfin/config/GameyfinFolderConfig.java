@@ -89,7 +89,7 @@ public class GameyfinFolderConfig {
         MutablePropertySources propSrcs = ((AbstractEnvironment) env).getPropertySources();
 
         StreamSupport.stream(propSrcs.spliterator(), false)
-                .filter(ps -> ps instanceof EnumerablePropertySource)
+                .filter(EnumerablePropertySource.class::isInstance)
                 .map(ps -> ((EnumerablePropertySource<?>) ps).getPropertyNames())
                 .flatMap(Arrays::stream)
                 .forEach(propName -> props.setProperty(propName, env.getProperty(propName)));

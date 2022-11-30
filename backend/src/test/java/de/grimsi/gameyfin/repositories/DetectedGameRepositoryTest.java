@@ -107,7 +107,8 @@ class DetectedGameRepositoryTest {
         target.saveAll(deletedGames);
 
         List<DetectedGame> result = target.getAllByPathNotInAndPathStartsWith(gamePaths, libraryPath);
-        assertThat(result).hasSize(2);
-        assertThat(result).containsOnlyOnceElementsOf(deletedGames);
+        assertThat(result)
+                .hasSize(2)
+                .containsOnlyOnceElementsOf(deletedGames);
     }
 }
