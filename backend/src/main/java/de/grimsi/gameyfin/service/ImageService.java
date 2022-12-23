@@ -3,10 +3,8 @@ package de.grimsi.gameyfin.service;
 import de.grimsi.gameyfin.entities.Company;
 import de.grimsi.gameyfin.entities.DetectedGame;
 import de.grimsi.gameyfin.igdb.IgdbApiProperties;
-import de.grimsi.gameyfin.repositories.DetectedGameRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -29,11 +27,8 @@ import java.util.stream.Collectors;
 @Service
 public class ImageService {
 
-    @Value("${gameyfin.cache}")
-    private String cacheFolderPath;
-
     private final FilesystemService filesystemService;
-    private final DetectedGameRepository detectedGameRepository;
+    private final GameService gameService;
     private final WebClient.Builder webclientBuilder;
     private WebClient igdbImageClient;
 
@@ -49,7 +44,7 @@ public class ImageService {
         stopWatch.start();
 
         MultiValueMap<String, String> gameToImageIds = new LinkedMultiValueMap<>(
-                detectedGameRepository.findAll().stream()
+                gameService.getAllDetectedGames().stream()
                         .collect(Collectors.toMap(DetectedGame::getSlug, g -> Collections.singletonList(g.getCoverId()))));
 
         int downloadCount = saveImagesIntoCache(gameToImageIds, IgdbApiProperties.COVER_IMAGE_SIZE, "cover", "game");
@@ -67,7 +62,7 @@ public class ImageService {
         stopWatch.start();
 
         MultiValueMap<String, String> gamesToImageIds = new LinkedMultiValueMap<>(
-                detectedGameRepository.findAll().stream()
+                gameService.getAllDetectedGames().stream()
                         .collect(Collectors.toMap(DetectedGame::getSlug, DetectedGame::getScreenshotIds)));
 
         int downloadCount = saveImagesIntoCache(gamesToImageIds, IgdbApiProperties.SCREENSHOT_IMAGE_SIZE, "screenshot", "game");
@@ -84,7 +79,7 @@ public class ImageService {
         log.info("Starting company logo download...");
         stopWatch.start();
 
-        Map<String, List<String>> companyToLogoIdMap = detectedGameRepository.findAll().stream()
+        Map<String, List<String>> companyToLogoIdMap = gameService.getAllDetectedGames().stream()
                 .flatMap(g -> g.getCompanies().stream())
                 .collect(Collectors.toMap(Company::getSlug, c -> Collections.singletonList(c.getLogoId()), (c1, c2) -> c1));
 
