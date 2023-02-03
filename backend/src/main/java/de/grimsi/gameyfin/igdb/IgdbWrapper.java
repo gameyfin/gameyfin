@@ -4,7 +4,7 @@ import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.entities.Platform;
-import de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.Condition;
+import de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.*;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.mapper.PlatformMapper;
@@ -201,6 +201,37 @@ public class IgdbWrapper {
         return Optional.of(games.get(0));
     }
 
+    public List<Platform> findPlatforms(String searchTerm, int limit) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
+        Igdb.PlatformResult platformResult = queryIgdbApi(
+                IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF,
+                queryBuilder.search(searchTerm)
+                        .fields("slug,name")
+                        .limit(limit)
+                        .build(),
+                Igdb.PlatformResult.class
+        );
+
+        if (platformResult == null) return Collections.emptyList();
+
+        return platformResult.getPlatformsList().stream().map(PlatformMapper::toPlatform).toList();
+    }
+
+    public Optional<Platform> getPlatformBySlug(String slug) {
+        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
+        Igdb.PlatformResult platformResult = queryIgdbApi(
+                IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF,
+                queryBuilder.fields("slug,name,platform_logo")
+                        .where(equal("slug", slug))
+                        .build(),
+                Igdb.PlatformResult.class
+        );
+
+        if (platformResult == null) return Optional.empty();
+
+        return platformResult.getPlatformsList().stream().map(PlatformMapper::toPlatform).findFirst();
+    }
+
     private void initIgdbClient() {
         if (accessToken == null) {
             authenticate();
@@ -223,36 +254,5 @@ public class IgdbWrapper {
                 .transformDeferred(BulkheadOperator.of(webClientConfig.getIgdbConcurrencyLimiter()))
                 .transformDeferred(RateLimiterOperator.of(webClientConfig.getIgdbRateLimiter()))
                 .block();
-    }
-
-    public List<Platform> findPlatforms(String searchTerm, int limit) {
-        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
-        Igdb.PlatformResult platformResult = queryIgdbApi(
-                IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF,
-                queryBuilder.search(searchTerm)
-                        .fields("slug,name")
-                        .limit(limit)
-                        .build(),
-                Igdb.PlatformResult.class
-        );
-
-        if (platformResult == null) return Collections.emptyList();
-
-        return platformResult.getPlatformsList().stream().map(PlatformMapper::toPlatform).toList();
-    }
-
-    public Platform getPlatformBySlug(String slug) {
-        IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
-        Igdb.PlatformResult platformResult = queryIgdbApi(
-                IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF,
-                queryBuilder.fields("slug,name,platform_logo")
-                        .where(equal("slug", slug))
-                        .build(),
-                Igdb.PlatformResult.class
-        );
-
-        if (platformResult == null) return null;
-
-        return platformResult.getPlatformsList().stream().map(PlatformMapper::toPlatform).findFirst().orElse(null);
     }
 }

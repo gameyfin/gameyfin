@@ -32,15 +32,16 @@ public class GameService {
     private final GameMapper gameMapper;
     private final DetectedGameRepository detectedGameRepository;
     private final UnmappableFileRepository unmappableFileRepository;
-
     private final LibraryRepository libraryRepository;
+    private final FilesystemService filesystemService;
 
     public List<DetectedGame> getAllDetectedGames() {
         return detectedGameRepository.findAll();
     }
 
     public DetectedGame getDetectedGame(String slug) {
-        return detectedGameRepository.findById(slug).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' not found in library.".formatted(slug)));
+        return detectedGameRepository.findById(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game with slug '%s' not found in library.".formatted(slug)));
     }
 
     public List<UnmappableFile> getAllUnmappedFiles() {
@@ -62,7 +63,7 @@ public class GameService {
         // so it doesn't get re-indexed on the next library scan
         unmappableFileRepository.save(new UnmappableFile(gameToBeDeleted.getPath()));
 
-        detectedGameRepository.deleteById(slug);
+        detectedGameRepository.delete(gameToBeDeleted);
     }
 
     public void deleteUnmappedFile(Long id) {
@@ -81,11 +82,12 @@ public class GameService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Game with slug '%s' already exists in database.".formatted(slug));
 
         Optional<UnmappableFile> optionalUnmappableFile = unmappableFileRepository.findByPath(path);
-        Optional<DetectedGame> optionalDetectedGame = detectedGameRepository.findByPath(path);
 
         if (optionalUnmappableFile.isPresent()) {
             return mapUnmappableFile(optionalUnmappableFile.get(), slug);
         }
+
+        Optional<DetectedGame> optionalDetectedGame = detectedGameRepository.findByPath(path);
 
         if (optionalDetectedGame.isPresent()) {
             return mapDetectedGame(optionalDetectedGame.get(), slug);
@@ -106,13 +108,13 @@ public class GameService {
     }
 
     private DetectedGame mapUnmappableFile(UnmappableFile unmappableFile, String slug) {
-        DetectedGame game = mapPathToGame(Path.of(unmappableFile.getPath()), slug);
+        DetectedGame game = mapPathToGame(filesystemService.getPath(unmappableFile.getPath()), slug);
         unmappableFileRepository.delete(unmappableFile);
         return game;
     }
 
     private DetectedGame mapDetectedGame(DetectedGame existingGame, String slug) {
-        DetectedGame game = mapPathToGame(Path.of(existingGame.getPath()), slug);
+        DetectedGame game = mapPathToGame(filesystemService.getPath(existingGame.getPath()), slug);
         detectedGameRepository.delete(existingGame);
         return game;
     }

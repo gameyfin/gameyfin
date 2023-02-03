@@ -1,6 +1,6 @@
 gameyfin:
-  db: ""
-  cache: ""
+  folders:
+    data: ""
   file-extensions: iso, zip, rar, 7z, exe
   file-suffixes: windows, win, english, win32, win64, opengl, stable
   igdb:

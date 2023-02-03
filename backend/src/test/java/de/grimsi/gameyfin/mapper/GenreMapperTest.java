@@ -12,7 +12,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GenreMapperTest extends RandomMapperTest<Igdb.Genre, Genre> {
 
     @Test
-    @Disabled
     void toGenre() {
         Igdb.Genre input = generateRandomInput();
 
@@ -23,7 +22,6 @@ class GenreMapperTest extends RandomMapperTest<Igdb.Genre, Genre> {
     }
 
     @Test
-    @Disabled
     void toGenres() {
         List<Igdb.Genre> input = List.of(generateRandomInput(), generateRandomInput(), generateRandomInput());
 

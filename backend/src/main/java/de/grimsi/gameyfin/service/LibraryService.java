@@ -51,6 +51,7 @@ public class LibraryService {
     private final UnmappableFileRepository unmappableFileRepository;
     private final LibraryRepository libraryRepository;
     private final PlatformRepository platformRepository;
+    private final FilesystemService filesystemService;
 
     public List<Path> getGameFiles() {
         return getGameFiles(null);
@@ -94,10 +95,6 @@ public class LibraryService {
         );
 
         return gamefiles;
-    }
-
-    private static Predicate<Path> allPathsOrSpecific(String path) {
-        return p -> isBlank(path) || p.equals(Path.of(path));
     }
 
     public LibraryScanResult scanGameLibrary(Library library) {
@@ -238,15 +235,23 @@ public class LibraryService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find library for path %s".formatted(path)));
 
         Set<String> platformSlugs = Arrays.stream(slugs.split(",")).collect(toSet());
+
         List<Platform> platforms = platformSlugs.stream()
-                .map(slug -> platformRepository.findBySlug(slug).
-                        orElseGet(() -> igdbWrapper.getPlatformBySlug(slug)))
-                .filter(Objects::nonNull)
+                .map(slug -> {
+                    Optional<Platform> p = platformRepository.findBySlug(slug);
+                    return p.isPresent() ? p : igdbWrapper.getPlatformBySlug(slug);
+                })
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(toList());
 
         library.setPlatforms(platforms);
         libraryRepository.save(library);
 
         return library;
+    }
+
+    private Predicate<Path> allPathsOrSpecific(String path) {
+        return p -> isBlank(path) || p.equals(filesystemService.getPath(path));
     }
 }

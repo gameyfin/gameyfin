@@ -6,6 +6,7 @@ import com.google.protobuf.Timestamp;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
+import de.grimsi.gameyfin.entities.Platform;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import io.github.resilience4j.bulkhead.Bulkhead;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.equal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -296,6 +298,67 @@ class IgdbWrapperTest {
         String r2_expectedQuery = "search \"%s\";fields %s;where platforms = (6);".formatted(gameResult.getGames(0).getName(), IgdbApiProperties.GAME_QUERY_FIELDS_STRING);
 
         assertThat(r2.getBody().readUtf8()).isEqualTo(r2_expectedQuery);
+    }
+
+    @Test
+    void findPlatforms() throws InterruptedException {
+        Igdb.PlatformResult platformResult = Igdb.PlatformResult.newBuilder()
+                .addAllPlatforms(List.of(
+                        Igdb.Platform.newBuilder().setSlug("platform_1").setName("Platform 1").build(),
+                        Igdb.Platform.newBuilder().setSlug("platform_2").setName("Platform 2").build(),
+                        Igdb.Platform.newBuilder().setSlug("platform_3").setName("Platform 3").build()))
+                .build();
+
+        String searchTerm = platformResult.getPlatforms(0).getSlug();
+        int limit = 10;
+
+        igdbApiMock.enqueue(new MockResponse()
+                .setBody(toBuffer(platformResult))
+                .setHeader("Content-Type", "application/protobuf")
+        );
+
+        List<Platform> result = target.findPlatforms(searchTerm, limit);
+
+        assertThat(result.get(0).getSlug()).isEqualTo(searchTerm);
+
+        RecordedRequest r = igdbApiMock.takeRequest();
+        assertThat(r.getRequestUrl()).isNotNull();
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF));
+
+        String expectedQuery = "search \"%s\";fields slug,name;limit %s;".formatted(searchTerm, limit);
+
+        assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
+    }
+
+    @Test
+    void getPlatformBySlug() throws InterruptedException {
+        Igdb.PlatformResult platformResult = Igdb.PlatformResult.newBuilder()
+                .addAllPlatforms(List.of(
+                        Igdb.Platform.newBuilder().setSlug("platform_1").setName("Platform 1").build()))
+                .build();
+
+        String slug = platformResult.getPlatforms(0).getSlug();
+
+        igdbApiMock.enqueue(new MockResponse()
+                .setBody(toBuffer(platformResult))
+                .setHeader("Content-Type", "application/protobuf")
+        );
+
+        Optional<Platform> result = target.getPlatformBySlug(slug);
+
+        assertThat(result).isPresent();
+
+        Platform platform = result.get();
+
+        assertThat(platform.getSlug()).isEqualTo(slug);
+
+        RecordedRequest r = igdbApiMock.takeRequest();
+        assertThat(r.getRequestUrl()).isNotNull();
+        assertThat(r.getRequestUrl().encodedPath()).isEqualTo("/%s".formatted(IgdbApiProperties.ENDPOINT_PLATFORMS_PROTOBUF));
+
+        String expectedQuery = "fields slug,name,platform_logo;where slug = \"%s\";".formatted(slug);
+
+        assertThat(r.getBody().readUtf8()).isEqualTo(expectedQuery);
     }
 
     private static Buffer toBuffer(Message input) {

@@ -25,3 +25,6 @@ management:
       enabled: true
   endpoints:
     enabled-by-default: false
+
+gameyfin:
+  internal-folder: .gameyfin
