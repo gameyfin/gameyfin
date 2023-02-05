@@ -10,7 +10,7 @@ import java.util.List;
 public class RandomMapperTest<Input extends Message, Output> {
 
     private static final int DEFAULT_COUNT = 5;
-    private final EasyRandom easyRandom = new EasyRandom();
+    protected final EasyRandom easyRandom = new EasyRandom();
 
     private final Class<Input> inputClass;
     private final Class<Output> outputClass;

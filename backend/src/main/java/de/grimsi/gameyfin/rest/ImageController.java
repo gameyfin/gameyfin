@@ -24,7 +24,7 @@ public class ImageController {
     private final DownloadService downloadService;
 
     @GetMapping(value = "/{imageId}", produces = MediaType.IMAGE_PNG_VALUE)
-    public ResponseEntity<Resource> getCoverImageForGame(@PathVariable String imageId) {
+    public ResponseEntity<Resource> getImage(@PathVariable String imageId) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic())
                 .body(downloadService.sendImageToClient(imageId));

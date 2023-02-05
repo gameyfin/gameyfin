@@ -29,17 +29,17 @@ public class DownloadService {
     private final FilesystemService filesystemService;
 
     public String getDownloadFileName(DetectedGame g) {
-        Path path = Path.of(g.getPath());
+        Path path = filesystemService.getPath(g.getPath());
 
-        if (!path.toFile().isDirectory()) return getFilenameWithExtension(path);
+        if (!Files.isDirectory(path)) return getFilenameWithExtension(path);
         return getFilenameWithExtension(path) + ".zip";
     }
 
     public long getDownloadFileSize(DetectedGame game) {
-        Path path = Path.of(game.getPath());
+        Path path = filesystemService.getPath(game.getPath());
 
         try {
-            if (!path.toFile().isDirectory()) {
+            if (!Files.isDirectory(path)) {
                 long fileSize = filesystemService.getSizeOnDisk(path);
                 log.info("Calculated file size for {} ({} MB).", path, Math.divideExact(fileSize, 1000000L));
                 return fileSize;
@@ -65,7 +65,7 @@ public class DownloadService {
 
         stopWatch.start();
 
-        Path path = Path.of(game.getPath());
+        Path path = filesystemService.getPath(game.getPath());
 
         try {
             if (path.toFile().isDirectory()) {

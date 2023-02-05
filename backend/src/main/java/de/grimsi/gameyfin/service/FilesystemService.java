@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,33 +12,55 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.net.URI;
+import java.nio.file.*;
 
+/**
+ * This class handles all filesystem operations for Gameyfin.
+ */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FilesystemService {
 
     @Value("${gameyfin.cache}")
     private String cacheFolderPath;
 
-    @PostConstruct
-    public void createCacheFolder() throws IOException {
-        Files.createDirectories(Path.of(cacheFolderPath));
+    private final FileSystem fileSystem;
+
+    /**
+     * Returns the given path on the configured filesystem.
+     * Basically just another way of doing {@link Path#of(String, String...)}, but easier to mock.
+     * @return The path
+     */
+    public Path getPath(String first, String... more) {
+        return fileSystem.getPath(first, more);
+    }
+
+    /**
+     * This method will create the folder specified in the "gameyfin.cache" property.
+     * If the folder already exists, nothing will happen.
+     */
+    public void createCacheFolder() {
+        log.debug("Creating cache folder...");
+
+        try {
+            Files.createDirectories(getPath(cacheFolderPath));
+            log.debug("Cache folder created.");
+        } catch (IOException e) {
+            log.error("Error while creating the cache folder.", e);
+        }
     }
 
     public void saveFileToCache(Flux<DataBuffer> dataBuffer, String filename) {
-        DataBufferUtils.write(dataBuffer, Path.of(cacheFolderPath).resolve(filename), StandardOpenOption.CREATE)
+        DataBufferUtils.write(dataBuffer, getPath(cacheFolderPath).resolve(filename), StandardOpenOption.CREATE)
                 .share().block();
     }
 
     public ByteArrayResource getFileFromCache(String filename) {
         try {
-            return new ByteArrayResource(Files.readAllBytes(Paths.get("%s/%s".formatted(cacheFolderPath, filename))));
+            return new ByteArrayResource(Files.readAllBytes(getPath(cacheFolderPath, filename)));
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find image file %s".formatted(filename));
         }
@@ -79,6 +102,6 @@ public class FilesystemService {
     }
 
     private Path getPathFromFilename(String filename) {
-        return Path.of(cacheFolderPath, filename);
+        return getPath(cacheFolderPath, filename);
     }
 }

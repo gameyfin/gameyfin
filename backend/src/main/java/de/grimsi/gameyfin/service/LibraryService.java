@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutExtension;
+import static de.grimsi.gameyfin.util.FilenameUtil.getFilenameWithoutAdditions;
 import static de.grimsi.gameyfin.util.FilenameUtil.hasGameArchiveExtension;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -51,6 +51,7 @@ public class LibraryService {
     private final UnmappableFileRepository unmappableFileRepository;
     private final LibraryRepository libraryRepository;
     private final PlatformRepository platformRepository;
+    private final FilesystemService filesystemService;
 
     public List<Path> getGameFiles() {
         return getGameFiles(null);
@@ -96,10 +97,6 @@ public class LibraryService {
         return gamefiles;
     }
 
-    private static Predicate<Path> allPathsOrSpecific(String path) {
-        return p -> isBlank(path) || p.equals(Path.of(path));
-    }
-
     public LibraryScanResult scanGameLibrary(Library library) {
         StopWatch stopWatch = new StopWatch();
 
@@ -141,7 +138,7 @@ public class LibraryService {
         // If a game is not found on IGDB, blacklist the path, so we won't query the API later for the same path
         List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
                 .map(p -> {
-                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutExtension(p), platformsFilter);
+                    Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutAdditions(p), platformsFilter);
 
                     if (optionalGame.isPresent() && detectedGameRepository.existsBySlug(optionalGame.get().getSlug())) {
                         log.warn("Game with slug '{}' already exists in database", optionalGame.get().getSlug());
@@ -238,15 +235,23 @@ public class LibraryService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Could not find library for path %s".formatted(path)));
 
         Set<String> platformSlugs = Arrays.stream(slugs.split(",")).collect(toSet());
+
         List<Platform> platforms = platformSlugs.stream()
-                .map(slug -> platformRepository.findBySlug(slug).
-                        orElseGet(() -> igdbWrapper.getPlatformBySlug(slug)))
-                .filter(Objects::nonNull)
+                .map(slug -> {
+                    Optional<Platform> p = platformRepository.findBySlug(slug);
+                    return p.isPresent() ? p : igdbWrapper.getPlatformBySlug(slug);
+                })
+                .filter(Optional::isPresent)
+                .map(Optional::get)
                 .collect(toList());
 
         library.setPlatforms(platforms);
         libraryRepository.save(library);
 
         return library;
+    }
+
+    private Predicate<Path> allPathsOrSpecific(String path) {
+        return p -> isBlank(path) || p.equals(filesystemService.getPath(path));
     }
 }

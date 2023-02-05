@@ -15,7 +15,7 @@
     <properties>
         <java.version>18</java.version>
 
-        <springdoc-openapi-ui.version>1.6.11</springdoc-openapi-ui.version>
+        <springdoc-openapi-ui.version>1.6.12</springdoc-openapi-ui.version>
         <resilience4j.version>1.7.1</resilience4j.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-compress.version>1.21</commons-compress.version>
@@ -126,12 +126,13 @@
             <version>${easy-random.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Temporarily disabled due to a StackOverflow bug: https://github.com/murdos/easy-random-protobuf/issues/136
         <dependency>
             <groupId>io.github.murdos</groupId>
             <artifactId>easy-random-protobuf</artifactId>
             <version>${easy-random-protobuf.version}</version>
             <scope>test</scope>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
