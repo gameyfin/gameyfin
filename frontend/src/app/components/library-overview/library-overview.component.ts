@@ -7,7 +7,7 @@ import {firstValueFrom, forkJoin, Observable} from "rxjs";
 import {SortDirection} from "@angular/material/sort";
 import {PlayerPerspectiveDto} from "../../models/dtos/PlayerPerspectiveDto";
 import {PlatformDto} from "../../models/dtos/PlatformDto";
-import {ActivatedRoute, ActivatedRouteSnapshot, Params, Router} from "@angular/router";
+import {ActivatedRoute, Params, Router} from "@angular/router";
 import {Location} from "@angular/common";
 
 class SortOption {
@@ -54,6 +54,7 @@ export class LibraryOverviewComponent implements AfterContentInit {
   activeGenreFilters: string[] = [];
   activePlayerPerspectiveFilters: string[] = [];
   activePlatformFilters: string[] = [];
+  filterExpansionState: FilterExpansionState = {};
 
   games: DetectedGameDto[] = [];
   availableGenres: GenreDto[] = [];
@@ -101,6 +102,14 @@ export class LibraryOverviewComponent implements AfterContentInit {
           if (this.previousStateParams['themes'] !== undefined) this.activeThemeFilters = this.matchSelectedFilters(this.availableThemes, this.previousStateParams['themes']);
           if (this.previousStateParams['playerPerspectives'] !== undefined) this.activePlayerPerspectiveFilters = this.matchSelectedFilters(this.availablePlayerPerspectives, this.previousStateParams['playerPerspectives']);
           if (this.previousStateParams['platforms'] !== undefined) this.activePlatformFilters = this.matchSelectedFilters(this.availablePlatforms, this.previousStateParams['platforms']);
+
+          this.filterExpansionState = {
+            gamemodes: this.getActiveGameModesFilters().length > 0,
+            genres: this.activeGenreFilters.length > 0,
+            themes: this.activeThemeFilters.length > 0,
+            playerPerspectives: this.activePlayerPerspectiveFilters.length > 0,
+            platforms: this.activePlatformFilters.length > 0
+          }
 
           this.refreshLibraryView().then(() => this.loading = false);
         });
@@ -273,4 +282,12 @@ export class LibraryOverviewComponent implements AfterContentInit {
     if (params.includes('lanSupport')) this.lanSupportFilterEnabled = true;
   }
 
+}
+
+class FilterExpansionState {
+  gamemodes?: boolean;
+  genres?: boolean;
+  themes?: boolean;
+  playerPerspectives?: boolean;
+  platforms?: boolean;
 }
