@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 import {LibraryService} from "../../services/library.service";
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
 import {Router} from "@angular/router";
 import {GamesService} from "../../services/games.service";
 import {ThemingService} from "../../services/theming.service";
