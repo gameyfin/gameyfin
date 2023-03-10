@@ -25,8 +25,12 @@ export class ProgressBarColorDirective implements OnChanges{
   updateColor(): void{
     // update dynamic style with the uniqueAttr
     this.styleEl.innerText = `
-      [${this.uniqueAttr}] .mat-progress-bar-fill::after {
-        background-color: ${this.progressBarColor};
+      [${this.uniqueAttr}] .mdc-linear-progress__bar-inner {
+        border-color: ${this.progressBarColor};
+      }
+
+      [${this.uniqueAttr}] .mdc-linear-progress__buffer-bar {
+        background-color: ${this.progressBarColor}55 !important;
       }
     `;
   }
