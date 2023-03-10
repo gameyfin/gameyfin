@@ -26,34 +26,38 @@
     <div fxFlex.gt-md="0 1 15" fxLayout="column" fxLayoutGap="16px" fxLayoutAlign.lt-lg="start center"
          fxFlex.lt-lg="100" [ngClass.gt-md]="'sticky'">
 
-      <mat-card fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="6px" class="mat-card-48">
-        <button mat-icon-button *ngIf="searchTerm.length > 0" matTooltip="Clear search input"
-                (click)="clearSearchTerm()">
-          <mat-icon>close</mat-icon>
-        </button>
+      <mat-card style="height: 64px">
+        <mat-card-content fxLayout="row" fxLayoutAlign="start center" style="padding: 0">
+          <button mat-icon-button *ngIf="searchTerm.length > 0" matTooltip="Clear search input"
+                  (click)="clearSearchTerm()">
+            <mat-icon>close</mat-icon>
+          </button>
 
-        <button mat-icon-button *ngIf="searchTerm.length === 0" matTooltip="Search for games by title">
-          <mat-icon>search</mat-icon>
-        </button>
+          <button mat-icon-button *ngIf="searchTerm.length === 0" matTooltip="Search for games by title">
+            <mat-icon>search</mat-icon>
+          </button>
 
-        <mat-form-field fxFlex>
-          <input type="text" matInput [matAutocomplete]="librarySearchAutocomplete" [(ngModel)]="searchTerm"
-                 (ngModelChange)="refreshLibraryView()">
-          <mat-autocomplete #librarySearchAutocomplete="matAutocomplete">
-            <mat-option *ngFor="let game of games" [value]="game.title">
-              {{game.title}}
-            </mat-option>
-          </mat-autocomplete>
-        </mat-form-field>
+          <mat-form-field>
+            <input type="text" matInput [matAutocomplete]="librarySearchAutocomplete" [(ngModel)]="searchTerm"
+                   (ngModelChange)="refreshLibraryView()">
+            <mat-autocomplete #librarySearchAutocomplete="matAutocomplete">
+              <mat-option *ngFor="let game of games" [value]="game.title">
+                {{game.title}}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </mat-card-content>
       </mat-card>
 
-      <mat-card fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="20px" class="mat-card-48">
-        <h3 class="filter-category-title" style="white-space: nowrap; padding-left: 6px">Sort by: </h3>
-        <mat-select [(value)]="selectedSortOption" (valueChange)="refreshLibraryView()">
-          <mat-option *ngFor="let sortOption of sortOptions" [value]="sortOption">
-            {{sortOption.title}}
-          </mat-option>
-        </mat-select>
+      <mat-card>
+        <mat-card-content fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="20px">
+          <h3 class="filter-category-title" style="white-space: nowrap; padding-left: 6px">Sort by: </h3>
+          <mat-select [(value)]="selectedSortOption" (valueChange)="refreshLibraryView()">
+            <mat-option *ngFor="let sortOption of sortOptions" [value]="sortOption">
+              {{sortOption.title}}
+            </mat-option>
+          </mat-select>
+        </mat-card-content>
       </mat-card>
 
       <mat-expansion-panel [expanded]="filterExpansionState.gamemodes">

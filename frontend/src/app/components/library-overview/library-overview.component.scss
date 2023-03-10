@@ -38,16 +38,14 @@
   margin-bottom: 0;
 }
 
-.mat-card-48 {
-  height: 48px;
-}
-
-::ng-deep .mat-checkbox-frame {
+/*TODO(mdc-migration): The following rule targets internal classes of checkbox that may no longer apply for the MDC version.*/
+::ng-deep .mat-mdc-text-field-wrapper {
   $config: mat.get-color-config($dark-theme);
   $primary-palette: map.get($config, 'primary');
   border-color: mat.get-color-from-palette($primary-palette, 500) !important;
 }
 
+/*TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version.*/
 ::ng-deep .mat-form-field-underline {
   $config: mat.get-color-config($dark-theme);
   $primary-palette: map.get($config, 'primary');

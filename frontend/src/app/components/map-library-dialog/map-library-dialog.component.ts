@@ -1,6 +1,6 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import {LibraryManagementService} from "../../services/library-management.service";
-import {MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef} from "@angular/material/legacy-dialog";
+import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
 import {PathToSlugDto} from "../../models/dtos/PathToSlugDto";
 import {DialogService} from "../../services/dialog.service";
 import {ApiErrorResponse} from "../../models/dtos/ApiErrorResponse";

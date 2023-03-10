@@ -1,15 +1,15 @@
 import {AfterViewInit, Component, Input, OnChanges, SimpleChanges, ViewChild} from '@angular/core';
-import {MatLegacyPaginator as MatPaginator} from '@angular/material/legacy-paginator';
+import {MatPaginator} from '@angular/material/paginator';
 import {MatSort} from '@angular/material/sort';
 import {
-  MatLegacyTable as MatTable,
-  MatLegacyTableDataSource as MatTableDataSource
-} from '@angular/material/legacy-table';
+  MatTable,
+  MatTableDataSource
+} from '@angular/material/table';
 import {LibraryDto} from "../../models/dtos/LibraryDto";
 import {LibraryScanRequestDto} from "../../models/dtos/LibraryScanRequestDto";
 import {LibraryManagementService} from "../../services/library-management.service";
 import {DialogService} from "../../services/dialog.service";
-import {MatLegacySnackBar as MatSnackBar} from '@angular/material/legacy-snack-bar';
+import {MatSnackBar} from '@angular/material/snack-bar';
 import {Router} from "@angular/router";
 import {LibraryService} from "../../services/library.service";
 
