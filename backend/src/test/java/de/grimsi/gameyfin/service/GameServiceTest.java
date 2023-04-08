@@ -95,7 +95,7 @@ class GameServiceTest {
 
         ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> target.getDetectedGame(slug));
 
-        assertThat(e.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         verify(detectedGameRepositoryMock, times(1)).findById(slug);
     }
 
@@ -257,7 +257,7 @@ class GameServiceTest {
 
         ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> target.mapPathToGame(input.getPath(), input.getSlug()));
 
-        assertThat(e.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(e.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         verify(detectedGameRepositoryMock, times(1)).existsBySlug(input.getSlug());
         verify(detectedGameRepositoryMock, never()).findByPath(input.getPath());
         verify(unmappableFileRepositoryMock, never()).findByPath(input.getPath());
@@ -273,7 +273,7 @@ class GameServiceTest {
 
         ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> target.mapPathToGame(input.getPath(), input.getSlug()));
 
-        assertThat(e.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         verify(detectedGameRepositoryMock, times(1)).existsBySlug(input.getSlug());
         verify(detectedGameRepositoryMock, times(1)).findByPath(input.getPath());
         verify(unmappableFileRepositoryMock, times(1)).findByPath(input.getPath());
@@ -311,7 +311,7 @@ class GameServiceTest {
 
         ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> target.refreshGame(slug));
 
-        assertThat(e.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(e.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         verify(detectedGameRepositoryMock, times(1)).findById(slug);
     }
 }

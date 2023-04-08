@@ -1,7 +1,6 @@
 package de.grimsi.gameyfin.repositories;
 
 import de.grimsi.gameyfin.entities.UnmappableFile;
-import de.grimsi.gameyfin.service.FilesystemService;
 import org.jeasy.random.EasyRandom;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
