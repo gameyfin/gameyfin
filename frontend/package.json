@@ -23,7 +23,7 @@
     "@angular/router": "^14.0.0",
     "@angular/youtube-player": "^14.2.7",
     "mat-table-filter": "^10.2.0",
-    "rxjs": "~7.5.0",
+    "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.11.8"
   },
