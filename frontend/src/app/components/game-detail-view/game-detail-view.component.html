@@ -35,10 +35,10 @@
       <div fxLayout="column" fxFlex="40" fxLayoutGap="16px">
 
         <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="16px">
-          <button mat-icon-button color="secondary" (click)="refreshGame()" title="Refresh metadata">
+          <button mat-fab color="secondary" (click)="refreshGame()" title="Refresh metadata">
             <mat-icon>refresh</mat-icon>
           </button>
-          <button mat-icon-button color="primary" (click)="downloadGame()">
+          <button mat-fab color="primary" (click)="downloadGame()">
             <mat-icon>download</mat-icon>
           </button>
           <b style="font-size: 24px">Download ({{bytesAsHumanReadableString(game.diskSize)}})</b>
