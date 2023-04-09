@@ -3,7 +3,8 @@ package de.grimsi.gameyfin.entities;
 import lombok.*;
 import org.hibernate.Hibernate;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
+
 import java.util.Objects;
 
 @Entity
@@ -18,7 +19,8 @@ public class UnmappableFile {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "HIBERNATE_SEQUENCE")
+    @SequenceGenerator(name = "HIBERNATE_SEQUENCE", allocationSize = 1)
     private Long id;
 
     private String path;
