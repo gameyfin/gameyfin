@@ -3,29 +3,31 @@
   <div fxLayout="column" fxFlex="0 1 75" fxLayoutGap="16px" fxFlex.lt-lg="95">
     <div fxLayout="row" fxLayout.lt-lg="column" fxLayoutGap="16px">
 
-      <mat-card fxFlex="100" fxLayout="row" fxLayout.lt-lg="column" fxLayoutGap="16px">
-        <div fxLayoutAlign="start" fxLayoutAlign.lt-lg="center">
-          <img src="v1/images/{{game.coverId}}" style="max-height: 352px" alt="Game cover">
-        </div>
-
-        <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="space-between">
-          <div fxLayoutGap="8px">
-            <h1 style="display: inline-block">{{game.title}}</h1>
-            <h3 style="display: inline-block; font-style: italic">{{game.releaseDate | date: 'yyyy'}}</h3>
-
-            <h2>Description</h2>
-            <p>{{game.summary}}</p>
+      <mat-card>
+        <mat-card-content fxLayout="row" fxLayout.lt-lg="column" fxLayoutGap="16px">
+          <div fxLayoutAlign="start" fxLayoutAlign.lt-lg="center">
+            <img src="v1/images/{{game.coverId}}" style="max-height: 352px" alt="Game cover">
           </div>
 
-          <div *ngIf="companiesWithLogo.length > 0">
-            <h2>Developed by</h2>
-            <div fxLayout="row wrap" fxLayoutGap="8px grid">
-              <div *ngFor="let company of companiesWithLogo" class="company-logos">
-                <img src="v1/images/{{company.logoId}}" alt="{{company.name}}" [matTooltip]="company.name">
+          <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="space-between">
+            <div fxLayoutGap="8px">
+              <h1 style="display: inline-block">{{game.title}}</h1>
+              <h3 style="display: inline-block; font-style: italic">{{game.releaseDate | date: 'yyyy'}}</h3>
+
+              <h2>Description</h2>
+              <p>{{game.summary}}</p>
+            </div>
+
+            <div *ngIf="companiesWithLogo.length > 0">
+              <h2>Developed by</h2>
+              <div fxLayout="row wrap" fxLayoutGap="8px grid">
+                <div *ngFor="let company of companiesWithLogo" class="company-logos">
+                  <img src="v1/images/{{company.logoId}}" alt="{{company.name}}" [matTooltip]="company.name">
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </mat-card-content>
       </mat-card>
 
       <div fxFlex><!-- Spacer --></div>
@@ -33,10 +35,10 @@
       <div fxLayout="column" fxFlex="40" fxLayoutGap="16px">
 
         <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="16px">
-          <button mat-raised-button color="secondary" (click)="refreshGame()" title="Refresh metadata">
+          <button mat-fab color="secondary" (click)="refreshGame()" title="Refresh metadata">
             <mat-icon>refresh</mat-icon>
           </button>
-          <button mat-raised-button color="primary" (click)="downloadGame()">
+          <button mat-fab color="primary" (click)="downloadGame()">
             <mat-icon>download</mat-icon>
           </button>
           <b style="font-size: 24px">Download ({{bytesAsHumanReadableString(game.diskSize)}})</b>
@@ -45,26 +47,26 @@
         <div fxLayout="column" fxLayoutGap="24px">
           <div *ngIf="game.genres !== undefined && game.genres.length > 0">
             <h2>Genres</h2>
-            <mat-chip-list>
-              <mat-chip *ngFor="let genre of game.genres"
-                        (click)="goToLibraryWithFilter('genres', genre.slug)">{{genre.name}}</mat-chip>
-            </mat-chip-list>
+            <mat-chip-listbox>
+              <mat-chip-option *ngFor="let genre of game.genres"
+                        (click)="goToLibraryWithFilter('genres', genre.slug)">{{genre.name}}</mat-chip-option>
+            </mat-chip-listbox>
           </div>
 
           <div *ngIf="game.themes !== undefined && game.themes.length > 0">
             <h2>Themes</h2>
-            <mat-chip-list>
-              <mat-chip *ngFor="let theme of game.themes"
-                        (click)="goToLibraryWithFilter('themes', theme.slug)">{{theme.name}}</mat-chip>
-            </mat-chip-list>
+            <mat-chip-listbox>
+              <mat-chip-option *ngFor="let theme of game.themes"
+                        (click)="goToLibraryWithFilter('themes', theme.slug)">{{theme.name}}</mat-chip-option>
+            </mat-chip-listbox>
           </div>
 
           <div *ngIf="game.platforms !== undefined && game.platforms.length > 0">
             <h2>Platforms</h2>
-            <mat-chip-list>
-              <mat-chip *ngFor="let platform of game.platforms" [disabled]="game.library == undefined || !hasPlatform(game.library, platform)"
-                        (click)="goToLibraryWithFilter('platforms', platform.slug)">{{platform.name}}</mat-chip>
-            </mat-chip-list>
+            <mat-chip-listbox>
+              <mat-chip-option *ngFor="let platform of game.platforms" [disabled]="game.library == undefined || !hasPlatform(game.library, platform)"
+                        (click)="goToLibraryWithFilter('platforms', platform.slug)">{{platform.name}}</mat-chip-option>
+            </mat-chip-listbox>
           </div>
         </div>
 

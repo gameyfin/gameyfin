@@ -26,34 +26,37 @@
     <div fxFlex.gt-md="0 1 15" fxLayout="column" fxLayoutGap="16px" fxLayoutAlign.lt-lg="start center"
          fxFlex.lt-lg="100" [ngClass.gt-md]="'sticky'">
 
-      <mat-card fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="6px" class="mat-card-48">
+      <div fxLayout="row" fxLayoutAlign="start center">
         <button mat-icon-button *ngIf="searchTerm.length > 0" matTooltip="Clear search input"
                 (click)="clearSearchTerm()">
           <mat-icon>close</mat-icon>
         </button>
 
-        <button mat-icon-button *ngIf="searchTerm.length === 0" matTooltip="Search for games by title">
+        <button mat-icon-button *ngIf="searchTerm.length === 0" matTooltip="Search for games by title"
+                style="pointer-events: none">
           <mat-icon>search</mat-icon>
         </button>
 
-        <mat-form-field fxFlex>
-          <input type="text" matInput [matAutocomplete]="librarySearchAutocomplete" [(ngModel)]="searchTerm"
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" fxFlex>
+          <input matInput [matAutocomplete]="librarySearchAutocomplete" [(ngModel)]="searchTerm"
                  (ngModelChange)="refreshLibraryView()">
-          <mat-autocomplete #librarySearchAutocomplete="matAutocomplete">
+          <mat-autocomplete #librarySearchAutocomplete="matAutocomplete" hideSingleSelectionIndicator panelWidth="auto">
             <mat-option *ngFor="let game of games" [value]="game.title">
               {{game.title}}
             </mat-option>
           </mat-autocomplete>
         </mat-form-field>
-      </mat-card>
+      </div>
 
-      <mat-card fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="20px" class="mat-card-48">
-        <h3 class="filter-category-title" style="white-space: nowrap; padding-left: 6px">Sort by: </h3>
-        <mat-select [(value)]="selectedSortOption" (valueChange)="refreshLibraryView()">
-          <mat-option *ngFor="let sortOption of sortOptions" [value]="sortOption">
-            {{sortOption.title}}
-          </mat-option>
-        </mat-select>
+      <mat-card>
+        <mat-card-content fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="20px">
+          <h3 class="filter-category-title" style="white-space: nowrap; padding-left: 6px">Sort by: </h3>
+          <mat-select [(value)]="selectedSortOption" (valueChange)="refreshLibraryView()" hideSingleSelectionIndicator>
+            <mat-option *ngFor="let sortOption of sortOptions" [value]="sortOption">
+              {{sortOption.title}}
+            </mat-option>
+          </mat-select>
+        </mat-card-content>
       </mat-card>
 
       <mat-expansion-panel [expanded]="filterExpansionState.gamemodes">
