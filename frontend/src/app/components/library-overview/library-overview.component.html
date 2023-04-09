@@ -51,7 +51,7 @@
       <mat-card>
         <mat-card-content fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="20px">
           <h3 class="filter-category-title" style="white-space: nowrap; padding-left: 6px">Sort by: </h3>
-          <mat-select [(value)]="selectedSortOption" (valueChange)="refreshLibraryView()">
+          <mat-select [(value)]="selectedSortOption" (valueChange)="refreshLibraryView()" hideSingleSelectionIndicator>
             <mat-option *ngFor="let sortOption of sortOptions" [value]="sortOption">
               {{sortOption.title}}
             </mat-option>
