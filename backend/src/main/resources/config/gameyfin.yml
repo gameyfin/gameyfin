@@ -1,7 +1,92 @@
 gameyfin:
   folders:
     data: ""
-  file-extensions: iso, zip, rar, 7z, exe
+  file-extensions:
+    - '.rar' # Compressed Archive -- Use WinRAR or 7-Zip to open and extract.
+    - '.7z' # Compressed Archive -- Use WinRAR or 7-Zip to open and extract.
+    - '.7zip' # Compressed Archive -- Use WinRAR or 7-Zip to open and extract.
+    - '.zip' # Compressed Archive -- Use WinRAR or 7-Zip to open and extract.
+    - '.tar.gz' # Compressed Archive -- Use WinRAR or 7-Zip to open and extract.
+    - 'n.gz' # Compressed Archive -- Use WinRAR or 7-Zip to open and extract.
+    - '.tar' # Archive -- Use 7-Zip to open and extract.
+    - '.001' # Split Archive -- Use WinRAR or 7-Zip to open and extract.
+    - 'part1' # Split Archive -- Use WinRAR or 7-Zip to open and extract.
+    - 'r01' # Split Archive -- Use WinRAR or 7-Zip to open and extract.
+    - '.gzip' # Compressed Archive -- Use 7-Zip to open and extract. Can be loaded by PCSX2 directly.
+    - '.iso' # Disk Image for Multiple systems
+    - '.img' # Disk Image for Multiple systems
+    - '.ccd' # CloneCD Control File for Multiple systems -- Usually comes with .img files.
+    - '.bin' # Binary File for Multiple systems -- Usually accompanied with, and used by, a cue sheet.
+    - '.cue' # Cue Sheet for Multiple systems -- Metadata file for .bin/.iso/.img tracks.
+    - '.chd' # Compressed Hard Disk for Multiple systems -- Originally made for MAME, now used by multiple emulators
+    - '.mdf' # Media Descriptor File for Multiple systems -- Disc image made from Alcohol 120%
+    - '.mds' # Media Descriptor Sheet for Multiple systems -- Similar to .cue or .ccd, but for .mdf files.
+    - '.ecm' # Error Code Modeler for PlayStation -- Compressed PS1 disc image, use Unecm to decompress it.
+    - '.cso' # Compressed ISO for PS2/PSP/GC/Wii -- Compressed disc image, see here to convert to and from .iso
+    - '.gcz' # Compressed Dolphin ISO for GC/Wii -- Compressed Wii/GC disc image, see here to convert to and from .iso or Compressed GameCube Disc Image for GameCube -- Can be either a compressed .gcm or .iso
+    - '.rvz' # Modern Dolphin Format for GC/Wii -- A new compressed format developed by the Dolphin team able to efficiently compress junk/padding data, allowing both small file sizes and archival quality.
+    - '.cdi' # CD Image for Dreamcast -- Typically used with Dreamcast, CDI is a compressed GDI
+    - '.gdi' # CD Image for Dreamcast -- Typically used with Dreamcast, CDI is a compressed GDI
+    - '.sbI' # CD Image -- Sub-channel data. Generally used in the case of PS1 for Digital Rights Management
+    - '.fds' # Famicom Disk System for NES
+    - '.ndd' # Nintendo 64DD for N64
+    - '.wav' # Waveform Audio File Format for Tape Based Systems -- Raw data in audio format†
+    - '.tap' # Tape File for Tape Based Systems -- Raw tape data usable by appropriate emulators
+    - '.tzx' # ZX Spectrum Tape File for Compatible Tape Based Systems (ZXS, CPC, C64, etc.) -- Prefered file type for all emulators, perfect representation
+    - '.cdc' # CPC Digital Tape for Amstrad CPC -- Identical to the .tzx file but useable only by Amstrad CPC emulators
+    - '.cas' # PC-6000 and PC-6601 Cassette for NEC PC-6000 series
+    - '.nes' # NES ROM for NES -- .unf and .unif correspond to the now deprecated Universal NES Image Format.
+    - '.nez' # NES ROM for NES -- .unf and .unif correspond to the now deprecated Universal NES Image Format.
+    - '.unf' # NES ROM for NES -- .unf and .unif correspond to the now deprecated Universal NES Image Format.
+    - '.unif' # NES ROM for NES -- .unf and .unif correspond to the now deprecated Universal NES Image Format.
+    - '.smc' # Super Magicom for SNES -- Headered ROMs dumped from a Super Magicom copier.
+    - '.sfc' # Super Famicom ROM for SNES -- Headerless SNES ROM
+    - '.md' # Multi Game Doctor for Genesis -- ROMs dumped from a Multi Game Doctor
+    - '.smd' # Super Magic Drive for Genesis -- Headered ROMs dumped from a Super Magic Drive
+    - '.gen' # Genesis ROM for Genesis -- Headerless Genesis ROM
+    - '.gg' # Game Gear ROM for Game Gear
+    - '.z64' # Zip Diskette N64 ROM for Nintendo 64 -- Headered N64 ROMS dumped with a Mr. Backup Z64
+    - '.v64' # Doctor V64 for Nintendo 64 -- Headered N64 ROMS dumped with a Doctor V64
+    - '.n64' # N64 ROM for Nintendo 64
+    - '.gb' # Game Boy ROM for Game Boy
+    - '.gbc' # Game Boy Color ROM for Game Boy Color
+    - '.gba' # Game Boy Advance ROM for Game Boy Advance
+    - '.gcm' # GameCube Master Image for GameCube -- GC disc dumped the way it's read
+    - '.nds' # Nintendo DS ROM for Nintendo DS or Game Boy Advance ROM for Game Boy Advance
+    - '.srl' # Nintendo DS ROM for Nintendo DS
+    - '.dsi' # DSiWare ROM for DSiWare -- Different from regular DS ROMs.
+    - '.app' # DSiWare ROM for DSiWare -- Different from regular DS ROMs.
+    - '.ids' # iQue DS ROM for iQue/Nintendo DS -- The same thing as regular Nintendo DS ROMs, but for the Chinese iQue DS.
+    - '.wbfs' # Wii Backup File System for Wii -- Use WBFS Manager to convert to and from .iso
+    - '.wad' # Wii Application Data for Wii or "Where's all the data files?" for Doom -- Used for Wii channels or Doom
+    - '.cia' # CTR Importable Archive for 3DS
+    - '.3ds' # Nintendo 3DS ROM for 3DS
+    - '.nsp' # Nintendo Switch ROM for Nintendo Switch -- Dump of SD and NAND games, Updates
+    - '.xci' # Nintendo Switch ROM for Nintendo Switch -- Dump of a game cartridge
+    - '.ngp' # NGP/C ROM for Neo Geo Pocket/Color
+    - '.ngc' # NGP/C ROM for Neo Geo Pocket/Color
+    - '.pce' # PC Engine ROM for PC Engine
+    - '.vpk' # PlayStation Vita ROM for PlayStation Vita -- Compressed files forming a PlayStation Vita ROM
+    - '.vb' # Virtual Boy ROM for Virtual Boy -- Also used for Visual Basic source files
+    - '.ws' # WonderSwan (Color) ROM for WonderSwan/Color
+    - '.wsc' # WonderSwan (Color) ROM for WonderSwan/Color
+    - '.ipa' # Apple iPhone App Data for iOS
+    - '.apk' # Android App Data for Android
+    - '.obb' # Android App Data Resources for Android
+    - '.elf' # Executable and Linkable Format for PS2/PS3/GC/Wii -- Typically a homebrew/small application file
+    - '.pbp' # Perl Builder File for PlayStation Portable -- Game and homebrew eboot file, also used for PS1 ISO storage (eboot.pbp)
+    - '.dol' # Dolphin File for GameCube/Wii -- Executable
+    - '.xbe' # Xbox Executable for Xbox/X360 -- Xbox Executable. Usually comes with a folder with game data. X360 ones can be loaded by Xenia.
+    - '.xex' # Xbox Executable for Xbox/X360 -- Xbox Executable. Usually comes with a folder with game data. X360 ones can be loaded by Xenia.
+    - '.cfg' # Configuration File for Multiple systems -- Use a text editor such as notepad/Notepad++ to edit
+    - '.ini' # Configuration File for Multiple systems -- Use a text editor such as notepad/Notepad++ to edit
+    - '.dll' # Dynamic Link Library for Multiple systems -- Typically used for plugins/emulation cores in emulators
+    - '.so' # Shared Library for Multiple systems -- Typically used for plugins/emulation cores in emulators
+    - '.xml' # Extensible Markup Language for MAME/MESS -- Contains various information about emulated systems and ROMs.
+    - '.hsi' # XML-like for MESS -- Contains various information about ROMs.
+    - '.lay' # Layout for MAME/MESS -- XML-like file used to describe the visual layout of artwork overlays and placement of emulation input/output.
+    - '.nv' # Non-Volatile RAM for MAME/MESS -- Created by default to store nvram of emulated systems or software in the NVRAM folder.
+    - '.m3u' # Playlist file for Multiple systems -- Used to play multiple discs back to back, automates disc swapping.
   file-suffixes: windows, win, english, win32, win64, opengl, stable
   igdb:
     api:
@@ -13,4 +98,204 @@ gameyfin:
       max-concurrent-requests: 2
       max-requests-per-second: 4
     config:
-      preferred-platforms: 6,23,33,24,22,3,14,137,37,4,20,159,18,21,130,7,8,9,48,38,46,165,35,64,29,32,58,19,47,5,41,11,12
+      preferred-platforms:
+        - 3 # Linux or GNU/Linux
+        - 4 # Nintendo 64 or N64
+        - 5 # Wii or Revolution
+        - 6 # PC (Microsoft Windows) or mswin
+        - 7 # PlayStation or PSX, PSOne, PS
+        - 8 # PlayStation 2 or PS2
+        - 9 # PlayStation 3 or PS3
+        - 11 # Xbox
+        - 12 # Xbox 360 or X360
+#        - 13 # DOS or PC DOS
+        - 14 # Mac or Mac OS
+#        - 15 # Commodore C64/128/MAX or C64/C128/MAX
+#        - 16 # Amiga
+        - 18 # Nintendo Entertainment System or NES
+        - 19 # Super Nintendo Entertainment System or SNES, Super Nintendo
+        - 20 # Nintendo DS or NDS
+        - 21 # Nintendo GameCube or GCN
+        - 22 # Game Boy Color or GBC
+        - 23 # Dreamcast or DC
+        - 24 # Game Boy Advance or GBA
+#        - 25 # Amstrad CPC or Colour Personal Computer
+#        - 26 # ZX Spectrum
+#        - 27 # MSX
+        - 29 # Sega Mega Drive/Genesis or Sega Genesis
+#        - 30 # Sega 32X
+        - 32 # Sega Saturn or JVC Saturn, Hi-Saturn, Samsung Saturn, V-Saturn
+        - 33 # Game Boy or GB
+#        - 34 # Android or Infocusa3
+        - 35 # Sega Game Gear or GG
+        - 37 # Nintendo 3DS or 3DS
+        - 38 # PlayStation Portable or PSP
+#        - 39 # iOS
+        - 41 # Wii U
+#        - 42 # N-Gage or NGage
+#        - 44 # Tapwave Zodiac
+        - 46 # PlayStation Vita or PS Vita
+        - 47 # Virtual Console
+        - 48 # PlayStation 4 or PS4
+#        - 49 # Xbox One or XONE
+#        - 50 # 3DO Interactive Multiplayer or 3DO
+#        - 51 # Family Computer Disk System or Famicom Disk System, FDS
+#        - 52 # Arcade
+#        - 53 # MSX2
+#        - 55 # Legacy Mobile Device or Legacy Cellphone
+#        - 57 # WonderSwan or WS
+        - 58 # Super Famicom or SFC
+#        - 59 # Atari 2600 or Atari VCS
+#        - 60 # Atari 7800 or Atari 7800 ProSystem
+#        - 61 # Atari Lynx
+#        - 62 # Atari Jaguar
+#        - 63 # Atari ST/STE
+        - 64 # Sega Master System/Mark III or SMS, Mark III
+#        - 65 # Atari 8-bit
+#        - 66 # Atari 5200 or Atari 5200 SuperSystem
+#        - 67 # Intellivision
+#        - 68 # ColecoVision
+#        - 69 # BBC Microcomputer System or BBC Micro
+#        - 70 # Vectrex
+#        - 71 # Commodore VIC-20
+#        - 72 # Ouya
+#        - 73 # BlackBerry OS
+#        - 74 # Windows Phone or WP
+#        - 75 # Apple II or apple ][
+#        - 77 # Sharp X1
+#        - 78 # Sega CD or Mega CD
+#        - 79 # Neo Geo MVS or Neo Geo Multi Video System
+#        - 80 # Neo Geo AES or AES
+#        - 82 # Web browser or Internet
+#        - 84 # SG-1000 or Sega Game 1000
+#        - 85 # Donner Model 30
+#        - 86 # TurboGrafx-16/PC Engine
+#        - 87 # Virtual Boy or VB
+#        - 88 # Odyssey or Magnavox Odyssey; Odysee; Odisea; Odissea
+#        - 89 # Microvision
+#        - 90 # Commodore PET
+#        - 91 # Bally Astrocade or Bally Arcade
+#        - 93 # Commodore 16 or C16
+#        - 94 # Commodore Plus/4
+#        - 95 # PDP-1 or Programmed Data Processor-1
+#        - 96 # PDP-10
+#        - 97 # PDP-8
+#        - 98 # DEC GT40
+#        - 99 # Family Computer or Famicom
+#        - 100 # Analogue electronics
+#        - 101 # Ferranti Nimrod Computer
+#        - 102 # EDSAC or Electronic Delay Storage Automatic Calculator
+#        - 103 # PDP-7
+#        - 104 # HP 2100
+#        - 105 # HP 3000
+#        - 106 # SDS Sigma 7
+#        - 107 # Call-A-Computer time-shared mainframe computer system
+#        - 108 # PDP-11
+#        - 109 # CDC Cyber 70
+#        - 110 # PLATO or Programmed Logic for Automatic Teaching Operations
+#        - 111 # Imlac PDS-1
+#        - 112 # Microcomputer
+#        - 113 # OnLive Game System
+#        - 114 # Amiga CD32
+#        - 115 # Apple IIGS
+#        - 116 # Acorn Archimedes
+#        - 117 # Philips CD-i
+#        - 118 # FM Towns
+#        - 119 # Neo Geo Pocket or NGP
+#        - 120 # Neo Geo Pocket Color or NGPC
+#        - 121 # Sharp X68000
+#        - 122 # Nuon
+#        - 123 # WonderSwan Color or WSC
+#        - 124 # SwanCrystal
+#        - 125 # PC-8801
+#        - 126 # TRS-80
+#        - 127 # Fairchild Channel F
+#        - 128 # PC Engine SuperGrafx
+#        - 129 # Texas Instruments TI-99 or Texas Instruments TI-99/4A
+        - 130 # Nintendo Switch or NX
+#        - 131 # Nintendo PlayStation or Nintendo Super Disc
+#        - 132 # Amazon Fire TV
+#        - 133 # Odyssey 2 / Videopac G7000 or Magnavox Odyssey²
+#        - 134 # Acorn Electron
+#        - 135 # Hyper Neo Geo 64
+#        - 136 # Neo Geo CD or NGCD
+        - 137 # New Nintendo 3DS or n3DS
+#        - 138 # VC 4000
+#        - 139 # 1292 Advanced Programmable Video System
+#        - 140 # AY-3-8500
+#        - 141 # AY-3-8610
+#        - 142 # PC-50X Family
+#        - 143 # AY-3-8760
+#        - 144 # AY-3-8710
+#        - 145 # AY-3-8603
+#        - 146 # AY-3-8605
+#        - 147 # AY-3-8606
+#        - 148 # AY-3-8607
+#        - 149 # PC-98
+#        - 150 # Turbografx-16/PC Engine CD or TG-16CD/PCECD
+#        - 151 # TRS-80 Color Computer or Tandy Color Computer
+#        - 152 # FM-7 or Fujitsu Micro 7
+#        - 153 # Dragon 32/64
+#        - 154 # Amstrad PCW
+#        - 155 # Tatung Einstein
+#        - 156 # Thomson MO5
+#        - 157 # NEC PC-6000 Series
+#        - 158 # Commodore CDTV or Commodore Dynamic Total Vision
+        - 159 # Nintendo DSi
+#        - 161 # Windows Mixed Reality or WMR
+#        - 162 # Oculus VR
+#        - 163 # SteamVR
+#        - 164 # Daydream
+        - 165 # PlayStation VR or PSVR
+#        - 166 # Pokémon mini
+#        - 167 # PlayStation 5 or PS5
+#        - 169 # Xbox Series X|S or XSX
+#        - 170 # Google Stadia or Stadia
+#        - 203 # DUPLICATE Stadia
+#        - 236 # Exidy Sorcerer
+#        - 237 # Sol-20
+#        - 238 # DVD Player or Digital Versatile Disc Player
+#        - 239 # Blu-ray Player
+#        - 240 # Zeebo
+#        - 274 # PC-FX
+#        - 306 # Satellaview
+#        - 307 # Game & Watch or Tricotronic, GW, G&W
+#        - 308 # Playdia
+#        - 309 # Evercade
+#        - 339 # Sega Pico or Kids Computer Pico
+#        - 372 # OOParts
+#        - 373 # Sinclair ZX81 or ZX81
+#        - 374 # Sharp MZ-2200
+#        - 375 # Epoch Cassette Vision
+#        - 376 # Epoch Super Cassette Vision or YENO Super Cassette Vision
+#        - 377 # Plug & Play or TV Game
+#        - 378 # Gamate or Super Boy
+#        - 379 # Game.com or Tiger Game.com
+#        - 380 # Casio Loopy or Loopy
+#        - 381 # Playdate
+#        - 382 # Intellivision Amico
+#        - 384 # Oculus Quest or Quest
+#        - 385 # Oculus Rift or Rift
+#        - 386 # Meta Quest 2 or Quest 2
+#        - 387 # Oculus Go or Go
+#        - 388 # Gear VR or Samsung Gear VR
+#        - 389 # AirConsole
+#        - 390 # PlayStation VR2 or PSVR2
+#        - 405 # Windows Mobile or Pocket PC
+#        - 406 # Sinclair QL or Sinclair Quantum Leap
+#        - 407 # HyperScan
+#        - 408 # Mega Duck/Cougar Boy or WG-108
+#        - 409 # Legacy Computer
+#        - 410 # Atari Jaguar CD or Jag CD
+#        - 411 # Handheld Electronic LCD or Handheld LCD Game
+#        - 412 # Leapster or Leapster Learning Game System
+#        - 413 # Leapster Explorer/LeadPad Explorer
+#        - 414 # LeapTV or LeapTV VCD
+#        - 415 # Watara/QuickShot Supervision
+#        - 416 # Nintendo 64DD or 64DD
+#        - 417 # Palm OS or Garnet OS
+#        - 438 # Arduboy
+#        - 439 # V.Smile or V.SMILE TV LEARNING SYSTEM
+#        - 440 # Visual Memory Unit / Visual Memory System or VMU / VMS
+#        - 441 # PocketStation
+#        - 471 # Meta Quest 3
