@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.util;
 
+import de.grimsi.gameyfin.config.properties.GameyfinProperties;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,11 +21,14 @@ public class FilenameUtil {
     private static final Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|\\[\\]|[-_.])+$");
     private static final Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|\\[\\]|[-_.])+");
 
-    @Value("${gameyfin.file-extensions}")
-    public void setPossibleGameFileExtensions(List<String> possibleGameFileExtensions) {
-        FilenameUtil.possibleGameFileExtensions = possibleGameFileExtensions;
+    public FilenameUtil(GameyfinProperties gameyfinProperties) {
+        possibleGameFileExtensions = gameyfinProperties.fileExtensions();
+
+        // Sort in descending length, so for example "windows" gets checked before "win"
+        FilenameUtil.possibleGameFileSuffixes = gameyfinProperties.fileSuffixes();
+        possibleGameFileSuffixes.sort((s1,s2) -> Integer.compare(s2.length(), s1.length()));
     }
-    
+
     @Value("${gameyfin.file-suffixes}")
     public void setPossibleGameFileSuffixes(List<String> possibleGameFileSuffixes) {
         // Sort in descending length, so for example "windows" gets checked before "win"

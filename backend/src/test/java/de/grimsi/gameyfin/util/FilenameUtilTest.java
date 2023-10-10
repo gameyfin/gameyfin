@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
@@ -13,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import de.grimsi.gameyfin.config.properties.GameyfinProperties;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,6 +27,7 @@ import com.google.common.jimfs.Jimfs;
 
 class FilenameUtilTest {
 
+    private static final GameyfinProperties gameyfinPropertiesMock = mock(GameyfinProperties.class);
     private static final FileSystem unixFS = Jimfs.newFileSystem(Configuration.unix());
     private static final FileSystem osxFS = Jimfs.newFileSystem(Configuration.osX());
     private static final FileSystem winFS = Jimfs.newFileSystem(Configuration.windows());
@@ -33,9 +37,10 @@ class FilenameUtilTest {
 
     @BeforeAll
     static void init() {
-        FilenameUtil filenameUtil = new FilenameUtil();
-        filenameUtil.setPossibleGameFileExtensions(gameFileExtensions);
-        filenameUtil.setPossibleGameFileSuffixes(possibleGameFileSuffixes);
+        when(gameyfinPropertiesMock.fileExtensions()).thenReturn(gameFileExtensions);
+        when(gameyfinPropertiesMock.fileSuffixes()).thenReturn(possibleGameFileSuffixes);
+
+        FilenameUtil filenameUtil = new FilenameUtil(gameyfinPropertiesMock);
     }
 
     @AfterAll

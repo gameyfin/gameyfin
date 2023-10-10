@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.igdb;
 
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
+import de.grimsi.gameyfin.config.properties.GameyfinProperties;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.entities.Platform;
 import de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.*;
@@ -38,12 +39,12 @@ public class IgdbWrapper {
     private final WebClient.Builder webclientBuilder;
     private final WebClientConfig webClientConfig;
     private final GameMapper gameMapper;
+    private final GameyfinProperties gameyfinProperties;
+
     @Value("${gameyfin.igdb.api.client-id}")
     private String clientId;
     @Value("${gameyfin.igdb.api.client-secret}")
     private String clientSecret;
-    @Value("${gameyfin.igdb.config.preferred-platforms:6}")
-    private List<Integer> preferredPlatforms;
     @Value("${gameyfin.igdb.api.endpoints.base}")
     private String igdbApiBaseUrl;
     @Value("${gameyfin.igdb.api.endpoints.auth}")
@@ -119,7 +120,7 @@ public class IgdbWrapper {
                 IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF,
                 queryBuilder.search(searchTerm)
                         .fields("slug,name,first_release_date,platforms.name")
-                        .where(in("platforms", preferredPlatforms))
+                        .where(in("platforms", gameyfinProperties.igdb().config().preferredPlatforms()))
                         .limit(limit)
                         .build(),
                 Igdb.GameResult.class
@@ -137,8 +138,8 @@ public class IgdbWrapper {
     public Optional<Igdb.Game> searchForGameByTitle(String searchTerm, Collection<String> platformSlugs) {
         IgdbApiQueryBuilder queryBuilder = new IgdbApiQueryBuilder();
         Condition platforms = isNotEmpty(platformSlugs) ?
-                and(in("platforms", preferredPlatforms), in("platforms.slug", platformSlugs)) :
-                in("platforms", preferredPlatforms);
+                and(in("platforms", gameyfinProperties.igdb().config().preferredPlatforms()), in("platforms.slug", platformSlugs)) :
+                in("platforms", gameyfinProperties.igdb().config().preferredPlatforms());
 
         Igdb.GameResult gameResult = queryIgdbApi(
                 IgdbApiProperties.ENDPOINT_GAMES_PROTOBUF,

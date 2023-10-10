@@ -5,6 +5,7 @@ import com.google.protobuf.Message;
 import com.google.protobuf.Timestamp;
 import com.igdb.proto.Igdb;
 import de.grimsi.gameyfin.config.WebClientConfig;
+import de.grimsi.gameyfin.config.properties.GameyfinProperties;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.entities.Platform;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -52,8 +54,9 @@ class IgdbWrapperTest {
     static void setup() throws IOException, InterruptedException {
         WebClientConfig webClientConfigMock = mock(WebClientConfig.class);
         GameMapper gameMapperMock = mock(GameMapper.class);
+        GameyfinProperties gameyfinPropertiesMock = mock(GameyfinProperties.class, Mockito.RETURNS_DEEP_STUBS);
 
-        target = new IgdbWrapper(WebClient.builder(), webClientConfigMock, gameMapperMock);
+        target = new IgdbWrapper(WebClient.builder(), webClientConfigMock, gameMapperMock, gameyfinPropertiesMock);
 
         igdbApiMock.start();
         twitchApiMock.start();
@@ -62,7 +65,8 @@ class IgdbWrapperTest {
         ReflectionTestUtils.setField(target, "clientSecret", "client_secret_value");
         ReflectionTestUtils.setField(target, "igdbApiBaseUrl", "http://localhost:%s".formatted(igdbApiMock.getPort()));
         ReflectionTestUtils.setField(target, "twitchAuthUrl", "http://localhost:%s/oauth2/token".formatted(twitchApiMock.getPort()));
-        ReflectionTestUtils.setField(target, "preferredPlatforms", List.of(6));
+
+        when(gameyfinPropertiesMock.igdb().config().preferredPlatforms()).thenReturn(List.of(6));
 
         when(webClientConfigMock.getIgdbConcurrencyLimiter()).thenReturn(Bulkhead.of("test_bulkhead", BulkheadConfig.ofDefaults()));
         when(webClientConfigMock.getIgdbRateLimiter()).thenReturn(RateLimiter.of("test_ratelimiter", RateLimiterConfig.ofDefaults()));

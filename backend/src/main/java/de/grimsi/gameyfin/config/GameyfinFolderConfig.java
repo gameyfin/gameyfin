@@ -24,7 +24,9 @@ import java.util.stream.StreamSupport;
 @RequiredArgsConstructor
 public class GameyfinFolderConfig {
 
-    private static final String INTERNAL_FOLDER_NAME = ".gameyfin";
+
+    @Value("${gameyfin.internal-folder}")
+    private String INTERNAL_FOLDER_NAME;
 
     /**
      * The following SpEL expression will:
