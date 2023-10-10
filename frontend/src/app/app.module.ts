@@ -21,7 +21,7 @@ import {ErrorDialogComponent} from "./components/error-dialog/error-dialog.compo
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatButtonModule} from "@angular/material/button";
 import {MatInputModule} from "@angular/material/input";
-import {FlexLayoutModule, FlexModule, GridModule} from "@angular/flex-layout";
+import {FlexLayoutModule, FlexModule, GridModule} from "@ngbracket/ngx-layout";
 import {LibraryOverviewComponent} from './components/library-overview/library-overview.component';
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 import {MatTableModule} from "@angular/material/table";
