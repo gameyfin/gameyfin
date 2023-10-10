@@ -23,7 +23,7 @@
         <protobuf-java.version>3.24.4</protobuf-java.version>
         <easy-random.version>5.0.0</easy-random.version>
         <easy-random-protobuf.version>0.4.0</easy-random-protobuf.version>
-        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.10</jacoco-maven-plugin.version>
 
         <!-- Use older version because the newer versions have problems with non-ASCII characters in properties files (umlauts etc.) -->
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
