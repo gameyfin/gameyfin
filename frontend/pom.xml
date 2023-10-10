@@ -59,6 +59,10 @@
             <goals>
               <goal>npm</goal>
             </goals>
+            <configuration>
+              <!-- Use legacy peer dependency handling because "mat-table-filter" is unmaintained -->
+              <arguments>install --legacy-peer-deps</arguments>
+            </configuration>
           </execution>
 
           <!-- Update frontend version in package.json -->
