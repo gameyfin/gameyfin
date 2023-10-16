@@ -17,7 +17,7 @@
     "@angular/core": "^16.2.8",
     "@angular/forms": "^16.2.8",
     "@angular/material": "^16.2.7",
-    "@angular/platform-browser": "^16.2.8",
+    "@angular/platform-browser": "^16.2.9",
     "@angular/platform-browser-dynamic": "^16.2.8",
     "@angular/router": "^16.2.8",
     "@angular/youtube-player": "^16.2.7",
