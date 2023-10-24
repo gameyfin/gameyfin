@@ -35,7 +35,7 @@ jobs:
           git config user.name "GitHub Actions"
 
       - name: Maven Package
-        run: mvn package -B -s .maven_settings.xml -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -Darguments="-Dmaven.deploy.skip=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true"
+        run: mvn package -B -s .maven_settings.xml -DreleaseVersion=${{ github.event.inputs.tag }} -Darguments="-Dmaven.deploy.skip=true -Dmaven.test.skip=true -Dmaven.javadoc.skip=true"
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ github.token }}
