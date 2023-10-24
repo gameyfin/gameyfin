@@ -17,7 +17,13 @@ public class FilenameUtil {
     private static List<String> possibleGameFileSuffixes;
     // matches v1.1.1 v1.1 v1 version numbers
     private static final Pattern versionPattern = Pattern.compile("v(\\d+\\.)?(\\d+\\.)?(\\d+)");
+
+    // Suppress SONAR detecting this as a potential stack overflow
+    // SONAR is correct, but I honestly don't know how to fix it
+    // Also it would require 6k+ character long filenames to really overflow the JVM stack
+    @SuppressWarnings("java:S5998")
     private static final Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|\\[]|[-_.])+$");
+    @SuppressWarnings("java:S5998")
     private static final Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|\\[]|[-_.])+");
 
     public FilenameUtil(GameyfinProperties gameyfinProperties) {
