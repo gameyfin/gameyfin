@@ -47,9 +47,9 @@ jobs:
           images: |
             grimsi/gameyfin
           tags: |
-            type=semver,pattern={{version}},value=${{ github.event.inputs.releaseVersion }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ github.event.inputs.releaseVersion }}
-            type=semver,pattern={{major}},value=${{ github.event.inputs.releaseVersion }}
+            type=semver,pattern={{version}},value=${{ github.event.inputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.event.inputs.tag }}
+            type=semver,pattern={{major}},value=${{ github.event.inputs.tag }}
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
