@@ -22,7 +22,7 @@ jobs:
     name: Release
     steps:
       - name: Git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
         
