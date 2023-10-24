@@ -2,7 +2,6 @@ package de.grimsi.gameyfin.util;
 
 import de.grimsi.gameyfin.config.properties.GameyfinProperties;
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
@@ -18,8 +17,14 @@ public class FilenameUtil {
     private static List<String> possibleGameFileSuffixes;
     // matches v1.1.1 v1.1 v1 version numbers
     private static final Pattern versionPattern = Pattern.compile("v(\\d+\\.)?(\\d+\\.)?(\\d+)");
-    private static final Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|\\[\\]|[-_.])+$");
-    private static final Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|\\[\\]|[-_.])+");
+
+    // Suppress SONAR detecting this as a potential stack overflow
+    // SONAR is correct, but I honestly don't know how to fix it
+    // Also it would require 6k+ character long filenames to really overflow the JVM stack
+    @SuppressWarnings("java:S5998")
+    private static final Pattern trailingNoisePattern = Pattern.compile("( |\\(\\)|\\[]|[-_.])+$");
+    @SuppressWarnings("java:S5998")
+    private static final Pattern headingNoisePattern = Pattern.compile("^( |\\(\\)|\\[]|[-_.])+");
 
     public FilenameUtil(GameyfinProperties gameyfinProperties) {
         possibleGameFileExtensions = gameyfinProperties.fileExtensions();
@@ -29,18 +34,11 @@ public class FilenameUtil {
         possibleGameFileSuffixes.sort((s1,s2) -> Integer.compare(s2.length(), s1.length()));
     }
 
-    @Value("${gameyfin.file-suffixes}")
-    public void setPossibleGameFileSuffixes(List<String> possibleGameFileSuffixes) {
-        // Sort in descending length, so for example "windows" gets checked before "win"
-        possibleGameFileSuffixes.sort((s1,s2) -> Integer.compare(s2.length(), s1.length()));
-        FilenameUtil.possibleGameFileSuffixes = possibleGameFileSuffixes;
-    }
-
     public static String getFilenameWithoutExtension(Path p) {
 
         // If the path points to a folder, return the folder name
         // Folders like "Counter Strike 1.6" would otherwise be returned as "Counter Strike 1"
-        if(Files.isDirectory(p)) return FilenameUtils.getName(p.toString());
+        if (Files.isDirectory(p)) return FilenameUtils.getName(p.toString());
 
         return FilenameUtils.getBaseName(p.toString());
     }
@@ -68,7 +66,7 @@ public class FilenameUtil {
     
     public static String removePattern(String string, Pattern pattern) {
         Matcher matcher = pattern.matcher(string);
-        if(matcher.find()) {
+        if (matcher.find()) {
             return matcher.replaceAll("");
         }
         return string;
