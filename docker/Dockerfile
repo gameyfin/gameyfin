@@ -1,4 +1,4 @@
-FROM openjdk:18
+FROM eclipse-temurin:21-jre-ubi9-minimal
 
 ENV GAMEYFIN_SOURCES=/opt/gameyfin-library
 
