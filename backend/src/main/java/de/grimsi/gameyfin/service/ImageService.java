@@ -96,44 +96,43 @@ public class ImageService {
     private int saveImagesIntoCache(MultiValueMap<String, String> entityToImageIds, String imageSize, String imageType, String entityType) {
         AtomicInteger downloadCounter = new AtomicInteger();
 
-        entityToImageIds.entrySet().parallelStream().forEach(entry ->
-                entry.getValue().forEach(imageId -> {
+        entityToImageIds.forEach((key, value) -> value.forEach(imageId -> {
 
-                    if (!StringUtils.hasText(imageId)) return;
+            if (!StringUtils.hasText(imageId)) return;
 
-                    String imgFileName = "%s.png".formatted(imageId);
-                    String imgUrl = "t_%s/%s".formatted(imageSize, imgFileName);
+            String imgFileName = "%s.png".formatted(imageId);
+            String imgUrl = "t_%s/%s".formatted(imageSize, imgFileName);
 
-                    if (filesystemService.doesCachedFileExist(imgFileName)) {
-                        if (filesystemService.isCachedFileCorrupt(imgFileName)) {
-                            log.info("File '{}' is corrupt, retrying download...", imgFileName);
-                            filesystemService.deleteFileFromCache(imgFileName);
-                        } else {
-                            log.debug("{} for {} '{}' already downloaded ({}), skipping.",
-                                    imageType.substring(0, 1).toUpperCase() + imageType.substring(1).toLowerCase(),
-                                    entityType,
-                                    entry.getKey(),
-                                    imgFileName);
-                            return;
-                        }
-                    }
+            if (filesystemService.doesCachedFileExist(imgFileName)) {
+                if (filesystemService.isCachedFileCorrupt(imgFileName)) {
+                    log.info("File '{}' is corrupt, retrying download...", imgFileName);
+                    filesystemService.deleteFileFromCache(imgFileName);
+                } else {
+                    log.debug("{} for {} '{}' already downloaded ({}), skipping.",
+                            imageType.substring(0, 1).toUpperCase() + imageType.substring(1).toLowerCase(),
+                            entityType,
+                            key,
+                            imgFileName);
+                    return;
+                }
+            }
 
-                    Flux<DataBuffer> dataBuffer = igdbImageClient.get()
-                            .uri(imgUrl)
-                            .retrieve()
-                            .bodyToFlux(DataBuffer.class);
+            Flux<DataBuffer> dataBuffer = igdbImageClient.get()
+                    .uri(imgUrl)
+                    .retrieve()
+                    .bodyToFlux(DataBuffer.class);
 
-                    try {
-                        filesystemService.saveFileToCache(dataBuffer, imgFileName);
-                    } catch (WebClientResponseException e) {
-                        if (e.getStatusCode().is4xxClientError()) {
-                            log.error("Could not download {} for {} '{}' from {}: {}", imageType, entityType, entry.getKey(), IgdbApiProperties.IMAGES_BASE_URL + imgUrl, e.getStatusCode());
-                        }
-                    }
+            try {
+                filesystemService.saveFileToCache(dataBuffer, imgFileName);
+            } catch (WebClientResponseException e) {
+                if (e.getStatusCode().is4xxClientError()) {
+                    log.error("Could not download {} for {} '{}' from {}: {}", imageType, entityType, key, IgdbApiProperties.IMAGES_BASE_URL + imgUrl, e.getStatusCode());
+                }
+            }
 
-                    downloadCounter.getAndIncrement();
-                    log.info("Downloaded {} for {} '{}' from {}", imageType, entityType, entry.getKey(), IgdbApiProperties.IMAGES_BASE_URL + imgUrl);
-                }));
+            downloadCounter.getAndIncrement();
+            log.info("Downloaded {} for {} '{}' from {}", imageType, entityType, key, IgdbApiProperties.IMAGES_BASE_URL + imgUrl);
+        }));
 
         return downloadCounter.get();
     }

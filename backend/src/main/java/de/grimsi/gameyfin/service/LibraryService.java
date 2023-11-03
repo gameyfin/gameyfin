@@ -136,7 +136,7 @@ public class LibraryService {
         // For each new game, load the info from IGDB
         // If a game is not found on IGDB, add it to the list of unmapped files, so we won't query the API later on for the same path
         // If a game is not found on IGDB, blacklist the path, so we won't query the API later for the same path
-        List<DetectedGame> newDetectedGames = gameFiles.parallelStream()
+        List<DetectedGame> newDetectedGames = gameFiles.stream()
                 .map(p -> {
                     Optional<Igdb.Game> optionalGame = igdbWrapper.searchForGameByTitle(getFilenameWithoutAdditions(p), platformsFilter);
 
