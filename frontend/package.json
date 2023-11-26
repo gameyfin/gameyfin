@@ -25,7 +25,6 @@
     "mat-table-filter": "^15.0.0",
     "rxjs": "~7.8.1",
     "tslib": "^2.6.2",
-    Upda
     "zone.js": "~0.14.2"
   },
   "devDependencies": {
