@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.grimsi</groupId>
     <artifactId>gameyfin</artifactId>
-    <version>1.4.5-SNAPSHOT</version>
+    <version>1.5.0-SNAPSHOT</version>
     <name>gameyfin</name>
     <description>gameyfin</description>
 
@@ -18,17 +19,17 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.5</version>
-        <relativePath /> <!-- lookup parent from repository -->
+        <version>3.2.0</version>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <scm>
         <connection>scm:git:https://github.com/grimsi/gameyfin.git</connection>
         <url>scm:git:https://github.com/grimsi/gameyfin.git</url>
         <developerConnection>scm:git:https://github.com/grimsi/gameyfin.git</developerConnection>
-      <tag>HEAD</tag>
-  </scm>
-  
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>grimsi-github</sonar.organization>
@@ -41,7 +42,7 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>3.0.1</version>
                 <configuration>
-                    <scmCommentPrefix>[ci skip] </scmCommentPrefix>
+                    <scmCommentPrefix>[ci skip]</scmCommentPrefix>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                     <checkModificationExcludes>
                         <checkModificationExclude>frontend/package.json</checkModificationExclude>
