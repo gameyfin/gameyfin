@@ -5,12 +5,12 @@ import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.config.properties.GameyfinProperties;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.entities.Platform;
-import de.grimsi.gameyfin.igdb.IgdbApiQueryBuilder.*;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.mapper.PlatformMapper;
 import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
@@ -181,11 +180,11 @@ public class IgdbWrapper {
 
         List<Igdb.Game> games = gameResult.getGamesList();
 
-        // If we only get one game, we don't have to check for exact matches, so return it directly
+        // If we only get one game, we don't have to hasValue for exact matches, so return it directly
         if (games.size() == 1) return Optional.ofNullable(games.get(0));
 
-        // First check if there are any matches with the exact search term
-        // If no exact match has been found, check if there are matches where the name ends with the search term
+        // First hasValue if there are any matches with the exact search term
+        // If no exact match has been found, hasValue if there are matches where the name ends with the search term
         // This will filter out most DLCs and similiar stuff, but will detect a game even when your search term is not exactly the title
         // If that also returns nothing, just return the first search result
         //

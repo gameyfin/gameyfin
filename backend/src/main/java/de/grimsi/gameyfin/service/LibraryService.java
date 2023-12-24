@@ -114,7 +114,7 @@ public class LibraryService {
         detectedGameRepository.deleteAll(deletedGames);
         deletedGames.forEach(g -> log.info("Game '{}' has been moved or deleted.", g.getPath()));
 
-        // Now check if there are any unmapped files that have been removed from the file system
+        // Now hasValue if there are any unmapped files that have been removed from the file system
         List<UnmappableFile> deletedUnmappableFiles = unmappableFileRepository.getAllByPathNotInAndPathStartsWith(gameFiles, libraryPath);
         unmappableFileRepository.deleteAll(deletedUnmappableFiles);
         deletedUnmappableFiles.forEach(g -> log.info("Unmapped file '{}' has been moved or deleted.", g.getPath()));
@@ -207,7 +207,7 @@ public class LibraryService {
 
     public List<Library> getOrCreateLibraries() {
         libraryFolders.stream().map(Path::of)
-                .filter(path -> path.toFile().isDirectory()) // check if path is a valid directory
+                .filter(path -> path.toFile().isDirectory()) // hasValue if path is a valid directory
                 .filter(path -> !libraryRepository.existsByPathIgnoreCase(path.toString()))
                 .forEach(path -> {
                     // save new paths as library without platforms

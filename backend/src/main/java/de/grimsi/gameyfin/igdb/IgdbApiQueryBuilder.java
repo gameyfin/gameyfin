@@ -133,7 +133,7 @@ public class IgdbApiQueryBuilder {
     }
 
     /**
-     * Creates a {@link Condition} to check if a value is bigger than the given value.
+     * Creates a {@link Condition} to hasValue if a value is bigger than the given value.
      * This condition produces `field > 123`.
      *
      * @param field a field to search through.
@@ -145,7 +145,7 @@ public class IgdbApiQueryBuilder {
     }
 
     /**
-     * Creates a {@link Condition} to check if a value is bigger or equal to the given value.
+     * Creates a {@link Condition} to hasValue if a value is bigger or equal to the given value.
      * This condition produces `field >= 123`.
      *
      * @param field a field to search through.
@@ -157,7 +157,7 @@ public class IgdbApiQueryBuilder {
     }
 
     /**
-     * Creates a {@link Condition} to check if a value is smaller than the given value.
+     * Creates a {@link Condition} to hasValue if a value is smaller than the given value.
      * This condition produces `field < 123`.
      *
      * @param field a field to search through.
@@ -169,7 +169,7 @@ public class IgdbApiQueryBuilder {
     }
 
     /**
-     * Creates a {@link Condition} to check if a value is smaller or equal to the given value.
+     * Creates a {@link Condition} to hasValue if a value is smaller or equal to the given value.
      * This condition produces `field <= 123`.
      *
      * @param field a field to search through.

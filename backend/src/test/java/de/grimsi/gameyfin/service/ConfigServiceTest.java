@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.service;
 
+import de.grimsi.gameyfin.config.properties.ConfigKey;
 import de.grimsi.gameyfin.entities.ConfigProperty;
 import de.grimsi.gameyfin.repositories.ConfigRepository;
 import org.jeasy.random.EasyRandom;
@@ -29,21 +30,31 @@ class ConfigServiceTest {
     private final EasyRandom easyRandom = new EasyRandom();
 
     @Test
-    void check_Present() {
+    void hasValue_PresentNotEmpty() {
         ConfigProperty c = randomConfigProperty(String.class);
 
         when(configRepository.findById(eq(c.getKey()))).thenReturn(Optional.of(c));
 
-        assertThat(target.check(c.getKey())).isTrue();
+        assertThat(target.hasValue(ConfigKey.valueOf(c.getKey()))).isTrue();
     }
 
     @Test
-    void check_NotPresent() {
-        String key = easyRandom.nextObject(String.class);
+    void hasValue_PresentEmpty() {
+        ConfigProperty c = randomConfigProperty(String.class);
+        c.setValue("");
 
-        when(configRepository.findById(eq(key))).thenReturn(Optional.empty());
+        when(configRepository.findById(eq(c.getKey()))).thenReturn(Optional.of(c));
 
-        assertThat(target.check(key)).isFalse();
+        assertThat(target.hasValue(ConfigKey.valueOf(c.getKey()))).isFalse();
+    }
+
+    @Test
+    void hasValue_NotPresent() {
+        ConfigKey key = easyRandom.nextObject(ConfigKey.class);
+
+        when(configRepository.findById(eq(key.name()))).thenReturn(Optional.empty());
+
+        assertThat(target.hasValue(key)).isFalse();
     }
 
     @Test
@@ -52,7 +63,7 @@ class ConfigServiceTest {
 
         when(configRepository.findById(c.getKey())).thenReturn(Optional.of(c));
 
-        String result = target.read(c.getKey(), String.class);
+        String result = target.read(ConfigKey.valueOf(c.getKey()), String.class);
 
         assertThat(result.getClass()).isEqualTo(String.class);
         assertThat(result).isEqualTo(c.getValue());
@@ -64,7 +75,7 @@ class ConfigServiceTest {
 
         when(configRepository.findById(c.getKey())).thenReturn(Optional.of(c));
 
-        assertThrows(ClassCastException.class, () -> target.read(c.getKey(), Integer.class));
+        assertThrows(ClassCastException.class, () -> target.read(ConfigKey.valueOf(c.getKey()), Integer.class));
     }
 
     @Test
@@ -73,7 +84,7 @@ class ConfigServiceTest {
 
         when(configRepository.findById(c.getKey())).thenReturn(Optional.of(c));
 
-        String result = target.readString(c.getKey());
+        String result = target.readString(ConfigKey.valueOf(c.getKey()));
 
         assertThat(result.getClass()).isEqualTo(String.class);
         assertThat(result).isEqualTo(c.getValue());
@@ -85,10 +96,10 @@ class ConfigServiceTest {
 
         when(configRepository.findById(c.getKey())).thenReturn(Optional.of(c));
 
-        Integer result = target.readInt(c.getKey());
+        Integer result = target.readInt(ConfigKey.valueOf(c.getKey()));
 
         assertThat(result.getClass()).isEqualTo(Integer.class);
-        assertThat(result).isEqualTo(c.getValue());
+        assertThat(result).isEqualTo(Integer.valueOf(c.getValue()));
     }
 
     @Test
@@ -97,10 +108,10 @@ class ConfigServiceTest {
 
         when(configRepository.findById(c.getKey())).thenReturn(Optional.of(c));
 
-        Boolean result = target.readBool(c.getKey());
+        Boolean result = target.readBool(ConfigKey.valueOf(c.getKey()));
 
         assertThat(result.getClass()).isEqualTo(Boolean.class);
-        assertThat(result).isEqualTo(c.getValue());
+        assertThat(result).isEqualTo(Boolean.valueOf(c.getValue()));
     }
 
     @Test
@@ -109,18 +120,18 @@ class ConfigServiceTest {
 
         when(configRepository.findById(c.getKey())).thenReturn(Optional.of(c));
 
-        Serializable result = target.getType(c.getKey());
+        Serializable result = target.getType(ConfigKey.valueOf(c.getKey()));
 
         assertThat(result).isEqualTo(String.class);
     }
- 
+
     @Test
     void write() {
         ConfigProperty c = randomConfigProperty(String.class);
 
         when(configRepository.save(eq(c))).thenReturn(c);
 
-        ConfigProperty result = target.write(c.getKey(), c.getValue());
+        ConfigProperty result = target.write(ConfigKey.valueOf(c.getKey()), c.getValue());
 
         verify(configRepository, times(1)).save(eq(c));
         assertThat(result).isEqualTo(c);
@@ -128,8 +139,8 @@ class ConfigServiceTest {
 
     private ConfigProperty randomConfigProperty(Class<? extends Serializable> type) {
         return ConfigProperty.builder()
-                .key(easyRandom.nextObject(String.class))
-                .value(easyRandom.nextObject(type))
+                .key(easyRandom.nextObject(ConfigKey.class).name())
+                .value(easyRandom.nextObject(type).toString())
                 .type(type)
                 .build();
     }

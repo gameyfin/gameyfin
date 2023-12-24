@@ -1,7 +1,9 @@
 package de.grimsi.gameyfin.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.*;
 
 import java.io.Serializable;
@@ -14,11 +16,14 @@ import java.util.Objects;
 @ToString
 @AllArgsConstructor
 @RequiredArgsConstructor
+@Table(name = "gameyfin_config")
 public class ConfigProperty {
     @Id
+    @Column(name = "config_key") //"key" is a reserved word in H2
     private String key;
 
-    private Serializable value;
+    @Column(name = "config_value") //"value" is a reserved word in H2
+    private String value;
 
     private Class<? extends Serializable> type;
 

@@ -31,7 +31,7 @@ public class FilenameUtil {
 
         // Sort in descending length, so for example "windows" gets checked before "win"
         FilenameUtil.possibleGameFileSuffixes = gameyfinProperties.fileSuffixes();
-        possibleGameFileSuffixes.sort((s1,s2) -> Integer.compare(s2.length(), s1.length()));
+        possibleGameFileSuffixes.sort((s1, s2) -> Integer.compare(s2.length(), s1.length()));
     }
 
     public static String getFilenameWithoutExtension(Path p) {
@@ -50,20 +50,20 @@ public class FilenameUtil {
     public static boolean hasGameArchiveExtension(Path p) {
         return possibleGameFileExtensions.contains(FilenameUtils.getExtension(p.getFileName().toString()));
     }
-    
+
     public static String getFilenameWithoutAdditions(Path p) {
         String name = getFilenameWithoutExtension(p).toLowerCase();
-        for(String suffix : possibleGameFileSuffixes) {
+        for (String suffix : possibleGameFileSuffixes) {
             name = name.replace(suffix, "");
         }
         name = removePattern(name, versionPattern);
         name = removePattern(name, trailingNoisePattern);
         name = removePattern(name, headingNoisePattern);
-        
-        // sanity check to never return an empty name
+
+        // sanity hasValue to never return an empty name
         return name.isBlank() ? getFilenameWithoutExtension(p) : name;
     }
-    
+
     public static String removePattern(String string, Pattern pattern) {
         Matcher matcher = pattern.matcher(string);
         if (matcher.find()) {
