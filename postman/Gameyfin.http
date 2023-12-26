@@ -1,0 +1,17 @@
+### List games
+GET {{host}}/v1/games
+Accept: application/json
+
+### Setup application
+POST {{host}}/v1/setup/complete
+Content-Type: application/json
+
+{
+  "igdbClientId": "abc",
+  "igdbClientSecret": "def",
+  "gameyfinAdminUsername": "admin",
+  "gameyfinAdminPassword": "password",
+  "gameyfinLibraryPaths": [
+    "D:\\"
+  ]
+}

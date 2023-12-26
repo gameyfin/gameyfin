@@ -1,0 +1,61 @@
+# IGDB
+
+###
+# @name Get Access Token
+POST https://id.twitch.tv/oauth2/token?
+    client_id={{twitch_client_id}}&
+    client_secret={{twitch_client_secret}}&
+    grant_type=client_credentials
+Authorization: Bearer {{twitch_access_token}}
+
+> {%
+    // TODO: migrate to HTTP Client Response handler API
+    // let token = pm.response.json().access_token;
+    
+    // pm.collectionVariables.set("twitch_access_token", token);
+%}
+
+###
+# @name IGDB - Search
+POST https://api.igdb.com/v4/search
+Authorization: Bearer {{twitch_access_token}}
+Content-Type: text/plain
+
+fields name; search "Rainbow Six Siege"; limit 10;
+
+###
+# @name IGDB - Games
+POST https://api.igdb.com/v4/games
+Authorization: Bearer {{twitch_access_token}}
+Content-Type: text/plain
+
+fields name; search "Rainbow Six Siege"; limit 50;
+
+###
+# @name IGDB - Release dates
+POST https://api.igdb.com/v4/release_dates
+Authorization: Bearer {{twitch_access_token}}
+Content-Type: text/plain
+
+fields *; where id = 367573;
+
+###
+# @name Gameyfin - Find game by title
+GET localhost:8080/dev/findGameByTitle/Rainbow Six Siege
+Authorization: Bearer {{twitch_access_token}}
+
+###
+# @name IGDB - Tags
+POST https://api.igdb.com/v4/tags
+Authorization: Bearer {{twitch_access_token}}
+Content-Type: text/plain
+
+fields *; where id = 268435469;
+
+###
+# @name IGDB - Themes
+POST https://api.igdb.com/v4/themes
+Authorization: Bearer {{twitch_access_token}}
+Content-Type: text/plain
+
+fields *; limit 100;

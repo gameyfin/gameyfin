@@ -5,15 +5,16 @@ import de.grimsi.gameyfin.config.WebClientConfig;
 import de.grimsi.gameyfin.config.properties.GameyfinProperties;
 import de.grimsi.gameyfin.dto.AutocompleteSuggestionDto;
 import de.grimsi.gameyfin.entities.Platform;
+import de.grimsi.gameyfin.events.SetupCompletedEvent;
 import de.grimsi.gameyfin.igdb.dto.TwitchOAuthTokenDto;
 import de.grimsi.gameyfin.mapper.GameMapper;
 import de.grimsi.gameyfin.mapper.PlatformMapper;
 import io.github.resilience4j.reactor.bulkhead.operator.BulkheadOperator;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -54,7 +55,7 @@ public class IgdbWrapper {
 
     private TwitchOAuthTokenDto accessToken;
 
-    @PostConstruct
+    @EventListener(SetupCompletedEvent.class)
     public void init() {
         twitchApiClient = webclientBuilder.build();
         authenticate();

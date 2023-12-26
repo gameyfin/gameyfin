@@ -3,10 +3,7 @@ package de.grimsi.gameyfin.rest;
 import de.grimsi.gameyfin.dto.SetupDto;
 import de.grimsi.gameyfin.service.SetupService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/setup")
@@ -21,7 +18,7 @@ public class SetupController {
     }
 
     @PostMapping("/complete")
-    public void completeSetup(SetupDto setupDto) {
+    public void completeSetup(@RequestBody SetupDto setupDto) {
         setupService.completeSetup(setupDto);
     }
 }
