@@ -13,4 +13,6 @@ COPY ${JAR_FILE} /opt/gameyfin/gameyfin.jar
 
 WORKDIR /opt/gameyfin
 
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "gameyfin.jar"]
