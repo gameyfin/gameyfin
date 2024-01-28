@@ -50,7 +50,7 @@ jobs:
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=grimsi_gameyfin
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gameyfin-${{ steps.project.outputs.GAMEYFIN_VERSION }}.jar
           path: backend/target/gameyfin-*.jar
