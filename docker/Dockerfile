@@ -1,8 +1,11 @@
 FROM eclipse-temurin:21-jre-alpine
 
 ENV GAMEYFIN_SOURCES=/opt/gameyfin-library
+ENV USER=gameyfin
 
-RUN groupadd gameyfin && useradd gameyfin -g gameyfin && \
+
+RUN addgroup gameyfin && \
+    adduser --disabled-password --gecos "" --ingroup "$USER" --no-create-home "$USER" && \
     mkdir -p /opt/gameyfin ${GAMEYFIN_SOURCES} && \
     chown -R gameyfin:gameyfin /opt/gameyfin ${GAMEYFIN_SOURCES}
 
