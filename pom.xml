@@ -4,7 +4,7 @@
 
     <groupId>de.grimsi</groupId>
     <artifactId>gameyfin</artifactId>
-    <version>1.4.5-SNAPSHOT</version>
+    <version>1.4.5</version>
     <name>gameyfin</name>
     <description>gameyfin</description>
 
@@ -26,7 +26,7 @@
         <connection>scm:git:https://github.com/grimsi/gameyfin.git</connection>
         <url>scm:git:https://github.com/grimsi/gameyfin.git</url>
         <developerConnection>scm:git:https://github.com/grimsi/gameyfin.git</developerConnection>
-      <tag>HEAD</tag>
+      <tag>v1.4.5</tag>
   </scm>
   
     <properties>
