@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-ubi9-minimal
+FROM eclipse-temurin:21-jre-alpine
 
 ENV GAMEYFIN_SOURCES=/opt/gameyfin-library
 
@@ -12,5 +12,7 @@ ARG JAR_FILE=./backend/target/*.jar
 COPY ${JAR_FILE} /opt/gameyfin/gameyfin.jar
 
 WORKDIR /opt/gameyfin
+
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "gameyfin.jar"]

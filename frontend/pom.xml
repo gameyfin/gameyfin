@@ -12,7 +12,7 @@
   <packaging>jar</packaging>
 
   <properties>
-    <frontend-maven-plugin.version>1.14.2</frontend-maven-plugin.version>
+    <frontend-maven-plugin.version>1.15.0</frontend-maven-plugin.version>
   </properties>
 
   <build>
