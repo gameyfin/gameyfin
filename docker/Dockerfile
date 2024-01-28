@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-ubi9-minimal
+FROM eclipse-temurin:21-jre-alpine
 
 ENV GAMEYFIN_SOURCES=/opt/gameyfin-library
 
