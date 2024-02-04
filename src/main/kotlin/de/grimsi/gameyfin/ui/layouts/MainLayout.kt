@@ -31,7 +31,7 @@ class MainLayout(@field:Transient private val authContext: AuthenticationContext
                         setWidthFull()
                         alignItems = FlexComponent.Alignment.CENTER
 
-                        image(PublicResources.GAMEYFIN_LOGO_WHITE_BORDER.path) {
+                        image(PublicResources.GAMEYFIN_LOGO.path) {
                             setWidthFull()
                             height = "40px"
                             className = "header-logo"

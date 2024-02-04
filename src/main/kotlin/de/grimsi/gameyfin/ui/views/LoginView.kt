@@ -26,7 +26,7 @@ class LoginView : VerticalLayout(), BeforeEnterObserver {
 
         image {
             height = "100px"
-            src = PublicResources.GAMEYFIN_LOGO_WHITE_BORDER.path
+            src = PublicResources.GAMEYFIN_LOGO.path
             setAlt("Gameyfin")
         }
 
@@ -39,9 +39,10 @@ class LoginView : VerticalLayout(), BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent?) {
         if (event != null) {
             if (event.location
-                            .queryParameters
-                            .parameters
-                            .containsKey("error")) {
+                    .queryParameters
+                    .parameters
+                    .containsKey("error")
+            ) {
                 login.isError = true
             }
         }

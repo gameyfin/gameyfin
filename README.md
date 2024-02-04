@@ -1,11 +1,11 @@
 <div align="center">
   <h2>Note: v2 is in a very early stage</h2>
   <h3>Most features are missing, existing features will probably break!</h3>
-  
-  </br></br></br>
-  <img src="assets/Gameyfin_Logo_White_Border.svg" height="128px" width="auto" alt="Gameyfin Logo">
+
+</br></br></br>
+<img src="assets/Banner.svg" width="auto" alt="Gameyfin Logo">
   <h1>Gameyfin</h1>
-  <p align="center">A simple game library manager. Now even better</p>
+  <p align="center">Manage your video games.</p>
 </div>
 
 # Overview
@@ -36,6 +36,7 @@ Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 `Work in progress`
 
 Gameyfin v2 is written in Kotlin and uses the following libraries/frameworks:
+
 * Spring Boot 3 for the backend
 * Vaadin for the frontend
 * PF4J for the plugin system
