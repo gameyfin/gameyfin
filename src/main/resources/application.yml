@@ -1,0 +1,5 @@
+vaadin.whitelisted-packages:
+  - com.vaadin
+  - org.vaadin
+  - dev.hilla
+  - com.flowingcode

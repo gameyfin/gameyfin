@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 414">
+    <defs>
+        <style>.cls-1{fill:#fff;}</style>
+    </defs>
+    <title>Element 11</title>
+    <g>
+        <g>
+            <polygon class="cls-1" points="234 60.48 234 85.23 256 54.32 234 60.48"/>
+            <polygon class="cls-1" points="450 0 324 35.28 253.125 118.125 450 63 450 0"/>
+            <polygon class="cls-1" points="234 348.48 306 328.32 306 184.32 450 144 450 90 234 150.48 234 348.48"/>
+            <polygon class="cls-1" points="72 177.84 192 144.24 216 110.52 216 65.52 0 126 0 414 72 312.84 72 177.84"/>
+            <polygon class="cls-1"
+                     points="144 245.68 144 301.68 81 319.32 0 414 216 353.52 216 209.52 162 224.64 144 245.68"/>
+        </g>
+    </g>
+</svg>
