@@ -3,7 +3,7 @@
   <h3>Most features are missing, existing features will probably break!</h3>
 
 </br></br></br>
-<img src="assets/Banner.svg" width="auto" alt="Gameyfin Logo">
+<img src="assets/v2/Banner.svg" width="auto" alt="Gameyfin Logo">
   <h1>Gameyfin</h1>
   <p align="center">Manage your video games.</p>
 </div>
