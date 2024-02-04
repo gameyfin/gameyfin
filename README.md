@@ -4,15 +4,15 @@
 
 </br></br></br>
 <img src="assets/v2/Banner.svg" width="auto" alt="Gameyfin Logo">
-  <h1>Gameyfin</h1>
+<h2>Gameyfin</h2>
   <p align="center">Manage your video games.</p>
 </div>
 
-# Overview
+## Overview
 
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 
-## Features
+### Features
 
 ✨ Automatically scans and indexes your game libraries  
 ⬇️ Access your library via your web browser & download games directly from there  
@@ -23,15 +23,15 @@ Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 🔌 Easily expandable with plugins  
 🔒 Integrates into your SSO solution via OAuth2 / OpenID Connect
 
-## Screenshots
+### Screenshots
 
 `Work in progress`
 
-## Installation
+### Installation
 
 `Work in progress`
 
-## Contribute to Gameyfin
+### Contribute to Gameyfin
 
 `Work in progress`
 
