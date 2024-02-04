@@ -1,9 +1,0 @@
-@use 'sass:map';
-@use '@angular/material' as mat;
-@import 'src/app/themes/light-theme';
-
-a {
-  $config: mat.get-color-config($light-theme);
-  $primary-palette: map.get($config, 'primary');
-  color: mat.get-color-from-palette($primary-palette, 500);
-}

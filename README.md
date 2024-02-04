@@ -1,46 +1,43 @@
 <div align="center">
+  <h2>Note: v2 is in a very early stage</h2>
+  <h3>Most features are missing, existing features will probably break!</h3>
+  
+  </br></br></br>
   <img src="assets/Gameyfin_Logo_White_Border.svg" height="128px" width="auto" alt="Gameyfin Logo">
   <h1>Gameyfin</h1>
-  <p align="center">A simple game library manager.</p>
+  <p align="center">A simple game library manager. Now even better</p>
 </div>
 
 # Overview
 
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 
-## Video
-
-Click [this link](https://youtu.be/BSaccEm0tpo) to watch how to install and set up Gameyfin on your machine.
-
 ## Features
 
-* Automatically scans your game library folder and downloads additional metadata from IGDB
-* Access your library via your Web-Browser
-* Download games directly from your browser
-* LAN-friendly (everything is cached locally)
-* Native Docker support (alternatively it's only one .jar file to run on bare metal)
-* Light and dark theme
+✨ Automatically scans and indexes your game libraries  
+⬇️ Access your library via your web browser & download games directly from there  
+👥 Share your library with friends & family  
+⚛️ LAN-friendly (everything is cached locally)  
+🐋 Runs in a container or as single <binary file / JAR file> on bare metal  
+🌈 Themes (including light and dark mode)  
+🔌 Easily expandable with plugins  
+🔒 Integrates into your SSO solution via OAuth2 / OpenID Connect
 
-## Preview
+## Screenshots
 
-https://user-images.githubusercontent.com/9295182/197277953-d69464a4-d280-407b-9274-ae62e6917981.mp4
+`Work in progress`
 
 ## Installation
 
-### General
+`Work in progress`
 
-Since Gameyfin loads information from IGDB, you need to register yourself there. Follow [this guide](https://api-docs.igdb.com/#account-creation).
+## Contribute to Gameyfin
 
-### Docker
+`Work in progress`
 
-1. Download the `docker-compose.example.yml` file from this repository and rename it to just `docker-compose.yml`
-2. Edit the configuration values to your liking
-3. Run `docker-compose up -d`
-
-### Bare metal
-
-1. Make sure you have a JRE or JDK with version 18 or greater installed
-2. Download the latest `gameyfin.jar` and `gameyfin.properties` file from the releases page
-3. Edit the config options in the `gameyfin.properties` file
-4. Use the following command to start Gameyfin: `java -jar gameyfin.jar`
-5. Open the address of your Gameyfin host in your browser, Gameyfin runs under port 8080 by default
+Gameyfin v2 is written in Kotlin and uses the following libraries/frameworks:
+* Spring Boot 3 for the backend
+* Vaadin for the frontend
+* PF4J for the plugin system
+* H2 database for persistence
+* Micrometer and Prometheus for monitoring
