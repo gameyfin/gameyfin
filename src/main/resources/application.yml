@@ -3,3 +3,9 @@ vaadin.whitelisted-packages:
   - org.vaadin
   - dev.hilla
   - com.flowingcode
+
+spring:
+  jpa:
+    properties:
+      hibernate:
+        globally_quoted_identifiers: true

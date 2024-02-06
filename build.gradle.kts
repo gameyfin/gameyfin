@@ -9,6 +9,10 @@ plugins {
     kotlin("plugin.jpa") version "1.9.22"
 }
 
+allOpen {
+    annotations("javax.persistence.Entity", "javax.persistence.MappedSuperclass", "javax.persistence.Embedabble")
+}
+
 group = "de.grimsi"
 version = "2.0.0-SNAPSHOT"
 
@@ -33,18 +37,26 @@ repositories {
 extra["vaadinVersion"] = "24.3.3"
 
 dependencies {
+    // Sprint Boot
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
+    // Logging
+    implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
+
+    // Persistence
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.7")
+
     // Frontend
-    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.vaadin:vaadin-spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.github.mvysny.karibudsl:karibu-dsl-v23:2.1.0")
     implementation("com.github.mvysny.karibu-tools:karibu-tools-23:0.19")
     implementation("com.flowingcode.addons:font-awesome-iron-iconset:5.2.2")
+    implementation("com.vaadin.componentfactory:autocomplete:24.1.7")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // Development

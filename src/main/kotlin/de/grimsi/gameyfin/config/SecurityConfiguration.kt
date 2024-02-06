@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.security
+package de.grimsi.gameyfin.config
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity
 import de.grimsi.gameyfin.ui.views.LoginView
@@ -8,10 +8,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer
-import org.springframework.security.core.userdetails.User
-import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.provisioning.InMemoryUserDetailsManager
-import org.springframework.security.provisioning.UserDetailsManager
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 
 
@@ -39,21 +37,8 @@ class SecurityConfiguration : VaadinWebSecurity() {
         super.configure(web)
     }
 
-    /**
-     * TODO: Just for testing
-     */
     @Bean
-    fun userDetailsService(): UserDetailsManager {
-        val user: UserDetails =
-                User.withUsername("user")
-                        .password("{noop}user")
-                        .roles("USER")
-                        .build()
-        val admin: UserDetails =
-                User.withUsername("admin")
-                        .password("{noop}admin")
-                        .roles("ADMIN")
-                        .build()
-        return InMemoryUserDetailsManager(user, admin)
+    fun passwordEncoder(): PasswordEncoder {
+        return BCryptPasswordEncoder()
     }
 }

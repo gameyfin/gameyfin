@@ -45,4 +45,4 @@ out/
 /backend/src/main/resources/static/
 /docker/docker-compose.yml
 /.gameyfin/
-/frontend/
+/frontend/generated

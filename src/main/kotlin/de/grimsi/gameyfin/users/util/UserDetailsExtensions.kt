@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.security
+package de.grimsi.gameyfin.users.util
 
 import org.springframework.security.core.userdetails.UserDetails
 
