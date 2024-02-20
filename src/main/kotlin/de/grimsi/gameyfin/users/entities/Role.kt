@@ -13,6 +13,6 @@ class Role(
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
-    @ManyToMany(mappedBy = "roles")
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)
     var users: Collection<User> = emptyList()
 )

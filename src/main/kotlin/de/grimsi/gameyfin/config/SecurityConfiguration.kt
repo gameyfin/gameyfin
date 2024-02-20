@@ -1,7 +1,7 @@
 package de.grimsi.gameyfin.config
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity
-import de.grimsi.gameyfin.ui.views.LoginView
+import de.grimsi.gameyfin.views.LoginView
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity

@@ -8,5 +8,5 @@ import org.springframework.boot.runApplication
 class GameyfinApplication
 
 fun main(args: Array<String>) {
-	runApplication<GameyfinApplication>(*args)
+    runApplication<GameyfinApplication>(*args)
 }

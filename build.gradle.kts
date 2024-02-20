@@ -7,6 +7,8 @@ plugins {
     kotlin("jvm") version "1.9.22"
     kotlin("plugin.spring") version "1.9.22"
     kotlin("plugin.jpa") version "1.9.22"
+    id("io.freefair.lombok") version "8.4"
+    java
 }
 
 allOpen {
@@ -27,6 +29,7 @@ configurations {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven {
         name = "Vaadin Addons"
@@ -55,9 +58,12 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.github.mvysny.karibudsl:karibu-dsl-v23:2.1.0")
     implementation("com.github.mvysny.karibu-tools:karibu-tools-23:0.19")
-    implementation("com.flowingcode.addons:font-awesome-iron-iconset:5.2.2")
-    implementation("com.vaadin.componentfactory:autocomplete:24.1.7")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // Vaadin Add-Ons
+    implementation("com.flowingcode.addons:font-awesome-iron-iconset:5.2.2")
+    implementation("in.virit:viritin:2.7.0")
+    implementation("io.sunshower.aire:aire-wizard:1.0.17.Final")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
@@ -66,6 +72,9 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
+
+    // Fix compilation error
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.3")
 }
 
 dependencyManagement {
