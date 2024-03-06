@@ -26,17 +26,21 @@ class SetupDataLoader(
         log.info { "We will now set up some data..." }
 
         setupRoles()
-        //setupUser()
+        setupUsers()
 
         log.info { "Setup completed..." }
     }
 
-    fun setupUser() {
+    fun setupUsers() {
         val superadmin = User("admin")
         superadmin.password = "admin"
         superadmin.roles = listOf(roleRepository.findByRolename(Roles.SUPERADMIN.roleName)!!)
-
         userService.registerUser(superadmin)
+
+        val user = User("user")
+        user.password = "user"
+        user.roles = listOf(roleRepository.findByRolename(Roles.USER.roleName)!!)
+        userService.registerUser(user)
     }
 
     fun setupRoles() {

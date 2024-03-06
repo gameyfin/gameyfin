@@ -1,14 +1,28 @@
+logging.level:
+  org.atmosphere: warn
+
+server:
+  port: 8080
+  servlet:
+    session:
+      tracking-modes: cookie
+
+spring:
+  # Workaround for https://github.dev/hilla/issues/842
+  devtools.restart.additional-exclude: dev/hilla/openapi.json
+  jpa:
+    defer-datasource-initialization: true
+  mustache:
+    check-template-location: false
+  sql.init.mode: always
+  application:
+    name: Gameyfin
+
 vaadin:
+  launch-browser: true
+  # To improve the performance during development.
+  # For more information https://vaadin.com/docs/flow/spring/tutorial-spring-configuration.html#special-configuration-parameters
   whitelisted-packages:
     - com.vaadin
     - org.vaadin
     - dev.hilla
-    - com.flowingcode
-  frontend:
-    hotdeploy: false
-
-spring:
-  jpa:
-    properties:
-      hibernate:
-        globally_quoted_identifiers: true

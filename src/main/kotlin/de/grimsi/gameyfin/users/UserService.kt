@@ -31,7 +31,7 @@ class UserService(
             true,
             true,
             true,
-            getAuthorities(user.roles)
+            toAuthorities(user.roles)
         )
     }
 
@@ -40,7 +40,7 @@ class UserService(
         return userRepository.save(user)
     }
 
-    private fun getAuthorities(roles: Collection<Role>): List<GrantedAuthority> {
+    private fun toAuthorities(roles: Collection<Role>): List<GrantedAuthority> {
         return roles.map { r -> SimpleGrantedAuthority(r.rolename) }
     }
 }
