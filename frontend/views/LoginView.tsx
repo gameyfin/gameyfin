@@ -1,11 +1,14 @@
 import {useAuth} from "Frontend/util/auth";
 import {useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {Button, Card, Input, Typography} from "@material-tailwind/react";
+import {Alert, Button, Card, Input, Spinner, Typography} from "@material-tailwind/react";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {faCircleInfo, faCircleXmark} from "@fortawesome/free-solid-svg-icons";
 
 export default function LoginView() {
     const {state, login} = useAuth();
-    const [hasError, setError] = useState<boolean>();
+    const [hasError, setError] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [username, setUsername] = useState<string>();
     const [password, setPassword] = useState<string>();
     const [url, setUrl] = useState<string>();
@@ -25,18 +28,26 @@ export default function LoginView() {
                     src="/images/Logo.svg"
                 />
                 <div className="mt-8 mb-2 w-80 max-w-screen-lg sm:w-96">
+                    { hasError &&
+                        <Alert
+                            icon={ <FontAwesomeIcon icon={faCircleXmark}/> }
+                            className="mb-4 bg-red-500"
+                        >
+                            Wrong username and/or password
+                        </Alert> }
                     <form
                         className="mb-1 flex flex-col gap-6"
                         onSubmit={async e => {
                             e.preventDefault();
                             if (typeof username === "string" && password != null) {
+                                setLoading(true);
                                 const {defaultUrl, error, redirectUrl} = await login(username, password);
                                 if (error) {
                                     setError(true);
-                                    alert("Wrong username and/or password!");
                                 } else {
                                     setUrl(redirectUrl ?? defaultUrl ?? '/');
                                 }
+                                setLoading(false);
                             }
                         }}
                     >
@@ -85,9 +96,10 @@ export default function LoginView() {
                             <Button
                                 type="submit"
                                 size="lg"
-                                className="w-28"
+                                className="w-28 h-12 flex justify-center"
+                                disabled={loading}
                             >
-                                Log in
+                                {loading ? <Spinner className="h-6 w-6"/> : "Log in"}
                             </Button>
                         </div>
                     </form>
