@@ -1,6 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
 import {useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {Button, Card, Input, Typography} from "@material-tailwind/react";
 
 export default function LoginView() {
@@ -40,13 +40,19 @@ export default function LoginView() {
                             }
                         }}
                     >
-                        <Typography variant="h6" color="blue-gray" className="-mb-3">
-                            Username
-                        </Typography>
+                        <label htmlFor="username">
+                            <Typography variant="h6" color="blue-gray" className="-mb-3">
+                                Username
+                            </Typography>
+                        </label>
                         <Input
                             onChange={(event) => {
                                 setUsername(event.target.value);
                             }}
+                            id="username"
+                            type="text"
+                            autoComplete="username"
+                            placeholder=""
                             size="lg"
                             className=" !border-t-blue-gray-200 focus:!border-t-gray-900"
                             labelProps={{
@@ -54,14 +60,19 @@ export default function LoginView() {
                             }}
                             crossOrigin="" //TODO: see https://github.com/creativetimofficial/material-tailwind/issues/427
                         />
-                        <Typography variant="h6" color="blue-gray" className="-mb-3">
-                            Password
-                        </Typography>
+                        <label htmlFor="current-password">
+                            <Typography variant="h6" color="blue-gray" className="-mb-3">
+                                Password
+                            </Typography>
+                        </label>
                         <Input
                             onChange={(event) => {
                                 setPassword(event.target.value);
                             }}
+                            id="current-password"
                             type="password"
+                            autoComplete="current-password"
+                            placeholder=""
                             size="lg"
                             className=" !border-t-blue-gray-200 focus:!border-t-gray-900"
                             labelProps={{
@@ -69,12 +80,16 @@ export default function LoginView() {
                             }}
                             crossOrigin="" //TODO: see https://github.com/creativetimofficial/material-tailwind/issues/427
                         />
-                        <Button
-                            type="submit"
-                            size="lg"
-                            fullWidth>
-                            Log in
-                        </Button>
+                        <div className="flex justify-between items-center">
+                            <Link to="#">Forgot password?</Link>
+                            <Button
+                                type="submit"
+                                size="lg"
+                                className="w-28"
+                            >
+                                Log in
+                            </Button>
+                        </div>
                     </form>
                 </div>
             </Card>

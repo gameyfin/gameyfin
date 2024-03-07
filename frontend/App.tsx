@@ -8,11 +8,11 @@ import React from 'react';
 export default function App() {
     return (
         <React.StrictMode>
-            <ThemeProvider>
-                <AuthProvider>
+            <AuthProvider>
+                <ThemeProvider>
                     <RouterProvider router={router}/>
-                </AuthProvider>
-            </ThemeProvider>
+                </ThemeProvider>
+            </AuthProvider>
         </React.StrictMode>
     );
 }
