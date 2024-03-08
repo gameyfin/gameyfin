@@ -1,6 +1,6 @@
 {
-  "name": "no-name",
-  "license": "UNLICENSED",
+  "name": "Gameyfin",
+  "version": "2.0.0-ALPHA",
   "type": "module",
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.1",

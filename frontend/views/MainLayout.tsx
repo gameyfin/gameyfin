@@ -1,11 +1,9 @@
-import {AppLayout} from '@hilla/react-components/AppLayout.js';
-import {Avatar} from '@hilla/react-components/Avatar.js';
-import {Button} from '@hilla/react-components/Button.js';
-import {DrawerToggle} from '@hilla/react-components/DrawerToggle.js';
 import {useAuth} from 'Frontend/util/auth.js';
 import {useRouteMetadata} from 'Frontend/util/routing.js';
 import {useEffect} from 'react';
-import {Outlet} from 'react-router-dom';
+import {Navbar} from "@material-tailwind/react";
+import ProfileMenu from "Frontend/components/ProfileMenu";
+import {Outlet} from "react-router-dom";
 
 const navLinkClasses = ({isActive}: any) => {
     return `block rounded-m p-s ${isActive ? 'bg-primary-10 text-primary' : 'text-body'}`;
@@ -18,35 +16,33 @@ export default function MainLayout() {
     }, [currentTitle]);
 
     const {state, logout} = useAuth();
-    return (
-        <AppLayout primarySection="drawer">
-            <div slot="drawer" className="flex flex-col justify-between h-full p-m">
-                <header className="flex flex-col gap-m">
-                    <h1 className="text-l m-0">My App</h1>
-                    <nav>
-                    </nav>
-                </header>
-                <footer className="flex flex-col gap-s">
-                    {state.user ? (
-                        <>
-                            <div className="flex items-center gap-s">
-                                <Avatar theme="xsmall" name={state.user.name}/>
-                                {state.user.name}
-                            </div>
-                            <Button onClick={async () => logout()}>Sign out</Button>
-                        </>
-                    ) : (
-                        <a href="/login">Sign in</a>
-                    )}
-                </footer>
-            </div>
 
-            <DrawerToggle slot="navbar" aria-label="Menu toggle"></DrawerToggle>
-            <h2 slot="navbar" className="text-l m-0">
-                {currentTitle}
-            </h2>
+    return (
+        <>
+            <Navbar className="sticky top-0 z-10 h-max max-w-full rounded-none px-4 py-2">
+                <div className="flex items-center justify-end text-blue-gray-900">
+                    <img
+                        className="absolute w-full content-center h-8"
+                        src="/images/Logo.svg"
+                        alt="Gameyfin"
+                    />
+                    <ProfileMenu/>
+                </div>
+            </Navbar>
 
             <Outlet/>
-        </AppLayout>
+        </>
     );
 }
+
+/*<footer
+    className="flex flex-row w-full items-center justify-between px-10 py-4">
+    <Typography color="blue-gray">
+        Gameyfin v{packageJson.version}
+    </Typography>
+    <Typography color="blue-gray">
+        &copy; {(new Date()).getFullYear()} <a
+        href="https://github.com/gameyfin/gameyfin/graphs/contributors" target="_blank">Gameyfin
+        contributors</a>
+    </Typography>
+</footer>*/
