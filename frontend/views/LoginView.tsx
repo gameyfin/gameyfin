@@ -2,8 +2,7 @@ import {useAuth} from "Frontend/util/auth";
 import {useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {Alert, Button, Card, Input, Spinner, Typography} from "@material-tailwind/react";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {faCircleInfo, faCircleXmark} from "@fortawesome/free-solid-svg-icons";
+import {XCircle} from "@phosphor-icons/react";
 
 export default function LoginView() {
     const {state, login} = useAuth();
@@ -28,13 +27,13 @@ export default function LoginView() {
                     src="/images/Logo.svg"
                 />
                 <div className="mt-8 mb-2 w-80 max-w-screen-lg sm:w-96">
-                    { hasError &&
+                    {hasError &&
                         <Alert
-                            icon={ <FontAwesomeIcon icon={faCircleXmark}/> }
+                            icon={<XCircle color="white" weight="fill"/>}
                             className="mb-4 bg-red-500"
                         >
                             Wrong username and/or password
-                        </Alert> }
+                        </Alert>}
                     <form
                         className="mb-1 flex flex-col gap-6"
                         onSubmit={async e => {

@@ -3,16 +3,19 @@ import {AuthProvider} from 'Frontend/util/auth.js';
 import {RouterProvider} from 'react-router-dom';
 import "./main.css";
 import {ThemeProvider} from "@material-tailwind/react";
-import React from 'react';
+import {IconContext} from "@phosphor-icons/react";
+import {StrictMode} from "react";
 
 export default function App() {
     return (
-        <React.StrictMode>
+        <StrictMode>
             <AuthProvider>
                 <ThemeProvider>
-                    <RouterProvider router={router}/>
+                    <IconContext.Provider value={{size: 20}}>
+                        <RouterProvider router={router}/>
+                    </IconContext.Provider>
                 </ThemeProvider>
             </AuthProvider>
-        </React.StrictMode>
+        </StrictMode>
     );
 }

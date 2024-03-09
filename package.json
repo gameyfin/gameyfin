@@ -3,9 +3,6 @@
   "version": "2.0.0-ALPHA",
   "type": "module",
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.5.1",
-    "@fortawesome/free-solid-svg-icons": "^6.5.1",
-    "@fortawesome/react-fontawesome": "^0.2.0",
     "@hilla/form": "2.5.6",
     "@hilla/frontend": "2.5.6",
     "@hilla/generator-typescript-cli": "2.5.6",
@@ -22,6 +19,7 @@
     "@hilla/react-crud": "2.5.6",
     "@hilla/react-form": "2.5.6",
     "@material-tailwind/react": "^2.1.9",
+    "@phosphor-icons/react": "^2.0.15",
     "@polymer/polymer": "3.5.1",
     "@vaadin/bundles": "24.3.0",
     "@vaadin/common-frontend": "0.0.19",
@@ -84,9 +82,7 @@
     "@hilla/generator-typescript-plugin-backbone": "$@hilla/generator-typescript-plugin-backbone",
     "@hilla/generator-typescript-cli": "$@hilla/generator-typescript-cli",
     "@material-tailwind/react": "$@material-tailwind/react",
-    "@fortawesome/fontawesome-svg-core": "$@fortawesome/fontawesome-svg-core",
-    "@fortawesome/free-solid-svg-icons": "$@fortawesome/free-solid-svg-icons",
-    "@fortawesome/react-fontawesome": "$@fortawesome/react-fontawesome"
+    "@phosphor-icons/react": "$@phosphor-icons/react"
   },
   "vaadin": {
     "dependencies": {
@@ -130,6 +126,6 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "f9e182b004ea4d86a6ca514e8d956df5851830853b0a45b9e40615d51b7d2788"
+    "hash": "866532fc7368b3b6387e2dee804a0a2f82b8b5c94f00c0a5fa056b2bd6af0220"
   }
 }

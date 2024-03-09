@@ -16,7 +16,7 @@ class User(
     var id: Long? = null,
 
     @field:NotNull
-    var password: String? = null,
+    var password: String,
 
     @field:Nullable
     var email: String? = null,
@@ -33,5 +33,5 @@ class User(
         joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
         inverseJoinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")]
     )
-    var roles: Collection<Role> = emptyList()
+    var roles: Collection<Role>
 )

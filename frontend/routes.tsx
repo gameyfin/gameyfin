@@ -3,6 +3,7 @@ import {createBrowserRouter, RouteObject} from 'react-router-dom';
 import LoginView from "Frontend/views/LoginView";
 import MainLayout from "Frontend/views/MainLayout";
 import TestView from "Frontend/views/TestView";
+import SetupView from "Frontend/views/SetupView";
 
 export const routes = protectRoutes([
     {
@@ -15,6 +16,10 @@ export const routes = protectRoutes([
     {
         path: '/login',
         element: <LoginView/>
+    },
+    {
+        path: '/setup',
+        element: <SetupView/>
     }
 ]) as RouteObject[];
 
