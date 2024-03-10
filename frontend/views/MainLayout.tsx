@@ -1,21 +1,14 @@
-import {useAuth} from 'Frontend/util/auth.js';
 import {useRouteMetadata} from 'Frontend/util/routing.js';
 import {useEffect} from 'react';
 import {Navbar} from "@material-tailwind/react";
 import ProfileMenu from "Frontend/components/ProfileMenu";
 import {Outlet} from "react-router-dom";
 
-const navLinkClasses = ({isActive}: any) => {
-    return `block rounded-m p-s ${isActive ? 'bg-primary-10 text-primary' : 'text-body'}`;
-};
-
 export default function MainLayout() {
-    const currentTitle = useRouteMetadata()?.title ?? 'My App';
+    const currentTitle = `Gameyfin - ${useRouteMetadata()?.title}` ?? 'Gameyfin';
     useEffect(() => {
         document.title = currentTitle;
     }, [currentTitle]);
-
-    const {state, logout} = useAuth();
 
     return (
         <>

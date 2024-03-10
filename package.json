@@ -26,10 +26,12 @@
     "@vaadin/router": "1.7.5",
     "classnames": "^2.3.2",
     "construct-style-sheets-polyfill": "3.1.0",
+    "formik": "^2.4.5",
     "lit": "3.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.4.2"
+    "react-router-dom": "^6.4.2",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@lit-labs/react": "^1.1.0",
@@ -82,7 +84,9 @@
     "@hilla/generator-typescript-plugin-backbone": "$@hilla/generator-typescript-plugin-backbone",
     "@hilla/generator-typescript-cli": "$@hilla/generator-typescript-cli",
     "@material-tailwind/react": "$@material-tailwind/react",
-    "@phosphor-icons/react": "$@phosphor-icons/react"
+    "@phosphor-icons/react": "$@phosphor-icons/react",
+    "formik": "$formik",
+    "yup": "$yup"
   },
   "vaadin": {
     "dependencies": {
@@ -126,6 +130,6 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "866532fc7368b3b6387e2dee804a0a2f82b8b5c94f00c0a5fa056b2bd6af0220"
+    "hash": "4a15d7e79e5a115970b30fcf67cfdd2edab987a6419ed93f8f80f6969d884b1d"
   }
 }

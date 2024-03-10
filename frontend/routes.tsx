@@ -8,18 +8,16 @@ import SetupView from "Frontend/views/SetupView";
 export const routes = protectRoutes([
     {
         element: <MainLayout/>,
-        handle: {title: 'Main', requiresLogin: true},
+        handle: {requiresLogin: true},
         children: [
-            {path: '/', element: <TestView/>, handle: {title: 'Gameyfin', requiresLogin: true}},
+            {path: '/', element: <TestView/>, handle: {title: 'Gameyfin - Test'}},
         ],
     },
     {
-        path: '/login',
-        element: <LoginView/>
+        path: '/login', element: <LoginView/>, handle: {requiresLogin: false}
     },
     {
-        path: '/setup',
-        element: <SetupView/>
+        path: '/setup', element: <SetupView/>, handle: {requiresLogin: false}
     }
 ]) as RouteObject[];
 
