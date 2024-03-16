@@ -31,20 +31,3 @@ const Input = ({label, ...props}) => {
 }
 
 export default Input;
-/*
-                        <Input
-                            onChange={(event) => {
-                                setUsername(event.target.value);
-                            }}
-                            id="username"
-                            type="text"
-                            autoComplete="username"
-                            placeholder=""
-                            size="lg"
-                            className=" !border-t-blue-gray-200 focus:!border-t-gray-900"
-                            labelProps={{
-                                className: "before:content-none after:content-none",
-                            }}
-                            crossOrigin="" //TODO: see https://github.com/creativetimofficial/material-tailwind/issues/427
-                        />
-*/
