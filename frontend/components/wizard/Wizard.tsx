@@ -1,9 +1,13 @@
-import React, {useState} from "react";
+import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
 import {Button, Spinner, Step, Stepper} from "@material-tailwind/react";
 import {ArrowLeft, ArrowRight, Check} from "@phosphor-icons/react";
 
-const Wizard = ({children, initialValues, onSubmit}: { children: any, initialValues: any, onSubmit: any }) => {
+const Wizard = ({children, initialValues, onSubmit}: {
+    children: ReactNode,
+    initialValues: any,
+    onSubmit: (values: any, bag: FormikHelpers<any> | FormikBag<any, any>) => Promise<void>
+}) => {
     const [stepNumber, setStepNumber] = useState(0);
     const steps = React.Children.toArray(children);
     const [snapshot, setSnapshot] = useState(initialValues);
@@ -73,7 +77,7 @@ const Wizard = ({children, initialValues, onSubmit}: { children: any, initialVal
                                     type="submit"
                             >
                                 {formik.isSubmitting ?
-                                    <Spinner className="h-5 w-5"/> : isLastStep ? <Check/> : <ArrowRight/>
+                                    <Spinner className="size-5"/> : isLastStep ? <Check/> : <ArrowRight/>
                                 }
                             </Button>
                         </div>

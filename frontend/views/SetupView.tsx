@@ -1,58 +1,74 @@
 import React from 'react';
-import {useFormikContext} from 'formik';
 import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import {Card, Typography} from "@material-tailwind/react";
 import Input from "Frontend/components/Input";
-import {GearFine, HandWaving, User} from "@phosphor-icons/react";
+import {GearFine, HandWaving, Palette, User} from "@phosphor-icons/react";
+import {Themes} from "Frontend/components/theming/Themes";
+import ThemePreview from "Frontend/components/theming/ThemePreview";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 function WelcomeStep() {
     return (
-        <div className="flex flex-col size-full gap-12 items-center">
-            <Typography variant="h4">Welcome to Gameyfin 👋</Typography>
-            <p className="place-content-center text-justify">
-                Gameyfin is a cutting-edge software tailored for gamers seeking efficient management of their
-                video
-                game collections. <br/><br/> With its intuitive interface and comprehensive features, Gameyfin
-                simplifies the organization of game libraries. Users can effortlessly add games through manual
-                input
-                or
-                automated recognition, categorize them based on various criteria like genre or platform, track
-                in-game
-                progress, and share achievements with friends. <br/><br/> Notably, Gameyfin stands out for its
-                user-friendly
-                design and adaptability, offering ample customization options to meet diverse user preferences.
-            </p>
-            <Typography variant="h5">Let's get started!</Typography>
+        <div className="flex flex-col size-full items-center">
+            <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
+                <Typography variant="h4">Welcome to Gameyfin 👋</Typography>
+                <p className="place-content-center text-justify">
+                    Gameyfin is a cutting-edge software tailored for gamers seeking efficient management of their
+                    video
+                    game collections. <br/><br/> With its intuitive interface and comprehensive features, Gameyfin
+                    simplifies the organization of game libraries. Users can effortlessly add games through manual
+                    input
+                    or
+                    automated recognition, categorize them based on various criteria like genre or platform, track
+                    in-game
+                    progress, and share achievements with friends. <br/><br/> Notably, Gameyfin stands out for its
+                    user-friendly
+                    design and adaptability, offering ample customization options to meet diverse user preferences.
+                </p>
+                <Typography variant="h5">Let's get started!</Typography>
+            </div>
         </div>
     );
 }
 
-function UserStep() {
-    const formik = useFormikContext();
+function ThemeStep() {
     return (
-        <div className="flex flex-col size-full gap-12 items-center">
-            <Typography variant="h4">Create your account</Typography>
-            <Typography className="-mt-8">This will set up the initial admin user account.</Typography>
-            <div className="mb-1 flex flex-col w-full gap-6">
-                <Input
-                    label="Username"
-                    name="username"
-                    type="text"
-                />
-                <Input
-                    label="Password"
-                    name="password"
-                    type="password"
-                />
-                <Input
-                    label="Password (repeat)"
-                    name="passwordRepeat"
-                    type="password"
-                />
+        <div className="flex flex-col size-full items-center">
+            <div className="size-full grid grid-cols-3 grid-rows-2 w-1/2 min-w-[468px] gap-12 items-center">
+                {Themes.all.map((theme => (
+                    <ThemePreview key={theme.name} theme={theme}/>
+                )))}
+            </div>
+        </div>
+    )
+}
+
+function UserStep() {
+    return (
+        <div className="flex flex-col size-full items-center">
+            <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
+                <Typography variant="h4">Create your account</Typography>
+                <Typography className="-mt-8">This will set up the initial admin user account.</Typography>
+                <div className="mb-1 flex flex-col w-full gap-6">
+                    <Input
+                        label="Username"
+                        name="username"
+                        type="text"
+                    />
+                    <Input
+                        label="Password"
+                        name="password"
+                        type="password"
+                    />
+                    <Input
+                        label="Password (repeat)"
+                        name="passwordRepeat"
+                        type="password"
+                    />
+                </div>
             </div>
         </div>
     );
@@ -60,9 +76,11 @@ function UserStep() {
 
 function SettingsStep() {
     return (
-        <div className="flex flex-col items-center">
-            <Typography variant="h4">Settings</Typography>
-            <Typography>Configure your settings</Typography>
+        <div className="flex flex-col size-full items-center">
+            <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
+                <Typography variant="h4">Settings</Typography>
+                <Typography>Configure your settings</Typography>
+            </div>
         </div>
     );
 }
@@ -77,13 +95,13 @@ const SetupView = () => (
                     sleep(300).then(() => alert(JSON.stringify(values, null, 2)))
                 }
             >
-                <WizardStep
-                    // @ts-ignore
-                    icon={<HandWaving/>}>
+                <WizardStep icon={<HandWaving/>}>
                     <WelcomeStep/>
                 </WizardStep>
+                <WizardStep icon={<Palette/>}>
+                    <ThemeStep/>
+                </WizardStep>
                 <WizardStep
-                    // @ts-ignore
                     validationSchema={Yup.object({
                         username: Yup.string()
                             .required('Required'),
@@ -98,10 +116,7 @@ const SetupView = () => (
                 >
                     <UserStep/>
                 </WizardStep>
-                <WizardStep
-                    //@ts-ignore
-                    icon={<GearFine/>}
-                >
+                <WizardStep icon={<GearFine/>}>
                     <SettingsStep/>
                 </WizardStep>
             </Wizard>
