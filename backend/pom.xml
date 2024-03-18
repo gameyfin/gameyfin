@@ -20,7 +20,7 @@
         <commons-io.version>2.15.1</commons-io.version>
         <commons-compress.version>1.21</commons-compress.version>
         <protoc.plugin.version>3.11.4</protoc.plugin.version>
-        <protobuf-java.version>3.25.2</protobuf-java.version>
+        <protobuf-java.version>4.26.0</protobuf-java.version>
         <easy-random.version>5.0.0</easy-random.version>
         <easy-random-protobuf.version>0.4.0</easy-random-protobuf.version>
         <jacoco-maven-plugin.version>0.8.11</jacoco-maven-plugin.version>
