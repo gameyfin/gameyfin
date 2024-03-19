@@ -45,7 +45,6 @@ const Wizard = ({children, initialValues, onSubmit}: {
         <Formik
             initialValues={snapshot}
             onSubmit={handleSubmit}
-            isInitialValid={false}
             /*// @ts-ignore*/
             validationSchema={step.props.validationSchema}
         >

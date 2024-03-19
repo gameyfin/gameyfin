@@ -3,17 +3,38 @@ import {Typography} from "@material-tailwind/react";
 
 export default function ThemePreview({theme}: { theme: Theme }) {
     return (
-        <div className={`
-            size-full bg-background
-            grid grid-rows-3
-            rounded-lg
-            border-2 border-on-background
-            p-4 gap-4
-            `}>
-            <div className="bg-primary flex grow rounded-lg"></div>
-            <div className="bg-secondary flex grow rounded-lg"></div>
-            <div className="bg-tertiary flex grow rounded-lg"></div>
-            <Typography variant="paragraph" className="text-center">{theme.name}</Typography>
+        <div className="flex flex-col items-center">
+            <svg width="228" height="120" viewBox="0 0 228 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path id="background" d="M0 0H228V120H0V0Z" fill={theme.background}/>
+                <rect id="background-secondary" x="29" y="54" width="144" height="53" rx="2" fill="#30363D"/>
+                <rect x="184" y="54" width="32" height="36" rx="2" fill="#30363D"/>
+                <rect opacity="0.3" x="29" y="59" width="144" height="12" fill="#2EA043"/>
+                <path opacity="0.6" d="M0 0H228V23H0V0Z" fill="#484F58"/>
+                <rect x="13" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
+                <rect x="29" y="36" width="48" height="6" rx="3" fill="#6E7681"/>
+                <rect x="34" y="62" width="64" height="6" rx="3" fill="#3FB950"/>
+                <rect x="210" y="36" width="6" height="6" rx="1" fill="#DA3633"/>
+                <rect x="202" y="36" width="6" height="6" rx="1" fill="#3FB950"/>
+                <rect x="53" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
+                <rect x="93" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
+            </svg>
+            <Typography variant="paragraph">{theme.name}</Typography>
         </div>
     );
 }
+/*
+            <svg width="228" height="120" viewBox="0 0 228 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 0H228V120H0V0Z" fill="#161B22"/>
+                <rect x="29" y="54" width="144" height="53" rx="2" fill="#30363D"/>
+                <rect x="184" y="54" width="32" height="36" rx="2" fill="#30363D"/>
+                <rect opacity="0.3" x="29" y="59" width="144" height="12" fill="#2EA043"/>
+                <path opacity="0.6" d="M0 0H228V23H0V0Z" fill="#484F58"/>
+                <rect x="13" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
+                <rect x="29" y="36" width="48" height="6" rx="3" fill="#6E7681"/>
+                <rect x="34" y="62" width="64" height="6" rx="3" fill="#3FB950"/>
+                <rect x="210" y="36" width="6" height="6" rx="1" fill="#DA3633"/>
+                <rect x="202" y="36" width="6" height="6" rx="1" fill="#3FB950"/>
+                <rect x="53" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
+                <rect x="93" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
+            </svg>
+ */
