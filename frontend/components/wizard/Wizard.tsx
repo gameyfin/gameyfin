@@ -1,7 +1,7 @@
 import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
-import {Button, Spinner, Step, Stepper} from "@material-tailwind/react";
-import {ArrowLeft, ArrowRight, Check} from "@phosphor-icons/react";
+import {ArrowLeft, ArrowRight, Check, SpinnerGap} from "@phosphor-icons/react";
+import {Button} from "Frontend/@/components/ui/button";
 
 const Wizard = ({children, initialValues, onSubmit}: {
     children: ReactNode,
@@ -51,16 +51,14 @@ const Wizard = ({children, initialValues, onSubmit}: {
             {formik => (
                 <Form className="flex flex-col grow">
                     <div className="w-full mb-8">
-                        <Stepper
-                            activeStep={stepNumber}
-                        >
+                        <p>Step {stepNumber + 1} of {steps.length}</p>
+                        {/*<Stepper activeStep={stepNumber}>
                             {steps.map((child, index) => (
                                 <Step key={index}>
-                                    {/*// @ts-ignore*/}
                                     {child.props.icon}
                                 </Step>
                             ))}
-                        </Stepper>
+                        </Stepper>*/}
                     </div>
                     <div className="flex grow">
                         {step}
@@ -76,7 +74,7 @@ const Wizard = ({children, initialValues, onSubmit}: {
                                     type="submit"
                             >
                                 {formik.isSubmitting ?
-                                    <Spinner className="size-5"/> : isLastStep ? <Check/> : <ArrowRight/>
+                                    <SpinnerGap className="animate-spin"/> : isLastStep ? <Check/> : <ArrowRight/>
                                 }
                             </Button>
                         </div>

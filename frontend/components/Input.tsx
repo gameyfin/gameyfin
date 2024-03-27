@@ -1,6 +1,7 @@
 import {useField} from "formik";
-import {Input as MaterialInput, Typography} from "@material-tailwind/react";
 import {XCircle} from "@phosphor-icons/react";
+import {Input as ShadcnInput} from "Frontend/@/components/ui/input";
+import {Label} from "Frontend/@/components/ui/label";
 
 // @ts-ignore
 const Input = ({label, ...props}) => {
@@ -8,25 +9,21 @@ const Input = ({label, ...props}) => {
     const [field, meta] = useField(props);
 
     return (
-        <>
-            <MaterialInput
+        <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Label htmlFor={label}>{label}</Label>
+            <ShadcnInput
                 {...props}
                 {...field}
-                label={label}
-                error={meta.touched && !!meta.error}
-                success={meta.touched && !meta.error}
-                crossOrigin=""
+                id={label}
             />
             {(meta.touched && !!meta.error) ?
-                <Typography
-                    variant="small"
-                    color="red"
-                    className="ml-3 -mt-5 flex flex-row items-center gap-1"
+                <small
+                    className="flex flex-row items-center gap-1 text-red-500"
                 >
                     <XCircle weight="fill" size={14}/> {meta.error}
-                </Typography> : <></>
+                </small> : <></>
             }
-        </>
+        </div>
     );
 }
 

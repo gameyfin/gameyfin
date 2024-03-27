@@ -2,11 +2,11 @@ import React from 'react';
 import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
-import {Card, Typography} from "@material-tailwind/react";
 import Input from "Frontend/components/Input";
 import {GearFine, HandWaving, Palette, User} from "@phosphor-icons/react";
-import {Themes} from "Frontend/components/theming/Themes";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
+import {Theme, themes} from "Frontend/@/registry/themes";
+import {Card} from "Frontend/@/components/ui/card";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -14,7 +14,7 @@ function WelcomeStep() {
     return (
         <div className="flex flex-col size-full items-center">
             <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
-                <Typography variant="h4">Welcome to Gameyfin 👋</Typography>
+                <h4>Welcome to Gameyfin 👋</h4>
                 <p className="place-content-center text-justify">
                     Gameyfin is a cutting-edge software tailored for gamers seeking efficient management of their
                     video
@@ -28,7 +28,7 @@ function WelcomeStep() {
                     user-friendly
                     design and adaptability, offering ample customization options to meet diverse user preferences.
                 </p>
-                <Typography variant="h5">Let's get started!</Typography>
+                <h5>Let's get started!</h5>
             </div>
         </div>
     );
@@ -38,7 +38,7 @@ function ThemeStep() {
     return (
         <div className="flex flex-col size-full items-center">
             <div className="size-full grid grid-cols-3 grid-rows-2 w-1/2 min-w-[468px] gap-12 items-center">
-                {Themes.all.map((theme => (
+                {themes.map(((theme: Theme) => (
                     <ThemePreview key={theme.name} theme={theme}/>
                 )))}
             </div>
@@ -50,9 +50,9 @@ function UserStep() {
     return (
         <div className="flex flex-col size-full items-center">
             <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
-                <Typography variant="h4">Create your account</Typography>
-                <Typography className="-mt-8">This will set up the initial admin user account.</Typography>
-                <div className="mb-1 flex flex-col w-full gap-6">
+                <h4>Create your account</h4>
+                <p className="-mt-8">This will set up the initial admin user account.</p>
+                <div className="mb-1 flex flex-col w-full gap-6 items-center">
                     <Input
                         label="Username"
                         name="username"
@@ -78,17 +78,16 @@ function SettingsStep() {
     return (
         <div className="flex flex-col size-full items-center">
             <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
-                <Typography variant="h4">Settings</Typography>
-                <Typography>Configure your settings</Typography>
+                <h4>Settings</h4>
+                <p>Configure your settings</p>
             </div>
         </div>
     );
 }
 
 const SetupView = () => (
-    <div className="flex h-screen">
-        <div className="fixed size-full bg-gradient-to-br from-gf-primary to-gf-secondary"></div>
-        <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8" shadow={true}>
+    <div className="flex size-full bg-gradient-to-br from-gf-primary to-gf-secondary">
+        <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8">
             <Wizard
                 initialValues={{username: '', password: '', passwordRepeat: ''}}
                 onSubmit={async (values: any) =>

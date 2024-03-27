@@ -1,11 +1,10 @@
-import {Theme} from "Frontend/components/theming/Theme";
-import {Typography} from "@material-tailwind/react";
+import {Theme} from "Frontend/@/registry/themes";
 
 export default function ThemePreview({theme}: { theme: Theme }) {
     return (
         <div className="flex flex-col items-center">
             <svg width="228" height="120" viewBox="0 0 228 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path id="background" d="M0 0H228V120H0V0Z" fill={theme.background}/>
+                <path id="background" d="M0 0H228V120H0V0Z" fill={theme.cssVars.dark.background}/>
                 <rect id="background-secondary" x="29" y="54" width="144" height="53" rx="2" fill="#30363D"/>
                 <rect x="184" y="54" width="32" height="36" rx="2" fill="#30363D"/>
                 <rect opacity="0.3" x="29" y="59" width="144" height="12" fill="#2EA043"/>
@@ -18,7 +17,7 @@ export default function ThemePreview({theme}: { theme: Theme }) {
                 <rect x="53" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
                 <rect x="93" y="9" width="32" height="6" rx="3" fill="#8B949E"/>
             </svg>
-            <Typography variant="paragraph">{theme.name}</Typography>
+            <p>{theme.name}</p>
         </div>
     );
 }

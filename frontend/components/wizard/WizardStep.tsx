@@ -9,6 +9,3 @@ export default function WizardStep({children, icon, validationSchema}: {
 }) {
     return children;
 }
-
-//const WizardStep = ({children}: { children: Component }) => children;
-//export default WizardStep;

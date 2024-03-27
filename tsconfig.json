@@ -24,9 +24,15 @@
     "useDefineForClassFields": false,
     "baseUrl": "frontend",
     "paths": {
-      "@vaadin/flow-frontend": ["generated/jar-resources"],
-      "@vaadin/flow-frontend/*": ["generated/jar-resources/*"],
-      "Frontend/*": ["*"]
+      "@vaadin/flow-frontend": [
+        "generated/jar-resources"
+      ],
+      "@vaadin/flow-frontend/*": [
+        "generated/jar-resources/*"
+      ],
+      "Frontend/*": [
+        "*"
+      ]
     }
   },
   "include": [

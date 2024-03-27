@@ -1,7 +1,7 @@
 import {useAtom} from "jotai"
 import {atomWithStorage} from "jotai/utils"
 
-import {Theme} from "@/registry/themes"
+import {Theme} from "Frontend/@/registry/themes"
 
 type Config = {
     theme: Theme["name"]

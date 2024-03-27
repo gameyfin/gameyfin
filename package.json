@@ -20,6 +20,11 @@
     "@hilla/react-form": "2.5.6",
     "@phosphor-icons/react": "^2.0.15",
     "@polymer/polymer": "3.5.1",
+    "@radix-ui/react-avatar": "^1.0.4",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tooltip": "^1.0.7",
     "@vaadin/bundles": "24.3.0",
     "@vaadin/common-frontend": "0.0.19",
     "@vaadin/router": "1.7.5",
@@ -31,6 +36,7 @@
     "jotai": "^2.7.1",
     "lit": "3.1.0",
     "lucide-react": "^0.360.0",
+    "next-themes": "^0.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.4.2",
@@ -90,7 +96,19 @@
     "@hilla/generator-typescript-cli": "$@hilla/generator-typescript-cli",
     "@phosphor-icons/react": "$@phosphor-icons/react",
     "formik": "$formik",
-    "yup": "$yup"
+    "yup": "$yup",
+    "class-variance-authority": "$class-variance-authority",
+    "clsx": "$clsx",
+    "jotai": "$jotai",
+    "lucide-react": "$lucide-react",
+    "next-themes": "$next-themes",
+    "tailwind-merge": "$tailwind-merge",
+    "tailwindcss-animate": "$tailwindcss-animate",
+    "@radix-ui/react-label": "$@radix-ui/react-label",
+    "@radix-ui/react-slot": "$@radix-ui/react-slot",
+    "@radix-ui/react-avatar": "$@radix-ui/react-avatar",
+    "@radix-ui/react-dropdown-menu": "$@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-tooltip": "$@radix-ui/react-tooltip"
   },
   "vaadin": {
     "dependencies": {
@@ -134,6 +152,6 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "9223d4c6f4cf3a6fd28b853d824fddc00718dbc1a3474e986f4dc2d69f294b6e"
+    "hash": "54c9ffc1de2ff554baf5ced1be2e704d4a354138bf9cbfca2d4fc83f126a4563"
   }
 }
