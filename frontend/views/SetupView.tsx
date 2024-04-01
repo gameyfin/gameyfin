@@ -37,7 +37,7 @@ function WelcomeStep() {
 function ThemeStep() {
     return (
         <div className="flex flex-col size-full items-center">
-            <div className="size-full grid grid-cols-3 grid-rows-2 w-1/2 min-w-[468px] gap-12 items-center">
+            <div className="grid grid-cols-3 w-1/2 min-w-[468px] gap-12">
                 {themes.map(((theme: Theme) => (
                     <ThemePreview key={theme.name} theme={theme}/>
                 )))}

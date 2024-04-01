@@ -49,7 +49,7 @@ const Wizard = ({children, initialValues, onSubmit}: {
             validationSchema={step.props.validationSchema}
         >
             {formik => (
-                <Form className="flex flex-col grow">
+                <Form className="flex flex-col h-full">
                     <div className="w-full mb-8">
                         <p>Step {stepNumber + 1} of {steps.length}</p>
                         {/*<Stepper activeStep={stepNumber}>
