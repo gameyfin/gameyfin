@@ -3,10 +3,12 @@ import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/Input";
-import {GearFine, HandWaving, Palette, User} from "@phosphor-icons/react";
+import {GearFine, HandWaving, Moon, Palette, SunDim, User} from "@phosphor-icons/react";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
 import {Theme, themes} from "Frontend/@/registry/themes";
 import {Card} from "Frontend/@/components/ui/card";
+import {Switch} from "Frontend/@/components/ui/switch";
+import {useTheme} from "next-themes";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -35,8 +37,19 @@ function WelcomeStep() {
 }
 
 function ThemeStep() {
+    const {setTheme, theme} = useTheme();
+
+    function toggleMode() {
+        setTheme(theme === "light" ? "dark" : "light");
+    }
+
     return (
         <div className="flex flex-col size-full items-center">
+            <div className="w-full flex flex-row items-center justify-center gap-4 mb-16">
+                <SunDim size={32}/>
+                <Switch checked={theme === "dark"} onCheckedChange={() => toggleMode()}></Switch>
+                <Moon size={32}/>
+            </div>
             <div className="grid grid-cols-3 w-1/2 min-w-[468px] gap-12">
                 {themes.map(((theme: Theme) => (
                     <ThemePreview key={theme.name} theme={theme}/>

@@ -14,7 +14,6 @@ export default function App() {
                     attribute="class"
                     defaultTheme="system"
                     enableSystem
-                    disableTransitionOnChange
                 >
                     <IconContext.Provider value={{size: 20}}>
                         <RouterProvider router={router}/>
