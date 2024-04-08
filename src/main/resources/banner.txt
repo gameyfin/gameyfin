@@ -1,0 +1,9 @@
+${AnsiBackground.DEFAULT}
+${AnsiColor.BLUE}  _____                         ${AnsiColor.MAGENTA}   ___   _
+${AnsiColor.BLUE} / ___/ ___ _  __ _  ___   __ __${AnsiColor.MAGENTA}  / _/  (_)  ___
+${AnsiColor.BLUE}/ (_ / / _ `/ /  ' \/ -_) / // /${AnsiColor.MAGENTA} / _/  / /  / _ \
+${AnsiColor.BLUE}\___/  \_,_/ /_/_/_/\__/  \_, / ${AnsiColor.MAGENTA}/_/   /_/  /_//_/
+${AnsiColor.BLUE}                         /___/
+${AnsiColor.DEFAULT}
+${spring.application.name} ${application.version}
+
