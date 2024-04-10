@@ -1,5 +1,4 @@
 @use '@angular/material' as mat;
-@import "@angular/material/theming";
 
 $custom-theme-primary: mat.define-palette(mat.$green-palette);
 $custom-theme-accent: mat.define-palette(mat.$grey-palette, A200, A100, A400);
