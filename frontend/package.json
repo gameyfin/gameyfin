@@ -20,7 +20,7 @@
     "@angular/platform-browser": "^17.3.3",
     "@angular/platform-browser-dynamic": "^17.3.3",
     "@angular/router": "^17.3.3",
-    "@angular/youtube-player": "^17.3.3",
+    "@angular/youtube-player": "^17.3.7",
     "@ngbracket/ngx-layout": "^17.0.1",
     "mat-table-filter": "^15.0.0",
     "rxjs": "~7.8.1",
