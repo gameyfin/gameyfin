@@ -1,7 +1,6 @@
 import {useField} from "formik";
 import {XCircle} from "@phosphor-icons/react";
-import {Input as ShadcnInput} from "Frontend/@/components/ui/input";
-import {Label} from "Frontend/@/components/ui/label";
+import {Input as NextUiInput} from "@nextui-org/react";
 
 // @ts-ignore
 const Input = ({label, ...props}) => {
@@ -10,19 +9,17 @@ const Input = ({label, ...props}) => {
 
     return (
         <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor={label}>{label}</Label>
-            <ShadcnInput
+            <NextUiInput
                 {...props}
                 {...field}
                 id={label}
+                placeholder={label}
+                isInvalid={meta.touched && !!meta.error}
+                errorMessage={
+                    <small className="flex flex-row items-center gap-1 text-danger">
+                        <XCircle weight="fill" size={14}/> {meta.error}
+                    </small>}
             />
-            {(meta.touched && !!meta.error) ?
-                <small
-                    className="flex flex-row items-center gap-1 text-red-500"
-                >
-                    <XCircle weight="fill" size={14}/> {meta.error}
-                </small> : <></>
-            }
         </div>
     );
 }

@@ -1,41 +1,25 @@
-import {Theme} from "Frontend/@/registry/themes";
-import {Card} from "Frontend/@/components/ui/card";
-import {Tooltip, TooltipContent, TooltipTrigger} from "Frontend/@/components/ui/tooltip";
-import {useTheme} from "next-themes";
+import {Theme} from "Frontend/theming/theme";
+import {Card, Tooltip} from "@nextui-org/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
-import {hsl} from "Frontend/@/lib/utils";
 
-export default function ThemePreview({theme}: { theme: Theme }) {
-    //@ts-ignore
-    let resolvedTheme: "light" | "dark" = useTheme().resolvedTheme ?? "light";
-    const {setTheme} = useTheme();
-
-    function toggleMode() {
-        resolvedTheme = resolvedTheme === "light" ? "dark" : "light";
-        setTheme(resolvedTheme);
-    }
-
+export default function ThemePreview({theme, mode, isSelected}: {
+    theme: Theme,
+    mode: "light" | "dark",
+    isSelected?: boolean
+}) {
     return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Card
-                    className="overflow-hidden flex place-self-center justify-center p-6"
-                    style={{background: hsl(theme.cssVars[resolvedTheme].background)}}>
-                    <GameyfinLogo primary={theme.cssVars[resolvedTheme].primary}
-                                  secondary={theme.cssVars[resolvedTheme].secondary}
-                                  className="w-1/2"
-                    />
-                </Card>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-                <p className="capitalize">{theme.name}</p>
-            </TooltipContent>
+        <Tooltip content={<p className="capitalize">{theme.name?.replace("-", " ")}</p>} placement="bottom">
+            <Card
+                shadow="none"
+                className={`${theme.name}-${mode} flex-row justify-center p-6 border-2 ${isSelected ? "border-focus" : "border-foreground-200 hover:border-focus"}`}
+            >
+                <GameyfinLogo className="w-1/2 fill-primary"/>
+            </Card>
         </Tooltip>
     );
 }
 
 /*
-
 <svg width="228" height="120" viewBox="0 0 228 120" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path id="background" d="M0 0H228V120H0V0Z" fill={theme.cssVars[resolvedTheme].background}/>
     <rect id="background-secondary" x="29" y="54" width="144" height="53" rx="2" fill="#30363D"/>

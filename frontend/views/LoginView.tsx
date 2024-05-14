@@ -1,11 +1,9 @@
 import {useAuth} from "Frontend/util/auth";
 import {useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {SpinnerGap, XCircle} from "@phosphor-icons/react";
-import {Card} from "Frontend/@/components/ui/card";
+import {XCircle} from "@phosphor-icons/react";
+import {Button, Card, CardBody, CardHeader, Input} from "@nextui-org/react";
 import {Alert, AlertDescription, AlertTitle} from "Frontend/@/components/ui/alert";
-import {Button} from "Frontend/@/components/ui/button";
-import {Input} from "Frontend/@/components/ui/input";
 
 export default function LoginView() {
     const {state, login} = useAuth();
@@ -24,11 +22,14 @@ export default function LoginView() {
     return (
         <div className="flex size-full bg-gradient-to-br from-gf-primary to-gf-secondary">
             <Card className="m-auto p-12">
-                <img
-                    className="h-28 w-full content-center"
-                    src="/images/Logo.svg"
-                />
-                <div className="mt-8 mb-2 w-80 max-w-screen-lg sm:w-96">
+                <CardHeader>
+                    <img
+                        className="h-28 w-full content-center"
+                        src="/images/Logo.svg"
+                        alt="Gameyfin Logo"
+                    />
+                </CardHeader>
+                <CardBody className="mt-8 mb-2 w-80 max-w-screen-lg sm:w-96">
                     {hasError &&
                         <Alert className="mb-4" variant="destructive">
                             <XCircle weight="fill" className="size-4"/>
@@ -82,17 +83,12 @@ export default function LoginView() {
                         />
                         <div className="flex justify-between items-center">
                             <Link to="#">Forgot password?</Link>
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="w-28 h-12 flex justify-center"
-                                disabled={loading}
-                            >
-                                {loading ? <SpinnerGap className="size-6 animate-spin"/> : "Log in"}
+                            <Button color="primary" type="submit" isLoading={loading}>
+                                Log in
                             </Button>
                         </div>
                     </form>
-                </div>
+                </CardBody>
             </Card>
         </div>
     );

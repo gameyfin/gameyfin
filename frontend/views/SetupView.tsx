@@ -1,14 +1,14 @@
-import React from 'react';
+import React, {useLayoutEffect, useState} from 'react';
 import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/Input";
 import {GearFine, HandWaving, Moon, Palette, SunDim, User} from "@phosphor-icons/react";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
-import {Theme, themes} from "Frontend/@/registry/themes";
-import {Card} from "Frontend/@/components/ui/card";
-import {Switch} from "Frontend/@/components/ui/switch";
+import {themes} from "Frontend/theming/themes";
+import {Card, Switch} from "@nextui-org/react";
 import {useTheme} from "next-themes";
+import {Theme} from "Frontend/theming/theme";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -37,23 +37,46 @@ function WelcomeStep() {
 }
 
 function ThemeStep() {
-    const {setTheme, theme} = useTheme();
+    const {theme, setTheme} = useTheme();
+    const [isSelected, setIsSelected] = useState(theme ? theme.includes("light") : false);
+    const [currentTheme, setCurrentTheme] = useState(theme?.split('-')[0]);
 
-    function toggleMode() {
-        setTheme(theme === "light" ? "dark" : "light");
+    useLayoutEffect(() => setTheme(`${currentTheme}-${mode()}`), [isSelected]);
+
+    function mode(): "light" | "dark" {
+        return !isSelected ? "dark" : "light"
     }
 
     return (
         <div className="flex flex-col size-full items-center">
             <div className="w-full flex flex-row items-center justify-center gap-4 mb-16">
-                <SunDim size={32}/>
-                <Switch checked={theme === "dark"} onCheckedChange={() => toggleMode()}></Switch>
-                <Moon size={32}/>
+                <Switch
+                    size="lg"
+                    startContent={<SunDim size={32}/>}
+                    endContent={<Moon size={32}/>}
+                    isSelected={isSelected}
+                    onValueChange={() => {
+                        setIsSelected(!isSelected);
+                    }}
+                />
+
             </div>
-            <div className="grid grid-cols-3 w-1/2 min-w-[468px] gap-12">
-                {themes.map(((theme: Theme) => (
-                    <ThemePreview key={theme.name} theme={theme}/>
-                )))}
+            <div className="grid grid-cols-4 w-3/4 min-w-[468px] gap-12">
+                {
+                    themes.map(((t: Theme) => (
+                        <div
+                            key={t.name}
+                            onClick={() => {
+                                setCurrentTheme(t.name);
+                                setTheme(`${t.name}-${mode()}`);
+                            }}>
+                            <ThemePreview
+                                theme={t}
+                                mode={mode()}
+                                isSelected={currentTheme === t.name}/>
+                        </div>
+                    )))
+                }
             </div>
         </div>
     )

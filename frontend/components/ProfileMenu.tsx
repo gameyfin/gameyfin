@@ -1,17 +1,9 @@
-import {useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import {useNavigate} from "react-router-dom";
 import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger
-} from "Frontend/@/components/ui/dropdown-menu";
-import {Avatar, AvatarFallback} from "Frontend/@/components/ui/avatar";
+import {Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@nextui-org/react";
 
 export default function ProfileMenu() {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const {state, logout} = useAuth();
     const navigate = useNavigate();
 
@@ -36,28 +28,33 @@ export default function ProfileMenu() {
             label: "Sign Out",
             icon: <SignOut/>,
             onClick: () => logout(),
-            color: "red-500"
+            color: "danger"
         },
     ];
 
     return (
-        <DropdownMenu open={isMenuOpen}>
-            <DropdownMenuTrigger>
-                <Avatar>
-                    <AvatarFallback>{state.user?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
+        <Dropdown placement="bottom-end">
+            <DropdownTrigger>
+                <Avatar showFallback radius="full" as="button" className="transition-transform"/>
+            </DropdownTrigger>
+            <DropdownMenu>
+                {/* @ts-ignore */}
                 {profileMenuItems.map(({label, icon, onClick, showIf, color}) => {
                     return (
                         (showIf === undefined || showIf === true) ?
-                            <DropdownMenuItem key={label} onClick={onClick}>
-                                {icon}
-                                <p color={color ? color : ""}>{label}</p>
-                            </DropdownMenuItem> : null
+                            <DropdownItem
+                                key={label}
+                                onClick={onClick}
+                                startContent={<div color={color}>{icon}</div>}
+                                /* @ts-ignore */
+                                color={color ? color : ""}
+                                className={`text-${color}`}
+                            >
+                                {label}
+                            </DropdownItem> : null
                     );
                 })}
-            </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenu>
+        </Dropdown>
     );
 }

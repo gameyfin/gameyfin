@@ -2,7 +2,7 @@ import {useRouteMetadata} from 'Frontend/util/routing.js';
 import {useEffect} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
 import {Outlet} from "react-router-dom";
-import {Card} from "Frontend/@/components/ui/card";
+import {Card} from "@nextui-org/react";
 
 export default function MainLayout() {
     const currentTitle = `Gameyfin - ${useRouteMetadata()?.title}` ?? 'Gameyfin';

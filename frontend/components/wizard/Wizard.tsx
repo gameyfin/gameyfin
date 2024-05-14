@@ -1,7 +1,8 @@
 import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
-import {ArrowLeft, ArrowRight, Check, SpinnerGap} from "@phosphor-icons/react";
-import {Button} from "Frontend/@/components/ui/button";
+import {ArrowLeft, ArrowRight, Check} from "@phosphor-icons/react";
+import {Button} from "@nextui-org/react";
+import {Step, Stepper} from "@material-tailwind/react";
 
 const Wizard = ({children, initialValues, onSubmit}: {
     children: ReactNode,
@@ -51,31 +52,34 @@ const Wizard = ({children, initialValues, onSubmit}: {
             {formik => (
                 <Form className="flex flex-col h-full">
                     <div className="w-full mb-8">
-                        <p>Step {stepNumber + 1} of {steps.length}</p>
-                        {/*<Stepper activeStep={stepNumber}>
+                        {/*<p>Step {stepNumber + 1} of {steps.length}</p>*/}
+                        <Stepper activeStep={stepNumber} activeLineClassName="bg-primary"
+                                 lineClassName="bg-foreground">
                             {steps.map((child, index) => (
-                                <Step key={index}>
+                                <Step key={index}
+                                      className="bg-foreground text-background"
+                                      activeClassName="bg-primary"
+                                      completedClassName="bg-primary">
+                                    {/*@ts-ignore*/}
                                     {child.props.icon}
                                 </Step>
                             ))}
-                        </Stepper>*/}
+                        </Stepper>
                     </div>
                     <div className="flex grow">
                         {step}
                     </div>
                     <div className="bottom-0 w-full">
                         <div className="flex justify-between">
-                            <Button onClick={() => previous(formik.values)} disabled={isFirstStep}
-                                    className="rounded-full">
+                            <Button color="primary" onClick={() => previous(formik.values)} disabled={isFirstStep}>
                                 <ArrowLeft/>
                             </Button>
-                            <Button disabled={formik.isSubmitting}
-                                    className="rounded-full"
-                                    type="submit"
+                            <Button
+                                color="primary"
+                                isLoading={formik.isSubmitting}
+                                type="submit"
                             >
-                                {formik.isSubmitting ?
-                                    <SpinnerGap className="animate-spin"/> : isLastStep ? <Check/> : <ArrowRight/>
-                                }
+                                {formik.isSubmitting ? "" : isLastStep ? <Check/> : <ArrowRight/>}
                             </Button>
                         </div>
                     </div>
