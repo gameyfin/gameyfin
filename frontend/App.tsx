@@ -12,7 +12,7 @@ export default function App() {
     return (
         <StrictMode>
             <NextUIProvider className="size-full">
-                <NextThemesProvider attribute="class" defaultTheme="gameyfin-blue-light" themes={themeNames()}>
+                <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark" >
                     <AuthProvider>
                         <IconContext.Provider value={{size: 20}}>
                             <RouterProvider router={router}/>

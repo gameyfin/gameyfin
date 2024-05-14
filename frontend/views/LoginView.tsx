@@ -1,5 +1,5 @@
 import {useAuth} from "Frontend/util/auth";
-import {useState} from "react";
+import {useEffect, useLayoutEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {XCircle} from "@phosphor-icons/react";
 import {Button, Card, CardBody, CardHeader, Input} from "@nextui-org/react";
@@ -14,13 +14,15 @@ export default function LoginView() {
     const [url, setUrl] = useState<string>();
     const navigate = useNavigate();
 
-    if (state.user && url) {
-        const path = new URL(url, document.baseURI).pathname;
-        navigate(path, {replace: true});
-    }
+    useLayoutEffect(() => {
+        if (state.user) {
+            const path = url ?  new URL(url, document.baseURI).pathname : '/'
+            navigate(path, {replace: true});
+        }
+    }, [state.user]);
 
     return (
-        <div className="flex size-full bg-gradient-to-br from-gf-primary to-gf-secondary">
+        <div className="flex size-full bg-gradient-to-br from-primary-400 to-primary-700">
             <Card className="m-auto p-12">
                 <CardHeader>
                     <img
@@ -84,7 +86,7 @@ export default function LoginView() {
                         <div className="flex justify-between items-center">
                             <Link to="#">Forgot password?</Link>
                             <Button color="primary" type="submit" isLoading={loading}>
-                                Log in
+                                {loading ? "" : "Log in"}
                             </Button>
                         </div>
                     </form>

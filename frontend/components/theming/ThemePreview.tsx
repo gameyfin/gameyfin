@@ -9,12 +9,11 @@ export default function ThemePreview({theme, mode, isSelected}: {
 }) {
     return (
         <Tooltip content={<p className="capitalize">{theme.name?.replace("-", " ")}</p>} placement="bottom">
-            <Card
-                shadow="none"
-                className={`${theme.name}-${mode} flex-row justify-center p-6 border-2 ${isSelected ? "border-focus" : "border-foreground-200 hover:border-focus"}`}
-            >
-                <GameyfinLogo className="w-1/2 fill-primary"/>
-            </Card>
+            <div className={`
+                ${theme.name}-${mode}
+                bg-primary p-6 border-2 rounded-md
+                ${isSelected ? "border-foreground" : "border-foreground-200 hover:border-focus"}`}
+            />
         </Tooltip>
     );
 }

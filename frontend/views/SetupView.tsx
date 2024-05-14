@@ -39,12 +39,12 @@ function WelcomeStep() {
 function ThemeStep() {
     const {theme, setTheme} = useTheme();
     const [isSelected, setIsSelected] = useState(theme ? theme.includes("light") : false);
-    const [currentTheme, setCurrentTheme] = useState(theme?.split('-')[0]);
+    const [currentTheme, setCurrentTheme] = useState(theme?.substring(0, theme?.lastIndexOf("-")));
 
     useLayoutEffect(() => setTheme(`${currentTheme}-${mode()}`), [isSelected]);
 
     function mode(): "light" | "dark" {
-        return !isSelected ? "dark" : "light"
+        return isSelected ? "light" : "dark";
     }
 
     return (
@@ -61,8 +61,9 @@ function ThemeStep() {
                 />
 
             </div>
-            <div className="grid grid-cols-4 w-3/4 min-w-[468px] gap-12">
+            <div className="grid grid-flow-col auto-cols-auto auto-cols-max-4 gap-8">
                 {
+                    //min-w-[468px]
                     themes.map(((t: Theme) => (
                         <div
                             key={t.name}
@@ -122,7 +123,7 @@ function SettingsStep() {
 }
 
 const SetupView = () => (
-    <div className="flex size-full bg-gradient-to-br from-gf-primary to-gf-secondary">
+    <div className="flex size-full bg-gradient-to-br from-primary-400 to-primary-700">
         <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8">
             <Wizard
                 initialValues={{username: '', password: '', passwordRepeat: ''}}

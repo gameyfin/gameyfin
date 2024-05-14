@@ -69,7 +69,7 @@ const Wizard = ({children, initialValues, onSubmit}: {
                     <div className="flex grow">
                         {step}
                     </div>
-                    <div className="bottom-0 w-full">
+                    <div className="left-8 right-8 absolute bottom-8 -z-1">
                         <div className="flex justify-between">
                             <Button color="primary" onClick={() => previous(formik.values)} disabled={isFirstStep}>
                                 <ArrowLeft/>
