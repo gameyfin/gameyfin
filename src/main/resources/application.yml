@@ -8,7 +8,7 @@ server:
       tracking-modes: cookie
 
 spring:
-  # Workaround for https://github.dev/hilla/issues/842
+  # Workaround for https://github.com/vaadin/hilla/issues/842
   devtools.restart.additional-exclude: dev/hilla/openapi.json
   jpa:
     defer-datasource-initialization: true

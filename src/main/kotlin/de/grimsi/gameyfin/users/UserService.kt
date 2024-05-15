@@ -1,8 +1,8 @@
 package de.grimsi.gameyfin.users
 
+import de.grimsi.gameyfin.users.dto.UserInfo
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
-import de.grimsi.gameyfin.users.persistence.RoleRepository
 import de.grimsi.gameyfin.users.persistence.UserRepository
 import jakarta.transaction.Transactional
 import org.springframework.security.core.GrantedAuthority
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service
 @Transactional
 class UserService(
     private val userRepository: UserRepository,
-    private val roleRepository: RoleRepository,
     private val passwordEncoder: PasswordEncoder
 ) : UserDetailsService {
 
@@ -42,8 +41,12 @@ class UserService(
         return userRepository.save(user)
     }
 
-    fun toRoles(roles: Collection<String>): List<Role> {
-        return roles.mapNotNull { r -> roleRepository.findByRolename(r) }
+    fun toUserInfo(user: User): UserInfo {
+        return UserInfo(
+            username = user.username,
+            email = user.email,
+            roles = user.roles.map { r -> r.rolename }
+        )
     }
 
     private fun toAuthorities(roles: Collection<Role>): List<GrantedAuthority> {

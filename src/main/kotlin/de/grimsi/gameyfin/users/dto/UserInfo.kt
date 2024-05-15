@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.users.dto
 
 data class UserInfo(
-    val name: String,
-    val authorities: List<String>
+    val username: String,
+    val email: String? = null,
+    val roles: List<String>
 )

@@ -7,7 +7,7 @@ import {Step, Stepper} from "@material-tailwind/react";
 const Wizard = ({children, initialValues, onSubmit}: {
     children: ReactNode,
     initialValues: any,
-    onSubmit: (values: any, bag: FormikHelpers<any> | FormikBag<any, any>) => Promise<void>
+    onSubmit: (values: any, bag: FormikHelpers<any> | FormikBag<any, any>) => Promise<any>
 }) => {
     const [stepNumber, setStepNumber] = useState(0);
     const steps = React.Children.toArray(children);

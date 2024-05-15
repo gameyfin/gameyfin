@@ -9,8 +9,7 @@ import {themes} from "Frontend/theming/themes";
 import {Card, Switch} from "@nextui-org/react";
 import {useTheme} from "next-themes";
 import {Theme} from "Frontend/theming/theme";
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import {UserEndpoint} from "Frontend/generated/endpoints";
 
 function WelcomeStep() {
     return (
@@ -96,6 +95,11 @@ function UserStep() {
                         type="text"
                     />
                     <Input
+                        label="E-Mail"
+                        name="email"
+                        type="email"
+                    />
+                    <Input
                         label="Password"
                         name="password"
                         type="password"
@@ -126,10 +130,13 @@ const SetupView = () => (
     <div className="flex size-full bg-gradient-to-br from-primary-400 to-primary-700">
         <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8">
             <Wizard
-                initialValues={{username: '', password: '', passwordRepeat: ''}}
-                onSubmit={async (values: any) =>
-                    sleep(300).then(() => alert(JSON.stringify(values, null, 2)))
-                }
+                initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}
+                onSubmit={(values: any) => UserEndpoint.registerInitialSuperAdmin({
+                        username: values.username,
+                        password: values.password,
+                        email: values.email
+                    }
+                ).then(() => alert("Successfully registered!"))}
             >
                 <WizardStep icon={<HandWaving/>}>
                     <WelcomeStep/>
@@ -143,6 +150,9 @@ const SetupView = () => (
                             .required('Required'),
                         password: Yup.string()
                             .min(8, 'Password must be at least 8 characters long')
+                            .required('Required'),
+                        email: Yup.string()
+                            .email()
                             .required('Required'),
                         passwordRepeat: Yup.string()
                             .equals([Yup.ref('password')], 'Passwords do not match')

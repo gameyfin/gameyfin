@@ -2,7 +2,8 @@ import {useRouteMetadata} from 'Frontend/util/routing.js';
 import {useEffect} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
 import {Outlet} from "react-router-dom";
-import {Card} from "@nextui-org/react";
+import {Navbar, NavbarBrand, NavbarContent, NavbarItem} from "@nextui-org/react";
+import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 
 export default function MainLayout() {
     const currentTitle = `Gameyfin - ${useRouteMetadata()?.title}` ?? 'Gameyfin';
@@ -12,16 +13,16 @@ export default function MainLayout() {
 
     return (
         <>
-            <Card className="sticky top-0 z-10 h-max max-w-full rounded-none px-4 py-2">
-                <div className="flex items-center justify-end text-blue-gray-900">
-                    <img
-                        className="absolute w-full content-center h-8"
-                        src="/images/Logo.svg"
-                        alt="Gameyfin"
-                    />
-                    <ProfileMenu/>
-                </div>
-            </Card>
+            <Navbar maxWidth="2xl" className="shadow">
+                <NavbarBrand>
+                    <GameyfinLogo className="h-10 fill-foreground"/>
+                </NavbarBrand>
+                <NavbarContent justify="end">
+                    <NavbarItem>
+                        <ProfileMenu/>
+                    </NavbarItem>
+                </NavbarContent>
+            </Navbar>
 
             <Outlet/>
         </>
