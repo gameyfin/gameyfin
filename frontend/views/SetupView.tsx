@@ -1,15 +1,12 @@
-import React, {useLayoutEffect, useState} from 'react';
+import React from 'react';
 import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/Input";
-import {GearFine, HandWaving, Moon, Palette, SunDim, User} from "@phosphor-icons/react";
-import ThemePreview from "Frontend/components/theming/ThemePreview";
-import {themes} from "Frontend/theming/themes";
-import {Card, Switch} from "@nextui-org/react";
-import {useTheme} from "next-themes";
-import {Theme} from "Frontend/theming/theme";
+import {GearFine, HandWaving, Palette, User} from "@phosphor-icons/react";
+import {Card} from "@nextui-org/react";
 import {UserEndpoint} from "Frontend/generated/endpoints";
+import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 
 function WelcomeStep() {
     return (
@@ -36,50 +33,9 @@ function WelcomeStep() {
 }
 
 function ThemeStep() {
-    const {theme, setTheme} = useTheme();
-    const [isSelected, setIsSelected] = useState(theme ? theme.includes("light") : false);
-    const [currentTheme, setCurrentTheme] = useState(theme?.substring(0, theme?.lastIndexOf("-")));
-
-    useLayoutEffect(() => setTheme(`${currentTheme}-${mode()}`), [isSelected]);
-
-    function mode(): "light" | "dark" {
-        return isSelected ? "light" : "dark";
-    }
-
     return (
-        <div className="flex flex-col size-full items-center">
-            <div className="w-full flex flex-row items-center justify-center gap-4 mb-16">
-                <Switch
-                    size="lg"
-                    startContent={<SunDim size={32}/>}
-                    endContent={<Moon size={32}/>}
-                    isSelected={isSelected}
-                    onValueChange={() => {
-                        setIsSelected(!isSelected);
-                    }}
-                />
-
-            </div>
-            <div className="grid grid-flow-col auto-cols-auto auto-cols-max-4 gap-8">
-                {
-                    //min-w-[468px]
-                    themes.map(((t: Theme) => (
-                        <div
-                            key={t.name}
-                            onClick={() => {
-                                setCurrentTheme(t.name);
-                                setTheme(`${t.name}-${mode()}`);
-                            }}>
-                            <ThemePreview
-                                theme={t}
-                                mode={mode()}
-                                isSelected={currentTheme === t.name}/>
-                        </div>
-                    )))
-                }
-            </div>
-        </div>
-    )
+        <ThemeSelector/>
+    );
 }
 
 function UserStep() {
@@ -127,7 +83,7 @@ function SettingsStep() {
 }
 
 const SetupView = () => (
-    <div className="flex size-full bg-gradient-to-br from-primary-400 to-primary-700">
+    <div className="flex size-full gradient-primary">
         <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8">
             <Wizard
                 initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}

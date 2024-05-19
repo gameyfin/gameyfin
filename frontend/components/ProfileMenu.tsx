@@ -1,15 +1,17 @@
 import {useAuth} from "Frontend/util/auth";
 import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
 import {Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@nextui-org/react";
+import {useNavigate} from "react-router-dom";
 
 export default function ProfileMenu() {
     const {state, logout} = useAuth();
+    const navigate = useNavigate();
 
     const profileMenuItems = [
         {
             label: "My Profile",
             icon: <User/>,
-            onClick: () => alert("Profile")
+            onClick: () => navigate('/profile')
         },
         {
             label: "Administration",
@@ -26,7 +28,7 @@ export default function ProfileMenu() {
             label: "Sign Out",
             icon: <SignOut/>,
             onClick: () => logout(),
-            color: "danger"
+            color: "primary"
         },
     ];
 
@@ -38,7 +40,7 @@ export default function ProfileMenu() {
                         as="button"
                         className="transition-transform size-8"
                         classNames={{
-                            base: "bg-gradient-to-br from-primary-400 to-primary-700",
+                            base: "gradient-primary",
                             icon: "text-background/80"
                         }}
                 />

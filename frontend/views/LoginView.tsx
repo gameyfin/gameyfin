@@ -1,9 +1,9 @@
 import {useAuth} from "Frontend/util/auth";
-import {useEffect, useLayoutEffect, useState} from "react";
-import {Link, useNavigate} from "react-router-dom";
+import {useLayoutEffect, useState} from "react";
 import {XCircle} from "@phosphor-icons/react";
-import {Button, Card, CardBody, CardHeader, Input} from "@nextui-org/react";
+import {Button, Card, CardBody, CardHeader, Input, Link} from "@nextui-org/react";
 import {Alert, AlertDescription, AlertTitle} from "Frontend/@/components/ui/alert";
+import {useNavigate} from "react-router-dom";
 
 export default function LoginView() {
     const {state, login} = useAuth();
@@ -16,13 +16,13 @@ export default function LoginView() {
 
     useLayoutEffect(() => {
         if (state.user) {
-            const path = url ?  new URL(url, document.baseURI).pathname : '/'
+            const path = url ? new URL(url, document.baseURI).pathname : '/'
             navigate(path, {replace: true});
         }
     }, [state.user]);
 
     return (
-        <div className="flex size-full bg-gradient-to-br from-primary-400 to-primary-700">
+        <div className="flex size-full gradient-primary">
             <Card className="m-auto p-12">
                 <CardHeader>
                     <img
@@ -84,7 +84,7 @@ export default function LoginView() {
                             placeholder=""
                         />
                         <div className="flex justify-between items-center">
-                            <Link to="#">Forgot password?</Link>
+                            <Link color="foreground" underline="always">Forgot password?</Link>
                             <Button color="primary" type="submit" isLoading={loading}>
                                 {loading ? "" : "Log in"}
                             </Button>
