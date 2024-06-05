@@ -4,7 +4,6 @@ import jakarta.servlet.*
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.annotation.Order
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import java.io.IOException
 
@@ -20,14 +19,24 @@ class SetupFilter(
         val req = servletRequest as HttpServletRequest
         val res = servletResponse as HttpServletResponse
 
-        val isSetupUri = req.requestURI.contains("/v1/setup")
+        val isSetupUri = req.requestURI.startsWith("/setup")
+        val isLoginUri = req.requestURI.startsWith("/login")
 
-        if (setupService.isSetupCompleted() && !isSetupUri ||
-            !setupService.isSetupCompleted() && isSetupUri
-        ) {
+        // Skip this filter if the urls don't match
+        if (!(isSetupUri || isLoginUri)) {
             filterChain.doFilter(req, res)
-        } else {
-            res.status = HttpStatus.FORBIDDEN.value()
+            return
         }
+
+        val isSetupComplete = setupService.isSetupCompleted()
+
+        if (isSetupUri && isSetupComplete) {
+            res.sendRedirect("/login")
+        } else if (isLoginUri && !isSetupComplete) {
+            res.sendRedirect("/setup")
+        }
+
+        // took me longer than I want to admit to realize you always need to call doFilter() at the end
+        filterChain.doFilter(req, res)
     }
 }

@@ -26,7 +26,7 @@ class SetupDataLoader(
         log.info { "We will now set up some data..." }
 
         setupRoles()
-        setupUsers()
+        //setupUsers()
 
         log.info { "Setup completed..." }
     }
@@ -45,7 +45,7 @@ class SetupDataLoader(
             password = "user",
             roles = listOf(roleRepository.findByRolename(Roles.USER.roleName)!!)
         )
-        
+
         userService.registerUser(user)
     }
 
