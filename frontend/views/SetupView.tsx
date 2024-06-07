@@ -8,6 +8,7 @@ import {Card} from "@nextui-org/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import {useNavigate} from "react-router-dom";
+import {toast} from "sonner";
 
 function WelcomeStep() {
     return (
@@ -99,6 +100,7 @@ function SetupView() {
                                     password: values.password,
                                     email: values.email
                                 });
+                                toast("Setup finished", {description: "Have fun with Gameyfin!"});
                                 navigate('/login');
                             } catch (e) {
                                 alert("An error occurred while completing the setup. Please try again.")

@@ -5,6 +5,7 @@ import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
 import {AuthProvider} from "Frontend/util/auth";
 import {IconContext} from "@phosphor-icons/react";
+import {Toaster} from "Frontend/@/components/ui/sonner";
 
 export default function App() {
     const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function App() {
                 <AuthProvider>
                     <IconContext.Provider value={{size: 20}}>
                         <Outlet/>
+                        <Toaster/>
                     </IconContext.Provider>
                 </AuthProvider>
             </NextThemesProvider>

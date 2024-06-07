@@ -9,26 +9,30 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
+import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
+import java.net.InetAddress
 
 
 @Service
 @Transactional
 class SetupDataLoader(
     private val roleRepository: RoleRepository,
-    private val userService: UserService
+    private val userService: UserService,
+    private val env: Environment
 ) {
     private val log = KotlinLogging.logger {}
 
     @EventListener(ApplicationReadyEvent::class)
     fun initialSetup() {
-        log.info { "Looks like this is the first time your're starting Gameyfin." }
+        log.info { "Looks like this is the first time you're starting Gameyfin." }
         log.info { "We will now set up some data..." }
 
         setupRoles()
         //setupUsers()
 
         log.info { "Setup completed..." }
+        log.info { "Visit http://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup to complete the setup" }
     }
 
     fun setupUsers() {

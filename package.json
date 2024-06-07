@@ -36,6 +36,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.4.2",
+    "sonner": "^1.4.41",
     "tailwind-merge": "^2.3.0",
     "yup": "^1.4.0"
   },
@@ -100,7 +101,8 @@
     "tailwind-merge": "$tailwind-merge",
     "@nextui-org/react": "$@nextui-org/react",
     "framer-motion": "$framer-motion",
-    "@material-tailwind/react": "$@material-tailwind/react"
+    "@material-tailwind/react": "$@material-tailwind/react",
+    "sonner": "$sonner"
   },
   "vaadin": {
     "dependencies": {
@@ -144,6 +146,6 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "a2234ddab9db9a07cd47eded5c9642efac70874179c7dadb6c6887c4fe6519a7"
+    "hash": "3305a1ae01d771a26115b08f2597b5fbb020e6535692fd453407cba700f727ea"
   }
 }
