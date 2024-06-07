@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.users
 
+import de.grimsi.gameyfin.config.Roles
 import de.grimsi.gameyfin.users.dto.UserInfo
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
@@ -18,7 +19,8 @@ import org.springframework.stereotype.Service
 @Transactional
 class UserService(
     private val userRepository: UserRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val roleService: RoleService
 ) : UserDetailsService {
 
     override fun loadUserByUsername(username: String): UserDetails {
@@ -36,8 +38,13 @@ class UserService(
         )
     }
 
-    fun registerUser(user: User): User {
+    fun registerUser(user: User, role: Roles): User {
+        return registerUser(user, listOf(role))
+    }
+
+    fun registerUser(user: User, roles: List<Roles>): User {
         user.password = passwordEncoder.encode(user.password)
+        user.roles = roleService.toRoles(roles)
         return userRepository.save(user)
     }
 

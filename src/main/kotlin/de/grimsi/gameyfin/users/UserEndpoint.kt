@@ -6,11 +6,9 @@ import de.grimsi.gameyfin.users.dto.UserRegistration
 import de.grimsi.gameyfin.users.entities.User
 import dev.hilla.Endpoint
 import jakarta.annotation.security.PermitAll
-import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.server.ResponseStatusException
 
 @Endpoint
 class UserEndpoint(
@@ -31,21 +29,13 @@ class UserEndpoint(
         return userService.toUserInfo(user)
     }
 
-    @PermitAll
-    fun registerInitialSuperAdmin(registration: UserRegistration): UserInfo {
-        if (roleService.getUserCountForRole(Roles.SUPERADMIN) > 0) throw ResponseStatusException(HttpStatus.UNAUTHORIZED)
-        val superAdmin: User = registerUser(registration, listOf(Roles.SUPERADMIN))
-        return userService.toUserInfo(superAdmin)
-    }
-
     private fun registerUser(registration: UserRegistration, roles: List<Roles>): User {
         val user = User(
             username = registration.username,
             password = registration.password,
-            email = registration.email,
-            roles = roles.map { r -> roleService.toRole(r.roleName) }
+            email = registration.email
         )
 
-        return userService.registerUser(user)
+        return userService.registerUser(user, roles)
     }
 }

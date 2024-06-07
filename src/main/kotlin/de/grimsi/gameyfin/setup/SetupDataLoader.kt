@@ -34,19 +34,17 @@ class SetupDataLoader(
     fun setupUsers() {
         val superadmin = User(
             username = "admin",
-            password = "admin",
-            roles = listOf(roleRepository.findByRolename(Roles.SUPERADMIN.roleName)!!)
+            password = "admin"
         )
 
-        userService.registerUser(superadmin)
+        userService.registerUser(superadmin, Roles.SUPERADMIN)
 
         val user = User(
             username = "user",
-            password = "user",
-            roles = listOf(roleRepository.findByRolename(Roles.USER.roleName)!!)
+            password = "user"
         )
 
-        userService.registerUser(user)
+        userService.registerUser(user, Roles.USER)
     }
 
     fun setupRoles() {

@@ -2,10 +2,13 @@ package de.grimsi.gameyfin.setup
 
 import de.grimsi.gameyfin.config.Roles
 import de.grimsi.gameyfin.users.RoleService
+import de.grimsi.gameyfin.users.UserService
+import de.grimsi.gameyfin.users.entities.User
 import org.springframework.stereotype.Service
 
 @Service
 class SetupService(
+    private val userService: UserService,
     private val roleService: RoleService
 ) {
 
@@ -16,5 +19,12 @@ class SetupService(
      */
     fun isSetupCompleted(): Boolean {
         return roleService.getUserCountForRole(Roles.SUPERADMIN) > 0
+    }
+
+    /**
+     * Creates the initial user with Super-Admin permissions
+     */
+    fun createInitialAdminUser(superAdmin: User): User {
+        return userService.registerUser(superAdmin, Roles.SUPERADMIN)
     }
 }

@@ -5,8 +5,9 @@ import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/Input";
 import {GearFine, HandWaving, Palette, User} from "@phosphor-icons/react";
 import {Card} from "@nextui-org/react";
-import {UserEndpoint} from "Frontend/generated/endpoints";
+import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
+import {useNavigate} from "react-router-dom";
 
 function WelcomeStep() {
     return (
@@ -82,48 +83,60 @@ function SettingsStep() {
     );
 }
 
-const SetupView = () => (
-    <div className="flex size-full gradient-primary">
-        <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8">
-            <Wizard
-                initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}
-                onSubmit={(values: any) => UserEndpoint.registerInitialSuperAdmin({
-                        username: values.username,
-                        password: values.password,
-                        email: values.email
+function SetupView() {
+    const navigate = useNavigate();
+
+    return (
+        <div className="flex size-full gradient-primary">
+            <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8">
+                <Wizard
+                    initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}
+                    onSubmit={
+                        async (values: any) => {
+                            try {
+                                await SetupEndpoint.registerSuperAdmin({
+                                    username: values.username,
+                                    password: values.password,
+                                    email: values.email
+                                });
+                                navigate('/login');
+                            } catch (e) {
+                                alert("An error occurred while completing the setup. Please try again.")
+                            }
+                        }
                     }
-                ).then(() => alert("Successfully registered!"))}
-            >
-                <WizardStep icon={<HandWaving/>}>
-                    <WelcomeStep/>
-                </WizardStep>
-                <WizardStep icon={<Palette/>}>
-                    <ThemeStep/>
-                </WizardStep>
-                <WizardStep
-                    validationSchema={Yup.object({
-                        username: Yup.string()
-                            .required('Required'),
-                        password: Yup.string()
-                            .min(8, 'Password must be at least 8 characters long')
-                            .required('Required'),
-                        email: Yup.string()
-                            .email()
-                            .required('Required'),
-                        passwordRepeat: Yup.string()
-                            .equals([Yup.ref('password')], 'Passwords do not match')
-                            .required('Required')
-                    })}
-                    icon={<User/>}
                 >
-                    <UserStep/>
-                </WizardStep>
-                <WizardStep icon={<GearFine/>}>
-                    <SettingsStep/>
-                </WizardStep>
-            </Wizard>
-        </Card>
-    </div>
-);
+                    <WizardStep icon={<HandWaving/>}>
+                        <WelcomeStep/>
+                    </WizardStep>
+                    <WizardStep icon={<Palette/>}>
+                        <ThemeStep/>
+                    </WizardStep>
+                    <WizardStep
+                        validationSchema={Yup.object({
+                            username: Yup.string()
+                                .required('Required'),
+                            password: Yup.string()
+                                .min(8, 'Password must be at least 8 characters long')
+                                .required('Required'),
+                            email: Yup.string()
+                                .email()
+                                .required('Required'),
+                            passwordRepeat: Yup.string()
+                                .equals([Yup.ref('password')], 'Passwords do not match')
+                                .required('Required')
+                        })}
+                        icon={<User/>}
+                    >
+                        <UserStep/>
+                    </WizardStep>
+                    <WizardStep icon={<GearFine/>}>
+                        <SettingsStep/>
+                    </WizardStep>
+                </Wizard>
+            </Card>
+        </div>
+    );
+}
 
 export default SetupView;

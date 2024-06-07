@@ -20,11 +20,12 @@ class RoleService(
         return r.users.size
     }
 
-    fun toRoles(roles: Collection<String>): List<Role> {
-        return roles.mapNotNull { r -> roleRepository.findByRolename(r) }
+    fun toRoles(roles: Collection<Roles>): List<Role> {
+        return roles.mapNotNull { r -> roleRepository.findByRolename(r.roleName) }
     }
 
-    fun toRole(role: String): Role {
-        return roleRepository.findByRolename(role) ?: throw RuntimeException("Role $role does not exist")
+    fun toRole(role: Roles): Role {
+        return roleRepository.findByRolename(role.roleName)
+            ?: throw RuntimeException("Role ${role.roleName} does not exist")
     }
 }
