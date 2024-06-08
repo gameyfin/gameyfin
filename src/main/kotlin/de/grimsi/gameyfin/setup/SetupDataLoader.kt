@@ -29,13 +29,16 @@ class SetupDataLoader(
         log.info { "We will now set up some data..." }
 
         setupRoles()
-        //setupUsers()
+        setupUsers()
 
         log.info { "Setup completed..." }
         log.info { "Visit http://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup to complete the setup" }
     }
 
     fun setupUsers() {
+
+        log.info { "Setting up users..." }
+
         val superadmin = User(
             username = "admin",
             password = "admin"
@@ -49,6 +52,8 @@ class SetupDataLoader(
         )
 
         userService.registerUser(user, Roles.USER)
+
+        log.info { "User setup completed." }
     }
 
     fun setupRoles() {

@@ -1,7 +1,16 @@
 package de.grimsi.gameyfin.config
 
 enum class Roles(val roleName: String) {
-    SUPERADMIN("ROLE_SUPERADMIN"),
-    ADMIN("ROLE_ADMIN"),
-    USER("ROLE_USER")
+    SUPERADMIN(Names.SUPERADMIN),
+    ADMIN(Names.ADMIN),
+    USER(Names.USER);
+
+    // necessary for the ability to use the Roles class in the @RolesAllowed annotation
+    class Names {
+        companion object {
+            const val SUPERADMIN = "ROLE_SUPERADMIN"
+            const val ADMIN = "ROLE_ADMIN"
+            const val USER = "ROLE_USER"
+        }
+    }
 }

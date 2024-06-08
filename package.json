@@ -31,6 +31,7 @@
     "construct-style-sheets-polyfill": "3.1.0",
     "formik": "^2.4.5",
     "framer-motion": "^11.1.7",
+    "http-status-codes": "^2.3.0",
     "lit": "3.1.0",
     "next-themes": "^0.3.0",
     "react": "^18.2.0",
@@ -102,7 +103,8 @@
     "@nextui-org/react": "$@nextui-org/react",
     "framer-motion": "$framer-motion",
     "@material-tailwind/react": "$@material-tailwind/react",
-    "sonner": "$sonner"
+    "sonner": "$sonner",
+    "http-status-codes": "$http-status-codes"
   },
   "vaadin": {
     "dependencies": {
@@ -146,6 +148,6 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "3305a1ae01d771a26115b08f2597b5fbb020e6535692fd453407cba700f727ea"
+    "hash": "e078b3ecf381b7be4b804c8e2cd928faa9accb3412cfb55cfb649f9633cd1d41"
   }
 }

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull
 @Entity
 class Role(
     @NotNull
+    @Column(unique = true)
     var rolename: String,
 
     @Id

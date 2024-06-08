@@ -12,8 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 
 @Endpoint
 class UserEndpoint(
-    private val userService: UserService,
-    private val roleService: RoleService,
+    private val userService: UserService
 ) {
 
     @PermitAll

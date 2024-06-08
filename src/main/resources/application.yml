@@ -7,6 +7,14 @@ server:
     session:
       tracking-modes: cookie
 
+management:
+  endpoints.web.exposure.include: '*'
+  endpoint:
+    pause:
+      enabled: false
+    restart:
+      enabled: true
+
 spring:
   # Workaround for https://github.com/vaadin/hilla/issues/842
   devtools.restart.additional-exclude: dev/hilla/openapi.json

@@ -8,23 +8,27 @@ import jakarta.validation.constraints.NotNull
 @Entity
 @Table(name = "users")
 class User(
-    @field:NotNull
+    @NotNull
+    @Column(unique = true)
     var username: String,
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
-    @field:NotNull
+    @NotNull
     var password: String,
 
-    @field:Nullable
+    @Nullable
+    @Column(unique = true)
     var email: String? = null,
+
+    var email_confirmed: Boolean = false,
 
     var enabled: Boolean = true,
 
     @Embedded
-    @field:Nullable
+    @Nullable
     var avatar: Avatar? = null,
 
     @ManyToMany(fetch = FetchType.EAGER)

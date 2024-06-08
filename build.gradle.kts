@@ -1,12 +1,13 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id("org.springframework.boot") version "3.2.2"
-    id("io.spring.dependency-management") version "1.1.4"
+    val kotlinVersion = "2.0.0"
+    id("org.springframework.boot") version "3.3.0"
+    id("io.spring.dependency-management") version "1.1.5"
     id("dev.hilla") version "2.5.6"
-    kotlin("jvm") version "1.9.22"
-    kotlin("plugin.spring") version "1.9.22"
-    kotlin("plugin.jpa") version "1.9.22"
+    kotlin("jvm") version kotlinVersion
+    kotlin("plugin.spring") version kotlinVersion
+    kotlin("plugin.jpa") version kotlinVersion
     java
 }
 
@@ -18,7 +19,7 @@ group = "de.grimsi"
 version = "2.0.0-SNAPSHOT"
 description = "gameyfin"
 
-java.sourceCompatibility = JavaVersion.VERSION_21
+java.sourceCompatibility = JavaVersion.VERSION_22
 
 configurations {
     compileOnly {
@@ -34,6 +35,7 @@ repositories {
 }
 
 extra["hillaVersion"] = "2.5.6"
+val springCloudVersion by extra("2023.0.2")
 
 dependencies {
     // Spring Boot & Kotlin
@@ -54,6 +56,7 @@ dependencies {
     // Persistence
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.7")
+    implementation("org.springframework.cloud:spring-cloud-starter")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
@@ -67,13 +70,17 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom("dev.hilla:hilla-bom:${property("hillaVersion")}")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
     }
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        freeCompilerArgs += "-Xjsr305=strict"
-        jvmTarget = "21"
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile> {
+    compilerOptions {
+        apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
+        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
+        jvmTarget.set(JvmTarget.JVM_22)
+        progressiveMode.set(true)
+        freeCompilerArgs.add("-Xjsr305=strict")
     }
 }
 

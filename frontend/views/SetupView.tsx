@@ -100,7 +100,7 @@ function SetupView() {
                                     password: values.password,
                                     email: values.email
                                 });
-                                toast("Setup finished", {description: "Have fun with Gameyfin!"});
+                                toast.success("Setup finished", {description: "Have fun with Gameyfin!"});
                                 navigate('/login');
                             } catch (e) {
                                 alert("An error occurred while completing the setup. Please try again.")
