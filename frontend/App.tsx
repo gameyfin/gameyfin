@@ -11,7 +11,8 @@ import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 
 export default function App() {
     const navigate = useNavigate();
-    client.middlewares.push(ErrorHandlingMiddleware);
+
+    client.middlewares = [ErrorHandlingMiddleware];
 
     return (
         <NextUIProvider className="size-full" navigate={navigate}>
