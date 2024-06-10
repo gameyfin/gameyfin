@@ -3,18 +3,20 @@ package de.grimsi.gameyfin.config
 import com.vaadin.flow.spring.security.VaadinWebSecurity
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 
 
 @EnableWebSecurity
 @Configuration
-class SecurityConfig : VaadinWebSecurity() {
+class SecurityConfig(
+    private val environment: Environment
+) : VaadinWebSecurity() {
 
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
@@ -31,7 +33,11 @@ class SecurityConfig : VaadinWebSecurity() {
     @Throws(Exception::class)
     public override fun configure(web: WebSecurity) {
         super.configure(web)
-        web.ignoring().requestMatchers(AntPathRequestMatcher("/images/**"))
+        web.ignoring().requestMatchers("/images/**")
+
+        if ("dev" in environment.activeProfiles) {
+            web.ignoring().requestMatchers("/h2-console/**")
+        }
     }
 
     @Bean

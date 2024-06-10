@@ -33,10 +33,12 @@ class UserService(
             user.enabled,
             true,
             true,
-            true,
+            user.enabled,
             toAuthorities(user.roles)
         )
     }
+
+    fun existsByUsername(username: String): Boolean = userRepository.findByUsername(username) != null
 
     fun registerUser(user: User, role: Roles): User {
         return registerUser(user, listOf(role))

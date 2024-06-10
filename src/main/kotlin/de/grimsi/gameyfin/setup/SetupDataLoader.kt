@@ -29,31 +29,13 @@ class SetupDataLoader(
         log.info { "We will now set up some data..." }
 
         setupRoles()
-        setupUsers()
+
+        if ("dev" in env.activeProfiles) {
+            setupUsers()
+        }
 
         log.info { "Setup completed..." }
         log.info { "Visit http://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup to complete the setup" }
-    }
-
-    fun setupUsers() {
-
-        log.info { "Setting up users..." }
-
-        val superadmin = User(
-            username = "admin",
-            password = "admin"
-        )
-
-        userService.registerUser(superadmin, Roles.SUPERADMIN)
-
-        val user = User(
-            username = "user",
-            password = "user"
-        )
-
-        userService.registerUser(user, Roles.USER)
-
-        log.info { "User setup completed." }
     }
 
     fun setupRoles() {
@@ -77,5 +59,31 @@ class SetupDataLoader(
             roleRepository.save(role)
         }
         return role
+    }
+
+    fun setupUsers() {
+        log.info { "Setting up users..." }
+
+        val superadmin = User(
+            username = "admin",
+            password = "admin"
+        )
+
+        registerUserIfNotFound(superadmin, Roles.SUPERADMIN)
+
+        val user = User(
+            username = "user",
+            password = "user"
+        )
+
+        registerUserIfNotFound(user, Roles.USER)
+
+        log.info { "User setup completed." }
+    }
+
+    fun registerUserIfNotFound(user: User, role: Roles) {
+        if (userService.existsByUsername(user.username)) return
+
+        userService.registerUser(user, role)
     }
 }

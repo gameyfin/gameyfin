@@ -19,10 +19,19 @@ spring:
   # Workaround for https://github.com/vaadin/hilla/issues/842
   devtools.restart.additional-exclude: dev/hilla/openapi.json
   jpa:
-    defer-datasource-initialization: true
+    # defer-datasource-initialization: true
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
   mustache:
     check-template-location: false
   sql.init.mode: always
+  datasource:
+    username: gfadmin
+    password: gameyfin
+    db-name: gameyfin_db
+    url: jdbc:h2:file:./db/${spring.datasource.db-name}
+    driverClassName: org.h2.Driver
   application:
     name: Gameyfin
 

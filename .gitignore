@@ -46,3 +46,4 @@ out/
 /docker/docker-compose.yml
 /.gameyfin/
 /frontend/generated
+/db/

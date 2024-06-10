@@ -1,5 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="GameyfinApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <option name="ACTIVE_PROFILES" value="dev" />
     <module name="gameyfin.main" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="de.grimsi.gameyfin.GameyfinApplication" />
     <extension name="coverage">

@@ -7,7 +7,7 @@ import de.grimsi.gameyfin.config.Roles
 import org.springframework.security.core.userdetails.UserDetails
 
 fun UserDetails.hasRole(role: Roles): Boolean {
-    return this.authorities.map { a -> a.authority }.contains(role.roleName)
+    return role.roleName in this.authorities.map { a -> a.authority }
 }
 
 fun UserDetails.isAdmin(): Boolean {
