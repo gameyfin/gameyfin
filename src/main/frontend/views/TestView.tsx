@@ -1,7 +1,7 @@
 import {Link} from "react-router-dom";
 import {Button} from "@nextui-org/react";
 import {toast} from "sonner";
-import {SystemEndpoint} from "Frontend/generated/endpoints";
+import {SystemEndpoint} from "Frontend/generated/endpoints.js";
 
 export default function TestView() {
     return (
@@ -14,7 +14,8 @@ export default function TestView() {
                             description: "Description",
                             action: {
                                 label: "OK",
-                                onClick: () => {},
+                                onClick: () => {
+                                },
                             }
                         })}>Toast (Normal)</Button>
                     <Button onPress={
@@ -22,7 +23,8 @@ export default function TestView() {
                             description: "Description",
                             action: {
                                 label: "OK",
-                                onClick: () => {},
+                                onClick: () => {
+                                },
                             }
                         })}>Toast (Success)</Button>
                     <Button onPress={
@@ -30,7 +32,8 @@ export default function TestView() {
                             description: "Description",
                             action: {
                                 label: "OK",
-                                onClick: () => {},
+                                onClick: () => {
+                                },
                             }
                         })}>Toast (Error)</Button>
                 </div>

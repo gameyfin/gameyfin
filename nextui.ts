@@ -1,5 +1,5 @@
 import {NextUIPluginConfig} from "@nextui-org/react";
-import {compileThemes, themes} from "./frontend/theming/themes"
+import {compileThemes, themes} from "./src/main/frontend/theming/themes"
 
 export const NextUIConfig: NextUIPluginConfig = {
     prefix: "gf",

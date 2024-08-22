@@ -4,7 +4,7 @@ import de.grimsi.gameyfin.config.Roles
 import de.grimsi.gameyfin.users.dto.UserInfo
 import de.grimsi.gameyfin.users.dto.UserRegistration
 import de.grimsi.gameyfin.users.entities.User
-import dev.hilla.Endpoint
+import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.PermitAll
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority

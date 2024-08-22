@@ -1,10 +1,15 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val springCloudVersion by extra("2023.0.3")
+val vaadinVersion by extra("24.4.5")
+
 plugins {
-    val kotlinVersion = "2.0.0"
-    id("org.springframework.boot") version "3.3.0"
-    id("io.spring.dependency-management") version "1.1.5"
-    id("dev.hilla") version "2.5.6"
+    val kotlinVersion = "2.0.10"
+    val vaadinVersion = "24.4.5"
+
+    id("org.springframework.boot") version "3.3.2"
+    id("io.spring.dependency-management") version "1.1.6"
+    id("com.vaadin") version vaadinVersion
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.spring") version kotlinVersion
     kotlin("plugin.jpa") version kotlinVersion
@@ -34,9 +39,6 @@ repositories {
     }
 }
 
-extra["hillaVersion"] = "2.5.6"
-val springCloudVersion by extra("2023.0.2")
-
 dependencies {
     // Spring Boot & Kotlin
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -46,9 +48,9 @@ dependencies {
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-    // Hilla
-    api("dev.hilla:hilla-react")
-    api("dev.hilla:hilla-spring-boot-starter")
+    // Vaadin Hilla
+    implementation("com.vaadin:vaadin")
+    api("com.vaadin:vaadin-spring-boot-starter")
 
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
@@ -69,7 +71,7 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("dev.hilla:hilla-bom:${property("hillaVersion")}")
+        mavenBom("com.vaadin:vaadin-bom:$vaadinVersion")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
     }
 }

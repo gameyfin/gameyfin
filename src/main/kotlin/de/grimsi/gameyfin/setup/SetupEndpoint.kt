@@ -7,8 +7,8 @@ import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.dto.UserInfo
 import de.grimsi.gameyfin.users.dto.UserRegistration
 import de.grimsi.gameyfin.users.entities.User
-import dev.hilla.Endpoint
-import dev.hilla.exception.EndpointException
+import com.vaadin.hilla.Endpoint
+import com.vaadin.hilla.exception.EndpointException
 
 @Endpoint
 class SetupEndpoint(

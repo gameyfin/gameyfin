@@ -49,17 +49,23 @@ const Wizard = ({children, initialValues, onSubmit}: {
             /*// @ts-ignore*/
             validationSchema={step.props.validationSchema}
         >
-            {formik => (
+            {(formik: { values: any; isSubmitting: any; }) => (
                 <Form className="flex flex-col h-full">
                     <div className="w-full mb-8">
                         {/*<p>Step {stepNumber + 1} of {steps.length}</p>*/}
                         <Stepper activeStep={stepNumber} activeLineClassName="bg-primary"
-                                 lineClassName="bg-foreground">
+                                 lineClassName="bg-foreground"
+                                 placeholder={undefined}
+                                 onPointerEnterCapture={undefined}
+                                 onPointerLeaveCapture={undefined}>
                             {steps.map((child, index) => (
                                 <Step key={index}
                                       className="bg-foreground text-background"
                                       activeClassName="bg-primary"
-                                      completedClassName="bg-primary">
+                                      completedClassName="bg-primary"
+                                      placeholder={undefined}
+                                      onPointerEnterCapture={undefined}
+                                      onPointerLeaveCapture={undefined}>
                                     {/*@ts-ignore*/}
                                     {child.props.icon}
                                 </Step>

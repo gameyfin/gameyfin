@@ -1,4 +1,4 @@
-import {Middleware, MiddlewareContext, MiddlewareNext} from '@hilla/frontend';
+import {Middleware, MiddlewareContext, MiddlewareNext} from '@vaadin/hilla-frontend';
 import {toast} from "sonner";
 import {getReasonPhrase} from "http-status-codes";
 
