@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 val springCloudVersion by extra("2023.0.3")
-val vaadinVersion by extra("24.4.5")
+val vaadinVersion by extra("24.4.10")
 
 plugins {
     val kotlinVersion = "2.0.10"
-    val vaadinVersion = "24.4.5"
+    val vaadinVersion = "24.4.10"
 
-    id("org.springframework.boot") version "3.3.2"
+    id("org.springframework.boot") version "3.3.3"
     id("io.spring.dependency-management") version "1.1.6"
     id("com.vaadin") version vaadinVersion
     kotlin("jvm") version kotlinVersion
@@ -49,7 +49,9 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // Vaadin Hilla
-    implementation("com.vaadin:vaadin")
+    implementation("com.vaadin:vaadin-core") {
+        exclude("com.vaadin:flow-react")
+    }
     api("com.vaadin:vaadin-spring-boot-starter")
 
     // Logging

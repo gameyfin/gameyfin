@@ -38,7 +38,9 @@ spring:
 vaadin:
   # To improve the performance during development.
   # For more information https://vaadin.com/docs/flow/spring/tutorial-spring-configuration.html#special-configuration-parameters
-  whitelisted-packages:
+  allowed-packages:
     - com.vaadin
     - org.vaadin
     - dev.hilla
+  pnpm:
+    enable: true
