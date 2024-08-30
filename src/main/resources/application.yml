@@ -43,4 +43,4 @@ vaadin:
     - org.vaadin
     - dev.hilla
   pnpm:
-    enable: true
+    enable: false

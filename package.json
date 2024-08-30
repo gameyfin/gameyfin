@@ -81,7 +81,7 @@
   "overrides": {
     "classnames": "$classnames",
     "react": "$react",
-    "react-dom": "$react-dom",
+    "react-dom": "18.3.1",
     "react-router-dom": "$react-router-dom",
     "@vaadin/bundles": "$@vaadin/bundles",
     "@vaadin/common-frontend": "$@vaadin/common-frontend",

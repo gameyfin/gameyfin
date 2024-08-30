@@ -1,18 +1,12 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-val springCloudVersion by extra("2023.0.3")
-val vaadinVersion by extra("24.4.10")
-
 plugins {
-    val kotlinVersion = "2.0.10"
-    val vaadinVersion = "24.4.10"
-
-    id("org.springframework.boot") version "3.3.3"
-    id("io.spring.dependency-management") version "1.1.6"
-    id("com.vaadin") version vaadinVersion
-    kotlin("jvm") version kotlinVersion
-    kotlin("plugin.spring") version kotlinVersion
-    kotlin("plugin.jpa") version kotlinVersion
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
+    id("com.vaadin")
+    kotlin("jvm")
+    kotlin("plugin.spring")
+    kotlin("plugin.jpa")
     java
 }
 
@@ -73,8 +67,8 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("com.vaadin:vaadin-bom:$vaadinVersion")
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
+        mavenBom("com.vaadin:vaadin-bom:${extra["vaadinVersion"]}")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${extra["springCloudVersion"]}")
     }
 }
 

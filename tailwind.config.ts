@@ -6,8 +6,8 @@ import withMT from "@material-tailwind/react/utils/withMT";
 export default withMT({
     darkMode: "class",
     content: [
-        './frontend/index.html',
-        './frontend/**/*.{js,ts,jsx,tsx}',
+        './src/main/frontend/index.html',
+        './src/main/frontend/**/*.{js,ts,jsx,tsx}',
         './node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}'
     ],
     theme: {
