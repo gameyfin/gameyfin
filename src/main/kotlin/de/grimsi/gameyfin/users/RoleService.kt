@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.users
 
-import de.grimsi.gameyfin.config.Roles
+import de.grimsi.gameyfin.meta.Roles
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.persistence.RoleRepository
 import jakarta.transaction.Transactional

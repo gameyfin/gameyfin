@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.config
+package de.grimsi.gameyfin.meta
 
 enum class Roles(val roleName: String) {
     SUPERADMIN(Names.SUPERADMIN),

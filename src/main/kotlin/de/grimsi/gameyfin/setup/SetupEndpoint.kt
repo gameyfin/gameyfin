@@ -1,14 +1,14 @@
 package de.grimsi.gameyfin.setup
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
-import de.grimsi.gameyfin.config.Roles
-import de.grimsi.gameyfin.users.RoleService
-import de.grimsi.gameyfin.users.UserService
-import de.grimsi.gameyfin.users.dto.UserInfo
-import de.grimsi.gameyfin.users.dto.UserRegistration
-import de.grimsi.gameyfin.users.entities.User
 import com.vaadin.hilla.Endpoint
 import com.vaadin.hilla.exception.EndpointException
+import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.users.RoleService
+import de.grimsi.gameyfin.users.UserService
+import de.grimsi.gameyfin.users.dto.UserInfoDto
+import de.grimsi.gameyfin.users.dto.UserRegistrationDto
+import de.grimsi.gameyfin.users.entities.User
 
 @Endpoint
 class SetupEndpoint(
@@ -22,7 +22,7 @@ class SetupEndpoint(
     }
 
     @AnonymousAllowed
-    fun registerSuperAdmin(superAdminRegistration: UserRegistration): UserInfo {
+    fun registerSuperAdmin(superAdminRegistration: UserRegistrationDto): UserInfoDto {
         if (setupService.isSetupCompleted()) throw EndpointException("Setup already completed")
 
         val user = User(

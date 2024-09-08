@@ -1,7 +1,7 @@
 package de.grimsi.gameyfin.users
 
-import de.grimsi.gameyfin.config.Roles
-import de.grimsi.gameyfin.users.dto.UserInfo
+import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
 import de.grimsi.gameyfin.users.persistence.UserRepository
@@ -50,8 +50,8 @@ class UserService(
         return userRepository.save(user)
     }
 
-    fun toUserInfo(user: User): UserInfo {
-        return UserInfo(
+    fun toUserInfo(user: User): UserInfoDto {
+        return UserInfoDto(
             username = user.username,
             email = user.email,
             roles = user.roles.map { r -> r.rolename }

@@ -1,7 +1,7 @@
 package de.grimsi.gameyfin.system
 
-import de.grimsi.gameyfin.config.Roles
 import com.vaadin.hilla.Endpoint
+import de.grimsi.gameyfin.meta.Roles
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
