@@ -1,29 +1,28 @@
-import {Listbox, ListboxItem} from "@nextui-org/react";
-import {GearFine, Palette, User} from "@phosphor-icons/react";
 import {Outlet, useNavigate} from "react-router-dom";
-import {useState} from "react";
+import {Envelope, GameController, Users} from "@phosphor-icons/react";
+import {Listbox, ListboxItem} from "@nextui-org/react";
 
-export default function ProfileView() {
+export default function AdministrationView() {
     const navigate = useNavigate();
 
     const menuItems = [
         {
-            title: "My Profile",
-            key: "profile",
-            icon: <User/>,
-            action: () => navigate('/profile')
+            title: "Libraries",
+            key: "libraries",
+            icon: <GameController/>,
+            action: () => navigate('libraries')
         },
         {
-            title: "Appearance",
-            key: "appearance",
-            icon: <Palette/>,
-            action: () => navigate('appearance')
+            title: "Users",
+            key: "users",
+            icon: <Users/>,
+            action: () => navigate('users')
         },
         {
-            title: "Manage account",
-            icon: <GearFine/>,
-            key: "account-management",
-            action: () => navigate('account-management')
+            title: "Notifications",
+            icon: <Envelope/>,
+            key: "notifications",
+            action: () => navigate('notifications')
         }
     ]
 
@@ -38,7 +37,7 @@ export default function ProfileView() {
                     ))}
                 </Listbox>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-grow">
                 <Outlet/>
             </div>
         </div>

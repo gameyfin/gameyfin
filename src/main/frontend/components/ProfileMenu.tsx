@@ -11,12 +11,12 @@ export default function ProfileMenu() {
         {
             label: "My Profile",
             icon: <User/>,
-            onClick: () => navigate('/profile')
+            onClick: () => navigate('/profile/')
         },
         {
             label: "Administration",
             icon: <GearFine/>,
-            onClick: () => alert("Administration"),
+            onClick: () => navigate("/administration/libraries"),
             showIf: state.user?.roles?.some(a => a?.includes("ADMIN"))
         },
         {

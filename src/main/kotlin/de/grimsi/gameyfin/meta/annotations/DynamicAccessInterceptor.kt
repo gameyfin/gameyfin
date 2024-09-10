@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.meta.annotations
 
-import de.grimsi.gameyfin.config.ConfigProperty
+import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -24,7 +24,7 @@ class DynamicAccessInterceptor(
         // Check if method is annotated with @DynamicPublicAccess
         if (method.isAnnotationPresent(DynamicPublicAccess::class.java)) {
             // Check if user is authenticated or public access is enabled
-            if (request.userPrincipal != null || configService.getConfigValue(ConfigProperty.LibraryAllowPublicAccess)) {
+            if (request.userPrincipal != null || configService.getConfigValue(ConfigProperties.LibraryAllowPublicAccess)) {
                 return true
             }
 

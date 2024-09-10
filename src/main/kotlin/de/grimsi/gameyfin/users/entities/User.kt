@@ -8,13 +8,13 @@ import jakarta.validation.constraints.NotNull
 @Entity
 @Table(name = "users")
 class User(
-    @NotNull
-    @Column(unique = true)
-    var username: String,
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
+
+    @NotNull
+    @Column(unique = true)
+    var username: String,
 
     @NotNull
     var password: String,

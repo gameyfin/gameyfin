@@ -7,6 +7,8 @@ import SetupView from "Frontend/views/SetupView";
 import ProfileView from "Frontend/views/ProfileView";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import App from "Frontend/App";
+import AdministrationView from "Frontend/views/AdministrationView";
+import {LibraryManagement} from "Frontend/components/administration/LibraryManagement";
 
 export const routes = protectRoutes([
     {
@@ -25,6 +27,13 @@ export const routes = protectRoutes([
                         element: <ProfileView/>,
                         children: [
                             {path: 'appearance', element: <ThemeSelector/>}
+                        ]
+                    },
+                    {
+                        path: 'administration',
+                        element: <AdministrationView/>,
+                        children: [
+                            {path: 'libraries', element: <LibraryManagement/>},
                         ]
                     }
                 ]

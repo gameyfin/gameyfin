@@ -52,7 +52,6 @@ const Wizard = ({children, initialValues, onSubmit}: {
             {(formik: { values: any; isSubmitting: any; }) => (
                 <Form className="flex flex-col h-full">
                     <div className="w-full mb-8">
-                        {/*<p>Step {stepNumber + 1} of {steps.length}</p>*/}
                         <Stepper activeStep={stepNumber} activeLineClassName="bg-primary"
                                  lineClassName="bg-foreground"
                                  placeholder={undefined}

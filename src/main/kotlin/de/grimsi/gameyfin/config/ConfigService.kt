@@ -1,17 +1,44 @@
 package de.grimsi.gameyfin.config
 
+import de.grimsi.gameyfin.config.dto.ConfigEntryDto
 import de.grimsi.gameyfin.config.entities.ConfigEntry
 import de.grimsi.gameyfin.config.persistence.ConfigRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import java.io.Serializable
-import kotlin.reflect.safeCast
 
 @Service
 @Transactional
 class ConfigService(
     private val appConfigRepository: ConfigRepository
 ) {
+
+    /**
+     * Get all known config values.
+     *
+     * @param prefix: Optional prefix to filter the config values
+     * @return A map of all config values
+     */
+    fun getAllConfigValues(prefix: String?): List<ConfigEntryDto> {
+        var configProperties = ConfigProperties::class.sealedSubclasses.flatMap { subclass ->
+            subclass.objectInstance?.let { listOf(it) } ?: listOf()
+        }
+
+        if (prefix != null) {
+            configProperties = configProperties.filter { it.key.startsWith(prefix) }
+        }
+
+        return configProperties.map { configProperty ->
+            val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
+            ConfigEntryDto(
+                key = configProperty.key,
+                value = appConfig?.value ?: configProperty.default?.toString(),
+                defaultValue = configProperty.default?.toString(),
+                type = configProperty.type.simpleName ?: "Unknown",
+                description = configProperty.description
+            )
+        }
+    }
 
     /**
      * Get the current value of a config property in a type-safe way.
@@ -21,7 +48,7 @@ class ConfigService(
      * @return The current value if set or the default value
      * @throws IllegalArgumentException if no value is set and no default value exists
      */
-    fun <T : Serializable> getConfigValue(configProperty: ConfigProperty<T>): T {
+    fun <T : Serializable> getConfigValue(configProperty: ConfigProperties<T>): T {
         val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
         return if (appConfig != null) {
             getValue(appConfig.value, configProperty)
@@ -61,12 +88,18 @@ class ConfigService(
     fun <T : Serializable> setConfigValue(key: String, value: T) {
         val configKey = findConfigProperty(key)
 
-        if (configKey.type.safeCast(value) == null) {
-            throw IllegalArgumentException("Type mismatch for key: ${configKey.key}")
+        // Check if the value can be cast to the type defined for the config property
+        val castedValue = getValue(value.toString(), configKey)
+
+        var configEntry = appConfigRepository.findById(key).orElse(null)
+
+        if (configEntry == null) {
+            configEntry = ConfigEntry(configKey.key, castedValue.toString())
+        } else {
+            configEntry.value = castedValue.toString()
         }
 
-        val appConfig = ConfigEntry(configKey.key, value.toString())
-        appConfigRepository.save(appConfig)
+        appConfigRepository.save(configEntry)
     }
 
     /**
@@ -104,11 +137,11 @@ class ConfigService(
      * Get the value of the config property in a type-safe way.
      */
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Serializable> getValue(value: String, configProperty: ConfigProperty<T>): T {
+    private fun <T : Serializable> getValue(value: String, configProperty: ConfigProperties<T>): T {
         return when (configProperty.type) {
             String::class -> value as T
             Boolean::class -> value.toBoolean() as T
-            Number::class -> value.toInt() as T
+            Int::class -> value.toInt() as T
             Float::class -> value.toFloat() as T
             else -> {
                 throw RuntimeException("Unknown config type ${configProperty.type}: '$value' for key ${configProperty.key}")
@@ -119,9 +152,9 @@ class ConfigService(
     /**
      * Returns a config property
      */
-    private fun findConfigProperty(key: String): ConfigProperty<*> {
+    private fun findConfigProperty(key: String): ConfigProperties<*> {
         // Use reflection to get all objects defined within ConfigKey
-        val configProperties = ConfigProperty::class.sealedSubclasses.flatMap { subclass ->
+        val configProperties = ConfigProperties::class.sealedSubclasses.flatMap { subclass ->
             subclass.objectInstance?.let { listOf(it) } ?: listOf()
         }
 

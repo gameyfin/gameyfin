@@ -8,12 +8,12 @@ const Input = ({label, ...props}) => {
     const [field, meta] = useField(props);
 
     return (
-        <div className="grid w-full max-w-sm items-center gap-1.5">
+        <div className="grid w-full max-w-sm items-center gap-2 my-2">
             <NextUiInput
                 {...props}
                 {...field}
                 id={label}
-                placeholder={label}
+                label={label}
                 isInvalid={meta.touched && !!meta.error}
                 errorMessage={
                     <small className="flex flex-row items-center gap-1 text-danger">

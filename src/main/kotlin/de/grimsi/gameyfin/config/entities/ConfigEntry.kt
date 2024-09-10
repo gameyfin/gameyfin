@@ -11,9 +11,10 @@ import jakarta.validation.constraints.NotNull
 class ConfigEntry(
     @Id
     @NotNull
-    @Column(unique = true)
+    @Column(name = "`key`", unique = true)
     val key: String,
 
     @NotNull
+    @Column(name = "`value`")
     var value: String
 )
