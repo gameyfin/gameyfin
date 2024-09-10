@@ -8,7 +8,7 @@ const Input = ({label, ...props}) => {
     const [field, meta] = useField(props);
 
     return (
-        <div className="grid w-full max-w-sm items-center gap-2 my-2">
+        <div className="flex flex-grow max-w-sm items-center gap-2 my-2">
             <NextUiInput
                 {...props}
                 {...field}

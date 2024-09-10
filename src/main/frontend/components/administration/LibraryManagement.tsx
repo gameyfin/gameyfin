@@ -5,6 +5,7 @@ import {Form, Formik} from "formik";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import {Button, Divider, Skeleton} from "@nextui-org/react";
 import {toast} from "sonner";
+import {Check} from "@phosphor-icons/react";
 
 type NestedConfig = {
     [field: string]: any;
@@ -17,6 +18,7 @@ type ConfigValuePair = {
 
 export function LibraryManagement() {
     const isInitialized = useRef(false);
+    const [configSaved, setConfigSaved] = useState(false);
     const [configDtos, setConfigDtos] = useState<ConfigEntryDto[]>([]);
 
     useEffect(() => {
@@ -25,6 +27,12 @@ export function LibraryManagement() {
             isInitialized.current = true;
         });
     }, []);
+
+    useEffect(() => {
+        if (configSaved) {
+            setTimeout(() => setConfigSaved(false), 2000);
+        }
+    }, [configSaved])
 
     async function handleSubmit(values: NestedConfig) {
         const configValues = toConfigValuePair(values);
@@ -37,6 +45,7 @@ export function LibraryManagement() {
             await ConfigController.setConfig(c.key, c.value.toString());
         }));
 
+        setConfigSaved(true);
         toast.success("Configuration saved");
     }
 
@@ -122,9 +131,10 @@ export function LibraryManagement() {
                         <Button
                             color="secondary"
                             isLoading={formik.isSubmitting}
+                            disabled={formik.isSubmitting || configSaved}
                             type="submit"
                         >
-                            {formik.isSubmitting ? "" : "Save"}
+                            {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
                         </Button>
                     </div>
                     <div className="mb-8 flex flex-col flex-grow">
@@ -145,7 +155,6 @@ export function LibraryManagement() {
                         <ConfigFormField
                             configElement={getConfig("library.display.games-per-page")}></ConfigFormField>
                     </div>
-                    <pre>{JSON.stringify(formik.values, null, 2)}</pre>
                 </Form>
             )}
         </Formik>

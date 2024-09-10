@@ -8,11 +8,11 @@ import org.springframework.web.servlet.HandlerInterceptor
 
 
 @Component
-@Profile("development")
+@Profile("dev")
 class DelayInterceptor : HandlerInterceptor {
 
     override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
-        Thread.sleep(2000)
+        if (request.requestURI.startsWith("/connect")) Thread.sleep(2000)
         return true
     }
 
