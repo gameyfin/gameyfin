@@ -111,10 +111,16 @@ export function LibraryManagement() {
 
     if (!isInitialized.current) {
         return (
-            <>
-                <Skeleton className="h-3 w-3/5 rounded-md"/>
-                <Skeleton className="h-3 w-4/5 rounded-md"/>
-            </>
+            [...Array(4)].map((e, i) =>
+                <div className="flex flex-col flex-grow gap-8 mb-12" key={i}>
+                    <Skeleton className="h-10 w-full rounded-md"/>
+                    <Skeleton className="h-12 flex w-1/3 rounded-md"/>
+                    <div className="flex flex-row gap-8">
+                        <Skeleton className="h-12 flex w-1/3 rounded-md"/>
+                        <Skeleton className="h-12 flex w-1/3 rounded-md"/>
+                    </div>
+                </div>
+            )
         )
     }
 
