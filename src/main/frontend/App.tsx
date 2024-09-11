@@ -1,5 +1,6 @@
 import {Outlet, useNavigate} from 'react-router-dom';
 import "./main.css";
+import "Frontend/util/custom-validators";
 import {NextUIProvider} from "@nextui-org/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";

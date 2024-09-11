@@ -2,8 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
+@layer utilities {
     .gradient-primary {
         @apply bg-gradient-to-br from-primary-400 to-primary-700;
+    }
+
+    .button-secondary {
+        @apply bg-primary-300 text-background/80;
     }
 }

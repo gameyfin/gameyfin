@@ -29,6 +29,7 @@
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "construct-style-sheets-polyfill": "3.1.0",
+    "cron-validator": "^1.3.1",
     "date-fns": "2.29.3",
     "formik": "^2.4.6",
     "framer-motion": "^11.3.28",
@@ -116,7 +117,8 @@
     "@vaadin/hilla-react-signals": "$@vaadin/hilla-react-signals",
     "@vaadin/vaadin-themable-mixin": "$@vaadin/vaadin-themable-mixin",
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
-    "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles"
+    "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
+    "cron-validator": "$cron-validator"
   },
   "vaadin": {
     "dependencies": {
@@ -175,6 +177,6 @@
       "workbox-core": "7.1.0",
       "workbox-precaching": "7.1.0"
     },
-    "hash": "7e2c61ec341a02c9a4778f045cbbda29ac1393776eb453e98b41899df49d0cdb"
+    "hash": "4a2abb2b0dc544e07b47be9cd538fec640d2646604044d77bd9ce5feecf4c3b3"
   }
 }

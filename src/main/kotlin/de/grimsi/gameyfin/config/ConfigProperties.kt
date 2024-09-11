@@ -31,7 +31,7 @@ sealed class ConfigProperties<T : Serializable>(
         ConfigProperties<Boolean>(
             Boolean::class,
             "library.metadata.update.enabled",
-            "Enable periodic refresh of video game meta-data",
+            "Enable periodic refresh of video game metadata",
             true
         )
 
@@ -41,22 +41,6 @@ sealed class ConfigProperties<T : Serializable>(
             "library.metadata.update.schedule",
             "Schedule for periodic metadata refresh in cron format",
             "0 0 * * 0"
-        )
-
-    data object LibraryGamesPerPage :
-        ConfigProperties<Int>(
-            Int::class,
-            "library.display.games-per-page",
-            "How many games should be displayed per page",
-            25
-        )
-
-    data object LibraryRatingCutoff :
-        ConfigProperties<Float>(
-            Float::class,
-            "library.display.rating-cutoff",
-            "Minimum rating for games to be displayed",
-            4.5f
         )
 
     /** User management */
@@ -71,7 +55,7 @@ sealed class ConfigProperties<T : Serializable>(
         ConfigProperties<Boolean>(
             Boolean::class,
             "users.sign-ups.confirm",
-            "Admins need to confirm new sign-ups before they are allowed to log in",
+            "Admins need to confirm new users",
             false
         )
 

@@ -8,7 +8,7 @@ import org.springframework.web.servlet.HandlerInterceptor
 
 
 @Component
-@Profile("dev")
+@Profile("delay")
 class DelayInterceptor : HandlerInterceptor {
 
     override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {

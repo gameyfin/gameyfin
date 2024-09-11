@@ -11,7 +11,7 @@ export default function ProfileMenu() {
         {
             label: "My Profile",
             icon: <User/>,
-            onClick: () => navigate('/profile/')
+            onClick: () => navigate('/settings/profile')
         },
         {
             label: "Administration",

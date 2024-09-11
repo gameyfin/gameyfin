@@ -1,7 +1,6 @@
 import {Listbox, ListboxItem} from "@nextui-org/react";
 import {GearFine, Palette, User} from "@phosphor-icons/react";
 import {Outlet, useNavigate} from "react-router-dom";
-import {useState} from "react";
 
 export default function ProfileView() {
     const navigate = useNavigate();
@@ -11,7 +10,7 @@ export default function ProfileView() {
             title: "My Profile",
             key: "profile",
             icon: <User/>,
-            action: () => navigate('/profile')
+            action: () => navigate('profile')
         },
         {
             title: "Appearance",
@@ -38,7 +37,7 @@ export default function ProfileView() {
                     ))}
                 </Listbox>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-grow">
                 <Outlet/>
             </div>
         </div>

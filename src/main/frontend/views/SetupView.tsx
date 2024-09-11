@@ -2,7 +2,7 @@ import React from 'react';
 import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
-import Input from "Frontend/components/Input";
+import Input from "Frontend/components/general/Input";
 import {GearFine, HandWaving, Palette, User} from "@phosphor-icons/react";
 import {Card} from "@nextui-org/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
@@ -95,9 +95,9 @@ function SetupView() {
                     onSubmit={
                         async (values: any) => {
                             await SetupEndpoint.registerSuperAdmin({
-                                    username: values.username,
-                                    password: values.password,
-                                    email: values.email
+                                username: values.username,
+                                password: values.password,
+                                email: values.email
                             });
                             toast.success("Setup finished", {description: "Have fun with Gameyfin!"});
                             navigate('/login');

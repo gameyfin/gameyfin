@@ -10,6 +10,7 @@ const CheckboxInput = ({label, ...props}) => {
         <div className="flex flex-row flex-grow items-center gap-2 my-2">
             <Checkbox
                 {...field}
+                {...props}
                 id={field.name}
                 isSelected={field.value}
             >
