@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.users
 
 import de.grimsi.gameyfin.meta.Roles
 import de.grimsi.gameyfin.users.dto.UserInfoDto
+import de.grimsi.gameyfin.users.dto.UserUpdateDto
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
 import de.grimsi.gameyfin.users.persistence.UserRepository
@@ -20,12 +21,12 @@ import org.springframework.stereotype.Service
 class UserService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val roleService: RoleService
+    private val roleService: RoleService,
+    private val sessionService: SessionService
 ) : UserDetailsService {
 
     override fun loadUserByUsername(username: String): UserDetails {
-        val user =
-            userRepository.findByUsername(username) ?: throw UsernameNotFoundException("Unknown user '$username'")
+        val user = userByUsername(username)
 
         return org.springframework.security.core.userdetails.User(
             user.username,
@@ -33,12 +34,17 @@ class UserService(
             user.enabled,
             true,
             true,
-            user.enabled,
+            true,
             toAuthorities(user.roles)
         )
     }
 
     fun existsByUsername(username: String): Boolean = userRepository.findByUsername(username) != null
+
+    fun getUserInfo(username: String): UserInfoDto {
+        val user = userByUsername(username)
+        return toUserInfo(user)
+    }
 
     fun registerUser(user: User, role: Roles): User {
         return registerUser(user, listOf(role))
@@ -48,6 +54,26 @@ class UserService(
         user.password = passwordEncoder.encode(user.password)
         user.roles = roleService.toRoles(roles)
         return userRepository.save(user)
+    }
+
+    fun updateUser(username: String, updates: UserUpdateDto) {
+        val user = userByUsername(username)
+
+        updates.username?.let { user.username = it }
+        updates.password?.let { user.password = passwordEncoder.encode(it) }
+        updates.email?.let { user.email = it }
+
+        userRepository.save(user)
+
+        // If user changes password, all sessions should be invalidated
+        if (updates.password != null) {
+            sessionService.logoutAllSessions()
+        }
+    }
+
+    fun deleteUser(username: String) {
+        val user = userByUsername(username)
+        userRepository.delete(user)
     }
 
     fun toUserInfo(user: User): UserInfoDto {
@@ -60,5 +86,9 @@ class UserService(
 
     private fun toAuthorities(roles: Collection<Role>): List<GrantedAuthority> {
         return roles.map { r -> SimpleGrantedAuthority(r.rolename) }
+    }
+
+    private fun userByUsername(username: String): User {
+        return userRepository.findByUsername(username) ?: throw UsernameNotFoundException("Unknown user '$username'")
     }
 }

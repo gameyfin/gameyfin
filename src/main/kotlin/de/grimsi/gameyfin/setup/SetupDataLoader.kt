@@ -66,14 +66,16 @@ class SetupDataLoader(
 
         val superadmin = User(
             username = "admin",
-            password = "admin"
+            password = "admin",
+            email = "admin@gameyfin.org"
         )
 
         registerUserIfNotFound(superadmin, Roles.SUPERADMIN)
 
         val user = User(
             username = "user",
-            password = "user"
+            password = "user",
+            email = "user@gameyfin.org"
         )
 
         registerUserIfNotFound(user, Roles.USER)

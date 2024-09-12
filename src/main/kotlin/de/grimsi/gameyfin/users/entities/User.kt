@@ -21,7 +21,7 @@ class User(
 
     @Nullable
     @Column(unique = true)
-    var email: String? = null,
+    var email: String,
 
     var email_confirmed: Boolean = false,
 

@@ -8,15 +8,21 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer
+import org.springframework.security.core.session.SessionRegistry
+import org.springframework.security.core.session.SessionRegistryImpl
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 
-
-@EnableWebSecurity
 @Configuration
+@EnableWebSecurity
 class SecurityConfig(
     private val environment: Environment
 ) : VaadinWebSecurity() {
+
+    @Bean
+    fun sessionRegistry(): SessionRegistry {
+        return SessionRegistryImpl()
+    }
 
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
@@ -24,6 +30,12 @@ class SecurityConfig(
         http.authorizeHttpRequests { auth: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry ->
             auth.requestMatchers("/setup").permitAll()
                 .requestMatchers("/public/**").permitAll()
+        }
+
+        http.sessionManagement { sessionManagement ->
+            sessionManagement
+                .maximumSessions(3)
+                .sessionRegistry(sessionRegistry())
         }
 
         super.configure(http)
