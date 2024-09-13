@@ -1,15 +1,23 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import * as Yup from "yup";
+import {UserEndpoint} from "Frontend/generated/endpoints";
+import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
+import {UserCard} from "Frontend/components/general/UserCard";
 
 function UserManagementLayout({getConfig, formik}: any) {
+    const [users, setUsers] = useState<UserInfoDto[]>([]);
+
+    useEffect(() => {
+        UserEndpoint.getAllUsers().then(
+            (response) => setUsers(response as UserInfoDto[])
+        );
+    }, []);
+
     return (
         <div className="flex flex-col flex-grow">
-
-            <Section title="Users"/>
-            {/* TODO */}
 
             <Section title="Sign-Ups"/>
             <div className="flex flex-row">
@@ -17,8 +25,15 @@ function UserManagementLayout({getConfig, formik}: any) {
                 <ConfigFormField configElement={getConfig("users.sign-ups.confirm")}
                                  isDisabled={!formik.values.users["sign-ups"].allow}/>
             </div>
+
+            <Section title="Users"/>
+            <div className="grid grid-flow-col grid-cols-4 gap-4">
+                {users.map((user) => <UserCard user={user} key={user.username}/>)}
+            </div>
+
         </div>
-    );
+    )
+        ;
 }
 
 const validationSchema = Yup.object({

@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.config
 import de.grimsi.gameyfin.config.dto.ConfigEntryDto
 import de.grimsi.gameyfin.config.entities.ConfigEntry
 import de.grimsi.gameyfin.config.persistence.ConfigRepository
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import java.io.Serializable
@@ -12,6 +13,7 @@ import java.io.Serializable
 class ConfigService(
     private val appConfigRepository: ConfigRepository
 ) {
+    private val log = KotlinLogging.logger {}
 
     /**
      * Get all known config values.
@@ -20,6 +22,9 @@ class ConfigService(
      * @return A map of all config values
      */
     fun getAllConfigValues(prefix: String?): List<ConfigEntryDto> {
+
+        log.info { "Getting all config values for prefix '$prefix'" }
+
         var configProperties = ConfigProperties::class.sealedSubclasses.flatMap { subclass ->
             subclass.objectInstance?.let { listOf(it) } ?: listOf()
         }
@@ -49,6 +54,9 @@ class ConfigService(
      * @throws IllegalArgumentException if no value is set and no default value exists
      */
     fun <T : Serializable> getConfigValue(configProperty: ConfigProperties<T>): T {
+
+        log.info { "Getting config value '${configProperty.key}'" }
+
         val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
         return if (appConfig != null) {
             getValue(appConfig.value, configProperty)
@@ -66,6 +74,9 @@ class ConfigService(
      * @throws IllegalArgumentException if no value is set and no default value exists
      */
     fun getConfigValue(key: String): String {
+
+        log.info { "Getting config value '$key'" }
+
         val configProperty = findConfigProperty(key)
         val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
 
@@ -86,6 +97,9 @@ class ConfigService(
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
      */
     fun <T : Serializable> setConfigValue(key: String, value: T) {
+
+        log.info { "Set config value '$key' to '$value'" }
+
         val configKey = findConfigProperty(key)
 
         // Check if the value can be cast to the type defined for the config property
@@ -109,6 +123,9 @@ class ConfigService(
      * @param key: Key of the config property
      */
     fun resetConfigValue(key: String) {
+
+        log.info { "Reset config value '$key'" }
+
         val configKey = findConfigProperty(key)
 
         if (configKey.default == null) {
@@ -129,6 +146,9 @@ class ConfigService(
      * @param key: Key of the config property
      */
     fun deleteConfig(key: String) {
+
+        log.info { "Delete config value '$key'" }
+
         val configKey = findConfigProperty(key)
         appConfigRepository.deleteById(configKey.key)
     }

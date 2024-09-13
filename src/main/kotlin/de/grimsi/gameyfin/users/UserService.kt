@@ -41,6 +41,10 @@ class UserService(
 
     fun existsByUsername(username: String): Boolean = userRepository.findByUsername(username) != null
 
+    fun getAllUsers(): List<UserInfoDto> {
+        return userRepository.findAll().map { u -> toUserInfo(u) }
+    }
+
     fun getUserInfo(username: String): UserInfoDto {
         val user = userByUsername(username)
         return toUserInfo(user)

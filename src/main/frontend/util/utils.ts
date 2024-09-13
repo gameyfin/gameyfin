@@ -18,3 +18,21 @@ export function rand(min: number, max: number) {
     const maxFloored = Math.floor(max);
     return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
 }
+
+export function roleToRoleName(role: string) {
+    role = role.replace("ROLE_", "").toLowerCase();
+    return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+export function roleToColor(role: string) {
+    switch (role) {
+        case "ROLE_SUPERADMIN":
+            return "red";
+        case "ROLE_ADMIN":
+            return "orange";
+        case "ROLE_USER":
+            return "blue";
+        default:
+            return "gray";
+    }
+}

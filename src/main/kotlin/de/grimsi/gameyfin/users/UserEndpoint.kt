@@ -23,6 +23,12 @@ class UserEndpoint(
     }
 
     @PermitAll
+    @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+    fun getAllUsers(): List<UserInfoDto> {
+        return userService.getAllUsers()
+    }
+
+    @PermitAll
     fun registerUser(registration: UserRegistrationDto): UserInfoDto {
         val user: User = registerUser(registration, listOf(Roles.USER))
         return userService.toUserInfo(user)
@@ -35,7 +41,7 @@ class UserEndpoint(
     }
 
     @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
-    fun updateUser(username: String, updates: UserUpdateDto) {
+    fun updateUserByName(username: String, updates: UserUpdateDto) {
         userService.updateUser(username, updates)
     }
 

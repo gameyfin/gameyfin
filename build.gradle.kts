@@ -18,7 +18,7 @@ group = "de.grimsi"
 version = "2.0.0-SNAPSHOT"
 description = "gameyfin"
 
-java.sourceCompatibility = JavaVersion.VERSION_22
+java.sourceCompatibility = JavaVersion.VERSION_21
 
 configurations {
     compileOnly {
@@ -76,7 +76,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile> {
     compilerOptions {
         apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
         languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
-        jvmTarget.set(JvmTarget.JVM_22)
+        jvmTarget.set(JvmTarget.JVM_21)
         progressiveMode.set(true)
         freeCompilerArgs.add("-Xjsr305=strict")
     }
