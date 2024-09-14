@@ -15,6 +15,9 @@ export default withMT({
             colors: {
                 'gf-primary': '#2332c8',
                 'gf-secondary': '#6441a5'
+            },
+            gridTemplateColumns: {
+                '300px': 'repeat(auto-fit, 300px)'
             }
         }
     },

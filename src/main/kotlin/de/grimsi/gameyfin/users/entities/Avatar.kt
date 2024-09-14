@@ -8,16 +8,16 @@ import org.springframework.content.commons.annotations.MimeType
 
 
 @Embeddable
-class Avatar {
+class Avatar(
     @ContentId
     @Nullable
-    var contentId: String? = null
+    var contentId: String? = null,
 
     @ContentLength
     @Nullable
-    var contentLength: Long? = null
+    var contentLength: Long? = null,
 
     @MimeType
     @Nullable
     var mimeType: String? = null
-}
+)

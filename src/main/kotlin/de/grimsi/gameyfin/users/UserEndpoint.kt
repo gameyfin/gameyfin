@@ -11,6 +11,7 @@ import jakarta.annotation.security.RolesAllowed
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 
+
 @Endpoint
 class UserEndpoint(
     private val userService: UserService
@@ -22,7 +23,6 @@ class UserEndpoint(
         return userService.getUserInfo(auth.name)
     }
 
-    @PermitAll
     @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
     fun getAllUsers(): List<UserInfoDto> {
         return userService.getAllUsers()

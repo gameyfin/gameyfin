@@ -30,6 +30,7 @@ class SecurityConfig(
         http.authorizeHttpRequests { auth: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry ->
             auth.requestMatchers("/setup").permitAll()
                 .requestMatchers("/public/**").permitAll()
+                .requestMatchers("/images/**").permitAll()
         }
 
         http.sessionManagement { sessionManagement ->
@@ -45,7 +46,6 @@ class SecurityConfig(
     @Throws(Exception::class)
     public override fun configure(web: WebSecurity) {
         super.configure(web)
-        web.ignoring().requestMatchers("/images/**")
 
         if ("dev" in environment.activeProfiles) {
             web.ignoring().requestMatchers("/h2-console/**")

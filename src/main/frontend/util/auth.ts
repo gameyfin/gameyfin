@@ -8,3 +8,9 @@ const auth = configureAuth(UserEndpoint.getUserInfo);
 // typed to the result of `UserInfoService.getUserInfo`
 export const useAuth = auth.useAuth;
 export const AuthProvider = auth.AuthProvider;
+
+
+export function getCsrfToken() {
+    const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    return token || '';
+}

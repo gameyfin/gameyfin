@@ -1,7 +1,7 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/Input";
 import {Form, Formik} from "formik";
-import {Button} from "@nextui-org/react";
+import {Avatar, Button} from "@nextui-org/react";
 import {Check, Info} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
@@ -10,6 +10,7 @@ import UserUpdateDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserU
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {toast} from "sonner";
+import FileUpload from "Frontend/components/general/FileUpload";
 
 export default function ProfileManagement() {
     const [configSaved, setConfigSaved] = useState(false);
@@ -90,13 +91,18 @@ export default function ProfileManagement() {
                         </div>
 
                         <div className="flex flex-row flex-1 justify-between gap-8">
+                            <div className="flex flex-col basis-1/4 items-center">
+                                <Section title="Avatar"></Section>
+                                <Avatar showFallback
+                                        src={`/images/avatar?username=${auth.state.user?.username}`}
+                                        className="size-40 m-4"></Avatar>
+                                <FileUpload upload="/avatar/upload" clear="/avatar/delete" accept="image/*"/>
+                            </div>
+
                             <div className="flex flex-col flex-grow">
                                 <Section title="Personal information"/>
                                 <Input name="username" label="Username" type="text" autocomplete="username"/>
                                 <Input name="email" label="Email" type="email" autocomplete="email"/>
-                            </div>
-
-                            <div className="flex flex-col flex-1">
                                 <Section title="Security"/>
                                 <Input name="newPassword" label="New Password" type="password"
                                        autocomplete="new-password"/>

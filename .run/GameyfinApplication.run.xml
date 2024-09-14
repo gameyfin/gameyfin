@@ -2,11 +2,9 @@
   <configuration default="false" name="GameyfinApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
     <option name="ACTIVE_PROFILES" value="dev" />
     <option name="ALTERNATIVE_JRE_PATH" value="BUNDLED" />
-    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <module name="gameyfin.main" />
     <option name="SHORTEN_COMMAND_LINE" value="ARGS_FILE" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="de.grimsi.gameyfin.GameyfinApplication" />
-    <option name="VM_PARAMETERS" value="-XX:+AllowEnhancedClassRedefinition -XX:HotswapAgent=fatjar" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="de.grimsi.gameyfin.*" />

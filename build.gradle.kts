@@ -53,7 +53,7 @@ dependencies {
 
     // Persistence
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.7")
+    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.14")
     implementation("org.springframework.cloud:spring-cloud-starter")
 
     // Development

@@ -4,7 +4,7 @@ import {Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@ne
 import {useNavigate} from "react-router-dom";
 
 export default function ProfileMenu() {
-    const {state, logout} = useAuth();
+    const auth = useAuth();
     const navigate = useNavigate();
 
     const profileMenuItems = [
@@ -17,7 +17,7 @@ export default function ProfileMenu() {
             label: "Administration",
             icon: <GearFine/>,
             onClick: () => navigate("/administration/libraries"),
-            showIf: state.user?.roles?.some(a => a?.includes("ADMIN"))
+            showIf: auth.state.user?.roles?.some(a => a?.includes("ADMIN"))
         },
         {
             label: "Help",
@@ -27,7 +27,7 @@ export default function ProfileMenu() {
         {
             label: "Sign Out",
             icon: <SignOut/>,
-            onClick: () => logout(),
+            onClick: () => auth.logout(),
             color: "primary"
         },
     ];
@@ -36,6 +36,7 @@ export default function ProfileMenu() {
         <Dropdown placement="bottom-end">
             <DropdownTrigger>
                 <Avatar showFallback
+                        src={`/images/avatar?username=${auth.state.user?.username}`}
                         radius="full"
                         as="button"
                         className="transition-transform size-8"

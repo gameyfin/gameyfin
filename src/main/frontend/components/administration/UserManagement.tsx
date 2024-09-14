@@ -27,7 +27,7 @@ function UserManagementLayout({getConfig, formik}: any) {
             </div>
 
             <Section title="Users"/>
-            <div className="grid grid-flow-col grid-cols-4 gap-4">
+            <div className="grid grid-cols-300px gap-4">
                 {users.map((user) => <UserCard user={user} key={user.username}/>)}
             </div>
 

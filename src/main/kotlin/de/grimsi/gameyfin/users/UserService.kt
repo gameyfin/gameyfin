@@ -3,8 +3,10 @@ package de.grimsi.gameyfin.users
 import de.grimsi.gameyfin.meta.Roles
 import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
+import de.grimsi.gameyfin.users.entities.Avatar
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
+import de.grimsi.gameyfin.users.persistence.AvatarContentStore
 import de.grimsi.gameyfin.users.persistence.UserRepository
 import jakarta.transaction.Transactional
 import org.springframework.security.core.GrantedAuthority
@@ -14,6 +16,8 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
+import java.io.InputStream
 
 
 @Service
@@ -22,7 +26,8 @@ class UserService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val roleService: RoleService,
-    private val sessionService: SessionService
+    private val sessionService: SessionService,
+    private val avatarStore: AvatarContentStore
 ) : UserDetailsService {
 
     override fun loadUserByUsername(username: String): UserDetails {
@@ -48,6 +53,35 @@ class UserService(
     fun getUserInfo(username: String): UserInfoDto {
         val user = userByUsername(username)
         return toUserInfo(user)
+    }
+
+    fun getAvatar(username: String): Avatar? {
+        val user = userByUsername(username)
+        return user.avatar
+    }
+
+    fun getAvatarFile(avatar: Avatar): InputStream {
+        return avatarStore.getContent(avatar)
+    }
+
+    fun setAvatar(username: String, file: MultipartFile) {
+        val user = userByUsername(username)
+
+        if (user.avatar == null) {
+            user.avatar = Avatar(mimeType = file.contentType)
+        }
+
+        avatarStore.setContent(user.avatar, file.inputStream)
+        userRepository.save(user)
+    }
+
+    fun deleteAvatar(username: String) {
+        val user = userByUsername(username)
+
+        avatarStore.unsetContent(user.avatar)
+        user.avatar = null
+
+        userRepository.save(user)
     }
 
     fun registerUser(user: User, role: Roles): User {
