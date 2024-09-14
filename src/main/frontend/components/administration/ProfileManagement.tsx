@@ -10,7 +10,7 @@ import UserUpdateDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserU
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {toast} from "sonner";
-import FileUpload from "Frontend/components/general/FileUpload";
+import AvatarUpload from "Frontend/components/general/AvatarUpload";
 
 export default function ProfileManagement() {
     const [configSaved, setConfigSaved] = useState(false);
@@ -90,13 +90,12 @@ export default function ProfileManagement() {
                             </div>
                         </div>
 
-                        <div className="flex flex-row flex-1 justify-between gap-8">
-                            <div className="flex flex-col basis-1/4 items-center">
-                                <Section title="Avatar"></Section>
+                        <div className="flex flex-row flex-1 justify-between gap-16">
+                            <div className="flex flex-col basis-1/4 mt-8 items-center">
                                 <Avatar showFallback
                                         src={`/images/avatar?username=${auth.state.user?.username}`}
                                         className="size-40 m-4"></Avatar>
-                                <FileUpload upload="/avatar/upload" clear="/avatar/delete" accept="image/*"/>
+                                <AvatarUpload upload="/avatar/upload" remove="/avatar/delete" accept="image/*"/>
                             </div>
 
                             <div className="flex flex-col flex-grow">

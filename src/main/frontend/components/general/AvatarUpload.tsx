@@ -4,7 +4,7 @@ import {Button, Input, Tooltip} from "@nextui-org/react";
 import {useState} from "react";
 import {Trash} from "@phosphor-icons/react";
 
-export default function FileUpload({upload, clear, accept}: { upload: string, clear: string, accept: string }) {
+export default function AvatarUpload({upload, remove, accept}: { upload: string, remove: string, accept: string }) {
 
     const [avatar, setAvatar] = useState<any>();
 
@@ -29,7 +29,7 @@ export default function FileUpload({upload, clear, accept}: { upload: string, cl
             const result = await response.text();
 
             if (response.ok) {
-                toast.success("Avatar updated");
+                window.location.reload();
             } else {
                 toast.error("Error uploading avatar", {description: result});
             }
@@ -40,7 +40,7 @@ export default function FileUpload({upload, clear, accept}: { upload: string, cl
 
     async function removeAvatar() {
         try {
-            const response = await fetch(clear, {
+            const response = await fetch(remove, {
                 headers: {
                     "X-CSRF-Token": getCsrfToken()
                 },
@@ -51,7 +51,7 @@ export default function FileUpload({upload, clear, accept}: { upload: string, cl
             const result = await response.text();
 
             if (response.ok) {
-                toast.success("Avatar removed");
+                window.location.reload();
             } else {
                 toast.error("Error removing avatar", {description: result});
             }
@@ -64,7 +64,7 @@ export default function FileUpload({upload, clear, accept}: { upload: string, cl
         <div className="flex flex-col gap-2">
             <div className="flex flex-row gap-2">
                 <Input type="file" accept={accept} onChange={onFileSelected}/>
-                <Button onClick={uploadAvatar} color="success">Upload</Button>
+                <Button onClick={uploadAvatar} isDisabled={avatar == null} color="success">Upload</Button>
                 <Tooltip content="Remove your current avatar">
                     <Button onClick={removeAvatar} isIconOnly color="danger"><Trash/></Button>
                 </Tooltip>

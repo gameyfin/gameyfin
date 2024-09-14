@@ -78,6 +78,8 @@ class UserService(
     fun deleteAvatar(username: String) {
         val user = userByUsername(username)
 
+        if (user.avatar == null) return
+
         avatarStore.unsetContent(user.avatar)
         user.avatar = null
 
