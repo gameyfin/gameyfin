@@ -163,6 +163,7 @@ class ConfigService(
             Boolean::class -> value.toBoolean() as T
             Int::class -> value.toFloat().toInt() as T
             Float::class -> value.toFloat() as T
+            Enum::class -> value as T
             else -> {
                 throw RuntimeException("Unknown config type ${configProperty.type}: '$value' for key ${configProperty.key}")
             }

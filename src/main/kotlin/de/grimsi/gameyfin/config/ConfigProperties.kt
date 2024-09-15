@@ -11,37 +11,33 @@ sealed class ConfigProperties<T : Serializable>(
 ) {
 
     /** Libraries */
-    data object LibraryAllowPublicAccess :
-        ConfigProperties<Boolean>(
-            Boolean::class,
-            "library.allow-public-access",
-            "Allow access to game libraries without login",
-            false
-        )
+    data object LibraryAllowPublicAccess : ConfigProperties<Boolean>(
+        Boolean::class,
+        "library.allow-public-access",
+        "Allow access to game libraries without login",
+        false
+    )
 
-    data object LibraryEnableFilesystemWatcher :
-        ConfigProperties<Boolean>(
-            Boolean::class,
-            "library.scan.enable-filesystem-watcher",
-            "Enable automatic library scanning using file system watchers",
-            true
-        )
+    data object LibraryEnableFilesystemWatcher : ConfigProperties<Boolean>(
+        Boolean::class,
+        "library.scan.enable-filesystem-watcher",
+        "Enable automatic library scanning using file system watchers",
+        true
+    )
 
-    data object LibraryMetadataUpdateEnabled :
-        ConfigProperties<Boolean>(
-            Boolean::class,
-            "library.metadata.update.enabled",
-            "Enable periodic refresh of video game metadata",
-            true
-        )
+    data object LibraryMetadataUpdateEnabled : ConfigProperties<Boolean>(
+        Boolean::class,
+        "library.metadata.update.enabled",
+        "Enable periodic refresh of video game metadata",
+        true
+    )
 
-    data object LibraryMetadataUpdateSchedule :
-        ConfigProperties<String>(
-            String::class,
-            "library.metadata.update.schedule",
-            "Schedule for periodic metadata refresh in cron format",
-            "0 0 * * 0"
-        )
+    data object LibraryMetadataUpdateSchedule : ConfigProperties<String>(
+        String::class,
+        "library.metadata.update.schedule",
+        "Schedule for periodic metadata refresh in cron format",
+        "0 0 * * 0"
+    )
 
     /** User management */
     data object UsersAllowNewSignUps : ConfigProperties<Boolean>(
@@ -51,13 +47,75 @@ sealed class ConfigProperties<T : Serializable>(
         false
     )
 
-    data object UsersConfirmNewSignUps :
-        ConfigProperties<Boolean>(
-            Boolean::class,
-            "users.sign-ups.confirm",
-            "Admins need to confirm new users",
-            false
-        )
+    data object UsersConfirmNewSignUps : ConfigProperties<Boolean>(
+        Boolean::class,
+        "users.sign-ups.confirm",
+        "Admins need to confirm new users",
+        false
+    )
+
+    /** Single Sign-On */
+    data object SsoEnabled : ConfigProperties<Boolean>(
+        Boolean::class,
+        "sso.oidc.enabled",
+        "Enable SSO via OIDC/OAuth2",
+        false
+    )
+
+    data object SsoClientId : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.client-id",
+        "Client ID"
+    )
+
+    data object SsoClientSecret : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.client-secret",
+        "Client secret"
+    )
+
+    data object SsoIssuerUrl : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.issuer-url",
+        "Issuer URL"
+    )
+
+    data object SsoAuthorizeUrl : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.authorize-url",
+        "Authorize URL"
+    )
+
+    data object SsoTokenUrl : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.token-url",
+        "Token URL"
+    )
+
+    data object SsoUserInfoUrl : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.userinfo-url",
+        "Userinfo URL"
+    )
+
+    data object SsoJwksUrl : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.jwks-url",
+        "JWKS URL"
+    )
+
+    data object SsoMatchExistingUsersBy : ConfigProperties<MatchUsersBy>(
+        MatchUsersBy::class,
+        "sso.oidc.match-existing-users-by",
+        "Match existing users by",
+        MatchUsersBy.USERNAME
+    )
+
+    data object SsoAutoRegisterNewUsers : ConfigProperties<Boolean>(
+        Boolean::class,
+        "sso.oidc.auto-register-new-users",
+        "Automatically create new users after registration"
+    )
 
     /** Notifications */
     data object NotificationsEmailHost :
@@ -71,4 +129,8 @@ sealed class ConfigProperties<T : Serializable>(
 
     data object NotificationsEmailPassword :
         ConfigProperties<String>(String::class, "notifications.email.password", "Password for the email account")
+}
+
+enum class MatchUsersBy {
+    USERNAME, EMAIL
 }

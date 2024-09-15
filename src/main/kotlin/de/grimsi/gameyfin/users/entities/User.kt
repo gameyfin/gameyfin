@@ -16,8 +16,9 @@ class User(
     @Column(unique = true)
     var username: String,
 
-    @NotNull
-    var password: String,
+    var password: String? = null,
+
+    var oidcProviderId: String? = null,
 
     @Nullable
     @Column(unique = true)
