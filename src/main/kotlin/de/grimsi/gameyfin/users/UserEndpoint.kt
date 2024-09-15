@@ -52,7 +52,7 @@ class UserEndpoint(
     }
 
     @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
-    fun deleteUser(username: String) {
+    fun deleteUserByName(username: String) {
         userService.deleteUser(username)
     }
 

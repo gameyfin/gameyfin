@@ -1,7 +1,9 @@
 package de.grimsi.gameyfin.users.avatar
 
+import de.grimsi.gameyfin.meta.Roles
 import de.grimsi.gameyfin.users.UserService
 import jakarta.annotation.security.PermitAll
+import jakarta.annotation.security.RolesAllowed
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.InputStreamResource
 import org.springframework.http.HttpHeaders
@@ -31,6 +33,12 @@ class AvatarController(
     fun deleteAvatar() {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
         userService.deleteAvatar(auth.name)
+    }
+
+    @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+    @PostMapping("/avatar/deleteByName")
+    fun deleteAvatarByName(@RequestParam("name") name: String) {
+        userService.deleteAvatar(name)
     }
 
     @PermitAll

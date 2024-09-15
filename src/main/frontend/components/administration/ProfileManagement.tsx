@@ -1,8 +1,8 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/Input";
+import {Avatar, Button, Input as NextUiInput, Tooltip} from "@nextui-org/react";
 import {Form, Formik} from "formik";
-import {Avatar, Button} from "@nextui-org/react";
-import {Check, Info} from "@phosphor-icons/react";
+import {Check, Info, Trash} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import * as Yup from "yup";
@@ -10,17 +10,23 @@ import UserUpdateDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserU
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {toast} from "sonner";
-import AvatarUpload from "Frontend/components/general/AvatarUpload";
+import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
 
 export default function ProfileManagement() {
     const [configSaved, setConfigSaved] = useState(false);
     const auth = useAuth();
+    const [avatar, setAvatar] = useState<any>();
 
     useEffect(() => {
         if (configSaved) {
             setTimeout(() => setConfigSaved(false), 2000);
         }
     }, [configSaved])
+
+
+    function onFileSelected(event: any) {
+        setAvatar(event.target.files[0]);
+    }
 
     async function handleSubmit(values: any) {
         const userUpdate: UserUpdateDto = {
@@ -91,11 +97,21 @@ export default function ProfileManagement() {
                         </div>
 
                         <div className="flex flex-row flex-1 justify-between gap-16">
-                            <div className="flex flex-col basis-1/4 mt-8 items-center">
-                                <Avatar showFallback
-                                        src={`/images/avatar?username=${auth.state.user?.username}`}
-                                        className="size-40 m-4"></Avatar>
-                                <AvatarUpload upload="/avatar/upload" remove="/avatar/delete" accept="image/*"/>
+                            <div className="flex flex-col basis-1/4 mt-8 gap-4">
+                                <div className="flex flex-row justify-center">
+                                    <Avatar showFallback
+                                            src={`/images/avatar?username=${auth.state.user?.username}`}
+                                            className="size-40 m-4 flex flex-row">
+                                    </Avatar>
+                                </div>
+                                <div className="flex flex-row gap-2">
+                                    <NextUiInput type="file" accept="image/*" onChange={onFileSelected}/>
+                                    <Button onClick={() => uploadAvatar(avatar)} isDisabled={avatar == null}
+                                            color="success">Upload</Button>
+                                    <Tooltip content="Remove your current avatar">
+                                        <Button onClick={removeAvatar} isIconOnly color="danger"><Trash/></Button>
+                                    </Tooltip>
+                                </div>
                             </div>
 
                             <div className="flex flex-col flex-grow">

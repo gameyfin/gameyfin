@@ -1,5 +1,6 @@
 import {type ClassValue, clsx} from "clsx"
 import {twMerge} from "tailwind-merge"
+import {getCsrfToken} from "Frontend/util/auth";
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
@@ -35,4 +36,15 @@ export function roleToColor(role: string) {
         default:
             return "gray";
     }
+}
+
+export async function fetchWithAuth(url: string, body: any = null, method = "POST"): Promise<Response> {
+    return await fetch(url, {
+        headers: {
+            "X-CSRF-Token": getCsrfToken()
+        },
+        credentials: "same-origin",
+        method: method,
+        body: body
+    });
 }
