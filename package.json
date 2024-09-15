@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "@material-tailwind/react": "^2.1.9",
-    "@nextui-org/react": "^2.4.6",
+    "@nextui-org/react": "^2.4.8",
     "@phosphor-icons/react": "^2.1.7",
     "@polymer/polymer": "3.5.1",
     "@vaadin/bundles": "24.4.7",
@@ -177,6 +177,6 @@
       "workbox-core": "7.1.0",
       "workbox-precaching": "7.1.0"
     },
-    "hash": "e4807cd1e75275abaaf1e41e23a8662d8fe4d7fb38029306089a3997a813d25e"
+    "hash": "0f5c2e2c0e435bad7d8e5153f11e7caac2a6024927de828fb8a6192acc6fd341"
   }
 }

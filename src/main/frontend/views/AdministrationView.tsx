@@ -1,45 +1,27 @@
-import {Outlet, useNavigate} from "react-router-dom";
-import {Envelope, GameController, Users} from "@phosphor-icons/react";
-import {Listbox, ListboxItem} from "@nextui-org/react";
+import {Envelope, GameController, LockKey, Users} from "@phosphor-icons/react";
+import withSideMenu, {MenuItem} from "Frontend/components/general/withSideMenu";
 
-export default function AdministrationView() {
-    const navigate = useNavigate();
+const menuItems: MenuItem[] = [
+    {
+        title: "Libraries",
+        url: "libraries",
+        icon: <GameController/>
+    },
+    {
+        title: "Users",
+        url: "users",
+        icon: <Users/>
+    },
+    {
+        title: "SSO",
+        url: "sso",
+        icon: <LockKey/>
+    },
+    {
+        title: "Notifications",
+        url: "notifications",
+        icon: <Envelope/>
+    }
+]
 
-    const menuItems = [
-        {
-            title: "Libraries",
-            key: "libraries",
-            icon: <GameController/>,
-            action: () => navigate('libraries')
-        },
-        {
-            title: "Users",
-            key: "users",
-            icon: <Users/>,
-            action: () => navigate('users')
-        },
-        {
-            title: "Notifications",
-            icon: <Envelope/>,
-            key: "notifications",
-            action: () => navigate('notifications')
-        }
-    ]
-
-    return (
-        <div className="flex flex-row">
-            <div className="flex flex-col pr-8">
-                <Listbox className="min-w-60">
-                    {menuItems.map((i) => (
-                        <ListboxItem key={i.key} onPress={i.action} startContent={i.icon}>
-                            {i.title}
-                        </ListboxItem>
-                    ))}
-                </Listbox>
-            </div>
-            <div className="flex flex-col flex-grow">
-                <Outlet/>
-            </div>
-        </div>
-    );
-}
+export const AdministrationView = withSideMenu(menuItems);

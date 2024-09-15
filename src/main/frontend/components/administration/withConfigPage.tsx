@@ -134,7 +134,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                             <h1 className="text-2xl font-bold">{title}</h1>
 
                             <Button
-                                className="button-secondary"
+                                color="primary"
                                 isLoading={formik.isSubmitting}
                                 disabled={formik.isSubmitting || configSaved}
                                 type="submit"

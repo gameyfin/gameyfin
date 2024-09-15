@@ -86,7 +86,7 @@ export default function ProfileManagement() {
                                     />
                                 }
                                 <Button
-                                    className="button-secondary"
+                                    color="primary"
                                     isLoading={formik.isSubmitting}
                                     disabled={formik.isSubmitting || configSaved}
                                     type="submit"

@@ -1,4 +1,4 @@
-import {Outlet, useNavigate} from 'react-router-dom';
+import {Outlet, useHref, useNavigate} from 'react-router-dom';
 import "./main.css";
 import "Frontend/util/custom-validators";
 import {NextUIProvider} from "@nextui-org/react";
@@ -16,7 +16,7 @@ export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
 
     return (
-        <NextUIProvider className="size-full" navigate={navigate}>
+        <NextUIProvider className="size-full" navigate={navigate} useHref={useHref}>
             <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark">
                 <AuthProvider>
                     <IconContext.Provider value={{size: 20}}>

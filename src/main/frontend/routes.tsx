@@ -4,13 +4,14 @@ import LoginView from "Frontend/views/LoginView";
 import MainLayout from "Frontend/views/MainLayout";
 import TestView from "Frontend/views/TestView";
 import SetupView from "Frontend/views/SetupView";
-import ProfileView from "Frontend/views/ProfileView";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import App from "Frontend/App";
-import AdministrationView from "Frontend/views/AdministrationView";
 import {LibraryManagement} from "Frontend/components/administration/LibraryManagement";
 import {UserManagement} from "Frontend/components/administration/UserManagement";
 import ProfileManagement from "Frontend/components/administration/ProfileManagement";
+import {SsoManagement} from "Frontend/components/administration/SsoManagement";
+import {AdministrationView} from "Frontend/views/AdministrationView";
+import {ProfileView} from "Frontend/views/ProfileView";
 
 export const routes = protectRoutes([
     {
@@ -38,6 +39,7 @@ export const routes = protectRoutes([
                         children: [
                             {path: 'libraries', element: <LibraryManagement/>},
                             {path: 'users', element: <UserManagement/>},
+                            {path: 'sso', element: <SsoManagement/>},
                         ]
                     }
                 ]
