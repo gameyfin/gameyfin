@@ -50,10 +50,9 @@ class ConfigService(
      * Used internally.
      *
      * @param configProperty: The config property containing necessary type information
-     * @return The current value if set or the default value
-     * @throws IllegalArgumentException if no value is set and no default value exists
+     * @return The current value if set or the default value or null if no value is set and no default value exists
      */
-    fun <T : Serializable> getConfigValue(configProperty: ConfigProperties<T>): T {
+    fun <T : Serializable> getConfigValue(configProperty: ConfigProperties<T>): T? {
 
         log.info { "Getting config value '${configProperty.key}'" }
 
@@ -61,7 +60,7 @@ class ConfigService(
         return if (appConfig != null) {
             getValue(appConfig.value, configProperty)
         } else {
-            configProperty.default ?: throw IllegalArgumentException("No value found for key: ${configProperty.key}")
+            configProperty.default ?: return null
         }
     }
 
@@ -70,10 +69,9 @@ class ConfigService(
      * Used for the external API.
      *
      * @param key: The key of the config property
-     * @return The current value if set or the default value
-     * @throws IllegalArgumentException if no value is set and no default value exists
+     * @return The current value if set or the default value or null if no value is set and no default value exists
      */
-    fun getConfigValue(key: String): String {
+    fun getConfigValue(key: String): String? {
 
         log.info { "Getting config value '$key'" }
 
@@ -83,9 +81,20 @@ class ConfigService(
         return if (appConfig != null) {
             getValue(appConfig.value, configProperty).toString()
         } else {
-            configProperty.default?.toString()
-                ?: throw IllegalArgumentException("No value found for key: ${configProperty.key}")
+            configProperty.default?.toString() ?: return null
         }
+    }
+
+
+    /**
+     * Set the value for a specified key in a type-safe way.
+     *
+     * @param configProperty: The target config property
+     * @param value: Value to set the config property to
+     * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
+     */
+    fun <T : Serializable> setConfigValue(configProperty: ConfigProperties<T>, value: T) {
+        return setConfigValue(configProperty.key, value)
     }
 
     /**

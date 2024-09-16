@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.config
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.config.dto.ConfigEntryDto
 import de.grimsi.gameyfin.meta.Roles
+import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
@@ -15,8 +16,18 @@ class ConfigController(
         return appConfigService.getAllConfigValues(prefix)
     }
 
-    fun getConfig(key: String): String {
+    fun getConfig(key: String): String? {
         return appConfigService.getConfigValue(key)
+    }
+
+    @PermitAll
+    fun isSsoEnabled(): Boolean? {
+        return appConfigService.getConfigValue(ConfigProperties.SsoEnabled)
+    }
+
+    @PermitAll
+    fun getLogoutUrl(): String? {
+        return appConfigService.getConfigValue(ConfigProperties.SsoLogoutUrl)
     }
 
     fun setConfig(key: String, value: String) {

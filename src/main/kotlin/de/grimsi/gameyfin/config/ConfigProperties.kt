@@ -104,6 +104,12 @@ sealed class ConfigProperties<T : Serializable>(
         "JWKS URL"
     )
 
+    data object SsoLogoutUrl : ConfigProperties<String>(
+        String::class,
+        "sso.oidc.logout-url",
+        "Logout URL"
+    )
+
     data object SsoMatchExistingUsersBy : ConfigProperties<MatchUsersBy>(
         MatchUsersBy::class,
         "sso.oidc.match-existing-users-by",

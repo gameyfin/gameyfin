@@ -9,12 +9,14 @@ import de.grimsi.gameyfin.users.entities.User
 import de.grimsi.gameyfin.users.persistence.AvatarContentStore
 import de.grimsi.gameyfin.users.persistence.UserRepository
 import jakarta.transaction.Transactional
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.InputStream
@@ -50,8 +52,14 @@ class UserService(
         return userRepository.findAll().map { u -> toUserInfo(u) }
     }
 
-    fun getUserInfo(username: String): UserInfoDto {
-        val user = userByUsername(username)
+    fun getUserInfo(auth: Authentication): UserInfoDto {
+        val principal = auth.principal
+
+        if (principal is OidcUser) {
+            return toUserInfo(User(principal))
+        }
+
+        val user = userByUsername(auth.name)
         return toUserInfo(user)
     }
 
@@ -120,6 +128,7 @@ class UserService(
         return UserInfoDto(
             username = user.username,
             email = user.email,
+            managedBySso = user.oidcProviderId != null,
             roles = user.roles.map { r -> r.rolename }
         )
     }

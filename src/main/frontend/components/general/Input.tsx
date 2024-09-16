@@ -9,7 +9,7 @@ const Input = ({label, ...props}) => {
     const [field, meta] = useField(props);
 
     return (
-        <div className="flex flex-col flex-grow max-w-sm items-start gap-2 my-2">
+        <div className="flex flex-col flex-grow items-start gap-2 my-2">
             <NextUiInput
                 {...props}
                 {...field}

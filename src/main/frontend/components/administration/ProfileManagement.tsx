@@ -77,6 +77,8 @@ export default function ProfileManagement() {
                     <Form>
                         <div className="flex flex-row flex-grow justify-between mb-8">
                             <h2 className="text-2xl font-bold">My Profile</h2>
+                            {auth.state.user?.managedBySso &&
+                                <p className="text-warning">Your account is managed externally.</p>}
 
                             <div className="flex flex-row items-center gap-4">
                                 {formik.values.newPassword.length > 0 &&
@@ -88,7 +90,7 @@ export default function ProfileManagement() {
                                 <Button
                                     color="primary"
                                     isLoading={formik.isSubmitting}
-                                    disabled={formik.isSubmitting || configSaved}
+                                    disabled={formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
                                     type="submit"
                                 >
                                     {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
@@ -105,24 +107,28 @@ export default function ProfileManagement() {
                                     </Avatar>
                                 </div>
                                 <div className="flex flex-row gap-2">
-                                    <NextUiInput type="file" accept="image/*" onChange={onFileSelected}/>
+                                    <NextUiInput type="file" accept="image/*" onChange={onFileSelected}
+                                                 isDisabled={auth.state.user?.managedBySso}/>
                                     <Button onClick={() => uploadAvatar(avatar)} isDisabled={avatar == null}
                                             color="success">Upload</Button>
                                     <Tooltip content="Remove your current avatar">
-                                        <Button onClick={removeAvatar} isIconOnly color="danger"><Trash/></Button>
+                                        <Button onClick={removeAvatar} isIconOnly color="danger"
+                                                isDisabled={auth.state.user?.managedBySso}><Trash/></Button>
                                     </Tooltip>
                                 </div>
                             </div>
 
                             <div className="flex flex-col flex-grow">
                                 <Section title="Personal information"/>
-                                <Input name="username" label="Username" type="text" autocomplete="username"/>
-                                <Input name="email" label="Email" type="email" autocomplete="email"/>
+                                <Input name="username" label="Username" type="text" autocomplete="username"
+                                       isDisabled={auth.state.user?.managedBySso}/>
+                                <Input name="email" label="Email" type="email" autocomplete="email"
+                                       isDisabled={auth.state.user?.managedBySso}/>
                                 <Section title="Security"/>
                                 <Input name="newPassword" label="New Password" type="password"
-                                       autocomplete="new-password"/>
+                                       autocomplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
                                 <Input name="passwordRepeat" label="Repeat password" type="password"
-                                       autocomplete="new-password"/>
+                                       autocomplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
                             </div>
                         </div>
                     </Form>

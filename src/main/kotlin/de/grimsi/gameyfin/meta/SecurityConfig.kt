@@ -1,28 +1,36 @@
 package de.grimsi.gameyfin.meta
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity
+import de.grimsi.gameyfin.config.ConfigProperties
+import de.grimsi.gameyfin.config.ConfigService
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
+import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer
+import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.core.session.SessionRegistryImpl
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.client.registration.ClientRegistration
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
+import org.springframework.security.oauth2.core.AuthorizationGrantType
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler
 
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val environment: Environment
+    private val environment: Environment,
+    private val config: ConfigService
 ) : VaadinWebSecurity() {
 
-    @Bean
-    fun sessionRegistry(): SessionRegistry {
-        return SessionRegistryImpl()
-    }
+    private val ssoProviderKey: String = "oidc"
 
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
@@ -35,12 +43,19 @@ class SecurityConfig(
 
         http.sessionManagement { sessionManagement ->
             sessionManagement
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(3)
                 .sessionRegistry(sessionRegistry())
         }
 
         super.configure(http)
-        setLoginView(http, "/login")
+
+        if (config.getConfigValue(ConfigProperties.SsoEnabled) == true) {
+            setOAuth2LoginPage(http, "/oauth2/authorization/$ssoProviderKey")
+            http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
+        } else {
+            setLoginView(http, "/login")
+        }
     }
 
     @Throws(Exception::class)
@@ -50,6 +65,32 @@ class SecurityConfig(
         if ("dev" in environment.activeProfiles) {
             web.ignoring().requestMatchers("/h2-console/**")
         }
+    }
+
+    @Bean
+    fun sessionRegistry(): SessionRegistry {
+        return SessionRegistryImpl()
+    }
+
+    // TODO: Maybe switch to a database-backed client registration repository? Not sure if worth it.
+    @Bean
+    @Conditional(SsoEnabledCondition::class)
+    fun clientRegistrationRepository(): ClientRegistrationRepository? {
+        val clientRegistration = ClientRegistration.withRegistrationId(ssoProviderKey)
+            .clientId(config.getConfigValue(ConfigProperties.SsoClientId))
+            .clientSecret(config.getConfigValue(ConfigProperties.SsoClientSecret))
+            .scope("openid", "profile", "email")
+            .userNameAttributeName("preferred_username")
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .issuerUri(config.getConfigValue(ConfigProperties.SsoIssuerUrl))
+            .authorizationUri(config.getConfigValue(ConfigProperties.SsoAuthorizeUrl))
+            .tokenUri(config.getConfigValue(ConfigProperties.SsoTokenUrl))
+            .userInfoUri(config.getConfigValue(ConfigProperties.SsoUserInfoUrl))
+            .jwkSetUri(config.getConfigValue(ConfigProperties.SsoJwksUrl))
+            .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+            .build()
+
+        return InMemoryClientRegistrationRepository(clientRegistration)
     }
 
     @Bean

@@ -20,7 +20,7 @@ class UserEndpoint(
     @PermitAll
     fun getUserInfo(): UserInfoDto {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
-        return userService.getUserInfo(auth.name)
+        return userService.getUserInfo(auth)
     }
 
     @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)

@@ -37,7 +37,6 @@ dependencies {
     // Spring Boot & Kotlin
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -55,6 +54,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.14")
     implementation("org.springframework.cloud:spring-cloud-starter")
+
+    // SSO
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    implementation("org.springframework.security:spring-security-oauth2-jose")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")

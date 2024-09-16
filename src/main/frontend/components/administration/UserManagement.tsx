@@ -30,8 +30,7 @@ function UserManagementLayout({getConfig, formik}: any) {
                 {users.map((user) => <UserManagementCard user={user} key={user.username}/>)}
             </div>
         </div>
-    )
-        ;
+    );
 }
 
 export const UserManagement = withConfigPage(UserManagementLayout, "User Management", "users");

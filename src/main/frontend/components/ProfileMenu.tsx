@@ -2,10 +2,19 @@ import {useAuth} from "Frontend/util/auth";
 import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
 import {Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@nextui-org/react";
 import {useNavigate} from "react-router-dom";
+import {ConfigController} from "Frontend/generated/endpoints";
 
 export default function ProfileMenu() {
     const auth = useAuth();
     const navigate = useNavigate();
+
+    async function logout() {
+        if (auth.state.user?.managedBySso) {
+            window.location.href = await ConfigController.getLogoutUrl() || "/";
+        } else {
+            await auth.logout();
+        }
+    }
 
     const profileMenuItems = [
         {
@@ -27,7 +36,7 @@ export default function ProfileMenu() {
         {
             label: "Sign Out",
             icon: <SignOut/>,
-            onClick: () => auth.logout(),
+            onClick: logout,
             color: "primary"
         },
     ];
