@@ -74,6 +74,38 @@ function SsoMangementLayout({getConfig, formik}: any) {
     );
 }
 
-const validationSchema = Yup.object({});
+const validationSchema = Yup.object({
+    sso: Yup.object({
+        oidc: Yup.object({
+            enabled: Yup.boolean(),
+            "auto-register-new-users": Yup.boolean().required(),
+            "match-existing-users-by": Yup.string().required(),
+            "client-id": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("Client ID is required") : schema
+            ),
+            "client-secret": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("Client Secret is required") : schema
+            ),
+            "issuer-url": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("Issuer URL is required") : schema
+            ),
+            "authorize-url": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("Authorize URL is required") : schema
+            ),
+            "token-url": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("Token URL is required") : schema
+            ),
+            "userinfo-url": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("Userinfo URL is required") : schema
+            ),
+            "logout-url": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("Logout URL is required") : schema
+            ),
+            "jwks-url": Yup.string().when("enabled", ([enabled], schema) =>
+                enabled ? schema.required("JWKS URL is required") : schema
+            )
+        })
+    })
+});
 
 export const SsoManagement = withConfigPage(SsoMangementLayout, "Single Sign-On", "sso", validationSchema);

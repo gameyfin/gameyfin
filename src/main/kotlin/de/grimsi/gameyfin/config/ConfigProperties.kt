@@ -7,7 +7,8 @@ sealed class ConfigProperties<T : Serializable>(
     val type: KClass<T>,
     val key: String,
     val description: String,
-    val default: T? = null
+    val default: T? = null,
+    val allowedValues: List<T>? = null
 ) {
 
     /** Libraries */
@@ -114,7 +115,8 @@ sealed class ConfigProperties<T : Serializable>(
         MatchUsersBy::class,
         "sso.oidc.match-existing-users-by",
         "Match existing users by",
-        MatchUsersBy.USERNAME
+        MatchUsersBy.USERNAME,
+        MatchUsersBy.entries
     )
 
     data object SsoAutoRegisterNewUsers : ConfigProperties<Boolean>(

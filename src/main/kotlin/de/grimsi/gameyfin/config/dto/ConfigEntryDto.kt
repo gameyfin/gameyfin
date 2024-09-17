@@ -9,5 +9,6 @@ data class ConfigEntryDto(
     val value: String?,
     val defaultValue: String?,
     @field:Nonnull val type: String,
-    @field:Nonnull val description: String
+    @field:Nonnull val description: String,
+    val allowedValues: List<String>?
 )

@@ -40,7 +40,8 @@ class ConfigService(
                 value = appConfig?.value ?: configProperty.default?.toString(),
                 defaultValue = configProperty.default?.toString(),
                 type = configProperty.type.simpleName ?: "Unknown",
-                description = configProperty.description
+                description = configProperty.description,
+                allowedValues = configProperty.allowedValues?.map { it.toString() }
             )
         }
     }
@@ -172,9 +173,14 @@ class ConfigService(
             Boolean::class -> value.toBoolean() as T
             Int::class -> value.toFloat().toInt() as T
             Float::class -> value.toFloat() as T
-            Enum::class -> value as T
             else -> {
-                throw RuntimeException("Unknown config type ${configProperty.type}: '$value' for key ${configProperty.key}")
+                if (configProperty.type.java.isEnum) {
+                    val enumConstants = configProperty.type.java.enumConstants
+                    enumConstants.firstOrNull { it.toString() == value }
+                        ?: throw IllegalArgumentException("Unknown enum value '$value' for key ${configProperty.key}")
+                } else {
+                    throw IllegalArgumentException("Unknown config type ${configProperty.type}: '$value' for key ${configProperty.key}")
+                }
             }
         }
     }
