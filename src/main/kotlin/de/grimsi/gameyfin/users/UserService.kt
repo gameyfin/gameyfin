@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.InputStream
@@ -62,6 +63,15 @@ class UserService(
     }
 
     fun getUserInfo(auth: Authentication): UserInfoDto {
+        val principal = auth.principal
+
+        if (principal is OidcUser) {
+            val oidcUser = User(principal)
+            val userInfoDto = toUserInfo(oidcUser)
+            userInfoDto.roles = roleService.extractGrantedAuthorities(principal.authorities).map { it.authority }
+            return userInfoDto
+        }
+
         val user = userByUsername(auth.name)
         return toUserInfo(user)
     }

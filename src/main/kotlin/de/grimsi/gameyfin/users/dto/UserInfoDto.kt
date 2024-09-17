@@ -4,5 +4,5 @@ data class UserInfoDto(
     val username: String,
     val managedBySso: Boolean,
     val email: String,
-    val roles: List<String>
+    var roles: List<String>
 )

@@ -42,7 +42,8 @@ function SsoMangementLayout({getConfig, formik}: any) {
                         <ConfigFormField configElement={getConfig("sso.oidc.auto-register-new-users")}
                                          isDisabled={!formik.values.sso.oidc.enabled}/>
                         <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
-                                         isDisabled={!formik.values.sso.oidc.enabled}/>
+                                         isDisabled={!formik.values.sso.oidc.enabled ||
+                                             !formik.values.sso.oidc["auto-register-new-users"]}/>
                     </div>
 
                     <Section title="SSO provider configuration"/>
