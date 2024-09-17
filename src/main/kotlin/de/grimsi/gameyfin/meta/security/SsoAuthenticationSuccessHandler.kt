@@ -64,6 +64,7 @@ class SsoAuthenticationSuccessHandler(
         else {
             matchedUser.username = oidcUser.preferredUsername
             matchedUser.email = oidcUser.email
+            matchedUser.oidcProviderId = oidcUser.subject
         }
 
         val grantedAuthorities = roleService.extractGrantedAuthorities(oidcUser.authorities)
