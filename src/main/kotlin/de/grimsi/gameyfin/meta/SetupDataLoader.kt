@@ -85,6 +85,6 @@ class SetupDataLoader(
     fun registerUserIfNotFound(user: User, role: Roles) {
         if (userService.existsByUsername(user.username)) return
 
-        userService.registerUser(user, role)
+        userService.registerOrUpdateUser(user, role)
     }
 }

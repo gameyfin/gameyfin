@@ -25,6 +25,6 @@ class SetupService(
      * Creates the initial user with Super-Admin permissions
      */
     fun createInitialAdminUser(superAdmin: User): User {
-        return userService.registerUser(superAdmin, Roles.SUPERADMIN)
+        return userService.registerOrUpdateUser(superAdmin, Roles.SUPERADMIN)
     }
 }

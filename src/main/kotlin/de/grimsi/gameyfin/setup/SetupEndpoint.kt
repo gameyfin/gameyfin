@@ -29,7 +29,7 @@ class SetupEndpoint(
             username = superAdminRegistration.username,
             password = superAdminRegistration.password,
             email = superAdminRegistration.email,
-            roles = listOf(roleService.toRole(Roles.SUPERADMIN))
+            roles = setOf(roleService.toRole(Roles.SUPERADMIN))
         )
 
         val superAdmin = setupService.createInitialAdminUser(user)

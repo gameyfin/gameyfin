@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta
+package de.grimsi.gameyfin.meta.security
 
 import de.grimsi.gameyfin.meta.annotations.DynamicAccessInterceptor
 import de.grimsi.gameyfin.meta.development.DelayInterceptor

@@ -122,7 +122,8 @@ sealed class ConfigProperties<T : Serializable>(
     data object SsoAutoRegisterNewUsers : ConfigProperties<Boolean>(
         Boolean::class,
         "sso.oidc.auto-register-new-users",
-        "Automatically create new users after registration"
+        "Automatically create new users after registration",
+        true
     )
 
     /** Notifications */

@@ -63,6 +63,6 @@ class UserEndpoint(
             email = registration.email
         )
 
-        return userService.registerUser(user, roles)
+        return userService.registerOrUpdateUser(user, roles)
     }
 }

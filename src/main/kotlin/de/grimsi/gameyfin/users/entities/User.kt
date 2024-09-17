@@ -1,6 +1,5 @@
 package de.grimsi.gameyfin.users.entities
 
-import de.grimsi.gameyfin.meta.Roles
 import jakarta.annotation.Nullable
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
@@ -40,15 +39,14 @@ class User(
         joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
         inverseJoinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")]
     )
-    var roles: Collection<Role> = emptyList()
+    var roles: Set<Role> = emptySet()
 ) {
 
     constructor(oidcUser: OidcUser) : this(
         username = oidcUser.preferredUsername,
         email = oidcUser.email,
+        email_confirmed = true,
+        enabled = true,
         oidcProviderId = oidcUser.subject
-    ) {
-        // FIXME: Implement role mapping from OIDC provider
-        this.roles = listOf(Role(Roles.ADMIN.roleName))
-    }
+    )
 }

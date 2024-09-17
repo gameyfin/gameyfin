@@ -1,5 +1,7 @@
 package de.grimsi.gameyfin.meta
 
+import de.grimsi.gameyfin.users.RoleService.Companion.INTERNAL_ROLE_PREFIX
+
 enum class Roles(val roleName: String) {
     SUPERADMIN(Names.SUPERADMIN),
     ADMIN(Names.ADMIN),
@@ -8,9 +10,9 @@ enum class Roles(val roleName: String) {
     // necessary for the ability to use the Roles class in the @RolesAllowed annotation
     class Names {
         companion object {
-            const val SUPERADMIN = "ROLE_SUPERADMIN"
-            const val ADMIN = "ROLE_ADMIN"
-            const val USER = "ROLE_USER"
+            const val SUPERADMIN = "${INTERNAL_ROLE_PREFIX}SUPERADMIN"
+            const val ADMIN = "${INTERNAL_ROLE_PREFIX}ADMIN"
+            const val USER = "${INTERNAL_ROLE_PREFIX}USER"
         }
     }
 }

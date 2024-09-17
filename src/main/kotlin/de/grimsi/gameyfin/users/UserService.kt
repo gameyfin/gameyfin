@@ -16,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.InputStream
@@ -46,19 +45,23 @@ class UserService(
         )
     }
 
-    fun existsByUsername(username: String): Boolean = userRepository.findByUsername(username) != null
+    fun existsByUsername(username: String): Boolean = userRepository.existsByUsername(username)
+
+    fun findByOidcProviderId(oidcProviderId: String): User? = userRepository.findByOidcProviderId(oidcProviderId)
 
     fun getAllUsers(): List<UserInfoDto> {
         return userRepository.findAll().map { u -> toUserInfo(u) }
     }
 
+    fun getByEmail(email: String): User? {
+        return userRepository.findByEmail(email)
+    }
+
+    fun getByUsername(username: String): User? {
+        return userRepository.findByUsername(username)
+    }
+
     fun getUserInfo(auth: Authentication): UserInfoDto {
-        val principal = auth.principal
-
-        if (principal is OidcUser) {
-            return toUserInfo(User(principal))
-        }
-
         val user = userByUsername(auth.name)
         return toUserInfo(user)
     }
@@ -94,12 +97,16 @@ class UserService(
         userRepository.save(user)
     }
 
-    fun registerUser(user: User, role: Roles): User {
-        return registerUser(user, listOf(role))
+    fun registerOrUpdateUser(user: User): User {
+        return userRepository.save(user)
     }
 
-    fun registerUser(user: User, roles: List<Roles>): User {
-        user.password = passwordEncoder.encode(user.password)
+    fun registerOrUpdateUser(user: User, role: Roles): User {
+        return registerOrUpdateUser(user, listOf(role))
+    }
+
+    fun registerOrUpdateUser(user: User, roles: List<Roles>): User {
+        user.password?.let { user.password = passwordEncoder.encode(it) }
         user.roles = roleService.toRoles(roles)
         return userRepository.save(user)
     }

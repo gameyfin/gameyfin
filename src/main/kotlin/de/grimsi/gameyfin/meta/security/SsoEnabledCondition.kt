@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta
+package de.grimsi.gameyfin.meta.security
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import org.springframework.context.annotation.Condition
@@ -32,7 +32,7 @@ class SsoEnabledCondition : Condition {
         } catch (_: Exception) {
             return false
         }
-        
+
         return false
     }
 }

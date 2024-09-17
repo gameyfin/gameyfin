@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta
+package de.grimsi.gameyfin.meta.security
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity
 import de.grimsi.gameyfin.config.ConfigProperties
@@ -14,9 +14,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.session.SessionRegistry
-import org.springframework.security.core.session.SessionRegistryImpl
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
@@ -27,7 +24,9 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 @EnableWebSecurity
 class SecurityConfig(
     private val environment: Environment,
-    private val config: ConfigService
+    private val config: ConfigService,
+    private val ssoAuthenticationSuccessHandler: SsoAuthenticationSuccessHandler,
+    private val sessionRegistry: SessionRegistry
 ) : VaadinWebSecurity() {
 
     private val ssoProviderKey: String = "oidc"
@@ -45,13 +44,16 @@ class SecurityConfig(
             sessionManagement
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(3)
-                .sessionRegistry(sessionRegistry())
+                .sessionRegistry(sessionRegistry)
         }
 
         super.configure(http)
 
         if (config.getConfigValue(ConfigProperties.SsoEnabled) == true) {
             setOAuth2LoginPage(http, "/oauth2/authorization/$ssoProviderKey")
+            // Use custom success handler to handle user registration
+            http.oauth2Login { oauth2Login -> oauth2Login.successHandler(ssoAuthenticationSuccessHandler) }
+            // Prevent unnecessary redirects
             http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
         } else {
             setLoginView(http, "/login")
@@ -65,11 +67,6 @@ class SecurityConfig(
         if ("dev" in environment.activeProfiles) {
             web.ignoring().requestMatchers("/h2-console/**")
         }
-    }
-
-    @Bean
-    fun sessionRegistry(): SessionRegistry {
-        return SessionRegistryImpl()
     }
 
     // TODO: Maybe switch to a database-backed client registration repository? Not sure if worth it.
@@ -91,10 +88,5 @@ class SecurityConfig(
             .build()
 
         return InMemoryClientRegistrationRepository(clientRegistration)
-    }
-
-    @Bean
-    fun passwordEncoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
     }
 }
