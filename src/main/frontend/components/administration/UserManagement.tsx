@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
-import {ConfigController, UserEndpoint} from "Frontend/generated/endpoints";
+import {ConfigEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
 import {UserManagementCard} from "Frontend/components/general/UserManagementCard";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
@@ -17,7 +17,7 @@ function UserManagementLayout({getConfig, formik}: any) {
             (response) => setUsers(response as UserInfoDto[])
         );
 
-        ConfigController.getConfig("sso.oidc.auto-register-new-users").then(
+        ConfigEndpoint.get("sso.oidc.auto-register-new-users").then(
             (response) => setAutoRegisterNewUsers(response === "true")
         );
     }, []);

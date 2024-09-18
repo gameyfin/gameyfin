@@ -1,6 +1,6 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/Input";
-import {Avatar, Button, Input as NextUiInput, Tooltip} from "@nextui-org/react";
+import {Button, Input as NextUiInput, Tooltip} from "@nextui-org/react";
 import {Form, Formik} from "formik";
 import {Check, Info, Trash} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
@@ -11,6 +11,7 @@ import {UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {toast} from "sonner";
 import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
+import Avatar from "Frontend/components/general/Avatar";
 
 export default function ProfileManagement() {
     const [configSaved, setConfigSaved] = useState(false);
@@ -101,10 +102,7 @@ export default function ProfileManagement() {
                         <div className="flex flex-row flex-1 justify-between gap-16">
                             <div className="flex flex-col basis-1/4 mt-8 gap-4">
                                 <div className="flex flex-row justify-center">
-                                    <Avatar showFallback
-                                            src={`/images/avatar?username=${auth.state.user?.username}`}
-                                            className="size-40 m-4 flex flex-row">
-                                    </Avatar>
+                                    <Avatar className="size-40 m-4 flex flex-row"/>
                                 </div>
                                 <div className="flex flex-row gap-2">
                                     <NextUiInput type="file" accept="image/*" onChange={onFileSelected}

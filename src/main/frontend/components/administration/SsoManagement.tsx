@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
@@ -7,7 +7,15 @@ import {Button} from "@nextui-org/react";
 import {MagicWand} from "@phosphor-icons/react";
 import {toast} from "sonner";
 
-function SsoMangementLayout({getConfig, formik}: any) {
+function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
+
+    useEffect(() => {
+        if (formik.dirty) {
+            setSaveMessage("Gameyfin must be restarted for the changes to take effect");
+        } else {
+            setSaveMessage(null);
+        }
+    }, [formik.dirty]);
 
     function isAutoPopulateDisabled() {
         return !formik.values.sso.oidc.enabled || !formik.values.sso.oidc["issuer-url"];
@@ -109,4 +117,4 @@ const validationSchema = Yup.object({
     })
 });
 
-export const SsoManagement = withConfigPage(SsoMangementLayout, "Single Sign-On", "sso", validationSchema);
+export const SsoManagement = withConfigPage(SsoManagementLayout, "Single Sign-On", "sso", validationSchema);

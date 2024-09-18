@@ -1,6 +1,5 @@
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
 import {
-    Avatar,
     Button,
     Card,
     Chip,
@@ -23,6 +22,7 @@ import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
+import Avatar from "Frontend/components/general/Avatar";
 
 export function UserManagementCard({user}: { user: UserInfoDto }) {
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -62,14 +62,13 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
     return (
         <Card className="flex flex-row justify-between p-2">
             <div className="flex flex-row items-center gap-4">
-                <Avatar showFallback
+                <Avatar username={user.username}
                         name={user.username?.charAt(0)}
-                        src={`/images/avatar?username=${user?.username}`}
                         classNames={{
                             base: "gradient-primary size-20",
                             icon: "text-background/80",
-                            name: "text-background/80 text-5xl -mt-1",
-                        }}></Avatar>
+                            name: "text-background/80 text-5xl",
+                        }}/>
                 <div className="flex flex-col gap-1">
                     <p className="font-semibold">{user.username}</p>
                     <p className="text-sm">{user.email}</p>

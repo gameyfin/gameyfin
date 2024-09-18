@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.config
 
 import de.grimsi.gameyfin.config.dto.ConfigEntryDto
+import de.grimsi.gameyfin.config.dto.ConfigValuePairDto
 import de.grimsi.gameyfin.config.entities.ConfigEntry
 import de.grimsi.gameyfin.config.persistence.ConfigRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -21,7 +22,7 @@ class ConfigService(
      * @param prefix: Optional prefix to filter the config values
      * @return A map of all config values
      */
-    fun getAllConfigValues(prefix: String?): List<ConfigEntryDto> {
+    fun getAll(prefix: String?): List<ConfigEntryDto> {
 
         log.info { "Getting all config values for prefix '$prefix'" }
 
@@ -53,7 +54,7 @@ class ConfigService(
      * @param configProperty: The config property containing necessary type information
      * @return The current value if set or the default value or null if no value is set and no default value exists
      */
-    fun <T : Serializable> getConfigValue(configProperty: ConfigProperties<T>): T? {
+    fun <T : Serializable> get(configProperty: ConfigProperties<T>): T? {
 
         log.info { "Getting config value '${configProperty.key}'" }
 
@@ -72,7 +73,7 @@ class ConfigService(
      * @param key: The key of the config property
      * @return The current value if set or the default value or null if no value is set and no default value exists
      */
-    fun getConfigValue(key: String): String? {
+    fun get(key: String): String? {
 
         log.info { "Getting config value '$key'" }
 
@@ -86,6 +87,17 @@ class ConfigService(
         }
     }
 
+    /**
+     * Set multiple config values at once.
+     * Configs with a null value will be deleted.
+     *
+     * @param configs: A map of key-value pairs to set
+     */
+    fun setAll(configs: List<ConfigValuePairDto>) {
+        configs.forEach {
+            it.value?.let { value -> set(it.key, value) } ?: deleteConfig(it.key)
+        }
+    }
 
     /**
      * Set the value for a specified key in a type-safe way.
@@ -94,8 +106,8 @@ class ConfigService(
      * @param value: Value to set the config property to
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
      */
-    fun <T : Serializable> setConfigValue(configProperty: ConfigProperties<T>, value: T) {
-        return setConfigValue(configProperty.key, value)
+    fun <T : Serializable> set(configProperty: ConfigProperties<T>, value: T) {
+        return set(configProperty.key, value)
     }
 
     /**
@@ -106,8 +118,7 @@ class ConfigService(
      * @param value: Value to set the config property to
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
      */
-    fun <T : Serializable> setConfigValue(key: String, value: T) {
-
+    fun <T : Serializable> set(key: String, value: T) {
         log.info { "Set config value '$key' to '$value'" }
 
         val configKey = findConfigProperty(key)

@@ -49,7 +49,7 @@ class SecurityConfig(
 
         super.configure(http)
 
-        if (config.getConfigValue(ConfigProperties.SsoEnabled) == true) {
+        if (config.get(ConfigProperties.SsoEnabled) == true) {
             setOAuth2LoginPage(http, "/oauth2/authorization/$ssoProviderKey")
             // Use custom success handler to handle user registration
             http.oauth2Login { oauth2Login -> oauth2Login.successHandler(ssoAuthenticationSuccessHandler) }
@@ -74,16 +74,16 @@ class SecurityConfig(
     @Conditional(SsoEnabledCondition::class)
     fun clientRegistrationRepository(): ClientRegistrationRepository? {
         val clientRegistration = ClientRegistration.withRegistrationId(ssoProviderKey)
-            .clientId(config.getConfigValue(ConfigProperties.SsoClientId))
-            .clientSecret(config.getConfigValue(ConfigProperties.SsoClientSecret))
+            .clientId(config.get(ConfigProperties.SsoClientId))
+            .clientSecret(config.get(ConfigProperties.SsoClientSecret))
             .scope("openid", "profile", "email")
             .userNameAttributeName("preferred_username")
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .issuerUri(config.getConfigValue(ConfigProperties.SsoIssuerUrl))
-            .authorizationUri(config.getConfigValue(ConfigProperties.SsoAuthorizeUrl))
-            .tokenUri(config.getConfigValue(ConfigProperties.SsoTokenUrl))
-            .userInfoUri(config.getConfigValue(ConfigProperties.SsoUserInfoUrl))
-            .jwkSetUri(config.getConfigValue(ConfigProperties.SsoJwksUrl))
+            .issuerUri(config.get(ConfigProperties.SsoIssuerUrl))
+            .authorizationUri(config.get(ConfigProperties.SsoAuthorizeUrl))
+            .tokenUri(config.get(ConfigProperties.SsoTokenUrl))
+            .userInfoUri(config.get(ConfigProperties.SsoUserInfoUrl))
+            .jwkSetUri(config.get(ConfigProperties.SsoJwksUrl))
             .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
             .build()
 

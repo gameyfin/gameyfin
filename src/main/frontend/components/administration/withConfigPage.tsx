@@ -1,17 +1,14 @@
 import React, {useEffect, useRef, useState} from "react";
-import {ConfigController} from "Frontend/generated/endpoints";
+import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigEntryDto";
 import {Form, Formik} from "formik";
 import {Button, Skeleton} from "@nextui-org/react";
-import {Check} from "@phosphor-icons/react";
+import {Check, Info} from "@phosphor-icons/react";
+import ConfigValuePairDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigValuePairDto";
+import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 
 type NestedConfig = {
     [field: string]: any;
-}
-
-type ConfigValuePair = {
-    key: string;
-    value: string | number | boolean | null | undefined;
 }
 
 export default function withConfigPage(WrappedComponent: React.ComponentType<any>, title: String, configPrefix: string, validationSchema?: any) {
@@ -19,9 +16,10 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         const isInitialized = useRef(false);
         const [configSaved, setConfigSaved] = useState(false);
         const [configDtos, setConfigDtos] = useState<ConfigEntryDto[]>([]);
+        const [saveMessage, setSaveMessage] = useState<string>();
 
         useEffect(() => {
-            ConfigController.getConfigs(configPrefix).then((response: any) => {
+            ConfigEndpoint.getAll(configPrefix).then((response: any) => {
                 setConfigDtos(response as ConfigEntryDto[]);
                 isInitialized.current = true;
             });
@@ -35,15 +33,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
 
         async function handleSubmit(values: NestedConfig) {
             const configValues = toConfigValuePair(values);
-            await Promise.all(configValues.map(async (c: ConfigValuePair) => {
-                if (c.value === null || c.value === undefined) {
-                    await ConfigController.deleteConfig(c.key);
-                    return;
-                }
-
-                await ConfigController.setConfig(c.key, c.value.toString());
-            }));
-
+            await ConfigEndpoint.setAll(configValues);
             setConfigSaved(true);
         }
 
@@ -90,8 +80,8 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
             return nestedConfig;
         }
 
-        function toConfigValuePair(obj: NestedConfig, parentKey: string = ''): ConfigValuePair[] {
-            let result: ConfigValuePair[] = [];
+        function toConfigValuePair(obj: NestedConfig, parentKey: string = ''): ConfigValuePairDto[] {
+            let result: ConfigValuePairDto[] = [];
 
             for (const key in obj) {
                 if (obj.hasOwnProperty(key)) {
@@ -133,17 +123,24 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                         <div className="flex flex-row flex-grow justify-between mb-8">
                             <h1 className="text-2xl font-bold">{title}</h1>
 
-                            <Button
-                                color="primary"
-                                isLoading={formik.isSubmitting}
-                                disabled={formik.isSubmitting || configSaved}
-                                type="submit"
-                            >
-                                {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
-                            </Button>
+                            <div className="flex flex-row items-center gap-4">
+                                {saveMessage && <SmallInfoField icon={Info}
+                                                                message={saveMessage}
+                                                                className="text-warning"/>}
+
+                                <Button
+                                    color="primary"
+                                    isLoading={formik.isSubmitting}
+                                    disabled={formik.isSubmitting || configSaved}
+                                    type="submit"
+                                >
+                                    {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
+                                </Button>
+                            </div>
                         </div>
 
-                        <WrappedComponent {...props} getConfig={getConfig} formik={formik}/>
+                        <WrappedComponent {...props} getConfig={getConfig} formik={formik}
+                                          setSaveMessage={setSaveMessage}/>
                     </Form>
                 )}
             </Formik>

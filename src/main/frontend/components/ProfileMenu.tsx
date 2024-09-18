@@ -1,8 +1,9 @@
 import {useAuth} from "Frontend/util/auth";
 import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
-import {Avatar, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@nextui-org/react";
+import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@nextui-org/react";
 import {useNavigate} from "react-router-dom";
-import {ConfigController} from "Frontend/generated/endpoints";
+import {ConfigEndpoint} from "Frontend/generated/endpoints";
+import Avatar from "Frontend/components/general/Avatar";
 
 export default function ProfileMenu() {
     const auth = useAuth();
@@ -10,7 +11,7 @@ export default function ProfileMenu() {
 
     async function logout() {
         if (auth.state.user?.managedBySso) {
-            window.location.href = await ConfigController.getLogoutUrl() || "/";
+            window.location.href = await ConfigEndpoint.getLogoutUrl() || "/";
         } else {
             await auth.logout();
         }
@@ -44,16 +45,17 @@ export default function ProfileMenu() {
     return (
         <Dropdown placement="bottom-end">
             <DropdownTrigger>
-                <Avatar showFallback
-                        src={`/images/avatar?username=${auth.state.user?.username}`}
-                        radius="full"
-                        as="button"
-                        className="transition-transform size-8"
-                        classNames={{
-                            base: "gradient-primary",
-                            icon: "text-background/80"
-                        }}
-                />
+                {/* div is necessary so dropdown menu will appear in the correct place */}
+                <div>
+                    <Avatar radius="full"
+                            as="button"
+                            className="transition-transform size-8"
+                            classNames={{
+                                base: "gradient-primary",
+                                icon: "text-background/80"
+                            }}
+                    />
+                </div>
             </DropdownTrigger>
             <DropdownMenu>
                 {/* @ts-ignore */}

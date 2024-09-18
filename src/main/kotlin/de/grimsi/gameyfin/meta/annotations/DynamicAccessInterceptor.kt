@@ -24,7 +24,7 @@ class DynamicAccessInterceptor(
         // Check if method is annotated with @DynamicPublicAccess
         if (method.isAnnotationPresent(DynamicPublicAccess::class.java)) {
             // Check if user is authenticated or public access is enabled
-            if (request.userPrincipal != null || configService.getConfigValue(ConfigProperties.LibraryAllowPublicAccess) == true) {
+            if (request.userPrincipal != null || configService.get(ConfigProperties.LibraryAllowPublicAccess) == true) {
                 return true
             }
 

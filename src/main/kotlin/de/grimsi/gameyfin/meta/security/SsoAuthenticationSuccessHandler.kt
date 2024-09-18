@@ -33,39 +33,31 @@ class SsoAuthenticationSuccessHandler(
         // If user is not registered via SSO, check if user is already registered by username or email
         // This is meant to map existing users to SSO users
         if (matchedUser == null) {
-            matchedUser = when (config.getConfigValue(ConfigProperties.SsoMatchExistingUsersBy)) {
-                MatchUsersBy.USERNAME -> {
-                    userService.getByUsername(oidcUser.preferredUsername)
-                }
-
-                MatchUsersBy.EMAIL -> {
-                    userService.getByEmail(oidcUser.email)
-                }
-
-                else -> {
-                    throw IllegalStateException("Unknown 'match users by' configuration")
-                }
+            matchedUser = when (config.get(ConfigProperties.SsoMatchExistingUsersBy)) {
+                MatchUsersBy.USERNAME -> userService.getByUsername(oidcUser.preferredUsername)
+                MatchUsersBy.EMAIL -> userService.getByEmail(oidcUser.email)
+                else -> throw IllegalStateException("Unknown 'match users by' configuration")
             }
         }
 
         // User could not be found in the database
         if (matchedUser == null) {
-
             // Check if new user registration is enabled
-            if (config.getConfigValue(ConfigProperties.SsoAutoRegisterNewUsers) == false) {
+            if (config.get(ConfigProperties.SsoAutoRegisterNewUsers) == false) {
                 response.sendRedirect("/")
                 return
             }
 
-            // Register new user
+            // Register as new user
             matchedUser = User(oidcUser)
-        }
-        // User was found in the database, but we still want to update the user's information
-        else {
+        } else {
+            // Update user with new SSO data
             matchedUser.username = oidcUser.preferredUsername
             matchedUser.email = oidcUser.email
+            matchedUser.email_confirmed = true
             matchedUser.oidcProviderId = oidcUser.subject
         }
+
 
         val grantedAuthorities = roleService.extractGrantedAuthorities(oidcUser.authorities)
         matchedUser.roles = roleService.authoritiesToRoles(grantedAuthorities)
