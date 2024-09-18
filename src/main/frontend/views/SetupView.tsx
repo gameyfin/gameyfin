@@ -42,11 +42,11 @@ function ThemeStep() {
 
 function UserStep() {
     return (
-        <div className="flex flex-col size-full items-center">
-            <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
-                <h4>Create your account</h4>
-                <p className="-mt-8">This will set up the initial admin user account.</p>
-                <div className="mb-1 flex flex-col w-full gap-6 items-center">
+        <div className="flex flex-row flex-grow justify-center">
+            <div className="flex flex-col w-1/3 min-w-96 gap-6 items-center">
+                <p className="text-2xl font-bold">Create your account</p>
+                <p>This will set up the initial admin user account.</p>
+                <div className="flex flex-col w-full">
                     <Input
                         label="Username"
                         name="username"
