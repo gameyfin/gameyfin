@@ -58,6 +58,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                     <ConfigFormField configElement={getConfig("sso.oidc.client-id")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.client-secret")}
+                                     type="password"
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                     <div className="flex flex-row gap-2">
                         <ConfigFormField configElement={getConfig("sso.oidc.issuer-url")}
@@ -65,7 +66,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                         <Button
                             isDisabled={isAutoPopulateDisabled()}
                             onPress={autoPopulate}
-                            className="h-14 mt-2"><MagicWand/> Auto-populate</Button>
+                            className="h-14 mt-2"><MagicWand className="min-w-5"/> Auto-populate</Button>
                     </div>
                     <ConfigFormField configElement={getConfig("sso.oidc.authorize-url")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>

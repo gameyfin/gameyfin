@@ -119,7 +119,7 @@ class ConfigService(
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
      */
     fun <T : Serializable> set(key: String, value: T) {
-        log.info { "Set config value '$key' to '$value'" }
+        log.info { "Set config value '$key'" }
 
         val configKey = findConfigProperty(key)
 

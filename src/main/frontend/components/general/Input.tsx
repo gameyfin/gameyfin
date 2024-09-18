@@ -9,7 +9,7 @@ const Input = ({label, ...props}) => {
     const [field, meta] = useField(props);
 
     return (
-        <div className="flex flex-col flex-grow items-start gap-2 my-2">
+        <div className="flex flex-col w-full items-start gap-2 my-2">
             <NextUiInput
                 {...props}
                 {...field}
@@ -17,7 +17,7 @@ const Input = ({label, ...props}) => {
                 label={label}
                 isInvalid={meta.touched && !!meta.error}
             />
-            <div className="min-h-6 w-full text-danger">
+            <div className="min-h-6 text-danger">
                 {meta.touched && meta.error && (
                     <SmallInfoField icon={XCircle} message={meta.error}/>
                 )}

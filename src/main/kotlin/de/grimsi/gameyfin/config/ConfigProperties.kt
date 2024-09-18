@@ -127,17 +127,37 @@ sealed class ConfigProperties<T : Serializable>(
     )
 
     /** Notifications */
-    data object NotificationsEmailHost :
-        ConfigProperties<String>(String::class, "notifications.email.host", "URL of the email server")
+    data object NotificationsEnabled : ConfigProperties<Boolean>(
+        Boolean::class,
+        "notifications.enabled",
+        "Enable notifications",
+        false
+    )
 
-    data object NotificationsEmailPort :
-        ConfigProperties<String>(String::class, "notifications.email.port", "Port of the email server")
+    data object NotificationsEmailHost : ConfigProperties<String>(
+        String::class,
+        "notifications.email.host",
+        "URL of the email server"
+    )
 
-    data object NotificationsEmailUsername :
-        ConfigProperties<String>(String::class, "notifications.email.username", "Username for the email account")
+    data object NotificationsEmailPort : ConfigProperties<Int>(
+        Int::class,
+        "notifications.email.port",
+        "Port of the email server",
+        587
+    )
 
-    data object NotificationsEmailPassword :
-        ConfigProperties<String>(String::class, "notifications.email.password", "Password for the email account")
+    data object NotificationsEmailUsername : ConfigProperties<String>(
+        String::class,
+        "notifications.email.username",
+        "Username for the email account"
+    )
+
+    data object NotificationsEmailPassword : ConfigProperties<String>(
+        String::class,
+        "notifications.email.password",
+        "Password for the email account"
+    )
 }
 
 enum class MatchUsersBy {

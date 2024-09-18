@@ -21,7 +21,8 @@ export default function ConfigFormField({configElement, ...props}: any) {
                 );
             case "String":
                 return (
-                    <Input label={configElement.description} name={configElement.key} type="text" {...props}/>
+                    <Input label={configElement.description} name={configElement.key}
+                           type={props.type && "text"} {...props}/>
                 );
             case "Float":
                 return (
