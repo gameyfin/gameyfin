@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta
+package de.grimsi.gameyfin.core
 
 import de.grimsi.gameyfin.users.RoleService.Companion.INTERNAL_ROLE_PREFIX
 

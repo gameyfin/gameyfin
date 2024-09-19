@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.users
 
-import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
 import de.grimsi.gameyfin.users.entities.Avatar

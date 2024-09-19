@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.config
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.config.dto.ConfigEntryDto
 import de.grimsi.gameyfin.config.dto.ConfigValuePairDto
-import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.core.Roles
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 

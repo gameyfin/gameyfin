@@ -1,7 +1,7 @@
 package de.grimsi.gameyfin.users
 
 import com.vaadin.hilla.Endpoint
-import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto

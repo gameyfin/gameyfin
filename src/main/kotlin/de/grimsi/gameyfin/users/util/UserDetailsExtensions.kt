@@ -3,7 +3,7 @@
 
 package de.grimsi.gameyfin.users.util
 
-import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.core.Roles
 import org.springframework.security.core.userdetails.UserDetails
 
 fun UserDetails.hasRole(role: Roles): Boolean {

@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.setup
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import com.vaadin.hilla.exception.EndpointException
-import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.users.RoleService
 import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.dto.UserInfoDto

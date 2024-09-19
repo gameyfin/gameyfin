@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta.security
+package de.grimsi.gameyfin.core.security
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService

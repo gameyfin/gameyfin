@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.users.avatar
 
-import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.users.UserService
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed

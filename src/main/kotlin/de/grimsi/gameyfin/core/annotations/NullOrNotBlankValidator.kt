@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta.annotations
+package de.grimsi.gameyfin.core.annotations
 
 import jakarta.validation.ConstraintValidator
 import jakarta.validation.ConstraintValidatorContext

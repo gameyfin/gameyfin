@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.setup
 
-import de.grimsi.gameyfin.meta.Roles
+import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.users.RoleService
 import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.entities.User

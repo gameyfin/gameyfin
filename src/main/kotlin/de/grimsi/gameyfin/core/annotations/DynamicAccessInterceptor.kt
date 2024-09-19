@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta.annotations
+package de.grimsi.gameyfin.core.annotations
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService

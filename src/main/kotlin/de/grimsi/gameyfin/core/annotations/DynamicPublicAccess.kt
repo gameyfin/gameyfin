@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta.annotations
+package de.grimsi.gameyfin.core.annotations
 
 import kotlin.annotation.AnnotationRetention.RUNTIME
 import kotlin.annotation.AnnotationTarget.FUNCTION

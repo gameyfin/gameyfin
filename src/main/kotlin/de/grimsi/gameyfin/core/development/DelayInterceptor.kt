@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.meta.development
+package de.grimsi.gameyfin.core.development
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

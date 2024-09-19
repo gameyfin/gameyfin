@@ -1,7 +1,7 @@
-package de.grimsi.gameyfin.meta.security
+package de.grimsi.gameyfin.core.security
 
-import de.grimsi.gameyfin.meta.annotations.DynamicAccessInterceptor
-import de.grimsi.gameyfin.meta.development.DelayInterceptor
+import de.grimsi.gameyfin.core.annotations.DynamicAccessInterceptor
+import de.grimsi.gameyfin.core.development.DelayInterceptor
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
