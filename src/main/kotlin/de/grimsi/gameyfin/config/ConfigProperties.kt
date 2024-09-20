@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.config
 
+import org.springframework.boot.logging.LogLevel
 import java.io.Serializable
 import kotlin.reflect.KClass
 
@@ -115,7 +116,7 @@ sealed class ConfigProperties<T : Serializable>(
         MatchUsersBy::class,
         "sso.oidc.match-existing-users-by",
         "Match existing users by",
-        MatchUsersBy.USERNAME,
+        MatchUsersBy.username,
         MatchUsersBy.entries
     )
 
@@ -158,8 +159,31 @@ sealed class ConfigProperties<T : Serializable>(
         "notifications.email.password",
         "Password for the email account"
     )
+
+    /** Logs */
+    data object LogsFolder : ConfigProperties<String>(
+        String::class,
+        "logs.folder",
+        "Storage folder for log files",
+        "./logs"
+    )
+
+    data object LogsMaxHistoryDays : ConfigProperties<Int>(
+        Int::class,
+        "logs.max-history-days",
+        "Log retention in days",
+        30
+    )
+
+    data object LogsLevel : ConfigProperties<LogLevel>(
+        LogLevel::class,
+        "logs.level",
+        "Log level",
+        LogLevel.INFO,
+        LogLevel.entries
+    )
 }
 
 enum class MatchUsersBy {
-    USERNAME, EMAIL
+    username, email
 }

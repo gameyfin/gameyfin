@@ -16,11 +16,13 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         const isInitialized = useRef(false);
         const [configSaved, setConfigSaved] = useState(false);
         const [configDtos, setConfigDtos] = useState<ConfigEntryDto[]>([]);
+        const [nestedConfigDtos, setNestedConfigDtos] = useState<NestedConfig>({});
         const [saveMessage, setSaveMessage] = useState<string>();
 
         useEffect(() => {
             ConfigEndpoint.getAll(configPrefix).then((response: any) => {
                 setConfigDtos(response as ConfigEntryDto[]);
+                setNestedConfigDtos(toNestedConfig(response as ConfigEntryDto[]));
                 isInitialized.current = true;
             });
         }, []);
@@ -34,6 +36,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         async function handleSubmit(values: NestedConfig) {
             const configValues = toConfigValuePair(values);
             await ConfigEndpoint.setAll(configValues);
+            setNestedConfigDtos(values);
             setConfigSaved(true);
         }
 
@@ -114,11 +117,12 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
 
         return (
             <Formik
-                initialValues={toNestedConfig(configDtos)}
+                initialValues={nestedConfigDtos}
                 onSubmit={handleSubmit}
                 validationSchema={validationSchema}
+                enableReinitialize={true}
             >
-                {(formik: { values: any; isSubmitting: any; }) => (
+                {(formik) => (
                     <Form>
                         <div className="flex flex-row flex-grow justify-between mb-8">
                             <h1 className="text-2xl font-bold">{title}</h1>
@@ -131,7 +135,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                                 <Button
                                     color="primary"
                                     isLoading={formik.isSubmitting}
-                                    disabled={formik.isSubmitting || configSaved}
+                                    disabled={formik.isSubmitting || configSaved || !formik.dirty}
                                     type="submit"
                                 >
                                     {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}

@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.core
 
+import de.grimsi.gameyfin.setup.SetupService
 import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
@@ -18,12 +19,15 @@ import java.net.InetAddress
 class SetupDataLoader(
     private val roleRepository: RoleRepository,
     private val userService: UserService,
+    private val setupService: SetupService,
     private val env: Environment
 ) {
     private val log = KotlinLogging.logger {}
 
     @EventListener(ApplicationReadyEvent::class)
     fun initialSetup() {
+        if (setupService.isSetupCompleted()) return
+
         log.info { "Looks like this is the first time you're starting Gameyfin." }
         log.info { "We will now set up some data..." }
 

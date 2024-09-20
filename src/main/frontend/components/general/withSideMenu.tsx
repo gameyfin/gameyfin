@@ -51,7 +51,7 @@ export default function withSideMenu(menuItems: MenuItem[]) {
                         ))}
                     </Listbox>
                 </div>
-                <div className="flex flex-col flex-grow">
+                <div className="flex-1 overflow-auto">
                     <Outlet/>
                 </div>
             </div>

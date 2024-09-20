@@ -13,6 +13,7 @@ import {SsoManagement} from "Frontend/components/administration/SsoManagement";
 import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
 import {NotificationManagement} from "Frontend/components/administration/NotificationManagement";
+import {LogManagement} from "Frontend/components/administration/LogManagement";
 
 export const routes = protectRoutes([
     {
@@ -41,7 +42,8 @@ export const routes = protectRoutes([
                             {path: 'libraries', element: <LibraryManagement/>},
                             {path: 'users', element: <UserManagement/>},
                             {path: 'sso', element: <SsoManagement/>},
-                            {path: 'notifications', element: <NotificationManagement/>}
+                            {path: 'notifications', element: <NotificationManagement/>},
+                            {path: 'logs', element: <LogManagement/>}
                         ]
                     }
                 ]

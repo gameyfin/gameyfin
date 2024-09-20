@@ -7,17 +7,18 @@ const SelectInput = ({label, values, ...props}) => {
     const [field] = useField(props);
 
     return (
-        <div className="flex flex-row flex-1 items-center gap-2 my-2">
+        <div className="flex flex-row flex-1 justify-center gap-2 my-2">
             <Select
                 {...field}
                 {...props}
                 id={field.name}
                 label={label}
                 defaultSelectedKeys={[field.value]}
+                disallowEmptySelection
             >
                 {values.map((value: string) => (
                     <SelectItem key={value} value={value}>
-                        {value.toLowerCase()}
+                        {value}
                     </SelectItem>
                 ))}
             </Select>

@@ -41,6 +41,11 @@ dependencies {
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+    // Reactive
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+
     // Vaadin Hilla
     implementation("com.vaadin:vaadin-core") {
         exclude("com.vaadin:flow-react")
@@ -50,10 +55,11 @@ dependencies {
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
 
-    // Persistence
+    // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.14")
     implementation("org.springframework.cloud:spring-cloud-starter")
+    implementation("commons-io:commons-io:2.16.1")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -62,7 +68,7 @@ dependencies {
 
     // Notifications
     implementation("org.springframework.boot:spring-boot-starter-mail")
-    
+
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")

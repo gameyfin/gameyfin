@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- Custom File Appender -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>{LOG_FOLDER}/{LOG_FILE_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>{LOG_FOLDER}/{LOG_FILE_NAME}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>{LOG_MAX_HISTORY_DAYS}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyy-MM-dd'T'HH:mm:ss.SSS} %-5level %-40.40logger{39} : %m%n</pattern>
+        </encoder>
+    </appender>
+    <root level="{LOG_LEVEL}">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>

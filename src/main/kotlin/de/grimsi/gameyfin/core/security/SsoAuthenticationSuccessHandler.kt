@@ -34,8 +34,8 @@ class SsoAuthenticationSuccessHandler(
         // This is meant to map existing users to SSO users
         if (matchedUser == null) {
             matchedUser = when (config.get(ConfigProperties.SsoMatchExistingUsersBy)) {
-                MatchUsersBy.USERNAME -> userService.getByUsername(oidcUser.preferredUsername)
-                MatchUsersBy.EMAIL -> userService.getByEmail(oidcUser.email)
+                MatchUsersBy.username -> userService.getByUsername(oidcUser.preferredUsername)
+                MatchUsersBy.email -> userService.getByEmail(oidcUser.email)
                 else -> throw IllegalStateException("Unknown 'match users by' configuration")
             }
         }

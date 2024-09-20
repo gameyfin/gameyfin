@@ -56,7 +56,7 @@ class SecurityConfig(
             // Prevent unnecessary redirects
             http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
         } else {
-            setLoginView(http, "/login")
+            setLoginView(http, "/login", "/")
         }
     }
 

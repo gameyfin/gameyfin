@@ -15,25 +15,24 @@ export default function MainLayout() {
 
     return (
         <div className="flex flex-col min-h-svh">
-            <Navbar maxWidth="2xl" className="shadow">
-                <NavbarBrand as="button" onClick={() => navigate('/')}>
-                    <GameyfinLogo className="h-10 fill-foreground"/>
-                </NavbarBrand>
-                <NavbarContent justify="end">
-                    <NavbarItem>
-                        <ProfileMenu/>
-                    </NavbarItem>
-                </NavbarContent>
-            </Navbar>
+            <div className="flex flex-col flex-grow w-full 2xl:w-3/4 m-auto">
+                <Navbar maxWidth="full">
+                    <NavbarBrand as="button" onClick={() => navigate('/')}>
+                        <GameyfinLogo className="h-10 fill-foreground"/>
+                    </NavbarBrand>
+                    <NavbarContent justify="end">
+                        <NavbarItem>
+                            <ProfileMenu/>
+                        </NavbarItem>
+                    </NavbarContent>
+                </Navbar>
 
-            <div className="flex-1">
-                <div className="flex-row relative m-auto max-w-[1536px] align-self-center px-2 pt-4">
+                <div className="w-full overflow-hidden ml-2 pr-8 mt-4">
                     <Outlet/>
                 </div>
             </div>
 
             <Divider/>
-
             <footer className="flex flex-row items-center justify-between py-4 px-12">
                 <p>Gameyfin {PackageJson.version}</p>
                 <p>

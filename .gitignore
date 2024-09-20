@@ -47,3 +47,4 @@ out/
 /.gameyfin/
 /src/main/frontend/generated/
 /db/
+/logs/

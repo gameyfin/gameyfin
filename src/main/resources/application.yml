@@ -8,7 +8,6 @@ server:
       tracking-modes: cookie
 
 management:
-  endpoints.web.exposure.include: '*'
   endpoint:
     pause:
       enabled: false
