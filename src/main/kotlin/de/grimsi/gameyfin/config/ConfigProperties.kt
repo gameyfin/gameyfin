@@ -137,27 +137,57 @@ sealed class ConfigProperties<T : Serializable>(
 
     data object NotificationsEmailHost : ConfigProperties<String>(
         String::class,
-        "notifications.email.host",
+        "notifications.providers.email.host",
         "URL of the email server"
     )
 
     data object NotificationsEmailPort : ConfigProperties<Int>(
         Int::class,
-        "notifications.email.port",
+        "notifications.providers.email.port",
         "Port of the email server",
         587
     )
 
     data object NotificationsEmailUsername : ConfigProperties<String>(
         String::class,
-        "notifications.email.username",
+        "notifications.providers.email.username",
         "Username for the email account"
     )
 
     data object NotificationsEmailPassword : ConfigProperties<String>(
         String::class,
-        "notifications.email.password",
+        "notifications.providers.email.password",
         "Password for the email account"
+    )
+
+    data object NotificationsTemplateNewUser : ConfigProperties<String>(
+        String::class,
+        "notifications.templates.new-user",
+        "Template for new user notifications"
+    )
+
+    data object NotificationsTemplateNewInvite : ConfigProperties<String>(
+        String::class,
+        "notifications.templates.new-invite",
+        "Template for new user notifications"
+    )
+
+    data object NotificationsTemplateNewPasswordRequest : ConfigProperties<String>(
+        String::class,
+        "notifications.templates.new-password-request",
+        "Template for new password request notifications"
+    )
+
+    data object NotificationsTemplateNewGame : ConfigProperties<String>(
+        String::class,
+        "notifications.templates.new-game",
+        "Template for new game notifications"
+    )
+
+    data object NotificationsTemplateNewGameRequest : ConfigProperties<String>(
+        String::class,
+        "notifications.templates.new-game-request",
+        "Template for new game request notifications"
     )
 
     /** Logs */

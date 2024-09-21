@@ -1,9 +1,6 @@
 package de.grimsi.gameyfin.config.entities
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 
 @Entity
@@ -15,6 +12,7 @@ class ConfigEntry(
     val key: String,
 
     @NotNull
+    @Lob
     @Column(name = "`value`")
     var value: String
 )

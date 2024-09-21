@@ -44,6 +44,10 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
             return configDtos.find((configDto: ConfigEntryDto) => configDto.key === key);
         }
 
+        function getConfigs(prefix: string) {
+            return configDtos.filter((configDto: ConfigEntryDto) => configDto.key?.startsWith(prefix));
+        }
+
         function toNestedConfig(configArray: ConfigEntryDto[]): NestedConfig {
             const nestedConfig: NestedConfig = {};
 
@@ -143,7 +147,10 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                             </div>
                         </div>
 
-                        <WrappedComponent {...props} getConfig={getConfig} formik={formik}
+                        <WrappedComponent {...props}
+                                          getConfig={getConfig}
+                                          getConfigs={getConfigs}
+                                          formik={formik}
                                           setSaveMessage={setSaveMessage}/>
                     </Form>
                 )}

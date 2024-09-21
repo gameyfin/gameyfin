@@ -66,7 +66,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                         <Button
                             isDisabled={isAutoPopulateDisabled()}
                             onPress={autoPopulate}
-                            className="h-14 mt-2"><MagicWand className="min-w-5"/> Auto-populate</Button>
+                            className="h-14"><MagicWand className="min-w-5"/> Auto-populate</Button>
                     </div>
                     <ConfigFormField configElement={getConfig("sso.oidc.authorize-url")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
