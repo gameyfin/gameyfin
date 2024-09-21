@@ -20,3 +20,4 @@ const menuItems = [
 ]
 
 export const ProfileView = withSideMenu(menuItems);
+export default ProfileView;

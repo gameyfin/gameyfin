@@ -8,19 +8,17 @@ import {Button, Code, Divider, Tooltip} from "@nextui-org/react";
 import {ArrowUDownLeft, SortAscending} from "@phosphor-icons/react";
 
 function LogManagementLayout({getConfig, formik}: any) {
-
     const [logEntries, setLogEntries] = useState<string[]>([]);
     const [autoScroll, setAutoScroll] = useState(true);
     const [softWrap, setSoftWrap] = useState(false);
-    const subscribed = useRef(false);
     const logEndRef = useRef<null | HTMLDivElement>(null);
 
     useEffect(() => {
-        if (subscribed.current) return;
-        LogEndpoint.getApplicationLogs().onNext((newEntry: string | undefined) =>
+        const sub = LogEndpoint.getApplicationLogs().onNext((newEntry: string | undefined) =>
             setLogEntries((currentEntries) => [...currentEntries, newEntry as string])
         );
-        subscribed.current = true;
+
+        return () => sub.cancel();
     }, []);
 
     useEffect(() => {

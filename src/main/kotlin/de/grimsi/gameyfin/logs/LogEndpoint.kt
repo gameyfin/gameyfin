@@ -19,7 +19,6 @@ class LogEndpoint(
     // FIXME: see https://vaadin.com/forum/t/can-only-access-flux-endpoint-with-anonymousallowed/167117
     @AnonymousAllowed
     fun getApplicationLogs(): Flux<String> {
-        return logService.getInitialLogs()
-            .concatWith(logService.streamLogs())
+        return logService.streamLogs()
     }
 }

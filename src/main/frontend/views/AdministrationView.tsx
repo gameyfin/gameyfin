@@ -30,3 +30,4 @@ const menuItems: MenuItem[] = [
 ]
 
 export const AdministrationView = withSideMenu(menuItems);
+export default AdministrationView;
