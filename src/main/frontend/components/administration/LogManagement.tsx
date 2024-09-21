@@ -71,7 +71,7 @@ function LogManagementLayout({getConfig, formik}: any) {
                 <Divider className="mb-4"/>
             </div>
             <Code size="sm" radius="none"
-                  className={`flex flex-col h-[50vh] max-h-[50vh] text-sm overflow-auto ${softWrap ? "whitespace-normal" : "whitespace-nowrap"}`}>
+                  className={`flex flex-col h-[50vh] max-h-[50vh] text-sm overflow-auto ${softWrap ? "whitespace-normal break-words" : "whitespace-nowrap"}`}>
                 {logEntries.map((entry, index) => <p key={index}>{entry}</p>)}
                 <div ref={logEndRef}/>
             </Code>
