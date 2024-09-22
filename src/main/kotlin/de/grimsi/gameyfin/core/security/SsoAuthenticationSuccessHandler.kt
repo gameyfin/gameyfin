@@ -54,7 +54,7 @@ class SsoAuthenticationSuccessHandler(
             // Update user with new SSO data
             matchedUser.username = oidcUser.preferredUsername
             matchedUser.email = oidcUser.email
-            matchedUser.email_confirmed = true
+            matchedUser.emailConfirmed = true
             matchedUser.oidcProviderId = oidcUser.subject
         }
 

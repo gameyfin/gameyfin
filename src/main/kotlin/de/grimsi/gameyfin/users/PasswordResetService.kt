@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.users
 
+import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
 import de.grimsi.gameyfin.users.entities.PasswordResetToken
 import de.grimsi.gameyfin.users.entities.User
@@ -29,16 +30,22 @@ class PasswordResetService(
 
     private val secureRandom = SecureRandom()
 
+    private val PasswordResetToken.isExpired: Boolean
+        get() = createdOn?.plus(TOKEN_EXPIRATION.toJavaDuration())!!.isBefore(Instant.now())
+
+    private val baseUrl: String
+        get() = Utils.getBaseUrl()
+
     fun requestPasswordReset(email: String) {
 
-        log.info { "Initiating password reset request for '${maskEmail(email)}'" }
+        log.info { "Initiating password reset request for '${Utils.maskEmail(email)}'" }
 
         val user = userService.getByEmail(email)
 
         // A user can only reset its password if its email is confirmed, and it's not an SSO user
-        if (user != null && user.email_confirmed && user.oidcProviderId == null) {
+        if (user != null && user.emailConfirmed && user.oidcProviderId == null) {
             val token = createPasswordResetToken(user)
-            eventPublisher.publishEvent(PasswordResetRequestEvent(this, token))
+            eventPublisher.publishEvent(PasswordResetRequestEvent(this, token, baseUrl))
         }
 
         // Simulate a delay to prevent timing attacks
@@ -73,12 +80,4 @@ class PasswordResetService(
         passwordResetTokenRepository.delete(passwordResetToken)
         sessionService.logoutAllSessions(user)
     }
-
-    private fun maskEmail(email: String): String {
-        val regex = """(?:\G(?!^)|(?<=^[^@]{2}|@))[^@](?!\.[^.]+$)""".toRegex()
-        return email.replace(regex, "*")
-    }
-
-    private val PasswordResetToken.isExpired: Boolean
-        get() = createdOn?.plus(TOKEN_EXPIRATION.toJavaDuration())!!.isBefore(Instant.now())
 }

@@ -2,17 +2,22 @@ package de.grimsi.gameyfin.notifications
 
 import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
 import de.grimsi.gameyfin.notifications.providers.AbstractNotificationProvider
+import de.grimsi.gameyfin.notifications.templates.MessageTemplateService
+import de.grimsi.gameyfin.notifications.templates.MessageTemplates
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
+import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.stereotype.Service
 import java.util.*
 
+@EnableAsync
 @Service
 class NotificationService(
-    private val applicationContext: ApplicationContext
+    private val applicationContext: ApplicationContext,
+    private val templateService: MessageTemplateService
 ) {
 
     val log: KLogger = KotlinLogging.logger {}
@@ -40,12 +45,16 @@ class NotificationService(
         log.info { "Sending password reset request notification" }
 
         val token = event.token
+        val resetLink = event.baseUrl + "/reset-password?token=${token.token}"
+        val content = templateService.fillMessageTemplate(
+            MessageTemplates.PasswordResetRequest,
+            mapOf("username" to token.user.username, "resetLink" to resetLink)
+        )
 
-        // TODO: Implement proper email template
         sendNotification(
             token.user.email,
-            "Password Reset Request",
-            "You have requested a password reset. Your token is ${token.token}"
+            "[Gameyfin] Password Reset Request",
+            content
         )
     }
 }

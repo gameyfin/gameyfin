@@ -27,7 +27,8 @@ class User(
     @Convert(converter = EncryptionConverter::class)
     var email: String,
 
-    var email_confirmed: Boolean = false,
+    // TODO: Add email confirmation
+    var emailConfirmed: Boolean = true,
 
     var enabled: Boolean = true,
 
@@ -47,7 +48,7 @@ class User(
     constructor(oidcUser: OidcUser) : this(
         username = oidcUser.preferredUsername,
         email = oidcUser.email,
-        email_confirmed = true,
+        emailConfirmed = true,
         enabled = true,
         oidcProviderId = oidcUser.subject
     )

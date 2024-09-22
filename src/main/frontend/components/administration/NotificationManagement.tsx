@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
@@ -6,6 +6,7 @@ import Section from "Frontend/components/general/Section";
 import {
     Button,
     Card,
+    Chip,
     Modal,
     ModalBody,
     ModalContent,
@@ -14,15 +15,23 @@ import {
     Textarea,
     useDisclosure
 } from "@nextui-org/react";
-import {ConfigEndpoint, NotificationEndpoint} from "Frontend/generated/endpoints";
+import {MessageTemplateEndpoint, NotificationEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";
-import ConfigEntryDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigEntryDto";
 import {Pencil} from "@phosphor-icons/react";
+import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/notifications/templates/MessageTemplateDto";
 
 function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
 
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const [selectedTemplate, setSelectedTemplate] = useState<ConfigEntryDto | null>(null);
+    const [availableTemplates, setAvailableTemplates] = useState<MessageTemplateDto[]>([]);
+    const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplateDto | null>(null);
+    const [templateContent, setTemplateContent] = useState<string>("");
+
+    useEffect(() => {
+        MessageTemplateEndpoint.getAll().then((response: any) => {
+            setAvailableTemplates(response as MessageTemplateDto[]);
+        });
+    }, []);
 
     async function verifyCredentials(provider: string) {
         const credentials: Record<string, any> = {
@@ -41,17 +50,22 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
         }
     }
 
-    async function openModal(template: ConfigEntryDto) {
-        let templateContent = await ConfigEndpoint.get(template.key);
-        setSelectedTemplate({
-            ...template,
-            value: templateContent
-        });
+    async function openModal(template: MessageTemplateDto) {
+        setSelectedTemplate(template);
+
+        let templateContent = await MessageTemplateEndpoint.read(template.key);
+
+        if (templateContent === undefined) {
+            toast.error("Can't read template content");
+            return;
+        }
+
+        setTemplateContent(templateContent);
         onOpen();
     }
 
-    async function saveTemplate(template: ConfigEntryDto) {
-        await ConfigEndpoint.set(template.key, template.value);
+    async function saveTemplate(template: MessageTemplateDto) {
+        await MessageTemplateEndpoint.save(template.key, templateContent);
     }
 
     return (
@@ -81,7 +95,7 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                         <div className="flex flex-col flex-1">
                             <Section title="Message Templates"/>
                             <div className="flex flex-col gap-4">
-                                {getConfigs("notifications.templates").map((template: ConfigEntryDto) =>
+                                {availableTemplates.map((template: MessageTemplateDto) =>
                                     <Card className="flex flex-row items-center gap-2 p-4" key={template.key}>
                                         <Button isIconOnly
                                                 size="sm"
@@ -103,18 +117,24 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                     {(onClose) => (
                         <>
                             <ModalHeader
-                                className="flex flex-col gap-1">Edit {selectedTemplate?.description.toLowerCase()}</ModalHeader>
+                                className="flex flex-col gap-1">Edit {selectedTemplate?.name} Template</ModalHeader>
                             <ModalBody>
+                                <div className="flex flex-row gap-2">
+                                    <p>Available placeholders:</p>
+                                    {selectedTemplate?.availablePlaceholders?.map((placeholder) =>
+                                        <Chip radius="sm"
+                                              key={placeholder}
+                                              color={templateContent.includes(`{${placeholder as string}}`) ? "success" : "danger"}
+                                        >{placeholder}</Chip>
+                                    )}
+                                </div>
                                 <Textarea
                                     size="lg"
                                     autoFocus
                                     disableAutosize
-                                    value={selectedTemplate?.value}
+                                    value={templateContent}
                                     onChange={(e) => {
-                                        if (selectedTemplate?.key) setSelectedTemplate({
-                                            ...selectedTemplate,
-                                            value: e.target.value
-                                        })
+                                        setTemplateContent(e.target.value)
                                     }}
                                     classNames={{
                                         input: "resize-y min-h-[500px]"
@@ -127,7 +147,7 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                                 </Button>
                                 <Button color="primary" onPress={async () => {
                                     if (selectedTemplate) {
-                                        await saveTemplate(selectedTemplate);
+                                        await saveTemplate(selectedTemplate,);
                                         toast.success("Template saved")
                                         onClose();
                                     }

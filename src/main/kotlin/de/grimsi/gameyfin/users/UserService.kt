@@ -150,7 +150,7 @@ class UserService(
         return UserInfoDto(
             username = user.username,
             email = user.email,
-            emailConfirmed = user.email_confirmed,
+            emailConfirmed = user.emailConfirmed,
             managedBySso = user.oidcProviderId != null,
             roles = user.roles.map { r -> r.rolename }
         )

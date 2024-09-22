@@ -48,3 +48,4 @@ out/
 /src/main/frontend/generated/
 /db/
 /logs/
+/templates/

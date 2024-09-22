@@ -7,7 +7,8 @@ class UserInvitationEvent(source: Any) : ApplicationEvent(source)
 
 class UserRegistrationEvent(source: Any) : ApplicationEvent(source)
 
-class PasswordResetRequestEvent(source: Any, val token: PasswordResetToken) : ApplicationEvent(source)
+class PasswordResetRequestEvent(source: Any, val token: PasswordResetToken, val baseUrl: String) :
+    ApplicationEvent(source)
 
 class GameRequestEvent(source: Any) : ApplicationEvent(source)
 
