@@ -33,7 +33,7 @@ class SsoAuthenticationSuccessHandler(
         // If user is not registered via SSO, check if user is already registered by username or email
         // This is meant to map existing users to SSO users
         if (matchedUser == null) {
-            matchedUser = when (config.get(ConfigProperties.SsoMatchExistingUsersBy)) {
+            matchedUser = when (config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy)) {
                 MatchUsersBy.username -> userService.getByUsername(oidcUser.preferredUsername)
                 MatchUsersBy.email -> userService.getByEmail(oidcUser.email)
                 else -> throw IllegalStateException("Unknown 'match users by' configuration")
@@ -43,7 +43,7 @@ class SsoAuthenticationSuccessHandler(
         // User could not be found in the database
         if (matchedUser == null) {
             // Check if new user registration is enabled
-            if (config.get(ConfigProperties.SsoAutoRegisterNewUsers) == false) {
+            if (config.get(ConfigProperties.SSO.OIDC.AutoRegisterNewUsers) == false) {
                 response.sendRedirect("/")
                 return
             }

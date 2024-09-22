@@ -21,9 +21,9 @@ class SsoEnabledCondition : Condition {
             val password = environment.getProperty("spring.datasource.password");
             val connection = DriverManager.getConnection(url, user, password);
 
-            connection.use { connection ->
-                val statement = connection.prepareStatement("SELECT \"value\" FROM app_config WHERE \"key\" = ?")
-                statement.setString(1, ConfigProperties.SsoEnabled.key)
+            connection.use { c ->
+                val statement = c.prepareStatement("SELECT \"value\" FROM app_config WHERE \"key\" = ?")
+                statement.setString(1, ConfigProperties.SSO.OIDC.Enabled.key)
                 val resultSet = statement.executeQuery()
                 if (resultSet.next()) {
                     return resultSet.getBoolean("value")

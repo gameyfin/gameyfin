@@ -43,11 +43,11 @@ class ConfigEndpoint(
 
     @PermitAll
     fun isSsoEnabled(): Boolean? {
-        return config.get(ConfigProperties.SsoEnabled)
+        return config.get(ConfigProperties.SSO.OIDC.Enabled)
     }
 
     @PermitAll
     fun getLogoutUrl(): String? {
-        return config.get(ConfigProperties.SsoLogoutUrl)
+        return config.get(ConfigProperties.SSO.OIDC.LogoutUrl)
     }
 }

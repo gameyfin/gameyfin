@@ -49,7 +49,7 @@ class SecurityConfig(
 
         super.configure(http)
 
-        if (config.get(ConfigProperties.SsoEnabled) == true) {
+        if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
             setOAuth2LoginPage(http, "/oauth2/authorization/$ssoProviderKey")
             // Use custom success handler to handle user registration
             http.oauth2Login { oauth2Login -> oauth2Login.successHandler(ssoAuthenticationSuccessHandler) }
@@ -74,16 +74,16 @@ class SecurityConfig(
     @Conditional(SsoEnabledCondition::class)
     fun clientRegistrationRepository(): ClientRegistrationRepository? {
         val clientRegistration = ClientRegistration.withRegistrationId(ssoProviderKey)
-            .clientId(config.get(ConfigProperties.SsoClientId))
-            .clientSecret(config.get(ConfigProperties.SsoClientSecret))
+            .clientId(config.get(ConfigProperties.SSO.OIDC.ClientId))
+            .clientSecret(config.get(ConfigProperties.SSO.OIDC.ClientSecret))
             .scope("openid", "profile", "email")
             .userNameAttributeName("preferred_username")
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-            .issuerUri(config.get(ConfigProperties.SsoIssuerUrl))
-            .authorizationUri(config.get(ConfigProperties.SsoAuthorizeUrl))
-            .tokenUri(config.get(ConfigProperties.SsoTokenUrl))
-            .userInfoUri(config.get(ConfigProperties.SsoUserInfoUrl))
-            .jwkSetUri(config.get(ConfigProperties.SsoJwksUrl))
+            .issuerUri(config.get(ConfigProperties.SSO.OIDC.IssuerUrl))
+            .authorizationUri(config.get(ConfigProperties.SSO.OIDC.AuthorizeUrl))
+            .tokenUri(config.get(ConfigProperties.SSO.OIDC.TokenUrl))
+            .userInfoUri(config.get(ConfigProperties.SSO.OIDC.UserInfoUrl))
+            .jwkSetUri(config.get(ConfigProperties.SSO.OIDC.JwksUrl))
             .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
             .build()
 

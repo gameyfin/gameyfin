@@ -41,9 +41,9 @@ class LogService(
     @EventListener(ApplicationStartedEvent::class)
     fun configureFileLogging() {
         return configureFileLogging(
-            config.get(ConfigProperties.LogsFolder)!!,
-            config.get(ConfigProperties.LogsMaxHistoryDays)!!,
-            config.get(ConfigProperties.LogsLevel)!!
+            config.get(ConfigProperties.Logs.Folder)!!,
+            config.get(ConfigProperties.Logs.MaxHistoryDays)!!,
+            config.get(ConfigProperties.Logs.Level)!!
         )
     }
 
