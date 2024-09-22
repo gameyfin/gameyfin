@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.users.entities
 
+import de.grimsi.gameyfin.core.security.EncryptionConverter
 import jakarta.annotation.Nullable
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
@@ -23,6 +24,7 @@ class User(
 
     @Nullable
     @Column(unique = true)
+    @Convert(converter = EncryptionConverter::class)
     var email: String,
 
     var email_confirmed: Boolean = false,

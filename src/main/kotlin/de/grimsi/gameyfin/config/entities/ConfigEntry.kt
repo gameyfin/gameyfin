@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.config.entities
 
+import de.grimsi.gameyfin.core.security.EncryptionConverter
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
 
@@ -12,7 +13,7 @@ class ConfigEntry(
     val key: String,
 
     @NotNull
-    @Lob
     @Column(name = "`value`")
+    @Convert(converter = EncryptionConverter::class)
     var value: String
 )

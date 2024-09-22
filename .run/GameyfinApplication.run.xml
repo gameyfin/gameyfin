@@ -2,6 +2,9 @@
   <configuration default="false" name="GameyfinApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
     <option name="ACTIVE_PROFILES" value="dev" />
     <option name="ALTERNATIVE_JRE_PATH" value="BUNDLED" />
+    <envs>
+      <env name="APP_KEY" value="8ODYedBBEA6qTd2Z/dZiWA==" />
+    </envs>
     <module name="gameyfin.main" />
     <option name="SHORTEN_COMMAND_LINE" value="ARGS_FILE" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="de.grimsi.gameyfin.GameyfinApplication" />
