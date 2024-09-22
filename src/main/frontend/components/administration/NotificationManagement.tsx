@@ -58,23 +58,22 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
         <div className="flex flex-col">
             <div className="flex flex-row">
                 <div className="flex flex-col flex-1">
-                    <ConfigFormField configElement={getConfig("notifications.enabled")}/>
-
                     <div className="flex flex-row gap-8">
                         <div className="flex flex-col flex-1">
                             <Section title="E-Mail"/>
+                            <ConfigFormField configElement={getConfig("notifications.providers.email.enabled")}/>
                             <ConfigFormField configElement={getConfig("notifications.providers.email.host")}
-                                             isDisabled={!formik.values.notifications.enabled}/>
+                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
                             <ConfigFormField configElement={getConfig("notifications.providers.email.port")}
-                                             isDisabled={!formik.values.notifications.enabled}/>
+                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
                             <ConfigFormField configElement={getConfig("notifications.providers.email.username")}
-                                             isDisabled={!formik.values.notifications.enabled}/>
+                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
                             <ConfigFormField configElement={getConfig("notifications.providers.email.password")}
                                              type="password"
-                                             isDisabled={!formik.values.notifications.enabled}/>
+                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
                             <Button onPress={() => verifyCredentials("email")}
                                     isDisabled={!(
-                                        formik.values.notifications.enabled &&
+                                        formik.values.notifications.providers.email.enabled &&
                                         formik.values.notifications.providers.email.host &&
                                         formik.values.notifications.providers.email.port &&
                                         formik.values.notifications.providers.email.username)}>Test</Button>
@@ -83,7 +82,7 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                             <Section title="Message Templates"/>
                             <div className="flex flex-col gap-4">
                                 {getConfigs("notifications.templates").map((template: ConfigEntryDto) =>
-                                    <Card className="flex flex-row items-center gap-2 p-4">
+                                    <Card className="flex flex-row items-center gap-2 p-4" key={template.key}>
                                         <Button isIconOnly
                                                 size="sm"
                                                 onPress={() => openModal(template)}

@@ -5,16 +5,18 @@ import java.util.*
 
 abstract class AbstractNotificationProvider(
     val providerKey: String,
-    private val config: ConfigService
+    protected val config: ConfigService
 ) {
-    private val configKey = String.format("notifications.providers.%s.enabled", providerKey)
-
-    fun isEnabled(): Boolean {
-        return config.get(configKey).toBoolean()
+    protected companion object {
+        const val BASE_KEY = "notifications.providers"
     }
+
+    private val configKey = String.format("%s.%s.enabled", BASE_KEY, providerKey)
+
+    val enabled: Boolean
+        get() = config.get(configKey).toBoolean()
 
     abstract fun testCredentials(credentials: Properties): Boolean
 
     abstract fun sendNotification(recipient: String, title: String, message: String)
-
 }

@@ -1,15 +1,29 @@
 package de.grimsi.gameyfin.notifications.providers
 
+import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
+import jakarta.mail.Message
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
+import jakarta.mail.internet.InternetAddress
+import jakarta.mail.internet.MimeMessage
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
 class EmailNotificationProvider(
-    configService: ConfigService
-) : AbstractNotificationProvider("email", configService) {
+    config: ConfigService
+) : AbstractNotificationProvider("email", config) {
+
+    private val storedCredentials: Properties
+        get() {
+            val properties = Properties()
+            properties["host"] = config.get(ConfigProperties.Notifications.Providers.Email.Host)
+            properties["port"] = config.get(ConfigProperties.Notifications.Providers.Email.Port)
+            properties["username"] = config.get(ConfigProperties.Notifications.Providers.Email.Username)
+            properties["password"] = config.get(ConfigProperties.Notifications.Providers.Email.Password)
+            return properties
+        }
 
     override fun testCredentials(credentials: Properties): Boolean {
         try {
@@ -36,6 +50,29 @@ class EmailNotificationProvider(
     }
 
     override fun sendNotification(recipient: String, title: String, message: String) {
-        TODO("Not yet implemented")
+        val credentials = storedCredentials
+        val sessionProperties = Properties()
+        sessionProperties["mail.smtp.auth"] = true
+        sessionProperties["mail.smtp.starttls.enable"] = true
+        sessionProperties["mail.smtp.host"] = credentials["host"]
+        sessionProperties["mail.smtp.port"] = credentials["port"]
+
+        val session = Session.getInstance(sessionProperties)
+
+        val mimeMessage = MimeMessage(session)
+        mimeMessage.setFrom(InternetAddress(credentials["username"] as String))
+        mimeMessage.setRecipients(Message.RecipientType.TO, recipient)
+        mimeMessage.subject = title
+        mimeMessage.setText(message)
+
+        val transport = session.getTransport("smtp")
+        transport.connect(
+            credentials["host"] as String,
+            credentials["port"] as Int,
+            credentials["username"] as String,
+            credentials["password"] as String
+        )
+        transport.sendMessage(mimeMessage, mimeMessage.allRecipients)
+        transport.close()
     }
 }

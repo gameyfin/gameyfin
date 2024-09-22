@@ -34,11 +34,14 @@ repositories {
 }
 
 dependencies {
-    // Spring Boot & Kotlin
+    // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.cloud:spring-cloud-starter")
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
+
+    // Kotlin extensions
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // Reactive
@@ -58,7 +61,6 @@ dependencies {
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.14")
-    implementation("org.springframework.cloud:spring-cloud-starter")
     implementation("commons-io:commons-io:2.16.1")
 
     // SSO

@@ -136,6 +136,11 @@ class UserService(
         }
     }
 
+    fun updatePassword(user: User, newPassword: String) {
+        user.password = passwordEncoder.encode(newPassword)
+        userRepository.save(user)
+    }
+
     fun deleteUser(username: String) {
         val user = userByUsername(username)
         userRepository.delete(user)

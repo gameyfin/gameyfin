@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.users
 
+import de.grimsi.gameyfin.users.entities.User
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.session.SessionInformation
@@ -17,6 +18,13 @@ class SessionService(private val sessionRegistry: SessionRegistry) {
                 sessionInfo.expireNow()
             }
             SecurityContextHolder.clearContext()
+        }
+    }
+
+    fun logoutAllSessions(user: User) {
+        val sessions: List<SessionInformation> = sessionRegistry.getAllSessions(user, false)
+        for (sessionInfo in sessions) {
+            sessionInfo.expireNow()
         }
     }
 }

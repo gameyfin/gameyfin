@@ -1,17 +1,36 @@
 import {useAuth} from "Frontend/util/auth";
 import {useLayoutEffect, useState} from "react";
 import {XCircle} from "@phosphor-icons/react";
-import {Button, Card, CardBody, CardHeader, Input, Link} from "@nextui-org/react";
+import {
+    Button,
+    Card,
+    CardBody,
+    CardHeader,
+    Input,
+    Link,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    useDisclosure
+} from "@nextui-org/react";
 import {Alert, AlertDescription, AlertTitle} from "Frontend/@/components/ui/alert";
 import {useNavigate} from "react-router-dom";
+import {PasswordResetEndpoint} from "Frontend/generated/endpoints";
+import {toast} from "sonner";
 
 export default function LoginView() {
     const {state, login} = useAuth();
+    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+
     const [hasError, setError] = useState(false);
     const [loading, setLoading] = useState(false);
     const [username, setUsername] = useState<string>();
     const [password, setPassword] = useState<string>();
     const [url, setUrl] = useState<string>();
+    const [resetEmail, setResetEmail] = useState<string>();
+
     const navigate = useNavigate();
 
     useLayoutEffect(() => {
@@ -20,6 +39,11 @@ export default function LoginView() {
             navigate(path, {replace: true});
         }
     }, [state.user]);
+
+    async function resetPassword() {
+        await PasswordResetEndpoint.requestPasswordReset(resetEmail);
+        toast.success("If the email address is registered, you will receive a message with further instructions.");
+    }
 
     return (
         <div className="flex size-full gradient-primary">
@@ -84,7 +108,9 @@ export default function LoginView() {
                             placeholder=""
                         />
                         <div className="flex justify-between items-center">
-                            <Link color="foreground" underline="always">Forgot password?</Link>
+                            <Link color="foreground" underline="always" onPress={onOpen}>
+                                Forgot password?
+                            </Link>
                             <Button color="primary" type="submit" isLoading={loading}>
                                 {loading ? "" : "Log in"}
                             </Button>
@@ -92,6 +118,36 @@ export default function LoginView() {
                     </form>
                 </CardBody>
             </Card>
+
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-1">Request a password reset</ModalHeader>
+                            <ModalBody>
+                                <Input
+                                    onChange={(event: any) => {
+                                        setResetEmail(event.target.value);
+                                    }}
+                                    type="email"
+                                    placeholder="Email"
+                                />
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button color="danger" variant="light" onPress={onClose}>
+                                    Cancel
+                                </Button>
+                                <Button color="primary" onPress={async () => {
+                                    await resetPassword();
+                                    onClose();
+                                }}>
+                                    Send request
+                                </Button>
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
         </div>
     );
 }

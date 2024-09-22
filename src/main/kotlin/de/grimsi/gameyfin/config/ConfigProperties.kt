@@ -128,37 +128,43 @@ sealed class ConfigProperties<T : Serializable>(
     )
 
     /** Notifications */
-    data object NotificationsEnabled : ConfigProperties<Boolean>(
-        Boolean::class,
-        "notifications.enabled",
-        "Enable notifications",
-        false
-    )
+    sealed class Notifications {
+        sealed class Providers {
+            sealed class Email {
+                data object Enabled : ConfigProperties<Boolean>(
+                    Boolean::class,
+                    "notifications.providers.email.enabled",
+                    "Enable E-Mail notifications",
+                    false
+                )
 
-    data object NotificationsEmailHost : ConfigProperties<String>(
-        String::class,
-        "notifications.providers.email.host",
-        "URL of the email server"
-    )
+                data object Host : ConfigProperties<String>(
+                    String::class,
+                    "notifications.providers.email.host",
+                    "URL of the email server"
+                )
 
-    data object NotificationsEmailPort : ConfigProperties<Int>(
-        Int::class,
-        "notifications.providers.email.port",
-        "Port of the email server",
-        587
-    )
+                data object Port : ConfigProperties<Int>(
+                    Int::class,
+                    "notifications.providers.email.port",
+                    "Port of the email server",
+                    587
+                )
 
-    data object NotificationsEmailUsername : ConfigProperties<String>(
-        String::class,
-        "notifications.providers.email.username",
-        "Username for the email account"
-    )
+                data object Username : ConfigProperties<String>(
+                    String::class,
+                    "notifications.providers.email.username",
+                    "Username for the email account"
+                )
 
-    data object NotificationsEmailPassword : ConfigProperties<String>(
-        String::class,
-        "notifications.providers.email.password",
-        "Password for the email account"
-    )
+                data object Password : ConfigProperties<String>(
+                    String::class,
+                    "notifications.providers.email.password",
+                    "Password for the email account"
+                )
+            }
+        }
+    }
 
     data object NotificationsTemplateNewUser : ConfigProperties<String>(
         String::class,
