@@ -36,6 +36,7 @@ class SecurityConfig(
         // Configure your static resources with public access before calling super.configure(HttpSecurity) as it adds final anyRequest matcher
         http.authorizeHttpRequests { auth: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry ->
             auth.requestMatchers("/setup").permitAll()
+                .requestMatchers("/reset-password").permitAll()
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
         }

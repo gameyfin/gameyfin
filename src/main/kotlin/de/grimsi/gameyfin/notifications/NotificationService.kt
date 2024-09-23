@@ -42,6 +42,12 @@ class NotificationService(
     @Async
     @EventListener(PasswordResetRequestEvent::class)
     fun onPasswordResetRequest(event: PasswordResetRequestEvent) {
+
+        if (!enabled) {
+            log.error { "No notification provider available, can't send password reset message" }
+            return
+        }
+
         log.info { "Sending password reset request notification" }
 
         val token = event.token

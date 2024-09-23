@@ -23,7 +23,7 @@ class UserEndpoint(
         return userService.getUserInfo(auth)
     }
 
-    @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+    @RolesAllowed(Roles.Names.ADMIN)
     fun getAllUsers(): List<UserInfoDto> {
         return userService.getAllUsers()
     }
@@ -40,7 +40,7 @@ class UserEndpoint(
         userService.updateUser(auth.name, updates)
     }
 
-    @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+    @RolesAllowed(Roles.Names.ADMIN)
     fun updateUserByName(username: String, updates: UserUpdateDto) {
         userService.updateUser(username, updates)
     }
@@ -51,7 +51,7 @@ class UserEndpoint(
         userService.deleteUser(auth.name)
     }
 
-    @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+    @RolesAllowed(Roles.Names.ADMIN)
     fun deleteUserByName(username: String) {
         userService.deleteUser(username)
     }

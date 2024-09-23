@@ -1,6 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
-import {useLayoutEffect, useState} from "react";
-import {XCircle} from "@phosphor-icons/react";
+import {useEffect, useState} from "react";
+import {WarningCircle, XCircle} from "@phosphor-icons/react";
 import {
     Button,
     Card,
@@ -17,7 +17,7 @@ import {
 } from "@nextui-org/react";
 import {Alert, AlertDescription, AlertTitle} from "Frontend/@/components/ui/alert";
 import {useNavigate} from "react-router-dom";
-import {PasswordResetEndpoint} from "Frontend/generated/endpoints";
+import {NotificationEndpoint, PasswordResetEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";
 
 export default function LoginView() {
@@ -28,12 +28,17 @@ export default function LoginView() {
     const [loading, setLoading] = useState(false);
     const [username, setUsername] = useState<string>();
     const [password, setPassword] = useState<string>();
+    const [canResetPassword, setCanResetPassword] = useState(false);
     const [url, setUrl] = useState<string>();
     const [resetEmail, setResetEmail] = useState<string>();
 
     const navigate = useNavigate();
 
-    useLayoutEffect(() => {
+    useEffect(() => {
+        NotificationEndpoint.isEnabled().then(setCanResetPassword);
+    }, []);
+
+    useEffect(() => {
         if (state.user) {
             const path = url ? new URL(url, document.baseURI).pathname : '/'
             navigate(path, {replace: true});
@@ -119,28 +124,39 @@ export default function LoginView() {
                 </CardBody>
             </Card>
 
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="xl">
                 <ModalContent>
                     {(onClose) => (
                         <>
                             <ModalHeader className="flex flex-col gap-1">Request a password reset</ModalHeader>
                             <ModalBody>
-                                <Input
-                                    onChange={(event: any) => {
-                                        setResetEmail(event.target.value);
-                                    }}
-                                    type="email"
-                                    placeholder="Email"
-                                />
+                                {canResetPassword ?
+                                    <Input
+                                        onChange={(event: any) => {
+                                            setResetEmail(event.target.value);
+                                        }}
+                                        type="email"
+                                        placeholder="Email"
+                                    /> :
+                                    <div className="flex flex-row items-center gap-4 text-warning">
+                                        <WarningCircle size={40}/>
+                                        <p>
+                                            Password self-service is disabled.<br/>
+                                            To reset your password please contact your administrator.
+                                        </p>
+                                    </div>
+                                }
                             </ModalBody>
                             <ModalFooter>
                                 <Button color="danger" variant="light" onPress={onClose}>
                                     Cancel
                                 </Button>
-                                <Button color="primary" onPress={async () => {
-                                    await resetPassword();
-                                    onClose();
-                                }}>
+                                <Button color="primary"
+                                        isDisabled={!canResetPassword}
+                                        onPress={async () => {
+                                            await resetPassword();
+                                            onClose();
+                                        }}>
                                     Send request
                                 </Button>
                             </ModalFooter>

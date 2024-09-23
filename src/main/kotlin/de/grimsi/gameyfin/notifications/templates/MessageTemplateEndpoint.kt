@@ -4,7 +4,7 @@ import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Roles
 import jakarta.annotation.security.RolesAllowed
 
-@RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+@RolesAllowed(Roles.Names.ADMIN)
 @Endpoint
 class MessageTemplateEndpoint(
     private val messageTemplateService: MessageTemplateService

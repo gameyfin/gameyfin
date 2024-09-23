@@ -7,7 +7,7 @@ import jakarta.annotation.security.RolesAllowed
 import reactor.core.publisher.Flux
 
 @Endpoint
-@RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+@RolesAllowed(Roles.Names.ADMIN)
 class LogEndpoint(
     private val logService: LogService
 ) {

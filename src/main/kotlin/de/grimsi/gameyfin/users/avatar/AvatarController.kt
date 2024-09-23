@@ -35,7 +35,7 @@ class AvatarController(
         userService.deleteAvatar(auth.name)
     }
 
-    @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+    @RolesAllowed(Roles.Names.ADMIN)
     @PostMapping("/avatar/deleteByName")
     fun deleteAvatarByName(@RequestParam("name") name: String) {
         userService.deleteAvatar(name)

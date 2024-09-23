@@ -88,8 +88,8 @@ function SetupView() {
     const navigate = useNavigate();
 
     return (
-        <div className="flex size-full gradient-primary">
-            <Card className="w-3/4 h-3/4 min-w-[500px] m-auto p-8">
+        <div className="flex flex-row flex-grow items-center justify-center gradient-primary">
+            <Card className="w-3/4 h-3/4 min-w-[500px] p-8">
                 <Wizard
                     initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}
                     onSubmit={

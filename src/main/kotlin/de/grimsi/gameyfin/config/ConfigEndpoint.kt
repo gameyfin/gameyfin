@@ -8,7 +8,7 @@ import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
-@RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+@RolesAllowed(Roles.Names.ADMIN)
 class ConfigEndpoint(
     private val config: ConfigService
 ) {

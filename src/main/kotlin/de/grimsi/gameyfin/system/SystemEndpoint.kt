@@ -9,7 +9,7 @@ class SystemEndpoint(
     private val systemService: SystemService
 ) {
 
-    @RolesAllowed(Roles.Names.SUPERADMIN, Roles.Names.ADMIN)
+    @RolesAllowed(Roles.Names.ADMIN)
     fun restart() {
         systemService.restart()
     }

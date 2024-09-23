@@ -14,6 +14,7 @@ import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
 import {NotificationManagement} from "Frontend/components/administration/NotificationManagement";
 import {LogManagement} from "Frontend/components/administration/LogManagement";
+import PasswordResetView from "Frontend/views/PasswordResetView";
 
 export const routes = protectRoutes([
     {
@@ -53,6 +54,9 @@ export const routes = protectRoutes([
             },
             {
                 path: '/setup', element: <SetupView/>, handle: {requiresLogin: false}
+            },
+            {
+                path: '/reset-password', element: <PasswordResetView/>, handle: {requiresLogin: false}
             }
         ],
     }
