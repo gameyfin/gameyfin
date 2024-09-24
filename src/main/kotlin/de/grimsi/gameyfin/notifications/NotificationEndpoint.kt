@@ -19,4 +19,8 @@ class NotificationEndpoint(
     fun verifyCredentials(provider: String, credentials: Map<String, Any>): Boolean {
         return notificationService.testCredentials(provider, credentials)
     }
+
+    fun sendTestNotification(templateKey: String, placeholders: Map<String, String>): Boolean {
+        return notificationService.sendTestNotification(templateKey, placeholders)
+    }
 }

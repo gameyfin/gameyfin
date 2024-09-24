@@ -14,17 +14,21 @@ import {
     ModalFooter,
     ModalHeader,
     Textarea,
+    Tooltip,
     useDisclosure
 } from "@nextui-org/react";
 import {MessageTemplateEndpoint, NotificationEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";
-import {Pencil} from "@phosphor-icons/react";
+import {PaperPlaneRight, Pencil} from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/notifications/templates/MessageTemplateDto";
 import TemplateType from "Frontend/generated/de/grimsi/gameyfin/notifications/templates/TemplateType";
+import {Form, Formik} from "formik";
+import Input from "Frontend/components/general/Input";
 
 function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
 
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+    const editorModal = useDisclosure();
+    const testNotificationModal = useDisclosure();
     const [availableTemplates, setAvailableTemplates] = useState<MessageTemplateDto[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplateDto | null>(null);
     const [templateContent, setTemplateContent] = useState<string>("");
@@ -53,7 +57,7 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
         }
     }
 
-    async function openModal(template: MessageTemplateDto) {
+    async function openEditor(template: MessageTemplateDto) {
         setSelectedTemplate(template);
 
         let templateContent = await MessageTemplateEndpoint.read(template.key, TemplateType.MJML);
@@ -66,11 +70,24 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
         }
 
         setTemplateContent(templateContent);
-        onOpen();
+        editorModal.onOpen();
+    }
+
+    function openTestNotification(template: MessageTemplateDto) {
+        setSelectedTemplate(template);
+        testNotificationModal.onOpen();
     }
 
     async function saveTemplate(template: MessageTemplateDto) {
         await MessageTemplateEndpoint.save(template.key, TemplateType.MJML, templateContent);
+    }
+
+    function generateValidationSchema(placeholders: string[]) {
+        const shape: { [key: string]: Yup.StringSchema } = {};
+        placeholders.forEach(placeholder => {
+            shape[placeholder] = Yup.string().required(`Placeholder ${placeholder} is required`);
+        });
+        return Yup.object().shape(shape);
     }
 
     return (
@@ -102,12 +119,22 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                             <div className="flex flex-col gap-4">
                                 {availableTemplates.map((template: MessageTemplateDto) =>
                                     <Card className="flex flex-row items-center gap-2 p-4" key={template.key}>
-                                        <Button isIconOnly
-                                                size="sm"
-                                                onPress={() => openModal(template)}
-                                        >
-                                            <Pencil/>
-                                        </Button>
+                                        <Tooltip content="Edit template">
+                                            <Button isIconOnly
+                                                    size="sm"
+                                                    onPress={() => openEditor(template)}
+                                            >
+                                                <Pencil/>
+                                            </Button>
+                                        </Tooltip>
+                                        <Tooltip content="Send test notification">
+                                            <Button isIconOnly
+                                                    size="sm"
+                                                    onPress={() => openTestNotification(template)}
+                                            >
+                                                <PaperPlaneRight/>
+                                            </Button>
+                                        </Tooltip>
                                         <p className="text-lg">{template.description}</p>
                                     </Card>
                                 )}
@@ -117,7 +144,7 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                 </div>
             </div>
 
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="5xl">
+            <Modal isOpen={editorModal.isOpen} onOpenChange={editorModal.onOpenChange} size="5xl">
                 <ModalContent>
                     {(onClose) => (
                         <>
@@ -186,6 +213,45 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                                     Save
                                 </Button>
                             </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
+
+            <Modal isOpen={testNotificationModal.isOpen} onOpenChange={testNotificationModal.onOpenChange} size="3xl">
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <Formik
+                                initialValues={{}}
+                                onSubmit={async (values) => {
+                                    await NotificationEndpoint.sendTestNotification(selectedTemplate?.key, values);
+                                    toast.success("Test notification to you has been sent");
+                                    onClose();
+                                }}
+                                validationSchema={generateValidationSchema(selectedTemplate?.availablePlaceholders as string[])}
+                            >
+                                <Form>
+                                    <ModalHeader className="flex flex-col gap-1">
+                                        Send {selectedTemplate?.name} Test Message
+                                    </ModalHeader>
+                                    <ModalBody>
+                                        <p className="text-ls font-semibold mb-4">Fill the placeholders of the
+                                            template</p>
+                                        {selectedTemplate?.availablePlaceholders?.map((placeholder) =>
+                                            <Input key={placeholder} label={placeholder} name={placeholder}/>
+                                        )}
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button color="danger" variant="light" onPress={onClose}>
+                                            Close
+                                        </Button>
+                                        <Button color="primary" type="submit">
+                                            Send
+                                        </Button>
+                                    </ModalFooter>
+                                </Form>
+                            </Formik>
                         </>
                     )}
                 </ModalContent>

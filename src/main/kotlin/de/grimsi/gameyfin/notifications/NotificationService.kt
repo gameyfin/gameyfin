@@ -4,12 +4,15 @@ import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
 import de.grimsi.gameyfin.notifications.providers.AbstractNotificationProvider
 import de.grimsi.gameyfin.notifications.templates.MessageTemplateService
 import de.grimsi.gameyfin.notifications.templates.MessageTemplates
+import de.grimsi.gameyfin.users.UserService
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.scheduling.annotation.EnableAsync
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -17,7 +20,8 @@ import java.util.*
 @Service
 class NotificationService(
     private val applicationContext: ApplicationContext,
-    private val templateService: MessageTemplateService
+    private val templateService: MessageTemplateService,
+    private val userService: UserService
 ) {
 
     val log: KLogger = KotlinLogging.logger {}
@@ -45,6 +49,30 @@ class NotificationService(
             val content = templateService.fillMessageTemplate(template, it.supportedTemplateType, placeholders)
             it.sendNotification(recipient, title, content)
         }
+    }
+
+    /**
+     * Sends a test notification.
+     * Recipient is always the current user to prevent misuse.
+     */
+    fun sendTestNotification(templateKey: String, placeholders: Map<String, String>): Boolean {
+
+        if (!enabled) {
+            log.error { "No notification provider available, can't send test message" }
+            return false
+        }
+
+        try {
+            val auth: Authentication = SecurityContextHolder.getContext().authentication
+            val user = userService.getByUsername(auth.name) ?: throw IllegalStateException("User not found")
+            val template = templateService.getMessageTemplate(templateKey)
+            sendNotification(user.email, "[Gameyfin] Test Notification", template, placeholders)
+        } catch (e: Exception) {
+            log.error(e) { "Failed to send test notification" }
+            return false
+        }
+
+        return true
     }
 
     @Async
