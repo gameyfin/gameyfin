@@ -70,6 +70,7 @@ dependencies {
 
     // Notifications
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("ch.digitalfondue.mjml4j:mjml4j:1.0.3")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")

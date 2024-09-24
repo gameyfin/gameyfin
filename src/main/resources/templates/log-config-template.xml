@@ -14,6 +14,10 @@
             <pattern>%d{yyy-MM-dd'T'HH:mm:ss.SSS} %-5level %-40.40logger{39} : %m%n</pattern>
         </encoder>
     </appender>
+
+    <!-- Spams the logs on DEBUG due to a loop (log -> push to client -> log the push -> repeat) -->
+    <logger name="com.vaadin.hilla.push.PushEndpoint" level="INFO"/>
+
     <root level="{LOG_LEVEL}">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>

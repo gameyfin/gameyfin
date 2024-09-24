@@ -17,11 +17,15 @@ class MessageTemplateEndpoint(
         return messageTemplateService.getMessageTemplate(key)
     }
 
-    fun read(key: String): String {
-        return messageTemplateService.getMessageTemplateContent(key)
+    fun getDefaultPlaceholders(type: TemplateType): Set<String> {
+        return messageTemplateService.getDefaultTemplatePlaceholders(type).keys
     }
 
-    fun save(key: String, content: String) {
-        messageTemplateService.setMessageTemplateContent(key, content)
+    fun read(key: String, templateType: TemplateType): String {
+        return messageTemplateService.getMessageTemplateContent(key, templateType)
+    }
+
+    fun save(key: String, templateType: TemplateType, content: String) {
+        messageTemplateService.setMessageTemplateContent(key, templateType, content)
     }
 }

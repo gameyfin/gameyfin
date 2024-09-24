@@ -35,8 +35,16 @@ class NotificationService(
             ?: throw IllegalArgumentException("Provider '$provider' not found")
     }
 
-    fun sendNotification(recipient: String, title: String, message: String) {
-        providers.filter { it.enabled }.forEach { it.sendNotification(recipient, title, message) }
+    fun sendNotification(
+        recipient: String,
+        title: String,
+        template: MessageTemplates,
+        placeholders: Map<String, String>
+    ) {
+        providers.filter { it.enabled }.forEach {
+            val content = templateService.fillMessageTemplate(template, it.supportedTemplateType, placeholders)
+            it.sendNotification(recipient, title, content)
+        }
     }
 
     @Async
@@ -52,15 +60,11 @@ class NotificationService(
 
         val token = event.token
         val resetLink = event.baseUrl + "/reset-password?token=${token.token}"
-        val content = templateService.fillMessageTemplate(
-            MessageTemplates.PasswordResetRequest,
-            mapOf("username" to token.user.username, "resetLink" to resetLink)
-        )
-
         sendNotification(
             token.user.email,
             "[Gameyfin] Password Reset Request",
-            content
+            MessageTemplates.PasswordResetRequest,
+            mapOf("username" to token.user.username, "resetLink" to resetLink)
         )
     }
 }

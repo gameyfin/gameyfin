@@ -1,10 +1,12 @@
 package de.grimsi.gameyfin.notifications.providers
 
 import de.grimsi.gameyfin.config.ConfigService
+import de.grimsi.gameyfin.notifications.templates.TemplateType
 import java.util.*
 
 abstract class AbstractNotificationProvider(
     val providerKey: String,
+    val supportedTemplateType: TemplateType,
     protected val config: ConfigService
 ) {
     protected companion object {

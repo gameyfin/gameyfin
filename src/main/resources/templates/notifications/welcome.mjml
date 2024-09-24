@@ -1,0 +1,27 @@
+<mjml>
+    <mj-head>
+        <mj-title>[Gameyfin] Password reset request</mj-title>
+        <mj-attributes>
+            <mj-all font-family="Arial, sans-serif"/>
+            <mj-text font-size="16px"/>
+        </mj-attributes>
+    </mj-head>
+    <mj-body>
+        <mj-section>
+            <mj-column>
+                <mj-image width="128px" src="{logo}"/>
+                <mj-image height="2px" padding-bottom="20px" src="{gradient}"/>
+
+                <mj-text font-size="20px" font-family="helvetica">Hey {username},
+                    <br/>
+                    <br/>
+                </mj-text>
+                <mj-text>your registration was successful!
+                    <br/>
+                    You can now start browsing games in Gameyfin.
+                </mj-text>
+
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>

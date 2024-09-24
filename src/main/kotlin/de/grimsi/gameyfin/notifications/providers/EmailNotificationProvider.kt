@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.notifications.providers
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
+import de.grimsi.gameyfin.notifications.templates.TemplateType
 import jakarta.mail.Message
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
@@ -13,7 +14,7 @@ import java.util.*
 @Service
 class EmailNotificationProvider(
     config: ConfigService
-) : AbstractNotificationProvider("email", config) {
+) : AbstractNotificationProvider("email", TemplateType.MJML, config) {
 
     private val storedCredentials: Properties
         get() {
@@ -63,7 +64,7 @@ class EmailNotificationProvider(
         mimeMessage.setFrom(InternetAddress(credentials["username"] as String))
         mimeMessage.setRecipients(Message.RecipientType.TO, recipient)
         mimeMessage.subject = title
-        mimeMessage.setText(message)
+        mimeMessage.setContent(message, "text/html; charset=utf-8")
 
         val transport = session.getTransport("smtp")
         transport.connect(

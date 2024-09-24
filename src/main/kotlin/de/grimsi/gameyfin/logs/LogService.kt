@@ -16,9 +16,7 @@ import reactor.core.publisher.Sinks
 import java.io.InputStream
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 
 @Service
 class LogService(
@@ -26,16 +24,16 @@ class LogService(
 ) {
 
     companion object {
-        private const val LOG_CONFIG_TEMPLATE = "log-config-template.xml"
+        private const val LOG_CONFIG_TEMPLATE = "templates/log-config-template.xml"
         private const val LOG_FILE_NAME = "gameyfin"
         private val LOG_REFRESH_INTERVAL = 5.seconds
-        private val LOG_STREAM_RETENTION = 1.days
+        private const val LOG_STREAM_RETENTION = 1000
     }
 
     private val log = KotlinLogging.logger {}
 
     private var logFilePath: Path? = null
-    private val sink: Sinks.Many<String> = Sinks.many().replay().limit(LOG_STREAM_RETENTION.toJavaDuration())
+    private val sink: Sinks.Many<String> = Sinks.many().replay().limit(LOG_STREAM_RETENTION)
     private var tailer: AsyncFileTailer? = null
 
     @EventListener(ApplicationStartedEvent::class)
