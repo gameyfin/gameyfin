@@ -33,18 +33,18 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
             }
         }, [configSaved])
 
-        async function handleSubmit(values: NestedConfig) {
+        async function handleSubmit(values: NestedConfig): Promise<void> {
             const configValues = toConfigValuePair(values);
             await ConfigEndpoint.setAll(configValues);
             setNestedConfigDtos(values);
             setConfigSaved(true);
         }
 
-        function getConfig(key: string) {
+        function getConfig(key: string): ConfigEntryDto | undefined {
             return configDtos.find((configDto: ConfigEntryDto) => configDto.key === key);
         }
 
-        function getConfigs(prefix: string) {
+        function getConfigs(prefix: string): ConfigEntryDto[] {
             return configDtos.filter((configDto: ConfigEntryDto) => configDto.key?.startsWith(prefix));
         }
 
@@ -106,7 +106,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
 
         if (!isInitialized.current) {
             return (
-                [...Array(4)].map((e, i) =>
+                [...Array(4)].map((_e, i) =>
                     <div className="flex flex-col flex-grow gap-8 mb-12" key={i}>
                         <Skeleton className="h-10 w-full rounded-md"/>
                         <Skeleton className="h-12 flex w-1/3 rounded-md"/>
