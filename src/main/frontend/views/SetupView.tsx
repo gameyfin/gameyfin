@@ -36,7 +36,10 @@ function WelcomeStep() {
 
 function ThemeStep() {
     return (
-        <ThemeSelector/>
+        <div className="flex flex-col flex-grow gap-6 items-center">
+            <p className="text-2xl font-bold">Choose your style</p>
+            <ThemeSelector/>
+        </div>
     );
 }
 
@@ -88,7 +91,7 @@ function SetupView() {
     const navigate = useNavigate();
 
     return (
-        <div className="flex flex-row flex-grow items-center justify-center gradient-primary">
+        <div className="flex flex-row size-full items-center justify-center gradient-primary">
             <Card className="w-3/4 h-3/4 min-w-[500px] p-8">
                 <Wizard
                     initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}

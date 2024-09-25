@@ -1,7 +1,6 @@
 import {useTheme} from "next-themes";
-import React, {useLayoutEffect, useState} from "react";
-import {Switch} from "@nextui-org/react";
-import {Moon, SunDim} from "@phosphor-icons/react";
+import React, {useEffect, useState} from "react";
+import {Button, Card, Divider, Select, Selection, SelectItem} from "@nextui-org/react";
 import {themes} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
@@ -9,46 +8,67 @@ import ThemePreview from "Frontend/components/theming/ThemePreview";
 export function ThemeSelector() {
 
     const {theme, setTheme} = useTheme();
-    const [isSelected, setIsSelected] = useState(theme ? theme.includes("light") : false);
-    const [currentTheme, setCurrentTheme] = useState(theme?.substring(0, theme?.lastIndexOf("-")));
+    const [selectedTheme, setSelectedTheme] = useState(theme?.substring(0, theme?.lastIndexOf("-")));
+    const [selectedMode, setSelectedMode] = useState<Selection>();
 
-    useLayoutEffect(() => setTheme(`${currentTheme}-${mode()}`), [isSelected]);
+    useEffect(() => {
+        if (!selectedMode)
+            setSelectedMode(new Set([theme?.split('-').pop() ?? "dark"]));
+    }, [theme]);
 
-    function mode(): "light" | "dark" {
-        return isSelected ? "light" : "dark";
+    useEffect(updateTheme, [selectedTheme, selectedMode]);
+
+    function updateTheme() {
+        if (selectedMode instanceof Set)
+            setTheme(`${selectedTheme}-${selectedMode.values().next().value}`)
     }
 
     return (
-        <div className="flex flex-col size-full items-center">
-            <div className="w-full flex flex-row items-center justify-center gap-4 mb-16">
-                <Switch
-                    size="lg"
-                    startContent={<SunDim size={32}/>}
-                    endContent={<Moon size={32}/>}
-                    isSelected={isSelected}
-                    onValueChange={() => {
-                        setIsSelected(!isSelected);
-                    }}
-                />
-
-            </div>
-            <div className="grid grid-flow-col auto-cols-auto auto-cols-max-4 gap-8">
+        <div className="flex flex-col items-center gap-8">
+            <Select label="Theme mode" className="max-w-xs"
+                    disallowEmptySelection
+                    selectionMode={"single"}
+                    defaultSelectedKeys={selectedMode}
+                    onSelectionChange={setSelectedMode}
+                    selectedKeys={selectedMode}>
+                <SelectItem key="light">
+                    Light
+                </SelectItem>
+                <SelectItem key="dark">
+                    Dark
+                </SelectItem>
+            </Select>
+            <div className="grid grid-flow-row grid-cols-8 gap-8">
                 {
                     //min-w-[468px]
                     themes.map(((t: Theme) => (
-                        <div
-                            key={t.name}
-                            onClick={() => {
-                                setCurrentTheme(t.name);
-                                setTheme(`${t.name}-${mode()}`);
-                            }}>
+                        <div className="size-[10vh] min-h-[50px] min-w-[50px]"
+                             key={t.name}
+                             onClick={() => setSelectedTheme(t.name)}>
                             <ThemePreview
                                 theme={t}
-                                mode={mode()}
-                                isSelected={currentTheme === t.name}/>
+                                isSelected={selectedTheme === t.name}/>
                         </div>
                     )))
                 }
+            </div>
+            <p className="text-2xl font-semibold mt-8">Preview</p>
+            <Divider/>
+            <div className="flex flex-row gap-8 items-baseline">
+                <div className="flex flex-row gap-4">
+                    <Button color="primary">Primary</Button>
+                    <Button color="secondary">Secondary</Button>
+                    <Button color="success">Success</Button>
+                    <Button color="warning">Warning</Button>
+                    <Button color="danger">Danger</Button>
+                </div>
+                <Card className="flex flex-row gap-4 p-4">
+                    <Button color="primary">Primary</Button>
+                    <Button color="secondary">Secondary</Button>
+                    <Button color="success">Success</Button>
+                    <Button color="warning">Warning</Button>
+                    <Button color="danger">Danger</Button>
+                </Card>
             </div>
         </div>
     )

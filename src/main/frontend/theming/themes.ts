@@ -10,6 +10,7 @@ import {Blue} from "./themes/blue";
 import {Yellow} from "./themes/yellow";
 import {Violet} from "./themes/violet";
 import {Orange} from "./themes/orange";
+import {Colorblind} from "./themes/colorblind";
 import {Theme} from "./theme";
 import {ConfigTheme, ConfigThemes} from "@nextui-org/react";
 
@@ -43,4 +44,4 @@ export function themeNames(): string[] {
     return Object.keys(compileThemes(themes));
 }
 
-export const themes: Theme[] = [GameyfinBlue, GameyfinViolet, GameyfinClassic, Neutral, Slate, Red, Rose, Orange, Purple, Blue, Yellow, Violet];
+export const themes: Theme[] = [GameyfinBlue, GameyfinViolet, GameyfinClassic, Neutral, Slate, Red, Rose, Orange, Purple, Blue, Yellow, Violet, Colorblind];
