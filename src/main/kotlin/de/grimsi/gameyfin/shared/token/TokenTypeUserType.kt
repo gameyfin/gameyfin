@@ -6,6 +6,7 @@ import java.io.Serializable
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.Types
+import kotlin.reflect.full.createInstance
 
 class TokenTypeUserType : UserType<TokenType> {
 
@@ -24,12 +25,12 @@ class TokenTypeUserType : UserType<TokenType> {
         owner: Any?
     ): TokenType? {
         val key = rs.getString(position) ?: return null
-        return when (key) {
-            TokenType.PasswordReset.key -> TokenType.PasswordReset
-            TokenType.EmailVerification.key -> TokenType.EmailVerification
-            TokenType.Invitation.key -> TokenType.Invitation
-            else -> throw IllegalArgumentException("Unknown TokenType key: $key")
-        }
+        val tokenTypeClass = TokenType::class
+
+        return tokenTypeClass.sealedSubclasses
+            .map { it.objectInstance ?: it.createInstance() }
+            .firstOrNull { it.key == key }
+            ?: throw IllegalArgumentException("Unknown TokenType: $key")
     }
 
     override fun nullSafeSet(

@@ -17,7 +17,7 @@ abstract class TokenService<T : TokenType>(
         )
 
         tokenRepository.findByUserAndType(user, type)?.let {
-            log.warn { "Deleting existing '${it.type}' token for user '${user.username}'" }
+            log.warn { "Deleting existing ${it.type.key} token for user '${user.username}'" }
             delete(it)
         }
 
