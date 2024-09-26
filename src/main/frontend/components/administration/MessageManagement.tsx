@@ -3,14 +3,14 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
 import {Button, Card, Tooltip, useDisclosure} from "@nextui-org/react";
-import {MessageTemplateEndpoint, NotificationEndpoint} from "Frontend/generated/endpoints";
+import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";
 import {PaperPlaneRight, Pencil} from "@phosphor-icons/react";
-import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/notifications/templates/MessageTemplateDto";
-import SendTestNotificationModal from "Frontend/components/administration/notifications/SendTestNotificationModal";
-import EditTemplateModal from "Frontend/components/administration/notifications/EditTemplateModel";
+import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/templates/MessageTemplateDto";
+import SendTestNotificationModal from "Frontend/components/administration/messages/SendTestNotificationModal";
+import EditTemplateModal from "Frontend/components/administration/messages/EditTemplateModel";
 
-function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
+function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
 
     const editorModal = useDisclosure();
     const testNotificationModal = useDisclosure();
@@ -25,13 +25,13 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
 
     async function verifyCredentials(provider: string) {
         const credentials: Record<string, any> = {
-            host: formik.values.notifications.providers.email.host,
-            port: formik.values.notifications.providers.email.port,
-            username: formik.values.notifications.providers.email.username,
-            password: formik.values.notifications.providers.email.password
+            host: formik.values.messages.providers.email.host,
+            port: formik.values.messages.providers.email.port,
+            username: formik.values.messages.providers.email.username,
+            password: formik.values.messages.providers.email.password
         }
 
-        const areCredentialsValid = await NotificationEndpoint.verifyCredentials(provider, credentials);
+        const areCredentialsValid = await MessageEndpoint.verifyCredentials(provider, credentials);
 
         if (areCredentialsValid) {
             toast.success("Credentials are valid")
@@ -57,22 +57,22 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
                     <div className="flex flex-row gap-8">
                         <div className="flex flex-col flex-1">
                             <Section title="E-Mail"/>
-                            <ConfigFormField configElement={getConfig("notifications.providers.email.enabled")}/>
-                            <ConfigFormField configElement={getConfig("notifications.providers.email.host")}
-                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
-                            <ConfigFormField configElement={getConfig("notifications.providers.email.port")}
-                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
-                            <ConfigFormField configElement={getConfig("notifications.providers.email.username")}
-                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
-                            <ConfigFormField configElement={getConfig("notifications.providers.email.password")}
+                            <ConfigFormField configElement={getConfig("messages.providers.email.enabled")}/>
+                            <ConfigFormField configElement={getConfig("messages.providers.email.host")}
+                                             isDisabled={!formik.values.messages.providers.email.enabled}/>
+                            <ConfigFormField configElement={getConfig("messages.providers.email.port")}
+                                             isDisabled={!formik.values.messages.providers.email.enabled}/>
+                            <ConfigFormField configElement={getConfig("messages.providers.email.username")}
+                                             isDisabled={!formik.values.messages.providers.email.enabled}/>
+                            <ConfigFormField configElement={getConfig("messages.providers.email.password")}
                                              type="password"
-                                             isDisabled={!formik.values.notifications.providers.email.enabled}/>
+                                             isDisabled={!formik.values.messages.providers.email.enabled}/>
                             <Button onPress={() => verifyCredentials("email")}
                                     isDisabled={!(
-                                        formik.values.notifications.providers.email.enabled &&
-                                        formik.values.notifications.providers.email.host &&
-                                        formik.values.notifications.providers.email.port &&
-                                        formik.values.notifications.providers.email.username)}>Test</Button>
+                                        formik.values.messages.providers.email.enabled &&
+                                        formik.values.messages.providers.email.host &&
+                                        formik.values.messages.providers.email.port &&
+                                        formik.values.messages.providers.email.username)}>Test</Button>
                         </div>
                         <div className="flex flex-col flex-1">
                             <Section title="Message Templates"/>
@@ -119,4 +119,4 @@ function NotificationManagementLayout({getConfig, getConfigs, formik}: any) {
     );
 }
 
-export const NotificationManagement = withConfigPage(NotificationManagementLayout, "Notifications", "notifications");
+export const MessageManagement = withConfigPage(MessageManagementLayout, "Messages", "messages");

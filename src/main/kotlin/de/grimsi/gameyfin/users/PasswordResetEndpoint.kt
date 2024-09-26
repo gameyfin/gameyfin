@@ -3,13 +3,14 @@ package de.grimsi.gameyfin.users
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Roles
-import de.grimsi.gameyfin.users.dto.PasswordResetResult
+import de.grimsi.gameyfin.shared.token.TokenValidationResult
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
 @AnonymousAllowed
 class PasswordResetEndpoint(
-    private val passwordResetService: PasswordResetService
+    private val passwordResetService: PasswordResetService,
+    private val userService: UserService
 ) {
 
     fun requestPasswordReset(email: String) {
@@ -20,10 +21,10 @@ class PasswordResetEndpoint(
 
     @RolesAllowed(Roles.Names.ADMIN)
     fun createPasswordResetTokenForUser(username: String): String {
-        return passwordResetService.createPasswordResetToken(username)
+        return passwordResetService.generate(username).secret
     }
 
-    fun resetPassword(token: String, newPassword: String): PasswordResetResult {
-        return passwordResetService.resetPassword(token, newPassword)
+    fun resetPassword(secret: String, newPassword: String): TokenValidationResult {
+        return passwordResetService.resetPassword(secret, newPassword)
     }
 }

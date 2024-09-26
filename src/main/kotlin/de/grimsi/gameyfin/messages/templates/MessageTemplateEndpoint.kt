@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.notifications.templates
+package de.grimsi.gameyfin.messages.templates
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Roles

@@ -12,7 +12,7 @@ import ProfileManagement from "Frontend/components/administration/ProfileManagem
 import {SsoManagement} from "Frontend/components/administration/SsoManagement";
 import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
-import {NotificationManagement} from "Frontend/components/administration/NotificationManagement";
+import {MessageManagement} from "Frontend/components/administration/MessageManagement";
 import {LogManagement} from "Frontend/components/administration/LogManagement";
 import PasswordResetView from "Frontend/views/PasswordResetView";
 
@@ -43,7 +43,7 @@ export const routes = protectRoutes([
                             {path: 'libraries', element: <LibraryManagement/>},
                             {path: 'users', element: <UserManagement/>},
                             {path: 'sso', element: <SsoManagement/>},
-                            {path: 'notifications', element: <NotificationManagement/>},
+                            {path: 'messages', element: <MessageManagement/>},
                             {path: 'logs', element: <LogManagement/>}
                         ]
                     }

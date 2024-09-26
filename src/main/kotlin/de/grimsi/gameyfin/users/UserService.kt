@@ -8,6 +8,7 @@ import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
 import de.grimsi.gameyfin.users.persistence.AvatarContentStore
 import de.grimsi.gameyfin.users.persistence.UserRepository
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
@@ -26,11 +27,13 @@ import java.io.InputStream
 @Transactional
 class UserService(
     private val userRepository: UserRepository,
+    private val avatarStore: AvatarContentStore,
     private val passwordEncoder: PasswordEncoder,
     private val roleService: RoleService,
-    private val sessionService: SessionService,
-    private val avatarStore: AvatarContentStore
+    private val sessionService: SessionService
 ) : UserDetailsService {
+
+    private val log = KotlinLogging.logger {}
 
     override fun loadUserByUsername(username: String): UserDetails {
         val user = userByUsername(username)
@@ -125,15 +128,18 @@ class UserService(
         val user = userByUsername(username)
 
         updates.username?.let { user.username = it }
-        updates.password?.let { user.password = passwordEncoder.encode(it) }
-        updates.email?.let { user.email = it }
 
-        userRepository.save(user)
-
-        // If user changes password, all sessions should be invalidated
-        if (updates.password != null) {
+        updates.password?.let {
+            user.password = passwordEncoder.encode(it)
             sessionService.logoutAllSessions()
         }
+
+        updates.email?.let {
+            user.email = it
+            user.emailConfirmed = false
+        }
+
+        userRepository.save(user)
     }
 
     fun updatePassword(user: User, newPassword: String) {

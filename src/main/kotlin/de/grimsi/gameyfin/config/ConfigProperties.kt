@@ -141,39 +141,39 @@ sealed class ConfigProperties<T : Serializable>(
         }
     }
 
-    /** Notifications */
-    sealed class Notifications {
+    /** Messages */
+    sealed class Messages {
         sealed class Providers {
             sealed class Email {
                 data object Enabled : ConfigProperties<Boolean>(
                     Boolean::class,
-                    "notifications.providers.email.enabled",
+                    "messages.providers.email.enabled",
                     "Enable E-Mail notifications",
                     false
                 )
 
                 data object Host : ConfigProperties<String>(
                     String::class,
-                    "notifications.providers.email.host",
+                    "messages.providers.email.host",
                     "URL of the email server"
                 )
 
                 data object Port : ConfigProperties<Int>(
                     Int::class,
-                    "notifications.providers.email.port",
+                    "messages.providers.email.port",
                     "Port of the email server",
                     587
                 )
 
                 data object Username : ConfigProperties<String>(
                     String::class,
-                    "notifications.providers.email.username",
+                    "messages.providers.email.username",
                     "Username for the email account"
                 )
 
                 data object Password : ConfigProperties<String>(
                     String::class,
-                    "notifications.providers.email.password",
+                    "messages.providers.email.password",
                     "Password for the email account"
                 )
             }

@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.notifications.templates
+package de.grimsi.gameyfin.messages.templates
 
 abstract class MjmlTemplate {
     companion object {

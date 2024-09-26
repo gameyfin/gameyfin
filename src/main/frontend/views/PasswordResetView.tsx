@@ -7,7 +7,7 @@ import {PasswordResetEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
 import {Warning} from "@phosphor-icons/react";
 import {toast} from "sonner";
-import PasswordResetResult from "Frontend/generated/de/grimsi/gameyfin/users/dto/PasswordResetResult";
+import TokenValidationResult from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenValidationResult";
 
 export default function PasswordResetView() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -21,17 +21,17 @@ export default function PasswordResetView() {
 
     async function resetPassword(values: any) {
         let token = searchParams.get("token") as string;
-        let result = await PasswordResetEndpoint.resetPassword(token, values.password) as PasswordResetResult;
+        let result = await PasswordResetEndpoint.resetPassword(token, values.password) as TokenValidationResult;
 
         switch (result) {
-            case PasswordResetResult.SUCCESS:
+            case TokenValidationResult.VALID:
                 toast.success("Password reset successfully");
                 navigate("/", {replace: true});
                 break;
-            case PasswordResetResult.EXPIRED_TOKEN:
+            case TokenValidationResult.EXPIRED:
                 toast.error("Token is expired");
                 break;
-            case PasswordResetResult.INVALID_TOKEN:
+            case TokenValidationResult.INVALID:
             default:
                 toast.error("Token is invalid");
                 break

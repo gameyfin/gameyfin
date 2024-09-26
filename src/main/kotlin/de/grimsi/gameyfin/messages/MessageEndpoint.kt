@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.notifications
+package de.grimsi.gameyfin.messages
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
@@ -7,20 +7,20 @@ import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
 @RolesAllowed(Roles.Names.ADMIN)
-class NotificationEndpoint(
-    private val notificationService: NotificationService
+class MessageEndpoint(
+    private val messageService: MessageService
 ) {
 
     @AnonymousAllowed
     fun isEnabled(): Boolean {
-        return notificationService.enabled
+        return messageService.enabled
     }
 
     fun verifyCredentials(provider: String, credentials: Map<String, Any>): Boolean {
-        return notificationService.testCredentials(provider, credentials)
+        return messageService.testCredentials(provider, credentials)
     }
 
     fun sendTestNotification(templateKey: String, placeholders: Map<String, String>): Boolean {
-        return notificationService.sendTestNotification(templateKey, placeholders)
+        return messageService.sendTestNotification(templateKey, placeholders)
     }
 }

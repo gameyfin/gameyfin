@@ -3,9 +3,9 @@ import {Form, Formik} from "formik";
 import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
 import {toast} from "sonner";
 import Input from "Frontend/components/general/Input";
-import {NotificationEndpoint} from "Frontend/generated/endpoints";
+import {MessageEndpoint} from "Frontend/generated/endpoints";
 import * as Yup from "yup";
-import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/notifications/templates/MessageTemplateDto";
+import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/templates/MessageTemplateDto";
 
 interface SendTestNotificationModalProps {
     isOpen: boolean;
@@ -35,7 +35,7 @@ export default function SendTestNotificationModal({
                         <Formik
                             initialValues={{}}
                             onSubmit={async (values) => {
-                                await NotificationEndpoint.sendTestNotification(selectedTemplate?.key, values);
+                                await MessageEndpoint.sendTestNotification(selectedTemplate?.key, values);
                                 toast.success("Test notification to you has been sent");
                                 onClose();
                             }}

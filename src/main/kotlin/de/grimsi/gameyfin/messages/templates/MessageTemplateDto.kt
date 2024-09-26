@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.notifications.templates
+package de.grimsi.gameyfin.messages.templates
 
 data class MessageTemplateDto(
     val key: String,

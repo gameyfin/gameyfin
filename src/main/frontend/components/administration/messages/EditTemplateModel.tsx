@@ -12,8 +12,8 @@ import {
 } from "@nextui-org/react";
 import {toast} from "sonner";
 import {MessageTemplateEndpoint} from "Frontend/generated/endpoints";
-import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/notifications/templates/MessageTemplateDto";
-import TemplateType from "Frontend/generated/de/grimsi/gameyfin/notifications/templates/TemplateType";
+import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/templates/MessageTemplateDto";
+import TemplateType from "Frontend/generated/de/grimsi/gameyfin/messages/templates/TemplateType";
 
 interface EditTemplateModalProps {
     isOpen: boolean;
@@ -39,6 +39,12 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
 
     async function saveTemplate(template: MessageTemplateDto) {
         await MessageTemplateEndpoint.save(template.key, TemplateType.MJML, templateContent);
+    }
+
+    function templateContainsAllRequiredPlaceholders(): boolean {
+        if (!selectedTemplate || !selectedTemplate.availablePlaceholders) return false;
+        return selectedTemplate.availablePlaceholders
+            .every((p) => templateContent.includes(`{${p}}`))
     }
 
     return (
@@ -98,15 +104,17 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                         </ModalBody>
                         <ModalFooter>
                             <Button color="danger" variant="light" onPress={onClose}>
-                                Close
+                                Cancel
                             </Button>
-                            <Button color="primary" onPress={async () => {
-                                if (selectedTemplate) {
-                                    await saveTemplate(selectedTemplate);
-                                    toast.success("Template saved");
-                                    onClose();
-                                }
-                            }}>
+                            <Button color="primary"
+                                    isDisabled={!templateContainsAllRequiredPlaceholders()}
+                                    onPress={async () => {
+                                        if (selectedTemplate) {
+                                            await saveTemplate(selectedTemplate);
+                                            toast.success("Template saved");
+                                            onClose();
+                                        }
+                                    }}>
                                 Save
                             </Button>
                         </ModalFooter>

@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.notifications.templates
+package de.grimsi.gameyfin.messages.templates
 
 import ch.digitalfondue.mjml4j.Mjml4j
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -14,7 +14,7 @@ class MessageTemplateService {
 
     companion object {
         private const val TEMPLATE_PATH = "templates"
-        private const val DEFAULT_TEMPLATE_PATH = "templates/notifications"
+        private const val DEFAULT_TEMPLATE_PATH = "templates/messages"
     }
 
     private val log = KotlinLogging.logger {}

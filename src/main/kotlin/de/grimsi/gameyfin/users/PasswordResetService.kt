@@ -2,42 +2,62 @@ package de.grimsi.gameyfin.users
 
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
-import de.grimsi.gameyfin.notifications.NotificationService
-import de.grimsi.gameyfin.users.dto.PasswordResetResult
-import de.grimsi.gameyfin.users.entities.PasswordResetToken
+import de.grimsi.gameyfin.messages.MessageService
+import de.grimsi.gameyfin.shared.token.Token
+import de.grimsi.gameyfin.shared.token.TokenRepository
+import de.grimsi.gameyfin.shared.token.TokenService
+import de.grimsi.gameyfin.shared.token.TokenType.PasswordReset
+import de.grimsi.gameyfin.shared.token.TokenValidationResult
 import de.grimsi.gameyfin.users.entities.User
-import de.grimsi.gameyfin.users.persistence.PasswordResetTokenRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import java.security.SecureRandom
-import java.time.Instant
-import java.util.*
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.toJavaDuration
 
 @Service
 class PasswordResetService(
+    tokenRepository: TokenRepository,
     private val userService: UserService,
+    private val messageService: MessageService,
     private val sessionService: SessionService,
-    private val notificationService: NotificationService,
-    private val eventPublisher: ApplicationEventPublisher,
-    private val passwordResetTokenRepository: PasswordResetTokenRepository
-) {
-
-    private companion object {
-        val TOKEN_EXPIRATION = 24.hours
-    }
+    private val eventPublisher: ApplicationEventPublisher
+) : TokenService<PasswordReset>(PasswordReset, tokenRepository) {
 
     private val log = KotlinLogging.logger {}
 
     private val secureRandom = SecureRandom()
 
-    private val PasswordResetToken.isExpired: Boolean
-        get() = createdOn?.plus(TOKEN_EXPIRATION.toJavaDuration())!!.isBefore(Instant.now())
-
     private val baseUrl: String
         get() = Utils.getBaseUrl()
+
+    override fun generate(user: User): Token<PasswordReset> {
+        if (user.oidcProviderId != null) {
+            throw IllegalStateException("Cannot create password reset token for user '${user.username}' because user is managed externally")
+        }
+
+        return super.generate(user)
+    }
+
+    /**
+     * Admins should be able to create password reset tokens for users when the following conditions are met:
+     * - E-Mail notifications are not enabled
+     * - The user has no confirmed email address
+     * - The user is not managed externally
+     */
+    fun generate(username: String): Token<PasswordReset> {
+        if (messageService.enabled) {
+            throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
+        }
+
+        val user = userService.getByUsername(username)
+            ?: throw IllegalArgumentException("Cannot create password reset token for user '$username' because user does not exist")
+
+        if (user.emailConfirmed == true) {
+            throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
+        }
+
+        return generate(user)
+    }
 
     /**
      * Users can request a password reset when the following conditions are met:
@@ -67,66 +87,26 @@ class PasswordResetService(
             return
         }
 
-        val token = createPasswordResetToken(user)
+        val token = generate(user)
         eventPublisher.publishEvent(PasswordResetRequestEvent(this, token, baseUrl))
 
         // Simulate a delay to prevent timing attacks
         Thread.sleep(secureRandom.nextLong(1024))
     }
 
-    fun createPasswordResetToken(user: User): PasswordResetToken {
-        if (user.oidcProviderId != null) {
-            throw IllegalStateException("Cannot create password reset token for user '${user.username}' because user is managed externally")
-        }
+    fun resetPassword(token: String, newPassword: String): TokenValidationResult {
+        val passwordResetToken = get(token, PasswordReset)
+            ?: return TokenValidationResult.INVALID
 
-        val token = PasswordResetToken(
-            user = user,
-            token = UUID.randomUUID().toString()
-        )
-
-        passwordResetTokenRepository.findByUser(user)?.let {
-            passwordResetTokenRepository.delete(it)
-        }
-
-        return passwordResetTokenRepository.save(token)
-    }
-
-    /**
-     * Admins should be able to create password reset tokens for users when the following conditions are met:
-     * - E-Mail notifications are not enabled
-     * - The user has no confirmed email address
-     * - The user is not managed externally
-     */
-    fun createPasswordResetToken(username: String): String {
-        if (notificationService.enabled) {
-            throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
-        }
-
-        val user = userService.getByUsername(username)
-            ?: throw IllegalArgumentException("Cannot create password reset token for user '$username' because user does not exist")
-
-        if (user.emailConfirmed == true) {
-            throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
-        }
-
-        return createPasswordResetToken(user).token
-    }
-
-
-    fun resetPassword(token: String, newPassword: String): PasswordResetResult {
-        val passwordResetToken =
-            passwordResetTokenRepository.findByToken(token)
-                ?: return PasswordResetResult.INVALID_TOKEN
-
-        if (passwordResetToken.isExpired) {
-            return PasswordResetResult.EXPIRED_TOKEN
+        if (passwordResetToken.expired) {
+            return TokenValidationResult.EXPIRED
         }
 
         val user = passwordResetToken.user
 
         userService.updatePassword(user, newPassword)
-        passwordResetTokenRepository.delete(passwordResetToken)
+        delete(passwordResetToken)
         sessionService.logoutAllSessions(user)
-        return PasswordResetResult.SUCCESS
+        return TokenValidationResult.VALID
     }
 }

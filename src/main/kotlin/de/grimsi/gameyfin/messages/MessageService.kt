@@ -1,9 +1,9 @@
-package de.grimsi.gameyfin.notifications
+package de.grimsi.gameyfin.messages
 
 import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
-import de.grimsi.gameyfin.notifications.providers.AbstractNotificationProvider
-import de.grimsi.gameyfin.notifications.templates.MessageTemplateService
-import de.grimsi.gameyfin.notifications.templates.MessageTemplates
+import de.grimsi.gameyfin.messages.providers.AbstractMessageProvider
+import de.grimsi.gameyfin.messages.templates.MessageTemplateService
+import de.grimsi.gameyfin.messages.templates.MessageTemplates
 import de.grimsi.gameyfin.users.UserService
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -18,7 +18,7 @@ import java.util.*
 
 @EnableAsync
 @Service
-class NotificationService(
+class MessageService(
     private val applicationContext: ApplicationContext,
     private val templateService: MessageTemplateService,
     private val userService: UserService
@@ -29,8 +29,8 @@ class NotificationService(
     val enabled: Boolean
         get() = providers.any { it.enabled }
 
-    private val providers: List<AbstractNotificationProvider>
-        get() = applicationContext.getBeansOfType(AbstractNotificationProvider::class.java).values.toList()
+    private val providers: List<AbstractMessageProvider>
+        get() = applicationContext.getBeansOfType(AbstractMessageProvider::class.java).values.toList()
 
     fun testCredentials(provider: String, credentials: Map<String, Any>): Boolean {
         val notificationProvider = providers.find { it.providerKey == provider }
@@ -87,7 +87,7 @@ class NotificationService(
         log.info { "Sending password reset request notification" }
 
         val token = event.token
-        val resetLink = event.baseUrl + "/reset-password?token=${token.token}"
+        val resetLink = event.baseUrl + "/reset-password?token=${token.secret}"
         sendNotification(
             token.user.email,
             "[Gameyfin] Password Reset Request",

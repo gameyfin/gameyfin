@@ -18,8 +18,8 @@ const menuItems: MenuItem[] = [
         icon: <LockKey/>
     },
     {
-        title: "Notifications",
-        url: "notifications",
+        title: "Messages",
+        url: "messages",
         icon: <Envelope/>
     },
     {

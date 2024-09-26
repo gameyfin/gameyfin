@@ -17,7 +17,7 @@ import {
 } from "@nextui-org/react";
 import {Alert, AlertDescription, AlertTitle} from "Frontend/@/components/ui/alert";
 import {useNavigate} from "react-router-dom";
-import {NotificationEndpoint, PasswordResetEndpoint} from "Frontend/generated/endpoints";
+import {MessageEndpoint, PasswordResetEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";
 
 export default function LoginView() {
@@ -35,7 +35,7 @@ export default function LoginView() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        NotificationEndpoint.isEnabled().then(setCanResetPassword);
+        MessageEndpoint.isEnabled().then(setCanResetPassword);
     }, []);
 
     useEffect(() => {

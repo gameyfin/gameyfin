@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.notifications.templates
+package de.grimsi.gameyfin.messages.templates
 
 sealed class MessageTemplates(
     val key: String,
@@ -18,6 +18,13 @@ sealed class MessageTemplates(
         "Welcome",
         "Template for the welcome message for new users",
         listOf("username")
+    )
+
+    data object EmailConfirmation : MessageTemplates(
+        "email-confirmation",
+        "Email Confirmation",
+        "Template for the email confirmation message",
+        listOf("username", "confirmationLink")
     )
 
     data object PasswordResetRequest : MessageTemplates(

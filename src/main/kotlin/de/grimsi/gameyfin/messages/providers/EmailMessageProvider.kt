@@ -1,8 +1,8 @@
-package de.grimsi.gameyfin.notifications.providers
+package de.grimsi.gameyfin.messages.providers
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
-import de.grimsi.gameyfin.notifications.templates.TemplateType
+import de.grimsi.gameyfin.messages.templates.TemplateType
 import jakarta.mail.Message
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
@@ -12,17 +12,17 @@ import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class EmailNotificationProvider(
+class EmailMessageProvider(
     config: ConfigService
-) : AbstractNotificationProvider("email", TemplateType.MJML, config) {
+) : AbstractMessageProvider("email", TemplateType.MJML, config) {
 
     private val storedCredentials: Properties
         get() {
             val properties = Properties()
-            properties["host"] = config.get(ConfigProperties.Notifications.Providers.Email.Host)
-            properties["port"] = config.get(ConfigProperties.Notifications.Providers.Email.Port)
-            properties["username"] = config.get(ConfigProperties.Notifications.Providers.Email.Username)
-            properties["password"] = config.get(ConfigProperties.Notifications.Providers.Email.Password)
+            properties["host"] = config.get(ConfigProperties.Messages.Providers.Email.Host)
+            properties["port"] = config.get(ConfigProperties.Messages.Providers.Email.Port)
+            properties["username"] = config.get(ConfigProperties.Messages.Providers.Email.Username)
+            properties["password"] = config.get(ConfigProperties.Messages.Providers.Email.Password)
             return properties
         }
 
