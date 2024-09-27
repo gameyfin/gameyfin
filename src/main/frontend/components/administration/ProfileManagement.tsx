@@ -7,16 +7,21 @@ import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import * as Yup from "yup";
 import UserUpdateDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserUpdateDto";
-import {EmailConfirmationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
+import {EmailConfirmationEndpoint, MessageEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {toast} from "sonner";
 import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
 import Avatar from "Frontend/components/general/Avatar";
 
 export default function ProfileManagement() {
-    const [configSaved, setConfigSaved] = useState(false);
     const auth = useAuth();
     const [avatar, setAvatar] = useState<any>();
+    const [configSaved, setConfigSaved] = useState(false);
+    const [messagesEnabled, setMessagesEnabled] = useState(false);
+
+    useEffect(() => {
+        MessageEndpoint.isEnabled().then(setMessagesEnabled);
+    }, []);
 
     useEffect(() => {
         if (configSaved) {
@@ -122,8 +127,8 @@ export default function ProfileManagement() {
                                        isDisabled={auth.state.user?.managedBySso}/>
                                 <div className="flex flex-row gap-4">
                                     <Input name="email" label="Email" type="email" autocomplete="email"
-                                           isDisabled={auth.state.user?.managedBySso}/>
-                                    {auth.state.user?.emailConfirmed === false &&
+                                           isDisabled={auth.state.user?.managedBySso || !messagesEnabled}/>
+                                    {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&
                                         <Tooltip content="Resend email confirmation message">
                                             <Button isIconOnly
                                                     onPress={() => {
@@ -131,6 +136,7 @@ export default function ProfileManagement() {
                                                             () => toast.success("You will receive an email shortly")
                                                         )
                                                     }}
+                                                    isDisabled={!messagesEnabled}
                                                     variant="ghost"
                                                     className="size-14"
                                             >
@@ -139,6 +145,14 @@ export default function ProfileManagement() {
                                         </Tooltip>
                                     }
                                 </div>
+                                {!messagesEnabled &&
+                                    <div className="flex flex-row gap-2 text-warning -mt-5">
+                                        <Info/>
+                                        <small>
+                                            Email services are disabled. Please contact your administrator.
+                                        </small>
+                                    </div>
+                                }
                                 <Section title="Security"/>
                                 <Input name="newPassword" label="New Password" type="password"
                                        autocomplete="new-password" isDisabled={auth.state.user?.managedBySso}/>

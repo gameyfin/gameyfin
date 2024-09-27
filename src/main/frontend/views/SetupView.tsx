@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/general/Input";
-import {GearFine, HandWaving, Palette, User} from "@phosphor-icons/react";
+import {HandWaving, Palette, User} from "@phosphor-icons/react";
 import {Card} from "@nextui-org/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
@@ -76,17 +76,6 @@ function UserStep() {
     );
 }
 
-function SettingsStep() {
-    return (
-        <div className="flex flex-col size-full items-center">
-            <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
-                <h4>Settings</h4>
-                <p>Configure your settings</p>
-            </div>
-        </div>
-    );
-}
-
 function SetupView() {
     const navigate = useNavigate();
 
@@ -130,9 +119,6 @@ function SetupView() {
                         icon={<User/>}
                     >
                         <UserStep/>
-                    </WizardStep>
-                    <WizardStep icon={<GearFine/>}>
-                        <SettingsStep/>
                     </WizardStep>
                 </Wizard>
             </Card>

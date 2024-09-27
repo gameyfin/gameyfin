@@ -179,10 +179,10 @@ class UserService(
         }
     }
 
-    fun registerUserFromInvitation(user: UserRegistrationDto, email: String): User {
+    fun registerUserFromInvitation(registration: UserRegistrationDto, email: String): User {
         val user = User(
-            username = user.username,
-            password = passwordEncoder.encode(user.password),
+            username = registration.username,
+            password = passwordEncoder.encode(registration.password),
             email = email,
             emailConfirmed = true,
             enabled = true,

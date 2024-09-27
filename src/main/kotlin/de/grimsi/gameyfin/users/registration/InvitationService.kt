@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.users.registration
 
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.UserInvitationEvent
+import de.grimsi.gameyfin.core.events.UserRegistrationEvent
 import de.grimsi.gameyfin.shared.token.TokenDto
 import de.grimsi.gameyfin.shared.token.TokenRepository
 import de.grimsi.gameyfin.shared.token.TokenService
@@ -48,7 +49,10 @@ class InvitationService(
         val email = invitationToken.payload[EMAIL_KEY] ?: return TokenValidationResult.INVALID
         if (invitationToken.expired) return TokenValidationResult.EXPIRED
 
-        userService.registerUserFromInvitation(registration, email)
+        val user = userService.registerUserFromInvitation(registration, email)
+        super.delete(invitationToken)
+        eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
+
         return TokenValidationResult.VALID
     }
 }
