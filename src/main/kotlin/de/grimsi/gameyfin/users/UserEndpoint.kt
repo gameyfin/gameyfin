@@ -15,6 +15,11 @@ class UserEndpoint(
     private val userService: UserService
 ) {
     @PermitAll
+    fun existsByMail(email: String): Boolean {
+        return userService.existsByEmail(email)
+    }
+
+    @PermitAll
     fun getUserInfo(): UserInfoDto {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
         return userService.getUserInfo(auth)

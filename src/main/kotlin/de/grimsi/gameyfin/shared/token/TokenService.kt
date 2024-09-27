@@ -14,12 +14,28 @@ abstract class TokenService<T : TokenType>(
     @Transactional
     open fun generate(user: User): Token<T> {
         val token = Token(
-            user = user,
+            creator = user,
             type = type
         )
 
-        tokenRepository.findByUserAndType(user, type)?.let {
+        tokenRepository.findByCreatorAndType(user, type)?.let {
             log.warn { "Deleting existing ${it.type.key} token for user '${user.username}'" }
+            delete(it)
+        }
+
+        return tokenRepository.save(token)
+    }
+
+    @Transactional
+    open fun generateWithPayload(user: User, payload: Map<String, String>): Token<T> {
+        val token = Token(
+            creator = user,
+            type = type,
+            payload = payload
+        )
+
+        tokenRepository.findByCreatorAndTypeAndPayload(user, type, payload)?.let {
+            log.warn { "Deleting existing ${it.type.key} token of user '${user.username}' with same payload" }
             delete(it)
         }
 
@@ -37,6 +53,11 @@ abstract class TokenService<T : TokenType>(
             log.error { "Token '$token' is not of type '$type'" }
             null
         }
+    }
+
+    @Transactional
+    open fun getPayload(secret: String): Map<String, String>? {
+        return tokenRepository.findBySecret(secret)?.payload
     }
 
     @Transactional

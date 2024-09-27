@@ -66,6 +66,7 @@ class UserService(
     }
 
     fun existsByUsername(username: String): Boolean = userRepository.existsByUsername(username)
+    fun existsByEmail(email: String): Boolean = userRepository.existsByEmail(email)
 
     fun findByOidcProviderId(oidcProviderId: String): User? = userRepository.findByOidcProviderId(oidcProviderId)
 
@@ -176,6 +177,19 @@ class UserService(
             val token = emailConfirmationService.generate(user)
             eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
         }
+    }
+
+    fun registerUserFromInvitation(user: UserRegistrationDto, email: String): User {
+        val user = User(
+            username = user.username,
+            password = passwordEncoder.encode(user.password),
+            email = email,
+            emailConfirmed = true,
+            enabled = true,
+            roles = roleService.toRoles(listOf(Roles.USER))
+        )
+
+        return userRepository.save(user)
     }
 
     fun updateUser(username: String, updates: UserUpdateDto) {

@@ -6,11 +6,15 @@ import kotlin.time.toJavaDuration
 data class TokenDto(
     val secret: String,
     val type: String,
-    val expiresAt: Instant
+    val expiresAt: String
 ) {
     constructor(token: Token<*>) : this(
         secret = token.secret,
         type = token.type.key,
-        expiresAt = token.createdOn?.plus(token.type.expiration.toJavaDuration()) ?: Instant.MIN
+        expiresAt = if (token.type.expiration.isFinite()) {
+            token.createdOn?.plus(token.type.expiration.toJavaDuration())?.toString() ?: Instant.MIN.toString()
+        } else {
+            "never"
+        }
     )
 }

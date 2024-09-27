@@ -16,6 +16,7 @@ import {MessageManagement} from "Frontend/components/administration/MessageManag
 import {LogManagement} from "Frontend/components/administration/LogManagement";
 import PasswordResetView from "Frontend/views/PasswordResetView";
 import EmailConfirmationView from "Frontend/views/EmailConfirmationView";
+import InvitationRegistrationView from "Frontend/views/InvitationRegistrationView";
 
 export const routes = protectRoutes([
     {
@@ -57,11 +58,14 @@ export const routes = protectRoutes([
                 path: '/setup', element: <SetupView/>, handle: {requiresLogin: false}
             },
             {
+                path: '/accept-invitation', element: <InvitationRegistrationView/>, handle: {requiresLogin: false}
+            },
+            {
                 path: '/reset-password', element: <PasswordResetView/>, handle: {requiresLogin: false}
             },
             {
                 path: '/confirm-email', element: <EmailConfirmationView/>, handle: {requiresLogin: true}
-            }
+            },
         ],
     }
 ]) as RouteObject[];

@@ -1,9 +1,12 @@
 package de.grimsi.gameyfin.shared.token
 
 import de.grimsi.gameyfin.core.security.EncryptionConverter
+import de.grimsi.gameyfin.core.security.EncryptionMapConverter
 import de.grimsi.gameyfin.users.entities.User
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.Type
 import java.time.Instant
 import java.util.*
@@ -18,8 +21,12 @@ class Token<T : TokenType>(
     @Type(TokenTypeUserType::class)
     val type: T,
 
-    @OneToOne(targetEntity = User::class, fetch = FetchType.EAGER)
-    val user: User,
+    @ManyToOne(targetEntity = User::class, fetch = FetchType.EAGER)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    val creator: User,
+
+    @Convert(converter = EncryptionMapConverter::class)
+    val payload: Map<String, String> = emptyMap(),
 
     @CreationTimestamp
     val createdOn: Instant? = null

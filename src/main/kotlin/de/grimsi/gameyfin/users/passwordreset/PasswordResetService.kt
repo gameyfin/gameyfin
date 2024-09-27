@@ -99,7 +99,7 @@ class PasswordResetService(
             return TokenValidationResult.EXPIRED
         }
 
-        val user = passwordResetToken.user
+        val user = passwordResetToken.creator
 
         userService.updatePassword(user, newPassword)
         delete(passwordResetToken)

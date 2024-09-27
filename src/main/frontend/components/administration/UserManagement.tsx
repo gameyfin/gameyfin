@@ -6,9 +6,12 @@ import {ConfigEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
 import {UserManagementCard} from "Frontend/components/general/UserManagementCard";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
-import {Info} from "@phosphor-icons/react";
+import {Info, UserPlus} from "@phosphor-icons/react";
+import {Button, Divider, Tooltip, useDisclosure} from "@nextui-org/react";
+import InviteUserModal from "Frontend/components/general/InviteUserModal";
 
 function UserManagementLayout({getConfig, formik}: any) {
+    const inviteUserModal = useDisclosure();
     const [users, setUsers] = useState<UserInfoDto[]>([]);
     const [autoRegisterNewUsers, setAutoRegisterNewUsers] = useState(true);
 
@@ -32,7 +35,15 @@ function UserManagementLayout({getConfig, formik}: any) {
                                  isDisabled={!formik.values.users["sign-ups"].allow}/>
             </div>
 
-            <Section title="Users"/>
+            <div className="flex flex-row items-baseline justify-between">
+                <h2 className={"text-xl font-bold mt-8 mb-1"}>Users</h2>
+                <Tooltip content="Invite new user">
+                    <Button isIconOnly variant="faded" onPress={inviteUserModal.onOpen}>
+                        <UserPlus/>
+                    </Button>
+                </Tooltip>
+            </div>
+            <Divider className="mb-4"/>
             {!autoRegisterNewUsers &&
                 <SmallInfoField className="mb-4 text-warning" icon={Info}
                                 message="Automatic user registration for SSO users is disabled"/>
@@ -40,6 +51,7 @@ function UserManagementLayout({getConfig, formik}: any) {
             <div className="grid grid-cols-300px gap-4">
                 {users.map((user) => <UserManagementCard user={user} key={user.username}/>)}
             </div>
+            <InviteUserModal isOpen={inviteUserModal.isOpen} onOpenChange={inviteUserModal.onOpenChange}/>
         </div>
     );
 }

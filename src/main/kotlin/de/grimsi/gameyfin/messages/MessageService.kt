@@ -89,10 +89,10 @@ class MessageService(
         val token = event.token
         val resetLink = event.baseUrl + "/reset-password?token=${token.secret}"
         sendNotification(
-            token.user.email,
+            token.creator.email,
             "[Gameyfin] Password Reset Request",
             MessageTemplates.PasswordResetRequest,
-            mapOf("username" to token.user.username, "resetLink" to resetLink)
+            mapOf("username" to token.creator.username, "resetLink" to resetLink)
         )
     }
 
@@ -167,13 +167,33 @@ class MessageService(
 
         log.info { "Sending email confirmation notification" }
 
-        val user = event.token.user
+        val user = event.token.creator
         val confirmationLink = event.baseUrl + "/confirm-email?token=${event.token.secret}"
         sendNotification(
             user.email,
             "[Gameyfin] Email Confirmation",
             MessageTemplates.EmailConfirmation,
             mapOf("username" to user.username, "confirmationLink" to confirmationLink)
+        )
+    }
+
+    @Async
+    @EventListener(UserInvitationEvent::class)
+    fun onUserInvitation(event: UserInvitationEvent) {
+
+        if (!enabled) {
+            log.error { "No notification provider available, can't send invitation message" }
+            return
+        }
+
+        log.info { "Sending invitation notification" }
+
+        val invitationLink = event.baseUrl + "/accept-invitation?token=${event.token.secret}"
+        sendNotification(
+            event.email,
+            "[Gameyfin] You've been invited!",
+            MessageTemplates.UserInvitation,
+            mapOf("invitationLink" to invitationLink)
         )
     }
 }

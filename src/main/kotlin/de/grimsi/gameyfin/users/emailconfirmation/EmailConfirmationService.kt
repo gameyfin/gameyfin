@@ -30,7 +30,7 @@ class EmailConfirmationService(
             return TokenValidationResult.EXPIRED
         }
 
-        val user = emailConfirmationToken.user
+        val user = emailConfirmationToken.creator
         confirmEmail(user)
         delete(emailConfirmationToken)
 
