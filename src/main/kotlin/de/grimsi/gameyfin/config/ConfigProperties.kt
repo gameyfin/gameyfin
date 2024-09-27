@@ -57,11 +57,11 @@ sealed class ConfigProperties<T : Serializable>(
                 false
             )
 
-            data object Confirm : ConfigProperties<Boolean>(
+            data object ConfirmationRequired : ConfigProperties<Boolean>(
                 Boolean::class,
-                "users.sign-ups.confirm",
+                "users.sign-ups.confirmation-required",
                 "Admins need to confirm new users",
-                false
+                true
             )
         }
     }

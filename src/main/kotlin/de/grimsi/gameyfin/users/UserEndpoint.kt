@@ -3,9 +3,7 @@ package de.grimsi.gameyfin.users
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.users.dto.UserInfoDto
-import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
-import de.grimsi.gameyfin.users.entities.User
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.springframework.security.core.Authentication
@@ -16,7 +14,6 @@ import org.springframework.security.core.context.SecurityContextHolder
 class UserEndpoint(
     private val userService: UserService
 ) {
-
     @PermitAll
     fun getUserInfo(): UserInfoDto {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
@@ -26,12 +23,6 @@ class UserEndpoint(
     @RolesAllowed(Roles.Names.ADMIN)
     fun getAllUsers(): List<UserInfoDto> {
         return userService.getAllUsers()
-    }
-
-    @PermitAll
-    fun registerUser(registration: UserRegistrationDto): UserInfoDto {
-        val user: User = registerUser(registration, listOf(Roles.USER))
-        return userService.toUserInfo(user)
     }
 
     @PermitAll
@@ -54,15 +45,5 @@ class UserEndpoint(
     @RolesAllowed(Roles.Names.ADMIN)
     fun deleteUserByName(username: String) {
         userService.deleteUser(username)
-    }
-
-    private fun registerUser(registration: UserRegistrationDto, roles: List<Roles>): User {
-        val user = User(
-            username = registration.username,
-            password = registration.password,
-            email = registration.email
-        )
-
-        return userService.registerOrUpdateUser(user, roles)
     }
 }

@@ -1,6 +1,9 @@
 package de.grimsi.gameyfin.messages
 
 import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
+import de.grimsi.gameyfin.core.events.RegistrationAttemptWithExistingEmailEvent
+import de.grimsi.gameyfin.core.events.UserRegistrationEvent
+import de.grimsi.gameyfin.core.events.UserRegistrationWaitingForApprovalEvent
 import de.grimsi.gameyfin.messages.providers.AbstractMessageProvider
 import de.grimsi.gameyfin.messages.templates.MessageTemplateService
 import de.grimsi.gameyfin.messages.templates.MessageTemplates
@@ -93,6 +96,66 @@ class MessageService(
             "[Gameyfin] Password Reset Request",
             MessageTemplates.PasswordResetRequest,
             mapOf("username" to token.user.username, "resetLink" to resetLink)
+        )
+    }
+
+    @Async
+    @EventListener(UserRegistrationWaitingForApprovalEvent::class)
+    fun onUserRegistrationWaitingForApproval(event: UserRegistrationWaitingForApprovalEvent) {
+
+        if (!enabled) {
+            log.error { "No notification provider available, can't send 'waiting for approval' message" }
+            return
+        }
+
+        log.info { "Sending waiting for approval notification" }
+
+        val user = event.newUser
+        sendNotification(
+            user.email,
+            "[Gameyfin] Waiting for Approval",
+            MessageTemplates.WaitingForApproval,
+            mapOf("username" to user.username)
+        )
+    }
+
+    @Async
+    @EventListener(UserRegistrationEvent::class)
+    fun onUserRegistration(event: UserRegistrationEvent) {
+
+        if (!enabled) {
+            log.error { "No notification provider available, can't send registration message" }
+            return
+        }
+
+        log.info { "Sending registration notification" }
+
+        val user = event.newUser
+        sendNotification(
+            user.email,
+            "[Gameyfin] Welcome",
+            MessageTemplates.Welcome,
+            mapOf("username" to user.username, "baseUrl" to event.baseUrl)
+        )
+    }
+
+    @Async
+    @EventListener(RegistrationAttemptWithExistingEmailEvent::class)
+    fun onRegistrationAttemptWithExistingEmail(event: RegistrationAttemptWithExistingEmailEvent) {
+
+        if (!enabled) {
+            log.error { "No notification provider available, can't send 'registration attempt with existing email' message" }
+            return
+        }
+
+        log.info { "Sending registration attempt with existing email notification" }
+
+        val user = event.existingUser
+        sendNotification(
+            user.email,
+            "[Gameyfin] Account alert",
+            MessageTemplates.RegistrationAttemptWithExistingEmail,
+            mapOf("username" to user.username, "passwordResetLink" to event.baseUrl)
         )
     }
 }

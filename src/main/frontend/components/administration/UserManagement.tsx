@@ -28,7 +28,7 @@ function UserManagementLayout({getConfig, formik}: any) {
             <Section title="Sign-Ups"/>
             <div className="flex flex-row">
                 <ConfigFormField configElement={getConfig("users.sign-ups.allow")}/>
-                <ConfigFormField configElement={getConfig("users.sign-ups.confirm")}
+                <ConfigFormField configElement={getConfig("users.sign-ups.confirmation-required")}
                                  isDisabled={!formik.values.users["sign-ups"].allow}/>
             </div>
 

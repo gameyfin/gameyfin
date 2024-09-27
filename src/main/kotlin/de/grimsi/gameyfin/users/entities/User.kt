@@ -27,8 +27,7 @@ class User(
     @Convert(converter = EncryptionConverter::class)
     var email: String,
 
-    // TODO: Add email confirmation
-    var emailConfirmed: Boolean = true,
+    var emailConfirmed: Boolean = false,
 
     var enabled: Boolean = true,
 

@@ -15,12 +15,11 @@ class Utils {
             val scheme = request.scheme
             val serverName = request.serverName
             val serverPort = request.serverPort
-            val contextPath = request.contextPath
 
             return if (serverPort == 80 || serverPort == 443) {
-                "$scheme://$serverName$contextPath"
+                "$scheme://$serverName"
             } else {
-                "$scheme://$serverName:$serverPort$contextPath"
+                "$scheme://$serverName:$serverPort"
             }
         }
     }

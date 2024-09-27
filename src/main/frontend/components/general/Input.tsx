@@ -18,7 +18,7 @@ const Input = ({label, ...props}) => {
                 isInvalid={meta.touched && !!meta.error}
             />
             <div className="min-h-6 text-danger">
-                {meta.touched && meta.error && (
+                {meta.touched && meta.error && meta.error.trim().length > 0 && (
                     <SmallInfoField icon={XCircle} message={meta.error}/>
                 )}
             </div>

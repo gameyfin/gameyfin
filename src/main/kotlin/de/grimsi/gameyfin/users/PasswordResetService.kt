@@ -3,11 +3,8 @@ package de.grimsi.gameyfin.users
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
 import de.grimsi.gameyfin.messages.MessageService
-import de.grimsi.gameyfin.shared.token.Token
-import de.grimsi.gameyfin.shared.token.TokenRepository
-import de.grimsi.gameyfin.shared.token.TokenService
+import de.grimsi.gameyfin.shared.token.*
 import de.grimsi.gameyfin.shared.token.TokenType.PasswordReset
-import de.grimsi.gameyfin.shared.token.TokenValidationResult
 import de.grimsi.gameyfin.users.entities.User
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
@@ -27,9 +24,6 @@ class PasswordResetService(
 
     private val secureRandom = SecureRandom()
 
-    private val baseUrl: String
-        get() = Utils.getBaseUrl()
-
     override fun generate(user: User): Token<PasswordReset> {
         if (user.oidcProviderId != null) {
             throw IllegalStateException("Cannot create password reset token for user '${user.username}' because user is managed externally")
@@ -44,7 +38,7 @@ class PasswordResetService(
      * - The user has no confirmed email address
      * - The user is not managed externally
      */
-    fun generate(username: String): Token<PasswordReset> {
+    fun generate(username: String): TokenDto {
         if (messageService.enabled) {
             throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
         }
@@ -52,11 +46,12 @@ class PasswordResetService(
         val user = userService.getByUsername(username)
             ?: throw IllegalArgumentException("Cannot create password reset token for user '$username' because user does not exist")
 
-        if (user.emailConfirmed == true) {
+        if (user.emailConfirmed) {
             throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
         }
 
-        return generate(user)
+        val token = generate(user)
+        return TokenDto(token)
     }
 
     /**
@@ -88,7 +83,7 @@ class PasswordResetService(
         }
 
         val token = generate(user)
-        eventPublisher.publishEvent(PasswordResetRequestEvent(this, token, baseUrl))
+        eventPublisher.publishEvent(PasswordResetRequestEvent(this, token, Utils.getBaseUrl()))
 
         // Simulate a delay to prevent timing attacks
         Thread.sleep(secureRandom.nextLong(1024))

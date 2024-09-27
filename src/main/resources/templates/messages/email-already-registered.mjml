@@ -1,6 +1,6 @@
 <mjml>
     <mj-head>
-        <mj-title>[Gameyfin] Welcome</mj-title>
+        <mj-title>[Gameyfin] Someone tried to register with your email</mj-title>
         <mj-attributes>
             <mj-all font-family="Arial, sans-serif"/>
             <mj-text font-size="16px"/>
@@ -16,9 +16,16 @@
                     <br/>
                     <br/>
                 </mj-text>
-                <mj-text>your registration has been approved!
+                <mj-text>someone just tried to register a new account with this email address.
                     <br/>
-                    You can now start browsing games in <a href="{baseUrl}">Gameyfin</a>.
+                    <br/>
+                    If you just forgot your password, you can reset it by visiting <a href="{passwordResetLink}">
+                        Gameyfin
+                    </a> and
+                    clicking on the "Forgot password?" button.
+                    <br/>
+                    <br/>
+                    If this wasn't you, please ignore this email.
                 </mj-text>
 
             </mj-column>

@@ -1,7 +1,14 @@
 package de.grimsi.gameyfin.users
 
+import de.grimsi.gameyfin.config.ConfigProperties
+import de.grimsi.gameyfin.config.ConfigService
 import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Utils
+import de.grimsi.gameyfin.core.events.RegistrationAttemptWithExistingEmailEvent
+import de.grimsi.gameyfin.core.events.UserRegistrationEvent
+import de.grimsi.gameyfin.core.events.UserRegistrationWaitingForApprovalEvent
 import de.grimsi.gameyfin.users.dto.UserInfoDto
+import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
 import de.grimsi.gameyfin.users.entities.Avatar
 import de.grimsi.gameyfin.users.entities.Role
@@ -10,6 +17,7 @@ import de.grimsi.gameyfin.users.persistence.AvatarContentStore
 import de.grimsi.gameyfin.users.persistence.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -30,10 +38,15 @@ class UserService(
     private val avatarStore: AvatarContentStore,
     private val passwordEncoder: PasswordEncoder,
     private val roleService: RoleService,
-    private val sessionService: SessionService
+    private val sessionService: SessionService,
+    private val config: ConfigService,
+    private val eventPublisher: ApplicationEventPublisher
 ) : UserDetailsService {
 
     private val log = KotlinLogging.logger {}
+
+    val selfRegistrationAllowed: Boolean
+        get() = config.get(ConfigProperties.Users.SignUps.Allow) == true
 
     override fun loadUserByUsername(username: String): UserDetails {
         val user = userByUsername(username)
@@ -124,6 +137,39 @@ class UserService(
         return userRepository.save(user)
     }
 
+    fun selfRegisterUser(registration: UserRegistrationDto) {
+        if (!selfRegistrationAllowed) {
+            throw IllegalStateException("Sign ups are not allowed")
+        }
+
+        if (existsByUsername(registration.username)) {
+            throw IllegalStateException("User with username '${registration.username}' already exists")
+        }
+
+        userRepository.findByEmail(registration.email)?.let {
+            eventPublisher.publishEvent(RegistrationAttemptWithExistingEmailEvent(this, it, Utils.getBaseUrl()))
+            return
+        }
+
+        val adminNeedsToApprove = config.get(ConfigProperties.Users.SignUps.ConfirmationRequired) == true
+
+        var user = User(
+            username = registration.username,
+            password = passwordEncoder.encode(registration.password),
+            email = registration.email,
+            enabled = !adminNeedsToApprove,
+            roles = roleService.toRoles(listOf(Roles.USER))
+        )
+
+        user = userRepository.save(user)
+
+        if (adminNeedsToApprove) {
+            eventPublisher.publishEvent(UserRegistrationWaitingForApprovalEvent(this, user))
+        } else {
+            eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
+        }
+    }
+
     fun updateUser(username: String, updates: UserUpdateDto) {
         val user = userByUsername(username)
 
@@ -147,6 +193,13 @@ class UserService(
         userRepository.save(user)
     }
 
+    fun confirmRegistration(username: String) {
+        val user = userByUsername(username)
+        user.enabled = true
+        userRepository.save(user)
+        eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
+    }
+
     fun deleteUser(username: String) {
         val user = userByUsername(username)
         userRepository.delete(user)
@@ -157,6 +210,8 @@ class UserService(
             username = user.username,
             email = user.email,
             emailConfirmed = user.emailConfirmed,
+            isEnabled = user.enabled,
+            hasAvatar = user.avatar != null,
             managedBySso = user.oidcProviderId != null,
             roles = user.roles.map { r -> r.rolename }
         )

@@ -1,6 +1,6 @@
 <mjml>
     <mj-head>
-        <mj-title>[Gameyfin] Welcome</mj-title>
+        <mj-title>[Gameyfin] Waiting for Approval</mj-title>
         <mj-attributes>
             <mj-all font-family="Arial, sans-serif"/>
             <mj-text font-size="16px"/>
@@ -16,9 +16,10 @@
                     <br/>
                     <br/>
                 </mj-text>
-                <mj-text>your registration has been approved!
+                <mj-text>your registration was successful!
                     <br/>
-                    You can now start browsing games in <a href="{baseUrl}">Gameyfin</a>.
+                    Before you can log in, you need to wait for an admin to approve your account.
+                    We will notify you as soon as your account is approved.
                 </mj-text>
 
             </mj-column>

@@ -13,11 +13,25 @@ sealed class MessageTemplates(
         listOf("invitationLink")
     )
 
+    data object WaitingForApproval : MessageTemplates(
+        "waiting-for-approval",
+        "Waiting for approval",
+        "Template for the waiting for approval message for new users",
+        listOf("username")
+    )
+
     data object Welcome : MessageTemplates(
         "welcome",
         "Welcome",
         "Template for the welcome message for new users",
-        listOf("username")
+        listOf("username", "baseUrl")
+    )
+
+    data object RegistrationAttemptWithExistingEmail : MessageTemplates(
+        "email-already-registered",
+        "Someone tried to register with your email",
+        "Template for the email already registered message",
+        listOf("username", "passwordResetLink")
     )
 
     data object EmailConfirmation : MessageTemplates(
