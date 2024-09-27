@@ -19,21 +19,17 @@ export default function LoginView() {
     const [signUpAllowed, setSignUpAllowed] = useState<boolean>(false);
 
     useEffect(() => {
-        RegistrationEndpoint.isSelfRegistrationAllowed().then(setSignUpAllowed);
-    }, []);
-
-    useEffect(() => {
         if (state.user) {
             const path = url ? new URL(url, document.baseURI).pathname : '/'
             navigate(path, {replace: true});
+        } else {
+            RegistrationEndpoint.isSelfRegistrationAllowed().then(setSignUpAllowed);
         }
     }, [state.user]);
 
     async function tryLogin(values: any, formik: any) {
-        const {defaultUrl, error, redirectUrl} = await login(values.username, values.password);
-        if (!error) {
-            setUrl(redirectUrl ?? defaultUrl ?? '/');
-        } else {
+        const {error} = await login(values.username, values.password);
+        if (error) {
             formik.setFieldError("username", " "); // Mark the field red, but don't show an error message
             formik.setFieldError("password", "Invalid username and/or password.");
         }

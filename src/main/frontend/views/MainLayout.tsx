@@ -1,24 +1,46 @@
 import {useRouteMetadata} from 'Frontend/util/routing.js';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
 import {Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem} from "@nextui-org/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useNavigate} from "react-router-dom";
 import {useAuth} from "Frontend/util/auth";
+import {Heart} from "@phosphor-icons/react";
+import Confetti, {ConfettiProps} from "react-confetti-boom";
 
 export default function MainLayout() {
     const navigate = useNavigate();
     const auth = useAuth();
     const routeMetadata = useRouteMetadata();
+    const [isExploding, setIsExploding] = useState(false);
 
     useEffect(() => {
         let newTitle = `Gameyfin - ${routeMetadata?.title}` ?? 'Gameyfin';
         window.addEventListener('popstate', () => document.title = newTitle);
     }, []);
 
+    const confettiProps: ConfettiProps = {
+        mode: 'boom',
+        x: 0.5,
+        y: 1,
+        particleCount: 1000,
+        spreadDeg: 90,
+        launchSpeed: 4,
+        effectInterval: 10000
+    }
+
+    function easterEgg() {
+        if (isExploding) return;
+        setIsExploding(true);
+        if (confettiProps.mode === "boom") {
+            setTimeout(() => setIsExploding(false), confettiProps.effectInterval);
+        }
+    }
+
     return (
         <div className="flex flex-col min-h-svh">
+            {isExploding ? <Confetti {...confettiProps}/> : <></>}
             <div className="flex flex-col flex-grow w-full 2xl:w-3/4 m-auto">
                 <Navbar maxWidth="full">
                     <NavbarBrand as="button" onClick={() => navigate('/')}>
@@ -44,17 +66,20 @@ export default function MainLayout() {
             </div>
 
             <Divider/>
-            <footer className="flex flex-row items-center justify-between py-4 px-12">
-                <p>Gameyfin {PackageJson.version}</p>
-                <p>
-                    &copy; {(new Date()).getFullYear()}&ensp;
-                    <Link href="https://github.com/gameyfin/gameyfin/graphs/contributors" target="_blank">
-                        Gameyfin contributors
-                    </Link>
-                </p>
-            </footer>
+            <div className="flex flex-col w-full 2xl:w-3/4 m-auto">
+                <footer className="flex flex-row items-center justify-between py-4 px-12">
+                    <p>Gameyfin {PackageJson.version}</p>
+                    <p className="flex flex-row gap-1 items-baseline">
+                        Made with
+                        <Heart size={16} weight="fill" className="text-primary" onClick={easterEgg}/>
+                        by
+                        <Link href="https://github.com/grimsi" target="_blank">grimsi</Link> and
+                        <Link href="https://github.com/gameyfin/gameyfin/graphs/contributors" target="_blank">
+                            contributors
+                        </Link>
+                    </p>
+                </footer>
+            </div>
         </div>
     );
 }
-
-/**/
