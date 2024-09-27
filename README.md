@@ -1,12 +1,12 @@
 <div align="center">
-  <h2>Note: v2 is in a very early stage</h2>
-  <h3>Most features are missing, existing features will probably break!</h3>
-
-</br></br></br>
 <img src="assets/v2/Banner.svg" width="auto" alt="Gameyfin Logo">
 <h2>Gameyfin</h2>
   <p align="center">Manage your video games.</p>
 </div>
+
+> [!IMPORTANT]
+> Gameyfin v2 is still under heavy development and far from feature complete.  
+> You can check the current progress [here](https://github.com/gameyfin/gameyfin/pull/280).
 
 ## Overview
 
