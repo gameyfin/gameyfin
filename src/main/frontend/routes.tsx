@@ -15,6 +15,7 @@ import {ProfileView} from "Frontend/views/ProfileView";
 import {MessageManagement} from "Frontend/components/administration/MessageManagement";
 import {LogManagement} from "Frontend/components/administration/LogManagement";
 import PasswordResetView from "Frontend/views/PasswordResetView";
+import EmailConfirmationView from "Frontend/views/EmailConfirmationView";
 
 export const routes = protectRoutes([
     {
@@ -57,6 +58,9 @@ export const routes = protectRoutes([
             },
             {
                 path: '/reset-password', element: <PasswordResetView/>, handle: {requiresLogin: false}
+            },
+            {
+                path: '/confirm-email', element: <EmailConfirmationView/>, handle: {requiresLogin: true}
             }
         ],
     }

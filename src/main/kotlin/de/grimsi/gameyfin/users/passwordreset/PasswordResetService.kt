@@ -1,10 +1,12 @@
-package de.grimsi.gameyfin.users
+package de.grimsi.gameyfin.users.passwordreset
 
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
 import de.grimsi.gameyfin.messages.MessageService
 import de.grimsi.gameyfin.shared.token.*
 import de.grimsi.gameyfin.shared.token.TokenType.PasswordReset
+import de.grimsi.gameyfin.users.SessionService
+import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.entities.User
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationEventPublisher
@@ -89,8 +91,8 @@ class PasswordResetService(
         Thread.sleep(secureRandom.nextLong(1024))
     }
 
-    fun resetPassword(token: String, newPassword: String): TokenValidationResult {
-        val passwordResetToken = get(token, PasswordReset)
+    fun resetPassword(secret: String, newPassword: String): TokenValidationResult {
+        val passwordResetToken = get(secret, PasswordReset)
             ?: return TokenValidationResult.INVALID
 
         if (passwordResetToken.expired) {

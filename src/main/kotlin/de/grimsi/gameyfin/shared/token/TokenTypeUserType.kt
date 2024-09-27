@@ -14,7 +14,11 @@ class TokenTypeUserType : UserType<TokenType> {
 
     override fun returnedClass(): Class<TokenType> = TokenType::class.java
 
-    override fun equals(x: TokenType, y: TokenType): Boolean = x.key == y.key
+    override fun equals(x: TokenType?, y: TokenType?): Boolean {
+        if (x === y) return true
+        if (x == null || y == null) return false
+        return x.key == y.key
+    }
 
     override fun hashCode(x: TokenType): Int = x.key.hashCode()
 
@@ -52,5 +56,13 @@ class TokenTypeUserType : UserType<TokenType> {
 
     override fun disassemble(value: TokenType): Serializable = value.key
 
-    override fun assemble(cached: Serializable, owner: Any?): TokenType = cached as TokenType
+    override fun assemble(cached: Serializable, owner: Any?): TokenType {
+        val key = cached as? String ?: throw IllegalArgumentException("Invalid cached value: $cached")
+        val tokenTypeClass = TokenType::class
+
+        return tokenTypeClass.sealedSubclasses
+            .map { it.objectInstance ?: it.createInstance() }
+            .firstOrNull { it.key == key }
+            ?: throw IllegalArgumentException("Unknown TokenType: $key")
+    }
 }

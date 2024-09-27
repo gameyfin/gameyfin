@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.shared.token
 
 import de.grimsi.gameyfin.users.entities.User
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.transaction.Transactional
 
 abstract class TokenService<T : TokenType>(
     private val type: T,
@@ -10,6 +11,7 @@ abstract class TokenService<T : TokenType>(
 
     private val log = KotlinLogging.logger {}
 
+    @Transactional
     open fun generate(user: User): Token<T> {
         val token = Token(
             user = user,
@@ -24,7 +26,8 @@ abstract class TokenService<T : TokenType>(
         return tokenRepository.save(token)
     }
 
-    fun get(secret: String, type: T): Token<T>? {
+    @Transactional
+    open fun get(secret: String, type: T): Token<T>? {
         val token = tokenRepository.findBySecret(secret) ?: return null
 
         return if (token.type == type) {
@@ -36,11 +39,17 @@ abstract class TokenService<T : TokenType>(
         }
     }
 
-    fun delete(token: Token<T>) {
-        tokenRepository.delete(token)
+    @Transactional
+    open fun delete(token: Token<T>) {
+        try {
+            tokenRepository.delete(token)
+        } catch (_: Exception) {
+            log.warn { "Token '$token' has already been deleted" }
+        }
     }
 
-    fun validate(secret: String): TokenValidationResult {
+    @Transactional
+    open fun validate(secret: String): TokenValidationResult {
         val token = tokenRepository.findBySecret(secret) ?: return TokenValidationResult.INVALID
         return if (token.expired) TokenValidationResult.EXPIRED else TokenValidationResult.VALID
     }

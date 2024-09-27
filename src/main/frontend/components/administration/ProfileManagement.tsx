@@ -2,12 +2,12 @@ import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/Input";
 import {Button, Input as NextUiInput, Tooltip} from "@nextui-org/react";
 import {Form, Formik} from "formik";
-import {Check, Info, Trash} from "@phosphor-icons/react";
+import {ArrowCounterClockwise, Check, Info, Trash} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import * as Yup from "yup";
 import UserUpdateDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserUpdateDto";
-import {UserEndpoint} from "Frontend/generated/endpoints";
+import {EmailConfirmationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {toast} from "sonner";
 import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
@@ -120,8 +120,25 @@ export default function ProfileManagement() {
                                 <Section title="Personal information"/>
                                 <Input name="username" label="Username" type="text" autocomplete="username"
                                        isDisabled={auth.state.user?.managedBySso}/>
-                                <Input name="email" label="Email" type="email" autocomplete="email"
-                                       isDisabled={auth.state.user?.managedBySso}/>
+                                <div className="flex flex-row gap-4">
+                                    <Input name="email" label="Email" type="email" autocomplete="email"
+                                           isDisabled={auth.state.user?.managedBySso}/>
+                                    {auth.state.user?.emailConfirmed === false &&
+                                        <Tooltip content="Resend email confirmation message">
+                                            <Button isIconOnly
+                                                    onPress={() => {
+                                                        EmailConfirmationEndpoint.resendEmailConfirmation().then(
+                                                            () => toast.success("You will receive an email shortly")
+                                                        )
+                                                    }}
+                                                    variant="ghost"
+                                                    className="size-14"
+                                            >
+                                                <ArrowCounterClockwise size={26}/>
+                                            </Button>
+                                        </Tooltip>
+                                    }
+                                </div>
                                 <Section title="Security"/>
                                 <Input name="newPassword" label="New Password" type="password"
                                        autocomplete="new-password" isDisabled={auth.state.user?.managedBySso}/>

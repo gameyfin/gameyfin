@@ -37,6 +37,7 @@ class SecurityConfig(
         http.authorizeHttpRequests { auth: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry ->
             auth.requestMatchers("/setup").permitAll()
                 .requestMatchers("/reset-password").permitAll()
+                .requestMatchers("/accept-invitation").permitAll()
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
         }
@@ -70,7 +71,6 @@ class SecurityConfig(
         }
     }
 
-    // TODO: Maybe switch to a database-backed client registration repository? Not sure if worth it.
     @Bean
     @Conditional(SsoEnabledCondition::class)
     fun clientRegistrationRepository(): ClientRegistrationRepository? {

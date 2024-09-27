@@ -4,12 +4,14 @@ import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
 import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.core.Utils
+import de.grimsi.gameyfin.core.events.EmailNeedsConfirmationEvent
 import de.grimsi.gameyfin.core.events.RegistrationAttemptWithExistingEmailEvent
 import de.grimsi.gameyfin.core.events.UserRegistrationEvent
 import de.grimsi.gameyfin.core.events.UserRegistrationWaitingForApprovalEvent
 import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
+import de.grimsi.gameyfin.users.emailconfirmation.EmailConfirmationService
 import de.grimsi.gameyfin.users.entities.Avatar
 import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
@@ -39,6 +41,7 @@ class UserService(
     private val passwordEncoder: PasswordEncoder,
     private val roleService: RoleService,
     private val sessionService: SessionService,
+    private val emailConfirmationService: EmailConfirmationService,
     private val config: ConfigService,
     private val eventPublisher: ApplicationEventPublisher
 ) : UserDetailsService {
@@ -168,6 +171,11 @@ class UserService(
         } else {
             eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
         }
+
+        if (!user.emailConfirmed) {
+            val token = emailConfirmationService.generate(user)
+            eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
+        }
     }
 
     fun updateUser(username: String, updates: UserUpdateDto) {
@@ -183,6 +191,8 @@ class UserService(
         updates.email?.let {
             user.email = it
             user.emailConfirmed = false
+            val token = emailConfirmationService.generate(user)
+            eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
         }
 
         userRepository.save(user)

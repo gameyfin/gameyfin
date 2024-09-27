@@ -1,9 +1,6 @@
 package de.grimsi.gameyfin.messages
 
-import de.grimsi.gameyfin.core.events.PasswordResetRequestEvent
-import de.grimsi.gameyfin.core.events.RegistrationAttemptWithExistingEmailEvent
-import de.grimsi.gameyfin.core.events.UserRegistrationEvent
-import de.grimsi.gameyfin.core.events.UserRegistrationWaitingForApprovalEvent
+import de.grimsi.gameyfin.core.events.*
 import de.grimsi.gameyfin.messages.providers.AbstractMessageProvider
 import de.grimsi.gameyfin.messages.templates.MessageTemplateService
 import de.grimsi.gameyfin.messages.templates.MessageTemplates
@@ -156,6 +153,27 @@ class MessageService(
             "[Gameyfin] Account alert",
             MessageTemplates.RegistrationAttemptWithExistingEmail,
             mapOf("username" to user.username, "passwordResetLink" to event.baseUrl)
+        )
+    }
+
+    @Async
+    @EventListener(EmailNeedsConfirmationEvent::class)
+    fun onEmailNeedsConfirmation(event: EmailNeedsConfirmationEvent) {
+
+        if (!enabled) {
+            log.error { "No notification provider available, can't send email confirmation message" }
+            return
+        }
+
+        log.info { "Sending email confirmation notification" }
+
+        val user = event.token.user
+        val confirmationLink = event.baseUrl + "/confirm-email?token=${event.token.secret}"
+        sendNotification(
+            user.email,
+            "[Gameyfin] Email Confirmation",
+            MessageTemplates.EmailConfirmation,
+            mapOf("username" to user.username, "confirmationLink" to confirmationLink)
         )
     }
 }

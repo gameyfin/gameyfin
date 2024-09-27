@@ -2,15 +2,11 @@ package de.grimsi.gameyfin.shared.token
 
 import de.grimsi.gameyfin.core.security.EncryptionConverter
 import de.grimsi.gameyfin.users.entities.User
-import jakarta.persistence.Convert
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.Id
-import jakarta.persistence.OneToOne
+import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.Type
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import kotlin.time.toJavaDuration
 
 @Entity
@@ -29,5 +25,6 @@ class Token<T : TokenType>(
     val createdOn: Instant? = null
 ) {
     val expired: Boolean
-        get() = createdOn?.plus(type.expiration.toJavaDuration())!!.isBefore(Instant.now())
+        get() = type.expiration.isFinite() &&
+                createdOn?.plus(type.expiration.toJavaDuration())!!.isBefore(Instant.now())
 }

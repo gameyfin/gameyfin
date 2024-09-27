@@ -29,7 +29,7 @@ class User(
 
     var emailConfirmed: Boolean = false,
 
-    var enabled: Boolean = true,
+    var enabled: Boolean = false,
 
     @Embedded
     @Nullable

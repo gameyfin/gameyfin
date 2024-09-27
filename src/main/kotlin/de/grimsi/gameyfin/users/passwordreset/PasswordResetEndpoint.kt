@@ -1,10 +1,11 @@
-package de.grimsi.gameyfin.users
+package de.grimsi.gameyfin.users.passwordreset
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Roles
 import de.grimsi.gameyfin.shared.token.TokenDto
 import de.grimsi.gameyfin.shared.token.TokenValidationResult
+import de.grimsi.gameyfin.users.UserService
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint

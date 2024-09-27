@@ -1,8 +1,9 @@
-package de.grimsi.gameyfin.users
+package de.grimsi.gameyfin.users.registration
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import jakarta.annotation.security.RolesAllowed
 

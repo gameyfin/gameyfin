@@ -8,6 +8,6 @@ sealed class TokenType(
     val expiration: Duration
 ) {
     data object PasswordReset : TokenType("password-reset", 15.minutes)
-    data object EmailVerification : TokenType("email-verification", Duration.INFINITE)
+    data object EmailConfirmation : TokenType("email-verification", Duration.INFINITE)
     data object Invitation : TokenType("invitation", Duration.INFINITE)
 }

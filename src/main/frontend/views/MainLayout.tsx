@@ -5,13 +5,17 @@ import {Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem} from "@ne
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useNavigate} from "react-router-dom";
+import {useAuth} from "Frontend/util/auth";
 
 export default function MainLayout() {
-    const currentTitle = `Gameyfin - ${useRouteMetadata()?.title}` ?? 'Gameyfin';
-    useEffect(() => {
-        document.title = currentTitle;
-    }, [currentTitle]);
     const navigate = useNavigate();
+    const auth = useAuth();
+    const routeMetadata = useRouteMetadata();
+
+    useEffect(() => {
+        let newTitle = `Gameyfin - ${routeMetadata?.title}` ?? 'Gameyfin';
+        window.addEventListener('popstate', () => document.title = newTitle);
+    }, []);
 
     return (
         <div className="flex flex-col min-h-svh">
@@ -21,6 +25,13 @@ export default function MainLayout() {
                         <GameyfinLogo className="h-10 fill-foreground"/>
                     </NavbarBrand>
                     <NavbarContent justify="end">
+                        {auth.state.user?.emailConfirmed === false ?
+                            <NavbarItem>
+                                <small className="text-warning">Please confirm your email</small>
+                            </NavbarItem>
+                            :
+                            ""
+                        }
                         <NavbarItem>
                             <ProfileMenu/>
                         </NavbarItem>
