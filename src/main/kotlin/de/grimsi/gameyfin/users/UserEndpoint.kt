@@ -43,6 +43,11 @@ class UserEndpoint(
         userService.updateUser(username, updates)
     }
 
+    @RolesAllowed(Role.Names.ADMIN)
+    fun setUserEnabled(username: String, enabled: Boolean) {
+        userService.setUserEnabled(username, enabled)
+    }
+
     @PermitAll
     fun deleteUser() {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
@@ -63,6 +68,11 @@ class UserEndpoint(
     fun getRolesBelow(): List<String> {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
         return roleService.getRolesBelowAuth(auth).map { it.roleName }
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun canCurrentUserManage(username: String): Boolean {
+        return userService.canManage(username)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

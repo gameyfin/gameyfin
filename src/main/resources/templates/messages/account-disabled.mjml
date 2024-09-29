@@ -17,9 +17,9 @@
                     <br/>
                     <br/>
                 </mj-text>
-                <mj-text>your registration has been approved!
+                <mj-text>your account has been disabled.
                     <br/>
-                    You can now start browsing games in <a href="{baseUrl}">Gameyfin</a>.
+                    If you think this is a mistake, contact your <a href="{baseUrl}">Gameyfin</a> administrator.
                 </mj-text>
 
             </mj-column>

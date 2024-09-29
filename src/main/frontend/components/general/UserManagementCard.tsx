@@ -2,7 +2,7 @@ import {Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosu
 import {DotsThreeVertical} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
-import {MessageEndpoint, PasswordResetEndpoint, RegistrationEndpoint} from "Frontend/generated/endpoints";
+import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
 import ConfirmUserDeletionModal from "Frontend/components/general/ConfirmUserDeletionModal";
@@ -28,8 +28,11 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
         let keysToBeDisabled: string[] = [];
         MessageEndpoint.isEnabled().then((isEnabled) => {
             if (isEnabled) keysToBeDisabled.push("resetPassword");
-            if (!canUserBeDeleted()) keysToBeDisabled.push("delete")
             if (!user.hasAvatar) keysToBeDisabled.push("removeAvatar");
+            setDisabledKeys(keysToBeDisabled);
+        });
+        UserEndpoint.canCurrentUserManage(user.username).then((canManage) => {
+            if (!canManage) keysToBeDisabled.push("assignRole", "disableUser", "delete");
             setDisabledKeys(keysToBeDisabled);
         });
     }, []);
@@ -37,20 +40,6 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
     useEffect(() => {
         setDropdownItems(getDropdownItems());
     }, [userEnabled]);
-
-    function canUserBeDeleted(): Boolean {
-        // User should not be able to delete himself through this menu (can be done via "My profile")
-        if (auth.state.user?.username === user.username) return false;
-
-        // User should not be able to delete the SUPERADMIN
-        if (user.roles?.includes(Role.SUPERADMIN)) return false;
-
-        // Superadmins can delete anyone excluding themselves (and other superadmins if there are any)
-        if (auth.state.user?.roles?.includes(Role.SUPERADMIN)) return true;
-
-        // Admins should be only allowed to delete other users, not other admins
-        return !user.roles?.includes(Role.ADMIN);
-    }
 
     async function resetPassword() {
         let token = await PasswordResetEndpoint.createPasswordResetTokenForUser(user.username);
@@ -62,37 +51,53 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
     function getDropdownItems() {
         let items = [];
 
-        if (!user.enabled) {
+        if (!user.managedBySso) {
+            if (!userEnabled) {
+                items.push(
+                    {
+                        key: "enableUser",
+                        onPress: () => {
+                            UserEndpoint.setUserEnabled(user.username, true).then(() => {
+                                setUserEnabled(true);
+                            })
+                        },
+                        label: "Enable user"
+                    }
+                );
+            } else {
+                items.push(
+                    {
+                        key: "disableUser",
+                        onPress: () => {
+                            UserEndpoint.setUserEnabled(user.username, false).then(() => {
+                                setUserEnabled(false);
+                            })
+                        },
+                        label: "Disable user"
+                    }
+                );
+            }
+
             items.push(
                 {
-                    key: "enableUser",
-                    onPress: () => {
-                        RegistrationEndpoint.confirmRegistration(user.username).then(() => {
-                            setUserEnabled(true);
-                        })
-                    },
-                    label: "Enable user"
+                    key: "removeAvatar",
+                    onPress: () => AvatarEndpoint.removeAvatarByName(user.username!),
+                    label: "Remove avatar"
+                },
+                {
+                    key: "assignRole",
+                    onPress: roleAssignmentModal.onOpen,
+                    label: "Assign role"
+                },
+                {
+                    key: "resetPassword",
+                    onPress: resetPassword,
+                    label: "Reset password"
                 }
             );
         }
 
-        items.push(
-            {
-                key: "removeAvatar",
-                onPress: () => AvatarEndpoint.removeAvatarByName(user.username!),
-                label: "Remove avatar"
-            },
-            {
-                key: "assignRoles",
-                onPress: roleAssignmentModal.onOpen,
-                label: "Assign roles"
-            },
-            {
-                key: "resetPassword",
-                onPress: resetPassword,
-                label: "Reset password"
-            },
-            {
+        items.push({
                 key: "delete",
                 onPress: userDeletionConfirmationModal.onOpen,
                 label: "Delete user"
@@ -104,7 +109,8 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
 
     return (
         <>
-            <Card className={`flex flex-row justify-between p-2 ${userEnabled ? "" : "bg-warning/25"}`}>
+            <Card
+                className={`flex flex-row justify-between p-2 ${userEnabled ? "" : "bg-warning/25"} ${user.managedBySso ? "text-foreground/50" : ""}`}>
                 <div className="flex flex-row items-center gap-4">
                     <Avatar username={user.username}
                             name={user.username?.charAt(0)}

@@ -4,9 +4,9 @@ import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.shared.token.TokenDto
-import de.grimsi.gameyfin.shared.token.TokenValidationResult
 import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
+import de.grimsi.gameyfin.users.enums.UserInvitationAcceptanceResult
 import jakarta.annotation.security.RolesAllowed
 
 @AnonymousAllowed
@@ -29,17 +29,12 @@ class RegistrationEndpoint(
         return !userService.existsByUsername(username)
     }
 
-    fun acceptInvitation(token: String, registration: UserRegistrationDto): TokenValidationResult {
+    fun acceptInvitation(token: String, registration: UserRegistrationDto): UserInvitationAcceptanceResult {
         return invitationService.acceptInvitation(token, registration)
     }
 
     fun getInvitationRecipientEmail(token: String): String? {
         return invitationService.getAssociatedEmail(token)
-    }
-
-    @RolesAllowed(Role.Names.ADMIN)
-    fun confirmRegistration(username: String) {
-        userService.confirmRegistration(username)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

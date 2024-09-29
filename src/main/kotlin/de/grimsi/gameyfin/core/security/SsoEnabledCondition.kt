@@ -26,7 +26,8 @@ class SsoEnabledCondition : Condition {
                 statement.setString(1, ConfigProperties.SSO.OIDC.Enabled.key)
                 val resultSet = statement.executeQuery()
                 if (resultSet.next()) {
-                    return resultSet.getBoolean("value")
+                    val encryptedValue = resultSet.getString("value")
+                    return EncryptionUtils.decrypt(encryptedValue).toBoolean()
                 }
             }
         } catch (_: Exception) {

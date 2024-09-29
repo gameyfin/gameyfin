@@ -32,12 +32,12 @@ export default function AssignRolesModal({
                                              user
                                          }: AssignRolesModalProps) {
     const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
-    const [selectedRoles, setSelectedRoles] = useState<Selection>();
+    const [selectedRole, setSelectedRole] = useState<Selection>();
     const [error, setError] = useState<string>();
 
     useEffect(() => {
-        setSelectedRoles(rolesToSelection(user.roles!));
-        UserEndpoint.getAvailableRoles().then((availableRoles) => {
+        setSelectedRole(rolesToSelection(user.roles!));
+        UserEndpoint.getRolesBelow().then((availableRoles) => {
             setAvailableRoles(availableRoles!.map((role) => ({id: role!.toString()})));
         });
     }, []);
@@ -47,14 +47,17 @@ export default function AssignRolesModal({
     }
 
     async function assignRoles() {
-        if (!selectedRoles) return;
+        if (!selectedRole) return;
 
-        let selectedRolesArray = Array.from(selectedRoles).map((role) => role.toString());
+        let selectedRolesArray = Array.from(selectedRole).map((role) => role.toString());
         let result = await UserEndpoint.assignRoles(user.username, selectedRolesArray);
         if (!result) return;
         switch (result) {
             case RoleAssignmentResult.SUCCESS:
                 window.location.reload();
+                break;
+            case RoleAssignmentResult.NO_ROLES_PROVIDED:
+                setError("Select at least one role");
                 break;
             case RoleAssignmentResult.TARGET_POWER_LEVEL_TOO_HIGH:
                 setError("Power level of user too high");
@@ -78,9 +81,10 @@ export default function AssignRolesModal({
                         <ModalBody className="flex flex-col gap-2">
                             <Select
                                 items={availableRoles}
-                                selectionMode="multiple"
-                                selectedKeys={selectedRoles}
-                                onSelectionChange={setSelectedRoles}
+                                selectionMode="single"
+                                disallowEmptySelection={true}
+                                selectedKeys={selectedRole}
+                                onSelectionChange={setSelectedRole}
                                 placeholder="Select roles"
                                 renderValue={(items: SelectedItems<Role>) => {
                                     return (
@@ -106,7 +110,7 @@ export default function AssignRolesModal({
                             <Button variant="light" onPress={onClose}>
                                 Cancel
                             </Button>
-                            <Button color="primary" onPress={assignRoles} isDisabled={!selectedRoles}>
+                            <Button color="primary" onPress={assignRoles} isDisabled={!selectedRole}>
                                 Assign roles
                             </Button>
                         </ModalFooter>

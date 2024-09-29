@@ -20,10 +20,24 @@ sealed class MessageTemplates(
         listOf("username")
     )
 
-    data object Welcome : MessageTemplates(
-        "welcome",
-        "Welcome",
-        "Template for the welcome message for new users",
+    data object AccountEnabled : MessageTemplates(
+        "account-enabled",
+        "Account Enabled",
+        "Template for the enabling of a users account",
+        listOf("username", "baseUrl")
+    )
+
+    data object AccountDisabled : MessageTemplates(
+        "account-disabled",
+        "Account Disabled",
+        "Template for the disabling of a users account",
+        listOf("username", "baseUrl")
+    )
+
+    data object AccountDeleted : MessageTemplates(
+        "account-deleted",
+        "Account Deleted",
+        "Template for the account deletion message",
         listOf("username", "baseUrl")
     )
 

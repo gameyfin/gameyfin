@@ -1,15 +1,15 @@
 package de.grimsi.gameyfin.users.registration
 
 import de.grimsi.gameyfin.core.Utils
+import de.grimsi.gameyfin.core.events.AccountStatusChangedEvent
 import de.grimsi.gameyfin.core.events.UserInvitationEvent
-import de.grimsi.gameyfin.core.events.UserRegistrationEvent
 import de.grimsi.gameyfin.shared.token.TokenDto
 import de.grimsi.gameyfin.shared.token.TokenRepository
 import de.grimsi.gameyfin.shared.token.TokenService
 import de.grimsi.gameyfin.shared.token.TokenType.Invitation
-import de.grimsi.gameyfin.shared.token.TokenValidationResult
 import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
+import de.grimsi.gameyfin.users.enums.UserInvitationAcceptanceResult
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
@@ -44,15 +44,19 @@ class InvitationService(
         return payload[EMAIL_KEY]
     }
 
-    fun acceptInvitation(secret: String, registration: UserRegistrationDto): TokenValidationResult {
-        val invitationToken = super.get(secret, Invitation) ?: return TokenValidationResult.INVALID
-        val email = invitationToken.payload[EMAIL_KEY] ?: return TokenValidationResult.INVALID
-        if (invitationToken.expired) return TokenValidationResult.EXPIRED
+    fun acceptInvitation(secret: String, registration: UserRegistrationDto): UserInvitationAcceptanceResult {
+        val invitationToken = super.get(secret, Invitation) ?: return UserInvitationAcceptanceResult.TOKEN_INVALID
+        val email = invitationToken.payload[EMAIL_KEY] ?: return UserInvitationAcceptanceResult.TOKEN_INVALID
+        if (invitationToken.expired) return UserInvitationAcceptanceResult.TOKEN_EXPIRED
 
-        val user = userService.registerUserFromInvitation(registration, email)
-        super.delete(invitationToken)
-        eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
+        try {
+            val user = userService.registerUserFromInvitation(registration, email)
+            super.delete(invitationToken)
+            eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
+        } catch (e: IllegalStateException) {
+            return UserInvitationAcceptanceResult.USERNAME_TAKEN
+        }
 
-        return TokenValidationResult.VALID
+        return UserInvitationAcceptanceResult.SUCCESS
     }
 }

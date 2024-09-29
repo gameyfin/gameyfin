@@ -7,7 +7,8 @@ import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
 import {Warning} from "@phosphor-icons/react";
 import {toast} from "sonner";
-import TokenValidationResult from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenValidationResult";
+import UserInvitationAcceptanceResult
+    from "Frontend/generated/de/grimsi/gameyfin/users/enums/UserInvitationAcceptanceResult";
 
 export default function InvitationRegistrationView() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -23,7 +24,7 @@ export default function InvitationRegistrationView() {
         }
     }, [searchParams]);
 
-    async function register(values: any) {
+    async function register(values: any, formik: any) {
         let result = await RegistrationEndpoint.acceptInvitation(token, {
             email: email,
             username: values.username,
@@ -31,14 +32,17 @@ export default function InvitationRegistrationView() {
         });
 
         switch (result) {
-            case TokenValidationResult.VALID:
+            case UserInvitationAcceptanceResult.SUCCESS:
                 toast.success("Registration successful");
                 navigate("/", {replace: true});
                 break;
-            case TokenValidationResult.EXPIRED:
+            case UserInvitationAcceptanceResult.USERNAME_TAKEN:
+                formik.setFieldError("username", "Username is already taken");
+                break;
+            case UserInvitationAcceptanceResult.TOKEN_EXPIRED:
                 toast.error("Token is expired");
                 break;
-            case TokenValidationResult.INVALID:
+            case UserInvitationAcceptanceResult.TOKEN_INVALID:
             default:
                 toast.error("Token is invalid");
                 break

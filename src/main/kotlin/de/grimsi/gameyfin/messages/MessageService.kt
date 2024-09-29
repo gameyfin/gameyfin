@@ -33,9 +33,9 @@ class MessageService(
         get() = applicationContext.getBeansOfType(AbstractMessageProvider::class.java).values.toList()
 
     fun testCredentials(provider: String, credentials: Map<String, Any>): Boolean {
-        val notificationProvider = providers.find { it.providerKey == provider }
+        val messageProvider = providers.find { it.providerKey == provider }
         val credentialsProperties = Properties().apply { putAll(credentials) }
-        return notificationProvider?.testCredentials(credentialsProperties)
+        return messageProvider?.testCredentials(credentialsProperties)
             ?: throw IllegalArgumentException("Provider '$provider' not found")
     }
 
@@ -52,13 +52,13 @@ class MessageService(
     }
 
     /**
-     * Sends a test notification.
+     * Sends a test message.
      * Recipient is always the current user to prevent misuse.
      */
     fun sendTestNotification(templateKey: String, placeholders: Map<String, String>): Boolean {
 
         if (!enabled) {
-            log.error { "No notification provider available, can't send test message" }
+            log.error { "No message provider available, can't send test message" }
             return false
         }
 
@@ -68,7 +68,7 @@ class MessageService(
             val template = templateService.getMessageTemplate(templateKey)
             sendNotification(user.email, "[Gameyfin] Test Notification", template, placeholders)
         } catch (e: Exception) {
-            log.error(e) { "Failed to send test notification" }
+            log.error(e) { "Failed to send test message" }
             return false
         }
 
@@ -80,11 +80,11 @@ class MessageService(
     fun onPasswordResetRequest(event: PasswordResetRequestEvent) {
 
         if (!enabled) {
-            log.error { "No notification provider available, can't send password reset message" }
+            log.error { "No message provider available, can't send password reset message" }
             return
         }
 
-        log.info { "Sending password reset request notification" }
+        log.info { "Sending password reset request message" }
 
         val token = event.token
         val resetLink = event.baseUrl + "/reset-password?token=${token.secret}"
@@ -101,11 +101,11 @@ class MessageService(
     fun onUserRegistrationWaitingForApproval(event: UserRegistrationWaitingForApprovalEvent) {
 
         if (!enabled) {
-            log.error { "No notification provider available, can't send 'waiting for approval' message" }
+            log.error { "No message provider available, can't send 'waiting for approval' message" }
             return
         }
 
-        log.info { "Sending waiting for approval notification" }
+        log.info { "Sending waiting for approval message" }
 
         val user = event.newUser
         sendNotification(
@@ -117,23 +117,33 @@ class MessageService(
     }
 
     @Async
-    @EventListener(UserRegistrationEvent::class)
-    fun onUserRegistration(event: UserRegistrationEvent) {
+    @EventListener(AccountStatusChangedEvent::class)
+    fun onAccountStatusChanged(event: AccountStatusChangedEvent) {
 
         if (!enabled) {
-            log.error { "No notification provider available, can't send registration message" }
+            log.error { "No message provider available, can't send registration message" }
             return
         }
 
-        log.info { "Sending registration notification" }
+        log.info { "Sending registration message" }
 
-        val user = event.newUser
-        sendNotification(
-            user.email,
-            "[Gameyfin] Welcome",
-            MessageTemplates.Welcome,
-            mapOf("username" to user.username, "baseUrl" to event.baseUrl)
-        )
+        val user = event.user
+
+        if (event.user.enabled) {
+            sendNotification(
+                user.email,
+                "[Gameyfin] Your account has been enabled",
+                MessageTemplates.AccountEnabled,
+                mapOf("username" to user.username, "baseUrl" to event.baseUrl)
+            )
+        } else {
+            sendNotification(
+                user.email,
+                "[Gameyfin] Your account has been disabled",
+                MessageTemplates.AccountDisabled,
+                mapOf("username" to user.username, "baseUrl" to event.baseUrl)
+            )
+        }
     }
 
     @Async
@@ -141,11 +151,11 @@ class MessageService(
     fun onRegistrationAttemptWithExistingEmail(event: RegistrationAttemptWithExistingEmailEvent) {
 
         if (!enabled) {
-            log.error { "No notification provider available, can't send 'registration attempt with existing email' message" }
+            log.error { "No message provider available, can't send 'registration attempt with existing email' message" }
             return
         }
 
-        log.info { "Sending registration attempt with existing email notification" }
+        log.info { "Sending registration attempt with existing email message" }
 
         val user = event.existingUser
         sendNotification(
@@ -161,11 +171,11 @@ class MessageService(
     fun onEmailNeedsConfirmation(event: EmailNeedsConfirmationEvent) {
 
         if (!enabled) {
-            log.error { "No notification provider available, can't send email confirmation message" }
+            log.error { "No message provider available, can't send email confirmation message" }
             return
         }
 
-        log.info { "Sending email confirmation notification" }
+        log.info { "Sending email confirmation message" }
 
         val user = event.token.creator
         val confirmationLink = event.baseUrl + "/confirm-email?token=${event.token.secret}"
@@ -182,11 +192,11 @@ class MessageService(
     fun onUserInvitation(event: UserInvitationEvent) {
 
         if (!enabled) {
-            log.error { "No notification provider available, can't send invitation message" }
+            log.error { "No message provider available, can't send invitation message" }
             return
         }
 
-        log.info { "Sending invitation notification" }
+        log.info { "Sending invitation message" }
 
         val invitationLink = event.baseUrl + "/accept-invitation?token=${event.token.secret}"
         sendNotification(
@@ -194,6 +204,25 @@ class MessageService(
             "[Gameyfin] You've been invited!",
             MessageTemplates.UserInvitation,
             mapOf("invitationLink" to invitationLink)
+        )
+    }
+
+    @Async
+    @EventListener(AccountDeletedEvent::class)
+    fun onAccountDeletion(event: AccountDeletedEvent) {
+
+        if (!enabled) {
+            log.error { "No message provider available, can't send account deletion message" }
+            return
+        }
+
+        log.info { "Sending account deletion message" }
+
+        sendNotification(
+            event.user.email,
+            "[Gameyfin] Your account has been deleted",
+            MessageTemplates.AccountDeleted,
+            mapOf("username" to event.user.username, "baseUrl" to event.baseUrl)
         )
     }
 }

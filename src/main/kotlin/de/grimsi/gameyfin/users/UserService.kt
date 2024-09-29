@@ -4,10 +4,7 @@ import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.Utils
-import de.grimsi.gameyfin.core.events.EmailNeedsConfirmationEvent
-import de.grimsi.gameyfin.core.events.RegistrationAttemptWithExistingEmailEvent
-import de.grimsi.gameyfin.core.events.UserRegistrationEvent
-import de.grimsi.gameyfin.core.events.UserRegistrationWaitingForApprovalEvent
+import de.grimsi.gameyfin.core.events.*
 import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
@@ -164,7 +161,7 @@ class UserService(
         if (adminNeedsToApprove) {
             eventPublisher.publishEvent(UserRegistrationWaitingForApprovalEvent(this, user))
         } else {
-            eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
+            eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
         }
 
         if (!user.emailConfirmed) {
@@ -182,6 +179,10 @@ class UserService(
             enabled = true,
             roles = setOf(Role.USER)
         )
+
+        if (existsByUsername(user.username)) {
+            throw IllegalStateException("User with username '${user.username}' already exists")
+        }
 
         return userRepository.save(user)
     }
@@ -211,27 +212,22 @@ class UserService(
         userRepository.save(user)
     }
 
-    fun confirmRegistration(username: String) {
-        val user = userByUsername(username)
-        user.enabled = true
-        userRepository.save(user)
-        eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
-    }
-
     fun assignRoles(username: String, roleNames: List<String>): RoleAssignmentResult {
+        if (roleNames.isEmpty()) {
+            return RoleAssignmentResult.NO_ROLES_PROVIDED
+        }
+
         val currentUser = SecurityContextHolder.getContext().authentication
         val targetUser = userByUsername(username)
 
-        val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
-        val targetUserLevel = roleService.getHighestRole(targetUser.roles).powerLevel
-
-        if (currentUserLevel <= targetUserLevel) {
+        if (!canManage(targetUser)) {
             log.error { "User ${currentUser.name} tried to assign roles to user with higher or equal power level to their own" }
             return RoleAssignmentResult.TARGET_POWER_LEVEL_TOO_HIGH
         }
 
         val newAssignedRoles = roleNames.mapNotNull { r -> Role.safeValueOf(r) }
         val newAssignedRolesLevel = roleService.getHighestRole(newAssignedRoles).powerLevel
+        val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
 
         if (currentUserLevel <= newAssignedRolesLevel) {
             log.error { "User ${currentUser.name} tried to assign roles with higher or equal power level than their own" }
@@ -243,9 +239,29 @@ class UserService(
         return RoleAssignmentResult.SUCCESS
     }
 
+    fun canManage(targetUsername: String): Boolean {
+        val targetUser = userByUsername(targetUsername)
+        return canManage(targetUser)
+    }
+
+    fun canManage(targetUser: User): Boolean {
+        val currentUser = SecurityContextHolder.getContext().authentication
+        val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
+        val targetUserLevel = roleService.getHighestRole(targetUser.roles).powerLevel
+        return currentUserLevel > targetUserLevel
+    }
+
+    fun setUserEnabled(username: String, enabled: Boolean) {
+        val user = userByUsername(username)
+        user.enabled = enabled
+        userRepository.save(user)
+        eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
+    }
+
     fun deleteUser(username: String) {
         val user = userByUsername(username)
         userRepository.delete(user)
+        eventPublisher.publishEvent(AccountDeletedEvent(this, user, Utils.getBaseUrl()))
     }
 
     fun toUserInfo(user: User): UserInfoDto {
