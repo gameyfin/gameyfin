@@ -1,10 +1,10 @@
 package de.grimsi.gameyfin.messages.templates
 
 import com.vaadin.hilla.Endpoint
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import jakarta.annotation.security.RolesAllowed
 
-@RolesAllowed(Roles.Names.ADMIN)
+@RolesAllowed(Role.Names.ADMIN)
 @Endpoint
 class MessageTemplateEndpoint(
     private val messageTemplateService: MessageTemplateService

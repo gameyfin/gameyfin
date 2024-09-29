@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.setup
 
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.users.RoleService
 import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.dto.UserInfoDto
@@ -20,7 +20,7 @@ class SetupService(
      * 1. At least one user with "Super Admin" role
      */
     fun isSetupCompleted(): Boolean {
-        return roleService.getUserCountForRole(Roles.SUPERADMIN) > 0
+        return roleService.getUserCountForRole(Role.SUPERADMIN) > 0
     }
 
     /**
@@ -31,11 +31,11 @@ class SetupService(
             username = registration.username,
             password = registration.password,
             email = registration.email,
-            roles = setOf(roleService.toRole(Roles.SUPERADMIN)),
-            enabled = true
+            enabled = true,
+            roles = setOf(Role.SUPERADMIN)
         )
 
-        val user = userService.registerOrUpdateUser(superAdmin, Roles.SUPERADMIN)
+        val user = userService.registerOrUpdateUser(superAdmin)
         return userService.toUserInfo(user)
     }
 }

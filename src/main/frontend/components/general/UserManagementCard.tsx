@@ -1,5 +1,4 @@
-import {Card, Chip, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@nextui-org/react";
-import {roleToColor, roleToRoleName} from "Frontend/util/utils";
+import {Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@nextui-org/react";
 import {DotsThreeVertical} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
@@ -10,10 +9,14 @@ import ConfirmUserDeletionModal from "Frontend/components/general/ConfirmUserDel
 import PasswordResetTokenModal from "Frontend/components/general/PasswortResetTokenModal";
 import TokenDto from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenDto";
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
+import RoleChip from "Frontend/components/general/RoleChip";
+import AssignRolesModal from "Frontend/components/general/AssignRolesModal";
+import Role from "Frontend/generated/de/grimsi/gameyfin/core/Role";
 
 export function UserManagementCard({user}: { user: UserInfoDto }) {
     const userDeletionConfirmationModal = useDisclosure();
     const passwordResetTokenModal = useDisclosure();
+    const roleAssignmentModal = useDisclosure();
     const [userEnabled, setUserEnabled] = useState(true);
     const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
     const [dropdownItems, setDropdownItems] = useState<any[]>([]);
@@ -40,13 +43,13 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
         if (auth.state.user?.username === user.username) return false;
 
         // User should not be able to delete the SUPERADMIN
-        if (user.roles?.includes("ROLE_SUPERADMIN")) return false;
+        if (user.roles?.includes(Role.SUPERADMIN)) return false;
 
         // Superadmins can delete anyone excluding themselves (and other superadmins if there are any)
-        if (auth.state.user?.roles?.includes("ROLE_SUPERADMIN")) return true;
+        if (auth.state.user?.roles?.includes(Role.SUPERADMIN)) return true;
 
         // Admins should be only allowed to delete other users, not other admins
-        return !user.roles?.includes("ROLE_ADMIN");
+        return !user.roles?.includes(Role.ADMIN);
     }
 
     async function resetPassword() {
@@ -80,6 +83,11 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
                 label: "Remove avatar"
             },
             {
+                key: "assignRoles",
+                onPress: roleAssignmentModal.onOpen,
+                label: "Assign roles"
+            },
+            {
                 key: "resetPassword",
                 onPress: resetPassword,
                 label: "Reset password"
@@ -108,9 +116,9 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
                     <div className="flex flex-col gap-1">
                         <p className="font-semibold">{user.username}</p>
                         <p className="text-sm">{user.email}</p>
-                        {user.roles?.map((role) =>
-                            <Chip key={role} size="sm" radius="sm"
-                                  className={`text-xs bg-${roleToColor(role!)}-500`}>{roleToRoleName(role!)}</Chip>)}
+                        {user.roles?.map((role) => (
+                            <RoleChip role={role as Role}/>
+                        ))}
                     </div>
                 </div>
 
@@ -138,6 +146,8 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
             <PasswordResetTokenModal isOpen={passwordResetTokenModal.isOpen}
                                      onOpenChange={passwordResetTokenModal.onOpenChange}
                                      token={passwordResetToken as TokenDto}/>
+            <AssignRolesModal isOpen={roleAssignmentModal.isOpen} onOpenChange={roleAssignmentModal.onOpenChange}
+                              user={user}/>
         </>
     )
 }

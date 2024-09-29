@@ -2,7 +2,7 @@ package de.grimsi.gameyfin.users
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.EmailNeedsConfirmationEvent
 import de.grimsi.gameyfin.core.events.RegistrationAttemptWithExistingEmailEvent
@@ -13,8 +13,8 @@ import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
 import de.grimsi.gameyfin.users.emailconfirmation.EmailConfirmationService
 import de.grimsi.gameyfin.users.entities.Avatar
-import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
+import de.grimsi.gameyfin.users.enums.RoleAssignmentResult
 import de.grimsi.gameyfin.users.persistence.AvatarContentStore
 import de.grimsi.gameyfin.users.persistence.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -23,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -88,7 +89,9 @@ class UserService(
         if (principal is OidcUser) {
             val oidcUser = User(principal)
             val userInfoDto = toUserInfo(oidcUser)
-            userInfoDto.roles = roleService.extractGrantedAuthorities(principal.authorities).map { it.authority }
+            userInfoDto.roles = roleService.extractGrantedAuthorities(principal.authorities)
+                .mapNotNull { Role.safeValueOf(it.authority) }
+                .toSet()
             return userInfoDto
         }
 
@@ -128,16 +131,7 @@ class UserService(
     }
 
     fun registerOrUpdateUser(user: User): User {
-        return userRepository.save(user)
-    }
-
-    fun registerOrUpdateUser(user: User, role: Roles): User {
-        return registerOrUpdateUser(user, listOf(role))
-    }
-
-    fun registerOrUpdateUser(user: User, roles: List<Roles>): User {
-        user.password?.let { user.password = passwordEncoder.encode(it) }
-        user.roles = roleService.toRoles(roles)
+        user.password = passwordEncoder.encode(user.password)
         return userRepository.save(user)
     }
 
@@ -162,7 +156,7 @@ class UserService(
             password = passwordEncoder.encode(registration.password),
             email = registration.email,
             enabled = !adminNeedsToApprove,
-            roles = roleService.toRoles(listOf(Roles.USER))
+            roles = setOf(Role.USER)
         )
 
         user = userRepository.save(user)
@@ -186,7 +180,7 @@ class UserService(
             email = email,
             emailConfirmed = true,
             enabled = true,
-            roles = roleService.toRoles(listOf(Roles.USER))
+            roles = setOf(Role.USER)
         )
 
         return userRepository.save(user)
@@ -224,6 +218,31 @@ class UserService(
         eventPublisher.publishEvent(UserRegistrationEvent(this, user, Utils.getBaseUrl()))
     }
 
+    fun assignRoles(username: String, roleNames: List<String>): RoleAssignmentResult {
+        val currentUser = SecurityContextHolder.getContext().authentication
+        val targetUser = userByUsername(username)
+
+        val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
+        val targetUserLevel = roleService.getHighestRole(targetUser.roles).powerLevel
+
+        if (currentUserLevel <= targetUserLevel) {
+            log.error { "User ${currentUser.name} tried to assign roles to user with higher or equal power level to their own" }
+            return RoleAssignmentResult.TARGET_POWER_LEVEL_TOO_HIGH
+        }
+
+        val newAssignedRoles = roleNames.mapNotNull { r -> Role.safeValueOf(r) }
+        val newAssignedRolesLevel = roleService.getHighestRole(newAssignedRoles).powerLevel
+
+        if (currentUserLevel <= newAssignedRolesLevel) {
+            log.error { "User ${currentUser.name} tried to assign roles with higher or equal power level than their own" }
+            return RoleAssignmentResult.ASSIGNED_ROLE_POWER_LEVEL_TOO_HIGH
+        }
+
+        targetUser.roles = newAssignedRoles.toMutableSet()
+        userRepository.save(targetUser)
+        return RoleAssignmentResult.SUCCESS
+    }
+
     fun deleteUser(username: String) {
         val user = userByUsername(username)
         userRepository.delete(user)
@@ -237,12 +256,12 @@ class UserService(
             isEnabled = user.enabled,
             hasAvatar = user.avatar != null,
             managedBySso = user.oidcProviderId != null,
-            roles = user.roles.map { r -> r.rolename }
+            roles = user.roles
         )
     }
 
     private fun toAuthorities(roles: Collection<Role>): List<GrantedAuthority> {
-        return roles.map { r -> SimpleGrantedAuthority(r.rolename) }
+        return roles.map { r -> SimpleGrantedAuthority(r.roleName) }
     }
 
     private fun userByUsername(username: String): User {

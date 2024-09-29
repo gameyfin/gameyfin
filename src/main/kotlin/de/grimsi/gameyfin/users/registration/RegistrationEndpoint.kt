@@ -2,7 +2,7 @@ package de.grimsi.gameyfin.users.registration
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.shared.token.TokenDto
 import de.grimsi.gameyfin.shared.token.TokenValidationResult
 import de.grimsi.gameyfin.users.UserService
@@ -37,12 +37,12 @@ class RegistrationEndpoint(
         return invitationService.getAssociatedEmail(token)
     }
 
-    @RolesAllowed(Roles.Names.ADMIN)
+    @RolesAllowed(Role.Names.ADMIN)
     fun confirmRegistration(username: String) {
         userService.confirmRegistration(username)
     }
 
-    @RolesAllowed(Roles.Names.ADMIN)
+    @RolesAllowed(Role.Names.ADMIN)
     fun createInvitation(email: String): TokenDto {
         return invitationService.createInvitation(email)
     }

@@ -2,9 +2,7 @@ package de.grimsi.gameyfin.core
 
 import de.grimsi.gameyfin.setup.SetupService
 import de.grimsi.gameyfin.users.UserService
-import de.grimsi.gameyfin.users.entities.Role
 import de.grimsi.gameyfin.users.entities.User
-import de.grimsi.gameyfin.users.persistence.RoleRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -17,7 +15,6 @@ import java.net.InetAddress
 @Service
 @Transactional
 class SetupDataLoader(
-    private val roleRepository: RoleRepository,
     private val userService: UserService,
     private val setupService: SetupService,
     private val env: Environment
@@ -29,39 +26,16 @@ class SetupDataLoader(
         if (setupService.isSetupCompleted()) return
 
         log.info { "Looks like this is the first time you're starting Gameyfin." }
-        log.info { "We will now set up some data..." }
-
-        setupRoles()
 
         if ("dev" in env.activeProfiles) {
+            log.info { "We will now set up some data for local development..." }
             setupUsers()
+            log.info { "Setup completed..." }
         }
 
-        log.info { "Setup completed..." }
-        log.info { "Visit http://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup to complete the setup" }
-    }
+        val protocol = if (env.getProperty("server.ssl.key-store") != null) "https" else "http"
 
-    fun setupRoles() {
-
-        log.info { "Setting up roles..." }
-
-        createRoleIfNotFound(Roles.SUPERADMIN.roleName)
-        createRoleIfNotFound(Roles.ADMIN.roleName)
-        createRoleIfNotFound(Roles.USER.roleName)
-
-        log.info { "Role setup completed." }
-    }
-
-    fun createRoleIfNotFound(name: String): Role {
-        log.info { "Creating role $name" }
-
-        var role: Role? = roleRepository.findByRolename(name)
-
-        if (role == null) {
-            role = Role(name)
-            roleRepository.save(role)
-        }
-        return role
+        log.info { "Visit $protocol://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup to complete the setup" }
     }
 
     fun setupUsers() {
@@ -72,27 +46,29 @@ class SetupDataLoader(
             password = "admin",
             email = "admin@gameyfin.org",
             emailConfirmed = true,
-            enabled = true
+            enabled = true,
+            roles = setOf(Role.SUPERADMIN)
         )
 
-        registerUserIfNotFound(superadmin, Roles.SUPERADMIN)
+        registerUserIfNotFound(superadmin)
 
         val user = User(
             username = "user",
             password = "user",
             email = "user@gameyfin.org",
             emailConfirmed = true,
-            enabled = true
+            enabled = true,
+            roles = setOf(Role.USER)
         )
 
-        registerUserIfNotFound(user, Roles.USER)
+        registerUserIfNotFound(user)
 
         log.info { "User setup completed." }
     }
 
-    fun registerUserIfNotFound(user: User, role: Roles) {
+    fun registerUserIfNotFound(user: User) {
         if (userService.existsByUsername(user.username)) return
 
-        userService.registerOrUpdateUser(user, role)
+        userService.registerOrUpdateUser(user)
     }
 }

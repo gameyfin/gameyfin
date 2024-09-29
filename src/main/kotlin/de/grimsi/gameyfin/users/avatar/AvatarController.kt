@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.users.avatar
 
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.users.UserService
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
@@ -35,7 +35,7 @@ class AvatarController(
         userService.deleteAvatar(auth.name)
     }
 
-    @RolesAllowed(Roles.Names.ADMIN)
+    @RolesAllowed(Role.Names.ADMIN)
     @PostMapping("/avatar/deleteByName")
     fun deleteAvatarByName(@RequestParam("name") name: String) {
         userService.deleteAvatar(name)

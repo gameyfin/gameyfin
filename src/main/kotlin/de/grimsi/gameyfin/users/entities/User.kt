@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.users.entities
 
+import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.security.EncryptionConverter
 import jakarta.annotation.Nullable
 import jakarta.persistence.*
@@ -35,12 +36,8 @@ class User(
     @Nullable
     var avatar: Avatar? = null,
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "users_roles",
-        joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
-        inverseJoinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")]
-    )
+    @ElementCollection(targetClass = Role::class, fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
     var roles: Set<Role> = emptySet()
 ) {
 

@@ -1,9 +1,10 @@
 package de.grimsi.gameyfin.users
 
-import de.grimsi.gameyfin.core.Roles
-import de.grimsi.gameyfin.users.entities.Role
-import de.grimsi.gameyfin.users.persistence.RoleRepository
+import de.grimsi.gameyfin.core.Role
+import de.grimsi.gameyfin.users.entities.User
+import de.grimsi.gameyfin.users.persistence.UserRepository
 import jakarta.transaction.Transactional
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service
 @Service
 @Transactional
 class RoleService(
-    private val roleRepository: RoleRepository
+    private val userRepository: UserRepository
 ) {
 
     companion object {
@@ -20,26 +21,37 @@ class RoleService(
         const val INTERNAL_ROLE_PREFIX = "ROLE_"
     }
 
+    fun getAllRoles(): List<Role> {
+        return Role.entries
+    }
+
     /**
      * @return the number of registered users with a given role
-     * @return 0 if a role does not exist
      */
-    fun getUserCountForRole(role: Roles): Int {
-        val r = roleRepository.findByRolename(role.roleName) ?: return 0
-        return r.users.size
+    fun getUserCountForRole(role: Role): Int {
+        return userRepository.countUserByRolesContains(role)
     }
 
-    fun toRoles(roles: Collection<Roles>): Set<Role> {
-        return roles.mapNotNull { r -> roleRepository.findByRolename(r.roleName) }.toSet()
+    fun getHighestRole(roles: Collection<Role>): Role {
+        return roles.maxByOrNull { it.powerLevel } ?: Role.USER
     }
 
-    fun toRole(role: Roles): Role {
-        return roleRepository.findByRolename(role.roleName)
-            ?: throw RuntimeException("Role ${role.roleName} does not exist")
+    fun getHighestRoleFromAuthorities(authorities: Collection<GrantedAuthority>): Role {
+        return getHighestRole(authoritiesToRoles(authorities))
+    }
+
+    fun getRolesBelowUser(user: User): List<Role> {
+        val highestUserRole = getHighestRole(user.roles)
+        return Role.entries.filter { it.powerLevel < highestUserRole.powerLevel }
+    }
+
+    fun getRolesBelowAuth(auth: Authentication): List<Role> {
+        val highestUserRole = getHighestRole(auth.authorities.mapNotNull { Role.safeValueOf(it.authority) })
+        return Role.entries.filter { it.powerLevel < highestUserRole.powerLevel }
     }
 
     fun authoritiesToRoles(authorities: Collection<GrantedAuthority>): Set<Role> {
-        return authorities.mapNotNull { a -> roleRepository.findByRolename(a.authority) }.toSet()
+        return authorities.mapNotNull { Role.safeValueOf(it.authority) }.toMutableSet()
     }
 
     /**
@@ -59,18 +71,16 @@ class RoleService(
                 val roles = userInfo.getClaim<List<String>>("roles")
                 roles.asSequence().mapNotNull {
                     if (it.startsWith(SSO_ROLE_PREFIX)) SimpleGrantedAuthority(
-                        it.replace(
-                            SSO_ROLE_PREFIX,
-                            INTERNAL_ROLE_PREFIX
-                        )
+                        it.replace(SSO_ROLE_PREFIX, INTERNAL_ROLE_PREFIX)
                     )
                     else null
                 }
             }
             .toSet()
 
+        // Add USER role if no roles are present
         if (mappedAuthorities.isEmpty()) {
-            mappedAuthorities.plus(SimpleGrantedAuthority(Roles.Names.USER))
+            mappedAuthorities.plus(SimpleGrantedAuthority(Role.Names.USER))
         }
 
         return mappedAuthorities

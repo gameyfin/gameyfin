@@ -2,7 +2,7 @@ package de.grimsi.gameyfin.users.passwordreset
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.shared.token.TokenDto
 import de.grimsi.gameyfin.shared.token.TokenValidationResult
 import de.grimsi.gameyfin.users.UserService
@@ -21,7 +21,7 @@ class PasswordResetEndpoint(
         // No return value to prevent enumeration attacks
     }
 
-    @RolesAllowed(Roles.Names.ADMIN)
+    @RolesAllowed(Role.Names.ADMIN)
     fun createPasswordResetTokenForUser(username: String): TokenDto {
         return passwordResetService.generate(username)
     }

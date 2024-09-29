@@ -1,5 +1,7 @@
 package de.grimsi.gameyfin.users.dto
 
+import de.grimsi.gameyfin.core.Role
+
 data class UserInfoDto(
     val username: String,
     val managedBySso: Boolean,
@@ -7,5 +9,5 @@ data class UserInfoDto(
     val emailConfirmed: Boolean,
     val isEnabled: Boolean,
     val hasAvatar: Boolean,
-    var roles: List<String>
+    var roles: Set<Role>
 )

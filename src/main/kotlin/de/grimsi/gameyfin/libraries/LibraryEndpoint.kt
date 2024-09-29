@@ -1,7 +1,7 @@
 package de.grimsi.gameyfin.libraries
 
 import com.vaadin.hilla.Endpoint
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.libraries.entities.Library
 import jakarta.annotation.security.RolesAllowed
 
@@ -9,7 +9,7 @@ import jakarta.annotation.security.RolesAllowed
 class LibraryEndpoint(
     private val libraryService: LibraryService
 ) {
-    @RolesAllowed(Roles.Names.ADMIN)
+    @RolesAllowed(Role.Names.ADMIN)
     fun getAllLibraries(): Collection<Library> {
         return libraryService.getAllLibraries()
     }

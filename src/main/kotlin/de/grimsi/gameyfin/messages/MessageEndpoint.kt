@@ -2,11 +2,11 @@ package de.grimsi.gameyfin.messages
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
-import de.grimsi.gameyfin.core.Roles
+import de.grimsi.gameyfin.core.Role
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
-@RolesAllowed(Roles.Names.ADMIN)
+@RolesAllowed(Role.Names.ADMIN)
 class MessageEndpoint(
     private val messageService: MessageService
 ) {
