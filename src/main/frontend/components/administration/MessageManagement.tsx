@@ -55,7 +55,7 @@ function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
             <div className="flex flex-row">
                 <div className="flex flex-col flex-1">
                     <div className="flex flex-row gap-8">
-                        <div className="flex flex-col flex-1">
+                        <div className="flex flex-col flex-1 h-fit">
                             <Section title="E-Mail"/>
                             <ConfigFormField configElement={getConfig("messages.providers.email.enabled")}/>
                             <ConfigFormField configElement={getConfig("messages.providers.email.host")}
@@ -74,7 +74,7 @@ function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
                                         formik.values.messages.providers.email.port &&
                                         formik.values.messages.providers.email.username)}>Test</Button>
                         </div>
-                        <div className="flex flex-col flex-1">
+                        <div className="flex flex-col flex-1 h-fit">
                             <Section title="Message Templates"/>
                             <div className="flex flex-col gap-4">
                                 {availableTemplates.map((template: MessageTemplateDto) =>

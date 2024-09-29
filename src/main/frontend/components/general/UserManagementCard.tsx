@@ -130,7 +130,7 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
 
                 <Dropdown placement="bottom-end" size="sm" backdrop="opaque">
                     <DropdownTrigger>
-                        <DotsThreeVertical/>
+                        <DotsThreeVertical cursor="pointer"/>
                     </DropdownTrigger>
                     <DropdownMenu aria-label="Static Actions" items={dropdownItems} disabledKeys={disabledKeys}>
                         {(item) => (

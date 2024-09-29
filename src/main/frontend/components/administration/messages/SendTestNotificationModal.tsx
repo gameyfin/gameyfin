@@ -34,6 +34,7 @@ export default function SendTestNotificationModal({
                     <>
                         <Formik
                             initialValues={{}}
+                            isInitialValid={false}
                             onSubmit={async (values) => {
                                 await MessageEndpoint.sendTestNotification(selectedTemplate?.key, values);
                                 toast.success("Test notification to you has been sent");
@@ -41,25 +42,28 @@ export default function SendTestNotificationModal({
                             }}
                             validationSchema={generateValidationSchema(selectedTemplate?.availablePlaceholders as string[])}
                         >
-                            <Form>
-                                <ModalHeader className="flex flex-col gap-1">
-                                    Send {selectedTemplate?.name} Test Message
-                                </ModalHeader>
-                                <ModalBody>
-                                    <p className="text-ls font-semibold mb-4">Fill the placeholders of the template</p>
-                                    {selectedTemplate?.availablePlaceholders?.map((placeholder) =>
-                                        <Input key={placeholder} label={placeholder} name={placeholder}/>
-                                    )}
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button color="danger" variant="light" onPress={onClose}>
-                                        Close
-                                    </Button>
-                                    <Button color="primary" type="submit">
-                                        Send
-                                    </Button>
-                                </ModalFooter>
-                            </Form>
+                            {(formik) => (
+                                <Form>
+                                    <ModalHeader className="flex flex-col gap-1">
+                                        Send {selectedTemplate?.name} Test Message
+                                    </ModalHeader>
+                                    <ModalBody>
+                                        <p className="text-ls font-semibold mb-4">Fill the placeholders of the
+                                            template</p>
+                                        {selectedTemplate?.availablePlaceholders?.map((placeholder) =>
+                                            <Input key={placeholder} label={placeholder} name={placeholder}/>
+                                        )}
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button color="danger" variant="light" onPress={onClose}>
+                                            Close
+                                        </Button>
+                                        <Button color="primary" type="submit" isDisabled={!formik.isValid}>
+                                            Send
+                                        </Button>
+                                    </ModalFooter>
+                                </Form>
+                            )}
                         </Formik>
                     </>
                 )}

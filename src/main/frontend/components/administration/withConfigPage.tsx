@@ -139,7 +139,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                                 <Button
                                     color="primary"
                                     isLoading={formik.isSubmitting}
-                                    disabled={formik.isSubmitting || configSaved || !formik.dirty}
+                                    isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
                                     type="submit"
                                 >
                                     {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
