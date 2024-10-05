@@ -35,14 +35,15 @@ export default function MainLayout() {
     }
 
     async function loadUserTheme() {
-        let theme = localStorage.getItem('theme');
+        let syncedTheme = await UserPreferencesEndpoint.get("preferred-theme");
 
-        if (theme) {
-            await UserPreferencesEndpoint.set("preferred-theme", theme);
+        if (syncedTheme) {
+            setTheme(syncedTheme);
         } else {
-            let preferredTheme = await UserPreferencesEndpoint.get("preferred-theme");
-            if (preferredTheme) {
-                setTheme(preferredTheme);
+            let localTheme = localStorage.getItem('theme');
+            if (localTheme) {
+                setTheme(localTheme);
+                await UserPreferencesEndpoint.set("preferred-theme", localTheme);
             }
         }
     }
