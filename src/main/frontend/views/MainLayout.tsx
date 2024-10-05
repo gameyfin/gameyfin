@@ -8,16 +8,20 @@ import {Outlet, useNavigate} from "react-router-dom";
 import {useAuth} from "Frontend/util/auth";
 import {Heart} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
+import {UserPreferencesEndpoint} from "Frontend/generated/endpoints";
+import {useTheme} from "next-themes";
 
 export default function MainLayout() {
     const navigate = useNavigate();
     const auth = useAuth();
     const routeMetadata = useRouteMetadata();
+    const {setTheme} = useTheme();
     const [isExploding, setIsExploding] = useState(false);
 
     useEffect(() => {
         let newTitle = `Gameyfin - ${routeMetadata?.title}` ?? 'Gameyfin';
         window.addEventListener('popstate', () => document.title = newTitle);
+        loadUserTheme().catch(console.error);
     }, []);
 
     const confettiProps: ConfettiProps = {
@@ -28,6 +32,19 @@ export default function MainLayout() {
         spreadDeg: 90,
         launchSpeed: 4,
         effectInterval: 10000
+    }
+
+    async function loadUserTheme() {
+        let theme = localStorage.getItem('theme');
+
+        if (theme) {
+            await UserPreferencesEndpoint.set("preferred-theme", theme);
+        } else {
+            let preferredTheme = await UserPreferencesEndpoint.get("preferred-theme");
+            if (preferredTheme) {
+                setTheme(preferredTheme);
+            }
+        }
     }
 
     function easterEgg() {

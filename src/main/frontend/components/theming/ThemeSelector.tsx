@@ -4,6 +4,7 @@ import {Button, Card, Divider, Select, Selection, SelectItem} from "@nextui-org/
 import {themes} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
+import {UserPreferencesEndpoint} from "Frontend/generated/endpoints";
 
 export function ThemeSelector() {
 
@@ -19,8 +20,11 @@ export function ThemeSelector() {
     useEffect(updateTheme, [selectedTheme, selectedMode]);
 
     function updateTheme() {
-        if (selectedMode instanceof Set)
-            setTheme(`${selectedTheme}-${selectedMode.values().next().value}`)
+        if (selectedMode instanceof Set) {
+            let theme = `${selectedTheme}-${selectedMode.values().next().value}`;
+            setTheme(theme);
+            UserPreferencesEndpoint.set("preferred-theme", theme).catch(console.error);
+        }
     }
 
     return (

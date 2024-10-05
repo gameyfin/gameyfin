@@ -50,7 +50,7 @@ class UserService(
         get() = config.get(ConfigProperties.Users.SignUps.Allow) == true
 
     override fun loadUserByUsername(username: String): UserDetails {
-        val user = userByUsername(username)
+        val user = getByUsernameNonNull(username)
 
         return org.springframework.security.core.userdetails.User(
             user.username,
@@ -80,6 +80,10 @@ class UserService(
         return userRepository.findByUsername(username)
     }
 
+    fun getByUsernameNonNull(username: String): User {
+        return userRepository.findByUsername(username) ?: throw UsernameNotFoundException("Unknown user '$username'")
+    }
+
     fun getUserInfo(auth: Authentication): UserInfoDto {
         val principal = auth.principal
 
@@ -92,12 +96,12 @@ class UserService(
             return userInfoDto
         }
 
-        val user = userByUsername(auth.name)
+        val user = getByUsernameNonNull(auth.name)
         return toUserInfo(user)
     }
 
     fun getAvatar(username: String): Avatar? {
-        val user = userByUsername(username)
+        val user = getByUsernameNonNull(username)
         return user.avatar
     }
 
@@ -106,7 +110,7 @@ class UserService(
     }
 
     fun setAvatar(username: String, file: MultipartFile) {
-        val user = userByUsername(username)
+        val user = getByUsernameNonNull(username)
 
         if (user.avatar == null) {
             user.avatar = Avatar(mimeType = file.contentType)
@@ -117,7 +121,7 @@ class UserService(
     }
 
     fun deleteAvatar(username: String) {
-        val user = userByUsername(username)
+        val user = getByUsernameNonNull(username)
 
         if (user.avatar == null) return
 
@@ -188,7 +192,7 @@ class UserService(
     }
 
     fun updateUser(username: String, updates: UserUpdateDto) {
-        val user = userByUsername(username)
+        val user = getByUsernameNonNull(username)
 
         updates.username?.let { user.username = it }
 
@@ -218,7 +222,7 @@ class UserService(
         }
 
         val currentUser = SecurityContextHolder.getContext().authentication
-        val targetUser = userByUsername(username)
+        val targetUser = getByUsernameNonNull(username)
 
         if (!canManage(targetUser)) {
             log.error { "User ${currentUser.name} tried to assign roles to user with higher or equal power level to their own" }
@@ -240,7 +244,7 @@ class UserService(
     }
 
     fun canManage(targetUsername: String): Boolean {
-        val targetUser = userByUsername(targetUsername)
+        val targetUser = getByUsernameNonNull(targetUsername)
         return canManage(targetUser)
     }
 
@@ -252,14 +256,14 @@ class UserService(
     }
 
     fun setUserEnabled(username: String, enabled: Boolean) {
-        val user = userByUsername(username)
+        val user = getByUsernameNonNull(username)
         user.enabled = enabled
         userRepository.save(user)
         eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
     }
 
     fun deleteUser(username: String) {
-        val user = userByUsername(username)
+        val user = getByUsernameNonNull(username)
         userRepository.delete(user)
         eventPublisher.publishEvent(AccountDeletedEvent(this, user, Utils.getBaseUrl()))
     }
@@ -278,9 +282,5 @@ class UserService(
 
     private fun toAuthorities(roles: Collection<Role>): List<GrantedAuthority> {
         return roles.map { r -> SimpleGrantedAuthority(r.roleName) }
-    }
-
-    private fun userByUsername(username: String): User {
-        return userRepository.findByUsername(username) ?: throw UsernameNotFoundException("Unknown user '$username'")
     }
 }
