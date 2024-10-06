@@ -37,6 +37,10 @@ function UserManagementLayout({getConfig, formik}: any) {
 
             <div className="flex flex-row items-baseline justify-between">
                 <h2 className={"text-xl font-bold mt-8 mb-1"}>Users</h2>
+                {!autoRegisterNewUsers &&
+                    <SmallInfoField className="mb-4 text-warning" icon={Info}
+                                    message="Automatic user registration for SSO users is disabled"/>
+                }
                 <Tooltip content="Invite new user">
                     <Button isIconOnly variant="faded" onPress={inviteUserModal.onOpen}>
                         <UserPlus/>
@@ -44,10 +48,6 @@ function UserManagementLayout({getConfig, formik}: any) {
                 </Tooltip>
             </div>
             <Divider className="mb-4"/>
-            {!autoRegisterNewUsers &&
-                <SmallInfoField className="mb-4 text-warning" icon={Info}
-                                message="Automatic user registration for SSO users is disabled"/>
-            }
             <div className="grid grid-cols-300px gap-4">
                 {users.map((user) => <UserManagementCard user={user} key={user.username}/>)}
             </div>

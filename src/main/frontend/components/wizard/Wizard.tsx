@@ -49,7 +49,7 @@ const Wizard = ({children, initialValues, onSubmit}: {
             /*// @ts-ignore*/
             validationSchema={step.props.validationSchema}
         >
-            {(formik: { values: any; isSubmitting: any; }) => (
+            {(formik) => (
                 <Form className="flex flex-col h-full">
                     <div className="w-full mb-8">
                         <Stepper activeStep={stepNumber} activeLineClassName="bg-primary"
@@ -76,7 +76,7 @@ const Wizard = ({children, initialValues, onSubmit}: {
                     </div>
                     <div className="left-8 right-8 absolute bottom-8 -z-1">
                         <div className="flex justify-between">
-                            <Button color="primary" onClick={() => previous(formik.values)} disabled={isFirstStep}>
+                            <Button color="primary" onClick={() => previous(formik.values)} isDisabled={isFirstStep}>
                                 <ArrowLeft/>
                             </Button>
                             <Button

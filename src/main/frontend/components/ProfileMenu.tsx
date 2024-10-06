@@ -4,6 +4,7 @@ import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@nextui-org
 import {useNavigate} from "react-router-dom";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
+import {CollectionElement} from "@react-types/shared";
 
 export default function ProfileMenu() {
     const auth = useAuth();
@@ -42,6 +43,7 @@ export default function ProfileMenu() {
         },
     ];
 
+    // @ts-ignore
     return (
         <Dropdown placement="bottom-end">
             <DropdownTrigger>
@@ -57,23 +59,24 @@ export default function ProfileMenu() {
                     />
                 </div>
             </DropdownTrigger>
-            <DropdownMenu>
-                {/* @ts-ignore */}
-                {profileMenuItems.map(({label, icon, onClick, showIf, color}) => {
+            <DropdownMenu disabledKeys={["username"]}>
+                <DropdownItem key="username">
+                    <p className="font-bold">Signed in as {auth.state.user?.username}</p>
+                </DropdownItem>
+                {profileMenuItems.filter(item => item.showIf !== false).map(({label, icon, onClick, color}) => {
                     return (
-                        (showIf === undefined || showIf === true) ?
-                            <DropdownItem
-                                key={label}
-                                onClick={onClick}
-                                startContent={<div color={color}>{icon}</div>}
-                                /* @ts-ignore */
-                                color={color ? color : ""}
-                                className={`text-${color} hover:bg-primary/20`}
-                            >
-                                {label}
-                            </DropdownItem> : null
+                        <DropdownItem
+                            key={label}
+                            onClick={onClick}
+                            startContent={<div color={color}>{icon}</div>}
+                            /* @ts-ignore */
+                            color={color ? color : ""}
+                            className={`text-${color} hover:bg-primary/20`}
+                        >
+                            {label}
+                        </DropdownItem>
                     );
-                })}
+                }) as unknown as CollectionElement<object>}
             </DropdownMenu>
         </Dropdown>
     );
