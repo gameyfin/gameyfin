@@ -8,6 +8,7 @@
     <module name="Gameyfin.gameyfin.main" />
     <option name="SHORTEN_COMMAND_LINE" value="ARGS_FILE" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="de.grimsi.gameyfin.GameyfinApplication" />
+    <option name="VM_PARAMETERS" value="-Dpf4j.mode=development" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="de.grimsi.gameyfin.*" />

@@ -2,8 +2,10 @@ package de.grimsi.gameyfin.plugins.igdb
 
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataPlugin
+import org.pf4j.Extension
 import java.time.Instant
 
+@Extension
 class IgdbPlugin : GameMetadataPlugin {
     override fun getConfig(): Map<String, String> {
         TODO("Not yet implemented")

@@ -18,4 +18,3 @@ pluginManagement {
 include("gameyfin")
 include("plugin-api")
 include("plugins:igdb")
-findProject(":plugins:igdb")?.name = "igdb"

@@ -68,9 +68,6 @@ dependencies {
 
     // Plugins
     implementation(project(":plugin-api"))
-    implementation("org.pf4j:pf4j-spring:${rootProject.extra["pf4jSpringVersion"]}") {
-        exclude("org.slf4j")
-    }
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
@@ -86,6 +83,18 @@ dependencyManagement {
         mavenBom("com.vaadin:vaadin-bom:${rootProject.extra["vaadinVersion"]}")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${rootProject.extra["springCloudVersion"]}")
     }
+}
+
+// Task to copy the bundled plugin JARs to the plugins directory
+val copyPlugins by tasks.registering(Copy::class) {
+    // Directory where plugins will be copied
+    val pluginsDir = layout.buildDirectory.dir("plugins")
+    from(project(":plugins:igdb").tasks.named("jar"))
+    into(pluginsDir)
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(copyPlugins)
 }
 
 tasks.withType<Test> {
