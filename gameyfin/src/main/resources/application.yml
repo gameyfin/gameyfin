@@ -1,0 +1,51 @@
+logging.level:
+  org.atmosphere: warn
+
+server:
+  port: 8080
+  servlet:
+    session:
+      tracking-modes: cookie
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: restart, health, info, metrics, prometheus
+  endpoint:
+    pause:
+      enabled: false
+    restart:
+      enabled: true
+
+spring:
+  # Workaround for https://github.com/vaadin/hilla/issues/842
+  devtools.restart.additional-exclude: dev/hilla/openapi.json
+  jpa:
+    # defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  mustache:
+    check-template-location: false
+  sql.init.mode: always
+  datasource:
+    username: gfadmin
+    password: gameyfin
+    db-name: gameyfin_db
+    url: jdbc:h2:file:./db/${spring.datasource.db-name}
+    driverClassName: org.h2.Driver
+  content:
+    fs.filesystem-root: ./data/
+  application:
+    name: Gameyfin
+
+vaadin:
+  # To improve the performance during development.
+  # For more information https://vaadin.com/docs/flow/spring/tutorial-spring-configuration.html#special-configuration-parameters
+  allowed-packages:
+    - com.vaadin
+    - org.vaadin
+    - dev.hilla
+  pnpm:
+    enable: false

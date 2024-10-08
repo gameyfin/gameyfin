@@ -41,11 +41,9 @@ out/
 .kotlin
 
 ### Custom ###
-/data/
-/backend/src/main/resources/static/
-/docker/docker-compose.yml
-/.gameyfin/
-/src/main/frontend/generated/
-/db/
-/logs/
-/templates/
+docker-compose.yml
+generated
+db
+data
+logs
+templates

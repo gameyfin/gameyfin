@@ -1,4 +1,4 @@
-rootProject.name = "gameyfin"
+rootProject.name = "Gameyfin"
 
 pluginManagement {
     repositories {
@@ -14,3 +14,8 @@ pluginManagement {
         kotlin("plugin.jpa") version extra["kotlinVersion"] as String
     }
 }
+
+include("gameyfin")
+include("plugin-api")
+include("plugins:igdb")
+findProject(":plugins:igdb")?.name = "igdb"
