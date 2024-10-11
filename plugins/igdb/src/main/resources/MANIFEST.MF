@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
 Plugin-Id: igdb
 Plugin-Class: de.grimsi.gameyfin.plugins.igdb.IgdbPlugin
-Plugin-Version: 1.0.0
+Plugin-Version: 1.0.0-SNAPSHOT
 Plugin-Provider: grimsi

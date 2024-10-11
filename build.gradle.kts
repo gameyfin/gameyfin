@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 allprojects {
     repositories {
+        mavenLocal()
         mavenCentral()
     }
 }
@@ -22,11 +23,17 @@ subprojects {
 
     tasks.withType<KotlinJvmCompile> {
         compilerOptions {
-            apiVersion = KotlinVersion.KOTLIN_2_2
-            languageVersion = KotlinVersion.KOTLIN_2_2
+            languageVersion = KotlinVersion.KOTLIN_2_0
+            apiVersion = KotlinVersion.KOTLIN_2_0
             jvmTarget = JvmTarget.JVM_21
             progressiveMode = true
             freeCompilerArgs.add("-Xjsr305=strict")
         }
     }
 }
+
+tasks.named("build") {
+    dependsOn(":gameyfin:uberJar")
+}
+
+extra.set("pluginDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))

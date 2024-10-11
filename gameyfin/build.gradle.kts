@@ -1,4 +1,6 @@
 group = "de.grimsi"
+val pluginDir: File by rootProject.extra
+val appMainClass = "de.grimsi.gameyfin.GameyfinApplication"
 
 plugins {
     id("org.springframework.boot")
@@ -7,21 +9,19 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.spring")
     kotlin("plugin.jpa")
-    java
+    application
+    id("com.google.devtools.ksp") version "2.0.20-1.0.24"
+}
+
+application {
+    mainClass.set(appMainClass)
 }
 
 allOpen {
     annotations("javax.persistence.Entity", "javax.persistence.MappedSuperclass", "javax.persistence.Embedabble")
 }
 
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
-}
-
 repositories {
-    mavenCentral()
     maven {
         setUrl("https://maven.vaadin.com/vaadin-addons")
     }
@@ -68,6 +68,7 @@ dependencies {
 
     // Plugins
     implementation(project(":plugin-api"))
+    ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:2.0.20-1.0.1")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
@@ -85,16 +86,25 @@ dependencyManagement {
     }
 }
 
-// Task to copy the bundled plugin JARs to the plugins directory
-val copyPlugins by tasks.registering(Copy::class) {
-    // Directory where plugins will be copied
-    val pluginsDir = layout.buildDirectory.dir("plugins")
-    from(project(":plugins:igdb").tasks.named("jar"))
-    into(pluginsDir)
+tasks.named<JavaExec>("run") {
+    systemProperty("pf4j.pluginsDir", pluginDir.absolutePath)
 }
 
-tasks.named("compileKotlin") {
-    dependsOn(copyPlugins)
+tasks.register<Jar>("uberJar") {
+    dependsOn(tasks.named("compileKotlin"))
+    archiveClassifier.set("uber")
+
+    from(sourceSets.main.get().output)
+
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
+    manifest {
+        attributes["Main-Class"] = appMainClass
+    }
+
+    archiveBaseName.set(project.name)
 }
 
 tasks.withType<Test> {

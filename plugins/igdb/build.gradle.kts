@@ -1,24 +1,7 @@
 plugins {
-    kotlin("jvm")
-    id("kotlin-kapt")
-}
-
-group = "de.grimsi.gameyfin.plugins"
-
-repositories {
-    mavenCentral()
+    id("com.google.devtools.ksp") version "2.0.20-1.0.24"
 }
 
 dependencies {
-    implementation(project(":plugin-api"))
-}
-
-tasks.jar {
-    manifest {
-        from("./src/main/resources/MANIFEST.MF")
-    }
-}
-
-tasks.test {
-    useJUnitPlatform()
+    ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:2.0.20-1.0.1")
 }

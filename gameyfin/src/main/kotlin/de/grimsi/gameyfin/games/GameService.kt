@@ -1,10 +1,8 @@
 package de.grimsi.gameyfin.games
 
-import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataPlugin
+import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataFetcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.PluginManager
-import org.springframework.boot.context.event.ApplicationReadyEvent
-import org.springframework.context.event.EventListener
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.nio.file.Path
@@ -16,15 +14,8 @@ class GameService(
 ) {
     private val log = KotlinLogging.logger {}
 
-    private val metadataPlugins: List<GameMetadataPlugin>
-        get() = pluginManager.getExtensions(GameMetadataPlugin::class.java)
-
-    @EventListener(ApplicationReadyEvent::class)
-    fun loadedPlugins() {
-        pluginManager.loadPlugins()
-        pluginManager.startPlugins()
-        log.info { "Loaded metadata plugins: ${metadataPlugins.map { it::class.simpleName }}" }
-    }
+    private val metadataPlugins: List<GameMetadataFetcher>
+        get() = pluginManager.getExtensions(GameMetadataFetcher::class.java)
 
     fun createOrUpdate(game: Game): Game {
         return gameRepository.save(game)

@@ -15,6 +15,10 @@ pluginManagement {
     }
 }
 
-include("gameyfin")
-include("plugin-api")
-include("plugins:igdb")
+
+include(":plugin-api")
+include(":gameyfin")
+
+include(":plugins")
+
+include(":plugins:igdb")
