@@ -1,13 +1,12 @@
 package de.grimsi.gameyfin.games
 
 import jakarta.persistence.*
-import java.nio.file.Path
 
 @Entity
 class Game(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    val id: Long? = null,
+    var id: Long? = null,
 
     val title: String,
 

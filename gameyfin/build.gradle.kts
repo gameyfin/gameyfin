@@ -100,6 +100,10 @@ tasks.register<Jar>("uberJar") {
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
     })
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    isZip64 = true
+
     manifest {
         attributes["Main-Class"] = appMainClass
     }

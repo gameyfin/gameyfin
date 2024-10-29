@@ -12,6 +12,5 @@ import org.springframework.transaction.annotation.EnableTransactionManagement
 class GameyfinApplication
 
 fun main(args: Array<String>) {
-    System.setProperty("spring.devtools.restart.enabled", "false");
     runApplication<GameyfinApplication>(*args)
 }

@@ -18,6 +18,9 @@ class GameService(
         get() = pluginManager.getExtensions(GameMetadataFetcher::class.java)
 
     fun createOrUpdate(game: Game): Game {
+        gameRepository.findByPath(game.path)?.let {
+            game.id = it.id
+        }
         return gameRepository.save(game)
     }
 
@@ -50,7 +53,7 @@ class GameService(
         }
 
         return GameDto(
-            id = game.id,
+            id = game.id!!,
             title = game.title
         )
     }
