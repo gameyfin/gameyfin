@@ -8,15 +8,17 @@ import org.springframework.context.event.EventListener
 import java.nio.file.Path
 
 @Configuration
-class PluginManagerConfig {
+class PluginManagerConfig(
+    private val pluginConfigRepository: PluginConfigRepository
+) {
     private val log = KotlinLogging.logger {}
     private val pluginPath = System.getProperty("pf4j.pluginsDir", "plugins")
 
     @Bean
-    fun pluginManager() = SpringDevtoolsPluginManager(Path.of(pluginPath))
+    fun pluginManager() = SpringDevtoolsPluginManager(Path.of(pluginPath), pluginConfigRepository)
 
     @EventListener(ApplicationReadyEvent::class)
-    fun loadedPlugins() {
+    fun loadPlugins() {
         pluginManager().loadPlugins()
         pluginManager().startPlugins()
         log.info { "Loaded plugins: ${pluginManager().plugins.map { it.pluginId }}" }

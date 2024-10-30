@@ -17,6 +17,7 @@ import {LogManagement} from "Frontend/components/administration/LogManagement";
 import PasswordResetView from "Frontend/views/PasswordResetView";
 import EmailConfirmationView from "Frontend/views/EmailConfirmationView";
 import InvitationRegistrationView from "Frontend/views/InvitationRegistrationView";
+import PluginManagement from "Frontend/components/administration/PluginManagement";
 
 export const routes = protectRoutes([
     {
@@ -46,6 +47,7 @@ export const routes = protectRoutes([
                             {path: 'users', element: <UserManagement/>},
                             {path: 'sso', element: <SsoManagement/>},
                             {path: 'messages', element: <MessageManagement/>},
+                            {path: 'plugins', element: <PluginManagement/>},
                             {path: 'logs', element: <LogManagement/>}
                         ]
                     }

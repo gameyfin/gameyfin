@@ -1,5 +1,7 @@
 package de.grimsi.gameyfin.pluginapi.core
 
-import org.pf4j.Plugin
-
-abstract class GameyfinPlugin(protected val context: PluginContext) : Plugin()
+interface GameyfinPlugin {
+    fun getConfigMetadata(): List<PluginConfigElement>
+    fun getCurrentConfig(): Map<String, String?>
+    fun loadConfig(config: Map<String, String?>)
+}

@@ -4,6 +4,8 @@ import com.api.igdb.apicalypse.APICalypse
 import com.api.igdb.request.IGDBWrapper
 import com.api.igdb.request.TwitchAuthenticator
 import com.api.igdb.request.games
+import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
+import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigError
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataFetcher
@@ -16,16 +18,36 @@ import org.pf4j.PluginWrapper
 import java.time.Instant
 import kotlin.collections.filter
 
-class IgdbPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
+class IgdbPlugin(wrapper: PluginWrapper) : Plugin(wrapper), GameyfinPlugin {
 
     private val log = KotlinLogging.logger {}
 
-    companion object {
-        val config: IgdbPluginConfig = IgdbPluginConfig(null, null)
+    private val configMetadata: List<PluginConfigElement> = listOf(
+        PluginConfigElement("clientId", "Twitch client ID", "Your Twitch Client ID"),
+        PluginConfigElement("clientSecret", "Twitch client secret", "Your Twitch Client Secret")
+    )
+
+    private var config: Map<String, String?> = configMetadata.associate { it.key to null }
+
+    override fun getConfigMetadata(): List<PluginConfigElement> {
+        return configMetadata
     }
 
+    override fun getCurrentConfig(): Map<String, String?> {
+        return config
+    }
+
+    override fun loadConfig(config: Map<String, String?>) {
+        this.config = config
+    }
+
+
     override fun start() {
-        authenticate()
+        try {
+            authenticate()
+        } catch (e: PluginConfigError) {
+            log.error { e.message }
+        }
     }
 
     override fun stop() {
@@ -35,8 +57,8 @@ class IgdbPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     private fun authenticate() {
         log.debug { "Authenticating on Twitch API..." }
 
-        val clientId: String = config.clientId ?: throw PluginConfigError("Twitch Client ID not set")
-        val clientSecret: String = config.clientSecret ?: throw PluginConfigError("Twitch Client Secret not set")
+        val clientId: String = config["clientId"] ?: throw PluginConfigError("Twitch Client ID not set")
+        val clientSecret: String = config["clientSecret"] ?: throw PluginConfigError("Twitch Client Secret not set")
 
         val token = TwitchAuthenticator.requestTwitchToken(clientId, clientSecret)
             ?: throw PluginConfigError("Failed to authenticate on Twitch API")
