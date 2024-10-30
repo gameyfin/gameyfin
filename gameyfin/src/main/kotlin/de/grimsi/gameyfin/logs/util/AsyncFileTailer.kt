@@ -48,7 +48,7 @@ class AsyncFileTailer(
                 tailer.run()
             }
 
-            log.info { "Started tailing the file: ${file.name}" }
+            log.debug { "Started tailing the file: ${file.name}" }
         } else {
             log.error { "File tailing for file ${file.name} is already running!" }
         }
@@ -58,7 +58,7 @@ class AsyncFileTailer(
         tailerJob?.let {
             it.cancel()
             tailerJob = null
-            log.info { "Stopped tailing the file: ${file.name}" }
+            log.debug { "Stopped tailing the file: ${file.name}" }
         }
     }
 }

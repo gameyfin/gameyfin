@@ -10,10 +10,10 @@ import java.nio.file.Path
 @Configuration
 class PluginManagerConfig {
     private val log = KotlinLogging.logger {}
-    private val pluginPath = Path.of("plugins")
+    private val pluginPath = System.getProperty("pf4j.pluginsDir", "plugins")
 
     @Bean
-    fun pluginManager() = SpringDevtoolsPluginManager(pluginPath)
+    fun pluginManager() = SpringDevtoolsPluginManager(Path.of(pluginPath))
 
     @EventListener(ApplicationReadyEvent::class)
     fun loadedPlugins() {

@@ -1,5 +1,4 @@
 group = "de.grimsi"
-val pluginDir: File by rootProject.extra
 val appMainClass = "de.grimsi.gameyfin.GameyfinApplication"
 
 plugins {
@@ -84,31 +83,6 @@ dependencyManagement {
         mavenBom("com.vaadin:vaadin-bom:${rootProject.extra["vaadinVersion"]}")
         mavenBom("org.springframework.cloud:spring-cloud-dependencies:${rootProject.extra["springCloudVersion"]}")
     }
-}
-
-tasks.named<JavaExec>("run") {
-    systemProperty("pf4j.pluginsDir", pluginDir.absolutePath)
-}
-
-tasks.register<Jar>("uberJar") {
-    dependsOn(tasks.named("compileKotlin"))
-    archiveClassifier.set("uber")
-
-    from(sourceSets.main.get().output)
-
-    dependsOn(configurations.runtimeClasspath)
-    from({
-        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
-    })
-
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    isZip64 = true
-
-    manifest {
-        attributes["Main-Class"] = appMainClass
-    }
-
-    archiveBaseName.set(project.name)
 }
 
 tasks.withType<Test> {

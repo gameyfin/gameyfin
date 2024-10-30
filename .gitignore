@@ -45,5 +45,6 @@ docker-compose.yml
 generated
 db
 data
+packaged_plugins
 logs
 templates

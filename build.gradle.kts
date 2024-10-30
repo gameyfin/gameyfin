@@ -32,8 +32,4 @@ subprojects {
     }
 }
 
-tasks.named("build") {
-    dependsOn(":gameyfin:uberJar")
-}
-
 extra.set("pluginDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))
