@@ -10,7 +10,9 @@ repositories {
 
 dependencies {
     // PF4J (shared)
-    api("org.pf4j:pf4j:${rootProject.extra["pf4jVersion"]}")
+    api("org.pf4j:pf4j:${rootProject.extra["pf4jVersion"]}") {
+        exclude(group = "org.slf4j")
+    }
 
     implementation(kotlin("stdlib"))
 
