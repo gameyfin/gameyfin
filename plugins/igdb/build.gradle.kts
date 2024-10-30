@@ -8,18 +8,3 @@ dependencies {
     // IGDB API client
     implementation("io.github.husnjak:igdb-api-jvm:1.2.0")
 }
-
-tasks.register<Copy>("copyDependencyClasses") {
-    dependsOn(tasks.jar)
-
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from(configurations.runtimeClasspath.get().map { project.zipTree(it) }) {
-        include("**/*.class")
-    }
-    into(layout.buildDirectory.get().asFile.resolve("classes/kotlin/main"))
-}
-
-tasks.build {
-    dependsOn("copyDependencyClasses")
-}

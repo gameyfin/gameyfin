@@ -1,4 +1,5 @@
 package de.grimsi.gameyfin.pluginapi.gamemetadata
+
 import java.net.URL
 import java.time.Instant
 
@@ -19,6 +20,7 @@ class GameMetadata(
 )
 
 enum class Genre {
+    UNKNOWN,
     PINBALL,
     ADVENTURE,
     INDIE,
@@ -45,6 +47,7 @@ enum class Genre {
 }
 
 enum class Theme {
+    UNKNOWN,
     ACTION,
     FANTASY,
     SCIENCE_FICTION,

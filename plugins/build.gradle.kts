@@ -7,6 +7,7 @@ subprojects {
 
     dependencies {
         compileOnly(project(":plugin-api"))
+        implementation("io.github.oshai:kotlin-logging-jvm:7.0.0")
     }
 
     tasks.jar {
@@ -25,5 +26,20 @@ subprojects {
         }
         from(sourceSets["main"].output.classesDirs)
         from(sourceSets["main"].resources)
+    }
+
+    tasks.register<Copy>("copyDependencyClasses") {
+        dependsOn(tasks.jar)
+
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+        from(configurations.runtimeClasspath.get().map { project.zipTree(it) }) {
+            include("**/*.class")
+        }
+        into(layout.buildDirectory.get().asFile.resolve("classes/kotlin/main"))
+    }
+
+    tasks.build {
+        dependsOn("copyDependencyClasses")
     }
 }
