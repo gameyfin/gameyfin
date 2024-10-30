@@ -34,6 +34,7 @@ export default function PluginManagement() {
                     clientId: igdbConfig?.clientId,
                     clientSecret: igdbConfig?.clientSecret
                 }}
+                enableReinitialize={true}
                 onSubmit={handleSubmit}
             >
                 {(formik: { values: any; isSubmitting: any; }) => (
