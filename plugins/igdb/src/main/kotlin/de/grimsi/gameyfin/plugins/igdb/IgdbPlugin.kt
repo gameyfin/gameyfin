@@ -1,5 +1,7 @@
 package de.grimsi.gameyfin.plugins.igdb
 
+import com.api.igdb.request.IGDBWrapper
+import com.api.igdb.request.TwitchAuthenticator
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataFetcher
 import org.pf4j.Extension
@@ -10,11 +12,21 @@ import java.time.Instant
 class IgdbPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
 
     override fun start() {
-        println("IgdbPlugin.start()")
+        authenticate()
     }
 
     override fun stop() {
         println("IgdbPlugin.stop()")
+    }
+
+    private fun authenticate() {
+        // Kotlin example
+        val token = TwitchAuthenticator.requestTwitchToken("CLIENT_ID", "CLIENT_SECRET")
+        if (token == null) {
+            println("Failed to authenticate with Twitch")
+            return
+        }
+        IGDBWrapper.setCredentials("client_id", token.access_token)
     }
 
     @Extension
