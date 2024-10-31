@@ -1,5 +1,6 @@
-package de.grimsi.gameyfin.core.plugins
+package de.grimsi.gameyfin.core.plugins.management
 
+import de.grimsi.gameyfin.core.plugins.config.PluginConfigRepository
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.CompoundPluginLoader

@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.core.plugins
+package de.grimsi.gameyfin.core.plugins.config
 
 import de.grimsi.gameyfin.core.security.EncryptionConverter
 import jakarta.persistence.Column

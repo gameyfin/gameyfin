@@ -9,11 +9,7 @@ interface PasswordResetTokenModalProps {
     token: TokenDto;
 }
 
-export default function PasswordResetTokenModal({
-                                                    isOpen,
-                                                    onOpenChange,
-                                                    token
-                                                }: PasswordResetTokenModalProps) {
+export default function PasswordResetTokenModal({isOpen, onOpenChange, token}: PasswordResetTokenModalProps) {
     const [timeUntilExpiry, setTimeUntilExpiry] = useState<string>("");
 
     const timeoutRefresh = setInterval(updateTimeUntilExpiry, 1000);

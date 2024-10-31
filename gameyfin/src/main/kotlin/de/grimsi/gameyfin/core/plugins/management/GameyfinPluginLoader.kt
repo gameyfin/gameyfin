@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.core.plugins
+package de.grimsi.gameyfin.core.plugins.management
 
 import org.pf4j.DevelopmentPluginLoader
 import org.pf4j.PluginClassLoader

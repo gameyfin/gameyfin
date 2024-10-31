@@ -26,11 +26,7 @@ interface Role {
     id: string;
 }
 
-export default function AssignRolesModal({
-                                             isOpen,
-                                             onOpenChange,
-                                             user
-                                         }: AssignRolesModalProps) {
+export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRolesModalProps) {
     const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
     const [selectedRole, setSelectedRole] = useState<Selection>();
     const [error, setError] = useState<string>();

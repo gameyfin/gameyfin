@@ -8,10 +8,7 @@ interface InviteUserModalProps {
     onOpenChange: () => void;
 }
 
-export default function InviteUserModal({
-                                            isOpen,
-                                            onOpenChange
-                                        }: InviteUserModalProps) {
+export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalProps) {
     const [email, setEmail] = useState<string | null>();
     const [error, setError] = useState<string | null>();
 

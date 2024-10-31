@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.core.plugins
+package de.grimsi.gameyfin.core.plugins.config
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role

@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.core.plugins
+package de.grimsi.gameyfin.core.plugins.config
 
 import org.springframework.data.jpa.repository.JpaRepository
 

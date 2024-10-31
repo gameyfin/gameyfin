@@ -9,11 +9,7 @@ interface ConfirmUserDeletionModalProps {
     user: UserInfoDto;
 }
 
-export default function ConfirmUserDeletionModal({
-                                                     isOpen,
-                                                     onOpenChange,
-                                                     user
-                                                 }: ConfirmUserDeletionModalProps) {
+export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: ConfirmUserDeletionModalProps) {
     const [confirmUsername, setConfirmUsername] = useState<string>("");
 
     useEffect(() => {
