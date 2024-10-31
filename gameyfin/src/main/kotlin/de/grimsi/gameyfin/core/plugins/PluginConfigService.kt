@@ -7,12 +7,12 @@ import org.springframework.stereotype.Service
 @Service
 class PluginConfigService(
     private val pluginConfigRepository: PluginConfigRepository,
-    private val pluginManager: SpringDevtoolsPluginManager
+    private val pluginManager: GameyfinPluginManager
 ) {
 
     fun getConfigMetadata(pluginId: String): List<PluginConfigElement> {
         val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
-        return plugin.getConfigMetadata()
+        return plugin.configMetadata
     }
 
     fun getConfig(pluginId: String): Map<String, String?> {

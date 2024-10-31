@@ -15,7 +15,7 @@ class PluginManagerConfig(
     private val pluginPath = System.getProperty("pf4j.pluginsDir", "plugins")
 
     @Bean
-    fun pluginManager() = SpringDevtoolsPluginManager(Path.of(pluginPath), pluginConfigRepository)
+    fun pluginManager() = GameyfinPluginManager(Path.of(pluginPath), pluginConfigRepository)
 
     @EventListener(ApplicationReadyEvent::class)
     fun loadPlugins() {

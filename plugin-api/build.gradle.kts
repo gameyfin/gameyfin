@@ -13,6 +13,8 @@ dependencies {
     api("org.pf4j:pf4j:${rootProject.extra["pf4jVersion"]}") {
         exclude(group = "org.slf4j")
     }
+    
+    api("org.slf4j:slf4j-api:2.0.16")
 
     implementation(kotlin("stdlib"))
 

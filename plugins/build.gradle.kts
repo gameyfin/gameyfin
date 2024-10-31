@@ -7,7 +7,6 @@ subprojects {
 
     dependencies {
         compileOnly(project(":plugin-api"))
-        implementation("io.github.oshai:kotlin-logging-jvm:7.0.0")
     }
 
     tasks.jar {

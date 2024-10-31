@@ -11,66 +11,48 @@ import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataFetcher
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Theme
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.Extension
-import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
+import org.slf4j.LoggerFactory
 import java.time.Instant
 import kotlin.collections.filter
 
-class IgdbPlugin(wrapper: PluginWrapper) : Plugin(wrapper), GameyfinPlugin {
+class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
-    private val log = KotlinLogging.logger {}
-
-    private val configMetadata: List<PluginConfigElement> = listOf(
+    override val configMetadata: List<PluginConfigElement> = listOf(
         PluginConfigElement("clientId", "Twitch client ID", "Your Twitch Client ID"),
         PluginConfigElement("clientSecret", "Twitch client secret", "Your Twitch Client Secret")
     )
-
-    private var config: Map<String, String?> = configMetadata.associate { it.key to null }
-
-    override fun getConfigMetadata(): List<PluginConfigElement> {
-        return configMetadata
-    }
-
-    override fun getCurrentConfig(): Map<String, String?> {
-        return config
-    }
-
-    override fun loadConfig(config: Map<String, String?>) {
-        this.config = config
-    }
-
 
     override fun start() {
         try {
             authenticate()
         } catch (e: PluginConfigError) {
-            log.error { e.message }
+            log.error(e.message)
         }
     }
 
     override fun stop() {
-        log.debug { "IgdbPlugin.stop()" }
+        log.debug("IgdbPlugin.stop()")
     }
 
     private fun authenticate() {
-        log.debug { "Authenticating on Twitch API..." }
+        log.debug("Authenticating on Twitch API...")
 
         val clientId: String = config["clientId"] ?: throw PluginConfigError("Twitch Client ID not set")
         val clientSecret: String = config["clientSecret"] ?: throw PluginConfigError("Twitch Client Secret not set")
 
         val token = TwitchAuthenticator.requestTwitchToken(clientId, clientSecret)
-            ?: throw PluginConfigError("Failed to authenticate on Twitch API")
+            ?: throw PluginConfigError("Failed to authenticate on Twitch API with provided credentials")
 
         IGDBWrapper.setCredentials(clientId, token.access_token)
 
-        log.debug { "Authentication successful" }
+        log.debug("Authentication successful")
     }
 
     @Extension
     class IgdbMetadataFetcher : GameMetadataFetcher {
-        private val log = KotlinLogging.logger {}
+        private val log = LoggerFactory.getLogger(javaClass)
 
         override fun fetchMetadata(gameId: String): GameMetadata {
             val findGameByName = APICalypse()
@@ -124,7 +106,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : Plugin(wrapper), GameyfinPlugin {
                 "hack-and-slash-beat-em-up" -> Genre.HACK_AND_SLASH_BEAT_EM_UP
                 "quiz-trivia" -> Genre.QUIZ_TRIVIA
                 else -> {
-                    log.warn { "Unknown genre: ${genre.slug}" }
+                    log.warn("Unknown genre: {}", genre.slug)
                     Genre.UNKNOWN
                 }
             }
@@ -155,7 +137,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : Plugin(wrapper), GameyfinPlugin {
                 "erotic" -> Theme.EROTIC
                 "romance" -> Theme.ROMANCE
                 else -> {
-                    log.warn { "Unknown theme: ${theme.slug}" }
+                    log.warn("Unknown theme: {}", theme.slug)
                     Theme.UNKNOWN
                 }
             }

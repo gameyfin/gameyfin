@@ -18,7 +18,7 @@ import java.nio.file.Path
 /**
  * @see https://stackoverflow.com/questions/73654174/my-application-cant-find-the-extension-with-pf4j
  */
-class SpringDevtoolsPluginManager(
+class GameyfinPluginManager(
     path: Path,
     private val pluginConfigRepository: PluginConfigRepository
 ) : DefaultPluginManager(path) {
@@ -34,7 +34,7 @@ class SpringDevtoolsPluginManager(
 
     override fun createPluginLoader(): PluginLoader {
         val compoundPluginLoader = CompoundPluginLoader()
-        val developmentPluginLoader = SpringDevtoolsDevelopmentPluginLoader(this, javaClass.classLoader)
+        val developmentPluginLoader = GameyfinPluginLoader(this, javaClass.classLoader)
         val jarPluginLoader = JarPluginLoader(this)
         val defaultPluginLoader = DefaultPluginLoader(this)
 
