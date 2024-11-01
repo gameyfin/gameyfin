@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.libraries
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
+import de.grimsi.gameyfin.games.Game
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
@@ -19,7 +20,7 @@ class LibraryEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun test(testString: String) {
-        libraryService.test(testString)
+    fun test(testString: String): Game {
+        return libraryService.test(testString)
     }
 }

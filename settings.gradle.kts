@@ -12,6 +12,7 @@ pluginManagement {
         kotlin("jvm") version extra["kotlinVersion"] as String
         kotlin("plugin.spring") version extra["kotlinVersion"] as String
         kotlin("plugin.jpa") version extra["kotlinVersion"] as String
+        kotlin("plugin.serialization") version extra["kotlinVersion"] as String
     }
 }
 
@@ -22,3 +23,4 @@ include(":gameyfin")
 include(":plugins")
 
 include(":plugins:igdb")
+include(":plugins:steam")

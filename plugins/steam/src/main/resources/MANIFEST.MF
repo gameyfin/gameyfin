@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Plugin-Class: de.grimsi.gameyfin.plugins.steam.SteamPlugin
+Plugin-Id: steam
+Plugin-Description: Steam Metadata
+Plugin-Version: 1.0.0-alpha1
+Plugin-Provider: grimsi

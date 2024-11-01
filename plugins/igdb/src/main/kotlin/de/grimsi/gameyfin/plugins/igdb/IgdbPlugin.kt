@@ -8,7 +8,8 @@ import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigError
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
-import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataFetcher
+import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import java.time.Instant
@@ -48,15 +49,32 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
     }
 
     @Extension
-    class IgdbMetadataFetcher : GameMetadataFetcher {
-        override fun fetchMetadata(gameId: String): GameMetadata {
-            val findGameByName = APICalypse()
+    class IgdbMetadataProvider : GameMetadataProvider {
+        override fun fetchMetadata(gameId: String): GameMetadata? {
+            val findBySlugQuery = APICalypse()
                 .fields("*")
-                .limit(100)
-                .search(gameId)
+                .where("slug = \"${guessSlug(gameId)}\"")
 
-            val game = IGDBWrapper.games(findGameByName).filter { it.slug == gameId.lowercase() }.firstOrNull()
-                ?: throw IllegalArgumentException("Could not match game with ID '$gameId'")
+            // First step: Try to find the game by guessing the slug
+            var game = IGDBWrapper.games(findBySlugQuery).firstOrNull()
+
+            // Second step: Try a fuzzy search
+            if (game == null) {
+                val searchByNameQuery = APICalypse()
+                    .fields("*")
+                    .limit(100)
+                    .search(gameId)
+
+                // Use IGDBs search function to get a list of games that match the search query
+                val games = IGDBWrapper.games(searchByNameQuery)
+
+                if (games.isEmpty()) return null
+
+                // Use fuzzy search to find the best matching game name
+                val bestMatchingName = FuzzySearch.extractOne(gameId, games.map { it.name }).string
+
+                game = games.find { it.name == bestMatchingName } ?: return null
+            }
 
             return GameMetadata(
                 title = game.name,
@@ -73,6 +91,10 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 features = listOf(),
                 perspectives = listOf()
             )
+        }
+
+        private fun guessSlug(gameId: String): String {
+            return gameId.replace(" ", "-").lowercase()
         }
     }
 }

@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.libraries
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
+import de.grimsi.gameyfin.games.Game
 import de.grimsi.gameyfin.games.GameService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -17,8 +18,8 @@ class LibraryService(
     private val gameService: GameService,
     private val config: ConfigService
 ) {
-    fun test(testString: String) {
-        gameService.createFromFile(Path(testString))
+    fun test(testString: String): Game {
+        return gameService.createFromFile(Path(testString))
     }
 
     fun createOrUpdate(library: LibraryDto): LibraryDto {
