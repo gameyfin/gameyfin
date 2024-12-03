@@ -29,4 +29,12 @@ class PluginManagementService(
     fun restartPlugin(pluginId: String) {
         pluginManager.restart(pluginId)
     }
+
+    fun enablePlugin(pluginId: String) {
+        pluginManager.enablePlugin(pluginId)
+    }
+
+    fun disablePlugin(pluginId: String) {
+        pluginManager.disablePlugin(pluginId)
+    }
 }

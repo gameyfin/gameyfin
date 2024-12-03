@@ -16,4 +16,8 @@ class PluginManagementEndpoint(
     fun stopPlugin(pluginId: String) = pluginManagementService.stopPlugin(pluginId)
 
     fun restartPlugin(pluginId: String) = pluginManagementService.restartPlugin(pluginId)
+
+    fun enablePlugin(pluginId: String) = pluginManagementService.enablePlugin(pluginId)
+
+    fun disablePlugin(pluginId: String) = pluginManagementService.disablePlugin(pluginId)
 }
