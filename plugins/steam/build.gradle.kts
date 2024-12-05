@@ -1,7 +1,7 @@
 val ktor_version = "3.0.0"
 
 plugins {
-    id("com.google.devtools.ksp") version "2.0.20-1.0.24"
+    id("com.google.devtools.ksp")
     kotlin("plugin.serialization")
 }
 
@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:2.0.20-1.0.1")
+    ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
 
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-cio:$ktor_version")

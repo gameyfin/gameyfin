@@ -8,8 +8,8 @@ plugins {
     kotlin("jvm")
     kotlin("plugin.spring")
     kotlin("plugin.jpa")
+    id("com.google.devtools.ksp")
     application
-    id("com.google.devtools.ksp") version "2.0.20-1.0.24"
 }
 
 application {
@@ -32,7 +32,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.cloud:spring-cloud-starter")
-    implementation("jakarta.validation:jakarta.validation-api:3.0.2")
+    implementation("jakarta.validation:jakarta.validation-api:3.1.0")
 
     // Kotlin extensions
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -49,12 +49,12 @@ dependencies {
     api("com.vaadin:vaadin-spring-boot-starter")
 
     // Logging
-    implementation("io.github.oshai:kotlin-logging-jvm:6.0.3")
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.14")
-    implementation("commons-io:commons-io:2.16.1")
+    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.15")
+    implementation("commons-io:commons-io:2.18.0")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -67,7 +67,7 @@ dependencies {
 
     // Plugins
     implementation(project(":plugin-api"))
-    ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:2.0.20-1.0.1")
+    ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
