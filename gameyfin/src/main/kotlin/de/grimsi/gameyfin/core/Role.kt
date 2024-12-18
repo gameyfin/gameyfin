@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.core
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import de.grimsi.gameyfin.users.RoleService.Companion.INTERNAL_ROLE_PREFIX
 
@@ -15,6 +16,14 @@ enum class Role(val roleName: String, val powerLevel: Int) {
     }
 
     companion object {
+
+        @JsonCreator
+        @JvmStatic
+        fun fromValue(value: String): Role? {
+            val enumString = value.removePrefix(INTERNAL_ROLE_PREFIX)
+            return Role.entries.find { it.roleName == enumString }
+        }
+
         fun safeValueOf(type: String): Role? {
             val enumString = type.removePrefix(INTERNAL_ROLE_PREFIX)
             return java.lang.Enum.valueOf(Role::class.java, enumString)

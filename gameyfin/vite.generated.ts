@@ -5,7 +5,7 @@
  * This file will be overwritten on every run. Any custom changes should be made to vite.config.ts
  */
 import path from 'path';
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, Stats } from 'fs';
 import { createHash } from 'crypto';
 import * as net from 'net';
 
@@ -23,7 +23,7 @@ import {
   ResolvedConfig,
   UserConfigFn
 } from 'vite';
-import { getManifest } from 'workbox-build';
+import { getManifest, type ManifestTransform } from 'workbox-build';
 
 import * as rollup from 'rollup';
 import brotli from 'rollup-plugin-brotli';
@@ -90,7 +90,7 @@ console.trace = () => {};
 console.debug = () => {};
 
 function injectManifestToSWPlugin(): rollup.Plugin {
-  const rewriteManifestIndexHtmlUrl = (manifest) => {
+  const rewriteManifestIndexHtmlUrl: ManifestTransform = (manifest) => {
     const indexEntry = manifest.find((entry) => entry.url === 'index.html');
     if (indexEntry) {
       indexEntry.url = appShellUrl;
@@ -106,7 +106,7 @@ function injectManifestToSWPlugin(): rollup.Plugin {
         const { manifestEntries } = await getManifest({
           globDirectory: buildOutputFolder,
           globPatterns: ['**/*'],
-          globIgnores: ['**/*.br'],
+          globIgnores: ['**/*.br', 'pwa-icons/**'],
           manifestTransforms: [rewriteManifestIndexHtmlUrl],
           maximumFileSizeToCacheInBytes: 100 * 1024 * 1024 // 100mb,
         });
@@ -117,11 +117,11 @@ function injectManifestToSWPlugin(): rollup.Plugin {
   };
 }
 
-function buildSWPlugin(opts): PluginOption {
+function buildSWPlugin(opts: { devMode: boolean }): PluginOption {
   let config: ResolvedConfig;
   const devMode = opts.devMode;
 
-  const swObj = {};
+  const swObj: { code?: string, map?: rollup.SourceMap | null } = {};
 
   async function build(action: 'generate' | 'write', additionalPlugins: rollup.Plugin[] = []) {
     const includedPluginNames = [
@@ -298,7 +298,7 @@ function statsExtracterPlugin(): PluginOption {
 
       const frontendFiles: Record<string, string> = {};
 
-      const projectFileExtensions = ['.js', '.js.map', '.ts', '.ts.map', '.tsx', '.tsx.map', '.css', '.css.map'];
+      const projectFileExtensions = ['.js', '.js.map', '.ts', '.ts.map', '.tsx', '.tsx.map', '.css', '.css.map', '.'];
 
       const isThemeComponentsResource = (id: string) =>
           id.startsWith(themeOptions.frontendGeneratedFolder.replace(/\\/g, '/'))
@@ -563,7 +563,7 @@ export { ${bindings.map(getExportBinding).join(', ')} };`;
   };
 }
 
-function themePlugin(opts): PluginOption {
+function themePlugin(opts: { devMode: boolean }): PluginOption {
   const fullThemeOptions = { ...themeOptions, devMode: opts.devMode };
   return {
     name: 'vaadin:theme',
@@ -571,7 +571,7 @@ function themePlugin(opts): PluginOption {
       processThemeResources(fullThemeOptions, console);
     },
     configureServer(server) {
-      function handleThemeFileCreateDelete(themeFile, stats) {
+      function handleThemeFileCreateDelete(themeFile: string, stats?: Stats) {
         if (themeFile.startsWith(themeFolder)) {
           const changed = path.relative(themeFolder, themeFile);
           console.debug('Theme file ' + (!!stats ? 'created' : 'deleted'), changed);
@@ -632,8 +632,8 @@ function themePlugin(opts): PluginOption {
   };
 }
 
-function runWatchDog(watchDogPort, watchDogHost) {
-  const client = net.Socket();
+function runWatchDog(watchDogPort: number, watchDogHost: string | undefined) {
+  const client = new net.Socket();
   client.setEncoding('utf8');
   client.on('error', function (err) {
     console.log('Watchdog connection error. Terminating vite process...', err);
@@ -692,7 +692,7 @@ export const vaadinConfig: UserConfigFn = (env) => {
   if (devMode && process.env.watchDogPort) {
     // Open a connection with the Java dev-mode handler in order to finish
     // vite when it exits or crashes.
-    runWatchDog(process.env.watchDogPort, process.env.watchDogHost);
+    runWatchDog(parseInt(process.env.watchDogPort), process.env.watchDogHost);
   }
 
   return {
@@ -722,20 +722,19 @@ export const vaadinConfig: UserConfigFn = (env) => {
       outDir: buildOutputFolder,
       emptyOutDir: devBundle,
       assetsDir: 'VAADIN/build',
-      target: ["esnext", "safari15"],
       rollupOptions: {
         input: {
           indexhtml: projectIndexHtml,
 
           ...(hasExportedWebComponents ? { webcomponenthtml: path.resolve(frontendFolder, 'web-component.html') } : {})
         },
-        onwarn: (warning: rollup.RollupWarning, defaultHandler: rollup.WarningHandler) => {
+        onwarn: (warning: rollup.RollupLog, defaultHandler: rollup.LoggingFunction) => {
           const ignoreEvalWarning = [
             'generated/jar-resources/FlowClient.js',
             'generated/jar-resources/vaadin-spreadsheet/spreadsheet-export.js',
             '@vaadin/charts/src/helpers.js'
           ];
-          if (warning.code === 'EVAL' && warning.id && !!ignoreEvalWarning.find((id) => warning.id.endsWith(id))) {
+          if (warning.code === 'EVAL' && warning.id && !!ignoreEvalWarning.find((id) => warning.id?.endsWith(id))) {
             return;
           }
           defaultHandler(warning);
@@ -784,7 +783,13 @@ export const vaadinConfig: UserConfigFn = (env) => {
           presets: [['@babel/preset-react', { runtime: 'automatic', development: !productionMode }]],
           // React writes the source location for where components are used, this writes for where they are defined
           plugins: [
-            !productionMode && addFunctionComponentSourceLocationBabel()
+            !productionMode && addFunctionComponentSourceLocationBabel(),
+            [
+              'module:@preact/signals-react-transform',
+              {
+                mode: 'all' // Needed to include translations which do not use something.value
+              }
+            ]
           ].filter(Boolean)
         }
       }),
