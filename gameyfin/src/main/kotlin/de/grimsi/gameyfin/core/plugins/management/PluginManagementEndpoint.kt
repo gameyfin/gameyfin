@@ -11,6 +11,8 @@ class PluginManagementEndpoint(
 ) {
     fun getPlugins() = pluginManagementService.getPlugins()
 
+    fun getPlugin(pluginId: String) = pluginManagementService.getPlugin(pluginId)
+
     fun startPlugin(pluginId: String) = pluginManagementService.startPlugin(pluginId)
 
     fun stopPlugin(pluginId: String) = pluginManagementService.stopPlugin(pluginId)

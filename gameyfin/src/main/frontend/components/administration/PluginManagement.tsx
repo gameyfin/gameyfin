@@ -14,6 +14,10 @@ export default function PluginManagement() {
         });
     }, []);
 
+    function updatePlugin(plugin: PluginDto) {
+        setPlugins(plugins.map(p => p.id === plugin.id ? plugin : p));
+    }
+
     return (
         <div className="flex flex-col">
             <div className="flex flex-row flex-grow justify-between mb-8">
@@ -26,7 +30,10 @@ export default function PluginManagement() {
             </div>
 
             <div className="grid grid-cols-300px gap-4">
-                {plugins.map((plugin) => <PluginManagementCard plugin={plugin} key={plugin.name}/>)}
+                {plugins.map((plugin) => <PluginManagementCard plugin={plugin}
+                                                               updatePlugin={updatePlugin}
+                                                               key={plugin.name}/>
+                )}
             </div>
 
             <div className="flex flex-row flex-grow justify-between my-8">

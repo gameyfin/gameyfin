@@ -6,7 +6,7 @@ import {PluginConfigEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/Input";
-import {PuzzlePiece} from "@phosphor-icons/react";
+import {Plug} from "@phosphor-icons/react";
 
 interface PluginDetailsModalProps {
     plugin: PluginDto;
@@ -52,7 +52,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                 <ModalBody>
                                     <h4 className="text-l font-bold">Details</h4>
                                     <div className="flex flex-row gap-8">
-                                        <PuzzlePiece size={64} weight="fill"/>
+                                        <Plug size={64} weight="fill"/>
                                         <div className="grid grid-cols-2">
                                             <p>Author: {plugin.author}</p>
                                             <p>Version: {plugin.version}</p>

@@ -18,6 +18,17 @@ class PluginManagementService(
         }
     }
 
+    fun getPlugin(pluginId: String): PluginDto {
+        val plugin = pluginManager.getPlugin(pluginId)
+        return PluginDto(
+            plugin.pluginId,
+            plugin.descriptor.pluginDescription,
+            plugin.descriptor.version,
+            plugin.descriptor.provider,
+            plugin.pluginState
+        )
+    }
+
     fun startPlugin(pluginId: String) {
         pluginManager.startPlugin(pluginId)
     }

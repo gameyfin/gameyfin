@@ -22,7 +22,18 @@ class GameyfinPluginManager(
     // This took me way too long to figure out...
     // But I learned a lot about Kotlin and Java interoperability in the process
     init {
-        this.pluginStatusProvider = dbPluginStatusProvider
+        pluginStatusProvider = dbPluginStatusProvider
+
+        pluginStateListeners.add { event ->
+            if (event is PluginStateEvent) {
+                log.info { "Plugin ${event.plugin.pluginId} changed state to ${event.pluginState}" }
+                if (event.oldState == PluginState.DISABLED) {
+                    startPlugin(event.plugin.pluginId)
+                } else if (event.pluginState == PluginState.DISABLED) {
+                    stopPlugin(event.plugin.pluginId)
+                }
+            }
+        }
     }
 
     override fun createPluginLoader(): PluginLoader {

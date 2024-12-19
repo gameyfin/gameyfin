@@ -17,7 +17,7 @@ class DatabasePluginStatusProvider(
     override fun disablePlugin(pluginId: String) {
         val pluginManagement = pluginManagementRepository.findByIdOrNull(pluginId)
         if (pluginManagement != null) {
-            pluginManagement.enabled = true
+            pluginManagement.enabled = false
             pluginManagementRepository.save(pluginManagement)
         }
     }
@@ -25,7 +25,7 @@ class DatabasePluginStatusProvider(
     override fun enablePlugin(pluginId: String) {
         val pluginManagement = pluginManagementRepository.findByIdOrNull(pluginId)
         if (pluginManagement != null) {
-            pluginManagement.enabled = false
+            pluginManagement.enabled = true
             pluginManagementRepository.save(pluginManagement)
         }
     }
