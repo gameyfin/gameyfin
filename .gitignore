@@ -48,3 +48,5 @@ data
 packaged_plugins
 logs
 templates
+/gameyfin/src/main/frontend/**/*.js
+/gameyfin/src/main/frontend/**/*.js.map
