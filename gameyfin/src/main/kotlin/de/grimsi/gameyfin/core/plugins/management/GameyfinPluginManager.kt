@@ -59,6 +59,14 @@ class GameyfinPluginManager(
         plugin.start()
     }
 
+    fun validatePluginConfig(pluginId: String): Boolean {
+        val plugin = getPlugin(pluginId)?.plugin ?: return false
+        if (plugin is GameyfinPlugin) {
+            return plugin.validateConfig()
+        }
+        return false
+    }
+
     private fun configurePlugin(pluginWrapper: PluginWrapper) {
         val plugin = pluginWrapper.plugin
         if (plugin is GameyfinPlugin) {

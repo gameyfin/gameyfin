@@ -19,10 +19,18 @@ export default function PluginManagement() {
             <div className="flex flex-row flex-grow justify-between mb-8">
                 <h2 className="text-2xl font-bold">Plugins</h2>
             </div>
-
             <Divider className="mb-4"/>
+
+            <div className="flex flex-row flex-grow justify-between mb-8">
+                <h2 className="text-xl font-bold">Metadata</h2>
+            </div>
+
             <div className="grid grid-cols-300px gap-4">
                 {plugins.map((plugin) => <PluginManagementCard plugin={plugin} key={plugin.name}/>)}
+            </div>
+
+            <div className="flex flex-row flex-grow justify-between my-8">
+                <h2 className="text-xl font-bold">Notifications</h2>
             </div>
         </div>
     );

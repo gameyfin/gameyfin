@@ -1,14 +1,29 @@
-import {Card, Chip, Tooltip, useDisclosure} from "@nextui-org/react";
+import {Card, Chip, Skeleton, useDisclosure} from "@nextui-org/react";
 import {PuzzlePiece} from "@phosphor-icons/react";
+import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
-import React from "react";
-import PluginConfigurationModal from "Frontend/components/general/PluginConfigurationModal";
+import React, {useEffect, useState} from "react";
+import PluginDetailsModal from "Frontend/components/general/PluginDetailsModal";
 
 export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
-    const pluginConfigurationModal = useDisclosure();
+    const pluginDetailsModal = useDisclosure();
+    const [configValid, setConfigValid] = useState<boolean | undefined>(undefined);
 
-    function stateToColor(state: PluginState | undefined): string {
+    useEffect(() => {
+        PluginManagementEndpoint.validatePluginConfig(plugin.id).then((response: boolean) => {
+            if (response === undefined) return;
+            setConfigValid(response);
+        });
+    }, []);
+
+    function borderColor(state: PluginState | undefined): "success" | "warning" | "danger" | "default" {
+        if (configValid === undefined) return "default";
+        if (!configValid) return "danger";
+        return stateToColor(state);
+    }
+
+    function stateToColor(state: PluginState | undefined): "success" | "warning" | "danger" | "default" {
         switch (state) {
             case PluginState.STARTED:
                 return "success";
@@ -17,32 +32,33 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
             case PluginState.STOPPED:
                 return "danger";
             default:
-                return "";
+                return "default";
         }
     }
 
     return (
         <>
-            <Card className="flex flex-row justify-between p-2"
-                  isPressable={true} onPress={pluginConfigurationModal.onOpen}>
-                <div className="flex flex-row items-center gap-4">
-                    <Tooltip placement="right" content={`Plugin ${plugin.state!.toLowerCase()}`}>
-                        <PuzzlePiece size={64} weight="duotone" className={`text-${stateToColor(plugin.state)}`}/>
-                    </Tooltip>
-                    <div className="flex flex-col items-start gap-1">
-                        <div className="flex flex-row gap-2">
-                            <p className="font-semibold">{plugin.name}</p>
-                            <div className="text-sm">
-                                <Chip size="sm" radius="sm" className="text-xs">{plugin.version}</Chip>
-                            </div>
-                        </div>
-                        <p className="text-sm">Author: {plugin.author}</p>
+            <Card className={`flex flex-row justify-between p-2 border-2 border-${borderColor(plugin.state)}`}
+                  isPressable={true} onPress={pluginDetailsModal.onOpen}>
+                <div className="flex flex-1 flex-col items-center gap-1">
+                    <PuzzlePiece size={64} weight="fill"/>
+                    <p className="font-semibold">{plugin.name}</p>
+                    <div className="flex flex-row gap-2">
+                        <Chip size="sm" radius="sm" className="text-xs">{plugin.version}</Chip>
+                        <Chip size="sm" radius="sm" className="text-xs"
+                              color={stateToColor(plugin.state)}>{plugin.state?.toLowerCase()}</Chip>
+                        {configValid === undefined ?
+                            <Skeleton className="rounded-md h-6 w-20"></Skeleton>
+                            : configValid ?
+                                <Chip size="sm" radius="sm" className="text-xs" color="success">config valid</Chip> :
+                                <Chip size="sm" radius="sm" className="text-xs" color="danger">config invalid</Chip>
+                        }
                     </div>
                 </div>
             </Card>
-            <PluginConfigurationModal plugin={plugin}
-                                      isOpen={pluginConfigurationModal.isOpen}
-                                      onOpenChange={pluginConfigurationModal.onOpenChange}
+            <PluginDetailsModal plugin={plugin}
+                                isOpen={pluginDetailsModal.isOpen}
+                                onOpenChange={pluginDetailsModal.onOpenChange}
             />
         </>
 

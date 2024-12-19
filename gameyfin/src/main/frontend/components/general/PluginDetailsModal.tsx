@@ -6,14 +6,15 @@ import {PluginConfigEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/Input";
+import {PuzzlePiece} from "@phosphor-icons/react";
 
-interface PluginConfigurationModalProps {
+interface PluginDetailsModalProps {
     plugin: PluginDto;
     isOpen: boolean;
     onOpenChange: () => void;
 }
 
-export default function PluginConfigurationModal({plugin, isOpen, onOpenChange}: PluginConfigurationModalProps) {
+export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: PluginDetailsModalProps) {
     const [pluginConfigMeta, setPluginConfigMeta] = useState<(PluginConfigElement)[]>();
     const [pluginConfig, setPluginConfig] = useState<Record<string, string>>();
 
@@ -46,24 +47,40 @@ export default function PluginConfigurationModal({plugin, isOpen, onOpenChange}:
                     >
                         {(formik: { isSubmitting: any; }) => (
                             <Form>
-                                <ModalHeader className="flex flex-col gap-1">{plugin.name} configuration</ModalHeader>
+                                <ModalHeader className="flex flex-col gap-1">
+                                    Plugin configuration for {plugin.name}</ModalHeader>
                                 <ModalBody>
-                                    {pluginConfigMeta && pluginConfigMeta.map((entry: any) => (
-                                        <Input key={entry.key} name={entry.key} label={entry.name} type="text"/>
-                                    ))}
+                                    <h4 className="text-l font-bold">Details</h4>
+                                    <div className="flex flex-row gap-8">
+                                        <PuzzlePiece size={64} weight="fill"/>
+                                        <div className="grid grid-cols-2">
+                                            <p>Author: {plugin.author}</p>
+                                            <p>Version: {plugin.version}</p>
+                                            <p>Plugin ID: {plugin.id}</p>
+                                            <p>Status: {plugin.state?.toLowerCase()}</p>
+                                        </div>
+                                    </div>
+
+                                    <h4 className="text-l font-bold mt-6">Configuration</h4>
+                                    {(pluginConfigMeta && pluginConfigMeta.length > 0) ?
+                                        pluginConfigMeta.map((entry: any) => (
+                                            <Input key={entry.key} name={entry.key} label={entry.name} type="text"/>
+                                        )) : "This plugin has no configuration options."
+                                    }
                                 </ModalBody>
                                 <ModalFooter>
                                     <Button variant="light" onPress={onClose}>
                                         Cancel
                                     </Button>
-                                    <Button
-                                        color="primary"
-                                        isLoading={formik.isSubmitting}
-                                        disabled={formik.isSubmitting}
-                                        type="submit"
-                                    >
-                                        {formik.isSubmitting ? "" : "Save"}
-                                    </Button>
+                                    {(pluginConfigMeta && pluginConfigMeta?.length > 0) ?
+                                        <Button
+                                            color="primary"
+                                            isLoading={formik.isSubmitting}
+                                            disabled={formik.isSubmitting}
+                                            type="submit"
+                                        >
+                                            {formik.isSubmitting ? "" : "Save"}
+                                        </Button> : ""}
                                 </ModalFooter>
                             </Form>
                         )}

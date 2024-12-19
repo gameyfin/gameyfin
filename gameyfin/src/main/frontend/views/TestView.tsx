@@ -1,7 +1,7 @@
 import {Link} from "react-router-dom";
 import {Button, Input} from "@nextui-org/react";
 import {toast} from "sonner";
-import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints.js";
+import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints";
 import {useState} from "react";
 import Game from "Frontend/generated/de/grimsi/gameyfin/games/Game";
 

@@ -13,7 +13,6 @@ import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import java.time.Instant
-import kotlin.collections.filter
 
 class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
@@ -21,6 +20,16 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         PluginConfigElement("clientId", "Twitch client ID", "Your Twitch Client ID"),
         PluginConfigElement("clientSecret", "Twitch client secret", "Your Twitch Client Secret")
     )
+
+    override fun validateConfig(config: Map<String, String?>): Boolean {
+        try {
+            authenticate()
+            return true
+        } catch (e: PluginConfigError) {
+            log.error(e.message)
+            return false
+        }
+    }
 
     override fun start() {
         try {

@@ -37,4 +37,8 @@ class PluginManagementService(
     fun disablePlugin(pluginId: String) {
         pluginManager.disablePlugin(pluginId)
     }
+
+    fun validatePluginConfig(pluginId: String): Boolean {
+        return pluginManager.validatePluginConfig(pluginId)
+    }
 }

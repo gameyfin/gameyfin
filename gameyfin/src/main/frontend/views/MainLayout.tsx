@@ -19,7 +19,7 @@ export default function MainLayout() {
     const [isExploding, setIsExploding] = useState(false);
 
     useEffect(() => {
-        let newTitle = `Gameyfin - ${routeMetadata?.title}` ?? 'Gameyfin';
+        let newTitle = `Gameyfin - ${routeMetadata?.title}`;
         window.addEventListener('popstate', () => document.title = newTitle);
         loadUserTheme().catch(console.error);
     }, []);

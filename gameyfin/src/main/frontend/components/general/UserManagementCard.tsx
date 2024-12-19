@@ -11,7 +11,6 @@ import TokenDto from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenDt
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
 import RoleChip from "Frontend/components/general/RoleChip";
 import AssignRolesModal from "Frontend/components/general/AssignRolesModal";
-import Role from "Frontend/generated/de/grimsi/gameyfin/core/Role";
 
 export function UserManagementCard({user}: { user: UserInfoDto }) {
     const userDeletionConfirmationModal = useDisclosure();
@@ -123,7 +122,7 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
                         <p className="font-semibold">{user.username}</p>
                         <p className="text-sm">{user.email}</p>
                         {user.roles?.map((role) => (
-                            <RoleChip role={role as Role}/>
+                            <RoleChip role={role as string}/>
                         ))}
                     </div>
                 </div>

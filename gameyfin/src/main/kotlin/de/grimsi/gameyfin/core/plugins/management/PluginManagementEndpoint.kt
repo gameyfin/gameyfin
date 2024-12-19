@@ -20,4 +20,6 @@ class PluginManagementEndpoint(
     fun enablePlugin(pluginId: String) = pluginManagementService.enablePlugin(pluginId)
 
     fun disablePlugin(pluginId: String) = pluginManagementService.disablePlugin(pluginId)
+
+    fun validatePluginConfig(pluginId: String): Boolean = pluginManagementService.validatePluginConfig(pluginId)
 }

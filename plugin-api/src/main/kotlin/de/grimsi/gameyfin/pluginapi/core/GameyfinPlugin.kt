@@ -15,4 +15,10 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     open fun loadConfig(config: Map<String, String?>) {
         this.config = config
     }
+
+    open fun validateConfig(): Boolean {
+        return validateConfig(config)
+    }
+
+    abstract fun validateConfig(config: Map<String, String?>): Boolean
 }
