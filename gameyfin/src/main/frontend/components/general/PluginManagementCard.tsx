@@ -18,11 +18,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
             if (response === undefined) return;
             setConfigValid(response);
         });
-    }, []);
-
-    function iconColor(state: PluginState | undefined): "white" | "default" {
-        return "default";
-    }
+    }, [pluginDetailsModal.isOpen]);
 
     function borderColor(state: PluginState | undefined): "success" | "warning" | "danger" | "default" {
         if (isDisabled(state)) return "warning";
@@ -37,7 +33,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                 return "success";
             case PluginState.DISABLED:
                 return "warning";
-            case PluginState.STOPPED:
+            case PluginState.FAILED:
                 return "danger";
             default:
                 return "default";
@@ -101,6 +97,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
             <PluginDetailsModal plugin={plugin}
                                 isOpen={pluginDetailsModal.isOpen}
                                 onOpenChange={pluginDetailsModal.onOpenChange}
+                                updatePlugin={updatePlugin}
             />
         </>
 

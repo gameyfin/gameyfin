@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
 import {toast} from "sonner";
 import {Form, Formik} from "formik";
-import {PluginConfigEndpoint} from "Frontend/generated/endpoints";
+import {PluginConfigEndpoint, PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/Input";
@@ -12,9 +12,10 @@ interface PluginDetailsModalProps {
     plugin: PluginDto;
     isOpen: boolean;
     onOpenChange: () => void;
+    updatePlugin: (plugin: PluginDto) => void;
 }
 
-export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: PluginDetailsModalProps) {
+export default function PluginDetailsModal({plugin, isOpen, onOpenChange, updatePlugin}: PluginDetailsModalProps) {
     const [pluginConfigMeta, setPluginConfigMeta] = useState<(PluginConfigElement)[]>();
     const [pluginConfig, setPluginConfig] = useState<Record<string, string>>();
 
@@ -32,6 +33,9 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
     async function saveConfig(values: Record<string, string>) {
         await PluginConfigEndpoint.setConfigEntries(plugin.id, values);
         toast.success(`Configuration for ${plugin.name} saved!`);
+        let updatedPlugin = await PluginManagementEndpoint.getPlugin(plugin.id);
+        if (updatedPlugin === undefined) return;
+        updatePlugin(updatedPlugin);
     }
 
     return (

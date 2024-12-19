@@ -39,6 +39,7 @@ export default function PluginManagement() {
             <div className="flex flex-row flex-grow justify-between my-8">
                 <h2 className="text-xl font-bold">Notifications</h2>
             </div>
+            <p>Notification plugins not yet supported.</p>
         </div>
     );
 }

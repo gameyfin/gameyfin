@@ -16,6 +16,8 @@ import kotlinx.serialization.json.*
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -66,6 +68,8 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
     @Extension
     class SteamMetadataProvider : GameMetadataProvider {
+        val log: Logger = LoggerFactory.getLogger(javaClass)
+
         val client = HttpClient(CIO) {
             install(ContentNegotiation) {
                 json()
@@ -89,7 +93,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 val searchResult: SteamSearchResult = client.get(url).body()
                 searchResult.items
             } catch (e: Exception) {
-                println(e.message)
+                log.error("Failed to search Steam store: ${e.message}")
                 emptyList()
             }
         }

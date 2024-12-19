@@ -63,11 +63,62 @@ class GameyfinPluginManager(
         return pluginWrapper
     }
 
+    override fun startPlugin(pluginId: String?): PluginState? {
+        if(pluginId == null)  return PluginState.FAILED
+
+        // Validate config before starting the plugin
+        if (!validatePluginConfig(pluginId)) {
+            log.error { "Plugin $pluginId has invalid configuration" }
+
+            val pluginWrapper = getPlugin(pluginId)
+            pluginWrapper.pluginState = PluginState.FAILED
+            this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginWrapper.pluginState));
+            return pluginWrapper.pluginState
+        }
+
+        return super.startPlugin(pluginId)
+    }
+
+    override fun startPlugins() {
+        for (pluginWrapper in resolvedPlugins) {
+            val pluginState = pluginWrapper.pluginState
+            if (!pluginState.isDisabled && !pluginState.isStarted) {
+
+                // Validate config before starting the plugin
+                if (!validatePluginConfig(pluginWrapper.pluginId)) {
+                    log.error { "Plugin ${pluginWrapper.pluginId} has invalid configuration" }
+                    pluginWrapper.pluginState = PluginState.FAILED
+
+                    firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
+                    return
+                }
+
+                try {
+                    log.info { "${"Start plugin '{}'"} ${getPluginLabel(pluginWrapper.descriptor)}"}
+                    pluginWrapper.plugin.start()
+                    pluginWrapper.pluginState = PluginState.STARTED
+                    pluginWrapper.failedException = null
+                    startedPlugins.add(pluginWrapper)
+                } catch (e: LinkageError) {
+                    pluginWrapper.pluginState = PluginState.FAILED
+                    pluginWrapper.failedException = e
+                    log.error { "${"Unable to start plugin '{}'"} ${getPluginLabel(pluginWrapper.descriptor)} $e"}
+                } catch (e: Exception) {
+                    pluginWrapper.pluginState = PluginState.FAILED
+                    pluginWrapper.failedException = e
+                    log.error { "${"Unable to start plugin '{}'"} ${getPluginLabel(pluginWrapper.descriptor)} $e"}
+                } finally {
+                    firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
+                }
+            }
+        }
+    }
+
     fun restart(pluginId: String) {
         val plugin = getPlugin(pluginId)?.plugin ?: return
-        plugin.stop()
+        stopPlugin(pluginId)
         (plugin as GameyfinPlugin).loadConfig(getConfig(pluginId))
-        plugin.start()
+        startPlugin(pluginId)
     }
 
     fun validatePluginConfig(pluginId: String): Boolean {
