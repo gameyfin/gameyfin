@@ -18,6 +18,7 @@ import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -109,6 +110,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             val metadata = GameMetadata(
                 title = string(game, "name"),
                 description = string(game, "detailed_description"),
+                coverUrl = URI("").toURL(),
                 release = date(game["release_date"]?.jsonObject["date"]?.jsonPrimitive?.content!!),
                 userRating = 0,
                 criticRating = 0,

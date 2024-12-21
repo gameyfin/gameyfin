@@ -17,6 +17,9 @@ class Game(
 
     val title: String,
 
+    @OneToOne(cascade = [CascadeType.MERGE])
+    val coverImage: Image,
+
     @Lob
     @Column(columnDefinition = "CLOB")
     val comment: String? = null,
@@ -27,10 +30,10 @@ class Game(
 
     val release: Instant,
 
-    @OneToMany(cascade = [CascadeType.MERGE])
+    @ManyToMany(cascade = [CascadeType.MERGE])
     val publishers: Set<Company>,
 
-    @OneToMany(cascade = [CascadeType.MERGE])
+    @ManyToMany(cascade = [CascadeType.MERGE])
     val developers: Set<Company>,
 
     @ElementCollection
@@ -49,7 +52,7 @@ class Game(
     val perspectives: Set<PlayerPerspective>,
 
     @OneToMany(cascade = [CascadeType.MERGE])
-    val screenshots: Set<Screenshot>,
+    val images: Set<Image>,
 
     @ElementCollection
     val videoUrls: Set<URL>,

@@ -1,14 +1,12 @@
 package de.grimsi.gameyfin.games
 
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
-import de.grimsi.gameyfin.games.entities.Company
-import de.grimsi.gameyfin.games.entities.CompanyType
-import de.grimsi.gameyfin.games.entities.Game
-import de.grimsi.gameyfin.games.entities.Screenshot
+import de.grimsi.gameyfin.games.dto.GameDto
+import de.grimsi.gameyfin.games.entities.*
 import de.grimsi.gameyfin.games.repositories.CompanyRepository
 import de.grimsi.gameyfin.games.repositories.GameRepository
-import de.grimsi.gameyfin.games.repositories.ScreenshotContentStore
-import de.grimsi.gameyfin.games.repositories.ScreenshotRepository
+import de.grimsi.gameyfin.games.repositories.ImageContentStore
+import de.grimsi.gameyfin.games.repositories.ImageRepository
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -28,8 +26,8 @@ class GameService(
     private val pluginManagementService: PluginManagementService,
     private val gameRepository: GameRepository,
     private val companyRepository: CompanyRepository,
-    private val screenshotRepository: ScreenshotRepository,
-    private val screenshotContentStore: ScreenshotContentStore
+    private val imageRepository: ImageRepository,
+    private val imageContentStore: ImageContentStore
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -43,7 +41,7 @@ class GameService(
         return gameRepository.save(game)
     }
 
-    fun createFromFile(path: Path): Game {
+    fun createFromFile(path: Path): GameDto {
         val metadataResults: Map<GameMetadataProvider, GameMetadata?> = runBlocking {
             coroutineScope {
                 metadataPlugins.associateWith {
@@ -66,9 +64,10 @@ class GameService(
             throw NoMatchException("Plugin ${plugin.javaClass} returned invalid metadata for game at $path")
         }
 
-        val game = toEntity(metadata, path, plugin)
-
-        return createOrUpdate(game)
+        var game = toEntity(metadata, path, plugin)
+        game = createOrUpdate(game)
+        
+        return toDto(game)
     }
 
     fun getAllGames(): Collection<GameDto> {
@@ -89,7 +88,21 @@ class GameService(
 
         return GameDto(
             id = gameId,
-            title = game.title
+            title = game.title,
+            coverImageUrl = game.coverImage.contentId,
+            comment = game.comment,
+            summary = game.summary,
+            release = game.release,
+            publishers = game.publishers.map { it.name },
+            developers = game.developers.map { it.name },
+            genres = game.genres.map { it.name },
+            themes = game.themes.map { it.name },
+            keywords = game.keywords.toList(),
+            features = game.features.map { it.name },
+            perspectives = game.perspectives.map { it.name },
+            images = game.images.mapNotNull { it.contentId },
+            videoUrls = game.videoUrls.map { it.toString() },
+            source = game.source.pluginId
         )
     }
 
@@ -97,6 +110,7 @@ class GameService(
         return Game(
             title = metadata.title,
             summary = metadata.description,
+            coverImage = downloadAndPersist(metadata.coverUrl, ImageType.COVER),
             release = metadata.release,
             publishers = metadata.publishedBy.map { toEntity(it, CompanyType.PUBLISHER) }.toSet(),
             developers = metadata.developedBy.map { toEntity(it, CompanyType.DEVELOPER) }.toSet(),
@@ -105,7 +119,7 @@ class GameService(
             keywords = metadata.keywords,
             features = metadata.features,
             perspectives = metadata.perspectives,
-            screenshots = metadata.screenshotUrls.map { downloadAndPersist(it) }.toSet(),
+            images = metadata.screenshotUrls.map { downloadAndPersist(it, ImageType.SCREENSHOT) }.toSet(),
             videoUrls = metadata.videoUrls,
             path = path.toString(),
             source = pluginManagementService.getPluginManagementEntry(source.javaClass)
@@ -118,15 +132,14 @@ class GameService(
         return companyRepository.save(company)
     }
 
-    private fun downloadAndPersist(screenshotUrl: URL): Screenshot {
-        screenshotRepository.findByOriginalUrl(screenshotUrl)?.let { return it }
+    private fun downloadAndPersist(imageUrl: URL, type: ImageType): Image {
+        imageRepository.findByOriginalUrl(imageUrl)?.let { return it }
 
-        val screenshot = Screenshot(originalUrl = screenshotUrl)
-        screenshotUrl.openStream().use { input ->
-            val mimeType = URLConnection.guessContentTypeFromStream(input)
-            screenshot.mimeType = mimeType
-            screenshotContentStore.setContent(screenshot, input)
+        val image = Image(originalUrl = imageUrl, type = type)
+        imageUrl.openStream().use { input ->
+            image.mimeType = URLConnection.guessContentTypeFromStream(input)
+            imageContentStore.setContent(image, input)
         }
-        return screenshotRepository.save(screenshot)
+        return imageRepository.save(image)
     }
 }

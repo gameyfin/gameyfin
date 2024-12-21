@@ -6,6 +6,7 @@ import java.time.Instant
 class GameMetadata(
     val title: String,
     val description: String,
+    val coverUrl: URL,
     val release: Instant,
     val userRating: Int?,
     val criticRating: Int?,

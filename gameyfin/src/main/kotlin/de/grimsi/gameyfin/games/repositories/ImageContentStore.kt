@@ -1,8 +1,8 @@
 package de.grimsi.gameyfin.games.repositories
 
-import de.grimsi.gameyfin.games.entities.Screenshot
+import de.grimsi.gameyfin.games.entities.Image
 import org.springframework.content.commons.store.ContentStore
 import org.springframework.stereotype.Repository
 
 @Repository
-interface ScreenshotContentStore : ContentStore<Screenshot, String>
+interface ImageContentStore : ContentStore<Image, String>

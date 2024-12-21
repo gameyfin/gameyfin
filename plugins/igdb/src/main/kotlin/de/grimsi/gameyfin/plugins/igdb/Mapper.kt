@@ -95,7 +95,11 @@ class Mapper {
         }
 
         fun screenshot(screenshot: proto.Screenshot): URL {
-            return URI(imageBuilder(screenshot.imageId, ImageSize.SCREENSHOT_HUGE, ImageType.PNG)).toURL()
+            return URI(imageBuilder(screenshot.imageId, ImageSize.FHD, ImageType.PNG)).toURL()
+        }
+
+        fun cover(cover: proto.Cover): URL {
+            return URI(imageBuilder(cover.imageId, ImageSize.COVER_BIG, ImageType.PNG)).toURL()
         }
 
         fun video(video: proto.GameVideo): URL {

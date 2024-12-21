@@ -122,6 +122,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             return GameMetadata(
                 title = game.name,
                 description = game.summary,
+                coverUrl = Mapper.cover(game.cover),
                 release = Instant.ofEpochSecond(game.firstReleaseDate.seconds),
                 userRating = game.rating.toInt(),
                 criticRating = game.aggregatedRating.toInt(),

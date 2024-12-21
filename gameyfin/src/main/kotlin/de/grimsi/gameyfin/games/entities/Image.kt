@@ -11,12 +11,14 @@ import org.springframework.content.commons.annotations.MimeType
 import java.net.URL
 
 @Entity
-class Screenshot(
+class Image(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
     val originalUrl: URL,
+
+    val type: ImageType,
 
     @ContentId
     @Nullable
@@ -30,3 +32,8 @@ class Screenshot(
     @Nullable
     var mimeType: String? = null
 )
+
+enum class ImageType {
+    COVER,
+    SCREENSHOT
+}
