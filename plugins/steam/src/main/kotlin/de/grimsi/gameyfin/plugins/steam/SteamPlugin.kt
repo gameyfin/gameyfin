@@ -112,14 +112,15 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 release = date(game["release_date"]?.jsonObject["date"]?.jsonPrimitive?.content!!),
                 userRating = 0,
                 criticRating = 0,
-                developedBy = stringList(game, "developers"),
-                publishedBy = stringList(game, "publishers"),
-                genres = emptyList(),
-                themes = emptyList(),
-                screenshotUrls = emptyList(),
-                videoUrls = emptyList(),
-                features = emptyList(),
-                perspectives = emptyList()
+                developedBy = stringList(game, "developers").toSet(),
+                publishedBy = stringList(game, "publishers").toSet(),
+                genres = emptySet(),
+                themes = emptySet(),
+                keywords = emptySet(),
+                screenshotUrls = emptySet(),
+                videoUrls = emptySet(),
+                features = emptySet(),
+                perspectives = emptySet()
             )
 
             return metadata

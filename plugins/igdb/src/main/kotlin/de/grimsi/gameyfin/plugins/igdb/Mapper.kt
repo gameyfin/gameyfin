@@ -1,8 +1,15 @@
 package de.grimsi.gameyfin.plugins.igdb
 
+import com.api.igdb.utils.ImageSize
+import com.api.igdb.utils.ImageType
+import com.api.igdb.utils.imageBuilder
+import de.grimsi.gameyfin.pluginapi.gamemetadata.GameFeature
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
+import de.grimsi.gameyfin.pluginapi.gamemetadata.PlayerPerspective
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Theme
 import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.URL
 
 class Mapper {
     companion object {
@@ -69,6 +76,50 @@ class Mapper {
                     Theme.UNKNOWN
                 }
             }
+        }
+
+        fun playerPerspective(perspective: proto.PlayerPerspective): PlayerPerspective {
+            return when (perspective.slug) {
+                "first-person" -> PlayerPerspective.FIRST_PERSON
+                "third-person" -> PlayerPerspective.THIRD_PERSON
+                "bird-view-isometric" -> PlayerPerspective.BIRD_VIEW_ISOMETRIC
+                "side-view" -> PlayerPerspective.SIDE_VIEW
+                "text" -> PlayerPerspective.TEXT
+                "auditory" -> PlayerPerspective.AUDITORY
+                "virtual-reality" -> PlayerPerspective.VIRTUAL_REALITY
+                else -> {
+                    log.warn("Unknown player perspective: {}", perspective.slug)
+                    PlayerPerspective.UNKNOWN
+                }
+            }
+        }
+
+        fun screenshot(screenshot: proto.Screenshot): URL {
+            return URI(imageBuilder(screenshot.imageId, ImageSize.SCREENSHOT_HUGE, ImageType.PNG)).toURL()
+        }
+
+        fun video(video: proto.GameVideo): URL {
+            return URI("https://www.youtube.com/watch?v=${video.videoId}").toURL()
+        }
+
+        fun gameFeatures(game: proto.Game): Set<GameFeature> {
+            var gameFeatures = mutableSetOf<GameFeature>()
+
+            // Get LAN support from multiplayer modes
+            if (game.multiplayerModesList.any { it.lancoop }) gameFeatures.add(GameFeature.LOCAL_MULTIPLAYER)
+
+            for (gameMode in game.gameModesList) {
+                when (gameMode.slug) {
+                    "single-player" -> gameFeatures.add(GameFeature.SINGLEPLAYER)
+                    "multiplayer" -> gameFeatures.add(GameFeature.MULTIPLAYER)
+                    "co-operative" -> gameFeatures.add(GameFeature.CO_OP)
+                    "split-screen" -> gameFeatures.add(GameFeature.SPLITSCREEN)
+                    else -> {
+                        log.warn("Unknown game mode: {}", gameMode.slug)
+                    }
+                }
+            }
+            return gameFeatures
         }
     }
 }

@@ -9,9 +9,9 @@ import jakarta.annotation.security.RolesAllowed
 class PluginManagementEndpoint(
     private val pluginManagementService: PluginManagementService
 ) {
-    fun getPlugins() = pluginManagementService.getPlugins()
+    fun getPlugins() = pluginManagementService.getPluginDtos()
 
-    fun getPlugin(pluginId: String) = pluginManagementService.getPlugin(pluginId)
+    fun getPlugin(pluginId: String) = pluginManagementService.getPluginDto(pluginId)
 
     fun startPlugin(pluginId: String) = pluginManagementService.startPlugin(pluginId)
 

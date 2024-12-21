@@ -59,9 +59,43 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
     @Extension
     class IgdbMetadataProvider : GameMetadataProvider {
+
+        private val QUERY_FIELDS = listOf(
+            "slug",
+            "name",
+            "summary",
+            "first_release_date",
+            "rating",
+            "aggregated_rating",
+            "total_rating",
+            "category",
+            "multiplayer_modes.lancoop",
+            "game_modes.slug",
+            "game_modes.name",
+            "cover.image_id",
+            "screenshots.image_id",
+            "videos.video_id",
+            "involved_companies.company.slug",
+            "involved_companies.company.name",
+            "involved_companies.developer",
+            "involved_companies.publisher",
+            "involved_companies.company.logo.image_id",
+            "genres.slug",
+            "genres.name",
+            "keywords.slug",
+            "keywords.name",
+            "themes.slug",
+            "themes.name",
+            "player_perspectives.slug",
+            "player_perspectives.name",
+            "platforms.slug",
+            "platforms.name",
+            "platforms.platform_logo.image_id"
+        ).joinToString(",")
+
         override fun fetchMetadata(gameId: String): GameMetadata? {
             val findBySlugQuery = APICalypse()
-                .fields("*")
+                .fields(QUERY_FIELDS)
                 .where("slug = \"${guessSlug(gameId)}\"")
 
             // First step: Try to find the game by guessing the slug
@@ -70,7 +104,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             // Second step: Try a fuzzy search
             if (game == null) {
                 val searchByNameQuery = APICalypse()
-                    .fields("*")
+                    .fields(QUERY_FIELDS)
                     .limit(100)
                     .search(gameId)
 
@@ -91,14 +125,15 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 release = Instant.ofEpochSecond(game.firstReleaseDate.seconds),
                 userRating = game.rating.toInt(),
                 criticRating = game.aggregatedRating.toInt(),
-                developedBy = game.involvedCompaniesList.filter { it.developer }.map { it.company.name },
-                publishedBy = game.involvedCompaniesList.filter { it.publisher }.map { it.company.name },
-                genres = game.genresList.map { Mapper.genre(it) },
-                themes = game.themesList.map { Mapper.theme(it) },
-                screenshotUrls = listOf(),
-                videoUrls = listOf(),
-                features = listOf(),
-                perspectives = listOf()
+                developedBy = game.involvedCompaniesList.filter { it.developer }.map { it.company.name }.toSet(),
+                publishedBy = game.involvedCompaniesList.filter { it.publisher }.map { it.company.name }.toSet(),
+                genres = game.genresList.map { Mapper.genre(it) }.toSet(),
+                themes = game.themesList.map { Mapper.theme(it) }.toSet(),
+                keywords = game.keywordsList.map { it.name }.toSet(),
+                screenshotUrls = game.screenshotsList.map { Mapper.screenshot(it) }.toSet(),
+                videoUrls = game.videosList.map { Mapper.video(it) }.toSet(),
+                features = Mapper.gameFeatures(game),
+                perspectives = game.playerPerspectivesList.map { Mapper.playerPerspective(it) }.toSet()
             )
         }
 

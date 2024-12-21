@@ -94,19 +94,15 @@ class GameyfinPluginManager(
                 }
 
                 try {
-                    log.info { "${"Start plugin '{}'"} ${getPluginLabel(pluginWrapper.descriptor)}"}
+                    log.info { "Start plugin '${getPluginLabel(pluginWrapper.descriptor)}'"}
                     pluginWrapper.plugin.start()
                     pluginWrapper.pluginState = PluginState.STARTED
                     pluginWrapper.failedException = null
                     startedPlugins.add(pluginWrapper)
-                } catch (e: LinkageError) {
-                    pluginWrapper.pluginState = PluginState.FAILED
-                    pluginWrapper.failedException = e
-                    log.error { "${"Unable to start plugin '{}'"} ${getPluginLabel(pluginWrapper.descriptor)} $e"}
                 } catch (e: Exception) {
                     pluginWrapper.pluginState = PluginState.FAILED
                     pluginWrapper.failedException = e
-                    log.error { "${"Unable to start plugin '{}'"} ${getPluginLabel(pluginWrapper.descriptor)} $e"}
+                    log.error { "Unable to start plugin '${getPluginLabel(pluginWrapper.descriptor)}': $e"}
                 } finally {
                     firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
                 }

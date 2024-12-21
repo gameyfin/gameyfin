@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.libraries
 
-import de.grimsi.gameyfin.games.Game
+import de.grimsi.gameyfin.games.entities.Game
 import jakarta.persistence.*
 
 @Entity

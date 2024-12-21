@@ -2,7 +2,7 @@ package de.grimsi.gameyfin.libraries
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
-import de.grimsi.gameyfin.games.Game
+import de.grimsi.gameyfin.games.entities.Game
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint

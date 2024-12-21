@@ -9,14 +9,15 @@ class GameMetadata(
     val release: Instant,
     val userRating: Int?,
     val criticRating: Int?,
-    val developedBy: List<String>,
-    val publishedBy: List<String>,
-    val genres: List<Genre>,
-    val themes: List<Theme>,
-    val screenshotUrls: List<URL>,
-    val videoUrls: List<URL>,
-    val features: List<GameFeature>,
-    val perspectives: List<PlayerPerspective>
+    val developedBy: Set<String>,
+    val publishedBy: Set<String>,
+    val genres: Set<Genre>,
+    val themes: Set<Theme>,
+    val keywords: Set<String>,
+    val screenshotUrls: Set<URL>,
+    val videoUrls: Set<URL>,
+    val features: Set<GameFeature>,
+    val perspectives: Set<PlayerPerspective>
 )
 
 enum class Genre {
@@ -95,10 +96,12 @@ enum class GameFeature {
     ONLINE_PVE,
     LOCAL_PVP,
     LOCAL_PVE,
-    CROSSPLAY
+    CROSSPLAY,
+    SPLITSCREEN
 }
 
 enum class PlayerPerspective {
+    UNKNOWN,
     FIRST_PERSON,
     THIRD_PERSON,
     BIRD_VIEW_ISOMETRIC,

@@ -2,8 +2,8 @@ package de.grimsi.gameyfin.libraries
 
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
-import de.grimsi.gameyfin.games.Game
 import de.grimsi.gameyfin.games.GameService
+import de.grimsi.gameyfin.games.entities.Game
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.nio.file.Path
