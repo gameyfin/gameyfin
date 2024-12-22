@@ -89,7 +89,7 @@ class GameService(
         return GameDto(
             id = gameId,
             title = game.title,
-            coverImageUrl = game.coverImage.contentId,
+            coverId = game.coverImage.id,
             comment = game.comment,
             summary = game.summary,
             release = game.release,
@@ -100,7 +100,7 @@ class GameService(
             keywords = game.keywords.toList(),
             features = game.features.map { it.name },
             perspectives = game.perspectives.map { it.name },
-            images = game.images.mapNotNull { it.id },
+            imageIds = game.images.mapNotNull { it.id },
             videoUrls = game.videoUrls.map { it.toString() },
             source = game.source.pluginId
         )
@@ -137,7 +137,7 @@ class GameService(
 
         val image = Image(originalUrl = imageUrl, type = type)
         imageUrl.openStream().use { input ->
-            image.mimeType = URLConnection.guessContentTypeFromStream(input)
+            image.mimeType = URLConnection.guessContentTypeFromName(imageUrl.file)
             imageContentStore.setContent(image, input)
         }
         return imageRepository.save(image)

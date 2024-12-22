@@ -5,7 +5,7 @@ import java.time.Instant
 class GameDto(
     val id: Long,
     val title: String,
-    val coverImageUrl: String?,
+    val coverId: Long?,
     val comment: String?,
     val summary: String?,
     val release: Instant?,
@@ -16,7 +16,7 @@ class GameDto(
     val keywords: List<String>?,
     val features: List<String>?,
     val perspectives: List<String>?,
-    val images: List<Long>?,
+    val imageIds: List<Long>?,
     val videoUrls: List<String>?,
     val source: String?
 )

@@ -76,8 +76,8 @@ class ImageEndpoint(
         val inputStreamResource = InputStreamResource(file)
 
         val headers = HttpHeaders()
-        headers.contentLength = image.contentLength!!
-        headers.contentType = MediaType.parseMediaType(image.mimeType!!)
+        image.contentLength?.let { headers.contentLength = it }
+        image.mimeType?.let { headers.contentType = MediaType.parseMediaType(it) }
 
         return ResponseEntity.ok()
             .headers(headers)
