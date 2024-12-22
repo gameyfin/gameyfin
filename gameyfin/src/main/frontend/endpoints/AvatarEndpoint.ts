@@ -5,7 +5,7 @@ export async function uploadAvatar(avatar: any) {
     const formData = new FormData();
     formData.append("file", avatar);
 
-    const response = await fetchWithAuth("avatar/upload", formData);
+    const response = await fetchWithAuth("images/avatar/upload", formData);
 
     const result = await response.text();
 
@@ -17,7 +17,7 @@ export async function uploadAvatar(avatar: any) {
 }
 
 export async function removeAvatar() {
-    const response = await fetchWithAuth("avatar/delete")
+    const response = await fetchWithAuth("images/avatar/delete")
 
     const result = await response.text();
 
@@ -29,7 +29,7 @@ export async function removeAvatar() {
 }
 
 export async function removeAvatarByName(name: string) {
-    const response = await fetchWithAuth("avatar/deleteByName?" + new URLSearchParams({name: name}))
+    const response = await fetchWithAuth("images/avatar/deleteByName?" + new URLSearchParams({name: name}))
 
     const result = await response.text();
 

@@ -3,11 +3,11 @@ import {Button, Input} from "@nextui-org/react";
 import {toast} from "sonner";
 import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints";
 import {useState} from "react";
-import Game from "Frontend/generated/de/grimsi/gameyfin/games/Game";
+import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 
 export default function TestView() {
     const [gameTitle, setGameTitle] = useState("");
-    const [game, setGame] = useState<Game>();
+    const [game, setGame] = useState<GameDto>();
 
     function getGame() {
         LibraryEndpoint.test(gameTitle).then(game => {

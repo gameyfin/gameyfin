@@ -1,26 +1,24 @@
-package de.grimsi.gameyfin.users.avatar
+package de.grimsi.gameyfin.media
 
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.users.UserService
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
-import jakarta.servlet.http.HttpServletResponse
 import org.springframework.core.io.InputStreamResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
 
 @RestController
-class AvatarController(
-    private val userService: UserService
+@RequestMapping("/images")
+class ImageController(
+    private val userService: UserService,
+    private val imageService: ImageService
 ) {
 
     @PostMapping("/avatar/upload")
@@ -42,14 +40,13 @@ class AvatarController(
     }
 
     @PermitAll
-    @GetMapping("/images/avatar")
+    @GetMapping("/avatar")
     fun getAvatar(
-        @RequestParam("username") username: String,
-        response: HttpServletResponse
+        @RequestParam("username") username: String
     ): ResponseEntity<InputStreamResource>? {
         val avatar = userService.getAvatar(username) ?: return ResponseEntity.notFound().build()
 
-        val file = avatar.let { userService.getAvatarFile(it) }
+        val file = avatar.let { imageService.getFileContent(it) }
 
         val inputStreamResource = InputStreamResource(file)
         val headers = HttpHeaders()

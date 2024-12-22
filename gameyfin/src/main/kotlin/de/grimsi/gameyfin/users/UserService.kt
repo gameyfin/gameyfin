@@ -5,14 +5,15 @@ import de.grimsi.gameyfin.config.ConfigService
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.*
+import de.grimsi.gameyfin.games.entities.Image
+import de.grimsi.gameyfin.games.entities.ImageType
+import de.grimsi.gameyfin.media.ImageService
 import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
 import de.grimsi.gameyfin.users.dto.UserUpdateDto
 import de.grimsi.gameyfin.users.emailconfirmation.EmailConfirmationService
-import de.grimsi.gameyfin.users.entities.Avatar
 import de.grimsi.gameyfin.users.entities.User
 import de.grimsi.gameyfin.users.enums.RoleAssignmentResult
-import de.grimsi.gameyfin.users.persistence.AvatarContentStore
 import de.grimsi.gameyfin.users.persistence.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
@@ -28,14 +29,13 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.io.InputStream
 
 
 @Service
 @Transactional
 class UserService(
     private val userRepository: UserRepository,
-    private val avatarStore: AvatarContentStore,
+    private val imageService: ImageService,
     private val passwordEncoder: PasswordEncoder,
     private val roleService: RoleService,
     private val sessionService: SessionService,
@@ -100,23 +100,20 @@ class UserService(
         return toUserInfo(user)
     }
 
-    fun getAvatar(username: String): Avatar? {
+    fun getAvatar(username: String): Image? {
         val user = getByUsernameNonNull(username)
         return user.avatar
-    }
-
-    fun getAvatarFile(avatar: Avatar): InputStream {
-        return avatarStore.getContent(avatar)
     }
 
     fun setAvatar(username: String, file: MultipartFile) {
         val user = getByUsernameNonNull(username)
 
         if (user.avatar == null) {
-            user.avatar = Avatar(mimeType = file.contentType)
+            user.avatar = imageService.createFile(ImageType.AVATAR, file.inputStream, file.contentType!!)
+        } else {
+            user.avatar = imageService.updateFileContent(user.avatar!!, file.inputStream, file.contentType!!)
         }
 
-        avatarStore.setContent(user.avatar, file.inputStream)
         userRepository.save(user)
     }
 
@@ -124,8 +121,7 @@ class UserService(
         val user = getByUsernameNonNull(username)
 
         if (user.avatar == null) return
-
-        avatarStore.unsetContent(user.avatar)
+        imageService.deleteFile(user.avatar!!)
         user.avatar = null
 
         userRepository.save(user)
@@ -275,6 +271,7 @@ class UserService(
             emailConfirmed = user.emailConfirmed,
             isEnabled = user.enabled,
             hasAvatar = user.avatar != null,
+            avatarId = user.avatar?.contentId,
             managedBySso = user.oidcProviderId != null,
             roles = user.roles
         )

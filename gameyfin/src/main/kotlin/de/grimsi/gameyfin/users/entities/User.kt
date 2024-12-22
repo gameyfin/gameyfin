@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.users.entities
 
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.security.EncryptionConverter
+import de.grimsi.gameyfin.games.entities.Image
 import jakarta.annotation.Nullable
 import jakarta.persistence.*
 import jakarta.validation.constraints.NotNull
@@ -32,9 +33,8 @@ class User(
 
     var enabled: Boolean = false,
 
-    @Embedded
-    @Nullable
-    var avatar: Avatar? = null,
+    @OneToOne(cascade = [CascadeType.ALL])
+    var avatar: Image? = null,
 
     @ElementCollection(targetClass = Role::class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)

@@ -16,7 +16,7 @@ class Image(
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
-    val originalUrl: URL,
+    val originalUrl: URL? = null,
 
     val type: ImageType,
 
@@ -35,5 +35,6 @@ class Image(
 
 enum class ImageType {
     COVER,
-    SCREENSHOT
+    SCREENSHOT,
+    AVATAR
 }
