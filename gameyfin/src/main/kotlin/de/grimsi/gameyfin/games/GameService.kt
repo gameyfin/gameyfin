@@ -66,7 +66,7 @@ class GameService(
 
         var game = toEntity(metadata, path, plugin)
         game = createOrUpdate(game)
-        
+
         return toDto(game)
     }
 
@@ -100,7 +100,7 @@ class GameService(
             keywords = game.keywords.toList(),
             features = game.features.map { it.name },
             perspectives = game.perspectives.map { it.name },
-            images = game.images.mapNotNull { it.contentId },
+            images = game.images.mapNotNull { it.id },
             videoUrls = game.videoUrls.map { it.toString() },
             source = game.source.pluginId
         )

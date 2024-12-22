@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.core.annotations
 
 import kotlin.annotation.AnnotationRetention.RUNTIME
+import kotlin.annotation.AnnotationTarget.CLASS
 import kotlin.annotation.AnnotationTarget.FUNCTION
 
 /**
@@ -9,6 +10,6 @@ import kotlin.annotation.AnnotationTarget.FUNCTION
  * One example would be the main library view.
  */
 
-@Target(FUNCTION)
+@Target(FUNCTION, CLASS)
 @Retention(RUNTIME)
 annotation class DynamicPublicAccess

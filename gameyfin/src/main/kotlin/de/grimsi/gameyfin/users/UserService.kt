@@ -6,7 +6,6 @@ import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.events.*
 import de.grimsi.gameyfin.games.entities.Image
-import de.grimsi.gameyfin.games.entities.ImageType
 import de.grimsi.gameyfin.media.ImageService
 import de.grimsi.gameyfin.users.dto.UserInfoDto
 import de.grimsi.gameyfin.users.dto.UserRegistrationDto
@@ -28,7 +27,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
-import org.springframework.web.multipart.MultipartFile
 
 
 @Service
@@ -105,15 +103,9 @@ class UserService(
         return user.avatar
     }
 
-    fun setAvatar(username: String, file: MultipartFile) {
+    fun updateAvatar(username: String, newAvatar: Image) {
         val user = getByUsernameNonNull(username)
-
-        if (user.avatar == null) {
-            user.avatar = imageService.createFile(ImageType.AVATAR, file.inputStream, file.contentType!!)
-        } else {
-            user.avatar = imageService.updateFileContent(user.avatar!!, file.inputStream, file.contentType!!)
-        }
-
+        user.avatar = newAvatar
         userRepository.save(user)
     }
 
@@ -125,6 +117,11 @@ class UserService(
         user.avatar = null
 
         userRepository.save(user)
+    }
+
+    fun hasAvatar(username: String): Boolean {
+        val user = getByUsernameNonNull(username)
+        return user.avatar != null && user.avatar!!.id != null
     }
 
     fun registerOrUpdateUser(user: User): User {
@@ -271,7 +268,7 @@ class UserService(
             emailConfirmed = user.emailConfirmed,
             isEnabled = user.enabled,
             hasAvatar = user.avatar != null,
-            avatarId = user.avatar?.contentId,
+            avatarId = user.avatar?.id,
             managedBySso = user.oidcProviderId != null,
             roles = user.roles
         )

@@ -16,7 +16,7 @@ class GameDto(
     val keywords: List<String>?,
     val features: List<String>?,
     val perspectives: List<String>?,
-    val images: List<String>?,
+    val images: List<Long>?,
     val videoUrls: List<String>?,
     val source: String?
 )

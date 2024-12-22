@@ -9,6 +9,6 @@ data class UserInfoDto(
     val emailConfirmed: Boolean,
     val isEnabled: Boolean,
     val hasAvatar: Boolean,
-    val avatarId: String? = null,
+    val avatarId: Long? = null,
     var roles: Set<Role>
 )
