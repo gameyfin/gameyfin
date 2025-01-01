@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.games
 
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
 import de.grimsi.gameyfin.games.dto.GameDto
+import de.grimsi.gameyfin.games.dto.GameMetadataDto
 import de.grimsi.gameyfin.games.entities.*
 import de.grimsi.gameyfin.games.repositories.CompanyRepository
 import de.grimsi.gameyfin.games.repositories.GameRepository
@@ -102,11 +103,24 @@ class GameService(
             perspectives = game.perspectives.map { it.name },
             imageIds = game.images.mapNotNull { it.id },
             videoUrls = game.videoUrls.map { it.toString() },
-            source = game.source.pluginId
+            metadata = toDto(game.metadata)
+        )
+    }
+
+    private fun toDto(metadata: Map<String, FieldMetadata>): Map<String, GameMetadataDto> {
+        return metadata.mapValues { toDto(it.value) }
+    }
+
+    private fun toDto(metadata: FieldMetadata): GameMetadataDto {
+        return GameMetadataDto(
+            source = metadata.source.pluginId,
+            lastUpdated = metadata.lastUpdated
         )
     }
 
     private fun toEntity(metadata: GameMetadata, path: Path, source: GameMetadataProvider): Game {
+        val sourcePlugin = pluginManagementService.getPluginManagementEntry(source.javaClass)
+
         return Game(
             title = metadata.title,
             summary = metadata.description,
@@ -122,7 +136,7 @@ class GameService(
             images = metadata.screenshotUrls.map { downloadAndPersist(it, ImageType.SCREENSHOT) }.toSet(),
             videoUrls = metadata.videoUrls,
             path = path.toString(),
-            source = pluginManagementService.getPluginManagementEntry(source.javaClass)
+            metadata = mapOf("title" to FieldMetadata(sourcePlugin))
         )
     }
 

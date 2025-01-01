@@ -1,6 +1,5 @@
 package de.grimsi.gameyfin.games.entities
 
-import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameFeature
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
 import de.grimsi.gameyfin.pluginapi.gamemetadata.PlayerPerspective
@@ -60,6 +59,6 @@ class Game(
     @Column(unique = true)
     val path: String,
 
-    @ManyToOne
-    val source: PluginManagementEntry
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    val metadata: Map<String, FieldMetadata>
 )
