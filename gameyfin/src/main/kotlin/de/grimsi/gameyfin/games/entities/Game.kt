@@ -5,7 +5,7 @@ import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
 import de.grimsi.gameyfin.pluginapi.gamemetadata.PlayerPerspective
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Theme
 import jakarta.persistence.*
-import java.net.URL
+import java.net.URI
 import java.time.Instant
 
 @Entity
@@ -17,7 +17,7 @@ class Game(
     val title: String,
 
     @OneToOne(cascade = [CascadeType.MERGE])
-    val coverImage: Image,
+    val coverImage: Image? = null,
 
     @Lob
     @Column(columnDefinition = "CLOB")
@@ -25,40 +25,40 @@ class Game(
 
     @Lob
     @Column(columnDefinition = "CLOB")
-    val summary: String,
+    val summary: String? = null,
 
-    val release: Instant,
-
-    @ManyToMany(cascade = [CascadeType.MERGE])
-    val publishers: Set<Company>,
+    val release: Instant? = null,
 
     @ManyToMany(cascade = [CascadeType.MERGE])
-    val developers: Set<Company>,
+    val publishers: Set<Company>? = null,
+
+    @ManyToMany(cascade = [CascadeType.MERGE])
+    val developers: Set<Company>? = null,
 
     @ElementCollection
-    val genres: Set<Genre>,
+    val genres: Set<Genre>? = null,
 
     @ElementCollection
-    val themes: Set<Theme>,
+    val themes: Set<Theme>? = null,
 
     @ElementCollection
-    val keywords: Set<String>,
+    val keywords: Set<String>? = null,
 
     @ElementCollection
-    val features: Set<GameFeature>,
+    val features: Set<GameFeature>? = null,
 
     @ElementCollection
-    val perspectives: Set<PlayerPerspective>,
+    val perspectives: Set<PlayerPerspective>? = null,
 
     @OneToMany(cascade = [CascadeType.MERGE])
-    val images: Set<Image>,
+    val images: Set<Image>? = null,
 
     @ElementCollection
-    val videoUrls: Set<URL>,
+    val videoUrls: Set<URI>? = null,
 
     @Column(unique = true)
     val path: String,
 
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    val metadata: Map<String, FieldMetadata>
+    val metadata: Map<String, FieldMetadata> = emptyMap()
 )

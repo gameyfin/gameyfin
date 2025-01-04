@@ -18,5 +18,6 @@ class GameDto(
     val perspectives: List<String>?,
     val imageIds: List<Long>?,
     val videoUrls: List<String>?,
+    val path: String,
     val metadata: Map<String, GameMetadataDto>
 )

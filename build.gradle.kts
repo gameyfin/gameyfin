@@ -4,8 +4,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 allprojects {
     repositories {
-        mavenLocal()
         mavenCentral()
+        mavenLocal()
     }
 }
 

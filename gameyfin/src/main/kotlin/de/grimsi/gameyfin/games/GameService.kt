@@ -17,7 +17,7 @@ import kotlinx.coroutines.runBlocking
 import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import java.net.URL
+import java.net.URI
 import java.net.URLConnection
 import java.nio.file.Path
 
@@ -43,20 +43,7 @@ class GameService(
     }
 
     fun createFromFile(path: Path): GameDto {
-        val metadataResults: Map<GameMetadataProvider, GameMetadata?> = runBlocking {
-            coroutineScope {
-                metadataPlugins.associateWith {
-                    async {
-                        try {
-                            it.fetchMetadata(path.fileName.toString())
-                        } catch (e: Exception) {
-                            log.error(e) { "Error fetching metadata with plugin ${it.javaClass.name}" }
-                            null
-                        }
-                    }.await()
-                }
-            }
-        }
+        val metadataResults = queryPlugins(path.fileName.toString())
 
         val (plugin, metadata) = metadataResults.entries.firstOrNull { it.value != null }
             ?: throw NoMatchException("Could not match game at $path")
@@ -84,25 +71,48 @@ class GameService(
         return gameRepository.findByIdOrNull(id) ?: throw IllegalArgumentException("Game with id $id not found")
     }
 
+    /**
+     * Queries all metadata plugins for metadata on the provided game title
+     * Runs the queries concurrently and asynchronously
+     * @return A map of metadata plugins and their respective results
+     */
+    private fun queryPlugins(gameTitle: String): Map<GameMetadataProvider, GameMetadata?> {
+        return runBlocking {
+            coroutineScope {
+                metadataPlugins.associateWith {
+                    async {
+                        try {
+                            it.fetchMetadata(gameTitle)
+                        } catch (e: Exception) {
+                            log.error(e) { "Error fetching metadata with plugin ${it.javaClass.name}" }
+                            null
+                        }
+                    }.await()
+                }
+            }
+        }
+    }
+
     private fun toDto(game: Game): GameDto {
         val gameId = game.id ?: throw IllegalArgumentException("Game ID is null")
 
         return GameDto(
             id = gameId,
             title = game.title,
-            coverId = game.coverImage.id,
+            coverId = game.coverImage?.id,
             comment = game.comment,
             summary = game.summary,
             release = game.release,
-            publishers = game.publishers.map { it.name },
-            developers = game.developers.map { it.name },
-            genres = game.genres.map { it.name },
-            themes = game.themes.map { it.name },
-            keywords = game.keywords.toList(),
-            features = game.features.map { it.name },
-            perspectives = game.perspectives.map { it.name },
-            imageIds = game.images.mapNotNull { it.id },
-            videoUrls = game.videoUrls.map { it.toString() },
+            publishers = game.publishers?.map { it.name },
+            developers = game.developers?.map { it.name },
+            genres = game.genres?.map { it.name },
+            themes = game.themes?.map { it.name },
+            keywords = game.keywords?.toList(),
+            features = game.features?.map { it.name },
+            perspectives = game.perspectives?.map { it.name },
+            imageIds = game.images?.mapNotNull { it.id },
+            videoUrls = game.videoUrls?.map { it.toString() },
+            path = game.path,
             metadata = toDto(game.metadata)
         )
     }
@@ -124,16 +134,16 @@ class GameService(
         return Game(
             title = metadata.title,
             summary = metadata.description,
-            coverImage = downloadAndPersist(metadata.coverUrl, ImageType.COVER),
+            coverImage = metadata.coverUrl?.let { downloadAndPersist(it, ImageType.COVER) },
             release = metadata.release,
-            publishers = metadata.publishedBy.map { toEntity(it, CompanyType.PUBLISHER) }.toSet(),
-            developers = metadata.developedBy.map { toEntity(it, CompanyType.DEVELOPER) }.toSet(),
+            publishers = metadata.publishedBy?.map { toEntity(it, CompanyType.PUBLISHER) }?.toSet(),
+            developers = metadata.developedBy?.map { toEntity(it, CompanyType.DEVELOPER) }?.toSet(),
             genres = metadata.genres,
             themes = metadata.themes,
             keywords = metadata.keywords,
             features = metadata.features,
             perspectives = metadata.perspectives,
-            images = metadata.screenshotUrls.map { downloadAndPersist(it, ImageType.SCREENSHOT) }.toSet(),
+            images = metadata.screenshotUrls?.map { downloadAndPersist(it, ImageType.SCREENSHOT) }?.toSet(),
             videoUrls = metadata.videoUrls,
             path = path.toString(),
             metadata = mapOf("title" to FieldMetadata(sourcePlugin))
@@ -146,12 +156,13 @@ class GameService(
         return companyRepository.save(company)
     }
 
-    private fun downloadAndPersist(imageUrl: URL, type: ImageType): Image {
-        imageRepository.findByOriginalUrl(imageUrl)?.let { return it }
+    private fun downloadAndPersist(imageUrl: URI, type: ImageType): Image {
+        val parsedUrl = imageUrl.toURL()
+        imageRepository.findByOriginalUrl(parsedUrl)?.let { return it }
 
-        val image = Image(originalUrl = imageUrl, type = type)
-        imageUrl.openStream().use { input ->
-            image.mimeType = URLConnection.guessContentTypeFromName(imageUrl.file)
+        val image = Image(originalUrl = parsedUrl, type = type)
+        parsedUrl.openStream().use { input ->
+            image.mimeType = URLConnection.guessContentTypeFromName(parsedUrl.file)
             imageContentStore.setContent(image, input)
         }
         return imageRepository.save(image)

@@ -14,7 +14,8 @@ import kotlin.io.path.Path
 @Component
 class GameyfinPluginManager(
     val pluginConfigRepository: PluginConfigRepository,
-    val dbPluginStatusProvider: DatabasePluginStatusProvider
+    val dbPluginStatusProvider: DatabasePluginStatusProvider,
+    val pluginManagementRepository: PluginManagementRepository
 ) : DefaultPluginManager(Path(System.getProperty("pf4j.pluginsDir", "plugins"))) {
 
     private val log = KotlinLogging.logger {}
@@ -55,8 +56,8 @@ class GameyfinPluginManager(
     override fun loadPluginFromPath(pluginPath: Path?): PluginWrapper? {
         val pluginWrapper = super.loadPluginFromPath(pluginPath)
 
-        // Inject config after loading, before starting
         if (pluginWrapper != null) {
+            // Inject config after loading, before starting
             configurePlugin(pluginWrapper)
         }
 
@@ -64,7 +65,7 @@ class GameyfinPluginManager(
     }
 
     override fun startPlugin(pluginId: String?): PluginState? {
-        if(pluginId == null)  return PluginState.FAILED
+        if (pluginId == null) return PluginState.FAILED
 
         // Validate config before starting the plugin
         if (!validatePluginConfig(pluginId)) {
@@ -94,7 +95,7 @@ class GameyfinPluginManager(
                 }
 
                 try {
-                    log.info { "Start plugin '${getPluginLabel(pluginWrapper.descriptor)}'"}
+                    log.info { "Start plugin '${getPluginLabel(pluginWrapper.descriptor)}'" }
                     pluginWrapper.plugin.start()
                     pluginWrapper.pluginState = PluginState.STARTED
                     pluginWrapper.failedException = null
@@ -102,7 +103,7 @@ class GameyfinPluginManager(
                 } catch (e: Exception) {
                     pluginWrapper.pluginState = PluginState.FAILED
                     pluginWrapper.failedException = e
-                    log.error { "Unable to start plugin '${getPluginLabel(pluginWrapper.descriptor)}': $e"}
+                    log.error { "Unable to start plugin '${getPluginLabel(pluginWrapper.descriptor)}': $e" }
                 } finally {
                     firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
                 }

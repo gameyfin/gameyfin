@@ -16,7 +16,7 @@ data class SteamGameDetails(
     val type: String,
     val name: String,
     @SerialName("steam_appid") val steamAppId: Int,
-    @SerialName("required_age") val requiredAge: String,
+    @SerialName("required_age") val requiredAge: Int,
     @SerialName("is_free") val isFree: Boolean,
     @SerialName("controller_support") val controllerSupport: String?,
     val dlc: List<Int>?,
