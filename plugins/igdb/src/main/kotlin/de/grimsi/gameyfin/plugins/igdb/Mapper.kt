@@ -9,7 +9,6 @@ import de.grimsi.gameyfin.pluginapi.gamemetadata.PlayerPerspective
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Theme
 import org.slf4j.LoggerFactory
 import java.net.URI
-import java.net.URL
 
 class Mapper {
     companion object {
@@ -94,16 +93,16 @@ class Mapper {
             }
         }
 
-        fun screenshot(screenshot: proto.Screenshot): URL {
-            return URI(imageBuilder(screenshot.imageId, ImageSize.FHD, ImageType.PNG)).toURL()
+        fun screenshot(screenshot: proto.Screenshot): URI {
+            return URI(imageBuilder(screenshot.imageId, ImageSize.FHD, ImageType.PNG))
         }
 
-        fun cover(cover: proto.Cover): URL {
-            return URI(imageBuilder(cover.imageId, ImageSize.COVER_BIG, ImageType.PNG)).toURL()
+        fun cover(cover: proto.Cover): URI {
+            return URI(imageBuilder(cover.imageId, ImageSize.COVER_BIG, ImageType.PNG))
         }
 
-        fun video(video: proto.GameVideo): URL {
-            return URI("https://www.youtube.com/watch?v=${video.videoId}").toURL()
+        fun video(video: proto.GameVideo): URI {
+            return URI("https://www.youtube.com/watch?v=${video.videoId}")
         }
 
         fun gameFeatures(game: proto.Game): Set<GameFeature> {

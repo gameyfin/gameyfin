@@ -4,15 +4,23 @@ import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import de.grimsi.gameyfin.plugins.steam.dto.SteamDetailsResultWrapper
+import de.grimsi.gameyfin.plugins.steam.dto.SteamGame
+import de.grimsi.gameyfin.plugins.steam.dto.SteamSearchResult
+import de.grimsi.gameyfin.plugins.steam.mapper.toGenre
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
@@ -26,39 +34,6 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.*
-
-@Serializable
-data class SteamSearchResult(
-    val total: Int,
-    val items: List<SteamGame>
-)
-
-@Serializable
-data class SteamGame(
-    val type: String,
-    val name: String,
-    val id: Int,
-    val price: Price?,
-    val tiny_image: String,
-    val metascore: String?,
-    val platforms: Platforms,
-    val streamingvideo: Boolean,
-    val controller_support: String
-)
-
-@Serializable
-data class Price(
-    val currency: String,
-    val initial: Int,
-    val final: Int
-)
-
-@Serializable
-data class Platforms(
-    val windows: Boolean,
-    val mac: Boolean,
-    val linux: Boolean
-)
 
 class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
     override val configMetadata: List<PluginConfigElement> = emptyList()
@@ -89,9 +64,13 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
         private suspend fun searchStore(title: String): List<SteamGame> {
             val encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
-            val url = "https://store.steampowered.com/api/storesearch?term=$encodedTitle&cc=en"
             return try {
-                val searchResult: SteamSearchResult = client.get(url).body()
+                val response = client.get("https://store.steampowered.com/api/storesearch") {
+                    parameter("term", encodedTitle)
+                    parameter("cc", "en")
+                    parameter("l", "en")
+                }
+                val searchResult: SteamSearchResult = response.body()
                 searchResult.items
             } catch (e: Exception) {
                 log.error("Failed to search Steam store: ${e.message}")
@@ -100,29 +79,32 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         }
 
         private suspend fun getGameDetails(id: Int): GameMetadata? {
-            val url = "https://store.steampowered.com/api/appdetails?appids=$id"
-            val response: JsonObject = (client.get(url).body() as JsonObject)[id.toString()]?.jsonObject ?: return null
+            val response = client.get("https://store.steampowered.com/api/appdetails") {
+                parameter("appids", id)
+                parameter("cc", "en")
+                parameter("l", "en")
+            }
 
-            if (response["success"]?.jsonPrimitive?.boolean == false) return null
+            if (response.status != HttpStatusCode.OK) return null
 
-            val game = response["data"]?.jsonObject ?: return null
+            val responseBody: String = response.bodyAsText(Charsets.UTF_8)
+            val steamDetailsResultWrapper: Map<Int, SteamDetailsResultWrapper> = Json.decodeFromString(responseBody)
+
+            if (!steamDetailsResultWrapper.containsKey(id)) return null
+
+            val game = steamDetailsResultWrapper[id]?.data ?: return null
 
             val metadata = GameMetadata(
-                title = string(game, "name"),
-                description = string(game, "detailed_description"),
-                coverUrl = URI("").toURL(),
-                release = date(game["release_date"]?.jsonObject["date"]?.jsonPrimitive?.content!!),
-                userRating = 0,
-                criticRating = 0,
-                developedBy = stringList(game, "developers").toSet(),
-                publishedBy = stringList(game, "publishers").toSet(),
-                genres = emptySet(),
-                themes = emptySet(),
-                keywords = emptySet(),
-                screenshotUrls = emptySet(),
-                videoUrls = emptySet(),
-                features = emptySet(),
-                perspectives = emptySet()
+                title = game.name,
+                description = game.detailedDescription,
+                coverUrl = URI(game.headerImage),
+                release = game.releaseDate?.date,
+                developedBy = game.developers.toSet(),
+                publishedBy = game.publishers.toSet(),
+                genres = game.genres.map { toGenre(it) }.toSet(),
+                keywords = game.categories.mapNotNull { it.description }.toSet(),
+                screenshotUrls = game.screenshots.map { URI(it.pathFull!!) }.toSet(),
+                videoUrls = game.movies.map { URI(it.webm?.max!!) }.toSet()
             )
 
             return metadata
