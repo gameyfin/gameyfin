@@ -297,6 +297,7 @@ function statsExtracterPlugin(): PluginOption {
       const generatedImports = Array.from(generatedImportsSet).sort();
 
       const frontendFiles: Record<string, string> = {};
+      frontendFiles['index.html'] = createHash('sha256').update(customIndexData.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
 
       const projectFileExtensions = ['.js', '.js.map', '.ts', '.ts.map', '.tsx', '.tsx.map', '.css', '.css.map', '.'];
 
