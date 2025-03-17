@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
+import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {toast} from "sonner";
 import {Form, Formik} from "formik";
 import {PluginConfigEndpoint, PluginManagementEndpoint} from "Frontend/generated/endpoints";

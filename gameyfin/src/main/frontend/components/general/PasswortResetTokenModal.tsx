@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Snippet} from "@nextui-org/react";
+import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Snippet} from "@heroui/react";
 import TokenDto from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenDto";
 import {timeUntil} from "Frontend/util/utils";
 

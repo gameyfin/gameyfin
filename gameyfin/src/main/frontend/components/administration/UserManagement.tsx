@@ -7,7 +7,7 @@ import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInf
 import {UserManagementCard} from "Frontend/components/general/UserManagementCard";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {Info, UserPlus} from "@phosphor-icons/react";
-import {Button, Divider, Tooltip, useDisclosure} from "@nextui-org/react";
+import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
 import InviteUserModal from "Frontend/components/general/InviteUserModal";
 
 function UserManagementLayout({getConfig, formik}: any) {

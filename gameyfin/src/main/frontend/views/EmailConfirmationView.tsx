@@ -1,4 +1,4 @@
-import {Card, CardBody, CardHeader} from "@nextui-org/react";
+import {Card, CardBody, CardHeader} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import React, {useEffect, useState} from "react";
 import {CheckCircle, Warning, WarningCircle} from "@phosphor-icons/react";

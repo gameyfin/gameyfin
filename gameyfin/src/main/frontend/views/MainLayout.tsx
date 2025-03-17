@@ -1,7 +1,7 @@
 import {useRouteMetadata} from 'Frontend/util/routing.js';
 import {useEffect, useState} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
-import {Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem} from "@nextui-org/react";
+import {Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem} from "@heroui/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useNavigate} from "react-router-dom";

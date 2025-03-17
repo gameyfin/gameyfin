@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
+import {Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";
 

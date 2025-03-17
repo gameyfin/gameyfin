@@ -1,5 +1,5 @@
 import React from "react";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
+import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import UserRegistrationDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserRegistrationDto";
 import {Form, Formik} from "formik";

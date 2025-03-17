@@ -10,7 +10,7 @@ import {
     SelectedItems,
     Selection,
     SelectItem
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
 import RoleChip from "Frontend/components/general/RoleChip";

@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigEntryDto";
 import {Form, Formik} from "formik";
-import {Button, Skeleton} from "@nextui-org/react";
+import {Button, Skeleton} from "@heroui/react";
 import {Check, Info} from "@phosphor-icons/react";
 import ConfigValuePairDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigValuePairDto";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";

@@ -12,7 +12,7 @@ import {Violet} from "./themes/violet";
 import {Orange} from "./themes/orange";
 import {Colorblind} from "./themes/colorblind";
 import {Theme} from "./theme";
-import {ConfigTheme, ConfigThemes} from "@nextui-org/react";
+import {ConfigTheme, ConfigThemes} from "@heroui/react";
 
 
 function light(c: Theme): ConfigTheme {

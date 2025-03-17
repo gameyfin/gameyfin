@@ -1,7 +1,7 @@
 import {Outlet, useHref, useNavigate} from 'react-router-dom';
 import "./main.css";
 import "Frontend/util/custom-validators";
-import {NextUIProvider} from "@nextui-org/react";
+import {HeroUIProvider} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
 import {AuthProvider} from "Frontend/util/auth";
@@ -16,7 +16,7 @@ export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
 
     return (
-        <NextUIProvider className="size-full" navigate={navigate} useHref={useHref}>
+        <HeroUIProvider className="size-full" navigate={navigate} useHref={useHref}>
             <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark">
                 <AuthProvider>
                     <IconContext.Provider value={{size: 20}}>
@@ -25,6 +25,6 @@ export default function App() {
                     </IconContext.Provider>
                 </AuthProvider>
             </NextThemesProvider>
-        </NextUIProvider>
+        </HeroUIProvider>
     );
 }

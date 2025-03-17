@@ -9,7 +9,7 @@ import {
     ModalFooter,
     ModalHeader,
     Textarea
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {toast} from "sonner";
 import {MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/templates/MessageTemplateDto";

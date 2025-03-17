@@ -1,4 +1,4 @@
-import {Chip} from "@nextui-org/react";
+import {Chip} from "@heroui/react";
 import {roleToColor, roleToRoleName} from "Frontend/util/utils";
 
 export default function RoleChip({role}: { role: string }) {

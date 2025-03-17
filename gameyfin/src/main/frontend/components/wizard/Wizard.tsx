@@ -1,7 +1,7 @@
 import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
 import {ArrowLeft, ArrowRight, Check} from "@phosphor-icons/react";
-import {Button} from "@nextui-org/react";
+import {Button} from "@heroui/react";
 import {Step, Stepper} from "@material-tailwind/react";
 
 const Wizard = ({children, initialValues, onSubmit}: {

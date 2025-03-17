@@ -1,4 +1,4 @@
-import {Button, Card, CardBody, CardHeader} from "@nextui-org/react";
+import {Button, Card, CardBody, CardHeader} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/Input";

@@ -1,4 +1,4 @@
-import {NextUIPluginConfig} from "@nextui-org/react";
+import {NextUIPluginConfig} from "@heroui/react";
 import {compileThemes, themes} from "./src/main/frontend/theming/themes"
 
 export const NextUIConfig: NextUIPluginConfig = {

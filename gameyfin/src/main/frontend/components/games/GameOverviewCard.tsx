@@ -1,5 +1,5 @@
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {Card, Image} from "@nextui-org/react";
+import {Card, Image} from "@heroui/react";
 
 export function GameOverviewCard({game}: { game: GameDto }) {
     return (

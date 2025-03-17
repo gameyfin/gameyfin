@@ -1,5 +1,5 @@
 import {useAuth} from "Frontend/util/auth";
-import {Avatar as NextUiAvatar} from "@nextui-org/react";
+import {Avatar as NextUiAvatar} from "@heroui/react";
 
 // @ts-ignore
 const Avatar = ({...props}) => {

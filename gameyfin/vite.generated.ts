@@ -16,18 +16,18 @@ import settings from './build/vaadin-dev-server-settings.json';
 import {
   AssetInfo,
   ChunkInfo,
+  build,
   defineConfig,
   mergeConfig,
   OutputOptions,
   PluginOption,
-  ResolvedConfig,
+  InlineConfig,
   UserConfigFn
 } from 'vite';
 import { getManifest, type ManifestTransform } from 'workbox-build';
 
 import * as rollup from 'rollup';
 import brotli from 'rollup-plugin-brotli';
-import replace from '@rollup/plugin-replace';
 import checker from 'vite-plugin-checker';
 import postcssLit from './build/plugins/rollup-plugin-postcss-lit-custom/rollup-plugin-postcss-lit.js';
 
@@ -118,87 +118,61 @@ function injectManifestToSWPlugin(): rollup.Plugin {
 }
 
 function buildSWPlugin(opts: { devMode: boolean }): PluginOption {
-  let config: ResolvedConfig;
+  let buildConfig: InlineConfig;
+  let buildOutput: rollup.RollupOutput;
   const devMode = opts.devMode;
-
-  const swObj: { code?: string, map?: rollup.SourceMap | null } = {};
-
-  async function build(action: 'generate' | 'write', additionalPlugins: rollup.Plugin[] = []) {
-    const includedPluginNames = [
-      'vite:esbuild',
-      'rollup-plugin-dynamic-import-variables',
-      'vite:esbuild-transpile',
-      'vite:terser'
-    ];
-    const plugins: rollup.Plugin[] = config.plugins.filter((p) => {
-      return includedPluginNames.includes(p.name);
-    });
-    const resolver = config.createResolver();
-    const resolvePlugin: rollup.Plugin = {
-      name: 'resolver',
-      resolveId(source, importer, _options) {
-        return resolver(source, importer);
-      }
-    };
-    plugins.unshift(resolvePlugin); // Put resolve first
-    plugins.push(
-      replace({
-        values: {
-          'process.env.NODE_ENV': JSON.stringify(config.mode),
-          ...config.define
-        },
-        preventAssignment: true
-      })
-    );
-    if (additionalPlugins) {
-      plugins.push(...additionalPlugins);
-    }
-    const bundle = await rollup.rollup({
-      input: path.resolve(settings.clientServiceWorkerSource),
-      plugins
-    });
-
-    try {
-      return await bundle[action]({
-        file: path.resolve(buildOutputFolder, 'sw.js'),
-        format: 'es',
-        exports: 'none',
-        sourcemap: config.command === 'serve' || config.build.sourcemap,
-        inlineDynamicImports: true
-      });
-    } finally {
-      await bundle.close();
-    }
-  }
 
   return {
     name: 'vaadin:build-sw',
     enforce: 'post',
-    async configResolved(resolvedConfig) {
-      config = resolvedConfig;
+    async configResolved(viteConfig) {
+      buildConfig = {
+        base: viteConfig.base,
+        root: viteConfig.root,
+        mode: viteConfig.mode,
+        resolve: viteConfig.resolve,
+        define: {
+          ...viteConfig.define,
+          'process.env.NODE_ENV': JSON.stringify(viteConfig.mode),
+        },
+        build: {
+          write: !devMode,
+          minify: viteConfig.build.minify,
+          outDir: viteConfig.build.outDir,
+          sourcemap: viteConfig.command === 'serve' || viteConfig.build.sourcemap,
+          emptyOutDir: false,
+          modulePreload: false,
+          rollupOptions: {
+            input: {
+              sw: settings.clientServiceWorkerSource
+            },
+            output: {
+              exports: 'none',
+              entryFileNames: 'sw.js',
+              inlineDynamicImports: true,
+            },
+          },
+        },
+      };
     },
     async buildStart() {
       if (devMode) {
-        const { output } = await build('generate');
-        swObj.code = output[0].code;
-        swObj.map = output[0].map;
+        buildOutput = await build(buildConfig) as rollup.RollupOutput;
       }
     },
     async load(id) {
       if (id.endsWith('sw.js')) {
-        return '';
-      }
-    },
-    async transform(_code, id) {
-      if (id.endsWith('sw.js')) {
-        return swObj;
+        return buildOutput.output[0].code;
       }
     },
     async closeBundle() {
       if (!devMode) {
-        await build('write', [injectManifestToSWPlugin(), brotli()]);
+        await build({
+          ...buildConfig,
+          plugins: [injectManifestToSWPlugin(), brotli()]
+        });
       }
-    }
+    },
   };
 }
 

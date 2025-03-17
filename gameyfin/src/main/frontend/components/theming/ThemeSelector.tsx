@@ -1,6 +1,6 @@
 import {useTheme} from "next-themes";
 import React, {useEffect, useState} from "react";
-import {Button, Card, Divider, Select, Selection, SelectItem} from "@nextui-org/react";
+import {Button, Card, Divider, Select, Selection, SelectItem} from "@heroui/react";
 import {themes} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";

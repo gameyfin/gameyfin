@@ -1,6 +1,6 @@
 import {Outlet} from "react-router-dom";
 import {Icon} from "@phosphor-icons/react";
-import {Listbox, ListboxItem} from "@nextui-org/react";
+import {Listbox, ListboxItem} from "@heroui/react";
 import {ReactElement, useState} from "react";
 
 export type MenuItem = {
@@ -17,7 +17,7 @@ export default function withSideMenu(menuItems: MenuItem[]) {
          * Remove a "/" at the start if it exists
          */
         function key(k: string): string {
-            return k.replace(/^(\/)/, "")
+            return k.replace(/^(\/)/, "");
         }
 
         /**
@@ -56,5 +56,5 @@ export default function withSideMenu(menuItems: MenuItem[]) {
                 </div>
             </div>
         );
-    }
+    };
 }

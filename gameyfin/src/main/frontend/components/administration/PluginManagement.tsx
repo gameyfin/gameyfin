@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import {PluginManagementCard} from "Frontend/components/general/PluginManagementCard";
-import {Divider} from "@nextui-org/react";
+import {Divider} from "@heroui/react";
 
 export default function PluginManagement() {
     const [plugins, setPlugins] = useState<PluginDto[]>([]);

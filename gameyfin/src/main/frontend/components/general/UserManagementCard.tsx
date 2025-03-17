@@ -1,4 +1,4 @@
-import {Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@nextui-org/react";
+import {Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
 import {DotsThreeVertical} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";

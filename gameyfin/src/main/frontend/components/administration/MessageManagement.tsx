@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {Button, Card, Tooltip, useDisclosure} from "@nextui-org/react";
+import {Button, Card, Tooltip, useDisclosure} from "@heroui/react";
 import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";
 import {PaperPlaneRight, Pencil} from "@phosphor-icons/react";

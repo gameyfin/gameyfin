@@ -1,5 +1,5 @@
 import {Config} from "tailwindcss/types/config";
-import {nextui} from "@nextui-org/react";
+import {heroui} from "@heroui/react";
 import {NextUIConfig} from "./nextui";
 import withMT from "@material-tailwind/react/utils/withMT";
 
@@ -8,7 +8,7 @@ export default withMT({
     content: [
         './src/main/frontend/index.html',
         './src/main/frontend/**/*.{js,ts,jsx,tsx}',
-        './node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}'
+        "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
     ],
     theme: {
         extend: {
@@ -22,6 +22,6 @@ export default withMT({
         }
     },
     plugins: [
-        nextui(NextUIConfig)
+        heroui(NextUIConfig)
     ],
 } satisfies Config);

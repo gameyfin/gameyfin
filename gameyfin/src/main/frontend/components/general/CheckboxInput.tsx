@@ -1,5 +1,5 @@
 import {useField} from "formik";
-import {Checkbox} from "@nextui-org/react";
+import {Checkbox} from "@heroui/react";
 
 // @ts-ignore
 const CheckboxInput = ({label, ...props}) => {

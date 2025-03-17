@@ -1,6 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
 import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
-import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@nextui-org/react";
+import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/react";
 import {useNavigate} from "react-router-dom";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
@@ -12,7 +12,7 @@ export default function ProfileMenu() {
 
     async function logout() {
         if (auth.state.user?.managedBySso) {
-            window.location.href = await ConfigEndpoint.getLogoutUrl() || "/";
+            window.location.href = (await ConfigEndpoint.getLogoutUrl()) || "/";
         } else {
             await auth.logout();
         }

@@ -1,6 +1,6 @@
 import React from "react";
 import {Form, Formik} from "formik";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
+import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {toast} from "sonner";
 import Input from "Frontend/components/general/Input";
 import {MessageEndpoint} from "Frontend/generated/endpoints";

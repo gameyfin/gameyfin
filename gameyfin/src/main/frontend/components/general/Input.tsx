@@ -1,5 +1,5 @@
 import {useField} from "formik";
-import {Input as NextUiInput} from "@nextui-org/react";
+import {Input as NextUiInput} from "@heroui/react";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {XCircle} from "@phosphor-icons/react";
 

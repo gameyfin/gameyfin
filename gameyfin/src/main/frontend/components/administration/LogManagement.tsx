@@ -4,7 +4,7 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import {toast} from "sonner";
-import {Button, Code, Divider, Tooltip} from "@nextui-org/react";
+import {Button, Code, Divider, Tooltip} from "@heroui/react";
 import {ArrowUDownLeft, SortAscending} from "@phosphor-icons/react";
 
 function LogManagementLayout({getConfig, formik}: any) {

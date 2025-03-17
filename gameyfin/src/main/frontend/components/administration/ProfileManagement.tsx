@@ -1,6 +1,6 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/Input";
-import {Button, Input as NextUiInput, Tooltip} from "@nextui-org/react";
+import {Button, Input as NextUiInput, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {ArrowCounterClockwise, Check, Info, Trash} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";

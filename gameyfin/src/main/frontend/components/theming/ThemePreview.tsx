@@ -1,5 +1,5 @@
 import {Theme} from "Frontend/theming/theme";
-import {Tooltip} from "@nextui-org/react";
+import {Tooltip} from "@heroui/react";
 
 export default function ThemePreview({theme, isSelected}: {
     theme: Theme,

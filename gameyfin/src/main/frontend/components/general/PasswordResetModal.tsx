@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
-import {Input as NextInput} from "@nextui-org/input";
+import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {Input as NextInput} from "@heroui/input";
 import {WarningCircle} from "@phosphor-icons/react";
 import {MessageEndpoint, PasswordResetEndpoint} from "Frontend/generated/endpoints";
 import {toast} from "sonner";

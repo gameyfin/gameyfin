@@ -3,7 +3,7 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {Button} from "@nextui-org/react";
+import {Button} from "@heroui/react";
 import {MagicWand} from "@phosphor-icons/react";
 import {toast} from "sonner";
 

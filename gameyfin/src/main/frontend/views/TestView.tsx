@@ -1,5 +1,5 @@
 import {Link} from "react-router-dom";
-import {Button, Input} from "@nextui-org/react";
+import {Button, Input} from "@heroui/react";
 import {toast} from "sonner";
 import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints";
 import {useState} from "react";

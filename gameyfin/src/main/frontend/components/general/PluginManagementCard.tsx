@@ -1,4 +1,4 @@
-import {Button, Card, Chip, Skeleton, Tooltip, useDisclosure} from "@nextui-org/react";
+import {Button, Card, Chip, Skeleton, Tooltip, useDisclosure} from "@heroui/react";
 import {Plug, Power, SlidersHorizontal} from "@phosphor-icons/react";
 import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
