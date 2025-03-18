@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {
+    addToast,
     Button,
     Chip,
     Link,
@@ -10,7 +11,6 @@ import {
     ModalHeader,
     Textarea
 } from "@heroui/react";
-import {toast} from "sonner";
 import {MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/templates/MessageTemplateDto";
 import TemplateType from "Frontend/generated/de/grimsi/gameyfin/messages/templates/TemplateType";
@@ -111,7 +111,11 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                                     onPress={async () => {
                                         if (selectedTemplate) {
                                             await saveTemplate(selectedTemplate);
-                                            toast.success("Template saved");
+                                            addToast({
+                                                title: "Template saved",
+                                                description: "Template has been saved",
+                                                color: "success"
+                                            });
                                             onClose();
                                         }
                                     }}>

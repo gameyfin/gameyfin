@@ -1,4 +1,4 @@
-import {Button, Card, CardBody, CardHeader} from "@heroui/react";
+import {addToast, Button, Card, CardBody, CardHeader} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/Input";
@@ -6,7 +6,6 @@ import * as Yup from "yup";
 import {PasswordResetEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
 import {Warning} from "@phosphor-icons/react";
-import {toast} from "sonner";
 import TokenValidationResult from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenValidationResult";
 
 export default function PasswordResetView() {
@@ -25,15 +24,27 @@ export default function PasswordResetView() {
 
         switch (result) {
             case TokenValidationResult.VALID:
-                toast.success("Password reset successfully");
+                addToast({
+                    title: "Password reset",
+                    description: "Password reset successfully",
+                    color: "success"
+                })
                 navigate("/", {replace: true});
                 break;
             case TokenValidationResult.EXPIRED:
-                toast.error("Token is expired");
+                addToast({
+                    title: "Token expired",
+                    description: "Token is expired",
+                    color: "warning"
+                })
                 break;
             case TokenValidationResult.INVALID:
             default:
-                toast.error("Token is invalid");
+                addToast({
+                    title: "Invalid token",
+                    description: "Token is invalid",
+                    color: "danger"
+                })
                 break
         }
     }

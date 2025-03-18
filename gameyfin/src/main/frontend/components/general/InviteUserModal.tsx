@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {addToast, Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
-import {toast} from "sonner";
 
 interface InviteUserModalProps {
     isOpen: boolean;
@@ -27,7 +26,11 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
 
         try {
             await RegistrationEndpoint.createInvitation(email);
-            toast.success("Invitation has been sent");
+            addToast({
+                title: "Invitation sent",
+                description: "The user will receive an email with further instructions shortly.",
+                color: "success"
+            });
             onClose();
         } catch (e) {
             setError("Failed to create invitation");

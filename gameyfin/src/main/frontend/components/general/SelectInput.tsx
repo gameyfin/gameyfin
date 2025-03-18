@@ -17,7 +17,7 @@ const SelectInput = ({label, values, ...props}) => {
                 disallowEmptySelection
             >
                 {values.map((value: string) => (
-                    <SelectItem key={value} value={value}>
+                    <SelectItem key={value}>
                         {value}
                     </SelectItem>
                 ))}

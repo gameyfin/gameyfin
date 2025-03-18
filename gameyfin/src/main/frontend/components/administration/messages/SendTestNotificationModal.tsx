@@ -1,7 +1,6 @@
 import React from "react";
 import {Form, Formik} from "formik";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
-import {toast} from "sonner";
+import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import Input from "Frontend/components/general/Input";
 import {MessageEndpoint} from "Frontend/generated/endpoints";
 import * as Yup from "yup";
@@ -37,7 +36,11 @@ export default function SendTestNotificationModal({
                             isInitialValid={false}
                             onSubmit={async (values) => {
                                 await MessageEndpoint.sendTestNotification(selectedTemplate?.key, values);
-                                toast.success("Test notification to you has been sent");
+                                addToast({
+                                    title: "Notification sent",
+                                    description: "Test notification to you has been sent",
+                                    color: "success"
+                                });
                                 onClose();
                             }}
                             validationSchema={generateValidationSchema(selectedTemplate?.availablePlaceholders as string[])}

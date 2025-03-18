@@ -1,6 +1,5 @@
 import {Link} from "react-router-dom";
-import {Button, Input} from "@heroui/react";
-import {toast} from "sonner";
+import {addToast, Button, Input} from "@heroui/react";
 import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints";
 import {useState} from "react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
@@ -23,32 +22,25 @@ export default function TestView() {
                 <Link to="/setup">Setup</Link>
                 <div className="flex flex-row gap-4">
                     <Button onPress={
-                        () => toast("Normal", {
-                            description: "Description",
-                            action: {
-                                label: "OK",
-                                onClick: () => {
-                                },
-                            }
-                        })}>Toast (Normal)</Button>
+                        () => addToast({
+                            title: "Primary",
+                            description: "Description"
+                        })
+                    }>Toast (Normal)</Button>
                     <Button onPress={
-                        () => toast.success("Success", {
+                        () => addToast({
+                            title: "Success",
                             description: "Description",
-                            action: {
-                                label: "OK",
-                                onClick: () => {
-                                },
-                            }
-                        })}>Toast (Success)</Button>
+                            color: "success"
+                        })
+                    }>Toast (Success)</Button>
                     <Button onPress={
-                        () => toast.error("Error", {
+                        () => addToast({
+                            title: "Error",
                             description: "Description",
-                            action: {
-                                label: "OK",
-                                onClick: () => {
-                                },
-                            }
-                        })}>Toast (Error)</Button>
+                            color: "danger"
+                        })
+                    }>Toast (Error)</Button>
                 </div>
                 <Button onPress={() => SystemEndpoint.restart()}>Restart</Button>
                 <div className="flex flex-row gap-4 items-center">

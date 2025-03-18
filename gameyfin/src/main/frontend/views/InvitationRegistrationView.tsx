@@ -1,4 +1,4 @@
-import {Button, Card, CardBody, CardHeader} from "@heroui/react";
+import {addToast, Button, Card, CardBody, CardHeader} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/Input";
@@ -6,7 +6,6 @@ import * as Yup from "yup";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
 import {Warning} from "@phosphor-icons/react";
-import {toast} from "sonner";
 import UserInvitationAcceptanceResult
     from "Frontend/generated/de/grimsi/gameyfin/users/enums/UserInvitationAcceptanceResult";
 
@@ -33,19 +32,31 @@ export default function InvitationRegistrationView() {
 
         switch (result) {
             case UserInvitationAcceptanceResult.SUCCESS:
-                toast.success("Registration successful");
+                addToast({
+                    title: "Registration successful",
+                    description: "Your account has been created",
+                    color: "success"
+                });
                 navigate("/", {replace: true});
                 break;
             case UserInvitationAcceptanceResult.USERNAME_TAKEN:
                 formik.setFieldError("username", "Username is already taken");
                 break;
             case UserInvitationAcceptanceResult.TOKEN_EXPIRED:
-                toast.error("Token is expired");
+                addToast({
+                    title: "Token expired",
+                    description: "Token is expired",
+                    color: "warning"
+                });
                 break;
             case UserInvitationAcceptanceResult.TOKEN_INVALID:
             default:
-                toast.error("Token is invalid");
-                break
+                addToast({
+                    title: "Invalid token",
+                    description: "Token is invalid",
+                    color: "danger"
+                });
+                break;
         }
     }
 

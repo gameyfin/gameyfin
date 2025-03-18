@@ -2,9 +2,8 @@ import React, {useEffect, useState} from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {Button, Card, Tooltip, useDisclosure} from "@heroui/react";
+import {addToast, Button, Card, Tooltip, useDisclosure} from "@heroui/react";
 import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
-import {toast} from "sonner";
 import {PaperPlaneRight, Pencil} from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/templates/MessageTemplateDto";
 import SendTestNotificationModal from "Frontend/components/administration/messages/SendTestNotificationModal";
@@ -34,9 +33,15 @@ function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
         const areCredentialsValid = await MessageEndpoint.verifyCredentials(provider, credentials);
 
         if (areCredentialsValid) {
-            toast.success("Credentials are valid")
+            addToast({
+                title: "Credentials are valid",
+                color: "success"
+            });
         } else {
-            toast.error("Credentials are invalid")
+            addToast({
+                title: "Credentials are invalid",
+                color: "warning"
+            });
         }
     }
 

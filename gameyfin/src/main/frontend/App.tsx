@@ -2,11 +2,11 @@ import {Outlet, useHref, useNavigate} from 'react-router-dom';
 import "./main.css";
 import "Frontend/util/custom-validators";
 import {HeroUIProvider} from "@heroui/react";
+import {ToastProvider} from "@heroui/toast";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
 import {AuthProvider} from "Frontend/util/auth";
-import {IconContext} from "@phosphor-icons/react";
-import {Toaster} from "Frontend/@/components/ui/sonner";
+import {IconContext, X} from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 
@@ -21,7 +21,20 @@ export default function App() {
                 <AuthProvider>
                     <IconContext.Provider value={{size: 20}}>
                         <Outlet/>
-                        <Toaster/>
+                        <ToastProvider
+                            toastProps={{
+                                shouldShowTimeoutProgress: true,
+                                radius: "sm",
+                                variant: "flat",
+                                hideIcon: true,
+                                closeIcon: <X/>,
+                                classNames: {
+                                    closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+                                    progressTrack: "h-1",
+                                }
+                            }}
+                            toastOffset={64}
+                        />
                     </IconContext.Provider>
                 </AuthProvider>
             </NextThemesProvider>

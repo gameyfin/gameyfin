@@ -1,7 +1,7 @@
-import {NextUIPluginConfig} from "@heroui/react";
+import {HeroUIPluginConfig} from "@heroui/react";
 import {compileThemes, themes} from "./src/main/frontend/theming/themes"
 
-export const NextUIConfig: NextUIPluginConfig = {
+export const HeroUIConfig: HeroUIPluginConfig = {
     prefix: "gf",
     themes: compileThemes(themes)
 };

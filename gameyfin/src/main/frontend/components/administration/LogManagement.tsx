@@ -3,8 +3,7 @@ import {LogEndpoint} from "Frontend/generated/endpoints";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
-import {toast} from "sonner";
-import {Button, Code, Divider, Tooltip} from "@heroui/react";
+import {addToast, Button, Code, Divider, Tooltip} from "@heroui/react";
 import {ArrowUDownLeft, SortAscending} from "@phosphor-icons/react";
 
 function LogManagementLayout({getConfig, formik}: any) {
@@ -24,7 +23,11 @@ function LogManagementLayout({getConfig, formik}: any) {
     useEffect(() => {
         if (formik.isSubmitting == false && formik.submitCount > 0) {
             LogEndpoint.reloadLogConfig()
-                .catch(() => toast.error("Failed to apply log configuration"));
+                .catch(() => addToast({
+                    title: "Error",
+                    description: "Failed to apply log configuration",
+                    color: "danger"
+                }));
         }
     }, [formik.isSubmitting]);
 

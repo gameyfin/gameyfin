@@ -1,11 +1,10 @@
 import React from "react";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import UserRegistrationDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserRegistrationDto";
 import {Form, Formik} from "formik";
 import * as Yup from "yup";
 import Input from "Frontend/components/general/Input";
-import {toast} from "sonner";
 
 interface SignUpModalProps {
     isOpen: boolean;
@@ -24,12 +23,20 @@ export default function SignUpModal({
                 password: registration.password,
                 email: registration.email
             });
-            
+
             onClose();
 
-            toast.success('You will receive an email with further instructions shortly.');
+            addToast({
+                title: "Account created",
+                description: "You will receive an email with further instructions shortly.",
+                color: "success"
+            });
         } catch (_) {
-            toast.error('An error occurred while registering your account.');
+            addToast({
+                title: "Registration failed",
+                description: "An error occurred while registering your account.",
+                color: "danger"
+            });
             return;
         }
     }

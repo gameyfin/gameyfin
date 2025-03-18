@@ -3,10 +3,11 @@
   "version": "2.0.0-ALPHA",
   "type": "module",
   "dependencies": {
-    "@material-tailwind/react": "^2.1.10",
     "@heroui/react": "2.7.5",
+    "@material-tailwind/react": "^2.1.10",
     "@phosphor-icons/react": "^2.1.7",
     "@polymer/polymer": "3.5.2",
+    "@react-types/shared": "^3.28.0",
     "@vaadin/bundles": "24.6.6",
     "@vaadin/common-frontend": "0.0.19",
     "@vaadin/hilla-file-router": "24.6.6",
@@ -24,9 +25,7 @@
     "@vaadin/vaadin-material-styles": "24.6.6",
     "@vaadin/vaadin-themable-mixin": "24.6.6",
     "@vaadin/vaadin-usage-statistics": "2.1.3",
-    "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",
-    "clsx": "^2.1.1",
     "construct-style-sheets-polyfill": "3.1.0",
     "cron-validator": "^1.3.1",
     "date-fns": "2.29.3",
@@ -41,8 +40,6 @@
     "react-confetti-boom": "^1.0.0",
     "react-dom": "18.3.1",
     "react-router-dom": "6.29.0",
-    "sonner": "^1.7.1",
-    "tailwind-merge": "^2.5.2",
     "yup": "^1.6.1"
   },
   "devDependencies": {
@@ -96,14 +93,10 @@
     "@phosphor-icons/react": "$@phosphor-icons/react",
     "formik": "$formik",
     "yup": "$yup",
-    "class-variance-authority": "$class-variance-authority",
-    "clsx": "$clsx",
     "next-themes": "$next-themes",
-    "tailwind-merge": "$tailwind-merge",
     "@heroui/react": "$@heroui/react",
     "framer-motion": "$framer-motion",
     "@material-tailwind/react": "$@material-tailwind/react",
-    "sonner": "$sonner",
     "http-status-codes": "$http-status-codes",
     "@vaadin/polymer-legacy-adapter": "$@vaadin/polymer-legacy-adapter",
     "@vaadin/vaadin-development-mode-detector": "$@vaadin/vaadin-development-mode-detector",
@@ -124,7 +117,8 @@
     "date-fns": "$date-fns",
     "@vaadin/vaadin-themable-mixin": "$@vaadin/vaadin-themable-mixin",
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
-    "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles"
+    "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
+    "@react-types/shared": "$@react-types/shared"
   },
   "vaadin": {
     "dependencies": {
@@ -184,6 +178,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "4cb8eb38282e90ab28af32f01ad7d2f7a15758837309655a753bbc1989258d6f"
+    "hash": "3f65776fc466d9436093cb2be8081f16d86234693e52c66dcc7faf5ad0bfbee6"
   }
 }

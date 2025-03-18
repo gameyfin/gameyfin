@@ -1,11 +1,5 @@
-import {type ClassValue, clsx} from "clsx"
-import {twMerge} from "tailwind-merge"
 import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
-
-export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
-}
 
 export function cssVar(variable: string) {
     return getComputedStyle(document.documentElement).getPropertyValue(`--${variable}`);

@@ -1,5 +1,5 @@
 import {Middleware, MiddlewareContext, MiddlewareNext} from '@vaadin/hilla-frontend';
-import {toast} from "sonner";
+import {addToast} from "@heroui/react";
 import {getReasonPhrase} from "http-status-codes";
 
 export const ErrorHandlingMiddleware: Middleware = async function (
@@ -21,9 +21,17 @@ export const ErrorHandlingMiddleware: Middleware = async function (
         let json: any = await response.json();
 
         if (json.type == "dev.hilla.exception.EndpointException") {
-            toast.error(`${getReasonPhrase(response.status)}`, {description: `${json.message}`});
+            addToast({
+                title: getReasonPhrase(response.status),
+                description: json.message,
+                color: "danger"
+            })
         } else {
-            toast.error(`${getReasonPhrase(response.status)}`, {description: `${endpoint}.${method}`})
+            addToast({
+                title: getReasonPhrase(response.status),
+                description: `${endpoint}.${method}`,
+                color: "danger"
+            })
         }
     }
 

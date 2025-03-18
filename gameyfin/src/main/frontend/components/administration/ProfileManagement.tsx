@@ -1,6 +1,6 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/Input";
-import {Button, Input as NextUiInput, Tooltip} from "@heroui/react";
+import {addToast, Button, Input as NextUiInput, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {ArrowCounterClockwise, Check, Info, Trash} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
@@ -9,7 +9,6 @@ import * as Yup from "yup";
 import UserUpdateDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserUpdateDto";
 import {EmailConfirmationEndpoint, MessageEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
-import {toast} from "sonner";
 import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
 import Avatar from "Frontend/components/general/Avatar";
 
@@ -48,8 +47,10 @@ export default function ProfileManagement() {
         setConfigSaved(true);
 
         if (values.newPassword.length > 0) {
-            toast.success("Password changed", {
-                description: "Please log in again"
+            addToast({
+                title: "Password changed",
+                description: "Please log in again",
+                color: "success"
             });
             setTimeout(() => {
                 auth.logout();
@@ -133,7 +134,11 @@ export default function ProfileManagement() {
                                             <Button isIconOnly
                                                     onPress={() => {
                                                         EmailConfirmationEndpoint.resendEmailConfirmation().then(
-                                                            () => toast.success("You will receive an email shortly")
+                                                            () => addToast({
+                                                                title: "Email confirmation message sent",
+                                                                description: "Please check your inbox",
+                                                                color: "success"
+                                                            })
                                                         )
                                                     }}
                                                     isDisabled={!messagesEnabled}

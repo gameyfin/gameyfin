@@ -1,6 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
-import {toast} from "sonner";
+import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {PluginConfigEndpoint, PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
@@ -32,7 +31,11 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange, update
 
     async function saveConfig(values: Record<string, string>) {
         await PluginConfigEndpoint.setConfigEntries(plugin.id, values);
-        toast.success(`Configuration for ${plugin.name} saved!`);
+        addToast({
+            title: "Configuration saved",
+            description: `Configuration for plugin ${plugin.name} saved!`,
+            color: "success"
+        });
         let updatedPlugin = await PluginManagementEndpoint.getPlugin(plugin.id);
         if (updatedPlugin === undefined) return;
         updatePlugin(updatedPlugin);

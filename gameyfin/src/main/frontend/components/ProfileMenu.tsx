@@ -67,7 +67,7 @@ export default function ProfileMenu() {
                     return (
                         <DropdownItem
                             key={label}
-                            onClick={onClick}
+                            onPress={onClick}
                             startContent={<div color={color}>{icon}</div>}
                             /* @ts-ignore */
                             color={color ? color : ""}

@@ -3,9 +3,8 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {Button} from "@heroui/react";
+import {addToast, Button} from "@heroui/react";
 import {MagicWand} from "@phosphor-icons/react";
-import {toast} from "sonner";
 
 function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
@@ -35,7 +34,10 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
             formik.setFieldValue("sso.oidc.logout-url", data.end_session_endpoint);
             formik.setFieldValue("sso.oidc.jwks-url", data.jwks_uri);
         } catch (e) {
-            toast.error("Failed to auto-populate SSO configuration");
+            addToast({
+                title: "Failed to auto-populate SSO configuration",
+                color: "warning"
+            });
         }
     }
 

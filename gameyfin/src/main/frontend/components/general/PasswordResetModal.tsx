@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from "react";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Input as NextInput} from "@heroui/input";
 import {WarningCircle} from "@phosphor-icons/react";
 import {MessageEndpoint, PasswordResetEndpoint} from "Frontend/generated/endpoints";
-import {toast} from "sonner";
 
 interface PasswordResetModalProps {
     isOpen: boolean;
@@ -23,7 +22,11 @@ export default function PasswordResetModal({
 
     async function resetPassword() {
         await PasswordResetEndpoint.requestPasswordReset(resetEmail);
-        toast.success("If the email address is registered, you will receive a message with further instructions.");
+        addToast({
+            title: "Password reset requested",
+            description: "If the email address is registered, you will receive a message with further instructions.",
+            color: "success"
+        });
     }
 
     return (

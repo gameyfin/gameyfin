@@ -4,11 +4,10 @@ import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/general/Input";
 import {HandWaving, Palette, User} from "@phosphor-icons/react";
-import {Card} from "@heroui/react";
+import {addToast, Card} from "@heroui/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import {useNavigate} from "react-router-dom";
-import {toast} from "sonner";
 
 function WelcomeStep() {
     return (
@@ -91,7 +90,11 @@ function SetupView() {
                                 password: values.password,
                                 email: values.email
                             });
-                            toast.success("Setup finished", {description: "Have fun with Gameyfin!"});
+                            addToast({
+                                title: "Setup finished",
+                                description: "Have fun with Gameyfin!",
+                                color: "success"
+                            })
                             navigate('/login');
                         }
                     }

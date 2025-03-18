@@ -1,6 +1,6 @@
 import {Config} from "tailwindcss/types/config";
 import {heroui} from "@heroui/react";
-import {NextUIConfig} from "./nextui";
+import {HeroUIConfig} from "./nextui";
 import withMT from "@material-tailwind/react/utils/withMT";
 
 export default withMT({
@@ -22,6 +22,6 @@ export default withMT({
         }
     },
     plugins: [
-        heroui(NextUIConfig)
+        heroui(HeroUIConfig)
     ],
 } satisfies Config);
