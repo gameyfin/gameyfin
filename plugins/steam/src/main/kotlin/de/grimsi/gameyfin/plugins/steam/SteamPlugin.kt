@@ -28,6 +28,14 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
+
+    companion object {
+        val json = Json {
+            isLenient = true
+            ignoreUnknownKeys = true
+        }
+    }
+
     override val configMetadata: List<PluginConfigElement> = emptyList()
 
     override fun validateConfig(config: Map<String, String?>): Boolean {
@@ -41,7 +49,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
         val client = HttpClient(CIO) {
             install(ContentNegotiation) {
-                json()
+                json(json)
             }
         }
 
@@ -85,7 +93,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             if (response.status != HttpStatusCode.OK) return null
 
             val responseBody: String = response.bodyAsText(Charsets.UTF_8)
-            val steamDetailsResultWrapper: Map<Int, SteamDetailsResultWrapper> = Json.decodeFromString(responseBody)
+            val steamDetailsResultWrapper: Map<Int, SteamDetailsResultWrapper> = json.decodeFromString(responseBody)
 
             if (!steamDetailsResultWrapper.containsKey(id)) return null
             if (steamDetailsResultWrapper[id]?.success != true) return null

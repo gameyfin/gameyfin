@@ -16,7 +16,7 @@ import java.util.*
 class SteamDateSerializer : KSerializer<Instant> {
 
     companion object {
-        val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM, yyyy", Locale.ENGLISH)
+        val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, yyyy", Locale.ENGLISH)
     }
 
     override fun deserialize(decoder: Decoder): Instant = fromString(decoder.decodeString())
