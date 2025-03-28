@@ -68,12 +68,12 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip content={`${isDisabled(plugin.state) ? "Enable" : "Disable"} plugin`} placement="bottom"
                              color="foreground">
-                        <Button isIconOnly variant="ghost" onPress={() => togglePluginEnabled()}>
+                        <Button isIconOnly variant="light" onPress={() => togglePluginEnabled()}>
                             <Power/>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Configuration" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="ghost" onPress={pluginDetailsModal.onOpen}>
+                        <Button isIconOnly variant="light" onPress={pluginDetailsModal.onOpen}>
                             <SlidersHorizontal/>
                         </Button>
                     </Tooltip>

@@ -70,8 +70,9 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange, update
 
                                     <h4 className="text-l font-bold mt-6">Configuration</h4>
                                     {(pluginConfigMeta && pluginConfigMeta.length > 0) ?
-                                        pluginConfigMeta.map((entry: any) => (
-                                            <Input key={entry.key} name={entry.key} label={entry.name} type="text"/>
+                                        pluginConfigMeta.map((entry: PluginConfigElement) => (
+                                            <Input key={entry.key} name={entry.key} label={entry.name}
+                                                   type={entry.secret ? "password" : "text"}/>
                                         )) : "This plugin has no configuration options."
                                     }
                                 </ModalBody>

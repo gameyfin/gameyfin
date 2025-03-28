@@ -18,7 +18,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
     override val configMetadata: List<PluginConfigElement> = listOf(
         PluginConfigElement("clientId", "Twitch client ID", "Your Twitch Client ID"),
-        PluginConfigElement("clientSecret", "Twitch client secret", "Your Twitch Client Secret")
+        PluginConfigElement("clientSecret", "Twitch client secret", "Your Twitch Client Secret", true)
     )
 
     override fun validateConfig(config: Map<String, String?>): Boolean {
