@@ -14,10 +14,10 @@ class Game(
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
-    val title: String,
+    var title: String? = null,
 
     @OneToOne(cascade = [CascadeType.MERGE])
-    val coverImage: Image? = null,
+    var coverImage: Image? = null,
 
     @Lob
     @Column(columnDefinition = "CLOB")
@@ -25,40 +25,40 @@ class Game(
 
     @Lob
     @Column(columnDefinition = "CLOB")
-    val summary: String? = null,
+    var summary: String? = null,
 
-    val release: Instant? = null,
-
-    @ManyToMany(cascade = [CascadeType.MERGE])
-    val publishers: Set<Company>? = null,
+    var release: Instant? = null,
 
     @ManyToMany(cascade = [CascadeType.MERGE])
-    val developers: Set<Company>? = null,
+    var publishers: Set<Company>? = null,
+
+    @ManyToMany(cascade = [CascadeType.MERGE])
+    var developers: Set<Company>? = null,
+
+    @ElementCollection(targetClass = Genre::class)
+    var genres: Set<Genre>? = null,
+
+    @ElementCollection(targetClass = Theme::class)
+    var themes: Set<Theme>? = null,
 
     @ElementCollection
-    val genres: Set<Genre>? = null,
+    var keywords: Set<String>? = null,
 
-    @ElementCollection
-    val themes: Set<Theme>? = null,
+    @ElementCollection(targetClass = GameFeature::class)
+    var features: Set<GameFeature>? = null,
 
-    @ElementCollection
-    val keywords: Set<String>? = null,
-
-    @ElementCollection
-    val features: Set<GameFeature>? = null,
-
-    @ElementCollection
-    val perspectives: Set<PlayerPerspective>? = null,
+    @ElementCollection(targetClass = PlayerPerspective::class)
+    var perspectives: Set<PlayerPerspective>? = null,
 
     @OneToMany(cascade = [CascadeType.MERGE])
-    val images: Set<Image>? = null,
+    var images: Set<Image>? = null,
 
     @ElementCollection
-    val videoUrls: Set<URI>? = null,
+    var videoUrls: Set<URI>? = null,
 
     @Column(unique = true)
     val path: String,
 
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    val metadata: Map<String, FieldMetadata> = emptyMap()
+    var metadata: Map<String, FieldMetadata> = emptyMap()
 )

@@ -10,5 +10,5 @@ data class PluginManagementEntry(
 
     var enabled: Boolean = true,
 
-    var priority: Int = Int.MAX_VALUE
+    var priority: Int = 0
 )

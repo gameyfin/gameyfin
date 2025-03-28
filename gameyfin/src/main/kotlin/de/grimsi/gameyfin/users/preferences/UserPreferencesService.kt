@@ -93,7 +93,11 @@ class UserPreferencesService(
             userPreference.value = castedValue.toString()
         }
 
-        userPreferenceRepository.save(userPreference)
+        try {
+            userPreferenceRepository.save(userPreference)
+        } catch (e: Exception) {
+            log.warn { "Error saving user preference '$key': ${e.message}" }
+        }
     }
 
     /**
