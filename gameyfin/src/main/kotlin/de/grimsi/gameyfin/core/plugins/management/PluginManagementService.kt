@@ -16,7 +16,8 @@ class PluginManagementService(
                 it.descriptor.pluginDescription,
                 it.descriptor.version,
                 it.descriptor.provider,
-                it.pluginState
+                it.pluginState,
+                getPluginManagementEntry(it.pluginId).priority
             )
         }
     }
@@ -28,7 +29,8 @@ class PluginManagementService(
             plugin.descriptor.pluginDescription,
             plugin.descriptor.version,
             plugin.descriptor.provider,
-            plugin.pluginState
+            plugin.pluginState,
+            getPluginManagementEntry(pluginId).priority
         )
     }
 
@@ -65,5 +67,19 @@ class PluginManagementService(
 
     fun validatePluginConfig(pluginId: String): Boolean {
         return pluginManager.validatePluginConfig(pluginId)
+    }
+
+    fun setPluginPriority(pluginId: String, priority: Int) {
+        val pluginManagementEntry = getPluginManagementEntry(pluginId)
+        pluginManagementEntry.priority = priority
+        pluginManagementRepository.save(pluginManagementEntry)
+    }
+
+    fun setPluginPriorities(pluginPriorities: Map<String, Int>) {
+        pluginPriorities.forEach { (pluginId, priority) ->
+            val pluginManagementEntry = getPluginManagementEntry(pluginId)
+            pluginManagementEntry.priority = priority
+            pluginManagementRepository.save(pluginManagementEntry)
+        }
     }
 }

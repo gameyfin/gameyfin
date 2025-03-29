@@ -42,7 +42,7 @@ function UserManagementLayout({getConfig, formik}: any) {
                                     message="Automatic user registration for SSO users is disabled"/>
                 }
                 <Tooltip content="Invite new user">
-                    <Button isIconOnly variant="faded" onPress={inviteUserModal.onOpen}>
+                    <Button isIconOnly variant="flat" onPress={inviteUserModal.onOpen}>
                         <UserPlus/>
                     </Button>
                 </Tooltip>

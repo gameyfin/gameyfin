@@ -1,0 +1,9 @@
+.react-aria-ListBoxItem {
+    &[data-dragging] {
+        opacity: 0.6;
+    }
+}
+
+.react-aria-DropIndicator[data-drop-target] {
+    outline: 1px solid theme('colors.primary');
+}

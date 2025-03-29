@@ -24,4 +24,10 @@ class PluginManagementEndpoint(
     fun disablePlugin(pluginId: String) = pluginManagementService.disablePlugin(pluginId)
 
     fun validatePluginConfig(pluginId: String): Boolean = pluginManagementService.validatePluginConfig(pluginId)
+
+    fun setPluginPriority(pluginId: String, priority: Int) =
+        pluginManagementService.setPluginPriority(pluginId, priority)
+
+    fun setPluginPriorities(pluginPriorities: Map<String, Int>) =
+        pluginManagementService.setPluginPriorities(pluginPriorities)
 }
