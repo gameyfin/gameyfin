@@ -83,6 +83,7 @@
     "workbox-precaching": "7.3.0"
   },
   "overrides": {
+    "@react-aria/utils": "^3.28.1",
     "classnames": "$classnames",
     "react": "$react",
     "react-dom": "$react-dom",
@@ -120,7 +121,9 @@
     "@vaadin/vaadin-themable-mixin": "$@vaadin/vaadin-themable-mixin",
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
     "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
-    "@react-types/shared": "$@react-types/shared"
+    "@react-types/shared": "$@react-types/shared",
+    "@react-stately/data": "$@react-stately/data",
+    "react-aria-components": "$react-aria-components"
   },
   "vaadin": {
     "dependencies": {
@@ -180,6 +183,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "3f65776fc466d9436093cb2be8081f16d86234693e52c66dcc7faf5ad0bfbee6"
+    "hash": "081663e5e6c1316ae1baa055271a5fe7aebc8015d2310320fd58e3e20c1dd342"
   }
 }
