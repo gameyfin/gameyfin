@@ -87,11 +87,6 @@ class PluginManagementService(
         }
     }
 
-    fun hasLogo(pluginId: String): Boolean {
-        val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
-        return plugin.hasLogo()
-    }
-
     fun getLogo(pluginId: String): InputStream? {
         val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
         return plugin.getLogo()

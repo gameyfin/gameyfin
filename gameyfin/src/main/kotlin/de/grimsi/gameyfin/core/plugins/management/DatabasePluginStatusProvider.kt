@@ -13,8 +13,14 @@ class DatabasePluginStatusProvider(
         var pluginManagement = pluginManagementRepository.findByIdOrNull(pluginId)
 
         // If the plugin is unknown, persist it as enabled
-        if(pluginManagement == null) {
-            pluginManagement = pluginManagementRepository.save(PluginManagementEntry(pluginId = pluginId, enabled = true))
+        if (pluginManagement == null) {
+
+            // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
+            val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
+
+            pluginManagement = pluginManagementRepository.save(
+                PluginManagementEntry(pluginId = pluginId, enabled = true, priority = currentMaxPriority + 1)
+            )
         }
 
         return pluginManagement.enabled != true
