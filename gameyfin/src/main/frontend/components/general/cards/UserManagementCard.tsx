@@ -5,12 +5,12 @@ import {useEffect, useState} from "react";
 import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
-import ConfirmUserDeletionModal from "Frontend/components/general/ConfirmUserDeletionModal";
-import PasswordResetTokenModal from "Frontend/components/general/PasswortResetTokenModal";
+import ConfirmUserDeletionModal from "Frontend/components/general/modals/ConfirmUserDeletionModal";
+import PasswordResetTokenModal from "Frontend/components/general/modals/PasswortResetTokenModal";
 import TokenDto from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenDto";
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
 import RoleChip from "Frontend/components/general/RoleChip";
-import AssignRolesModal from "Frontend/components/general/AssignRolesModal";
+import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModal";
 
 export function UserManagementCard({user}: { user: UserInfoDto }) {
     const userDeletionConfirmationModal = useDisclosure();

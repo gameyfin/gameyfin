@@ -3,9 +3,9 @@ import {useEffect, useState} from "react";
 import {Button, Card, CardBody, CardHeader, Link, useDisclosure} from "@heroui/react";
 import {useNavigate} from "react-router-dom";
 import {Form, Formik} from "formik";
-import Input from "Frontend/components/general/Input";
-import PasswordResetModal from "Frontend/components/general/PasswordResetModal";
-import SignUpModal from "Frontend/components/general/SignUpModal";
+import Input from "Frontend/components/general/input/Input";
+import PasswordResetModal from "Frontend/components/general/modals/PasswordResetModal";
+import SignUpModal from "Frontend/components/general/modals/SignUpModal";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 
 export default function LoginView() {

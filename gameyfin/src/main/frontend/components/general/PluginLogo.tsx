@@ -11,7 +11,7 @@ export default function PluginLogo({plugin}: PluginLogoProps) {
     return (
         <>
             {plugin.hasLogo ?
-                <Image src={`/images/plugins/${plugin.id}/logo`} width={64} height={64} radius="none"/> :
+                <Image isBlurred src={`/images/plugins/${plugin.id}/logo`} width={64} height={64} radius="none"/> :
                 <Plug size={64} weight="fill"/>
             }
         </>

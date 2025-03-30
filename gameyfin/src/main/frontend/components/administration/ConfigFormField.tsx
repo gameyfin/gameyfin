@@ -1,8 +1,8 @@
 import ConfigEntryDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigEntryDto";
 import React from "react";
-import Input from "Frontend/components/general/Input";
-import CheckboxInput from "Frontend/components/general/CheckboxInput";
-import SelectInput from "Frontend/components/general/SelectInput";
+import Input from "Frontend/components/general/input/Input";
+import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
+import SelectInput from "Frontend/components/general/input/SelectInput";
 
 export default function ConfigFormField({configElement, ...props}: any) {
     function inputElement(configElement: ConfigEntryDto) {

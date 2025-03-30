@@ -4,7 +4,7 @@ import {Form, Formik} from "formik";
 import {PluginConfigEndpoint, PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
-import Input from "Frontend/components/general/Input";
+import Input from "Frontend/components/general/input/Input";
 import PluginLogo from "Frontend/components/general/PluginLogo";
 
 interface PluginDetailsModalProps {

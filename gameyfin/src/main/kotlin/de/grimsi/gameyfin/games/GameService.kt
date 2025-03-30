@@ -123,6 +123,11 @@ class GameService(
         return results.filter { it.value.title == bestMatchingTitle }
     }
 
+    /**
+     * Merges the results from the metadata plugins into a single Game entity
+     * The merging is done by taking the first non-null value for each field
+     * The plugin with the highest possible priority is used as the source for each field
+     */
     private fun mergeResults(results: List<Map.Entry<GameMetadataProvider, GameMetadata?>>, path: Path): Game {
         val mergedGame = Game(path = path.toString())
         val metadataMap = mutableMapOf<String, FieldMetadata>()

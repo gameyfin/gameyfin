@@ -3,7 +3,7 @@ import {addToast, Button, Input} from "@heroui/react";
 import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints";
 import {useState} from "react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {GameOverviewCard} from "Frontend/components/games/GameOverviewCard";
+import {GameOverviewCard} from "Frontend/components/general/cards/GameOverviewCard";
 
 export default function TestView() {
     const [gameTitle, setGameTitle] = useState("");

@@ -45,6 +45,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
         <div className="flex flex-col">
             <div className="flex flex-row">
                 <div className="flex flex-col flex-1">
+                    <Section title="SSO configuration"/>
                     <ConfigFormField configElement={getConfig("sso.oidc.enabled")}/>
 
                     <Section title="SSO user handling"/>

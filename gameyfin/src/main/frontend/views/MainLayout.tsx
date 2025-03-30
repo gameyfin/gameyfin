@@ -83,7 +83,7 @@ export default function MainLayout() {
                 </div>
             </div>
 
-            <Divider/>
+            <Divider className="mt-8"/>
             <div className="flex flex-col w-full 2xl:w-3/4 m-auto">
                 <footer className="flex flex-row items-center justify-between py-4 px-12">
                     <p>Gameyfin {PackageJson.version}</p>

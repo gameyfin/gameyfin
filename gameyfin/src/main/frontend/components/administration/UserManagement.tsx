@@ -4,11 +4,11 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import {ConfigEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
-import {UserManagementCard} from "Frontend/components/general/UserManagementCard";
+import {UserManagementCard} from "Frontend/components/general/cards/UserManagementCard";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {Info, UserPlus} from "@phosphor-icons/react";
 import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
-import InviteUserModal from "Frontend/components/general/InviteUserModal";
+import InviteUserModal from "Frontend/components/general/modals/InviteUserModal";
 
 function UserManagementLayout({getConfig, formik}: any) {
     const inviteUserModal = useDisclosure();
@@ -36,7 +36,7 @@ function UserManagementLayout({getConfig, formik}: any) {
             </div>
 
             <div className="flex flex-row items-baseline justify-between">
-                <h2 className={"text-xl font-bold mt-8 mb-1"}>Users</h2>
+                <h2 className="text-xl font-bold mt-8 mb-1">Users</h2>
                 {!autoRegisterNewUsers &&
                     <SmallInfoField className="mb-4 text-warning" icon={Info}
                                     message="Automatic user registration for SSO users is disabled"/>

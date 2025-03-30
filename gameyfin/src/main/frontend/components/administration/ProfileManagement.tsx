@@ -1,5 +1,5 @@
 import Section from "Frontend/components/general/Section";
-import Input from "Frontend/components/general/Input";
+import Input from "Frontend/components/general/input/Input";
 import {addToast, Button, Input as NextUiInput, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {ArrowCounterClockwise, Check, Info, Trash} from "@phosphor-icons/react";

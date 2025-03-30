@@ -1,7 +1,7 @@
 import {addToast, Button, Card, CardBody, CardHeader} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import {Form, Formik} from "formik";
-import Input from "Frontend/components/general/Input";
+import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";

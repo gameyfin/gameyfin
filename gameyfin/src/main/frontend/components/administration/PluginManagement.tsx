@@ -1,10 +1,10 @@
 import React, {useEffect, useState} from "react";
 import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
-import {PluginManagementCard} from "Frontend/components/general/PluginManagementCard";
+import {PluginManagementCard} from "Frontend/components/general/cards/PluginManagementCard";
 import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
 import {ListNumbers} from "@phosphor-icons/react";
-import PluginPrioritiesModal from "Frontend/components/general/PluginPrioritiesModal";
+import PluginPrioritiesModal from "Frontend/components/general/modals/PluginPrioritiesModal";
 
 export default function PluginManagement() {
     const [plugins, setPlugins] = useState<PluginDto[]>([]);

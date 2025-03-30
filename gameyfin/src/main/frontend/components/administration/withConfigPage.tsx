@@ -128,7 +128,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
             >
                 {(formik) => (
                     <Form>
-                        <div className="flex flex-row flex-grow justify-between mb-8">
+                        <div className="flex flex-row flex-grow justify-between">
                             <h1 className="text-2xl font-bold">{title}</h1>
 
                             <div className="flex flex-row items-center gap-4">

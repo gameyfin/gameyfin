@@ -1,7 +1,7 @@
 import React from "react";
 import {Form, Formik} from "formik";
 import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
-import Input from "Frontend/components/general/Input";
+import Input from "Frontend/components/general/input/Input";
 import {MessageEndpoint} from "Frontend/generated/endpoints";
 import * as Yup from "yup";
 import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/templates/MessageTemplateDto";

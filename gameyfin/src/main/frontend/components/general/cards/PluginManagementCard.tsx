@@ -13,7 +13,7 @@ import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
 import React, {ReactNode, useEffect, useState} from "react";
-import PluginDetailsModal from "Frontend/components/general/PluginDetailsModal";
+import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
 import PluginLogo from "Frontend/components/general/PluginLogo";
 
 export function PluginManagementCard({plugin, updatePlugin}: {

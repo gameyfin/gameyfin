@@ -4,7 +4,7 @@ import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import UserRegistrationDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserRegistrationDto";
 import {Form, Formik} from "formik";
 import * as Yup from "yup";
-import Input from "Frontend/components/general/Input";
+import Input from "Frontend/components/general/input/Input";
 
 interface SignUpModalProps {
     isOpen: boolean;

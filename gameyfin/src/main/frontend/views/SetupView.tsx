@@ -2,7 +2,7 @@ import React from 'react';
 import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
-import Input from "Frontend/components/general/Input";
+import Input from "Frontend/components/general/input/Input";
 import {HandWaving, Palette, User} from "@phosphor-icons/react";
 import {addToast, Card} from "@heroui/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
