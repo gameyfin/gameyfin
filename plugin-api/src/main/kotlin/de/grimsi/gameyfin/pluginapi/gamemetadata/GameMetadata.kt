@@ -4,6 +4,7 @@ import java.net.URI
 import java.time.Instant
 
 class GameMetadata(
+    val originalId: String,
     val title: String,
     val description: String? = null,
     val coverUrl: URI? = null,

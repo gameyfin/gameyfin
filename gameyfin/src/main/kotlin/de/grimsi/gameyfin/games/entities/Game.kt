@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.games.entities
 
+import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameFeature
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
 import de.grimsi.gameyfin.pluginapi.gamemetadata.PlayerPerspective
@@ -28,6 +29,10 @@ class Game(
     var summary: String? = null,
 
     var release: Instant? = null,
+
+    var userRating: Int? = null,
+
+    var criticRating: Int? = null,
 
     @ManyToMany(cascade = [CascadeType.MERGE])
     var publishers: Set<Company>? = null,
@@ -60,5 +65,8 @@ class Game(
     val path: String,
 
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    var metadata: Map<String, FieldMetadata> = emptyMap()
+    var metadata: Map<String, FieldMetadata> = emptyMap(),
+
+    @ElementCollection
+    var originalIds: Map<PluginManagementEntry, String> = emptyMap()
 )

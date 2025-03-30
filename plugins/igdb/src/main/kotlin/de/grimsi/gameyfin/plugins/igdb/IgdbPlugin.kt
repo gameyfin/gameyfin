@@ -120,6 +120,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             }
 
             return GameMetadata(
+                originalId = game.slug,
                 title = game.name,
                 description = game.summary,
                 coverUrl = Mapper.cover(game.cover),

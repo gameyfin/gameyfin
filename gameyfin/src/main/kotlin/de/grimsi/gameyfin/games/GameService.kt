@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.games
 
 import de.grimsi.gameyfin.core.filterValuesNotNull
+import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.dto.GameMetadataDto
@@ -131,6 +132,7 @@ class GameService(
     private fun mergeResults(results: List<Map.Entry<GameMetadataProvider, GameMetadata?>>, path: Path): Game {
         val mergedGame = Game(path = path.toString())
         val metadataMap = mutableMapOf<String, FieldMetadata>()
+        val originalIdsMap = mutableMapOf<PluginManagementEntry, String>()
 
         // Sort results by plugin priority
         val sortedResults = results.sortedByDescending {
@@ -139,7 +141,10 @@ class GameService(
 
         sortedResults.forEach { (provider, metadata) ->
             val sourcePlugin = pluginManagementService.getPluginManagementEntry(provider.javaClass)
+
             metadata?.let {
+                originalIdsMap[sourcePlugin] = metadata.originalId
+
                 it.title.takeIf { it.isNotBlank() }?.let { title ->
                     if (!metadataMap.containsKey("title")) {
                         mergedGame.title = title
@@ -162,6 +167,18 @@ class GameService(
                     if (!metadataMap.containsKey("release")) {
                         mergedGame.release = release
                         metadataMap["release"] = FieldMetadata(sourcePlugin)
+                    }
+                }
+                it.userRating?.let { userRating ->
+                    if (!metadataMap.containsKey("userRating")) {
+                        mergedGame.userRating = userRating
+                        metadataMap["userRating"] = FieldMetadata(sourcePlugin)
+                    }
+                }
+                it.criticRating?.let { criticRating ->
+                    if (!metadataMap.containsKey("criticRating")) {
+                        mergedGame.criticRating = criticRating
+                        metadataMap["criticRating"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 it.publishedBy?.takeIf { it.isNotEmpty() }?.let { publishedBy ->
@@ -225,6 +242,7 @@ class GameService(
         }
 
         mergedGame.metadata = metadataMap
+        mergedGame.originalIds = originalIdsMap
         return mergedGame
     }
 
@@ -238,6 +256,8 @@ class GameService(
             comment = game.comment,
             summary = game.summary,
             release = game.release,
+            userRating = game.userRating,
+            criticRating = game.criticRating,
             publishers = game.publishers?.map { it.name },
             developers = game.developers?.map { it.name },
             genres = game.genres?.map { it.name },
@@ -248,7 +268,8 @@ class GameService(
             imageIds = game.images?.mapNotNull { it.id },
             videoUrls = game.videoUrls?.map { it.toString() },
             path = game.path,
-            metadata = toDto(game.metadata)
+            metadata = toDto(game.metadata),
+            originalIds = game.originalIds.mapKeys { it.key.pluginId }
         )
     }
 

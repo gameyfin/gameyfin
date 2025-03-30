@@ -102,6 +102,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
             // This is as much as I can get from the Steam Store API
             val metadata = GameMetadata(
+                originalId = id.toString(),
                 title = game.name,
                 description = game.detailedDescription,
                 coverUrl = URI(game.headerImage),

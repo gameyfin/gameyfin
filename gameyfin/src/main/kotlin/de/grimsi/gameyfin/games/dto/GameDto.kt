@@ -9,6 +9,8 @@ class GameDto(
     val comment: String?,
     val summary: String?,
     val release: Instant?,
+    val userRating: Int?,
+    val criticRating: Int?,
     val publishers: List<String>?,
     val developers: List<String>?,
     val genres: List<String>?,
@@ -19,5 +21,6 @@ class GameDto(
     val imageIds: List<Long>?,
     val videoUrls: List<String>?,
     val path: String,
-    val metadata: Map<String, GameMetadataDto>
+    val metadata: Map<String, GameMetadataDto>,
+    val originalIds: Map<String, String>
 )
