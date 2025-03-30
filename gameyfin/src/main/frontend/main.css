@@ -11,3 +11,21 @@
         @apply bg-primary-300 text-background/80;
     }
 }
+
+/* Custom CSS */
+
+/* Overwrite default Hilla styles (e.g. loading indicator) */
+:root {
+    --lumo-primary-color: theme('colors.primary');
+}
+
+/* List box drag & drop */
+.react-aria-ListBoxItem {
+    &[data-dragging] {
+        opacity: 0.6;
+    }
+}
+
+.react-aria-DropIndicator[data-drop-target] {
+    outline: 1px solid theme('colors.primary');
+}
