@@ -53,7 +53,7 @@ class ImageEndpoint(
     fun uploadAvatar(@RequestParam("file") file: MultipartFile) {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
 
-        val image: Image = if (userService.hasAvatar(auth.name)) {
+        val image: Image = if (!userService.hasAvatar(auth.name)) {
             imageService.createFile(ImageType.AVATAR, file.inputStream, file.contentType!!)
         } else {
             val existingAvatar = userService.getAvatar(auth.name)!!
