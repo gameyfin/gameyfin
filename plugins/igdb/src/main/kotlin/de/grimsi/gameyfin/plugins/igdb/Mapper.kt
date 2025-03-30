@@ -115,6 +115,7 @@ class Mapper {
                 when (gameMode.slug) {
                     "single-player" -> gameFeatures.add(GameFeature.SINGLEPLAYER)
                     "multiplayer" -> gameFeatures.add(GameFeature.MULTIPLAYER)
+                    "massively-multiplayer-online-mmo" -> gameFeatures.add(GameFeature.MULTIPLAYER)
                     "co-operative" -> gameFeatures.add(GameFeature.CO_OP)
                     "split-screen" -> gameFeatures.add(GameFeature.SPLITSCREEN)
                     else -> {
