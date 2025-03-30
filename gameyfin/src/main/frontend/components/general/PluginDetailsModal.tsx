@@ -5,7 +5,7 @@ import {PluginConfigEndpoint, PluginManagementEndpoint} from "Frontend/generated
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/Input";
-import {Plug} from "@phosphor-icons/react";
+import PluginLogo from "Frontend/components/general/PluginLogo";
 
 interface PluginDetailsModalProps {
     plugin: PluginDto;
@@ -59,7 +59,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange, update
                                 <ModalBody>
                                     <h4 className="text-l font-bold">Details</h4>
                                     <div className="flex flex-row gap-8">
-                                        <Plug size={64} weight="fill"/>
+                                        <PluginLogo plugin={plugin}/>
                                         <div className="grid grid-cols-2">
                                             <p>Author: {plugin.author}</p>
                                             <p>Version: {plugin.version}</p>

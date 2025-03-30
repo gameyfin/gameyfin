@@ -1,8 +1,10 @@
 package de.grimsi.gameyfin.core.plugins.management
 
+import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import org.pf4j.ExtensionPoint
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import java.io.InputStream
 
 @Service
 class PluginManagementService(
@@ -16,6 +18,7 @@ class PluginManagementService(
                 it.descriptor.pluginDescription,
                 it.descriptor.version,
                 it.descriptor.provider,
+                (it.plugin as GameyfinPlugin).hasLogo(),
                 it.pluginState,
                 getPluginManagementEntry(it.pluginId).priority
             )
@@ -29,6 +32,7 @@ class PluginManagementService(
             plugin.descriptor.pluginDescription,
             plugin.descriptor.version,
             plugin.descriptor.provider,
+            (plugin.plugin as GameyfinPlugin).hasLogo(),
             plugin.pluginState,
             getPluginManagementEntry(pluginId).priority
         )
@@ -81,5 +85,15 @@ class PluginManagementService(
             pluginManagementEntry.priority = priority
             pluginManagementRepository.save(pluginManagementEntry)
         }
+    }
+
+    fun hasLogo(pluginId: String): Boolean {
+        val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
+        return plugin.hasLogo()
+    }
+
+    fun getLogo(pluginId: String): InputStream? {
+        val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
+        return plugin.getLogo()
     }
 }

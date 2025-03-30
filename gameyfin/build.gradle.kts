@@ -55,6 +55,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.15")
     implementation("commons-io:commons-io:2.18.0")
+    implementation("org.apache.tika:tika-core:3.1.0")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")

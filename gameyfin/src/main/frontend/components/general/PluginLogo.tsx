@@ -1,0 +1,19 @@
+import {Plug} from "@phosphor-icons/react";
+import React from "react";
+import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
+import {Image} from "@heroui/react";
+
+interface PluginLogoProps {
+    plugin: PluginDto;
+}
+
+export default function PluginLogo({plugin}: PluginLogoProps) {
+    return (
+        <>
+            {plugin.hasLogo ?
+                <Image src={`/images/plugins/${plugin.id}/logo`} width={64} height={64} radius="none"/> :
+                <Plug size={64} weight="fill"/>
+            }
+        </>
+    );
+}

@@ -5,7 +5,6 @@ import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/manage
 import {ListBox, ListBoxItem, useDragAndDrop} from "react-aria-components";
 import {CaretUpDown} from "@phosphor-icons/react";
 import {ListData, useListData} from "@react-stately/data";
-import './PluginPrioritiesModal.css';
 
 interface PluginPrioritiesModalProps {
     plugins: PluginDto[];

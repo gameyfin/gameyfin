@@ -25,6 +25,12 @@ subprojects {
         }
         from(sourceSets["main"].output.classesDirs)
         from(sourceSets["main"].resources)
+
+        // Include logo file under META-INF/resources
+        from("src/main/resources") {
+            include("logo.*")
+            into("META-INF/resources")
+        }
     }
 
     tasks.register<Copy>("copyDependencyClasses") {
