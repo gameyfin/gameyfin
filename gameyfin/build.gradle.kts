@@ -55,7 +55,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.15")
     implementation("commons-io:commons-io:2.18.0")
-    implementation("org.apache.tika:tika-core:3.1.0")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -69,6 +68,10 @@ dependencies {
     // Plugins
     implementation(project(":plugin-api"))
     ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
+
+    // Utils
+    implementation("org.apache.tika:tika-core:3.1.0")
+    implementation("me.xdrop:fuzzywuzzy:1.4.0")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")

@@ -9,6 +9,7 @@ import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 import java.io.InputStream
 
+
 class Utils {
     companion object {
         private val tika = Tika()
@@ -49,3 +50,6 @@ class Utils {
         }
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+fun <K, V> Map<K, V?>.filterValuesNotNull() = filterValues { it != null } as Map<K, V>

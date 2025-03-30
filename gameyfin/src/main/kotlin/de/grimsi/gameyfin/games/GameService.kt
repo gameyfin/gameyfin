@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.games
 
+import de.grimsi.gameyfin.core.filterValuesNotNull
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.dto.GameMetadataDto
@@ -14,6 +15,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -43,17 +45,29 @@ class GameService(
     }
 
     fun createFromFile(path: Path): GameDto {
-        val metadataResults = queryPlugins(path.fileName.toString())
-        val validResults = metadataResults.filterValues { it != null }
+        val query = path.fileName.toString()
+
+        // Step 0: Query all metadata plugins for metadata on the provided game title
+        val metadataResults = queryPlugins(query)
+
+        // Step 1: Filter out invalid (empty) results
+        val validResults = metadataResults.filterValuesNotNull()
         if (validResults.isEmpty()) {
             throw NoMatchException("Could not match game at $path")
         }
 
-        val sortedResults = validResults.entries.sortedByDescending {
+        // Step 2: Filter results to find the best matching title
+        val filteredResults = filterResults(query, validResults)
+
+        // Step 3: Sort results by plugin priority
+        val sortedResults = filteredResults.entries.sortedByDescending {
             pluginManagementService.getPluginManagementEntry(it.key.javaClass).priority
         }
 
+        // Step 4: Merge results into a single Game entity
         val mergedGame = mergeResults(sortedResults, path)
+
+        // Step 5: Save the new game
         val savedGame = createOrUpdate(mergedGame)
 
         return toDto(savedGame)
@@ -92,6 +106,21 @@ class GameService(
                 }
             }
         }
+    }
+
+    /**
+     * Determines the closest matching title from the results and filters out any other results
+     */
+    private fun filterResults(
+        originalQuery: String,
+        results: Map<GameMetadataProvider, GameMetadata>
+    ): Map<GameMetadataProvider, GameMetadata> {
+        val availableTitles = results.map { it.value.title }
+        val bestMatchingTitle = FuzzySearch.extractOne(originalQuery, availableTitles).string
+
+        log.info { "Best matching title: '$bestMatchingTitle' for '$originalQuery' determined from $availableTitles" }
+
+        return results.filter { it.value.title == bestMatchingTitle }
     }
 
     private fun mergeResults(results: List<Map.Entry<GameMetadataProvider, GameMetadata?>>, path: Path): Game {
