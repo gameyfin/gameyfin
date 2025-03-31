@@ -16,6 +16,17 @@ export default function TestView() {
         });
     }
 
+    function removeGames() {
+        LibraryEndpoint.removeGames().then(() => {
+            setGame(undefined);
+            addToast({
+                title: "Success",
+                description: "Games removed",
+                color: "success"
+            })
+        });
+    }
+
     return (
         <div className="grow justify-center mt-12">
             <div className="flex flex-col items-center gap-6">
@@ -46,6 +57,7 @@ export default function TestView() {
                 <div className="flex flex-row gap-4 items-center">
                     <Input label="Game title" onValueChange={setGameTitle}/>
                     <Button onPress={getGame} size="lg">Match</Button>
+                    <Button onPress={removeGames} size="lg">Clear DB</Button>
                 </div>
                 {game && <GameOverviewCard game={game}></GameOverviewCard>}
                 {game && <>{JSON.stringify(game, null, 2)}</>}

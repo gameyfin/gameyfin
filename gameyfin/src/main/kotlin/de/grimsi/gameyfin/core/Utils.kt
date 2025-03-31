@@ -51,5 +51,14 @@ class Utils {
     }
 }
 
+/**
+ * Converts a map with nullable values to a map with non-nullable values by filtering out null values
+ */
 @Suppress("UNCHECKED_CAST")
 fun <K, V> Map<K, V?>.filterValuesNotNull() = filterValues { it != null } as Map<K, V>
+
+/**
+ * Converts a string to an alphanumeric string by removing all non-alphanumeric characters (except whitespaces)
+ * and converting it to lowercase
+ */
+fun String.alphaNumeric() = filter { it.isLetterOrDigit() || it.isWhitespace() }.lowercase()

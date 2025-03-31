@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.games
 
+import de.grimsi.gameyfin.core.alphaNumeric
 import de.grimsi.gameyfin.core.filterValuesNotNull
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
@@ -83,6 +84,10 @@ class GameService(
         gameRepository.delete(game)
     }
 
+    fun deleteAll() {
+        gameRepository.deleteAll()
+    }
+
     private fun getById(id: Long): Game {
         return gameRepository.findByIdOrNull(id) ?: throw IllegalArgumentException("Game with id $id not found")
     }
@@ -110,7 +115,8 @@ class GameService(
     }
 
     /**
-     * Determines the closest matching title from the results and filters out any other results
+     * Determines the closest matching title from the results
+     * Filters the results to only include the best matching title (using an alphanumeric comparison)
      */
     private fun filterResults(
         originalQuery: String,
@@ -121,7 +127,7 @@ class GameService(
 
         log.info { "Best matching title: '$bestMatchingTitle' for '$originalQuery' determined from $availableTitles" }
 
-        return results.filter { it.value.title == bestMatchingTitle }
+        return results.filter { it.value.title.alphaNumeric() == bestMatchingTitle.alphaNumeric() }
     }
 
     /**
