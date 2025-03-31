@@ -13,15 +13,16 @@ data class SteamDetailsResultWrapper(
 
 @Serializable
 data class SteamGameDetails(
+    val type: String,
     val name: String,
-    @SerialName("detailed_description") val detailedDescription: String,
-    @SerialName("header_image") val headerImage: String,
-    val developers: List<String>,
-    val publishers: List<String>,
-    val categories: List<Category>,
-    val genres: List<SteamGenre>,
-    val screenshots: List<Screenshot>,
-    val movies: List<Movie>,
+    @SerialName("detailed_description") val detailedDescription: String? = null,
+    @SerialName("header_image") val headerImage: String? = null,
+    val developers: List<String>? = null,
+    val publishers: List<String>? = null,
+    val categories: List<Category>? = null,
+    val genres: List<SteamGenre>? = null,
+    val screenshots: List<Screenshot>? = null,
+    val movies: List<Movie>? = null,
     @SerialName("release_date") val releaseDate: ReleaseDate? = null
 )
 
@@ -41,7 +42,7 @@ data class SteamGenre(
 data class Screenshot(
     val id: Int,
     @SerialName("path_thumbnail") val pathThumbnail: String? = null,
-    @SerialName("path_full") val pathFull: String? = null
+    @SerialName("path_full") val pathFull: String
 )
 
 @Serializable
@@ -57,7 +58,7 @@ data class Movie(
 @Serializable
 data class Webm(
     val `480`: String? = null,
-    val max: String? = null
+    val max: String
 )
 
 @Serializable

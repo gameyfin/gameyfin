@@ -100,19 +100,21 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
             val game = steamDetailsResultWrapper[id]?.data ?: return null
 
+            if (game.type != "game") return null
+
             // This is as much as I can get from the Steam Store API
             val metadata = GameMetadata(
                 originalId = id.toString(),
                 title = game.name,
                 description = game.detailedDescription,
-                coverUrl = URI(game.headerImage),
+                coverUrl = game.headerImage?.let { URI(it) },
                 release = game.releaseDate?.date,
-                developedBy = game.developers.toSet(),
-                publishedBy = game.publishers.toSet(),
-                genres = game.genres.map { Mapper.genre(it) }.toSet(),
-                keywords = game.categories.mapNotNull { it.description }.toSet(),
-                screenshotUrls = game.screenshots.map { URI(it.pathFull!!) }.toSet(),
-                videoUrls = game.movies.map { URI(it.webm?.max!!) }.toSet()
+                developedBy = game.developers?.toSet(),
+                publishedBy = game.publishers?.toSet(),
+                genres = game.genres?.let { it.map { Mapper.genre(it) }.toSet() },
+                keywords = game.categories?.let { it.mapNotNull { it.description }.toSet() },
+                screenshotUrls = game.screenshots?.let { it.map { URI(it.pathFull) }.toSet() },
+                videoUrls = game.movies?.let { it.mapNotNull { it.webm?.let { URI(it.max) } }.toSet() }
             )
 
             return metadata

@@ -97,7 +97,8 @@ class Mapper {
             return URI(imageBuilder(screenshot.imageId, ImageSize.FHD, ImageType.PNG))
         }
 
-        fun cover(cover: proto.Cover): URI {
+        fun cover(cover: proto.Cover): URI? {
+            if (cover.imageId.isEmpty()) return null
             return URI(imageBuilder(cover.imageId, ImageSize.COVER_BIG, ImageType.PNG))
         }
 
