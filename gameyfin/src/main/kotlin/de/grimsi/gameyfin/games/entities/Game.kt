@@ -68,5 +68,7 @@ class Game(
     var metadata: Map<String, FieldMetadata> = emptyMap(),
 
     @ElementCollection
-    var originalIds: Map<PluginManagementEntry, String> = emptyMap()
+    var originalIds: Map<PluginManagementEntry, String> = emptyMap(),
+
+    var downloadCount: Int = 0
 )

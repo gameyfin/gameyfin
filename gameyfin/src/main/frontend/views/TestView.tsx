@@ -27,6 +27,16 @@ export default function TestView() {
         });
     }
 
+    function removeLibraries() {
+        LibraryEndpoint.removeLibraries().then(() => {
+            addToast({
+                title: "Success",
+                description: "Libraries removed",
+                color: "success"
+            })
+        });
+    }
+
     return (
         <div className="grow justify-center mt-12">
             <div className="flex flex-col items-center gap-6">
@@ -58,6 +68,7 @@ export default function TestView() {
                     <Input label="Game title" onValueChange={setGameTitle}/>
                     <Button onPress={getGame} size="lg">Match</Button>
                     <Button onPress={removeGames} size="lg">Clear DB</Button>
+                    <Button onPress={removeLibraries} size="lg">Clear Libs</Button>
                 </div>
                 {game && <GameOverviewCard game={game}></GameOverviewCard>}
                 {game && <>{JSON.stringify(game, null, 2)}</>}

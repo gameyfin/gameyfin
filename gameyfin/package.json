@@ -37,7 +37,9 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.47",
     "next-themes": "^0.4.6",
+    "rand-seed": "^2.1.7",
     "react": "18.3.1",
+    "react-accessible-treeview": "^2.11.1",
     "react-aria-components": "^1.7.1",
     "react-confetti-boom": "^1.0.0",
     "react-dom": "18.3.1",
@@ -123,7 +125,9 @@
     "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
     "@react-types/shared": "$@react-types/shared",
     "@react-stately/data": "$@react-stately/data",
-    "react-aria-components": "$react-aria-components"
+    "react-aria-components": "$react-aria-components",
+    "react-accessible-treeview": "$react-accessible-treeview",
+    "rand-seed": "$rand-seed"
   },
   "vaadin": {
     "dependencies": {
@@ -183,6 +187,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "081663e5e6c1316ae1baa055271a5fe7aebc8015d2310320fd58e3e20c1dd342"
+    "hash": "a951d6d827dd2a43a7d0fa6330d5030cc19c1077490488a24cfd7908bd43aac3"
   }
 }

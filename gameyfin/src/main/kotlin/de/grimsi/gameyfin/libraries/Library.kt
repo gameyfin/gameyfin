@@ -14,6 +14,6 @@ class Library(
     @Column(unique = true)
     val path: String,
 
-    @OneToMany
-    val games: Set<Game> = emptySet()
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    val games: MutableSet<Game> = mutableSetOf()
 )

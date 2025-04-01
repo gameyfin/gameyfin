@@ -4,16 +4,27 @@ import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
+import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
+@PermitAll
 class LibraryEndpoint(
     private val libraryService: LibraryService,
     private val gameService: GameService
 ) {
-    @RolesAllowed(Role.Names.ADMIN)
     fun getAllLibraries(): Collection<LibraryDto> {
         return libraryService.getAllLibraries()
+    }
+
+    fun getGamesInLibrary(libraryId: Long): Collection<GameDto> {
+        return libraryService.getGamesInLibrary(libraryId)
+    }
+
+    // FIXME: Just for testing
+    @RolesAllowed(Role.Names.ADMIN)
+    fun test(testString: String): GameDto {
+        return libraryService.test(testString)
     }
 
     @RolesAllowed(Role.Names.ADMIN)
@@ -22,8 +33,8 @@ class LibraryEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun test(testString: String): GameDto {
-        return libraryService.test(testString)
+    fun removeLibraries() {
+        return libraryService.deleteAllLibraries()
     }
 
     @RolesAllowed(Role.Names.ADMIN)

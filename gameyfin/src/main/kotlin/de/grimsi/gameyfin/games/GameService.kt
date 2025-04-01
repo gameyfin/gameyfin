@@ -21,6 +21,7 @@ import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.net.URI
 import java.net.URLConnection
 import java.nio.file.Path
@@ -46,7 +47,7 @@ class GameService(
         return gameRepository.save(game)
     }
 
-    fun createFromFile(path: Path): GameDto {
+    fun createFromFile(path: Path): Game {
         val query = path.fileName.toString()
 
         // Step 0: Query all metadata plugins for metadata on the provided game title
@@ -70,11 +71,10 @@ class GameService(
         val mergedGame = mergeResults(sortedResults, path)
 
         // Step 5: Save the new game
-        val savedGame = createOrUpdate(mergedGame)
-
-        return toDto(savedGame)
+        return createOrUpdate(mergedGame)
     }
 
+    @Transactional(readOnly = true)
     fun getAllGames(): Collection<GameDto> {
         val entities = gameRepository.findAll()
         return entities.map { toDto(it) }
@@ -252,7 +252,7 @@ class GameService(
         return mergedGame
     }
 
-    private fun toDto(game: Game): GameDto {
+    fun toDto(game: Game): GameDto {
         val gameId = game.id ?: throw IllegalArgumentException("Game ID is null")
 
         return GameDto(

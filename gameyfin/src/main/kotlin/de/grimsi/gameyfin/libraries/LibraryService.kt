@@ -6,6 +6,7 @@ import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.extension
@@ -18,8 +19,16 @@ class LibraryService(
     private val gameService: GameService,
     private val config: ConfigService
 ) {
+
     fun test(testString: String): GameDto {
-        return gameService.createFromFile(Path(testString))
+        val game = gameService.createFromFile(Path(testString))
+
+        val randomLibrary = libraryRepository.findRandomLibrary() ?: throw IllegalArgumentException("No library found")
+
+        randomLibrary.games.add(game)
+        libraryRepository.save(randomLibrary)
+
+        return gameService.toDto(game)
     }
 
     fun createOrUpdate(library: LibraryDto): LibraryDto {
@@ -27,6 +36,7 @@ class LibraryService(
         return toDto(entity)
     }
 
+    @Transactional(readOnly = true)
     fun getAllLibraries(): Collection<LibraryDto> {
         val entities = libraryRepository.findAll()
         return entities.map { toDto(it) }
@@ -35,6 +45,20 @@ class LibraryService(
     fun deleteLibrary(library: LibraryDto) {
         val entity = toEntity(library)
         libraryRepository.delete(entity)
+    }
+
+    fun deleteAllLibraries() {
+        libraryRepository.deleteAll()
+    }
+
+    @Transactional(readOnly = true)
+    fun getGamesInLibrary(libraryId: Long): Collection<GameDto> {
+        val library = libraryRepository.findByIdOrNull(libraryId)
+            ?: throw IllegalArgumentException("Library with ID $libraryId not found")
+
+        val games = library.games.map { gameService.toDto(it) }
+
+        return games
     }
 
     /**
@@ -72,16 +96,21 @@ class LibraryService(
             throw IllegalArgumentException("Library ID is null")
         }
 
+        val statsDto = LibraryStatsDto(
+            gamesCount = library.games.size,
+            downloadedGamesCount = library.games.sumOf { it.downloadCount }
+        )
+
         return LibraryDto(
             id = library.id,
             name = library.name,
-            path = library.path
+            path = library.path,
+            stats = statsDto
         )
     }
 
     private fun toEntity(library: LibraryDto): Library {
         return libraryRepository.findByIdOrNull(library.id) ?: Library(
-            id = library.id,
             name = library.name,
             path = library.path
         )
