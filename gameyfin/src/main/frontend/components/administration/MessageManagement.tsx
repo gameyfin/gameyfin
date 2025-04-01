@@ -96,6 +96,7 @@ function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
                                             <Button isIconOnly
                                                     size="sm"
                                                     onPress={() => openTestNotification(template)}
+                                                    isDisabled={!formik.values.messages.providers.email.enabled}
                                             >
                                                 <PaperPlaneRight/>
                                             </Button>
