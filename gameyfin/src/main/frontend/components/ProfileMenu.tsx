@@ -1,7 +1,7 @@
 import {useAuth} from "Frontend/util/auth";
 import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
 import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
 import {CollectionElement} from "@react-types/shared";

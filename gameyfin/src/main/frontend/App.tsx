@@ -1,4 +1,4 @@
-import {Outlet, useHref, useNavigate} from 'react-router-dom';
+import {Outlet, useHref, useNavigate} from 'react-router';
 import "./main.css";
 import "Frontend/util/custom-validators";
 import {HeroUIProvider} from "@heroui/react";

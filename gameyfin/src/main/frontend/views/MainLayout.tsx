@@ -4,7 +4,7 @@ import ProfileMenu from "Frontend/components/ProfileMenu";
 import {Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem} from "@heroui/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
-import {Outlet, useNavigate} from "react-router-dom";
+import {Outlet, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
 import {Heart} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";

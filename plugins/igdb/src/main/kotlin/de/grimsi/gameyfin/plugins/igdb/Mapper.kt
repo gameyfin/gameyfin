@@ -12,7 +12,7 @@ import java.net.URI
 
 class Mapper {
     companion object {
-        private val log = LoggerFactory.getLogger(javaClass)
+        private val log = LoggerFactory.getLogger(Mapper::class.java)
 
         fun genre(genre: proto.Genre): Genre {
             return when (genre.slug) {

@@ -23,8 +23,8 @@ subprojects {
 
     tasks.withType<KotlinJvmCompile> {
         compilerOptions {
-            languageVersion = KotlinVersion.KOTLIN_2_0
-            apiVersion = KotlinVersion.KOTLIN_2_0
+            languageVersion = KotlinVersion.KOTLIN_2_1
+            apiVersion = KotlinVersion.KOTLIN_2_1
             jvmTarget = JvmTarget.JVM_21
             progressiveMode = true
             freeCompilerArgs.add("-Xjsr305=strict")

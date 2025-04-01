@@ -1,5 +1,5 @@
 import {addToast, Button, Card, CardBody, CardHeader} from "@heroui/react";
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";

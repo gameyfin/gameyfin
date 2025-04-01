@@ -142,6 +142,7 @@ function buildSWPlugin(opts: { devMode: boolean }): PluginOption {
           sourcemap: viteConfig.command === 'serve' || viteConfig.build.sourcemap,
           emptyOutDir: false,
           modulePreload: false,
+          target: ['safari15', 'es2022'],
           rollupOptions: {
             input: {
               sw: settings.clientServiceWorkerSource
@@ -273,7 +274,7 @@ function statsExtracterPlugin(): PluginOption {
       const frontendFiles: Record<string, string> = {};
       frontendFiles['index.html'] = createHash('sha256').update(customIndexData.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
 
-      const projectFileExtensions = ['.js', '.js.map', '.ts', '.ts.map', '.tsx', '.tsx.map', '.css', '.css.map', '.'];
+      const projectFileExtensions = ['.js', '.js.map', '.ts', '.ts.map', '.tsx', '.tsx.map', '.css', '.css.map'];
 
       const isThemeComponentsResource = (id: string) =>
           id.startsWith(themeOptions.frontendGeneratedFolder.replace(/\\/g, '/'))
@@ -697,6 +698,7 @@ export const vaadinConfig: UserConfigFn = (env) => {
       outDir: buildOutputFolder,
       emptyOutDir: devBundle,
       assetsDir: 'VAADIN/build',
+      target: ['safari15', 'es2022'],
       rollupOptions: {
         input: {
           indexhtml: projectIndexHtml,
@@ -755,7 +757,16 @@ export const vaadinConfig: UserConfigFn = (env) => {
         babel: {
           // We need to use babel to provide the source information for it to be correct
           // (otherwise Babel will slightly rewrite the source file and esbuild generate source info for the modified file)
-          presets: [['@babel/preset-react', { runtime: 'automatic', development: !productionMode }]],
+          presets: [
+            [
+              '@babel/preset-react',
+              {
+                runtime: 'automatic',
+                importSource: productionMode ? 'react' : 'Frontend/generated/jsx-dev-transform',
+                development: !productionMode
+              }
+            ]
+          ],
           // React writes the source location for where components are used, this writes for where they are defined
           plugins: [
             !productionMode && addFunctionComponentSourceLocationBabel(),

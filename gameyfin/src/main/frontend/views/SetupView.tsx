@@ -7,7 +7,7 @@ import {HandWaving, Palette, User} from "@phosphor-icons/react";
 import {addToast, Card} from "@heroui/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 
 function WelcomeStep() {
     return (

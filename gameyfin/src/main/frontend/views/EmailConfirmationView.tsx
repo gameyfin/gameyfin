@@ -1,5 +1,5 @@
 import {Card, CardBody, CardHeader} from "@heroui/react";
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router";
 import React, {useEffect, useState} from "react";
 import {CheckCircle, Warning, WarningCircle} from "@phosphor-icons/react";
 import TokenValidationResult from "Frontend/generated/de/grimsi/gameyfin/shared/token/TokenValidationResult";

@@ -1,7 +1,7 @@
-import { useMatches } from 'react-router-dom';
+import {useMatches} from 'react-router';
 
 type RouteMetadata = {
-  [key: string]: any;
+    [key: string]: any;
 };
 
 /**
@@ -9,7 +9,7 @@ type RouteMetadata = {
  * or undefined if the route does not have defined a handle.
  */
 export function useRouteMetadata(): RouteMetadata | undefined {
-  const matches = useMatches();
-  const match = matches[matches.length - 1];
-  return match?.handle as RouteMetadata | undefined;
+    const matches = useMatches();
+    const match = matches[matches.length - 1];
+    return match?.handle as RouteMetadata | undefined;
 }

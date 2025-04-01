@@ -1,7 +1,7 @@
 import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
 import {Button, Card, CardBody, CardHeader, Link, useDisclosure} from "@heroui/react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import PasswordResetModal from "Frontend/components/general/modals/PasswordResetModal";

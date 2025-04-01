@@ -1,4 +1,4 @@
-import {Outlet} from "react-router-dom";
+import {Outlet} from "react-router";
 import {Icon} from "@phosphor-icons/react";
 import {Listbox, ListboxItem} from "@heroui/react";
 import {ReactElement, useState} from "react";

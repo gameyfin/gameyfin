@@ -1,5 +1,5 @@
 import {protectRoutes} from '@vaadin/hilla-react-auth';
-import {createBrowserRouter, RouteObject} from 'react-router-dom';
+import {createBrowserRouter, RouteObject} from 'react-router';
 import LoginView from "Frontend/views/LoginView";
 import MainLayout from "Frontend/views/MainLayout";
 import TestView from "Frontend/views/TestView";
