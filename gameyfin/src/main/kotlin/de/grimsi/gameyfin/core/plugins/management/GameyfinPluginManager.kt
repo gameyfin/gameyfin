@@ -4,9 +4,17 @@ import de.grimsi.gameyfin.core.plugins.config.PluginConfigRepository
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.*
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import java.io.InputStream
 import java.nio.file.Path
+import java.security.PublicKey
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.util.jar.JarFile
 import kotlin.io.path.Path
+import kotlin.io.path.extension
+
 
 /**
  * @see https://stackoverflow.com/questions/73654174/my-application-cant-find-the-extension-with-pf4j
@@ -17,6 +25,10 @@ class GameyfinPluginManager(
     val dbPluginStatusProvider: DatabasePluginStatusProvider,
     val pluginManagementRepository: PluginManagementRepository
 ) : DefaultPluginManager(Path(System.getProperty("pf4j.pluginsDir", "plugins"))) {
+
+    companion object {
+        private const val PUBLIC_KEY_FILE = "certificates/gameyfin-plugins.pem"
+    }
 
     private val log = KotlinLogging.logger {}
 
@@ -41,12 +53,10 @@ class GameyfinPluginManager(
         val compoundPluginLoader = CompoundPluginLoader()
         val developmentPluginLoader = GameyfinPluginLoader(this, javaClass.classLoader)
         val jarPluginLoader = JarPluginLoader(this)
-        val defaultPluginLoader = DefaultPluginLoader(this)
 
         return compoundPluginLoader
             .add(developmentPluginLoader, this::isDevelopment)
             .add(jarPluginLoader, this::isNotDevelopment)
-            .add(defaultPluginLoader, this::isNotDevelopment)
     }
 
     override fun createPluginStatusProvider(): PluginStatusProvider {
@@ -59,6 +69,32 @@ class GameyfinPluginManager(
         if (pluginWrapper != null) {
             // Inject config after loading, before starting
             configurePlugin(pluginWrapper)
+
+            // Update or create the PluginManagementEntry
+            if (pluginPath != null) {
+
+                // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
+                val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
+
+                val pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
+                    ?: PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
+
+                if (pluginPath.extension == "jar") {
+                    log.debug { "Verifying plugin signature for ${pluginWrapper.pluginId}" }
+                    pluginManagementEntry.trustLevel = verifyPluginSignature(pluginPath)
+                    log.debug { "Plugin ${pluginWrapper.pluginId} verification status: ${pluginManagementEntry.trustLevel}" }
+                } else {
+                    pluginManagementEntry.trustLevel = PluginTrustLevel.BUNDLED
+                }
+
+                if (pluginManagementEntry.trustLevel in listOf(PluginTrustLevel.OFFICIAL, PluginTrustLevel.BUNDLED)) {
+                    pluginManagementEntry.enabled = true
+                    log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
+                    startPlugin(pluginWrapper.pluginId)
+                }
+
+                pluginManagementRepository.save(pluginManagementEntry)
+            }
         }
 
         return pluginWrapper
@@ -69,11 +105,11 @@ class GameyfinPluginManager(
 
         // Validate config before starting the plugin
         if (!validatePluginConfig(pluginId)) {
-            log.error { "Plugin $pluginId has invalid configuration" }
+            log.warn { "Plugin $pluginId has invalid configuration" }
 
             val pluginWrapper = getPlugin(pluginId)
             pluginWrapper.pluginState = PluginState.FAILED
-            this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginWrapper.pluginState));
+            this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginWrapper.pluginState))
             return pluginWrapper.pluginState
         }
 
@@ -136,5 +172,56 @@ class GameyfinPluginManager(
 
     private fun getConfig(pluginId: String): Map<String, String?> {
         return pluginConfigRepository.findAllById_PluginId(pluginId).associate { it.id.key to it.value }
+    }
+
+    fun verifyPluginSignature(pluginPath: Path): PluginTrustLevel {
+        val certFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
+        val certFileInputStream = javaClass.classLoader.getResourceAsStream(PUBLIC_KEY_FILE)
+        val cert: X509Certificate = certFactory.generateCertificate(certFileInputStream) as X509Certificate
+        val publicKey: PublicKey = cert.publicKey
+        certFileInputStream?.close()
+
+        val jarFile = JarFile(pluginPath.toFile(), true)
+        val entries = jarFile.entries()
+
+        while (entries.hasMoreElements()) {
+            val entry = entries.nextElement()
+            if (entry.isDirectory || entry.name.startsWith("META-INF/")) continue
+
+            try {
+                val buffer = ByteArray(8192)
+                val entryInputStream: InputStream = jarFile.getInputStream(entry)
+                while ((entryInputStream.read(buffer, 0, buffer.size)) != -1) {
+                    // We just read
+                    // This will throw a SecurityException if a signature/digest check fails
+                }
+            } catch (_: SecurityException) {
+                // Signature verification failed
+                return PluginTrustLevel.THIRD_PARTY
+            }
+
+            val codeSigners = entry.codeSigners
+
+            if (codeSigners == null || codeSigners.isEmpty()) {
+                // No code signers, so we can't verify the signature
+                return PluginTrustLevel.THIRD_PARTY
+            }
+
+            for (codeSigner in codeSigners) {
+                val certs = codeSigner.signerCertPath.certificates
+
+                for (cert in certs) {
+                    if (cert is X509Certificate) {
+                        try {
+                            cert.verify(publicKey)
+                        } catch (_: Exception) {
+                            // Signature verification failed
+                            return PluginTrustLevel.THIRD_PARTY
+                        }
+                    }
+                }
+            }
+        }
+        return PluginTrustLevel.OFFICIAL
     }
 }

@@ -9,5 +9,6 @@ data class PluginDto(
     val author: String,
     val hasLogo: Boolean,
     val state: PluginState,
-    val priority: Int
+    val priority: Int,
+    val trustLevel: PluginTrustLevel
 )

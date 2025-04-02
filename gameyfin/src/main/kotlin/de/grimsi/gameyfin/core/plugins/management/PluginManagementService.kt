@@ -13,6 +13,7 @@ class PluginManagementService(
 ) {
     fun getPluginDtos(): List<PluginDto> {
         return pluginManager.plugins.map {
+            val pluginManagementEntry = getPluginManagementEntry(it.pluginId)
             PluginDto(
                 it.pluginId,
                 it.descriptor.pluginDescription,
@@ -20,13 +21,15 @@ class PluginManagementService(
                 it.descriptor.provider,
                 (it.plugin as GameyfinPlugin).hasLogo(),
                 it.pluginState,
-                getPluginManagementEntry(it.pluginId).priority
+                pluginManagementEntry.priority,
+                pluginManagementEntry.trustLevel
             )
         }
     }
 
     fun getPluginDto(pluginId: String): PluginDto {
         val plugin = pluginManager.getPlugin(pluginId)
+        val pluginManagementEntry = getPluginManagementEntry(pluginId)
         return PluginDto(
             plugin.pluginId,
             plugin.descriptor.pluginDescription,
@@ -34,7 +37,8 @@ class PluginManagementService(
             plugin.descriptor.provider,
             (plugin.plugin as GameyfinPlugin).hasLogo(),
             plugin.pluginState,
-            getPluginManagementEntry(pluginId).priority
+            pluginManagementEntry.priority,
+            pluginManagementEntry.trustLevel
         )
     }
 

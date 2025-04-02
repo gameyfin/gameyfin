@@ -8,7 +8,9 @@ data class PluginManagementEntry(
     @Id
     val pluginId: String,
 
-    var enabled: Boolean = true,
+    var enabled: Boolean = false,
 
-    var priority: Int = 0
+    var priority: Int = 0,
+
+    var trustLevel: PluginTrustLevel = PluginTrustLevel.UNKNOWN,
 )

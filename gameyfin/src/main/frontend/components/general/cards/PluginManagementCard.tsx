@@ -5,6 +5,9 @@ import {
     PlayCircle,
     Power,
     QuestionMark,
+    SealCheck,
+    SealQuestion,
+    SealWarning,
     SlidersHorizontal,
     StopCircle,
     WarningCircle
@@ -15,6 +18,7 @@ import PluginState from "Frontend/generated/org/pf4j/PluginState";
 import React, {ReactNode, useEffect, useState} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
 import PluginLogo from "Frontend/components/general/PluginLogo";
+import PluginTrustLevel from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginTrustLevel";
 
 export function PluginManagementCard({plugin, updatePlugin}: {
     plugin: PluginDto,
@@ -63,6 +67,27 @@ export function PluginManagementCard({plugin, updatePlugin}: {
         }
     }
 
+    function trustLevelToBadge(trustLevel: PluginTrustLevel | undefined): React.ReactNode {
+        switch (trustLevel) {
+            case PluginTrustLevel.OFFICIAL:
+                return <Tooltip color="foreground" placement="bottom" content="Official plugin">
+                    <SealCheck weight="fill" className="fill-success"/>
+                </Tooltip>;
+            case PluginTrustLevel.BUNDLED:
+                return <Tooltip color="foreground" placement="bottom" content="Bundled plugin">
+                    <SealCheck weight="fill"/>
+                </Tooltip>;
+            case PluginTrustLevel.THIRD_PARTY:
+                return <Tooltip color="foreground" placement="bottom" content="3rd party plugin">
+                    <SealWarning/>
+                </Tooltip>;
+            default:
+                return <Tooltip color="foreground" placement="bottom" content="Unkown verification status">
+                    <SealQuestion/>
+                </Tooltip>;
+        }
+    }
+
     function isDisabled(state: PluginState | undefined): boolean {
         return state === PluginState.DISABLED;
     }
@@ -102,9 +127,12 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                         </Button>
                     </Tooltip>
                 </div>
-                <div className="flex flex-1 flex-col items-center gap-1">
+                <div className="flex flex-1 flex-col items-center gap-2">
                     <PluginLogo plugin={plugin}/>
-                    <p className="font-semibold">{plugin.name}</p>
+                    <p className="flex flex-row gap-1 font-semibold">
+                        {plugin.name}
+                        {trustLevelToBadge(plugin.trustLevel)}
+                    </p>
                     <div className="flex flex-row gap-2">
                         <Chip size="sm" radius="sm" className="text-xs">{plugin.version}</Chip>
                         <Chip size="sm" radius="sm" className="text-xs" color={stateToColor(plugin.state)}>

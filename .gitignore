@@ -50,3 +50,4 @@ logs
 templates
 /gameyfin/src/main/frontend/**/*.js
 /gameyfin/src/main/frontend/**/*.js.map
+/gameyfin/src/main/bundles/

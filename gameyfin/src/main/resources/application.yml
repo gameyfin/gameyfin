@@ -16,7 +16,7 @@ management:
     pause:
       enabled: false
     restart:
-      enabled: true
+      access: unrestricted
 
 spring:
   # Workaround for https://github.com/vaadin/hilla/issues/842

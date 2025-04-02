@@ -12,15 +12,8 @@ class DatabasePluginStatusProvider(
     override fun isPluginDisabled(pluginId: String): Boolean {
         var pluginManagement = pluginManagementRepository.findByIdOrNull(pluginId)
 
-        // If the plugin is unknown, persist it as enabled
         if (pluginManagement == null) {
-
-            // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
-            val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
-
-            pluginManagement = pluginManagementRepository.save(
-                PluginManagementEntry(pluginId = pluginId, enabled = true, priority = currentMaxPriority + 1)
-            )
+            return true
         }
 
         return pluginManagement.enabled != true
