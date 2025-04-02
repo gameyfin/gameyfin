@@ -4,13 +4,15 @@ import {
     PauseCircle,
     PlayCircle,
     Power,
+    Question,
     QuestionMark,
     SealCheck,
     SealQuestion,
     SealWarning,
     SlidersHorizontal,
     StopCircle,
-    WarningCircle
+    WarningCircle,
+    XCircle
 } from "@phosphor-icons/react";
 import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
@@ -19,25 +21,29 @@ import React, {ReactNode, useEffect, useState} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
 import PluginLogo from "Frontend/components/general/PluginLogo";
 import PluginTrustLevel from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginTrustLevel";
+import PluginConfigValidationResult
+    from "Frontend/generated/de/grimsi/gameyfin/core/plugins/config/PluginConfigValidationResult";
 
 export function PluginManagementCard({plugin, updatePlugin}: {
     plugin: PluginDto,
     updatePlugin: (plugin: PluginDto) => void
 }) {
     const pluginDetailsModal = useDisclosure();
-    const [configValid, setConfigValid] = useState<boolean | undefined>(undefined);
+    const [configValidationResult, setConfigValidationResult] = useState<PluginConfigValidationResult | undefined>(undefined);
 
     useEffect(() => {
-        PluginManagementEndpoint.validatePluginConfig(plugin.id).then((response: boolean) => {
+        PluginManagementEndpoint.validatePluginConfig(plugin.id).then((response: PluginConfigValidationResult | undefined) => {
             if (response === undefined) return;
-            setConfigValid(response);
+            setConfigValidationResult(response);
         });
     }, [pluginDetailsModal.isOpen]);
 
-    function borderColor(state: PluginState | undefined): "success" | "warning" | "danger" | "default" {
+    function borderColor(state: PluginState | undefined, trustLevel: PluginTrustLevel | undefined): "success" | "warning" | "danger" | "default" {
+        if (trustLevel === PluginTrustLevel.UNTRUSTED) return "danger";
+
         if (isDisabled(state)) return "warning";
-        if (configValid === undefined) return "default";
-        if (!configValid) return "danger";
+        if (configValidationResult === undefined) return "default";
+        if (!configValidationResult) return "danger";
         return stateToColor(state);
     }
 
@@ -62,8 +68,34 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                 return <PauseCircle/>;
             case PluginState.FAILED:
                 return <StopCircle/>;
+            case PluginState.UNLOADED:
+            case PluginState.RESOLVED:
+                return <XCircle/>;
             default:
                 return <QuestionMark/>;
+        }
+    }
+
+    function configValidationResultToChip(validationResult: PluginConfigValidationResult | undefined): ReactNode {
+        switch (validationResult) {
+            case PluginConfigValidationResult.VALID:
+                return <Tooltip content="Config valid" placement="bottom" color="foreground">
+                    <Chip size="sm" radius="sm" className="text-xs" color="success">
+                        <CheckCircle/>
+                    </Chip>
+                </Tooltip>
+            case PluginConfigValidationResult.INVALID:
+                return <Tooltip content="Config invalid" placement="bottom" color="foreground">
+                    <Chip size="sm" radius="sm" className="text-xs" color="danger">
+                        <WarningCircle/>
+                    </Chip>
+                </Tooltip>;
+            default:
+                return <Tooltip content="Config could not be validated" placement="bottom" color="foreground">
+                    <Chip size="sm" radius="sm" className="text-xs">
+                        <Question/>
+                    </Chip>
+                </Tooltip>
         }
     }
 
@@ -82,7 +114,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                     <SealWarning/>
                 </Tooltip>;
             case PluginTrustLevel.UNTRUSTED:
-                return <Tooltip color="foreground" placement="bottom" content="Invlalid plugin signature">
+                return <Tooltip color="foreground" placement="bottom" content="Invalid plugin signature">
                     <SealWarning weight="fill" className="fill-danger"/>
                 </Tooltip>;
             default:
@@ -117,11 +149,16 @@ export function PluginManagementCard({plugin, updatePlugin}: {
     // @ts-ignore
     return (
         <>
-            <Card className={`flex flex-row justify-between p-2 border-2 border-${borderColor(plugin.state)}`}>
+            <Card
+                className={`flex flex-row justify-between p-2 border-2 border-${borderColor(plugin.state, plugin.trustLevel)}`}>
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip content={`${isDisabled(plugin.state) ? "Enable" : "Disable"} plugin`} placement="bottom"
                              color="foreground">
-                        <Button isIconOnly variant="light" onPress={() => togglePluginEnabled()}>
+                        <Button isIconOnly
+                                variant="light"
+                                onPress={() => togglePluginEnabled()}
+                                isDisabled={plugin.state == PluginState.UNLOADED || plugin.state == PluginState.RESOLVED}
+                        >
                             <Power/>
                         </Button>
                     </Tooltip>
@@ -145,19 +182,9 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                                 {stateToIcon(plugin.state)}
                             </Tooltip>
                         </Chip>
-                        {configValid === undefined ?
-                            <Skeleton className="rounded-md h-6 w-9"/>
-                            : configValid ?
-                                <Tooltip content="Config valid" placement="bottom" color="foreground">
-                                    <Chip size="sm" radius="sm" className="text-xs" color="success">
-                                        <CheckCircle/>
-                                    </Chip>
-                                </Tooltip> :
-                                <Tooltip content="Config invalid" placement="bottom" color="foreground">
-                                    <Chip size="sm" radius="sm" className="text-xs" color="danger">
-                                        <WarningCircle/>
-                                    </Chip>
-                                </Tooltip>
+                        {configValidationResult === undefined ?
+                            <Skeleton className="rounded-md h-6 w-9"/> :
+                            configValidationResultToChip(configValidationResult)
                         }
                     </div>
                 </div>

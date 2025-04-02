@@ -1,7 +1,9 @@
 package de.grimsi.gameyfin.core.plugins.management
 
+import de.grimsi.gameyfin.core.plugins.config.PluginConfigValidationResult
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import org.pf4j.ExtensionPoint
+import org.pf4j.PluginWrapper
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.io.InputStream
@@ -9,37 +11,15 @@ import java.io.InputStream
 @Service
 class PluginManagementService(
     private val pluginManager: GameyfinPluginManager,
-    private val pluginManagementRepository: PluginManagementRepository
+    private val pluginManagementRepository: PluginManagementRepository,
 ) {
     fun getPluginDtos(): List<PluginDto> {
-        return pluginManager.plugins.map {
-            val pluginManagementEntry = getPluginManagementEntry(it.pluginId)
-            PluginDto(
-                it.pluginId,
-                it.descriptor.pluginDescription,
-                it.descriptor.version,
-                it.descriptor.provider,
-                (it.plugin as GameyfinPlugin).hasLogo(),
-                it.pluginState,
-                pluginManagementEntry.priority,
-                pluginManagementEntry.trustLevel
-            )
-        }
+        return pluginManager.plugins.map { toDto(it) }
     }
 
     fun getPluginDto(pluginId: String): PluginDto {
         val plugin = pluginManager.getPlugin(pluginId)
-        val pluginManagementEntry = getPluginManagementEntry(pluginId)
-        return PluginDto(
-            plugin.pluginId,
-            plugin.descriptor.pluginDescription,
-            plugin.descriptor.version,
-            plugin.descriptor.provider,
-            (plugin.plugin as GameyfinPlugin).hasLogo(),
-            plugin.pluginState,
-            pluginManagementEntry.priority,
-            pluginManagementEntry.trustLevel
-        )
+        return toDto(plugin)
     }
 
     fun getPluginManagementEntry(pluginId: String): PluginManagementEntry {
@@ -73,7 +53,7 @@ class PluginManagementService(
         pluginManager.disablePlugin(pluginId)
     }
 
-    fun validatePluginConfig(pluginId: String): Boolean {
+    fun validatePluginConfig(pluginId: String): PluginConfigValidationResult {
         return pluginManager.validatePluginConfig(pluginId)
     }
 
@@ -94,5 +74,29 @@ class PluginManagementService(
     fun getLogo(pluginId: String): InputStream? {
         val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
         return plugin.getLogo()
+    }
+
+    private fun toDto(pluginWrapper: PluginWrapper): PluginDto {
+        val pluginManagementEntry = getPluginManagementEntry(pluginWrapper.pluginId)
+
+        val hasLogo = try {
+            when (pluginWrapper.plugin is GameyfinPlugin) {
+                true -> (pluginWrapper.plugin as GameyfinPlugin).hasLogo()
+                false -> false
+            }
+        } catch (_: NoClassDefFoundError) {
+            false
+        }
+
+        return PluginDto(
+            pluginWrapper.pluginId,
+            pluginWrapper.descriptor.pluginDescription,
+            pluginWrapper.descriptor.version,
+            pluginWrapper.descriptor.provider,
+            hasLogo,
+            pluginWrapper.pluginState,
+            pluginManagementEntry.priority,
+            pluginManagementEntry.trustLevel
+        )
     }
 }

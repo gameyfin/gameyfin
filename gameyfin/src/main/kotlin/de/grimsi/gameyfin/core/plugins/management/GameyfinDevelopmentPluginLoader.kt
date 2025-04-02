@@ -9,7 +9,7 @@ import java.nio.file.Path
 /**
  * @see https://stackoverflow.com/questions/73654174/my-application-cant-find-the-extension-with-pf4j
  */
-class GameyfinPluginLoader(
+class GameyfinDevelopmentPluginLoader(
     pluginManager: PluginManager,
     private val parentClassLoader: ClassLoader
 ) : DevelopmentPluginLoader(pluginManager) {

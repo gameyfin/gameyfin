@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.core.plugins.management
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
+import de.grimsi.gameyfin.core.plugins.config.PluginConfigValidationResult
 import jakarta.annotation.security.RolesAllowed
 
 @Endpoint
@@ -23,7 +24,8 @@ class PluginManagementEndpoint(
 
     fun disablePlugin(pluginId: String) = pluginManagementService.disablePlugin(pluginId)
 
-    fun validatePluginConfig(pluginId: String): Boolean = pluginManagementService.validatePluginConfig(pluginId)
+    fun validatePluginConfig(pluginId: String): PluginConfigValidationResult =
+        pluginManagementService.validatePluginConfig(pluginId)
 
     fun setPluginPriority(pluginId: String, priority: Int) =
         pluginManagementService.setPluginPriority(pluginId, priority)

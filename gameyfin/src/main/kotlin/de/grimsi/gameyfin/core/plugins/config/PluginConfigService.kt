@@ -16,7 +16,15 @@ class PluginConfigService(
 
     fun getConfigMetadata(pluginId: String): List<PluginConfigElement> {
         log.info { "Getting config metadata for plugin $pluginId" }
-        val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
+
+        val plugin = try {
+            pluginManager.getPlugin(pluginId).plugin
+        } catch (_: NoClassDefFoundError) {
+            return emptyList()
+        }
+
+        if (plugin !is GameyfinPlugin) return emptyList()
+
         return plugin.configMetadata
     }
 

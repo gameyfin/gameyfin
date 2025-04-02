@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.core.plugins.management
 
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigRepository
+import de.grimsi.gameyfin.core.plugins.config.PluginConfigValidationResult
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.*
@@ -51,13 +52,10 @@ class GameyfinPluginManager(
     }
 
     override fun createPluginLoader(): PluginLoader {
-        val compoundPluginLoader = CompoundPluginLoader()
-        val developmentPluginLoader = GameyfinPluginLoader(this, javaClass.classLoader)
-        val jarPluginLoader = JarPluginLoader(this)
-
-        return compoundPluginLoader
-            .add(developmentPluginLoader, this::isDevelopment)
-            .add(jarPluginLoader, this::isNotDevelopment)
+        return when (this.isDevelopment) {
+            true -> GameyfinDevelopmentPluginLoader(this, javaClass.classLoader)
+            false -> GameyfinJarPluginLoader(this)
+        }
     }
 
     override fun createPluginStatusProvider(): PluginStatusProvider {
@@ -68,9 +66,6 @@ class GameyfinPluginManager(
         val pluginWrapper = super.loadPluginFromPath(pluginPath)
 
         if (pluginWrapper == null || pluginPath == null) return null
-
-        // Inject config after loading, before starting
-        configurePlugin(pluginWrapper)
 
         var pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
 
@@ -104,6 +99,16 @@ class GameyfinPluginManager(
             }
         }
 
+        // If the plugin is untrusted, we disable it regardless of the previous state
+        if (pluginManagementEntry.trustLevel == PluginTrustLevel.UNTRUSTED) {
+            log.warn { "Plugin ${pluginWrapper.pluginId} is untrusted, disabling" }
+            pluginManagementEntry.enabled = false
+        }
+
+        // Inject config after loading and verification, before starting
+        // Note: If the plugin is untrusted, we don't want to inject the config
+        if (pluginManagementEntry.trustLevel != PluginTrustLevel.UNTRUSTED) configurePlugin(pluginWrapper)
+
         log.debug { "Plugin ${pluginWrapper.pluginId} verification status: ${pluginManagementEntry.trustLevel}" }
         pluginManagementRepository.save(pluginManagementEntry)
 
@@ -113,8 +118,17 @@ class GameyfinPluginManager(
     override fun startPlugin(pluginId: String?): PluginState? {
         if (pluginId == null) return PluginState.FAILED
 
+        val trustLevel = pluginManagementRepository.findByIdOrNull(pluginId)?.trustLevel ?: PluginTrustLevel.UNKNOWN
+        if (trustLevel == PluginTrustLevel.UNTRUSTED) {
+            val pluginWrapper = getPlugin(pluginId)
+            val pluginState = PluginState.UNLOADED
+
+            this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
+            return pluginState
+        }
+
         // Validate config before starting the plugin
-        if (!validatePluginConfig(pluginId)) {
+        if (validatePluginConfig(pluginId) == PluginConfigValidationResult.INVALID) {
             log.warn { "Plugin $pluginId has invalid configuration" }
 
             val pluginWrapper = getPlugin(pluginId)
@@ -127,34 +141,8 @@ class GameyfinPluginManager(
     }
 
     override fun startPlugins() {
-        for (pluginWrapper in resolvedPlugins) {
-            val pluginState = pluginWrapper.pluginState
-            if (!pluginState.isDisabled && !pluginState.isStarted) {
-
-                // Validate config before starting the plugin
-                if (!validatePluginConfig(pluginWrapper.pluginId)) {
-                    log.error { "Plugin ${pluginWrapper.pluginId} has invalid configuration" }
-                    pluginWrapper.pluginState = PluginState.FAILED
-
-                    firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
-                    return
-                }
-
-                try {
-                    log.info { "Start plugin '${getPluginLabel(pluginWrapper.descriptor)}'" }
-                    pluginWrapper.plugin.start()
-                    pluginWrapper.pluginState = PluginState.STARTED
-                    pluginWrapper.failedException = null
-                    startedPlugins.add(pluginWrapper)
-                } catch (e: Exception) {
-                    pluginWrapper.pluginState = PluginState.FAILED
-                    pluginWrapper.failedException = e
-                    log.error { "Unable to start plugin '${getPluginLabel(pluginWrapper.descriptor)}': $e" }
-                } finally {
-                    firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
-                }
-            }
-        }
+        val pluginsToStart = resolvedPlugins.filter { !it.pluginState.isDisabled && !it.pluginState.isStarted }
+        pluginsToStart.forEach { startPlugin(it.pluginId) }
     }
 
     fun restart(pluginId: String) {
@@ -164,12 +152,18 @@ class GameyfinPluginManager(
         startPlugin(pluginId)
     }
 
-    fun validatePluginConfig(pluginId: String): Boolean {
-        val plugin = getPlugin(pluginId)?.plugin ?: return false
-        if (plugin is GameyfinPlugin) {
-            return plugin.validateConfig()
+    fun validatePluginConfig(pluginId: String): PluginConfigValidationResult {
+        val plugin = try {
+            getPlugin(pluginId)?.plugin
+        } catch (_: NoClassDefFoundError) {
+            return PluginConfigValidationResult.UNKNWOWN
         }
-        return false
+
+        if (plugin is GameyfinPlugin && plugin.validateConfig()) {
+            return PluginConfigValidationResult.VALID
+        }
+
+        return PluginConfigValidationResult.INVALID
     }
 
     private fun configurePlugin(pluginWrapper: PluginWrapper) {
