@@ -81,6 +81,10 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                 return <Tooltip color="foreground" placement="bottom" content="3rd party plugin">
                     <SealWarning/>
                 </Tooltip>;
+            case PluginTrustLevel.UNTRUSTED:
+                return <Tooltip color="foreground" placement="bottom" content="Plugin verification failed">
+                    <SealWarning weight="fill" className="fill-danger"/>
+                </Tooltip>;
             default:
                 return <Tooltip color="foreground" placement="bottom" content="Unkown verification status">
                     <SealQuestion/>

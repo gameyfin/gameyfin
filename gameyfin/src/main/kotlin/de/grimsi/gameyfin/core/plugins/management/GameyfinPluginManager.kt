@@ -31,6 +31,7 @@ class GameyfinPluginManager(
     }
 
     private val log = KotlinLogging.logger {}
+    private val publicKey: PublicKey = loadPluginSignaturePublicKey()
 
     // This took me way too long to figure out...
     // But I learned a lot about Kotlin and Java interoperability in the process
@@ -66,36 +67,45 @@ class GameyfinPluginManager(
     override fun loadPluginFromPath(pluginPath: Path?): PluginWrapper? {
         val pluginWrapper = super.loadPluginFromPath(pluginPath)
 
-        if (pluginWrapper != null) {
-            // Inject config after loading, before starting
-            configurePlugin(pluginWrapper)
+        if (pluginWrapper == null || pluginPath == null) return null
 
-            // Update or create the PluginManagementEntry
-            if (pluginPath != null) {
+        // Inject config after loading, before starting
+        configurePlugin(pluginWrapper)
 
-                // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
-                val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
+        var pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
 
-                val pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
-                    ?: PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
+        if (pluginManagementEntry == null) {
+            // Create a new entry
 
-                if (pluginPath.extension == "jar") {
-                    log.debug { "Verifying plugin signature for ${pluginWrapper.pluginId}" }
-                    pluginManagementEntry.trustLevel = verifyPluginSignature(pluginPath)
-                    log.debug { "Plugin ${pluginWrapper.pluginId} verification status: ${pluginManagementEntry.trustLevel}" }
-                } else {
-                    pluginManagementEntry.trustLevel = PluginTrustLevel.BUNDLED
-                }
+            // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
+            val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
 
-                if (pluginManagementEntry.trustLevel in listOf(PluginTrustLevel.OFFICIAL, PluginTrustLevel.BUNDLED)) {
-                    pluginManagementEntry.enabled = true
-                    log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
-                    startPlugin(pluginWrapper.pluginId)
-                }
+            pluginManagementEntry =
+                PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
 
-                pluginManagementRepository.save(pluginManagementEntry)
+            pluginManagementEntry.trustLevel = when (pluginPath.extension) {
+                "jar" -> verifyPluginSignature(pluginPath)
+                else -> PluginTrustLevel.BUNDLED
+            }
+
+            // If the plugin is official or bundled, we can enable it and start it by default
+            if (pluginManagementEntry.trustLevel == PluginTrustLevel.OFFICIAL
+                || pluginManagementEntry.trustLevel == PluginTrustLevel.BUNDLED
+            ) {
+                pluginManagementEntry.enabled = true
+                log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
+                startPlugin(pluginWrapper.pluginId)
+            }
+        } else {
+            // Just re-verify the plugin if it was already in the database
+            pluginManagementEntry.trustLevel = when (pluginPath.extension) {
+                "jar" -> verifyPluginSignature(pluginPath)
+                else -> PluginTrustLevel.BUNDLED
             }
         }
+
+        log.debug { "Plugin ${pluginWrapper.pluginId} verification status: ${pluginManagementEntry.trustLevel}" }
+        pluginManagementRepository.save(pluginManagementEntry)
 
         return pluginWrapper
     }
@@ -174,13 +184,15 @@ class GameyfinPluginManager(
         return pluginConfigRepository.findAllById_PluginId(pluginId).associate { it.id.key to it.value }
     }
 
-    fun verifyPluginSignature(pluginPath: Path): PluginTrustLevel {
+    private fun loadPluginSignaturePublicKey(): PublicKey {
         val certFactory: CertificateFactory = CertificateFactory.getInstance("X.509")
         val certFileInputStream = javaClass.classLoader.getResourceAsStream(PUBLIC_KEY_FILE)
         val cert: X509Certificate = certFactory.generateCertificate(certFileInputStream) as X509Certificate
-        val publicKey: PublicKey = cert.publicKey
         certFileInputStream?.close()
+        return cert.publicKey
+    }
 
+    private fun verifyPluginSignature(pluginPath: Path): PluginTrustLevel {
         val jarFile = JarFile(pluginPath.toFile(), true)
         val entries = jarFile.entries()
 
@@ -197,7 +209,7 @@ class GameyfinPluginManager(
                 }
             } catch (_: SecurityException) {
                 // Signature verification failed
-                return PluginTrustLevel.THIRD_PARTY
+                return PluginTrustLevel.UNTRUSTED
             }
 
             val codeSigners = entry.codeSigners
@@ -216,7 +228,7 @@ class GameyfinPluginManager(
                             cert.verify(publicKey)
                         } catch (_: Exception) {
                             // Signature verification failed
-                            return PluginTrustLevel.THIRD_PARTY
+                            return PluginTrustLevel.UNTRUSTED
                         }
                     }
                 }

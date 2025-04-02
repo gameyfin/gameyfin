@@ -4,5 +4,6 @@ enum class PluginTrustLevel {
     BUNDLED,
     OFFICIAL,
     THIRD_PARTY,
+    UNTRUSTED,
     UNKNOWN,
 }
