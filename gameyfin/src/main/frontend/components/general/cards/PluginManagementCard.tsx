@@ -82,7 +82,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                     <SealWarning/>
                 </Tooltip>;
             case PluginTrustLevel.UNTRUSTED:
-                return <Tooltip color="foreground" placement="bottom" content="Plugin verification failed">
+                return <Tooltip color="foreground" placement="bottom" content="Invlalid plugin signature">
                     <SealWarning weight="fill" className="fill-danger"/>
                 </Tooltip>;
             default:
