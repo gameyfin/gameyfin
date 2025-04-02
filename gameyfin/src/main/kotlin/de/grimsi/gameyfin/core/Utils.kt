@@ -1,13 +1,12 @@
 package de.grimsi.gameyfin.core
 
 import org.apache.tika.Tika
-import org.springframework.core.io.InputStreamResource
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
-import java.io.InputStream
 
 
 class Utils {
@@ -32,21 +31,21 @@ class Utils {
             }
         }
 
-        fun inputStreamToResponseEntity(stream: InputStream?): ResponseEntity<InputStreamResource> {
-            if (stream == null) return ResponseEntity.notFound().build()
+        fun inputStreamToResponseEntity(bytes: ByteArray?): ResponseEntity<ByteArrayResource> {
+            if (bytes == null) return ResponseEntity.notFound().build()
 
-            val inputStreamResource = InputStreamResource(stream)
+            val byteArrayResource = ByteArrayResource(bytes)
 
             val headers = HttpHeaders()
-            val contentLength = stream.available().toLong()
-            val contentType = tika.detect(stream)
+            val contentLength = bytes.size.toLong()
+            val contentType = tika.detect(bytes)
 
             headers.contentLength = contentLength
             headers.contentType = MediaType.parseMediaType(contentType)
 
             return ResponseEntity.ok()
                 .headers(headers)
-                .body(inputStreamResource)
+                .body(byteArrayResource)
         }
     }
 }

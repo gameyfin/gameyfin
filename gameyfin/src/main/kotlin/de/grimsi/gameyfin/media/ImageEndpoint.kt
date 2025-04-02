@@ -8,6 +8,7 @@ import de.grimsi.gameyfin.games.entities.Image
 import de.grimsi.gameyfin.games.entities.ImageType
 import de.grimsi.gameyfin.users.UserService
 import jakarta.annotation.security.RolesAllowed
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.InputStreamResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -37,7 +38,7 @@ class ImageEndpoint(
     }
 
     @GetMapping("/plugins/{id}/logo")
-    fun getPluginLogo(@PathVariable("id") pluginId: String): ResponseEntity<InputStreamResource>? {
+    fun getPluginLogo(@PathVariable("id") pluginId: String): ResponseEntity<ByteArrayResource>? {
         val logo = pluginManagementService.getLogo(pluginId)
         return Utils.inputStreamToResponseEntity(logo)
     }

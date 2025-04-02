@@ -6,7 +6,6 @@ import org.pf4j.ExtensionPoint
 import org.pf4j.PluginWrapper
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import java.io.InputStream
 
 @Service
 class PluginManagementService(
@@ -71,7 +70,7 @@ class PluginManagementService(
         }
     }
 
-    fun getLogo(pluginId: String): InputStream? {
+    fun getLogo(pluginId: String): ByteArray? {
         val plugin = pluginManager.getPlugin(pluginId).plugin as GameyfinPlugin
         return plugin.getLogo()
     }

@@ -2,7 +2,6 @@ package de.grimsi.gameyfin.pluginapi.core
 
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
-import java.io.InputStream
 
 abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
 
@@ -40,12 +39,12 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
         return false
     }
 
-    fun getLogo(): InputStream? {
+    fun getLogo(): ByteArray? {
         for (format in SUPPORTED_LOGO_FORMATS) {
             val resourcePath = "$LOGO_FILE_NAME.$format"
             val inputStream = wrapper.pluginClassLoader.getResourceAsStream(resourcePath)
             if (inputStream != null) {
-                return inputStream
+                return inputStream.readAllBytes()
             }
         }
 
