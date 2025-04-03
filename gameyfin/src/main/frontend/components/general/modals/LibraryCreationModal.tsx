@@ -4,6 +4,7 @@ import {Form, Formik} from "formik";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/LibraryDto";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
+import FileTreeView from "Frontend/components/general/input/FileTreeView";
 
 interface LibraryCreationModalProps {
     libraries: LibraryDto[];
@@ -70,6 +71,8 @@ export default function LibraryCreationModal({
                                             required
                                         />
                                     </div>
+
+                                    <FileTreeView/>
                                 </ModalBody>
                                 <ModalFooter>
                                     <Button variant="light" onPress={onClose}>

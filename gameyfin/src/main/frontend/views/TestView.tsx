@@ -4,6 +4,7 @@ import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints";
 import {useState} from "react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {GameOverviewCard} from "Frontend/components/general/cards/GameOverviewCard";
+import FileTreeView from "Frontend/components/general/input/FileTreeView";
 
 export default function TestView() {
     const [gameTitle, setGameTitle] = useState("");
@@ -72,6 +73,8 @@ export default function TestView() {
                 </div>
                 {game && <GameOverviewCard game={game}></GameOverviewCard>}
                 {game && <>{JSON.stringify(game, null, 2)}</>}
+
+                <FileTreeView/>
             </div>
         </div>
     );
