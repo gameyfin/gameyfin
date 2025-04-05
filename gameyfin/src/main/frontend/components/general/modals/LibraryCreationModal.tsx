@@ -74,7 +74,7 @@ export default function LibraryCreationModal({
                                         />
                                     </div>
                                     <pre>{selectedPath}</pre>
-                                    <FileTreeView setSelectedPath={setSelectedPath}/>
+                                    <FileTreeView onPathChange={setSelectedPath}/>
                                 </ModalBody>
                                 <ModalFooter>
                                     <Button variant="light" onPress={onClose}>

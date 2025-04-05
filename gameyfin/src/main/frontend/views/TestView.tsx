@@ -75,7 +75,7 @@ export default function TestView() {
                 {game && <GameOverviewCard game={game}></GameOverviewCard>}
                 {game && <>{JSON.stringify(game, null, 2)}</>}
                 <pre>{selectedPath}</pre>
-                <FileTreeView setSelectedPath={setSelectedPath}/>
+                <FileTreeView onPathChange={setSelectedPath}/>
             </div>
         </div>
     );

@@ -5,6 +5,7 @@ import {FilesystemEndpoint} from "Frontend/generated/endpoints";
 import FileDto from "Frontend/generated/de/grimsi/gameyfin/core/filesystem/FileDto";
 import FileType from "Frontend/generated/de/grimsi/gameyfin/core/filesystem/FileType";
 import {IFlatMetadata} from "react-accessible-treeview/dist/TreeView/utils";
+import OperatingSystemType from "Frontend/generated/de/grimsi/gameyfin/core/filesystem/OperatingSystemType";
 
 interface ITreeNode<M extends IFlatMetadata = IFlatMetadata> {
     id?: NodeId;
@@ -14,7 +15,7 @@ interface ITreeNode<M extends IFlatMetadata = IFlatMetadata> {
     metadata?: M;
 }
 
-export default function FileTreeView({setSelectedPath}: { setSelectedPath: (file: string) => void }) {
+export default function FileTreeView({onPathChange}: { onPathChange: (file: string) => void }) {
     const rootNode: INode = {
         id: "root",
         name: "",
@@ -22,14 +23,21 @@ export default function FileTreeView({setSelectedPath}: { setSelectedPath: (file
         parent: null
     }
 
+    const [hostOSType, setHostOSType] = useState<OperatingSystemType>();
     const [fileTree, setFileTree] = useState<ITreeNode>();
     const [flattenedFileTree, setFlattenedFileTree] = useState<INode[]>([rootNode]);
 
     useEffect(() => {
-        FilesystemEndpoint.listSubDirectories(undefined).then(
+        FilesystemEndpoint.getHostOperatingSystem().then(
             result => {
                 if (result === undefined) return;
-                result = result.filter(r => r !== undefined);
+                setHostOSType(result);
+            }
+        )
+
+        FilesystemEndpoint.listSubDirectories("").then(
+            result => {
+                if (result === undefined) return;
                 const nodes = fileDtosToTree(result as FileDto[]);
                 const tree = flattenTree(nodes);
                 setFileTree(nodes);
@@ -39,14 +47,25 @@ export default function FileTreeView({setSelectedPath}: { setSelectedPath: (file
     }, []);
 
     function getAbsolutePath(node: INode, path: string = ""): string {
-        if (node.parent === null) {
-            return path ? `${node.name}/${path}` : node.name;
+        let pathSeparator = "/";
+
+        if (hostOSType === OperatingSystemType.WINDOWS) {
+            pathSeparator = "\\";
+            if (path.startsWith(pathSeparator)) path = path.substring(1);
         }
+
+        path = path.replace(`${pathSeparator}${pathSeparator}`, pathSeparator);
+
+        if (node.parent === null) {
+            if (hostOSType === OperatingSystemType.WINDOWS) return path ? path : node.name
+            return path ? `${node.name}${pathSeparator}${path}` : node.name;
+        }
+
         const parentNode = flattenedFileTree.find(n => n.id === node.parent);
         if (!parentNode) {
             throw new Error(`Parent node with id ${node.parent} not found`);
         }
-        return getAbsolutePath(parentNode, `${node.name}/${path}`);
+        return getAbsolutePath(parentNode, `${node.name}${pathSeparator}${path}`);
     }
 
     async function onLoadData({element}: { element: INode }) {
@@ -54,14 +73,13 @@ export default function FileTreeView({setSelectedPath}: { setSelectedPath: (file
 
         let subDirectories = await FilesystemEndpoint.listSubDirectories(absolutePath);
         if (subDirectories === undefined) return;
-        subDirectories = subDirectories.filter(r => r !== undefined);
 
         const newNodes = fileDtosToNodes(subDirectories as FileDto[]);
         const updatedTree = updateTreeWithNewNodes(fileTree!!, element.id, newNodes);
 
         setFileTree(updatedTree);
         setFlattenedFileTree(flattenTree(updatedTree));
-        setSelectedPath(absolutePath);
+        onPathChange(absolutePath);
     }
 
     function updateTreeWithNewNodes(tree: ITreeNode, nodeId: NodeId, newNodes: ITreeNode[]): ITreeNode {
