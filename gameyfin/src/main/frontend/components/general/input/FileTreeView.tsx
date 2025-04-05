@@ -57,8 +57,8 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
         path = path.replace(`${pathSeparator}${pathSeparator}`, pathSeparator);
 
         if (node.parent === null) {
-            if (hostOSType === OperatingSystemType.WINDOWS) return path ? path : node.name
-            return path ? `${node.name}${pathSeparator}${path}` : node.name;
+            if (hostOSType === OperatingSystemType.WINDOWS) return path;
+            return `${pathSeparator}${path}`;
         }
 
         const parentNode = flattenedFileTree.find(n => n.id === node.parent);

@@ -21,27 +21,23 @@ class FilesystemService {
      */
     fun listContents(path: String?): List<FileDto> {
         if (path == null || path.isEmpty()) {
-            return FileSystems.getDefault().rootDirectories
-                .map {
-                    FileDto(
-                        it.root.toString(),
-                        if (it.isDirectory()) FileType.DIRECTORY else FileType.FILE,
-                        it.hashCode()
-                    )
-                }
+            val roots = FileSystems.getDefault().rootDirectories.toList()
+
+            if (roots.size > 1) return roots.map {
+                FileDto(
+                    it.root.toString(),
+                    if (it.isDirectory()) FileType.DIRECTORY else FileType.FILE,
+                    it.hashCode()
+                )
+            }
+
+            // If there is only one root, return its contents
+            return safeReadDirectoryContents(roots.first().toString())
         }
 
         var path = FilenameUtils.separatorsToSystem(path)
-        if (path.startsWith("\\")) path = path.substring(1)
 
-        return try {
-            Path(path).toFile().listFiles()
-                .filter { f -> !f.isHidden }
-                .map { FileDto(it.name, if (it.isDirectory) FileType.DIRECTORY else FileType.FILE, it.hashCode()) }
-        } catch (_: Exception) {
-            log.error { "Error listing contents of path $path" }
-            emptyList()
-        }
+        return safeReadDirectoryContents(path)
     }
 
     /**
@@ -62,6 +58,17 @@ class FilesystemService {
             os.contains("mac") -> OperatingSystemType.MAC
             os.contains("nux") -> OperatingSystemType.LINUX
             else -> OperatingSystemType.UNKNOWN
+        }
+    }
+
+    private fun safeReadDirectoryContents(path: String): List<FileDto> {
+        return try {
+            Path(path).toFile().listFiles()
+                .filter { !it.isHidden }
+                .map { FileDto(it.name, if (it.isDirectory) FileType.DIRECTORY else FileType.FILE, it.hashCode()) }
+        } catch (e: Exception) {
+            log.error(e) { "Error reading directory contents of $path" }
+            emptyList()
         }
     }
 }
