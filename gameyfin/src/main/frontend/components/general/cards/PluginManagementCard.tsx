@@ -1,6 +1,7 @@
 import {Button, Card, Chip, Skeleton, Tooltip, useDisclosure} from "@heroui/react";
 import {
     CheckCircle,
+    IconContext,
     PauseCircle,
     PlayCircle,
     Power,
@@ -103,11 +104,11 @@ export function PluginManagementCard({plugin, updatePlugin}: {
         switch (trustLevel) {
             case PluginTrustLevel.OFFICIAL:
                 return <Tooltip color="foreground" placement="bottom" content="Official plugin">
-                    <SealCheck weight="fill" className="fill-success"/>
+                    <SealCheck className="fill-success"/>
                 </Tooltip>;
             case PluginTrustLevel.BUNDLED:
                 return <Tooltip color="foreground" placement="bottom" content="Bundled plugin">
-                    <SealCheck weight="fill"/>
+                    <SealCheck/>
                 </Tooltip>;
             case PluginTrustLevel.THIRD_PARTY:
                 return <Tooltip color="foreground" placement="bottom" content="3rd party plugin">
@@ -115,7 +116,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                 </Tooltip>;
             case PluginTrustLevel.UNTRUSTED:
                 return <Tooltip color="foreground" placement="bottom" content="Invalid plugin signature">
-                    <SealWarning weight="fill" className="fill-danger"/>
+                    <SealWarning className="fill-danger"/>
                 </Tooltip>;
             default:
                 return <Tooltip color="foreground" placement="bottom" content="Unkown verification status">
@@ -170,9 +171,11 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2">
                     <PluginLogo plugin={plugin}/>
-                    <p className="flex flex-row gap-1 font-semibold">
+                    <p className="flex flex-row items-center gap-1 font-semibold">
                         {plugin.name}
-                        {trustLevelToBadge(plugin.trustLevel)}
+                        <IconContext.Provider value={{size: 18, weight: "fill"}}>
+                            {trustLevelToBadge(plugin.trustLevel)}
+                        </IconContext.Provider>
                     </p>
                     <div className="flex flex-row gap-2">
                         <Chip size="sm" radius="sm" className="text-xs">{plugin.version}</Chip>

@@ -1,0 +1,1 @@
+jarsigner -keystore gameyfin.jks <name of the plugin file>.jar gameyfin-plugins

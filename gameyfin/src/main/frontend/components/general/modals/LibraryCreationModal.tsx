@@ -61,7 +61,6 @@ export default function LibraryCreationModal({
                                 <Form>
                                     <ModalHeader className="flex flex-col gap-1">Add a new library</ModalHeader>
                                     <ModalBody>
-                                        <h4 className="text-l font-bold">Details</h4>
                                         <div className="flex flex-col gap-2">
                                             <Input
                                                 name="name"
