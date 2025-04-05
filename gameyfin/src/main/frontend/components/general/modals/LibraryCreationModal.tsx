@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/LibraryDto";
@@ -19,6 +19,8 @@ export default function LibraryCreationModal({
                                                  isOpen,
                                                  onOpenChange
                                              }: LibraryCreationModalProps) {
+    const [selectedPath, setSelectedPath] = useState("");
+
     async function createLibrary(library: LibraryDto) {
         try {
             const newLibrary = await LibraryEndpoint.createLibrary(library as LibraryDto);
@@ -71,8 +73,8 @@ export default function LibraryCreationModal({
                                             required
                                         />
                                     </div>
-
-                                    <FileTreeView/>
+                                    <pre>{selectedPath}</pre>
+                                    <FileTreeView setSelectedPath={setSelectedPath}/>
                                 </ModalBody>
                                 <ModalFooter>
                                     <Button variant="light" onPress={onClose}>
