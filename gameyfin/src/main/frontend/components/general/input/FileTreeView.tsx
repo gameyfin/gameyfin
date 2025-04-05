@@ -117,7 +117,7 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
     }
 
     return (
-        <div className="flex flex-col gap-4 bg-contrast">
+        <div className="flex flex-col flex-1 w-full gap-4 overflow-hidden">
             <TreeView
                 data={flattenedFileTree}
                 aria-label="directory tree"
@@ -133,7 +133,7 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
                     <IconContext.Provider value={{size: 32, weight: "regular"}}>
                         <div {...getNodeProps()}
                              className={`
-                             flex flex-row items-center gap-2
+                             flex flex-row items-center gap-2 w-full
                              rounded-md cursor-pointer
                              ${isSelected ? 'bg-primary' : 'hover:bg-primary/20'}`
                              }
@@ -144,7 +144,6 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
                     </IconContext.Provider>
                 )}
             />
-            <pre>{JSON.stringify(flattenedFileTree, null, 2)}</pre>
         </div>
     );
 }

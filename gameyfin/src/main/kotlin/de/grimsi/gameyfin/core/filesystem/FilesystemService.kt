@@ -23,7 +23,7 @@ class FilesystemService {
         if (path == null || path.isEmpty()) {
             val roots = FileSystems.getDefault().rootDirectories.toList()
 
-            if (roots.size > 1) return roots.map {
+            if (getHostOperatingSystem() == OperatingSystemType.WINDOWS) return roots.map {
                 FileDto(
                     it.root.toString(),
                     if (it.isDirectory()) FileType.DIRECTORY else FileType.FILE,
@@ -31,7 +31,7 @@ class FilesystemService {
                 )
             }
 
-            // If there is only one root, return its contents
+            // UNIX file systems only have one root, so return its contents directly
             return safeReadDirectoryContents(roots.first().toString())
         }
 
@@ -66,8 +66,8 @@ class FilesystemService {
             Path(path).toFile().listFiles()
                 .filter { !it.isHidden }
                 .map { FileDto(it.name, if (it.isDirectory) FileType.DIRECTORY else FileType.FILE, it.hashCode()) }
-        } catch (e: Exception) {
-            log.error(e) { "Error reading directory contents of $path" }
+        } catch (_: Exception) {
+            log.error { "Error reading directory contents of $path" }
             emptyList()
         }
     }
