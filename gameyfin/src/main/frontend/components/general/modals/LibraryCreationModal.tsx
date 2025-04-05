@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/LibraryDto";
@@ -46,50 +46,58 @@ export default function LibraryCreationModal({
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="lg">
             <ModalContent>
                 {(onClose) => (
-                    <Formik initialValues={{name: "", path: ""}}
+                    <Formik initialValues={{name: "", path: selectedPath}}
                             onSubmit={async (values: any) => {
                                 await createLibrary(values);
                                 onClose();
                             }}
                     >
-                        {(formik) => (
-                            <Form>
-                                <ModalHeader className="flex flex-col gap-1">Add a new library</ModalHeader>
-                                <ModalBody>
-                                    <h4 className="text-l font-bold">Details</h4>
-                                    <div className="flex flex-col gap-2">
-                                        <Input
-                                            name="name"
-                                            label="Library Name"
-                                            placeholder="Enter library name"
-                                            value={formik.values.name}
-                                            required
-                                        />
-                                        <Input
-                                            name="path"
-                                            label="path"
-                                            placeholder="Enter library path"
-                                            value={formik.values.path}
-                                            required
-                                        />
-                                    </div>
-                                    <pre>{selectedPath}</pre>
-                                    <FileTreeView onPathChange={setSelectedPath}/>
-                                </ModalBody>
-                                <ModalFooter>
-                                    <Button variant="light" onPress={onClose}>
-                                        Cancel
-                                    </Button>
-                                    <Button color="primary"
-                                            isLoading={formik.isSubmitting}
-                                            disabled={formik.isSubmitting}
-                                            type="submit"
-                                    >
-                                        {formik.isSubmitting ? "" : "Add"}
-                                    </Button>
-                                </ModalFooter>
-                            </Form>
-                        )}
+                        {(formik) => {
+                            useEffect(() => {
+                                formik.setFieldValue("path", selectedPath);
+                            }, [selectedPath]);
+
+                            return (
+                                <Form>
+                                    <ModalHeader className="flex flex-col gap-1">Add a new library</ModalHeader>
+                                    <ModalBody>
+                                        <h4 className="text-l font-bold">Details</h4>
+                                        <div className="flex flex-col gap-2">
+                                            <Input
+                                                name="name"
+                                                label="Library Name"
+                                                placeholder="Enter library name"
+                                                value={formik.values.name}
+                                                required
+                                            />
+                                            <Input
+                                                name="path"
+                                                label="Library Path"
+                                                placeholder="Select a path"
+                                                value={formik.values.path}
+                                                isDisabled
+                                                required
+                                            />
+                                        </div>
+                                        <div className="h-64 overflow-auto">
+                                            <FileTreeView onPathChange={setSelectedPath}/>
+                                        </div>
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button variant="light" onPress={onClose}>
+                                            Cancel
+                                        </Button>
+                                        <Button color="primary"
+                                                isLoading={formik.isSubmitting}
+                                                disabled={formik.isSubmitting}
+                                                type="submit"
+                                        >
+                                            {formik.isSubmitting ? "" : "Add"}
+                                        </Button>
+                                    </ModalFooter>
+                                </Form>
+                            );
+                        }}
                     </Formik>
                 )}
             </ModalContent>

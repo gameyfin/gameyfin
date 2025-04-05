@@ -67,7 +67,7 @@ class FilesystemService {
                 .filter { !it.isHidden }
                 .map { FileDto(it.name, if (it.isDirectory) FileType.DIRECTORY else FileType.FILE, it.hashCode()) }
         } catch (_: Exception) {
-            log.error { "Error reading directory contents of $path" }
+            log.warn { "Error reading directory contents of $path" }
             emptyList()
         }
     }
