@@ -4,6 +4,7 @@ import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +20,8 @@ class LibraryService(
     private val gameService: GameService,
     private val config: ConfigService
 ) {
+
+    private val log = KotlinLogging.logger {}
 
     fun test(testString: String): GameDto {
         val game = gameService.createFromFile(Path(testString))
@@ -76,12 +79,21 @@ class LibraryService(
      * Return a list of all subfolders and game files in the provided library
      */
     fun scan(library: Library): List<Path> {
-        val folder = Path(library.path)
-        if (!folder.isDirectory()) throw IllegalArgumentException("The provided path is not a valid directory")
-        return folder
-            .listDirectoryEntries()
-            .filter { it.isDirectory() || it.isGameFile() }
-            .map { it.fileName }
+        val validDirectories = library.directories.map { Path(it) }
+            .filter { path ->
+                if (!path.isDirectory()) {
+                    log.warn { "Invalid directory '$path' in library '${library.name}'" }
+                    false
+                } else {
+                    true
+                }
+            }
+
+        return validDirectories.flatMap { directory ->
+            directory.listDirectoryEntries()
+                .filter { it.isDirectory() || it.isGameFile() }
+                .map { it.fileName }
+        }
     }
 
     private fun Path.isGameFile(): Boolean {
@@ -104,7 +116,7 @@ class LibraryService(
         return LibraryDto(
             id = library.id,
             name = library.name,
-            path = library.path,
+            directories = library.directories,
             stats = statsDto
         )
     }
@@ -112,7 +124,7 @@ class LibraryService(
     private fun toEntity(library: LibraryDto): Library {
         return libraryRepository.findByIdOrNull(library.id) ?: Library(
             name = library.name,
-            path = library.path
+            directories = library.directories
         )
     }
 }

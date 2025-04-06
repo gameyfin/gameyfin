@@ -11,9 +11,9 @@ class Library(
 
     val name: String,
 
-    @Column(unique = true)
-    val path: String,
+    @ElementCollection(fetch = FetchType.EAGER)
+    val directories: Set<String>,
 
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @ManyToMany(cascade = [CascadeType.ALL])
     val games: MutableSet<Game> = mutableSetOf()
 )

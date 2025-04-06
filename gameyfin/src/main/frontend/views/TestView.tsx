@@ -4,10 +4,8 @@ import {LibraryEndpoint, SystemEndpoint} from "Frontend/generated/endpoints";
 import {useState} from "react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {GameOverviewCard} from "Frontend/components/general/cards/GameOverviewCard";
-import FileTreeView from "Frontend/components/general/input/FileTreeView";
 
 export default function TestView() {
-    const [selectedPath, setSelectedPath] = useState("");
     const [gameTitle, setGameTitle] = useState("");
     const [game, setGame] = useState<GameDto>();
 
@@ -74,8 +72,6 @@ export default function TestView() {
                 </div>
                 {game && <GameOverviewCard game={game}></GameOverviewCard>}
                 {game && <>{JSON.stringify(game, null, 2)}</>}
-                <pre>{selectedPath}</pre>
-                <FileTreeView onPathChange={setSelectedPath}/>
             </div>
         </div>
     );
