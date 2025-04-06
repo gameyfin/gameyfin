@@ -20,6 +20,7 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                     <Formik initialValues={{path: currentlySelectedPath}}
                             onSubmit={(values: any) => {
                                 returnSelectedPath(values.path);
+                                setCurrentlySelectedPath("");
                                 onClose();
                             }}>
                         {(formik) => {
