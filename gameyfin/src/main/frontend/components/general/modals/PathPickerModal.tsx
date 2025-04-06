@@ -33,7 +33,7 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                                     <ModalBody>
                                         <Input
                                             name="path"
-                                            label="Library Path"
+                                            label="Selected directory"
                                             placeholder="&nbsp;"
                                             value={formik.values.path}
                                             isDisabled
