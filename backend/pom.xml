@@ -17,7 +17,7 @@
 
         <springdoc-openapi-ui.version>1.8.0</springdoc-openapi-ui.version>
         <resilience4j.version>2.2.0</resilience4j.version>
-        <commons-io.version>2.16.1</commons-io.version>
+        <commons-io.version>2.19.0</commons-io.version>
         <commons-compress.version>1.21</commons-compress.version>
         <protoc.plugin.version>3.11.4</protoc.plugin.version>
         <protobuf-java.version>3.25.3</protobuf-java.version>
