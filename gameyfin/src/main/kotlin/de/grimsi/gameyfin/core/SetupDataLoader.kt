@@ -4,7 +4,6 @@ import de.grimsi.gameyfin.setup.SetupService
 import de.grimsi.gameyfin.users.UserService
 import de.grimsi.gameyfin.users.entities.User
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.transaction.Transactional
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.core.env.Environment
@@ -13,7 +12,6 @@ import java.net.InetAddress
 
 
 @Service
-@Transactional
 class SetupDataLoader(
     private val userService: UserService,
     private val setupService: SetupService,

@@ -21,7 +21,6 @@ import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.net.URI
 import java.net.URLConnection
 import java.nio.file.Path
@@ -41,9 +40,7 @@ class GameService(
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
 
     fun createOrUpdate(game: Game): Game {
-        gameRepository.findByPath(game.path)?.let {
-            game.id = it.id
-        }
+        gameRepository.findByPath(game.path)?.let { game.id = it.id }
         return gameRepository.save(game)
     }
 
@@ -74,7 +71,6 @@ class GameService(
         return createOrUpdate(mergedGame)
     }
 
-    @Transactional(readOnly = true)
     fun getAllGames(): Collection<GameDto> {
         val entities = gameRepository.findAll()
         return entities.map { toDto(it) }

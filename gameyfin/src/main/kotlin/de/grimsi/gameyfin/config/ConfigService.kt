@@ -5,12 +5,10 @@ import de.grimsi.gameyfin.config.dto.ConfigValuePairDto
 import de.grimsi.gameyfin.config.entities.ConfigEntry
 import de.grimsi.gameyfin.config.persistence.ConfigRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import java.io.Serializable
 
 @Service
-@Transactional
 class ConfigService(
     private val appConfigRepository: ConfigRepository
 ) {

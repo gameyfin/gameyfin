@@ -17,7 +17,7 @@ class Game(
 
     var title: String? = null,
 
-    @OneToOne(cascade = [CascadeType.MERGE])
+    @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
     var coverImage: Image? = null,
 
     @Lob
@@ -34,10 +34,10 @@ class Game(
 
     var criticRating: Int? = null,
 
-    @ManyToMany(cascade = [CascadeType.MERGE])
+    @ManyToMany
     var publishers: Set<Company>? = null,
 
-    @ManyToMany(cascade = [CascadeType.MERGE])
+    @ManyToMany
     var developers: Set<Company>? = null,
 
     @ElementCollection(targetClass = Genre::class)
@@ -55,7 +55,7 @@ class Game(
     @ElementCollection(targetClass = PlayerPerspective::class)
     var perspectives: Set<PlayerPerspective>? = null,
 
-    @OneToMany(cascade = [CascadeType.MERGE])
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     var images: Set<Image>? = null,
 
     @ElementCollection

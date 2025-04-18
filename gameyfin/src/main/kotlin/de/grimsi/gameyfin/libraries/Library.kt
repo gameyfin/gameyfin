@@ -7,13 +7,13 @@ import jakarta.persistence.*
 class Library(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    val id: Long? = null,
+    var id: Long? = null,
 
-    val name: String,
+    var name: String,
 
     @ElementCollection(fetch = FetchType.EAGER)
-    val directories: Set<String>,
+    var directories: MutableSet<String> = HashSet<String>(),
 
-    @ManyToMany(cascade = [CascadeType.ALL])
-    val games: MutableSet<Game> = mutableSetOf()
+    @ManyToMany(fetch = FetchType.EAGER)
+    var games: MutableSet<Game> = HashSet<Game>()
 )

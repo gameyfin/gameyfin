@@ -15,7 +15,6 @@ import de.grimsi.gameyfin.users.entities.User
 import de.grimsi.gameyfin.users.enums.RoleAssignmentResult
 import de.grimsi.gameyfin.users.persistence.UserRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.transaction.Transactional
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
@@ -30,7 +29,6 @@ import org.springframework.stereotype.Service
 
 
 @Service
-@Transactional
 class UserService(
     private val userRepository: UserRepository,
     private val imageService: ImageService,

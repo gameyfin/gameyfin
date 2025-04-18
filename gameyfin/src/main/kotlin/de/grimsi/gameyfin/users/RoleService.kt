@@ -3,7 +3,6 @@ package de.grimsi.gameyfin.users
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.users.entities.User
 import de.grimsi.gameyfin.users.persistence.UserRepository
-import jakarta.transaction.Transactional
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -11,7 +10,6 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
 import org.springframework.stereotype.Service
 
 @Service
-@Transactional
 class RoleService(
     private val userRepository: UserRepository
 ) {

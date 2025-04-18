@@ -21,10 +21,9 @@ class LibraryEndpoint(
         return libraryService.getGamesInLibrary(libraryId)
     }
 
-    // FIXME: Just for testing
     @RolesAllowed(Role.Names.ADMIN)
-    fun test(testString: String): GameDto {
-        return libraryService.test(testString)
+    fun triggerScan(libraries: Collection<LibraryDto>?) {
+        return libraryService.triggerScan(libraries)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

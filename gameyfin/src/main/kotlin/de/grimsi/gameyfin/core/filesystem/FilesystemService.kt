@@ -1,16 +1,26 @@
 package de.grimsi.gameyfin.core.filesystem
 
+import de.grimsi.gameyfin.config.ConfigProperties
+import de.grimsi.gameyfin.config.ConfigService
+import de.grimsi.gameyfin.libraries.Library
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.io.FilenameUtils
 import org.springframework.stereotype.Service
 import java.nio.file.FileSystems
-import kotlin.io.path.Path
-import kotlin.io.path.isDirectory
+import java.nio.file.Path
+import kotlin.io.path.*
 
 @Service
-class FilesystemService {
+class FilesystemService(
+    private val config: ConfigService
+) {
 
     private val log = KotlinLogging.logger {}
+
+    private val gameFileExtensions
+        get() = config.get(ConfigProperties.Libraries.Scan.GameFileExtensions)!!
+            .split(",")
+            .map { it.trim().lowercase() }
 
     /**
      * Lists all files and directories in the given path.
@@ -61,11 +71,43 @@ class FilesystemService {
         }
     }
 
+    /**
+     * Scans the given library for files and directories potentially containing games.
+     *
+     * @param library The library to scan.
+     * @return A list of paths representing game files and directories.
+     */
+    fun scanLibraryForGamefiles(library: Library): List<Path> {
+        // Cache the game file extensions to avoid reading them multiple times in the same scan
+        val gamefileExtensions = gameFileExtensions
+
+        // Filter out invalid directories (directories could have been changed externally after the library was created)
+        val validDirectories = library.directories.map { Path(it) }
+            .filter { path ->
+                if (!path.isDirectory()) {
+                    log.warn { "Invalid directory '$path' in library '${library.name}'" }
+                    false
+                } else {
+                    true
+                }
+            }
+
+        // Return all paths that are directories or match the game file extensions
+        return validDirectories.flatMap {
+            safeReadDirectoryContents(it)
+                .filter { it.isDirectory() || it.extension.lowercase() in gamefileExtensions }
+        }
+    }
+
     private fun safeReadDirectoryContents(path: String): List<FileDto> {
+        return safeReadDirectoryContents(Path(path))
+            .map { FileDto(it.name, if (it.isDirectory()) FileType.DIRECTORY else FileType.FILE, it.hashCode()) }
+    }
+
+    private fun safeReadDirectoryContents(path: Path): List<Path> {
         return try {
-            Path(path).toFile().listFiles()
-                .filter { !it.isHidden }
-                .map { FileDto(it.name, if (it.isDirectory) FileType.DIRECTORY else FileType.FILE, it.hashCode()) }
+            path.listDirectoryEntries()
+                .filter { !it.isHidden() }
         } catch (_: Exception) {
             log.warn { "Error reading directory contents of $path" }
             emptyList()

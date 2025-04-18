@@ -1,7 +1,7 @@
-import {Card, Chip} from "@heroui/react";
+import {Button, Card, Chip, Tooltip} from "@heroui/react";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/LibraryDto";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {GameCover} from "Frontend/components/general/GameCover";
 import Rand from "rand-seed";
@@ -12,6 +12,7 @@ import {
     Ghost,
     Joystick,
     Lego,
+    MagnifyingGlass,
     Skull,
     SoccerBall,
     Strategy,
@@ -72,6 +73,14 @@ export function LibraryOverviewCard({library}: { library: LibraryDto }) {
                 </div>
 
                 <p className="absolute text-2xl font-bold">{library.name}</p>
+
+                <div className="absolute right-0 top-0 flex flex-row">
+                    <Tooltip content="Scan library" placement="bottom" color="foreground">
+                        <Button isIconOnly variant="light" onPress={() => LibraryEndpoint.triggerScan([library])}>
+                            <MagnifyingGlass/>
+                        </Button>
+                    </Tooltip>
+                </div>
             </div>
 
             {!!library.stats &&

@@ -1,60 +1,65 @@
 package de.grimsi.gameyfin.libraries
 
-import de.grimsi.gameyfin.config.ConfigProperties
-import de.grimsi.gameyfin.config.ConfigService
+import de.grimsi.gameyfin.core.filesystem.FilesystemService
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
+import de.grimsi.gameyfin.games.entities.Game
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
-import java.nio.file.Path
-import kotlin.io.path.Path
-import kotlin.io.path.extension
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
 
 @Service
 class LibraryService(
     private val libraryRepository: LibraryRepository,
     private val gameService: GameService,
-    private val config: ConfigService
+    private val filesystemService: FilesystemService
 ) {
 
     private val log = KotlinLogging.logger {}
 
-    fun test(testString: String): GameDto {
-        val game = gameService.createFromFile(Path(testString))
-
-        val randomLibrary = libraryRepository.findRandomLibrary() ?: throw IllegalArgumentException("No library found")
-
-        randomLibrary.games.add(game)
-        libraryRepository.save(randomLibrary)
-
-        return gameService.toDto(game)
-    }
-
+    /**
+     * Creates or updates a library in the repository.
+     *
+     * @param library: The library to create or update.
+     * @return The created or updated LibraryDto object.
+     */
     fun createOrUpdate(library: LibraryDto): LibraryDto {
         val entity = libraryRepository.save(toEntity(library))
         return toDto(entity)
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Retrieves all libraries from the repository.
+     */
     fun getAllLibraries(): Collection<LibraryDto> {
         val entities = libraryRepository.findAll()
         return entities.map { toDto(it) }
     }
 
+    /**
+     * Deletes a library from the repository.
+     *
+     * @param library: The library to delete.
+     */
     fun deleteLibrary(library: LibraryDto) {
         val entity = toEntity(library)
         libraryRepository.delete(entity)
     }
 
+    /**
+     * Deletes all libraries from the repository.
+     */
     fun deleteAllLibraries() {
         libraryRepository.deleteAll()
     }
 
-    @Transactional(readOnly = true)
+    /**
+     * Retrieves all games in a library.
+     *
+     * @param libraryId: The ID of the library to retrieve games from.
+     * @return A collection of GameDto objects representing the games in the library.
+     */
     fun getGamesInLibrary(libraryId: Long): Collection<GameDto> {
         val library = libraryRepository.findByIdOrNull(libraryId)
             ?: throw IllegalArgumentException("Library with ID $libraryId not found")
@@ -65,48 +70,63 @@ class LibraryService(
     }
 
     /**
-     * Triggers a scan for a list of libraries. If no list is provided, all libraries will be scanned.
+     * Adds a game to the library.
+     *
+     * @param game: The game to add.
+     * @param library: The library to add the game to.
+     * @return The updated library.
      */
-    fun scan(libraryDtos: Collection<LibraryDto>?) {
+    fun addGameToLibrary(game: Game, library: Library): Library {
+        if (library.games.any { it.id == game.id }) return library
+
+        library.games.add(game)
+        return libraryRepository.save(library)
+    }
+
+    /**
+     * Adds a collection of games to the library.
+     *
+     * @param games: The collection of games to add.
+     * @param library: The library to add the games to.
+     * @return The updated library.
+     */
+    fun addGamesToLibrary(games: Collection<Game>, library: Library): Library {
+        val newGames = games.filter { game -> library.games.none { it.id == game.id } }
+        library.games = library.games.toMutableSet().apply { addAll(newGames) }
+        return libraryRepository.save(library)
+    }
+
+
+    /**
+     * Wrapper function to trigger a scan for a list of libraries.
+     */
+    fun triggerScan(libraryDtos: Collection<LibraryDto>?) = runBlocking {
+        scan(libraryDtos)
+    }
+
+    /**
+     * Triggers a scan for a list of libraries.
+     * If no list is provided, all libraries will be scanned.
+     *
+     * @param libraryDtos: List of LibraryDto objects to scan.
+     */
+    suspend fun scan(libraryDtos: Collection<LibraryDto>?) {
         val libraries = libraryDtos?.map { toEntity(it) } ?: libraryRepository.findAll()
         libraries.forEach { library ->
-            val games = scan(library)
-            games.forEach(gameService::createFromFile)
+            val gamePaths = filesystemService.scanLibraryForGamefiles(library)
+            val newGames = gamePaths.map { gameService.createFromFile(it) }
+            addGamesToLibrary(newGames, library)
         }
     }
 
     /**
-     * Return a list of all subfolders and game files in the provided library
+     * Converts a Library entity to a LibraryDto.
+     *
+     * @param library: The Library entity to convert.
+     * @return The converted LibraryDto.
      */
-    fun scan(library: Library): List<Path> {
-        val validDirectories = library.directories.map { Path(it) }
-            .filter { path ->
-                if (!path.isDirectory()) {
-                    log.warn { "Invalid directory '$path' in library '${library.name}'" }
-                    false
-                } else {
-                    true
-                }
-            }
-
-        return validDirectories.flatMap { directory ->
-            directory.listDirectoryEntries()
-                .filter { it.isDirectory() || it.isGameFile() }
-                .map { it.fileName }
-        }
-    }
-
-    private fun Path.isGameFile(): Boolean {
-        val gameFileExtensions = config.get(ConfigProperties.Libraries.Scan.GameFileExtensions)!!
-            .split(",")
-            .map { it.trim().lowercase() }
-        return extension.lowercase() in gameFileExtensions
-    }
-
     private fun toDto(library: Library): LibraryDto {
-        if (library.id == null) {
-            throw IllegalArgumentException("Library ID is null")
-        }
+        val libraryId = library.id ?: throw IllegalArgumentException("Library ID is null")
 
         val statsDto = LibraryStatsDto(
             gamesCount = library.games.size,
@@ -114,17 +134,23 @@ class LibraryService(
         )
 
         return LibraryDto(
-            id = library.id,
+            id = libraryId,
             name = library.name,
             directories = library.directories,
             stats = statsDto
         )
     }
 
+    /**
+     * Converts a LibraryDto to a Library entity.
+     *
+     * @param library: The LibraryDto to convert.
+     * @return The converted Library entity.
+     */
     private fun toEntity(library: LibraryDto): Library {
         return libraryRepository.findByIdOrNull(library.id) ?: Library(
             name = library.name,
-            directories = library.directories
+            directories = library.directories.toMutableSet()
         )
     }
 }

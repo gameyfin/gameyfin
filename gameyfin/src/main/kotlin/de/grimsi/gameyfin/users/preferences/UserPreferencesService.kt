@@ -2,13 +2,11 @@ package de.grimsi.gameyfin.users.preferences
 
 import de.grimsi.gameyfin.users.UserService
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.transaction.Transactional
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.io.Serializable
 
 @Service
-@Transactional
 class UserPreferencesService(
     private val userPreferenceRepository: UserPreferenceRepository,
     private val userService: UserService
