@@ -25,7 +25,7 @@ spring:
     # defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
-    open-in-view: false
+    open-in-view: true
   mustache:
     check-template-location: false
   sql.init.mode: always
