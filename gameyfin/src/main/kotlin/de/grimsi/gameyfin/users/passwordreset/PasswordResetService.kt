@@ -41,14 +41,11 @@ class PasswordResetService(
      * - The user is not managed externally
      */
     fun generate(username: String): TokenDto {
-        if (messageService.enabled) {
-            throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
-        }
 
         val user = userService.getByUsername(username)
             ?: throw IllegalArgumentException("Cannot create password reset token for user '$username' because user does not exist")
 
-        if (user.emailConfirmed) {
+        if (messageService.enabled && user.emailConfirmed) {
             throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
         }
 

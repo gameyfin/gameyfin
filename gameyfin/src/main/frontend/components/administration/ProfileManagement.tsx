@@ -113,10 +113,10 @@ export default function ProfileManagement() {
                                 <div className="flex flex-row gap-2">
                                     <NextUiInput type="file" accept="image/*" onChange={onFileSelected}
                                                  isDisabled={auth.state.user?.managedBySso}/>
-                                    <Button onClick={() => uploadAvatar(avatar)} isDisabled={avatar == null}
+                                    <Button onPress={() => uploadAvatar(avatar)} isDisabled={avatar == null}
                                             color="success">Upload</Button>
                                     <Tooltip content="Remove your current avatar">
-                                        <Button onClick={removeAvatar} isIconOnly color="danger"
+                                        <Button onPress={removeAvatar} isIconOnly color="danger"
                                                 isDisabled={auth.state.user?.managedBySso}><Trash/></Button>
                                     </Tooltip>
                                 </div>

@@ -42,7 +42,7 @@ function LogManagementLayout({getConfig, formik}: any) {
     }
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col mt-4">
             <div className="flex flex-row gap-4">
                 <ConfigFormField configElement={getConfig("logs.folder")}/>
                 <ConfigFormField configElement={getConfig("logs.max-history-days")}/>

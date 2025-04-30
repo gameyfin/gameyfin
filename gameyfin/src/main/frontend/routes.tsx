@@ -2,7 +2,7 @@ import {protectRoutes} from '@vaadin/hilla-react-auth';
 import {createBrowserRouter, RouteObject} from 'react-router';
 import LoginView from "Frontend/views/LoginView";
 import MainLayout from "Frontend/views/MainLayout";
-import TestView from "Frontend/views/TestView";
+import HomeView from "Frontend/views/HomeView";
 import SetupView from "Frontend/views/SetupView";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import App from "Frontend/App";
@@ -18,6 +18,7 @@ import PasswordResetView from "Frontend/views/PasswordResetView";
 import EmailConfirmationView from "Frontend/views/EmailConfirmationView";
 import InvitationRegistrationView from "Frontend/views/InvitationRegistrationView";
 import PluginManagement from "Frontend/components/administration/PluginManagement";
+import {SystemManagement} from "Frontend/components/administration/SystemManagement";
 
 export const routes = protectRoutes([
     {
@@ -29,7 +30,7 @@ export const routes = protectRoutes([
                 handle: {requiresLogin: true},
                 children: [
                     {
-                        index: true, element: <TestView/>
+                        index: true, element: <HomeView/>
                     },
                     {
                         path: 'settings',
@@ -48,7 +49,8 @@ export const routes = protectRoutes([
                             {path: 'sso', element: <SsoManagement/>},
                             {path: 'messages', element: <MessageManagement/>},
                             {path: 'plugins', element: <PluginManagement/>},
-                            {path: 'logs', element: <LogManagement/>}
+                            {path: 'logs', element: <LogManagement/>},
+                            {path: 'system', element: <SystemManagement/>}
                         ]
                     }
                 ]
