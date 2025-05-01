@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.libraries
+package de.grimsi.gameyfin.libraries.dto
 
 data class LibraryDto(
     val id: Long,

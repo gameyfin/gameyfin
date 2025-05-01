@@ -11,7 +11,7 @@ import {
     useDisclosure
 } from "@heroui/react";
 import {Form, Formik} from "formik";
-import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/LibraryDto";
+import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
 import PathPickerModal from "Frontend/components/general/modals/PathPickerModal";

@@ -55,7 +55,8 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange, update
                         {(formik: { isSubmitting: any; }) => (
                             <Form>
                                 <ModalHeader className="flex flex-col gap-1">
-                                    Plugin configuration for {plugin.name}</ModalHeader>
+                                    Plugin configuration for {plugin.name}
+                                </ModalHeader>
                                 <ModalBody>
                                     <h4 className="text-l font-bold">Details</h4>
                                     <div className="flex flex-row gap-8">

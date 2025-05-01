@@ -4,6 +4,8 @@ import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
+import de.grimsi.gameyfin.libraries.dto.LibraryDto
+import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 
@@ -28,7 +30,17 @@ class LibraryEndpoint(
 
     @RolesAllowed(Role.Names.ADMIN)
     fun createLibrary(library: LibraryDto): LibraryDto {
-        return libraryService.createOrUpdate(library)
+        return libraryService.create(library)
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun updateLibrary(library: LibraryUpdateDto): LibraryDto {
+        return libraryService.update(library)
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun removeLibrary(libraryId: Long) {
+        return libraryService.deleteLibrary(libraryId)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

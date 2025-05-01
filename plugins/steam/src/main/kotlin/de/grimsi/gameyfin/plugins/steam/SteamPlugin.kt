@@ -57,14 +57,14 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
          * The Steam Store API I am using provides far less info than IGDB for example
          * See it more as a proof of concept than a fully functional plugin
          **/
-        override fun fetchMetadata(gameId: String): GameMetadata? {
+        override fun fetchMetadata(gameId: String, maxResults: Int): List<GameMetadata> {
             val searchResult: List<SteamGame> = runBlocking { searchStore(gameId) }
-            if (searchResult.isEmpty()) return null
+            if (searchResult.isEmpty()) return emptyList()
 
-            val bestMatchingTitle = FuzzySearch.extractOne(gameId, searchResult.map { it.name }).string
-            val bestMatch = searchResult.find { it.name == bestMatchingTitle } ?: return null
+            val bestMatchingTitles = FuzzySearch.extractTop(gameId, searchResult.map { it.name }, maxResults)
+            val bestMatches = bestMatchingTitles.mapNotNull { title -> searchResult.find { it.name == title.string } }
 
-            return runBlocking { getGameDetails(bestMatch.id) }
+            return runBlocking { bestMatches.map { getGameDetails(it.id) } }.filterNotNull()
         }
 
         private suspend fun searchStore(title: String): List<SteamGame> {
@@ -105,7 +105,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             // This is as much as I can get from the Steam Store API
             val metadata = GameMetadata(
                 originalId = id.toString(),
-                title = game.name,
+                title = sanitizeTitle(game.name),
                 description = game.detailedDescription,
                 coverUrl = game.headerImage?.let { URI(it) },
                 release = game.releaseDate?.date,
@@ -118,6 +118,16 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             )
 
             return metadata
+        }
+
+
+        /**
+         * Often titles on Steam copyright symbols which makes matching between different providers harder
+         * This method removes those symbols
+         */
+        private fun sanitizeTitle(originalTitle: String): String {
+            val unwantedChars = setOf('™', '©', '®')
+            return originalTitle.filter { it !in unwantedChars }.trim()
         }
     }
 }

@@ -18,6 +18,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import me.xdrop.fuzzywuzzy.FuzzySearch
+import org.apache.commons.io.FilenameUtils
 import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -44,8 +45,8 @@ class GameService(
         return gameRepository.save(game)
     }
 
-    fun createFromFile(path: Path): Game {
-        val query = path.fileName.toString()
+    fun createFromFile(path: Path): Game? {
+        val query = FilenameUtils.removeExtension(path.fileName.toString())
 
         // Step 0: Query all metadata plugins for metadata on the provided game title
         val metadataResults = queryPlugins(query)
@@ -53,7 +54,8 @@ class GameService(
         // Step 1: Filter out invalid (empty) results
         val validResults = metadataResults.filterValuesNotNull()
         if (validResults.isEmpty()) {
-            throw NoMatchException("Could not match game at $path")
+            log.error { "Could not identify game at path '$path'" }
+            return null
         }
 
         // Step 2: Filter results to find the best matching title
@@ -99,9 +101,9 @@ class GameService(
                 metadataPlugins.associateWith {
                     async {
                         try {
-                            it.fetchMetadata(gameTitle)
+                            it.fetchMetadata(gameTitle).firstOrNull()
                         } catch (e: Exception) {
-                            log.error(e) { "Error fetching metadata with plugin ${it.javaClass.name}" }
+                            log.error(e) { "Error fetching metadata for game with plugin ${it.javaClass.name}" }
                             null
                         }
                     }.await()

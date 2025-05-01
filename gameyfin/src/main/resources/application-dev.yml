@@ -1,2 +1,3 @@
+logging.level.de.grimsi.gameyfin: DEBUG
 logging.level.org.hibernate.SQL: DEBUG
 logging.level.org.hibernate.type: TRACE

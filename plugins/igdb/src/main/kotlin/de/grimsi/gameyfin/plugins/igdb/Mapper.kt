@@ -52,6 +52,7 @@ class Mapper {
                 "fantasy" -> Theme.FANTASY
                 "horror" -> Theme.HORROR
                 "sci-fi" -> Theme.SCIENCE_FICTION
+                "science-fiction" -> Theme.SCIENCE_FICTION
                 "mystery" -> Theme.MYSTERY
                 "thriller" -> Theme.THRILLER
                 "survival" -> Theme.SURVIVAL
@@ -82,6 +83,7 @@ class Mapper {
                 "first-person" -> PlayerPerspective.FIRST_PERSON
                 "third-person" -> PlayerPerspective.THIRD_PERSON
                 "bird-view-isometric" -> PlayerPerspective.BIRD_VIEW_ISOMETRIC
+                "bird-view-slash-isometric" -> PlayerPerspective.BIRD_VIEW_ISOMETRIC
                 "side-view" -> PlayerPerspective.SIDE_VIEW
                 "text" -> PlayerPerspective.TEXT
                 "auditory" -> PlayerPerspective.AUDITORY
