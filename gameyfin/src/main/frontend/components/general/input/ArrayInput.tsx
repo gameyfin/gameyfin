@@ -16,11 +16,14 @@ const ArrayInput = ({label, ...props}) => {
                         function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
                             if (event.key === "Enter" || event.key == "Tab" || event.key === ",") {
                                 event.preventDefault();
-                                let trimmedValue = newElementValue.trim();
-                                if (trimmedValue !== "") {
-                                    arrayHelpers.push(trimmedValue);
-                                    setNewElementValue("");
-                                }
+                                
+                                newElementValue
+                                    .split(",")
+                                    .map((value) => value.trim())
+                                    .filter((value) => value !== "")
+                                    .forEach((value) => arrayHelpers.push(value));
+
+                                setNewElementValue("");
                             }
                         }
 
