@@ -15,6 +15,41 @@ class ConfigService(
 ) {
     private val log = KotlinLogging.logger {}
 
+
+    /**
+     * Get the current value of a config property in a type-safe way.
+     *
+     * @param configProperty: The config property containing necessary type information
+     * @return The current value if set or the default value or null if no value is set and no default value exists
+     */
+    fun <T : Serializable> get(configProperty: ConfigProperties<T>): T? {
+
+        log.debug { "Getting config value '${configProperty.key}'" }
+
+        val appConfig = appConfigRepository.findByIdOrNull(configProperty.key)
+        return if (appConfig != null) {
+            getValue(appConfig.value, configProperty)
+        } else {
+            configProperty.default ?: return null
+        }
+    }
+
+    /**
+     * Get the current value of a config property in a *not* type-safe way.
+     * Used for the external API.
+     *
+     * @param key: The key of the config property
+     * @return The current value if set or the default value or null if no value is set and no default value exists
+     */
+    fun get(key: String): Serializable? {
+
+        log.debug { "Getting config value '$key'" }
+
+        val configProperty = findConfigProperty(key)
+
+        return get(configProperty)
+    }
+
     /**
      * Get all known config values.
      *
@@ -34,22 +69,9 @@ class ConfigService(
         }
 
         return configProperties.map { configProperty ->
-            val appConfig = appConfigRepository.findByIdOrNull(configProperty.key)
-
-            val parsedValue =
-                if (configProperty.type.java.isArray)
-                    if (appConfig?.value == null)
-                        null
-                    else if (appConfig.value.isEmpty())
-                        emptyArray()
-                    else
-                        appConfig.value.split(",").toTypedArray()
-                else
-                    appConfig?.value
-
             ConfigEntryDto(
                 key = configProperty.key,
-                value = parsedValue ?: configProperty.default,
+                value = get(configProperty),
                 defaultValue = configProperty.default,
                 type = configProperty.type.simpleName ?: "Unknown",
                 elementType = configProperty.type.java.componentType?.simpleName,
@@ -57,69 +79,6 @@ class ConfigService(
                 description = configProperty.description
             )
         }
-    }
-
-    /**
-     * Get the current value of a config property in a type-safe way.
-     * Used internally.
-     *
-     * @param configProperty: The config property containing necessary type information
-     * @return The current value if set or the default value or null if no value is set and no default value exists
-     */
-    fun <T : Serializable> get(configProperty: ConfigProperties<T>): T? {
-
-        log.info { "Getting config value '${configProperty.key}'" }
-
-        val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
-        return if (appConfig != null) {
-            getValue(appConfig.value, configProperty)
-        } else {
-            configProperty.default ?: return null
-        }
-    }
-
-    /**
-     * Get the current value of a config property in a *not* type-safe way.
-     * Used for the external API.
-     *
-     * @param key: The key of the config property
-     * @return The current value if set or the default value or null if no value is set and no default value exists
-     */
-    fun get(key: String): Serializable? {
-
-        log.info { "Getting config value '$key'" }
-
-        val configProperty = findConfigProperty(key)
-        val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
-
-        if (appConfig != null) return getValue(appConfig.value, configProperty)
-
-        if (configProperty.default == null) return null
-
-        return configProperty.default
-    }
-
-    /**
-     * Set multiple config values at once.
-     * Configs with a null value will be deleted.
-     *
-     * @param configs: A map of key-value pairs to set
-     */
-    fun setAll(configs: List<ConfigValuePairDto>) {
-        configs.forEach {
-            it.value?.let { value -> set(it.key, value) } ?: deleteConfig(it.key)
-        }
-    }
-
-    /**
-     * Set the value for a specified key in a type-safe way.
-     *
-     * @param configProperty: The target config property
-     * @param value: Value to set the config property to
-     * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
-     */
-    fun <T : Serializable> set(configProperty: ConfigProperties<T>, value: T) {
-        return set(configProperty.key, value)
     }
 
     /**
@@ -151,6 +110,29 @@ class ConfigService(
         }
 
         appConfigRepository.save(configEntry)
+    }
+
+    /**
+     * Set multiple config values at once.
+     * Configs with a null value will be deleted.
+     *
+     * @param configs: A map of key-value pairs to set
+     */
+    fun setAll(configs: List<ConfigValuePairDto>) {
+        configs.forEach {
+            it.value?.let { value -> set(it.key, value) } ?: deleteConfig(it.key)
+        }
+    }
+
+    /**
+     * Set the value for a specified key in a type-safe way.
+     *
+     * @param configProperty: The target config property
+     * @param value: Value to set the config property to
+     * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
+     */
+    fun <T : Serializable> set(configProperty: ConfigProperties<T>, value: T) {
+        return set(configProperty.key, value)
     }
 
     /**
@@ -189,6 +171,7 @@ class ConfigService(
                 val componentType = configProperty.type.java.componentType
                 // Remove the brackets and split the string by commas
                 val elements = value.removeSurrounding("[", "]").split(",")
+                if (elements.isEmpty()) return emptyArray<Serializable>() as T
                 when (componentType) {
                     String::class.java -> elements.toTypedArray() as T
                     Boolean::class.java -> elements.map { it.toBoolean() }.toTypedArray() as T
