@@ -38,7 +38,9 @@ class ConfigService(
 
             val parsedValue =
                 if (configProperty.type.java.isArray)
-                    if (appConfig?.value == null || appConfig.value.isEmpty())
+                    if (appConfig?.value == null)
+                        null
+                    else if (appConfig.value.isEmpty())
                         emptyArray()
                     else
                         appConfig.value.split(",").toTypedArray()
