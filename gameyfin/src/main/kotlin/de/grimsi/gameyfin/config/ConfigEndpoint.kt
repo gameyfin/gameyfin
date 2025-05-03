@@ -6,6 +6,7 @@ import de.grimsi.gameyfin.config.dto.ConfigValuePairDto
 import de.grimsi.gameyfin.core.Role
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
+import java.io.Serializable
 
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
@@ -19,7 +20,7 @@ class ConfigEndpoint(
         return config.getAll(prefix)
     }
 
-    fun get(key: String): String? {
+    fun get(key: String): Serializable? {
         return config.get(key)
     }
 
@@ -32,7 +33,7 @@ class ConfigEndpoint(
     }
 
     fun resetConfig(key: String) {
-        config.resetConfigValue(key)
+        config.deleteConfig(key)
     }
 
     fun deleteConfig(key: String) {

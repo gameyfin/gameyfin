@@ -29,11 +29,32 @@ sealed class ConfigProperties<T : Serializable>(
                 true
             )
 
-            data object GameFileExtensions : ConfigProperties<String>(
-                String::class,
+            data object GameFileExtensions : ConfigProperties<Array<String>>(
+                Array<String>::class,
                 "library.scan.game-file-extensions",
                 "File extensions to consider as games",
-                "zip, tar, gz, rar, 7z, bz2, xz, iso, jar, tgz, exe, bat, cmd, com, msi, bin, run, app, dmg, elf"
+                arrayOf(
+                    "zip",
+                    "tar",
+                    "gz",
+                    "rar",
+                    "7z",
+                    "bz2",
+                    "xz",
+                    "iso",
+                    "jar",
+                    "tgz",
+                    "exe",
+                    "bat",
+                    "cmd",
+                    "com",
+                    "msi",
+                    "bin",
+                    "run",
+                    "app",
+                    "dmg",
+                    "elf"
+                )
             )
         }
 

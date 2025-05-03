@@ -3,6 +3,7 @@ import React from "react";
 import Input from "Frontend/components/general/input/Input";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
 import SelectInput from "Frontend/components/general/input/SelectInput";
+import ArrayInput from "Frontend/components/general/input/ArrayInput";
 
 export default function ConfigFormField({configElement, ...props}: any) {
     function inputElement(configElement: ConfigEntryDto) {
@@ -34,10 +35,14 @@ export default function ConfigFormField({configElement, ...props}: any) {
                     <Input label={configElement.description} name={configElement.key} type="number"
                            step="1" {...props}/>
                 );
+            case "Array":
+                return (
+                    <ArrayInput label={configElement.description} name={configElement.key} type="text" {...props}/>
+                );
             default:
                 return <pre>Unsupported type: {configElement.type} for key {configElement.key}</pre>;
         }
     }
 
-    return (inputElement(configElement!));
+    return inputElement(configElement!);
 }

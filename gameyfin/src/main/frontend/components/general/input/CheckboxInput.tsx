@@ -7,7 +7,7 @@ const CheckboxInput = ({label, ...props}) => {
     const [field] = useField(props);
 
     return (
-        <div className="flex flex-row flex-1 items-center gap-2 mb-2">
+        <div className="flex flex-row flex-1 items-center gap-2 mb-6">
             <Checkbox
                 {...field}
                 {...props}

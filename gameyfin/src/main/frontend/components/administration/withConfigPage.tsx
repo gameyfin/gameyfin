@@ -62,13 +62,35 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                         let value: any;
                         switch (item.type) {
                             case 'Boolean':
-                                value = item.value === 'true';
+                                value = typeof item.value == 'boolean' ? item.value : item.value === 'true';
                                 break;
                             case 'Int':
-                                value = parseInt(item.value!);
+                                value = typeof item.value == 'number' ? item.value : 0;
                                 break;
                             case 'Float':
-                                value = parseFloat(item.value!);
+                                value = typeof item.value == 'number' ? item.value : 0.0;
+                                break;
+                            case 'Array':
+                                if (Array.isArray(item.value)) {
+                                    switch (item.elementType) {
+                                        case 'Boolean':
+                                            value = item.value.map(v => typeof v === 'boolean' ? v : v === 'true');
+                                            break;
+                                        case 'Int':
+                                        case 'Integer':
+                                            value = item.value.map(v => typeof v == 'number' ? v : 0);
+                                            break;
+                                        case 'Float':
+                                            value = item.value.map(v => typeof v == 'number' ? v : 0.0);
+                                            break;
+                                        case 'String':
+                                        default:
+                                            value = item.value.map(v => v.toString());
+                                            break;
+                                    }
+                                } else {
+                                    value = [];
+                                }
                                 break;
                             case 'String':
                             default:

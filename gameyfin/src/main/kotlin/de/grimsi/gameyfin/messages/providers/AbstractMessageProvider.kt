@@ -16,7 +16,7 @@ abstract class AbstractMessageProvider(
     private val configKey = String.format("%s.%s.enabled", BASE_KEY, providerKey)
 
     val enabled: Boolean
-        get() = config.get(configKey).toBoolean()
+        get() = config.get(configKey) as Boolean
 
     abstract fun testCredentials(credentials: Properties): Boolean
 

@@ -21,7 +21,7 @@ function UserManagementLayout({getConfig, formik}: any) {
         );
 
         ConfigEndpoint.get("sso.oidc.auto-register-new-users").then(
-            (response) => setAutoRegisterNewUsers(response === "true")
+            (response) => setAutoRegisterNewUsers(response as boolean)
         );
     }, []);
 

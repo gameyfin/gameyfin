@@ -5,6 +5,7 @@ import de.grimsi.gameyfin.config.dto.ConfigValuePairDto
 import de.grimsi.gameyfin.config.entities.ConfigEntry
 import de.grimsi.gameyfin.config.persistence.ConfigRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.io.Serializable
 
@@ -33,14 +34,22 @@ class ConfigService(
         }
 
         return configProperties.map { configProperty ->
-            val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
+            val appConfig = appConfigRepository.findByIdOrNull(configProperty.key)
+
+            val parsedValue =
+                if (configProperty.type.java.isArray)
+                    appConfig?.value?.split(",")?.toTypedArray()
+                else
+                    appConfig?.value
+
             ConfigEntryDto(
                 key = configProperty.key,
-                value = appConfig?.value ?: configProperty.default?.toString(),
-                defaultValue = configProperty.default?.toString(),
+                value = parsedValue ?: configProperty.default,
+                defaultValue = configProperty.default,
                 type = configProperty.type.simpleName ?: "Unknown",
-                description = configProperty.description,
-                allowedValues = configProperty.allowedValues?.map { it.toString() }
+                elementType = configProperty.type.java.componentType?.simpleName,
+                allowedValues = configProperty.allowedValues?.map { it.toString() },
+                description = configProperty.description
             )
         }
     }
@@ -71,18 +80,18 @@ class ConfigService(
      * @param key: The key of the config property
      * @return The current value if set or the default value or null if no value is set and no default value exists
      */
-    fun get(key: String): String? {
+    fun get(key: String): Serializable? {
 
         log.info { "Getting config value '$key'" }
 
         val configProperty = findConfigProperty(key)
         val appConfig = appConfigRepository.findById(configProperty.key).orElse(null)
 
-        return if (appConfig != null) {
-            getValue(appConfig.value, configProperty).toString()
-        } else {
-            configProperty.default?.toString() ?: return null
-        }
+        if (appConfig != null) return getValue(appConfig.value, configProperty)
+
+        if (configProperty.default == null) return null
+
+        return configProperty.default
     }
 
     /**
@@ -116,51 +125,32 @@ class ConfigService(
      * @param value: Value to set the config property to
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
      */
+    @Suppress("UNCHECKED_CAST")
     fun <T : Serializable> set(key: String, value: T) {
         log.info { "Set config value '$key'" }
 
-        val configKey = findConfigProperty(key)
+        val configProperty = findConfigProperty(key)
 
-        // Check if the value can be cast to the type defined for the config property
-        val castedValue = getValue(value.toString(), configKey)
+        var configEntry = appConfigRepository.findByIdOrNull(key)
 
-        var configEntry = appConfigRepository.findById(key).orElse(null)
+        val parsedValue =
+            if (value.javaClass.isArray)
+                (value as Array<Serializable>).joinToString(",")
+            else
+                value.toString()
 
         if (configEntry == null) {
-            configEntry = ConfigEntry(configKey.key, castedValue.toString())
+            configEntry = ConfigEntry(configProperty.key, parsedValue)
         } else {
-            configEntry.value = castedValue.toString()
+            configEntry.value = parsedValue
         }
 
         appConfigRepository.save(configEntry)
     }
 
     /**
-     * Reset a given config property to its default value if it has a default value.
-     * Otherwise, delete the config key from the database.
-     *
-     * @param key: Key of the config property
-     */
-    fun resetConfigValue(key: String) {
-
-        log.info { "Reset config value '$key'" }
-
-        val configKey = findConfigProperty(key)
-
-        if (configKey.default == null) {
-            deleteConfig(key)
-            return
-        }
-
-        val appConfig = appConfigRepository.findById(configKey.key).orElse(null)
-        if (appConfig != null) {
-            appConfig.value = configKey.default.toString()
-            appConfigRepository.save(appConfig)
-        }
-    }
-
-    /**
-     * Remove a config property from the database
+     * Remove a config property from the database.
+     * This will also cause it to reset to its default value.
      *
      * @param key: Key of the config property
      */
@@ -176,21 +166,34 @@ class ConfigService(
      * Get the value of the config property in a type-safe way.
      */
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Serializable> getValue(value: String, configProperty: ConfigProperties<T>): T {
-        return when (configProperty.type) {
-            String::class -> value as T
-            Boolean::class -> value.toBoolean() as T
-            Int::class -> value.toFloat().toInt() as T
-            Float::class -> value.toFloat() as T
-            else -> {
-                if (configProperty.type.java.isEnum) {
-                    val enumConstants = configProperty.type.java.enumConstants
-                    enumConstants.firstOrNull { it.toString() == value }
-                        ?: throw IllegalArgumentException("Unknown enum value '$value' for key ${configProperty.key}")
-                } else {
-                    throw IllegalArgumentException("Unknown config type ${configProperty.type}: '$value' for key ${configProperty.key}")
+    private fun <T : Serializable> getValue(value: Serializable, configProperty: ConfigProperties<T>): T {
+        val value = value.toString()
+        return when {
+            configProperty.type == String::class -> value as T
+            configProperty.type == Boolean::class -> value.toBoolean() as T
+            configProperty.type == Int::class -> value.toFloat().toInt() as T
+            configProperty.type == Float::class -> value.toFloat() as T
+
+            configProperty.type.java.isEnum -> {
+                val enumConstants = configProperty.type.java.enumConstants
+                enumConstants.firstOrNull { it.toString() == value }
+                    ?: throw IllegalArgumentException("Unknown enum value '$value' for key ${configProperty.key}")
+            }
+
+            configProperty.type.java.isArray -> {
+                val componentType = configProperty.type.java.componentType
+                // Remove the brackets and split the string by commas
+                val elements = value.removeSurrounding("[", "]").split(",")
+                when (componentType) {
+                    String::class.java -> elements.toTypedArray() as T
+                    Boolean::class.java -> elements.map { it.toBoolean() }.toTypedArray() as T
+                    Int::class.java -> elements.map { it.toInt() }.toTypedArray() as T
+                    Float::class.java -> elements.map { it.toFloat() }.toTypedArray() as T
+                    else -> throw IllegalArgumentException("Unsupported array type: ${componentType.name}")
                 }
             }
+
+            else -> throw IllegalArgumentException("Unknown config type ${configProperty.type}: '$value' for key ${configProperty.key}")
         }
     }
 

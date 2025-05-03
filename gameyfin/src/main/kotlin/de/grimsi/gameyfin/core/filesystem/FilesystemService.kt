@@ -18,9 +18,7 @@ class FilesystemService(
     private val log = KotlinLogging.logger {}
 
     private val gameFileExtensions
-        get() = config.get(ConfigProperties.Libraries.Scan.GameFileExtensions)!!
-            .split(",")
-            .map { it.trim().lowercase() }
+        get() = config.get(ConfigProperties.Libraries.Scan.GameFileExtensions)!!.map { it.trim().lowercase() }
 
     /**
      * Lists all files and directories in the given path.
@@ -45,7 +43,7 @@ class FilesystemService(
             return safeReadDirectoryContents(roots.first().toString())
         }
 
-        var path = FilenameUtils.separatorsToSystem(path)
+        val path = FilenameUtils.separatorsToSystem(path)
 
         return safeReadDirectoryContents(path)
     }
@@ -93,8 +91,8 @@ class FilesystemService(
             }
 
         // Return all paths that are directories or match the game file extensions
-        return validDirectories.flatMap {
-            safeReadDirectoryContents(it)
+        return validDirectories.flatMap { validDirectory ->
+            safeReadDirectoryContents(validDirectory)
                 .filter { it.isDirectory() || it.extension.lowercase() in gamefileExtensions }
         }
     }
