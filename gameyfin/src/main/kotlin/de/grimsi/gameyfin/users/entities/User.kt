@@ -3,9 +3,7 @@ package de.grimsi.gameyfin.users.entities
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.security.EncryptionConverter
 import de.grimsi.gameyfin.games.entities.Image
-import jakarta.annotation.Nullable
 import jakarta.persistence.*
-import jakarta.validation.constraints.NotNull
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 
 
@@ -16,15 +14,14 @@ class User(
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
-    @NotNull
     @Column(unique = true)
+    @Convert(converter = EncryptionConverter::class)
     var username: String,
 
     var password: String? = null,
 
     var oidcProviderId: String? = null,
 
-    @Nullable
     @Column(unique = true)
     @Convert(converter = EncryptionConverter::class)
     var email: String,

@@ -109,7 +109,7 @@ class Mapper {
         }
 
         fun gameFeatures(game: proto.Game): Set<GameFeature> {
-            var gameFeatures = mutableSetOf<GameFeature>()
+            val gameFeatures = mutableSetOf<GameFeature>()
 
             // Get LAN support from multiplayer modes
             if (game.multiplayerModesList.any { it.lancoop }) gameFeatures.add(GameFeature.LOCAL_MULTIPLAYER)
@@ -119,6 +119,7 @@ class Mapper {
                     "single-player" -> gameFeatures.add(GameFeature.SINGLEPLAYER)
                     "multiplayer" -> gameFeatures.add(GameFeature.MULTIPLAYER)
                     "massively-multiplayer-online-mmo" -> gameFeatures.add(GameFeature.MULTIPLAYER)
+                    "battle-royale" -> gameFeatures.add(GameFeature.MULTIPLAYER)
                     "co-operative" -> gameFeatures.add(GameFeature.CO_OP)
                     "split-screen" -> gameFeatures.add(GameFeature.SPLITSCREEN)
                     else -> {

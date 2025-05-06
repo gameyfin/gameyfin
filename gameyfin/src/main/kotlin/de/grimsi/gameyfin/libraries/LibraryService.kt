@@ -1,25 +1,36 @@
 package de.grimsi.gameyfin.libraries
 
 import de.grimsi.gameyfin.core.filesystem.FilesystemService
+import de.grimsi.gameyfin.games.CompanyService
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.entities.Game
 import de.grimsi.gameyfin.libraries.dto.LibraryDto
 import de.grimsi.gameyfin.libraries.dto.LibraryStatsDto
 import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
+import de.grimsi.gameyfin.media.ImageService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.util.concurrent.Callable
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 @Service
 class LibraryService(
     private val libraryRepository: LibraryRepository,
+    private val filesystemService: FilesystemService,
     private val gameService: GameService,
-    private val filesystemService: FilesystemService
+    private val imageService: ImageService,
+    private val companyService: CompanyService
 ) {
 
-    private val log = KotlinLogging.logger {}
+    companion object {
+        private val log = KotlinLogging.logger {}
+        private val executor = Executors.newVirtualThreadPerTaskExecutor()
+    }
 
     /**
      * Creates or updates a library in the repository.
@@ -117,7 +128,6 @@ class LibraryService(
         return libraryRepository.save(library)
     }
 
-
     /**
      * Wrapper function to trigger a scan for a list of libraries.
      */
@@ -131,15 +141,70 @@ class LibraryService(
      *
      * @param libraryDtos: List of LibraryDto objects to scan.
      */
-    suspend fun scan(libraryDtos: Collection<LibraryDto>?) {
+    @Transactional(timeout = Integer.MAX_VALUE)
+    fun scan(libraryDtos: Collection<LibraryDto>?) {
         val libraries = libraryDtos?.map { toEntity(it) } ?: libraryRepository.findAll()
+
         libraries.forEach { library ->
             val gamePaths = filesystemService.scanLibraryForGamefiles(library)
-            val newGames = gamePaths.mapNotNull {
-                gameService.createFromFile(it)
+            val totalPaths = gamePaths.size
+            val completedMetadata = AtomicInteger(0)
+            val completedImageDownload = AtomicInteger(0)
+
+            log.info { "Scanning library '${library.name}' with $totalPaths paths..." }
+
+            // 1. Fetch metadata for each game
+            val metadataTasks = gamePaths.map { path ->
+                Callable<Game?> {
+                    try {
+                        val game = gameService.matchFromFile(path, library)
+                        val progress = completedMetadata.incrementAndGet()
+                        log.info { "${progress}/${totalPaths} metadata matched" }
+                        game
+                    } catch (e: Exception) {
+                        log.error(e) { "Error processing game: ${e.message}" }
+                        null
+                    }
+                }
             }
 
-            addGamesToLibrary(newGames, library)
+            val matchedGames = executor.invokeAll(metadataTasks).mapNotNull { it.get() }
+
+            // 2. Download all images
+            val totalImages = matchedGames.count { it.coverImage != null } + matchedGames.sumOf { it.images.size }
+
+            val imageDownloadTasks = matchedGames.map { game ->
+                Callable<Game?> {
+                    try {
+                        game.coverImage?.let {
+                            imageService.downloadIfNew(it)
+                            completedImageDownload.andIncrement
+                        }
+
+                        game.images.map {
+                            imageService.downloadIfNew(it)
+                            completedImageDownload.andIncrement
+                        }
+
+                        log.info { "${completedImageDownload}/${totalImages} images downloaded" }
+
+                        game
+                    } catch (e: Exception) {
+                        log.error(e) { "Error downloading images for game: ${e.message}" }
+                        null
+                    }
+                }
+            }
+
+            val gamesWithImages = executor.invokeAll(imageDownloadTasks).mapNotNull { it.get() }
+
+            // 3. Persist entities
+            val persistedGames = gameService.create(gamesWithImages)
+            log.info { "${persistedGames.size}/${totalPaths} saved to database" }
+
+            // 4. Add games to library
+            addGamesToLibrary(persistedGames, library)
+            log.info { "Scan finished, matched ${persistedGames.size} new games" }
         }
     }
 

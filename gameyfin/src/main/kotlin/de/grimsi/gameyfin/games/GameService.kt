@@ -7,10 +7,9 @@ import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.dto.GameMetadataDto
 import de.grimsi.gameyfin.games.entities.*
-import de.grimsi.gameyfin.games.repositories.CompanyRepository
 import de.grimsi.gameyfin.games.repositories.GameRepository
-import de.grimsi.gameyfin.games.repositories.ImageContentStore
-import de.grimsi.gameyfin.games.repositories.ImageRepository
+import de.grimsi.gameyfin.libraries.Library
+import de.grimsi.gameyfin.media.ImageService
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -22,8 +21,7 @@ import org.apache.commons.io.FilenameUtils
 import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import java.net.URI
-import java.net.URLConnection
+import org.springframework.transaction.annotation.Transactional
 import java.nio.file.Path
 
 @Service
@@ -31,11 +29,12 @@ class GameService(
     private val pluginManager: PluginManager,
     private val pluginManagementService: PluginManagementService,
     private val gameRepository: GameRepository,
-    private val companyRepository: CompanyRepository,
-    private val imageRepository: ImageRepository,
-    private val imageContentStore: ImageContentStore
+    private val companyService: CompanyService,
+    private val imageService: ImageService
 ) {
-    private val log = KotlinLogging.logger {}
+    companion object {
+        private val log = KotlinLogging.logger {}
+    }
 
     private val metadataPlugins: List<GameMetadataProvider>
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
@@ -45,7 +44,21 @@ class GameService(
         return gameRepository.save(game)
     }
 
-    fun createFromFile(path: Path): Game? {
+    @Transactional
+    fun create(games: Collection<Game>): Collection<Game> {
+        val gamesToBePersisted = games.filter { it.id == null }
+
+        gamesToBePersisted.forEach { game ->
+            game.publishers = game.publishers.map { companyService.createOrGet(it) }.toSet()
+            game.developers = game.developers.map { companyService.createOrGet(it) }.toSet()
+            game
+        }
+
+        return gameRepository.saveAll(gamesToBePersisted)
+    }
+
+    @Transactional
+    fun matchFromFile(path: Path, library: Library): Game? {
         val query = FilenameUtils.removeExtension(path.fileName.toString())
 
         // Step 0: Query all metadata plugins for metadata on the provided game title
@@ -67,10 +80,10 @@ class GameService(
         }
 
         // Step 4: Merge results into a single Game entity
-        val mergedGame = mergeResults(sortedResults, path)
+        val mergedGame = mergeResults(sortedResults, path, library)
 
         // Step 5: Save the new game
-        return createOrUpdate(mergedGame)
+        return mergedGame
     }
 
     fun getAllGames(): Collection<GameDto> {
@@ -123,7 +136,7 @@ class GameService(
         val availableTitles = results.map { it.value.title }
         val bestMatchingTitle = FuzzySearch.extractOne(originalQuery, availableTitles).string
 
-        log.info { "Best matching title: '$bestMatchingTitle' for '$originalQuery' determined from $availableTitles" }
+        log.debug { "Best matching title: '$bestMatchingTitle' for '$originalQuery' determined from $availableTitles" }
 
         return results.filter { it.value.title.alphaNumeric() == bestMatchingTitle.alphaNumeric() }
     }
@@ -133,8 +146,12 @@ class GameService(
      * The merging is done by taking the first non-null value for each field
      * The plugin with the highest possible priority is used as the source for each field
      */
-    private fun mergeResults(results: List<Map.Entry<GameMetadataProvider, GameMetadata?>>, path: Path): Game {
-        val mergedGame = Game(path = path.toString())
+    private fun mergeResults(
+        results: List<Map.Entry<GameMetadataProvider, GameMetadata?>>,
+        path: Path,
+        library: Library
+    ): Game {
+        val mergedGame = Game(path = path.toString(), library = library)
         val metadataMap = mutableMapOf<String, FieldMetadata>()
         val originalIdsMap = mutableMapOf<PluginManagementEntry, String>()
 
@@ -163,7 +180,7 @@ class GameService(
                 }
                 metadata.coverUrl?.let { coverUrl ->
                     if (!metadataMap.containsKey("coverImage")) {
-                        mergedGame.coverImage = downloadAndPersist(coverUrl, ImageType.COVER)
+                        mergedGame.coverImage = Image(originalUrl = coverUrl.toURL(), type = ImageType.COVER)
                         metadataMap["coverImage"] = FieldMetadata(sourcePlugin)
                     }
                 }
@@ -188,14 +205,14 @@ class GameService(
                 metadata.publishedBy?.takeIf { it.isNotEmpty() }?.let { publishedBy ->
                     if (!metadataMap.containsKey("publishers")) {
                         mergedGame.publishers =
-                            publishedBy.map { name -> toEntity(name, CompanyType.PUBLISHER) }.toSet()
+                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }.toSet()
                         metadataMap["publishers"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.developedBy?.takeIf { it.isNotEmpty() }?.let { developedBy ->
                     if (!metadataMap.containsKey("developers")) {
                         mergedGame.developers =
-                            developedBy.map { name -> toEntity(name, CompanyType.DEVELOPER) }.toSet()
+                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }.toSet()
                         metadataMap["developers"] = FieldMetadata(sourcePlugin)
                     }
                 }
@@ -231,9 +248,9 @@ class GameService(
                 }
                 metadata.screenshotUrls?.takeIf { it.isNotEmpty() }?.let { screenshotUrls ->
                     if (!metadataMap.containsKey("images")) {
-                        mergedGame.images =
-                            screenshotUrls.map { url -> downloadAndPersist(url, ImageType.SCREENSHOT) }.toSet()
-                        metadataMap["images"] = FieldMetadata(sourcePlugin)
+                        mergedGame.images = runBlocking {
+                            screenshotUrls.map { Image(originalUrl = it.toURL(), type = ImageType.SCREENSHOT) }.toSet()
+                        }
                     }
                 }
                 metadata.videoUrls?.takeIf { it.isNotEmpty() }?.let { videoUrls ->
@@ -247,30 +264,34 @@ class GameService(
 
         mergedGame.metadata = metadataMap
         mergedGame.originalIds = originalIdsMap
+
         return mergedGame
     }
 
     fun toDto(game: Game): GameDto {
         val gameId = game.id ?: throw IllegalArgumentException("Game ID is null")
+        val gameLibraryId = game.library.id ?: throw IllegalArgumentException("Game library ID is null")
+        val gameTitle = game.title ?: throw IllegalArgumentException("Game title is null")
 
         return GameDto(
             id = gameId,
-            title = game.title!!,
+            libraryId = gameLibraryId,
+            title = gameTitle,
             coverId = game.coverImage?.id,
             comment = game.comment,
             summary = game.summary,
             release = game.release,
             userRating = game.userRating,
             criticRating = game.criticRating,
-            publishers = game.publishers?.map { it.name },
-            developers = game.developers?.map { it.name },
-            genres = game.genres?.map { it.name },
-            themes = game.themes?.map { it.name },
-            keywords = game.keywords?.toList(),
-            features = game.features?.map { it.name },
+            publishers = game.publishers.map { it.name },
+            developers = game.developers.map { it.name },
+            genres = game.genres.map { it.name },
+            themes = game.themes.map { it.name },
+            keywords = game.keywords.toList(),
+            features = game.features.map { it.name },
             perspectives = game.perspectives?.map { it.name },
-            imageIds = game.images?.mapNotNull { it.id },
-            videoUrls = game.videoUrls?.map { it.toString() },
+            imageIds = game.images.mapNotNull { it.id },
+            videoUrls = game.videoUrls.map { it.toString() },
             path = game.path,
             metadata = toDto(game.metadata),
             originalIds = game.originalIds.mapKeys { it.key.pluginId }
@@ -286,23 +307,5 @@ class GameService(
             source = metadata.source.pluginId,
             lastUpdated = metadata.lastUpdated
         )
-    }
-
-    private fun toEntity(companyName: String, companyType: CompanyType): Company {
-        companyRepository.findByNameAndType(companyName, companyType)?.let { return it }
-        val company = Company(name = companyName, type = companyType)
-        return companyRepository.save(company)
-    }
-
-    private fun downloadAndPersist(imageUrl: URI, type: ImageType): Image {
-        val parsedUrl = imageUrl.toURL()
-        imageRepository.findByOriginalUrl(parsedUrl)?.let { return it }
-
-        val image = Image(originalUrl = parsedUrl, type = type)
-        parsedUrl.openStream().use { input ->
-            image.mimeType = URLConnection.guessContentTypeFromName(parsedUrl.file)
-            imageContentStore.setContent(image, input)
-        }
-        return imageRepository.save(image)
     }
 }

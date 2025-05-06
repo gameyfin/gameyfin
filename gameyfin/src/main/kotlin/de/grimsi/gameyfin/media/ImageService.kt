@@ -4,6 +4,8 @@ import de.grimsi.gameyfin.games.entities.Image
 import de.grimsi.gameyfin.games.entities.ImageType
 import de.grimsi.gameyfin.games.repositories.ImageContentStore
 import de.grimsi.gameyfin.games.repositories.ImageRepository
+import org.apache.tika.Tika
+import org.apache.tika.io.TikaInputStream
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import java.io.InputStream
@@ -13,15 +15,29 @@ class ImageService(
     private val imageRepository: ImageRepository,
     private val imageContentStore: ImageContentStore
 ) {
+    companion object {
+        private val tika = Tika();
+    }
 
-    fun getImage(id: Long): Image? {
-        return imageRepository.findByIdOrNull(id)
+    fun downloadIfNew(image: Image) {
+        if (image.originalUrl == null) throw IllegalArgumentException("Image must have an original URL")
+
+        imageRepository.findByOriginalUrl(image.originalUrl)?.let { return }
+
+        TikaInputStream.get { image.originalUrl.openStream() }.use { input ->
+            image.mimeType = tika.detect(input)
+            imageContentStore.setContent(image, input)
+        }
     }
 
     fun createFile(type: ImageType, content: InputStream, mimeType: String): Image {
         val image = Image(type = type, mimeType = mimeType)
         imageRepository.save(image)
         return imageContentStore.setContent(image, content)
+    }
+
+    fun getImage(id: Long): Image? {
+        return imageRepository.findByIdOrNull(id)
     }
 
     fun getFileContent(id: Long): InputStream? {

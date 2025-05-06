@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.games.entities
 
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
+import de.grimsi.gameyfin.libraries.Library
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameFeature
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
 import de.grimsi.gameyfin.pluginapi.gamemetadata.PlayerPerspective
@@ -14,6 +15,10 @@ class Game(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "library_id")
+    val library: Library,
 
     var title: String? = null,
 
@@ -34,32 +39,32 @@ class Game(
 
     var criticRating: Int? = null,
 
-    @ManyToMany
-    var publishers: Set<Company>? = null,
+    @ManyToMany(cascade = [CascadeType.ALL])
+    var publishers: Set<Company> = emptySet(),
 
-    @ManyToMany
-    var developers: Set<Company>? = null,
+    @ManyToMany(cascade = [CascadeType.ALL])
+    var developers: Set<Company> = emptySet(),
 
     @ElementCollection(targetClass = Genre::class)
-    var genres: Set<Genre>? = null,
+    var genres: Set<Genre> = emptySet(),
 
     @ElementCollection(targetClass = Theme::class)
-    var themes: Set<Theme>? = null,
+    var themes: Set<Theme> = emptySet(),
 
     @ElementCollection
-    var keywords: Set<String>? = null,
+    var keywords: Set<String> = emptySet(),
 
     @ElementCollection(targetClass = GameFeature::class)
-    var features: Set<GameFeature>? = null,
+    var features: Set<GameFeature> = emptySet(),
 
     @ElementCollection(targetClass = PlayerPerspective::class)
     var perspectives: Set<PlayerPerspective>? = null,
 
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    var images: Set<Image>? = null,
+    var images: Set<Image> = emptySet(),
 
     @ElementCollection
-    var videoUrls: Set<URI>? = null,
+    var videoUrls: Set<URI> = emptySet(),
 
     @Column(unique = true)
     val path: String,
