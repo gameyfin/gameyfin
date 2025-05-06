@@ -1,6 +1,7 @@
 package de.grimsi.gameyfin.plugins.igdb
 
 import com.api.igdb.apicalypse.APICalypse
+import com.api.igdb.exceptions.RequestException
 import com.api.igdb.request.IGDBWrapper
 import com.api.igdb.request.TwitchAuthenticator
 import com.api.igdb.request.games
@@ -12,6 +13,7 @@ import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
+import org.slf4j.LoggerFactory
 import proto.Game
 import java.time.Instant
 
@@ -61,70 +63,66 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
     @Extension
     class IgdbMetadataProvider : GameMetadataProvider {
 
-        private val QUERY_FIELDS = listOf(
-            "slug",
-            "name",
-            "summary",
-            "first_release_date",
-            "rating",
-            "aggregated_rating",
-            "total_rating",
-            "category",
-            "multiplayer_modes.lancoop",
-            "game_modes.slug",
-            "game_modes.name",
-            "cover.image_id",
-            "screenshots.image_id",
-            "videos.video_id",
-            "involved_companies.company.slug",
-            "involved_companies.company.name",
-            "involved_companies.developer",
-            "involved_companies.publisher",
-            "involved_companies.company.logo.image_id",
-            "genres.slug",
-            "genres.name",
-            "keywords.slug",
-            "keywords.name",
-            "themes.slug",
-            "themes.name",
-            "player_perspectives.slug",
-            "player_perspectives.name",
-            "platforms.slug",
-            "platforms.name",
-            "platforms.platform_logo.image_id"
-        ).joinToString(",")
+        companion object {
+            private val log = LoggerFactory.getLogger(this::class.java)
+
+            private val QUERY_FIELDS = listOf(
+                "slug",
+                "name",
+                "summary",
+                "first_release_date",
+                "rating",
+                "aggregated_rating",
+                "total_rating",
+                "category",
+                "multiplayer_modes.lancoop",
+                "game_modes.slug",
+                "game_modes.name",
+                "cover.image_id",
+                "screenshots.image_id",
+                "videos.video_id",
+                "involved_companies.company.slug",
+                "involved_companies.company.name",
+                "involved_companies.developer",
+                "involved_companies.publisher",
+                "involved_companies.company.logo.image_id",
+                "genres.slug",
+                "genres.name",
+                "keywords.slug",
+                "keywords.name",
+                "themes.slug",
+                "themes.name",
+                "player_perspectives.slug",
+                "player_perspectives.name",
+                "platforms.slug",
+                "platforms.name",
+                "platforms.platform_logo.image_id"
+            ).joinToString(",")
+        }
 
         override fun fetchMetadata(gameId: String, maxResults: Int): List<GameMetadata> {
-            val findBySlugQuery = APICalypse()
-                .fields(QUERY_FIELDS)
-                .where("slug = \"${guessSlug(gameId)}\"")
-
-            // First step: Try to find the game by guessing the slug
-            var games = IGDBWrapper.games(findBySlugQuery)
-
-            // Second step: Try a fuzzy search
-            // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
-            if (games.isEmpty()) {
+            try {
+                // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
                 val searchByNameQuery = APICalypse()
                     .fields(QUERY_FIELDS)
                     .limit(100)
                     .search(gameId)
 
                 // Use IGDBs search function to get a list of games that match the search query
-                games = IGDBWrapper.games(searchByNameQuery)
+                var games = IGDBWrapper.games(searchByNameQuery)
 
                 if (games.isEmpty()) return emptyList()
 
                 // Use fuzzy search to find the best matching game name
                 val bestMatchingTitles = FuzzySearch.extractTop(gameId, games.map { it.name }, maxResults)
                 games = bestMatchingTitles.mapNotNull { title -> games.find { it.name == title.string } }
+
+                return games.map { toGameMetadata(it) }
+            } catch (e: RequestException) {
+                log.error("Request to IGDB API failed with HTTP ${e.statusCode}")
             }
 
-            return games.map { toGameMetadata(it) }
-        }
-
-        private fun guessSlug(gameId: String): String {
-            return gameId.replace(" ", "-").lowercase()
+            return emptyList()
         }
 
         private fun toGameMetadata(game: Game): GameMetadata {
