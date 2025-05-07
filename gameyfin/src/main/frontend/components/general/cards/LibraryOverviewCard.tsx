@@ -23,6 +23,7 @@ import {
 } from "@phosphor-icons/react";
 import LibraryDetailsModal from "Frontend/components/general/modals/LibraryDetailsModal";
 import LibraryUpdateDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryUpdateDto";
+import ScanType from "Frontend/generated/de/grimsi/gameyfin/libraries/enums/ScanType";
 
 export function LibraryOverviewCard({library, updateLibrary}: {
     library: LibraryDto,
@@ -85,7 +86,8 @@ export function LibraryOverviewCard({library, updateLibrary}: {
 
                     <div className="absolute right-0 top-0 flex flex-row">
                         <Tooltip content="Scan library" placement="bottom" color="foreground">
-                            <Button isIconOnly variant="light" onPress={() => LibraryEndpoint.triggerScan([library])}>
+                            <Button isIconOnly variant="light"
+                                    onPress={() => LibraryEndpoint.triggerScan(ScanType.QUICK, [library])}>
                                 <MagnifyingGlass/>
                             </Button>
                         </Tooltip>

@@ -122,7 +122,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
 
         /**
-         * Often titles on Steam copyright symbols which makes matching between different providers harder
+         * Often titles on Steam contain copyright symbols which makes matching between different providers harder
          * This method removes those symbols
          */
         private fun sanitizeTitle(originalTitle: String): String {

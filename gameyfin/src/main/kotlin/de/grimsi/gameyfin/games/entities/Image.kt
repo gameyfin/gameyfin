@@ -1,6 +1,5 @@
 package de.grimsi.gameyfin.games.entities
 
-import jakarta.annotation.Nullable
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -21,15 +20,12 @@ class Image(
     val type: ImageType,
 
     @ContentId
-    @Nullable
     var contentId: String? = null,
 
     @ContentLength
-    @Nullable
     var contentLength: Long? = null,
 
     @MimeType
-    @Nullable
     var mimeType: String? = null
 )
 

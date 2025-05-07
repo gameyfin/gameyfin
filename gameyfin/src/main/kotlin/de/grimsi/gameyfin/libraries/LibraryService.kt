@@ -1,30 +1,29 @@
 package de.grimsi.gameyfin.libraries
 
 import de.grimsi.gameyfin.core.filesystem.FilesystemService
-import de.grimsi.gameyfin.games.CompanyService
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.entities.Game
 import de.grimsi.gameyfin.libraries.dto.LibraryDto
 import de.grimsi.gameyfin.libraries.dto.LibraryStatsDto
 import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
+import de.grimsi.gameyfin.libraries.enums.ScanType
 import de.grimsi.gameyfin.media.ImageService
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.runBlocking
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import java.util.concurrent.Callable
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.measureTimedValue
 
 @Service
 class LibraryService(
     private val libraryRepository: LibraryRepository,
     private val filesystemService: FilesystemService,
     private val gameService: GameService,
-    private val imageService: ImageService,
-    private val companyService: CompanyService
+    private val imageService: ImageService
 ) {
 
     companion object {
@@ -124,29 +123,49 @@ class LibraryService(
      */
     fun addGamesToLibrary(games: Collection<Game>, library: Library): Library {
         val newGames = games.filter { game -> library.games.none { it.id == game.id } }
-        library.games = library.games.toMutableSet().apply { addAll(newGames) }
-        return libraryRepository.save(library)
+        library.games.addAll(newGames)
+        return library
     }
 
     /**
      * Wrapper function to trigger a scan for a list of libraries.
      */
-    fun triggerScan(libraryDtos: Collection<LibraryDto>?) = runBlocking {
-        scan(libraryDtos)
+    fun triggerScan(scanType: ScanType, libraryDtos: Collection<LibraryDto>?) {
+        val scanResult = measureTimedValue {
+            when (scanType) {
+                ScanType.QUICK -> quickScan(libraryDtos)
+                ScanType.FULL -> TODO()
+            }
+        }
+
+        log.info {
+            """
+            Scan completed in ${scanResult.duration}.
+            Libraries scanned: ${libraryDtos?.joinToString { it.name } ?: "all libraries"}
+            Scan type: ${scanType.toString().lowercase()}
+            New games added: ${scanResult.value.newGames.size}
+            Removed games: ${scanResult.value.removedGames.size}
+            New unmatched paths: ${scanResult.value.newUnmatchedPaths.size}
+        """.trimIndent()
+        }
     }
 
     /**
-     * Triggers a scan for a list of libraries.
+     * Triggers a quick scan for a list of libraries.
+     * A quick scan will only scan for new games and deleted games, but will not touch existing games.
      * If no list is provided, all libraries will be scanned.
      *
      * @param libraryDtos: List of LibraryDto objects to scan.
      */
-    @Transactional(timeout = Integer.MAX_VALUE)
-    fun scan(libraryDtos: Collection<LibraryDto>?) {
+    fun quickScan(libraryDtos: Collection<LibraryDto>?): LibraryScanResult {
         val libraries = libraryDtos?.map { toEntity(it) } ?: libraryRepository.findAll()
 
-        libraries.forEach { library ->
-            val gamePaths = filesystemService.scanLibraryForGamefiles(library)
+        val scanResults: List<LibraryScanResult> = libraries.map { library ->
+            val scanResult = filesystemService.scanLibraryForGamefiles(library)
+            val gamePaths = scanResult.newPaths
+            val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
+            val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
+
             val totalPaths = gamePaths.size
             val completedMetadata = AtomicInteger(0)
             val completedImageDownload = AtomicInteger(0)
@@ -154,21 +173,41 @@ class LibraryService(
             log.info { "Scanning library '${library.name}' with $totalPaths paths..." }
 
             // 1. Fetch metadata for each game
+            val newUnmatchedPaths = ConcurrentHashMap.newKeySet<String>()
+
             val metadataTasks = gamePaths.map { path ->
                 Callable<Game?> {
                     try {
                         val game = gameService.matchFromFile(path, library)
+
+                        if (game == null) {
+                            newUnmatchedPaths.add(path.toString())
+                            return@Callable null
+                        }
+
                         val progress = completedMetadata.incrementAndGet()
                         log.info { "${progress}/${totalPaths} metadata matched" }
-                        game
+
+                        return@Callable game
                     } catch (e: Exception) {
                         log.error(e) { "Error processing game: ${e.message}" }
-                        null
+                        newUnmatchedPaths.add(path.toString())
+
+                        return@Callable null
                     }
                 }
             }
 
+            // 1.1 Wait for all metadata tasks to complete
             val matchedGames = executor.invokeAll(metadataTasks).mapNotNull { it.get() }
+
+            // 1.2 Add unmatched paths to the library
+            library.unmatchedPaths.removeAll(removedUnmatchedPaths)
+            library.unmatchedPaths.addAll(newUnmatchedPaths)
+
+            // 1.3 Remove deleted games from the library
+            val removedGames = gameService.getAllByPaths(removedGamePaths)
+            library.games.removeAll(removedGames)
 
             // 2. Download all images
             val totalImages = matchedGames.count { it.coverImage != null } + matchedGames.sumOf { it.images.size }
@@ -198,13 +237,31 @@ class LibraryService(
 
             val gamesWithImages = executor.invokeAll(imageDownloadTasks).mapNotNull { it.get() }
 
-            // 3. Persist entities
+            // 3. Persist new games
             val persistedGames = gameService.create(gamesWithImages)
             log.info { "${persistedGames.size}/${totalPaths} saved to database" }
 
-            // 4. Add games to library
+            // 4. Add new games to library
             addGamesToLibrary(persistedGames, library)
-            log.info { "Scan finished, matched ${persistedGames.size} new games" }
+
+            // 5. Persist library
+            libraryRepository.save(library)
+
+            return LibraryScanResult(
+                libraries = setOf(library),
+                newGames = persistedGames.toSet(),
+                removedGames = removedGames.toSet(),
+                newUnmatchedPaths = newUnmatchedPaths
+            )
+        }
+
+        return scanResults.reduce { acc, scanResult ->
+            LibraryScanResult(
+                libraries = acc.libraries + scanResult.libraries,
+                newGames = acc.newGames + scanResult.newGames,
+                removedGames = acc.removedGames + scanResult.removedGames,
+                newUnmatchedPaths = acc.newUnmatchedPaths + scanResult.newUnmatchedPaths
+            )
         }
     }
 

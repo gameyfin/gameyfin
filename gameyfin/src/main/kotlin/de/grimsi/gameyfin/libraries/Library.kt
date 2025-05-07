@@ -14,6 +14,9 @@ class Library(
     @ElementCollection(fetch = FetchType.EAGER)
     var directories: MutableSet<String> = HashSet<String>(),
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    var games: MutableSet<Game> = HashSet<Game>()
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
+    var games: MutableSet<Game> = HashSet<Game>(),
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    var unmatchedPaths: MutableSet<String> = HashSet<String>()
 )

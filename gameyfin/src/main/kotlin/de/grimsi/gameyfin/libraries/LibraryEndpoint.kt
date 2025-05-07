@@ -6,6 +6,7 @@ import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.libraries.dto.LibraryDto
 import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
+import de.grimsi.gameyfin.libraries.enums.ScanType
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 
@@ -24,8 +25,8 @@ class LibraryEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun triggerScan(libraries: Collection<LibraryDto>?) {
-        return libraryService.triggerScan(libraries)
+    fun triggerScan(scanType: ScanType = ScanType.QUICK, libraries: Collection<LibraryDto>?) {
+        return libraryService.triggerScan(scanType, libraries)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

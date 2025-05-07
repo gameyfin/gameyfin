@@ -39,10 +39,10 @@ class Game(
 
     var criticRating: Int? = null,
 
-    @ManyToMany(cascade = [CascadeType.ALL])
+    @ManyToMany(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH])
     var publishers: Set<Company> = emptySet(),
 
-    @ManyToMany(cascade = [CascadeType.ALL])
+    @ManyToMany(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH])
     var developers: Set<Company> = emptySet(),
 
     @ElementCollection(targetClass = Genre::class)

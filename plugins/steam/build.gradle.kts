@@ -1,4 +1,4 @@
-val ktor_version = "3.0.0"
+val ktor_version = "3.1.2"
 
 plugins {
     id("com.google.devtools.ksp")

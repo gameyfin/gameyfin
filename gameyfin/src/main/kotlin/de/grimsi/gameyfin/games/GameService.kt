@@ -86,6 +86,10 @@ class GameService(
         return mergedGame
     }
 
+    fun getAllByPaths(paths: Collection<String>): Collection<Game> {
+        return gameRepository.findAllByPathIn(paths)
+    }
+
     fun getAllGames(): Collection<GameDto> {
         val entities = gameRepository.findAll()
         return entities.map { toDto(it) }

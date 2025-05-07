@@ -2,16 +2,13 @@ package de.grimsi.gameyfin.users.preferences
 
 import de.grimsi.gameyfin.core.security.EncryptionConverter
 import jakarta.persistence.*
-import jakarta.validation.constraints.NotNull
 import java.io.Serializable
 
 @Entity
 class UserPreference(
-    @NotNull
     @EmbeddedId
     val id: UserPreferenceKey,
 
-    @NotNull
     @Column(name = "`value`")
     @Convert(converter = EncryptionConverter::class)
     var value: String

@@ -75,7 +75,7 @@ class FilesystemService(
      * @param library The library to scan.
      * @return A list of paths representing game files and directories.
      */
-    fun scanLibraryForGamefiles(library: Library): List<Path> {
+    fun scanLibraryForGamefiles(library: Library): FilesystemScanResult {
         // Cache the game file extensions to avoid reading them multiple times in the same scan
         val gamefileExtensions = gameFileExtensions
 
@@ -90,11 +90,39 @@ class FilesystemService(
                 }
             }
 
-        // Return all paths that are directories or match the game file extensions
-        return validDirectories.flatMap { validDirectory ->
+        // Get all paths that are directories or match the game file extensions
+        val currentFilesystemPaths = validDirectories.flatMap { validDirectory ->
             safeReadDirectoryContents(validDirectory)
                 .filter { it.isDirectory() || it.extension.lowercase() in gamefileExtensions }
         }
+
+        // Get all paths already in the library as game files or as unmatched paths
+        val currentLibraryGamePaths = library.games.map { Path(it.path) }
+        val currentLibraryUnmatchedPaths = library.unmatchedPaths.map { Path(it) }
+        val allCurrentLibraryPaths = currentLibraryGamePaths + currentLibraryUnmatchedPaths
+
+        //Get all paths that are on the filesystem, but not in the library (either as game or as unmatched path)
+        val newPaths = currentFilesystemPaths.filter { path ->
+            val isInLibrary = allCurrentLibraryPaths.any { it == path }
+            !isInLibrary
+        }.toSet()
+
+        //Get all paths that are in the library (either as game or as unmatched path), but not on the filesystem
+        val removedGamePaths = currentLibraryGamePaths.filter { path ->
+            val isOnFilesystem = currentFilesystemPaths.any { it == path }
+            !isOnFilesystem
+        }.toSet()
+
+        val removedUnmatchedPaths = currentLibraryUnmatchedPaths.filter { path ->
+            val isOnFilesystem = currentFilesystemPaths.any { it == path }
+            !isOnFilesystem
+        }.toSet()
+
+        return FilesystemScanResult(
+            newPaths = newPaths,
+            removedGamePaths = removedGamePaths,
+            removedUnmatchedPaths = removedUnmatchedPaths
+        )
     }
 
     private fun safeReadDirectoryContents(path: String): List<FileDto> {
