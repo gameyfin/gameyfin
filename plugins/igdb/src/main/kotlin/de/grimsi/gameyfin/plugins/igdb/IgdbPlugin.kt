@@ -16,6 +16,7 @@ import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import proto.Game
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
 class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
@@ -119,6 +120,14 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
                 return games.map { toGameMetadata(it) }
             } catch (e: RequestException) {
+                // FIXME: Handle rate limit errors with exponential backoff
+                if (e.statusCode == 429) {
+                    val randomInterval = (1..5).random().toLong()
+                    log.warn("IGDB rate limit exceeded, retrying in $randomInterval seconds...")
+                    TimeUnit.SECONDS.sleep(randomInterval)
+                    return fetchMetadata(gameId, maxResults)
+                }
+
                 log.error("Request to IGDB API failed with HTTP ${e.statusCode}")
             }
 
