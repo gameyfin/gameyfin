@@ -32,14 +32,14 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
     const [error, setError] = useState<string>();
 
     useEffect(() => {
-        setSelectedRole(rolesToSelection(user.roles!));
+        setSelectedRole(rolesToSelection(user.roles));
         UserEndpoint.getRolesBelow().then((availableRoles) => {
-            setAvailableRoles(availableRoles!.map((role) => ({id: role!.toString()})));
+            setAvailableRoles(availableRoles.map((role) => ({id: role.toString()})));
         });
     }, []);
 
-    function rolesToSelection(roles: Array<string | undefined>): Selection {
-        return new Set(roles.map((role) => role!.toString()));
+    function rolesToSelection(roles: Array<string>): Selection {
+        return new Set(roles.map((role) => role.toString()));
     }
 
     async function assignRoles() {
@@ -47,7 +47,6 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
 
         let selectedRolesArray = Array.from(selectedRole).map((role) => role.toString());
         let result = await UserEndpoint.assignRoles(user.username, selectedRolesArray);
-        if (!result) return;
         switch (result) {
             case RoleAssignmentResult.SUCCESS:
                 window.location.reload();

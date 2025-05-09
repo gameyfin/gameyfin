@@ -14,7 +14,7 @@ function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
     const editorModal = useDisclosure();
     const testNotificationModal = useDisclosure();
     const [availableTemplates, setAvailableTemplates] = useState<MessageTemplateDto[]>([]);
-    const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplateDto | null>(null);
+    const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplateDto>();
 
     useEffect(() => {
         MessageTemplateEndpoint.getAll().then((response: any) => {
@@ -113,13 +113,13 @@ function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
             <EditTemplateModal
                 isOpen={editorModal.isOpen}
                 onOpenChange={editorModal.onOpenChange}
-                selectedTemplate={selectedTemplate}
+                selectedTemplate={selectedTemplate!!}
             />
 
             <SendTestNotificationModal
                 isOpen={testNotificationModal.isOpen}
                 onOpenChange={testNotificationModal.onOpenChange}
-                selectedTemplate={selectedTemplate}
+                selectedTemplate={selectedTemplate!!}
             />
         </div>
     );

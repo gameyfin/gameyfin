@@ -10,7 +10,7 @@ import UserInvitationAcceptanceResult
     from "Frontend/generated/de/grimsi/gameyfin/users/enums/UserInvitationAcceptanceResult";
 
 export default function InvitationRegistrationView() {
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const [token, setToken] = useState<string>();
     const [email, setEmail] = useState<string>();
     const navigate = useNavigate();
@@ -24,6 +24,8 @@ export default function InvitationRegistrationView() {
     }, [searchParams]);
 
     async function register(values: any, formik: any) {
+        if (!token || !email) return;
+
         let result = await RegistrationEndpoint.acceptInvitation(token, {
             email: email,
             username: values.username,

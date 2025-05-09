@@ -17,7 +17,7 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
     }, []);
 
     async function inviteUser(onClose: () => void) {
-        if (email === null) return;
+        if (!email) return;
 
         if (await UserEndpoint.existsByMail(email)) {
             setError("User with this email already exists");

@@ -21,6 +21,8 @@ export default function PasswordResetModal({
     }, []);
 
     async function resetPassword() {
+        if (!resetEmail) return;
+
         await PasswordResetEndpoint.requestPasswordReset(resetEmail);
         addToast({
             title: "Password reset requested",

@@ -12,8 +12,6 @@ export default function PluginManagement() {
 
     useEffect(() => {
         PluginManagementEndpoint.getPlugins().then((response) => {
-            if (response === undefined) return;
-
             let sortedPlugins: PluginDto[] = response
                 .filter(p => !!p)
                 .sort((a: PluginDto, b: PluginDto) => {

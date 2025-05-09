@@ -28,12 +28,9 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
     const [flattenedFileTree, setFlattenedFileTree] = useState<INode[]>([rootNode]);
 
     useEffect(() => {
-        FilesystemEndpoint.getHostOperatingSystem().then(
-            result => {
-                if (result === undefined) return;
-                setHostOSType(result);
-            }
-        )
+        FilesystemEndpoint.getHostOperatingSystem().then((response) => {
+            setHostOSType(response);
+        })
 
         FilesystemEndpoint.listSubDirectories("").then(
             result => {

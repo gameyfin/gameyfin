@@ -9,7 +9,7 @@ import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/t
 interface SendTestNotificationModalProps {
     isOpen: boolean;
     onOpenChange: () => void;
-    selectedTemplate: MessageTemplateDto | null;
+    selectedTemplate: MessageTemplateDto;
 }
 
 export default function SendTestNotificationModal({
@@ -35,7 +35,7 @@ export default function SendTestNotificationModal({
                             initialValues={{}}
                             isInitialValid={false}
                             onSubmit={async (values) => {
-                                await MessageEndpoint.sendTestNotification(selectedTemplate?.key, values);
+                                await MessageEndpoint.sendTestNotification(selectedTemplate.key, values);
                                 addToast({
                                     title: "Notification sent",
                                     description: "Test notification to you has been sent",
@@ -43,7 +43,7 @@ export default function SendTestNotificationModal({
                                 });
                                 onClose();
                             }}
-                            validationSchema={generateValidationSchema(selectedTemplate?.availablePlaceholders as string[])}
+                            validationSchema={generateValidationSchema(selectedTemplate.availablePlaceholders)}
                         >
                             {(formik) => (
                                 <Form>
@@ -53,7 +53,7 @@ export default function SendTestNotificationModal({
                                     <ModalBody>
                                         <p className="text-ls font-semibold mb-4">Fill the placeholders of the
                                             template</p>
-                                        {selectedTemplate?.availablePlaceholders?.map((placeholder) =>
+                                        {selectedTemplate.availablePlaceholders.map((placeholder) =>
                                             <Input key={placeholder} label={placeholder} name={placeholder}/>
                                         )}
                                     </ModalBody>

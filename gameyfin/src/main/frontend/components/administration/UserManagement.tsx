@@ -17,7 +17,7 @@ function UserManagementLayout({getConfig, formik}: any) {
 
     useEffect(() => {
         UserEndpoint.getAllUsers().then(
-            (response) => setUsers(response as UserInfoDto[])
+            (response) => setUsers(response)
         );
 
         ConfigEndpoint.get("sso.oidc.auto-register-new-users").then(

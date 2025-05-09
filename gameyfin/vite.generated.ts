@@ -85,6 +85,8 @@ const themeOptions = {
 
 const hasExportedWebComponents = existsSync(path.resolve(frontendFolder, 'web-component.html'));
 
+const target = ['safari15', 'es2022'];
+
 // Block debug and trace logs.
 console.trace = () => {};
 console.debug = () => {};
@@ -139,10 +141,10 @@ function buildSWPlugin(opts: { devMode: boolean }): PluginOption {
           write: !devMode,
           minify: viteConfig.build.minify,
           outDir: viteConfig.build.outDir,
+          target,
           sourcemap: viteConfig.command === 'serve' || viteConfig.build.sourcemap,
           emptyOutDir: false,
           modulePreload: false,
-          target: ['safari15', 'es2022'],
           rollupOptions: {
             input: {
               sw: settings.clientServiceWorkerSource
@@ -698,12 +700,23 @@ export const vaadinConfig: UserConfigFn = (env) => {
       outDir: buildOutputFolder,
       emptyOutDir: devBundle,
       assetsDir: 'VAADIN/build',
-      target: ['safari15', 'es2022'],
+      target,
       rollupOptions: {
         input: {
           indexhtml: projectIndexHtml,
 
           ...(hasExportedWebComponents ? { webcomponenthtml: path.resolve(frontendFolder, 'web-component.html') } : {})
+        },
+        output: {
+          // Workaround to enable dynamic imports with top-level await for
+          // commonjs modules, such as "atmosphere.js" in Hilla. Extracting
+          // Rollup's commonjs helpers into separate manual chunk avoids
+          // circular dependencies in this case. Caused
+          //   - https://github.com/vitejs/vite/issues/10995
+          //   - https://github.com/rollup/rollup/issues/5884
+          //   - https://github.com/vitejs/vite/issues/19695
+          //   - https://github.com/vitejs/vite/issues/12209
+          manualChunks: (id: string) => id.startsWith('\0commonjsHelpers.js') ? 'commonjsHelpers' : null
         },
         onwarn: (warning: rollup.RollupLog, defaultHandler: rollup.LoggingFunction) => {
           const ignoreEvalWarning = [
@@ -719,6 +732,9 @@ export const vaadinConfig: UserConfigFn = (env) => {
       }
     },
     optimizeDeps: {
+      esbuildOptions: {
+        target,
+      },
       entries: [
         // Pre-scan entrypoints in Vite to avoid reloading on first open
         'generated/vaadin.ts'
@@ -836,11 +852,11 @@ export const vaadinConfig: UserConfigFn = (env) => {
           }
         }
       },
+      vitePluginFileSystemRouter({isDevMode: devMode}),
       checker({
         typescript: true
       }),
       productionMode && visualizer({ brotliSize: true, filename: bundleSizeFile })
-      , vitePluginFileSystemRouter({isDevMode: devMode})
     ]
   };
 };
