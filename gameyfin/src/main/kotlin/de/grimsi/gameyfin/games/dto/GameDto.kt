@@ -4,6 +4,8 @@ import java.time.Instant
 
 class GameDto(
     val id: Long,
+    val createdAt: Instant,
+    val updatedAt: Instant,
     val libraryId: Long,
     val title: String,
     val coverId: Long?,

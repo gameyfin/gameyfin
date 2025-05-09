@@ -7,6 +7,8 @@ import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
 import de.grimsi.gameyfin.pluginapi.gamemetadata.PlayerPerspective
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Theme
 import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
 import java.net.URI
 import java.time.Instant
 
@@ -15,6 +17,13 @@ class Game(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    var createdAt: Instant? = null,
+
+    @UpdateTimestamp
+    var updatedAt: Instant? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "library_id")

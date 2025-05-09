@@ -4,7 +4,6 @@ import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import React, {useEffect, useState} from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {GameCover} from "Frontend/components/general/GameCover";
-import Rand from "rand-seed";
 import {
     Alien,
     CastleTurret,
@@ -24,32 +23,21 @@ import {
 import LibraryDetailsModal from "Frontend/components/general/modals/LibraryDetailsModal";
 import LibraryUpdateDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryUpdateDto";
 import ScanType from "Frontend/generated/de/grimsi/gameyfin/libraries/enums/ScanType";
+import {randomGamesFromLibrary} from "Frontend/util/utils";
 
 export function LibraryOverviewCard({library, updateLibrary}: {
     library: LibraryDto,
     updateLibrary: (library: LibraryUpdateDto) => void
 }) {
     const MAX_COVER_COUNT = 5;
-    const rand = new Rand(library.id.toString());
 
-    const [randomGamesFromLibrary, setRandomGamesFromLibrary] = useState<GameDto[]>([]);
+    const [randomGames, setRandomGames] = useState<GameDto[]>([]);
     const libraryDetailsModal = useDisclosure();
 
     useEffect(() => {
-        LibraryEndpoint.getGamesInLibrary(library.id).then(
-            (response) => {
-                if (response === undefined) return;
-                const count = Math.min(response.length, MAX_COVER_COUNT)
-
-                let gamesFromLibrary: GameDto[] = response
-                    .filter(g => !!g)
-                    .sort((a: GameDto, b: GameDto) => a.id - b.id)
-                    .sort(() => rand.next() - 0.5)
-                    .slice(0, count)
-
-                setRandomGamesFromLibrary(gamesFromLibrary);
-            }
-        )
+        randomGamesFromLibrary(library, MAX_COVER_COUNT).then((games) => {
+            setRandomGames(games);
+        })
     }, []);
 
     return (
@@ -73,9 +61,9 @@ export function LibraryOverviewCard({library, updateLibrary}: {
                             <Lego size={28} className="absolute top-[30%] left-[20%] rotate-[30deg]"/>
                             <TreasureChest size={40} className="absolute top-[70%] left-[50%] rotate-[75deg]"/>
                         </div>
-                        {randomGamesFromLibrary.length > 0 &&
+                        {randomGames.length > 0 &&
                             <div className="absolute flex flex-row">
-                                {randomGamesFromLibrary.map((game) => (
+                                {randomGames.map((game) => (
                                     <GameCover game={game} size={100} radius="none" key={game.coverId}/>
                                 ))}
                             </div>

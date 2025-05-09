@@ -19,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.apache.commons.io.FilenameUtils
 import org.pf4j.PluginManager
+import org.springframework.data.domain.Limit
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -101,6 +102,16 @@ class GameService(
 
     fun deleteAll() {
         gameRepository.deleteAll()
+    }
+
+    fun getMostRecentlyAdded(count: Int): List<GameDto> {
+        return gameRepository.findByOrderByCreatedAtDesc(Limit.of(count))
+            .map { toDto(it) }
+    }
+
+    fun getMostRecentlyUpdated(count: Int): List<GameDto> {
+        return gameRepository.findByOrderByCreatedAtDesc(Limit.of(count))
+            .map { toDto(it) }
     }
 
     private fun getById(id: Long): Game {
@@ -274,11 +285,15 @@ class GameService(
 
     fun toDto(game: Game): GameDto {
         val gameId = game.id ?: throw IllegalArgumentException("Game ID is null")
+        val createdAt = game.createdAt ?: throw IllegalArgumentException("Game creation timestamp is null")
+        val updatedAt = game.updatedAt ?: throw IllegalArgumentException("Game update timestamp is null")
         val gameLibraryId = game.library.id ?: throw IllegalArgumentException("Game library ID is null")
         val gameTitle = game.title ?: throw IllegalArgumentException("Game title is null")
 
         return GameDto(
             id = gameId,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
             libraryId = gameLibraryId,
             title = gameTitle,
             coverId = game.coverImage?.id,

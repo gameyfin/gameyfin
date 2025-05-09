@@ -1,5 +1,9 @@
 import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
+import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
+import Rand from "rand-seed";
+import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
+import {LibraryEndpoint} from "Frontend/generated/endpoints";
 
 export function cssVar(variable: string) {
     return getComputedStyle(document.documentElement).getPropertyValue(`--${variable}`);
@@ -75,4 +79,19 @@ export function timeUntil(instantString: string, timeZone: string = moment.tz.gu
     }
 
     return "just now";
+}
+
+/**
+ * Select a random number of games from the library based on the library ID.
+ * @param library
+ * @param count
+ * @returns {GameDto[]}
+ */
+export async function randomGamesFromLibrary(library: LibraryDto, count: number): Promise<GameDto[]> {
+    const rand = new Rand(library.id.toString());
+    const games = await LibraryEndpoint.getGamesInLibrary(library.id);
+    return games
+        .sort((a: GameDto, b: GameDto) => a.id - b.id)
+        .sort(() => rand.next() - 0.5)
+        .slice(0, count);
 }

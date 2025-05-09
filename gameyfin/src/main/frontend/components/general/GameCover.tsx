@@ -7,7 +7,7 @@ interface GameCoverProps {
     radius?: "none" | "sm" | "md" | "lg" | "full";
 }
 
-export function GameCover({game, size = 300, radius}: GameCoverProps) {
+export function GameCover({game, size = 300, radius = "sm"}: GameCoverProps) {
     return (
         <Image
             alt={game.title}
