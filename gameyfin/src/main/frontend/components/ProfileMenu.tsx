@@ -60,7 +60,7 @@ export default function ProfileMenu() {
                 </div>
             </DropdownTrigger>
             <DropdownMenu disabledKeys={["username"]}>
-                <DropdownItem key="username">
+                <DropdownItem key="username" textValue={auth.state.user?.username}>
                     <p className="font-bold">Signed in as {auth.state.user?.username}</p>
                 </DropdownItem>
                 {profileMenuItems.filter(item => item.showIf !== false).map(({label, icon, onClick, color}) => {
@@ -72,6 +72,7 @@ export default function ProfileMenu() {
                             /* @ts-ignore */
                             color={color ? color : ""}
                             className={`text-${color} hover:bg-primary/20`}
+                            textValue={label}
                         >
                             {label}
                         </DropdownItem>

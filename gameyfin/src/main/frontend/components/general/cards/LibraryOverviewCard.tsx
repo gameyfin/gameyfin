@@ -3,7 +3,7 @@ import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/Libr
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import React, {useEffect, useState} from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
-import {GameCover} from "Frontend/components/general/GameCover";
+import {GameCover} from "Frontend/components/general/covers/GameCover";
 import {
     Alien,
     CastleTurret,

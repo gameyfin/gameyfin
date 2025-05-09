@@ -1,9 +1,9 @@
 import {useEffect, useState} from "react";
 import {GameEndpoint, LibraryEndpoint} from "Frontend/generated/endpoints";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
-import {HorizontalGameList} from "Frontend/components/general/HorizontalGameList";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {randomGamesFromLibrary} from "Frontend/util/utils";
+import {CoverRow} from "Frontend/components/general/CoverRow";
 
 export default function HomeView() {
     const [recentlyAddedGames, setRecentlyAddedGames] = useState<GameDto[]>([]);
@@ -15,7 +15,7 @@ export default function HomeView() {
             setLibraries(libraries);
 
             const gamePromises = libraries.map((library) =>
-                randomGamesFromLibrary(library, 10).then((games) => [library.id, games] as [number, GameDto[]])
+                randomGamesFromLibrary(library).then((games) => [library.id, games] as [number, GameDto[]])
             );
 
             Promise.all(gamePromises).then((results) => {
@@ -35,12 +35,14 @@ export default function HomeView() {
 
     return (
         <div className="w-full">
-            <p className="text-center text-2xl font-extrabold">Welcome to Gameyfin!</p>
             <div className="flex flex-col gap-2">
-                <HorizontalGameList title="Recently added" games={recentlyAddedGames}/>
+                <CoverRow title="Recently added" games={recentlyAddedGames}
+                          onPressShowMore={() => alert("show more of 'Recently added'")}/>
                 {libraries.map((library) => (
-                    <HorizontalGameList key={library.id} title={library.name}
-                                        games={libraryIdToGames.get(library.id) || []}/>
+                    <CoverRow key={library.id} title={library.name}
+                              games={libraryIdToGames.get(library.id) || []}
+                              onPressShowMore={() => alert(`show more of library '${library.name}'`)}
+                    />
                 ))}
             </div>
         </div>

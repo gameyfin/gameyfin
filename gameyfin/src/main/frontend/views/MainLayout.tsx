@@ -57,35 +57,34 @@ export default function MainLayout() {
     }
 
     return (
-        <div className="flex flex-col min-h-svh">
+        <div className="flex flex-col min-h-screen">
             {isExploding ? <Confetti {...confettiProps}/> : <></>}
-            <div className="flex flex-col flex-grow w-full 2xl:w-3/4 m-auto">
-                <Navbar maxWidth="full">
-                    <NavbarBrand as="button" onClick={() => navigate('/')}>
-                        <GameyfinLogo className="h-10 fill-foreground"/>
-                    </NavbarBrand>
-                    <NavbarContent justify="end">
-                        {auth.state.user?.emailConfirmed === false ?
-                            <NavbarItem>
-                                <small className="text-warning">Please confirm your email</small>
-                            </NavbarItem>
-                            :
-                            ""
-                        }
-                        <NavbarItem>
-                            <ProfileMenu/>
-                        </NavbarItem>
-                    </NavbarContent>
-                </Navbar>
 
-                <div className="w-full overflow-hidden ml-2 pr-8 mt-4">
-                    <Outlet/>
-                </div>
+            <Navbar maxWidth="full" className="2xl:px-[12.5%]">
+                <NavbarBrand as="button" onClick={() => navigate('/')}>
+                    <GameyfinLogo className="h-10 fill-foreground"/>
+                </NavbarBrand>
+                <NavbarContent justify="end">
+                    {auth.state.user?.emailConfirmed === false ?
+                        <NavbarItem>
+                            <small className="text-warning">Please confirm your email</small>
+                        </NavbarItem>
+                        :
+                        ""
+                    }
+                    <NavbarItem>
+                        <ProfileMenu/>
+                    </NavbarItem>
+                </NavbarContent>
+            </Navbar>
+
+            <div className="flex flex-col flex-grow 2xl:px-[12.5%] overflow-x-hidden mt-4">
+                <Outlet/>
             </div>
 
             <Divider className="mt-8"/>
-            <div className="flex flex-col w-full 2xl:w-3/4 m-auto">
-                <footer className="flex flex-row items-center justify-between py-4 px-12">
+            <div className="flex flex-col w-full 2xl:px-[12.5%]">
+                <footer className="flex flex-row items-center justify-between py-4">
                     <p>Gameyfin {PackageJson.version}</p>
                     <p className="flex flex-row gap-1 items-baseline">
                         Made with

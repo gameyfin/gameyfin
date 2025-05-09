@@ -87,11 +87,11 @@ export function timeUntil(instantString: string, timeZone: string = moment.tz.gu
  * @param count
  * @returns {GameDto[]}
  */
-export async function randomGamesFromLibrary(library: LibraryDto, count: number): Promise<GameDto[]> {
+export async function randomGamesFromLibrary(library: LibraryDto, count?: number): Promise<GameDto[]> {
     const rand = new Rand(library.id.toString());
     const games = await LibraryEndpoint.getGamesInLibrary(library.id);
     return games
         .sort((a: GameDto, b: GameDto) => a.id - b.id)
         .sort(() => rand.next() - 0.5)
-        .slice(0, count);
+        .slice(0, count ?? games.length);
 }
