@@ -37,10 +37,8 @@ export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: P
     }
 
     let {dragAndDropHooks} = useDragAndDrop({
-        // @ts-ignore
         getItems: (keys) =>
-            // @ts-ignore
-            [...keys].map((key) => ({'text/plain': sortedPlugins.getItem(key).name})),
+            [...keys].map((key) => ({'text/plain': sortedPlugins.getItem(key)!.name})),
         onReorder(e) {
             if (e.keys.has(e.target.key)) {
                 return; // Avoid placing a plugin before or after itself
@@ -105,8 +103,9 @@ export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: P
                                         key={plugin.id}
                                         className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5">
                                         <div className="flex flex-row gap-2 items-center">
-                                            <Chip size="sm"
-                                                  color="primary">{sortedPlugins.items.length - plugin.priority + 1}</Chip>
+                                            <Chip size="sm" color="primary">
+                                                {sortedPlugins.items.length - plugin.priority + 1}
+                                            </Chip>
                                             <p className="font-normal text-small">{plugin.name}</p>
                                         </div>
                                         <CaretUpDown/>

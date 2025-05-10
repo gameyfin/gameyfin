@@ -25,3 +25,4 @@ include(":plugins")
 
 include(":plugins:igdb")
 include(":plugins:steam")
+include(":plugins:steamgriddb")

@@ -1,12 +1,8 @@
-val ktor_version = "3.1.2"
+val ktor_version = "3.1.3"
 
 plugins {
     id("com.google.devtools.ksp")
     kotlin("plugin.serialization")
-}
-
-repositories {
-    maven(url = "https://jitpack.io")
 }
 
 dependencies {
