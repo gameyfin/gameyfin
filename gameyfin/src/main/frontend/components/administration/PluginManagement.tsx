@@ -56,9 +56,11 @@ export default function PluginManagement() {
             </div>
             <p>Notification plugins not yet supported.</p>
 
-            <PluginPrioritiesModal plugins={plugins}
-                                   isOpen={pluginPrioritiesModal.isOpen}
-                                   onOpenChange={pluginPrioritiesModal.onOpenChange}
+            <PluginPrioritiesModal
+                key={plugins.map(p => p.id + p.priority).join(',')} // force re-mount if plugin order changes
+                plugins={[...plugins].sort((a, b) => b.priority - a.priority)}
+                isOpen={pluginPrioritiesModal.isOpen}
+                onOpenChange={pluginPrioritiesModal.onOpenChange}
             />
         </div>
     );

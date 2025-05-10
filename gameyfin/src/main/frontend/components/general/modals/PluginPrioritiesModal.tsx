@@ -1,10 +1,10 @@
-import React, {useEffect} from "react";
+import React from "react";
 import {addToast, Button, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import {ListBox, ListBoxItem, useDragAndDrop} from "react-aria-components";
 import {CaretUpDown} from "@phosphor-icons/react";
-import {ListData, useListData} from "@react-stately/data";
+import {useListData} from "@react-stately/data";
 
 interface PluginPrioritiesModalProps {
     plugins: PluginDto[];
@@ -14,35 +14,16 @@ interface PluginPrioritiesModalProps {
 
 export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: PluginPrioritiesModalProps) {
 
-    let sortedPlugins: ListData<PluginDto> = useListData({
-        initialItems: plugins,
-        getKey: (plugin) => plugin.id!!
+    const sortedPlugins = useListData({
+        initialItems: plugins, // Already sorted in parent
+        getKey: (plugin) => plugin.id
     });
-
-    useEffect(() => {
-        clearSortedPlugins();
-        sortedPlugins.append(...sortPlugins(plugins));
-    }, [plugins]);
-
-    function sortPlugins(plugins: PluginDto[]): PluginDto[] {
-        return [...plugins].sort((a, b) => {
-            if (a.priority === undefined || b.priority === undefined) return 0;
-            return b.priority - a.priority;
-        });
-    }
-
-    function clearSortedPlugins() {
-        const keyList = sortedPlugins.items.map(plugin => plugin.id!!);
-        keyList.forEach(key => sortedPlugins.remove(key));
-    }
 
     let {dragAndDropHooks} = useDragAndDrop({
         getItems: (keys) =>
             [...keys].map((key) => ({'text/plain': sortedPlugins.getItem(key)!.name})),
         onReorder(e) {
-            if (e.keys.has(e.target.key)) {
-                return; // Avoid placing a plugin before or after itself
-            }
+            if (e.keys.has(e.target.key)) return;
 
             if (e.target.dropPosition === 'before' || e.target.dropPosition === 'on') {
                 sortedPlugins.moveBefore(e.target.key, e.keys);
@@ -50,19 +31,21 @@ export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: P
                 sortedPlugins.moveAfter(e.target.key, e.keys);
             }
 
-            // Recalculate priorities
+            // Recalculate priority based on new position (reversed)
             sortedPlugins.items.forEach((plugin, index) => {
-                sortedPlugins.update(plugin.id!!, {...plugin, priority: index + 1});
+                const reversedPriority = sortedPlugins.items.length - index;
+                sortedPlugins.update(plugin.id, {...plugin, priority: reversedPriority});
             });
         }
     });
 
     function generatePrioritiesMap(): Record<string, number> {
-        return sortedPlugins.items.reduce((acc, plugin) => {
-            if (plugin.id === undefined || plugin.priority === undefined) return acc;
-            acc[plugin.id] = plugin.priority;
-            return acc;
-        }, {} as Record<string, number>);
+        let map: Record<string, number> = {};
+        const totalPlugins = sortedPlugins.items.length;
+        sortedPlugins.items.forEach((plugin, index) => {
+            map[plugin.id] = totalPlugins - index; // Reverse order
+        });
+        return map;
     }
 
     async function setPluginPriorities(onClose: () => void) {
@@ -104,7 +87,7 @@ export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: P
                                         className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5">
                                         <div className="flex flex-row gap-2 items-center">
                                             <Chip size="sm" color="primary">
-                                                {sortedPlugins.items.length - plugin.priority + 1}
+                                                {sortedPlugins.items.findIndex(p => p.id === plugin.id) + 1}
                                             </Chip>
                                             <p className="font-normal text-small">{plugin.name}</p>
                                         </div>
