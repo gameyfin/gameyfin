@@ -4,12 +4,12 @@ import de.grimsi.gameyfin.core.alphaNumeric
 import de.grimsi.gameyfin.core.filterValuesNotNull
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
+import de.grimsi.gameyfin.core.replaceRomanNumerals
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.dto.GameMetadataDto
 import de.grimsi.gameyfin.games.entities.*
 import de.grimsi.gameyfin.games.repositories.GameRepository
 import de.grimsi.gameyfin.libraries.Library
-import de.grimsi.gameyfin.media.ImageService
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -30,10 +30,11 @@ class GameService(
     private val pluginManager: PluginManager,
     private val pluginManagementService: PluginManagementService,
     private val gameRepository: GameRepository,
-    private val companyService: CompanyService,
-    private val imageService: ImageService
+    private val companyService: CompanyService
 ) {
     companion object {
+        const val TITLE_MATCH_MIN_RATIO = 90
+
         private val log = KotlinLogging.logger {}
     }
 
@@ -58,7 +59,6 @@ class GameService(
         return gameRepository.saveAll(gamesToBePersisted)
     }
 
-    @Transactional
     fun matchFromFile(path: Path, library: Library): Game? {
         val query = FilenameUtils.removeExtension(path.fileName.toString())
 
@@ -75,15 +75,10 @@ class GameService(
         // Step 2: Filter results to find the best matching title
         val filteredResults = filterResults(query, validResults)
 
-        // Step 3: Sort results by plugin priority
-        val sortedResults = filteredResults.entries.sortedByDescending {
-            pluginManagementService.getPluginManagementEntry(it.key.javaClass).priority
-        }
+        // Step 3: Merge results into a single Game entity
+        val mergedGame = mergeResults(filteredResults, path, library)
 
-        // Step 4: Merge results into a single Game entity
-        val mergedGame = mergeResults(sortedResults, path, library)
-
-        // Step 5: Save the new game
+        // Step 4: Save the new game
         return mergedGame
     }
 
@@ -148,12 +143,19 @@ class GameService(
         originalQuery: String,
         results: Map<GameMetadataProvider, GameMetadata>
     ): Map<GameMetadataProvider, GameMetadata> {
-        val availableTitles = results.map { it.value.title }
-        val bestMatchingTitle = FuzzySearch.extractOne(originalQuery, availableTitles).string
+        val providerToTitle = results.entries.associate {
+            pluginManager.whichPlugin(it.key.javaClass).pluginId to it.value.title
+        }
 
-        log.debug { "Best matching title: '$bestMatchingTitle' for '$originalQuery' determined from $availableTitles" }
+        val bestMatchingTitle = FuzzySearch.extractOne(originalQuery, providerToTitle.values).string
 
-        return results.filter { it.value.title.alphaNumeric() == bestMatchingTitle.alphaNumeric() }
+        log.info {
+            "Best matching title: '$bestMatchingTitle' (${
+                providerToTitle.count { it.value.fuzzyMatchTitle(bestMatchingTitle) }
+            }/${providerToTitle.size} matches) for '$originalQuery' determined from $providerToTitle"
+        }
+
+        return results.filter { it.value.title.fuzzyMatchTitle(bestMatchingTitle) }
     }
 
     /**
@@ -162,7 +164,7 @@ class GameService(
      * The plugin with the highest possible priority is used as the source for each field
      */
     private fun mergeResults(
-        results: List<Map.Entry<GameMetadataProvider, GameMetadata?>>,
+        results: Map<GameMetadataProvider, GameMetadata?>,
         path: Path,
         library: Library
     ): Game {
@@ -170,13 +172,17 @@ class GameService(
         val metadataMap = mutableMapOf<String, FieldMetadata>()
         val originalIdsMap = mutableMapOf<PluginManagementEntry, String>()
 
+        // Cache the plugin management entries for each provider
+        val providerToManagementEntry =
+            results.entries.associate { it.key to pluginManagementService.getPluginManagementEntry(it.key.javaClass) }
+
         // Sort results by plugin priority
-        val sortedResults = results.sortedByDescending {
+        val sortedResults = results.entries.sortedByDescending {
             pluginManagementService.getPluginManagementEntry(it.key.javaClass).priority
         }
 
         sortedResults.forEach { (provider, metadata) ->
-            val sourcePlugin = pluginManagementService.getPluginManagementEntry(provider.javaClass)
+            val sourcePlugin = providerToManagementEntry[provider] ?: return@forEach
 
             metadata?.let { metadata ->
                 originalIdsMap[sourcePlugin] = metadata.originalId
@@ -327,4 +333,10 @@ class GameService(
             lastUpdated = metadata.lastUpdated
         )
     }
+
+    private fun String.fuzzyMatchTitle(other: String, minRatio: Int = TITLE_MATCH_MIN_RATIO): Boolean {
+        return FuzzySearch.ratio(this.normalizeGameTitle(), other.normalizeGameTitle()) > minRatio
+    }
+
+    fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals()
 }
