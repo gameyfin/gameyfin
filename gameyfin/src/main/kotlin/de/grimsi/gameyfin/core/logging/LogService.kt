@@ -1,10 +1,10 @@
-package de.grimsi.gameyfin.logs
+package de.grimsi.gameyfin.core.logging
 
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
-import de.grimsi.gameyfin.logs.util.AsyncFileTailer
+import de.grimsi.gameyfin.core.logging.util.AsyncFileTailer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationStartedEvent
@@ -41,18 +41,20 @@ class LogService(
         return configureFileLogging(
             config.get(ConfigProperties.Logs.Folder)!!,
             config.get(ConfigProperties.Logs.MaxHistoryDays)!!,
-            config.get(ConfigProperties.Logs.Level)!!
+            config.get(ConfigProperties.Logs.Level.Gameyfin)!!,
+            config.get(ConfigProperties.Logs.Level.Root)!!
         )
     }
 
-    fun configureFileLogging(folder: String, maxHistoryDays: Int, level: LogLevel) {
+    fun configureFileLogging(folder: String, maxHistoryDays: Int, levelGameyfin: LogLevel, levelRoot: LogLevel) {
         val context = LoggerFactory.getILoggerFactory() as LoggerContext
         val configurator = JoranConfigurator()
         configurator.context = context
         context.reset()
 
-        generateLogConfigXml(folder.removeSuffix("/"), maxHistoryDays, level).use {
-            log.info { "Setting log level to $level" }
+        generateLogConfigXml(folder.removeSuffix("/"), maxHistoryDays, levelGameyfin, levelRoot).use {
+            log.info { "Setting log level for Gameyfin to $levelGameyfin" }
+            log.info { "Setting log level for Root to $levelRoot" }
             log.info { "Setting log retention to $maxHistoryDays days" }
             configurator.doConfigure(it)
 
@@ -74,7 +76,8 @@ class LogService(
     private fun generateLogConfigXml(
         folder: String,
         maxHistoryDays: Int,
-        level: LogLevel
+        levelGameyfin: LogLevel,
+        levelRoot: LogLevel
     ): InputStream {
         val template = javaClass.classLoader.getResourceAsStream(LOG_CONFIG_TEMPLATE)
             ?: throw IllegalStateException("Log config template not found")
@@ -84,7 +87,8 @@ class LogService(
             .replace("{LOG_FOLDER}", folder)
             .replace("{LOG_FILE_NAME}", LOG_FILE_NAME)
             .replace("{LOG_MAX_HISTORY_DAYS}", maxHistoryDays.toString())
-            .replace("{LOG_LEVEL}", level.toString())
+            .replace("{LOG_LEVEL_GAMEYFIN}", levelGameyfin.toString())
+            .replace("{LOG_LEVEL_ROOT}", levelRoot.toString())
             .byteInputStream()
     }
 }

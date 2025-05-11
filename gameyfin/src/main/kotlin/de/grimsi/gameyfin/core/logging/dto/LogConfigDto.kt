@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.logs.dto
+package de.grimsi.gameyfin.core.logging.dto
 
 import org.springframework.boot.logging.LogLevel
 

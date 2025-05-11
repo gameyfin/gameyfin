@@ -20,7 +20,7 @@ class MessageTemplateService {
     private val log = KotlinLogging.logger {}
 
     fun getMessageTemplates(): List<MessageTemplateDto> {
-        log.info { "Getting all message templates" }
+        log.debug { "Getting all message templates" }
         val messageTemplates = MessageTemplates::class.sealedSubclasses.flatMap { subclass ->
             subclass.objectInstance?.let { listOf(it) } ?: listOf()
         }
@@ -35,7 +35,7 @@ class MessageTemplateService {
     }
 
     fun getMessageTemplateContent(key: String, type: TemplateType): String {
-        log.info { "Reading message template content for '$key.${type.extension}'" }
+        log.debug { "Reading message template content for '$key.${type.extension}'" }
         return getTemplateFile(key, type).readText()
     }
 
@@ -53,7 +53,7 @@ class MessageTemplateService {
     }
 
     fun setMessageTemplateContent(key: String, type: TemplateType, content: String) {
-        log.info { "Saving message template content for key '$key'" }
+        log.debug { "Saving message template content for key '$key'" }
         getOrCreateTemplateFile(key, type).writeText(content)
     }
 
@@ -80,7 +80,7 @@ class MessageTemplateService {
     }
 
     private fun getDefaultTemplateFile(key: String, type: TemplateType): Path {
-        log.info { "No custom message template found for '$key.${type.extension}', returning default" }
+        log.debug { "No custom message template found for '$key.${type.extension}', returning default" }
         val resourceUrl = javaClass.classLoader.getResource("$DEFAULT_TEMPLATE_PATH/$key.${type.extension}")
             ?: throw IllegalStateException("Default template file not found for '$key.${type.extension}'")
         return Paths.get(resourceUrl.toURI())

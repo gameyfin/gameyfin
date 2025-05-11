@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.logs.util
+package de.grimsi.gameyfin.core.logging.util
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope

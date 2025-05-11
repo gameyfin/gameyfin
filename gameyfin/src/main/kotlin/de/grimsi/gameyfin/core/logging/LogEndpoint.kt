@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.logs
+package de.grimsi.gameyfin.core.logging
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint

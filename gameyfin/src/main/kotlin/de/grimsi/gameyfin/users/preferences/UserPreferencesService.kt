@@ -21,7 +21,7 @@ class UserPreferencesService(
      * @return The current value if set or the default value or null if no value is set and no default value exists
      */
     fun <T : Serializable> get(userPreference: UserPreferences<T>): T? {
-        log.info { "Getting user preference '${userPreference.key}'" }
+        log.debug { "Getting user preference '${userPreference.key}'" }
 
         val id = id(userPreference.key)
         val appConfig = userPreferenceRepository.findById(id).orElse(null)
@@ -42,7 +42,7 @@ class UserPreferencesService(
      */
     fun get(key: String): String? {
 
-        log.info { "Getting user preference '$key'" }
+        log.debug { "Getting user preference '$key'" }
 
         val userPreference = findUserPreference(key)
         val id = id(key)
@@ -75,7 +75,7 @@ class UserPreferencesService(
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the user preference
      */
     fun <T : Serializable> set(key: String, value: T) {
-        log.info { "Set user preference '$key'" }
+        log.debug { "Set user preference '$key'" }
 
         val userPreferenceKey = findUserPreference(key)
 

@@ -46,7 +46,8 @@ function LogManagementLayout({getConfig, formik}: any) {
             <div className="flex flex-row gap-4">
                 <ConfigFormField configElement={getConfig("logs.folder")}/>
                 <ConfigFormField configElement={getConfig("logs.max-history-days")}/>
-                <ConfigFormField configElement={getConfig("logs.level")}/>
+                <ConfigFormField configElement={getConfig("logs.level.gameyfin")}/>
+                <ConfigFormField configElement={getConfig("logs.level.root")}/>
             </div>
 
             <div className="flex flex-col">
@@ -86,7 +87,10 @@ const validationSchema = Yup.object({
     logs: Yup.object({
         folder: Yup.string().required("Required"),
         "max-history-days": Yup.number().required("Required"),
-        level: Yup.string().required("Required")
+        level: Yup.object({
+            gameyfin: Yup.string().required("Required"),
+            root: Yup.string().required("Required")
+        })
     })
 });
 

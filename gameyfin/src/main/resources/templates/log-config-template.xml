@@ -15,10 +15,9 @@
         </encoder>
     </appender>
 
-    <!-- Spams the logs on DEBUG due to a loop (log -> push to client -> log the push -> repeat) -->
-    <logger name="com.vaadin.hilla.push.PushEndpoint" level="INFO"/>
+    <logger name="de.grimsi.gameyfin" level="{LOG_LEVEL_GAMEYFIN}"/>
 
-    <root level="{LOG_LEVEL}">
+    <root level="{LOG_LEVEL_ROOT}">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>

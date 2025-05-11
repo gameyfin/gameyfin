@@ -15,7 +15,7 @@ class PluginConfigService(
     private val log = KotlinLogging.logger {}
 
     fun getConfigMetadata(pluginId: String): List<PluginConfigElement> {
-        log.info { "Getting config metadata for plugin $pluginId" }
+        log.debug { "Getting config metadata for plugin $pluginId" }
 
         val plugin = try {
             pluginManager.getPlugin(pluginId).plugin
@@ -29,19 +29,19 @@ class PluginConfigService(
     }
 
     fun getConfig(pluginId: String): Map<String, String?> {
-        log.info { "Getting config for plugin $pluginId" }
+        log.debug { "Getting config for plugin $pluginId" }
         return pluginConfigRepository.findAllById_PluginId(pluginId).associate { it.id.key to it.value }
     }
 
     fun setConfigEntries(pluginId: String, config: Map<String, String>) {
-        log.info { "Setting config entries for plugin $pluginId" }
+        log.debug { "Setting config entries for plugin $pluginId" }
         val entries = config.map { PluginConfigEntry(PluginConfigEntryKey(pluginId, it.key), it.value) }
         pluginConfigRepository.saveAll(entries)
         pluginManager.restart(pluginId)
     }
 
     fun setConfigEntry(pluginId: String, key: String, value: String) {
-        log.info { "Setting config entry $key for plugin $pluginId" }
+        log.debug { "Setting config entry $key for plugin $pluginId" }
         val entry = PluginConfigEntry(PluginConfigEntryKey(pluginId, key), value)
         pluginConfigRepository.save(entry)
         pluginManager.restart(pluginId)

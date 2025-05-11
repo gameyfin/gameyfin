@@ -186,7 +186,7 @@ class LibraryService(
                         }
 
                         val progress = completedMetadata.incrementAndGet()
-                        log.info { "${progress}/${totalPaths} metadata matched" }
+                        log.debug { "${progress}/${totalPaths} metadata matched" }
 
                         return@Callable game
                     } catch (e: Exception) {
@@ -225,7 +225,7 @@ class LibraryService(
                             completedImageDownload.andIncrement
                         }
 
-                        log.info { "${completedImageDownload}/${totalImages} images downloaded" }
+                        log.debug { "${completedImageDownload}/${totalImages} images downloaded" }
 
                         game
                     } catch (e: Exception) {
@@ -239,7 +239,7 @@ class LibraryService(
 
             // 3. Persist new games
             val persistedGames = gameService.create(gamesWithImages)
-            log.info { "${persistedGames.size}/${totalPaths} saved to database" }
+            log.debug { "${persistedGames.size}/${totalPaths} saved to database" }
 
             // 4. Add new games to library
             addGamesToLibrary(persistedGames, library)

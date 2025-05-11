@@ -149,7 +149,7 @@ class GameService(
 
         val bestMatchingTitle = FuzzySearch.extractOne(originalQuery, providerToTitle.values).string
 
-        log.info {
+        log.debug {
             "Best matching title: '$bestMatchingTitle' (${
                 providerToTitle.count { it.value.fuzzyMatchTitle(bestMatchingTitle) }
             }/${providerToTitle.size} matches) for '$originalQuery' determined from $providerToTitle"

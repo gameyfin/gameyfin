@@ -224,13 +224,23 @@ sealed class ConfigProperties<T : Serializable>(
             30
         )
 
-        data object Level : ConfigProperties<LogLevel>(
-            LogLevel::class,
-            "logs.level",
-            "Log level",
-            LogLevel.INFO,
-            LogLevel.entries
-        )
+        sealed class Level {
+            data object Gameyfin : ConfigProperties<LogLevel>(
+                LogLevel::class,
+                "logs.level.gameyfin",
+                "Log level (Gameyfin)",
+                LogLevel.INFO,
+                LogLevel.entries
+            )
+
+            data object Root : ConfigProperties<LogLevel>(
+                LogLevel::class,
+                "logs.level.root",
+                "Log level (Root)",
+                LogLevel.INFO,
+                LogLevel.entries
+            )
+        }
     }
 }
 

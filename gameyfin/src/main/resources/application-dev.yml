@@ -1,7 +1,3 @@
-logging.level.de.grimsi.gameyfin: DEBUG
-logging.level.org.hibernate.SQL: DEBUG
-logging.level.org.hibernate.type: TRACE
-
 spring:
   datasource:
     url: jdbc:h2:file:./db/${spring.datasource.db-name};AUTO_SERVER=TRUE

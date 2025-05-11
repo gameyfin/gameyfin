@@ -58,7 +58,7 @@ class ConfigService(
      */
     fun getAll(prefix: String?): List<ConfigEntryDto> {
 
-        log.info { "Getting all config values for prefix '$prefix'" }
+        log.debug { "Getting all config values for prefix '$prefix'" }
 
         var configProperties = ConfigProperties::class.sealedSubclasses.flatMap { subclass ->
             subclass.objectInstance?.let { listOf(it) } ?: listOf()
@@ -91,7 +91,7 @@ class ConfigService(
      */
     @Suppress("UNCHECKED_CAST")
     fun <T : Serializable> set(key: String, value: T) {
-        log.info { "Set config value '$key'" }
+        log.debug { "Set config value '$key'" }
 
         val configProperty = findConfigProperty(key)
 
@@ -143,7 +143,7 @@ class ConfigService(
      */
     fun deleteConfig(key: String) {
 
-        log.info { "Delete config value '$key'" }
+        log.debug { "Delete config value '$key'" }
 
         val configKey = findConfigProperty(key)
         appConfigRepository.deleteById(configKey.key)
