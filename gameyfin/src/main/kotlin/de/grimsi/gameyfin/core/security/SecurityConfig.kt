@@ -19,6 +19,8 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler
+import org.springframework.web.cors.CorsConfiguration
+
 
 @Configuration
 @EnableWebSecurity
@@ -33,6 +35,7 @@ class SecurityConfig(
 
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
+
         // Configure your static resources with public access before calling super.configure(HttpSecurity) as it adds final anyRequest matcher
         http.authorizeHttpRequests { auth: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry ->
             auth.requestMatchers("/setup").permitAll()
@@ -47,6 +50,14 @@ class SecurityConfig(
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .maximumSessions(3)
                 .sessionRegistry(sessionRegistry)
+        }
+
+        http.cors { cors ->
+            cors.configurationSource { request ->
+                val configuration = CorsConfiguration()
+                configuration.allowedOrigins = config.get(ConfigProperties.System.Cors.AllowedOrigins)?.toList()
+                configuration
+            }
         }
 
         super.configure(http)
