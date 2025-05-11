@@ -3,7 +3,7 @@ import ConfigFormField from "Frontend/components/administration/ConfigFormField"
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import * as Yup from 'yup';
-import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
+import {addToast, Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
 import {Plus} from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {LibraryOverviewCard} from "Frontend/components/general/cards/LibraryOverviewCard";
@@ -41,6 +41,24 @@ function LibraryManagementLayout({getConfig, formik}: any) {
             }
             return [...prevLibraries, updatedLibrary];
         });
+
+        addToast({
+            title: "Library updated",
+            description: `Library ${library.name} has been updated.`,
+            color: "success"
+        })
+    }
+
+    async function removeLibrary(library: LibraryDto) {
+        await LibraryEndpoint.removeLibrary(library.id);
+        setLibraries((prevLibraries) => {
+            return prevLibraries.filter((l) => l.id !== library.id);
+        });
+        addToast({
+            title: "Library removed",
+            description: `Library ${library.name} has been removed.`,
+            color: "success"
+        })
     }
 
     return (
@@ -72,7 +90,8 @@ function LibraryManagementLayout({getConfig, formik}: any) {
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
                 <div id="library-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
                     {libraries.map((library) =>
-                        <LibraryOverviewCard library={library} updateLibrary={updateLibrary} key={library.name}/>
+                        <LibraryOverviewCard library={library} updateLibrary={updateLibrary}
+                                             removeLibrary={removeLibrary} key={library.name}/>
                     )}
                 </div> :
                 "No libraries configured. Add your first library!"
