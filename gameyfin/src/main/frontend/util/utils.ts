@@ -24,6 +24,12 @@ export function roleToRoleName(role: string) {
     return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
+export function toTitleCase(str: string) {
+    return str.toLowerCase().split(' ').map((word: string) => {
+        return (word.charAt(0).toUpperCase() + word.slice(1));
+    }).join(' ');
+}
+
 export function roleToColor(role: string) {
     switch (role) {
         case "ROLE_SUPERADMIN":

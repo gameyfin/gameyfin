@@ -5,6 +5,7 @@ import {themes} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
 import {UserPreferencesEndpoint} from "Frontend/generated/endpoints";
+import {toTitleCase} from "Frontend/util/utils";
 
 export function ThemeSelector() {
 
@@ -56,7 +57,9 @@ export function ThemeSelector() {
                     )))
                 }
             </div>
-            <p className="text-2xl font-semibold mt-8">Preview</p>
+            <p className="text-2xl font-semibold mt-8">Preview for theme
+                "{toTitleCase(theme!.replaceAll("-", " "))}"
+            </p>
             <Divider/>
             <div className="flex flex-row gap-8 items-baseline">
                 <div className="flex flex-row gap-4">
