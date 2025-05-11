@@ -2,5 +2,5 @@ Manifest-Version: 1.0
 Plugin-Class: de.grimsi.gameyfin.plugins.steam.SteamPlugin
 Plugin-Id: steam
 Plugin-Description: Steam Metadata
-Plugin-Version: 1.0.0-alpha5
+Plugin-Version: 1.0.0-alpha6
 Plugin-Provider: grimsi

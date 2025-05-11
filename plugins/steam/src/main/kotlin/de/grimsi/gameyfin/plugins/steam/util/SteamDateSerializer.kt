@@ -16,6 +16,9 @@ import java.util.*
 class SteamDateSerializer : KSerializer<Instant> {
 
     companion object {
+        const val COMING_SOON_TEXT = "Coming Soon"
+        val COMING_SOON_FALLBACK_DATE: LocalDate = LocalDate.parse("2999-12-31")
+
         val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, yyyy", Locale.ENGLISH)
     }
 
@@ -24,6 +27,10 @@ class SteamDateSerializer : KSerializer<Instant> {
     override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
 
     private fun fromString(dateString: String): Instant {
+        if (dateString.equals(COMING_SOON_TEXT, true)) {
+            return COMING_SOON_FALLBACK_DATE.atStartOfDay().toInstant(ZoneOffset.UTC)
+        }
+
         val localDate = LocalDate.parse(dateString, formatter)
         return localDate.atStartOfDay().toInstant(ZoneOffset.UTC)
     }
