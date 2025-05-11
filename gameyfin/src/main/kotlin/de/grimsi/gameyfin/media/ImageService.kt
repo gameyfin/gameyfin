@@ -22,7 +22,10 @@ class ImageService(
     fun downloadIfNew(image: Image) {
         if (image.originalUrl == null) throw IllegalArgumentException("Image must have an original URL")
 
-        imageRepository.findByOriginalUrl(image.originalUrl)?.let { return }
+        imageRepository.findByOriginalUrl(image.originalUrl)?.let {
+            imageContentStore.associate(image, it.contentId)
+            return
+        }
 
         TikaInputStream.get { image.originalUrl.openStream() }.use { input ->
             image.mimeType = tika.detect(input)
