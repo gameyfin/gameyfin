@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Plugin-Class: de.grimsi.gameyfin.plugins.steamgriddb.SteamGridDbPlugin
 Plugin-Id: steamgriddb
-Plugin-Description: Steam Grid DB covers
+Plugin-Description: SteamGridDB covers
 Plugin-Version: 1.0.0-alpha2
 Plugin-Provider: grimsi
