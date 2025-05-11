@@ -20,6 +20,7 @@ class SteamGridDbApiClient(private val apiKey: String) {
             ignoreUnknownKeys = true
         }
         private const val BASE_URL = "https://www.steamgriddb.com/api/v2"
+        private const val COVER_SIZES = "600x900,342x482,660x930"
     }
 
     private val client = HttpClient(CIO) {
@@ -42,7 +43,12 @@ class SteamGridDbApiClient(private val apiKey: String) {
     }
 
     suspend fun grids(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbGridResult {
-        return get("grids/game/$gameId", block).body()
+        return get("grids/game/$gameId") {
+            url {
+                parameters.append("dimensions", COVER_SIZES)
+            }
+            block()
+        }.body()
     }
 
     private suspend fun get(endpoint: String, block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
