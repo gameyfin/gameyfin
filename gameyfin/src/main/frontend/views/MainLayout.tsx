@@ -8,8 +8,8 @@ import {Outlet, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
 import {Heart} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
-import {UserPreferencesEndpoint} from "Frontend/generated/endpoints";
 import {useTheme} from "next-themes";
+import {UserPreferenceService} from "Frontend/util/user-preference-service";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -21,7 +21,10 @@ export default function MainLayout() {
     useEffect(() => {
         let newTitle = `Gameyfin - ${routeMetadata?.title}`;
         window.addEventListener('popstate', () => document.title = newTitle);
-        loadUserTheme().catch(console.error);
+
+        UserPreferenceService.sync()
+            .then(() => loadUserTheme().catch(console.error))
+            .catch(console.error);
     }, []);
 
     const confettiProps: ConfettiProps = {
@@ -35,16 +38,9 @@ export default function MainLayout() {
     }
 
     async function loadUserTheme() {
-        let syncedTheme = await UserPreferencesEndpoint.get("preferred-theme");
-
-        if (syncedTheme) {
+        let syncedTheme = await UserPreferenceService.get("preferred-theme")
+        if (syncedTheme !== undefined) {
             setTheme(syncedTheme);
-        } else {
-            let localTheme = localStorage.getItem('theme');
-            if (localTheme) {
-                setTheme(localTheme);
-                await UserPreferencesEndpoint.set("preferred-theme", localTheme);
-            }
         }
     }
 

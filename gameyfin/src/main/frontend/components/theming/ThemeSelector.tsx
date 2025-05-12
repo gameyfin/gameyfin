@@ -4,8 +4,8 @@ import {Button, Card, Divider, Select, Selection, SelectItem} from "@heroui/reac
 import {themes} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
-import {UserPreferencesEndpoint} from "Frontend/generated/endpoints";
 import {toTitleCase} from "Frontend/util/utils";
+import {UserPreferenceService} from "Frontend/util/user-preference-service";
 
 export function ThemeSelector() {
 
@@ -24,7 +24,7 @@ export function ThemeSelector() {
         if (selectedMode instanceof Set) {
             let theme = `${selectedTheme}-${selectedMode.values().next().value}`;
             setTheme(theme);
-            UserPreferencesEndpoint.set("preferred-theme", theme).catch(console.error);
+            UserPreferenceService.set("preferred-theme", theme).catch(console.error);
         }
     }
 

@@ -9,4 +9,5 @@ sealed class UserPreferences<T : Serializable>(
     val allowedValues: List<T>? = null
 ) {
     data object PreferredTheme : UserPreferences<String>(String::class, "preferred-theme")
+    data object PreferredDownloadMethod : UserPreferences<String>(String::class, "preferred-download-method")
 }
