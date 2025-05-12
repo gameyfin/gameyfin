@@ -16,7 +16,7 @@
 
 /* Overwrite default Hilla styles (e.g. loading indicator) */
 :root {
-    --lumo-primary-color: theme('colors.primary');
+    --lumo-primary-color: theme(colors.primary);
 }
 
 /* List box drag & drop */
@@ -27,5 +27,5 @@
 }
 
 .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid theme('colors.primary');
+    outline: 1px solid theme(colors.primary);
 }

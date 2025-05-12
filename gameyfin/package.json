@@ -44,6 +44,7 @@
     "react-confetti-boom": "^1.0.0",
     "react-dom": "18.3.1",
     "react-router": "7.5.2",
+    "swiper": "^11.2.6",
     "yup": "^1.6.1"
   },
   "devDependencies": {

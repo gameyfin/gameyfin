@@ -4,6 +4,7 @@ import {GameEndpoint} from "Frontend/generated/endpoints";
 import {useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
+import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -37,9 +38,13 @@ export default function GameView() {
     return (game && (
         <div className="flex flex-col gap-4">
             {game.imageIds !== undefined && game.imageIds.length > 0 &&
-                <div className="overflow-hidden rounded-lg">
-                    <img className="w-full h-96 object-cover brightness-50 blur-sm scale-110" alt="Game screenshot"
-                         src={`/images/screenshot/${game.imageIds[0]}`}/>
+                <div className="overflow-hidden rounded-lg relative">
+                    <img className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
+                         alt="Game screenshot"
+                         src={`/images/screenshot/${game.imageIds[0]}`}
+                    />
+                    <div
+                        className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent to-background"/>
                 </div>
             }
             <div className="flex flex-col gap-4 mx-24">
@@ -55,9 +60,16 @@ export default function GameView() {
                     </div>
                     <ComboButton options={downloadOptions} preferredOptionKey="preferred-download-method"/>
                 </div>
-                <div className="flex flex-col gap-2">
-                    <p className="text-foreground/60">Summary</p>
-                    <p>{game.summary}</p>
+                <div className="flex flex-col gap-8">
+                    <div className="flex flex-col gap-2">
+                        <p className="text-foreground/60">Summary</p>
+                        <p>{game.summary}</p>
+                    </div>
+                    <div className="flex flex-col gap-2  overflow-visible">
+                        <p className="text-foreground/60">Screenshots</p>
+                        {game.imageIds !== undefined && game.imageIds.length > 0 &&
+                            <ImageCarousel imageIds={game.imageIds}/>}
+                    </div>
                 </div>
             </div>
         </div>
