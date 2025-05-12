@@ -9,7 +9,6 @@ export default function GameView() {
     const {gameId} = useParams();
 
     const [game, setGame] = useState<GameDto>();
-    const [selectedDownloadOption, setSelectedDownloadOption] = useState<string | null>(null);
 
     const downloadOptions: Record<string, ComboButtonOption> = {
         browser: {
