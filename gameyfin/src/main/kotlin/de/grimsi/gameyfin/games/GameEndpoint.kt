@@ -12,6 +12,10 @@ class GameEndpoint(
     private val gameService: GameService
 ) {
 
+    fun getGame(id: Long): GameDto {
+        return gameService.getGame(id)
+    }
+
     fun getMostRecentlyAddedGames(n: Int?): List<GameDto> {
         return gameService.getMostRecentlyAdded(n ?: 10)
     }

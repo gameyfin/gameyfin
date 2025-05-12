@@ -59,6 +59,11 @@ class GameService(
         return gameRepository.saveAll(gamesToBePersisted)
     }
 
+    fun getGame(id: Long): GameDto {
+        return gameRepository.findByIdOrNull(id)?.toDto()
+            ?: throw IllegalArgumentException("Game with id $id not found")
+    }
+
     fun matchFromFile(path: Path, library: Library): Game? {
         val query = FilenameUtils.removeExtension(path.fileName.toString())
 
@@ -88,7 +93,7 @@ class GameService(
 
     fun getAllGames(): Collection<GameDto> {
         val entities = gameRepository.findAll()
-        return entities.map { toDto(it) }
+        return entities.map { it.toDto() }
     }
 
     fun delete(game: Game) {
@@ -101,12 +106,12 @@ class GameService(
 
     fun getMostRecentlyAdded(count: Int): List<GameDto> {
         return gameRepository.findByOrderByCreatedAtDesc(Limit.of(count))
-            .map { toDto(it) }
+            .map { it.toDto() }
     }
 
     fun getMostRecentlyUpdated(count: Int): List<GameDto> {
         return gameRepository.findByOrderByCreatedAtDesc(Limit.of(count))
-            .map { toDto(it) }
+            .map { it.toDto() }
     }
 
     private fun getById(id: Long): Game {
@@ -289,54 +294,57 @@ class GameService(
         return mergedGame
     }
 
-    fun toDto(game: Game): GameDto {
-        val gameId = game.id ?: throw IllegalArgumentException("Game ID is null")
-        val createdAt = game.createdAt ?: throw IllegalArgumentException("Game creation timestamp is null")
-        val updatedAt = game.updatedAt ?: throw IllegalArgumentException("Game update timestamp is null")
-        val gameLibraryId = game.library.id ?: throw IllegalArgumentException("Game library ID is null")
-        val gameTitle = game.title ?: throw IllegalArgumentException("Game title is null")
-
-        return GameDto(
-            id = gameId,
-            createdAt = createdAt,
-            updatedAt = updatedAt,
-            libraryId = gameLibraryId,
-            title = gameTitle,
-            coverId = game.coverImage?.id,
-            comment = game.comment,
-            summary = game.summary,
-            release = game.release,
-            userRating = game.userRating,
-            criticRating = game.criticRating,
-            publishers = game.publishers.map { it.name },
-            developers = game.developers.map { it.name },
-            genres = game.genres.map { it.name },
-            themes = game.themes.map { it.name },
-            keywords = game.keywords.toList(),
-            features = game.features.map { it.name },
-            perspectives = game.perspectives?.map { it.name },
-            imageIds = game.images.mapNotNull { it.id },
-            videoUrls = game.videoUrls.map { it.toString() },
-            path = game.path,
-            metadata = toDto(game.metadata),
-            originalIds = game.originalIds.mapKeys { it.key.pluginId }
-        )
+    private fun String.fuzzyMatchTitle(other: String, minRatio: Int = TITLE_MATCH_MIN_RATIO): Boolean {
+        return FuzzySearch.ratio(this.normalizeGameTitle(), other.normalizeGameTitle()) > minRatio
     }
 
-    private fun toDto(metadata: Map<String, FieldMetadata>): Map<String, GameMetadataDto> {
-        return metadata.mapValues { toDto(it.value) }
-    }
+    fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals()
+}
 
-    private fun toDto(metadata: FieldMetadata): GameMetadataDto {
+
+fun Game.toDto(): GameDto {
+    // Helper functions
+    fun toDto(metadata: FieldMetadata): GameMetadataDto {
         return GameMetadataDto(
             source = metadata.source.pluginId,
             lastUpdated = metadata.lastUpdated
         )
     }
 
-    private fun String.fuzzyMatchTitle(other: String, minRatio: Int = TITLE_MATCH_MIN_RATIO): Boolean {
-        return FuzzySearch.ratio(this.normalizeGameTitle(), other.normalizeGameTitle()) > minRatio
+    fun toDto(metadata: Map<String, FieldMetadata>): Map<String, GameMetadataDto> {
+        return metadata.mapValues { toDto(it.value) }
     }
 
-    fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals()
+
+    val thisId = this.id ?: throw IllegalArgumentException("this ID is null")
+    val createdAt = this.createdAt ?: throw IllegalArgumentException("this creation timestamp is null")
+    val updatedAt = this.updatedAt ?: throw IllegalArgumentException("this update timestamp is null")
+    val thisLibraryId = this.library.id ?: throw IllegalArgumentException("this library ID is null")
+    val thisTitle = this.title ?: throw IllegalArgumentException("this title is null")
+
+    return GameDto(
+        id = thisId,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        libraryId = thisLibraryId,
+        title = thisTitle,
+        coverId = this.coverImage?.id,
+        comment = this.comment,
+        summary = this.summary,
+        release = this.release,
+        userRating = this.userRating,
+        criticRating = this.criticRating,
+        publishers = this.publishers.map { it.name },
+        developers = this.developers.map { it.name },
+        genres = this.genres.map { it.name },
+        themes = this.themes.map { it.name },
+        keywords = this.keywords.toList(),
+        features = this.features.map { it.name },
+        perspectives = this.perspectives?.map { it.name },
+        imageIds = this.images.mapNotNull { it.id },
+        videoUrls = this.videoUrls.map { it.toString() },
+        path = this.path,
+        metadata = toDto(this.metadata),
+        originalIds = this.originalIds.mapKeys { it.key.pluginId }
+    )
 }

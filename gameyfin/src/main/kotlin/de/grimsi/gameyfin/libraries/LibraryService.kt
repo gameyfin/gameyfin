@@ -4,6 +4,7 @@ import de.grimsi.gameyfin.core.filesystem.FilesystemService
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.entities.Game
+import de.grimsi.gameyfin.games.toDto
 import de.grimsi.gameyfin.libraries.dto.LibraryDto
 import de.grimsi.gameyfin.libraries.dto.LibraryStatsDto
 import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
@@ -95,7 +96,7 @@ class LibraryService(
         val library = libraryRepository.findByIdOrNull(libraryId)
             ?: throw IllegalArgumentException("Library with ID $libraryId not found")
 
-        val games = library.games.map { gameService.toDto(it) }
+        val games = library.games.map { it.toDto() }
 
         return games
     }

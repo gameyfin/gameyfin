@@ -41,6 +41,11 @@ export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
         })
     }, []);
 
+    async function triggerScan() {
+        await LibraryEndpoint.triggerScan(ScanType.QUICK, [library]);
+        await updateLibrary({id: library.id});
+    }
+
     return (
         <>
             <Card className="flex flex-col justify-between w-[353px]">
@@ -75,8 +80,7 @@ export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
 
                     <div className="absolute right-0 top-0 flex flex-row">
                         <Tooltip content="Scan library" placement="bottom" color="foreground">
-                            <Button isIconOnly variant="light"
-                                    onPress={() => LibraryEndpoint.triggerScan(ScanType.QUICK, [library])}>
+                            <Button isIconOnly variant="light" onPress={triggerScan}>
                                 <MagnifyingGlass/>
                             </Button>
                         </Tooltip>

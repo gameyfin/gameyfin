@@ -3,6 +3,7 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {Card} from "@heroui/react";
 import {ArrowRight} from "@phosphor-icons/react";
+import {useNavigate} from "react-router";
 
 interface CoverRowProps {
     games: GameDto[];
@@ -17,6 +18,7 @@ const radius = "sm";
 
 export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
 
+    const navigate = useNavigate();
     const containerRef = useRef<HTMLDivElement>(null);
     const [visibleCount, setVisibleCount] = useState(games.length);
 
@@ -47,7 +49,8 @@ export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
             <div className="w-full relative">
                 <Card ref={containerRef} className="flex flex-row gap-4 bg-transparent" radius={radius}>
                     {games.slice(0, visibleCount).map((game, index) => (
-                        <div className="flex-shrink-0" key={index}>
+                        <div className="flex-shrink-0 cursor-pointer" key={index}
+                             onClick={() => navigate(`/game/${game.id}`)}>
                             <GameCover game={game} radius={radius}/>
                         </div>
                     ))}

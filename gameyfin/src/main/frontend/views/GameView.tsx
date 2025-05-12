@@ -1,0 +1,43 @@
+import {useEffect, useState} from "react";
+import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
+import {GameEndpoint} from "Frontend/generated/endpoints";
+import {useParams} from "react-router";
+import {GameCover} from "Frontend/components/general/covers/GameCover";
+
+export default function GameView() {
+    const {gameId} = useParams();
+
+    const [game, setGame] = useState<GameDto>();
+
+    useEffect(() => {
+        if (gameId) {
+            GameEndpoint.getGame(parseInt(gameId)).then((game) => setGame(game));
+        }
+    }, [gameId]);
+
+    return (game && (
+        <div className="flex flex-col gap-4">
+            {game.imageIds !== undefined && game.imageIds.length > 0 &&
+                <div className="overflow-hidden rounded-lg">
+                    <img className="w-full h-96 object-cover brightness-50 blur-sm scale-110" alt="Game screenshot"
+                         src={`/images/screenshot/${game.imageIds[0]}`}/>
+                </div>
+            }
+            <div className="flex flex-col gap-4 mx-24">
+                <div className="flex flex-row gap-4">
+                    <div className="mt-[-16.25rem]">
+                        <GameCover game={game} size={320} radius="none"/>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <p className="font-semibold text-3xl">{game.title}</p>
+                        <p className="text-foreground/60">{game.release !== undefined ? new Date(game.release).getFullYear() : "unknown"}</p>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                    <p className="text-foreground/60">Summary</p>
+                    <p>{game.summary}</p>
+                </div>
+            </div>
+        </div>
+    ));
+}

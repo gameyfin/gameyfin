@@ -19,6 +19,7 @@ import EmailConfirmationView from "Frontend/views/EmailConfirmationView";
 import InvitationRegistrationView from "Frontend/views/InvitationRegistrationView";
 import PluginManagement from "Frontend/components/administration/PluginManagement";
 import {SystemManagement} from "Frontend/components/administration/SystemManagement";
+import GameView from "Frontend/views/GameView";
 
 export const routes = protectRoutes([
     {
@@ -31,6 +32,10 @@ export const routes = protectRoutes([
                 children: [
                     {
                         index: true, element: <HomeView/>
+                    },
+                    {
+                        path: 'game/:gameId',
+                        element: <GameView/>
                     },
                     {
                         path: 'settings',
