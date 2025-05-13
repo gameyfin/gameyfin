@@ -81,6 +81,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 "game_modes.name",
                 "cover.image_id",
                 "screenshots.image_id",
+                "videos.name",
                 "videos.video_id",
                 "involved_companies.company.slug",
                 "involved_companies.company.name",
@@ -149,7 +150,12 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 themes = game.themesList.map { Mapper.theme(it) }.toSet(),
                 keywords = game.keywordsList.map { it.name }.toSet(),
                 screenshotUrls = game.screenshotsList.map { Mapper.screenshot(it) }.toSet(),
-                videoUrls = game.videosList.map { Mapper.video(it) }.toSet(),
+                videoUrls = game.videosList
+                    // Lots of gameplay videos hosted on YouTube are blocked from viewing on external sites due to age ratings
+                    // Trailers usually are not affected so we filter for them
+                    // see https://support.google.com/youtube/answer/2802167
+                    .filter { it.name.equals("trailer", ignoreCase = true) }
+                    .map { Mapper.video(it) }.toSet(),
                 features = Mapper.gameFeatures(game),
                 perspectives = game.playerPerspectivesList.map { Mapper.playerPerspective(it) }.toSet()
             )
