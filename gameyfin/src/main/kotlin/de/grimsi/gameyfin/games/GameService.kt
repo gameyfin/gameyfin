@@ -277,6 +277,7 @@ class GameService(
                         mergedGame.images = runBlocking {
                             screenshotUrls.map { Image(originalUrl = it.toURL(), type = ImageType.SCREENSHOT) }.toSet()
                         }
+                        metadataMap["images"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.videoUrls?.takeIf { it.isNotEmpty() }?.let { videoUrls ->
