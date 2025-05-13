@@ -66,9 +66,12 @@ export default function GameView() {
                         <p>{game.summary}</p>
                     </div>
                     <div className="flex flex-col gap-2  overflow-visible">
-                        <p className="text-foreground/60">Screenshots</p>
+                        <p className="text-foreground/60">Media</p>
                         {game.imageIds !== undefined && game.imageIds.length > 0 &&
-                            <ImageCarousel imageIds={game.imageIds}/>}
+                            <ImageCarousel
+                                imageUrls={game.imageIds.map(id => `/images/screenshot/${id}`)}
+                                videosUrls={game.videoUrls}
+                            />}
                     </div>
                 </div>
             </div>

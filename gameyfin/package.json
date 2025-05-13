@@ -43,6 +43,7 @@
     "react-aria-components": "^1.7.1",
     "react-confetti-boom": "^1.0.0",
     "react-dom": "18.3.1",
+    "react-player": "^2.16.0",
     "react-router": "7.5.2",
     "swiper": "^11.2.6",
     "yup": "^1.6.1"
@@ -129,7 +130,9 @@
     "react-aria-components": "$react-aria-components",
     "react-accessible-treeview": "$react-accessible-treeview",
     "rand-seed": "$rand-seed",
-    "react-router": "$react-router"
+    "react-router": "$react-router",
+    "swiper": "$swiper",
+    "react-player": "$react-player"
   },
   "vaadin": {
     "dependencies": {
@@ -190,6 +193,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "fdf5506c7d7915b341632254a47867cd7d7007cab8d08447bd909b37cdb94cf9"
+    "hash": "b7f2b9b343406ec77ce90fe42104642df3b7205f522d2cc60db71051097a32de"
   }
 }
