@@ -19,11 +19,12 @@ export interface ComboButtonOption {
 }
 
 export interface ComboButtonProps {
+    description?: string;
     options: Record<string, ComboButtonOption>;
     preferredOptionKey?: string;
 }
 
-export default function ComboButton({options, preferredOptionKey}: ComboButtonProps) {
+export default function ComboButton({options, preferredOptionKey, description}: ComboButtonProps) {
     const [selectedOption, setSelectedOption] = useState(new Set([Object.keys(options)[0]]));
     const [disabledOptions] = useState<string[]>(getDisabledKeys(options));
     const selectedOptionValue = Array.from(selectedOption)[0];
@@ -56,8 +57,12 @@ export default function ComboButton({options, preferredOptionKey}: ComboButtonPr
 
     return (
         <ButtonGroup className="gap-[1px]">
-            <Button color="primary" className="font-semibold w-52"
-                    onPress={options[selectedOptionValue].action}>{options[selectedOptionValue].label}
+            <Button color="primary" className="w-52"
+                    onPress={options[selectedOptionValue].action}>
+                <div className="flex flex-col items-center">
+                    <p className="font-semibold">{options[selectedOptionValue].label}</p>
+                    <p className="text-xs font-normal opacity-70 ">{description}</p>
+                </div>
             </Button>
             <Dropdown placement="bottom-end">
                 <DropdownTrigger>

@@ -5,6 +5,8 @@ import {useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
+import {Chip} from "@heroui/react";
+import {toTitleCase} from "Frontend/util/utils";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -58,20 +60,45 @@ export default function GameView() {
                             <p className="text-foreground/60">{game.release !== undefined ? new Date(game.release).getFullYear() : "unknown"}</p>
                         </div>
                     </div>
-                    <ComboButton options={downloadOptions} preferredOptionKey="preferred-download-method"/>
+                    <ComboButton description="64 GiB"
+                                 options={downloadOptions}
+                                 preferredOptionKey="preferred-download-method"
+                    />
                 </div>
                 <div className="flex flex-col gap-8">
-                    <div className="flex flex-col gap-2">
-                        <p className="text-foreground/60">Summary</p>
-                        <p>{game.summary}</p>
+                    <div className="flex flex-row gap-12">
+                        <div className="flex flex-col flex-1 gap-2">
+                            <p className="text-foreground/60">Summary</p>
+                            <p className="text-justify">{game.summary}</p>
+                        </div>
+                        <div className="flex flex-col flex-1 gap-2">
+                            <p className="text-foreground/60">Details</p>
+                            <table className="text-left w-full table-auto">
+                                <tbody>
+                                {Object.entries({
+                                    "Developed by": game.developers?.sort().join(" / "),
+                                    "Published by": game.publishers?.sort().join(" / "),
+                                    "Genres": game.genres?.sort().map(p => <Chip radius="sm">{toTitleCase(p)}</Chip>),
+                                    "Themes": game.themes?.sort().map(p => <Chip radius="sm">{toTitleCase(p)}</Chip>),
+                                    "Features": game.features?.sort().map(p => <Chip
+                                        radius="sm">{toTitleCase(p)}</Chip>),
+                                }).map(([key, value]) => (
+                                    <tr key={key}>
+                                        <td className="text-foreground/60 w-0 min-w-32">{key}</td>
+                                        <td className="flex flex-row gap-1">{value}</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div className="flex flex-col gap-2  overflow-visible">
+                    <div className="flex flex-col gap-4">
                         <p className="text-foreground/60">Media</p>
-                        {game.imageIds !== undefined && game.imageIds.length > 0 &&
-                            <ImageCarousel
-                                imageUrls={game.imageIds.map(id => `/images/screenshot/${id}`)}
-                                videosUrls={game.videoUrls}
-                            />}
+                        <ImageCarousel
+                            imageUrls={game.imageIds?.map(id => `/images/screenshot/${id}`)}
+                            videosUrls={game.videoUrls}
+                            className="-mx-24"
+                        />
                     </div>
                 </div>
             </div>

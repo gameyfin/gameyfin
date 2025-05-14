@@ -1,4 +1,4 @@
-import {Autoplay, Virtual} from 'swiper/modules';
+import {Autoplay, Navigation, Pagination} from 'swiper/modules';
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Card, Image, Modal, ModalContent, useDisclosure} from "@heroui/react";
 import ReactPlayer from 'react-player';
@@ -8,11 +8,13 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useEffect, useState} from "react";
+import {CaretLeft, CaretRight, IconContext, Play} from "@phosphor-icons/react";
 
 
 interface ImageCarouselProps {
     imageUrls?: string[];
     videosUrls?: string[];
+    className?: string;
 }
 
 interface SlideData {
@@ -22,14 +24,14 @@ interface SlideData {
     isNext: boolean;
 }
 
-export default function ImageCarousel({imageUrls, videosUrls}: ImageCarouselProps) {
+export default function ImageCarousel({imageUrls, videosUrls, className}: ImageCarouselProps) {
 
     interface CarouselElement {
         type: "image" | "video";
         url: string;
     }
 
-    const SLIDES_PER_VIEW = 3;
+    const DEFAULT_SLIDES_PER_VIEW = 3;
 
     const [elements, setElements] = useState<CarouselElement[]>();
     const [selectedImageUrl, setSelectedImageUrl] = useState<string>();
@@ -45,13 +47,7 @@ export default function ImageCarousel({imageUrls, videosUrls}: ImageCarouselProp
             url: videoUrl
         })) || [];
 
-        if ((images.length + videos.length) > SLIDES_PER_VIEW) {
-            let elements = [...videos, ...images];
-            // Add the last element to the start of the array and the first element to the end of the array to create a loop
-            setElements([elements[elements.length - 1], ...elements, elements[0]]);
-        } else {
-            setElements([...videos, ...images]);
-        }
+        setElements([...images, ...videos]);
     }, [])
 
     function showImagePopup(imageUrl: string) {
@@ -60,47 +56,74 @@ export default function ImageCarousel({imageUrls, videosUrls}: ImageCarouselProp
     }
 
     return (
-        <div className="flex flex-col gap-2 bg-transparent">
-            <Swiper
-                modules={[Virtual, Autoplay]}
-                virtual={true}
-                slidesPerView={SLIDES_PER_VIEW}
-                spaceBetween={0}
-                autoplay={{
-                    delay: 10000,
-                    waitForTransition: false,
-                    pauseOnMouseEnter: true
-                }}
-                className="w-full"
-            >
-                {elements && elements.map((e, index) => (
-                    <SwiperSlide key={index} virtualIndex={index}>
-                        {({isNext}: SlideData) => {
-                            if (e.type === "image") {
-                                return (
-                                    <Image
-                                        src={e.url}
-                                        alt={`Game screenshot slide ${index}`}
-                                        className={`w-full h-full object-cover aspect-[16/9] cursor-zoom-in ${!isNext ? "scale-90" : ""}`}
-                                        onClick={() => showImagePopup(e.url)}
-                                    />
-                                )
-                            }
-                            return (
-                                <Card
-                                    className={`w-full h-full aspect-[16/9] ${!isNext ? "scale-90" : ""}`}>
-                                    <ReactPlayer
-                                        url={e.url}
-                                        width="100%"
-                                        height="100%"
-                                    />
-                                </Card>
-                            )
-                        }}
-                    </SwiperSlide>
-                ))}
-            </Swiper>
-            <ImagePopup imageUrl={selectedImageUrl} isOpen={imagePopup.isOpen} onOpenChange={imagePopup.onOpenChange}/>
+        <div className={className}>
+            {elements && elements.length > 0 &&
+                <div className="w-full flex flex-col gap-2 items-center">
+                    <div className="w-full flex flex-row items-center">
+                        <IconContext.Provider value={{size: 50}}>
+                            <CaretLeft className="swiper-custom-button-prev cursor-pointer fill-primary"/>
+                            <Swiper
+                                modules={[Pagination, Navigation, Autoplay]}
+                                slidesPerView={DEFAULT_SLIDES_PER_VIEW > elements.length ? elements.length : DEFAULT_SLIDES_PER_VIEW}
+                                pagination={{
+                                    clickable: true,
+                                    el: ".swiper-custom-pagination"
+                                }}
+                                navigation={{
+                                    prevEl: ".swiper-custom-button-prev",
+                                    nextEl: ".swiper-custom-button-next"
+                                }}
+                                centeredSlides={true}
+                                loop={true}
+                                spaceBetween={0}
+                                autoplay={{
+                                    delay: 10000,
+                                    disableOnInteraction: true
+                                }}
+                                className="w-full"
+                            >
+                                {elements && elements.map((e, index) => (
+                                    <SwiperSlide key={index} virtualIndex={index}>
+                                        {({isActive}: SlideData) => {
+                                            if (e.type === "image") {
+                                                return (
+                                                    <Image
+                                                        src={e.url}
+                                                        alt={`Game screenshot slide ${index}`}
+                                                        className={`w-full h-full object-cover aspect-[16/9] cursor-zoom-in ${!isActive ? "scale-90" : ""}`}
+                                                        onClick={() => showImagePopup(e.url)}
+                                                    />
+                                                )
+                                            }
+                                            return (
+                                                <Card
+                                                    className={`w-full h-full aspect-[16/9] ${!isActive ? "scale-90" : ""}`}>
+                                                    <ReactPlayer
+                                                        url={e.url}
+                                                        width="100%"
+                                                        height="100%"
+                                                        light={true}
+                                                        controls={true}
+                                                        playing={isActive}
+                                                        playIcon={<Play weight="fill"/>}
+                                                    />
+                                                </Card>
+                                            )
+                                        }}
+                                    </SwiperSlide>
+                                ))}
+                                <ImagePopup imageUrl={selectedImageUrl} isOpen={imagePopup.isOpen}
+                                            onOpenChange={imagePopup.onOpenChange}/>
+                            </Swiper>
+                            <CaretRight className="swiper-custom-button-next cursor-pointer fill-primary"/>
+                        </IconContext.Provider>
+                    </div>
+                    <div>
+                        {/* Wrap the pagination in a div because it gets replaced at runtime be SwiperJS and loses all styling */}
+                        <div className="swiper-custom-pagination"/>
+                    </div>
+                </div>
+            }
         </div>
     );
 }

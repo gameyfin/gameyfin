@@ -14,9 +14,17 @@
 
 /* Custom CSS */
 
-/* Overwrite default Hilla styles (e.g. loading indicator) */
 :root {
+    /* Overwrite default Hilla styles (e.g. loading indicator) */
     --lumo-primary-color: theme(colors.primary);
+
+    /* Overwrite SwiperJS styles */
+    --swiper-navigation-color: theme(colors.primary);
+    --swiper-pagination-color: theme(colors.primary);
+
+    .swiper-pagination-bullet {
+        background-color: theme(colors.primary);
+    }
 }
 
 /* List box drag & drop */
