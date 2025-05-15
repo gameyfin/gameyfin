@@ -7,6 +7,7 @@ import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Chip} from "@heroui/react";
 import {toTitleCase} from "Frontend/util/utils";
+import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -18,7 +19,7 @@ export default function GameView() {
             label: "Direct Download",
             description: "Download the game in this browser",
             action: () => {
-                alert("Direct download not yet implemented")
+                DownloadEndpoint.downloadGame(parseInt(gameId!), "de.grimsi.gameyfin.plugins.directdownload.DirectDownloadPlugin$DirectDownloadProvider")
             }
         },
         torrent: {

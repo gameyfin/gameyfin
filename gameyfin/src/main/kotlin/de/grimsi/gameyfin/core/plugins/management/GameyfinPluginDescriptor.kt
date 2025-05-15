@@ -4,24 +4,31 @@ import org.pf4j.DefaultPluginDescriptor
 import org.pf4j.PluginDescriptor
 
 data class GameyfinPluginDescriptor(
-    var pluginUrl: String,
+    var pluginUrl: String?,
     var pluginName: String,
+    var pluginShortDescription: String?,
     var author: String
 ) : DefaultPluginDescriptor() {
 
+    companion object {
+        const val NEWLINE_INDICATOR = "<br>"
+    }
+
     constructor(
         descriptor: PluginDescriptor,
-        url: String,
+        url: String?,
         name: String,
+        shortDescription: String?,
         author: String
     ) : this(
         pluginUrl = url,
         pluginName = name,
+        pluginShortDescription = shortDescription,
         author = author
     ) {
         this.pluginId = descriptor.pluginId
-        // The Manifest parser ignores newlines in the description
-        this.pluginDescription = descriptor.pluginDescription.replace("<br>", "\n")
+        // The Manifest spec does not account for line breaks in values
+        this.pluginDescription = descriptor.pluginDescription.replace(NEWLINE_INDICATOR, "\n")
         this.pluginClass = descriptor.pluginClass
         this.setPluginVersion(descriptor.version)
         this.requires = descriptor.requires

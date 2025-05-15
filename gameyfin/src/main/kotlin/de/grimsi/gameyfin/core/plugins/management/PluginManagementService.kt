@@ -93,6 +93,7 @@ class PluginManagementService(
             id = descriptor.pluginId,
             name = descriptor.pluginName,
             description = descriptor.pluginDescription,
+            shortDescription = descriptor.pluginShortDescription,
             version = descriptor.version,
             author = descriptor.author,
             license = descriptor.license,

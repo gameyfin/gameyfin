@@ -6,6 +6,7 @@ data class PluginDto(
     val id: String,
     val name: String,
     val description: String,
+    val shortDescription: String? = null,
     val version: String,
     val author: String,
     val license: String? = null,
