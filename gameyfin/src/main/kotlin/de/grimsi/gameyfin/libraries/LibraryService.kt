@@ -170,6 +170,7 @@ class LibraryService(
             val totalPaths = gamePaths.size
             val completedMetadata = AtomicInteger(0)
             val completedImageDownload = AtomicInteger(0)
+            val calculatedFileSize = AtomicInteger(0)
 
             log.info { "Scanning library '${library.name}' with $totalPaths paths..." }
 
@@ -238,14 +239,30 @@ class LibraryService(
 
             val gamesWithImages = executor.invokeAll(imageDownloadTasks).mapNotNull { it.get() }
 
-            // 3. Persist new games
+            // 3. Calculate game file sizes
+            val calculateFileSizeTask = matchedGames.map { game ->
+                Callable {
+                    game.path.let { path ->
+                        val fileSize = filesystemService.calculateFileSize(path)
+                        game.fileSize = fileSize
+                        val progress = calculatedFileSize.incrementAndGet()
+                        log.debug { "${progress}/${totalPaths} file sizes calculated" }
+                        game
+                    }
+                }
+            }
+
+            val gamesWithFileSizes = executor.invokeAll(calculateFileSizeTask).map { it.get() }
+
+
+            // 4. Persist new games
             val persistedGames = gameService.create(gamesWithImages)
             log.debug { "${persistedGames.size}/${totalPaths} saved to database" }
 
-            // 4. Add new games to library
+            // 5. Add new games to library
             addGamesToLibrary(persistedGames, library)
 
-            // 5. Persist library
+            // 6. Persist library
             libraryRepository.save(library)
 
             return LibraryScanResult(

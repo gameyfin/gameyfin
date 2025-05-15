@@ -345,6 +345,7 @@ fun Game.toDto(): GameDto {
         imageIds = this.images.mapNotNull { it.id },
         videoUrls = this.videoUrls.map { it.toString() },
         path = this.path,
+        fileSize = this.fileSize ?: 0L,
         metadata = toDto(this.metadata),
         originalIds = this.originalIds.mapKeys { it.key.pluginId }
     )

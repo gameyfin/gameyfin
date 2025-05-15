@@ -17,10 +17,10 @@ class DownloadService(
         return downloadPlugins.map { it.javaClass.name }
     }
 
-    fun getDownloadElement(path: String, provider: String): Download {
+    fun getDownload(path: String, provider: String): Download {
         val provider = downloadPlugins.firstOrNull { it.javaClass.name == provider }
             ?: throw IllegalArgumentException("Download provider $provider not found")
 
-        return provider.getDownloadSources(Path(path))
+        return provider.download(Path(path))
     }
 }

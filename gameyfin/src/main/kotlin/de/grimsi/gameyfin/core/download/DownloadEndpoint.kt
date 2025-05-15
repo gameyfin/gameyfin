@@ -4,10 +4,9 @@ import de.grimsi.gameyfin.core.annotations.DynamicPublicAccess
 import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.pluginapi.download.FileDownload
 import de.grimsi.gameyfin.pluginapi.download.LinkDownload
-import org.springframework.core.io.InputStreamResource
-import org.springframework.core.io.Resource
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 
 @RestController
 @RequestMapping("/download")
@@ -21,19 +20,20 @@ class DownloadEndpoint(
     }
 
     @GetMapping("/{gameId}")
-    fun downloadGame(@PathVariable gameId: Long, @RequestParam provider: String): ResponseEntity<Resource> {
+    fun downloadGame(
+        @PathVariable gameId: Long,
+        @RequestParam provider: String
+    ): ResponseEntity<StreamingResponseBody> {
         val game = gameService.getGame(gameId)
-        val downloadElement = downloadService.getDownloadElement(game.path, provider)
+        val download = downloadService.getDownload(game.path, provider)
 
-        return when (downloadElement) {
+        return when (download) {
             is FileDownload -> {
-                val resource = InputStreamResource(downloadElement.data)
                 ResponseEntity.ok()
-                    .header(
-                        "Content-Disposition",
-                        "attachment; filename=\"${game.title}.${downloadElement.fileExtension}\""
-                    )
-                    .body(resource)
+                    .header("Content-Disposition", "attachment; filename=\"${game.title}.zip\"")
+                    .body(StreamingResponseBody { outputStream ->
+                        download.data.copyTo(outputStream)
+                    })
             }
 
             is LinkDownload -> {

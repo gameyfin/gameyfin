@@ -78,6 +78,8 @@ class Game(
     @Column(unique = true)
     val path: String,
 
+    var fileSize: Long? = null,
+
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     var metadata: Map<String, FieldMetadata> = emptyMap(),
 

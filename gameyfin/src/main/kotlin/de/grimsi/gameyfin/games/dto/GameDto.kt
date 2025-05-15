@@ -24,6 +24,7 @@ class GameDto(
     val imageIds: List<Long>?,
     val videoUrls: List<String>?,
     val path: String,
+    val fileSize: Long,
     val metadata: Map<String, GameMetadataDto>,
     val originalIds: Map<String, String>
 )

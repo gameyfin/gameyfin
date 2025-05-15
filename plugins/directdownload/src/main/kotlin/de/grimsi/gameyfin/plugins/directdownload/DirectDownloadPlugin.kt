@@ -10,13 +10,12 @@ import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.IOException
 import java.io.InputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.concurrent.BlockingQueue
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -26,6 +25,15 @@ import kotlin.io.path.fileSize
 import kotlin.io.path.isDirectory
 
 class DirectDownloadPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Configurable {
+    companion object {
+        lateinit var plugin: DirectDownloadPlugin
+            private set
+    }
+
+    init {
+        plugin = this
+    }
+
     val log: Logger = LoggerFactory.getLogger(javaClass)
 
     enum class CompressionMode {
@@ -68,64 +76,77 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Co
 
     @Extension
     class DirectDownloadProvider : DownloadProvider {
-        companion object {
-            private val END_OF_QUEUE = Pair<ZipEntry, Path>(ZipEntry("__END__"), Paths.get(""))
-        }
-
-        override fun getDownloadSources(path: Path): Download {
+        override fun download(path: Path): Download {
             if (!path.exists()) throw IllegalArgumentException("Path $path does not exist")
 
             return FileDownload(
-                data = readContentAsSingleFile(path),
+                data = streamContentAsSingleFile(path),
                 fileExtension = if (path.isDirectory()) "zip" else path.extension,
                 size = path.fileSize()
             )
         }
 
-        fun readContentAsSingleFile(path: Path): InputStream {
-            if (path.isDirectory()) return zipFilesInPath(path)
-            return Files.newInputStream(path, StandardOpenOption.READ)
+        fun streamContentAsSingleFile(path: Path): InputStream {
+            if (path.isDirectory()) return streamFolderAsZip(path)
+            return streamFile(path)
         }
 
-        private fun zipFilesInPath(path: Path): InputStream {
-            val pipedIn = PipedInputStream(64 * 1024)
-            val pipedOut = PipedOutputStream(pipedIn)
-            val queue: BlockingQueue<Pair<ZipEntry, Path>?> = LinkedBlockingQueue()
+        fun streamFile(path: Path): InputStream {
+            val pipeIn = PipedInputStream(512 * 1024)
+            val pipeOut = PipedOutputStream(pipeIn)
 
-            // Producer: walks the file tree and enqueues files
-            Thread.startVirtualThread {
+            Thread.ofVirtual().start {
                 try {
-                    Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
-                        override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-                            val entry = ZipEntry(path.relativize(file).toString())
-                            queue.put(entry to file)
-                            return FileVisitResult.CONTINUE
-                        }
-                    })
+                    Files.newInputStream(path, StandardOpenOption.READ).use { input ->
+                        input.copyTo(pipeOut, 512 * 1024)
+                    }
+                } catch (_: IOException) {
                 } finally {
-                    queue.put(END_OF_QUEUE) // signal end
+                    try {
+                        pipeOut.close()
+                    } catch (_: IOException) {
+                    }
                 }
             }
 
-            // Consumer: zips files in parallel, but writes entries in order
-            Thread {
-                ZipOutputStream(pipedOut).use { zos ->
-                    zos.setLevel(Deflater.NO_COMPRESSION)
-                    while (true) {
-                        val item = queue.take()
-                        if (item === END_OF_QUEUE || item == null) break
-                        val (entry, file) = item
-                        zos.putNextEntry(entry)
-                        Files.newInputStream(file, StandardOpenOption.READ).use { input ->
-                            input.copyTo(zos, 128 * 1024)
-                        }
-                        zos.closeEntry()
+            return pipeIn
+        }
+
+        fun streamFolderAsZip(path: Path): InputStream {
+            val pipeIn = PipedInputStream(512 * 1024) // 512 KB buffer
+            val pipeOut = PipedOutputStream(pipeIn)
+
+            Thread.ofVirtual().start {
+                try {
+                    ZipOutputStream(pipeOut).use { zos ->
+
+                        zos.setLevel(CompressionMode.toDeflaterLevel(plugin.config["compressionMode"]?.let {
+                            CompressionMode.valueOf(it.uppercase())
+                        } ?: CompressionMode.NONE))
+
+                        Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
+                            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                                val entry = ZipEntry(path.relativize(file).toString())
+                                zos.putNextEntry(entry)
+                                Files.newInputStream(file, StandardOpenOption.READ).use { input ->
+                                    input.copyTo(zos, 512 * 1024)
+                                }
+                                zos.closeEntry()
+                                return FileVisitResult.CONTINUE
+                            }
+                        })
+                    }
+                    pipeOut.close()
+                } catch (_: IOException) {
+                } finally {
+                    try {
+                        pipeOut.close()
+                    } catch (_: IOException) {
                     }
                 }
-                pipedOut.close()
-            }.start()
+            }
 
-            return pipedIn
+            return pipeIn
         }
     }
 }

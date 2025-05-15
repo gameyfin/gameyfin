@@ -6,7 +6,7 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Chip} from "@heroui/react";
-import {toTitleCase} from "Frontend/util/utils";
+import {humanFileSize, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 
 export default function GameView() {
@@ -61,7 +61,7 @@ export default function GameView() {
                             <p className="text-foreground/60">{game.release !== undefined ? new Date(game.release).getFullYear() : "unknown"}</p>
                         </div>
                     </div>
-                    <ComboButton description="64 GiB"
+                    <ComboButton description={humanFileSize(game.fileSize)}
                                  options={downloadOptions}
                                  preferredOptionKey="preferred-download-method"
                     />

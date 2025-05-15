@@ -6,6 +6,7 @@ import de.grimsi.gameyfin.libraries.Library
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.io.FilenameUtils
 import org.springframework.stereotype.Service
+import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -123,6 +124,22 @@ class FilesystemService(
             removedGamePaths = removedGamePaths,
             removedUnmatchedPaths = removedUnmatchedPaths
         )
+    }
+
+    fun calculateFileSize(path: String): Long {
+        return try {
+            val file = File(path)
+            if (file.isFile) {
+                file.length()
+            } else if (file.isDirectory) {
+                File(path).walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+            } else {
+                0L
+            }
+        } catch (e: Exception) {
+            log.warn { "Error calculating file size for $path: ${e.message}" }
+            0L
+        }
     }
 
     private fun safeReadDirectoryContents(path: String): List<FileDto> {

@@ -39,6 +39,10 @@ spring:
     fs.filesystem-root: ./data/
   application:
     name: Gameyfin
+  threads:
+    virtual.enabled: true
+  mvc:
+    async.request-timeout: 0
 
 vaadin:
   # To improve the performance during development.

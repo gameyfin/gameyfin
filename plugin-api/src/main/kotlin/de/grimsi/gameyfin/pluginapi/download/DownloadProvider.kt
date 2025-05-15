@@ -5,5 +5,5 @@ import java.nio.file.Path
 
 interface DownloadProvider : ExtensionPoint {
 
-    fun getDownloadSources(path: Path): Download
+    fun download(path: Path): Download
 }
