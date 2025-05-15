@@ -2,7 +2,7 @@ package de.grimsi.gameyfin.core.plugins.management
 
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigRepository
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigValidationResult
-import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
+import de.grimsi.gameyfin.pluginapi.core.Configurable
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
@@ -157,7 +157,7 @@ class GameyfinPluginManager(
     fun restart(pluginId: String) {
         val plugin = getPlugin(pluginId)?.plugin ?: return
         stopPlugin(pluginId)
-        (plugin as GameyfinPlugin).loadConfig(getConfig(pluginId))
+        if (plugin is Configurable) plugin.config = getConfig(pluginId)
         startPlugin(pluginId)
     }
 
@@ -168,7 +168,7 @@ class GameyfinPluginManager(
             return PluginConfigValidationResult.UNKNWOWN
         }
 
-        if (plugin is GameyfinPlugin && plugin.validateConfig()) {
+        if (plugin !is Configurable || plugin.validateConfig()) {
             return PluginConfigValidationResult.VALID
         }
 
@@ -177,9 +177,9 @@ class GameyfinPluginManager(
 
     private fun configurePlugin(pluginWrapper: PluginWrapper) {
         val plugin = pluginWrapper.plugin
-        if (plugin is GameyfinPlugin) {
+        if (plugin is Configurable) {
             val config = getConfig(pluginWrapper.pluginId)
-            plugin.loadConfig(config)
+            plugin.config = config
         }
     }
 

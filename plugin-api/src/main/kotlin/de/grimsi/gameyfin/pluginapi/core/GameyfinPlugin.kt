@@ -10,23 +10,6 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
         val SUPPORTED_LOGO_FORMATS: List<String> = listOf("png", "jpg", "jpeg", "gif", "svg", "webp")
     }
 
-    abstract val configMetadata: List<PluginConfigElement>
-    protected open var config: Map<String, String?> = emptyMap()
-
-    open fun getCurrentConfig(): Map<String, String?> {
-        return config
-    }
-
-    open fun loadConfig(config: Map<String, String?>) {
-        this.config = config
-    }
-
-    open fun validateConfig(): Boolean {
-        return validateConfig(config)
-    }
-
-    abstract fun validateConfig(config: Map<String, String?>): Boolean
-
     fun hasLogo(): Boolean {
         for (format in SUPPORTED_LOGO_FORMATS) {
             val resourcePath = "$LOGO_FILE_NAME.$format"

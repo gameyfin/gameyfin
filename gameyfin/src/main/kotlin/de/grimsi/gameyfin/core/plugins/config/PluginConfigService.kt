@@ -1,7 +1,7 @@
 package de.grimsi.gameyfin.core.plugins.config
 
 import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginManager
-import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
+import de.grimsi.gameyfin.pluginapi.core.Configurable
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
@@ -23,7 +23,7 @@ class PluginConfigService(
             return emptyList()
         }
 
-        if (plugin !is GameyfinPlugin) return emptyList()
+        if (plugin !is Configurable) return emptyList()
 
         return plugin.configMetadata
     }

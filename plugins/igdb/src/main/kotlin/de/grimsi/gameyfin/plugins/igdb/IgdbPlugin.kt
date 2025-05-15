@@ -5,6 +5,7 @@ import com.api.igdb.exceptions.RequestException
 import com.api.igdb.request.IGDBWrapper
 import com.api.igdb.request.TwitchAuthenticator
 import com.api.igdb.request.games
+import de.grimsi.gameyfin.pluginapi.core.Configurable
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigError
@@ -18,12 +19,22 @@ import proto.Game
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
-class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
+class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Configurable {
 
-    override val configMetadata: List<PluginConfigElement> = listOf(
-        PluginConfigElement("clientId", "Twitch client ID", "Your Twitch Client ID"),
-        PluginConfigElement("clientSecret", "Twitch client secret", "Your Twitch Client Secret", true)
+    override val configMetadata = listOf(
+        PluginConfigElement(
+            key = "clientId",
+            name = "Twitch client ID",
+            description = "Your Twitch Client ID"
+        ),
+        PluginConfigElement(
+            key = "clientSecret",
+            name = "Twitch client secret",
+            description = "Your Twitch Client Secret",
+            isSecret = true
+        )
     )
+    override var config: Map<String, String?> = emptyMap()
 
     override fun validateConfig(config: Map<String, String?>): Boolean {
         try {

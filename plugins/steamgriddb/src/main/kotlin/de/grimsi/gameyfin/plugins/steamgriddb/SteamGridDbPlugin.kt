@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.plugins.steamgriddb
 
+import de.grimsi.gameyfin.pluginapi.core.Configurable
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigError
@@ -15,7 +16,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
 
-class SteamGridDbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
+class SteamGridDbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Configurable {
 
     companion object {
         private var client: SteamGridDbApiClient? = null
@@ -24,8 +25,14 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
     val log: Logger = LoggerFactory.getLogger(javaClass)
 
     override val configMetadata: List<PluginConfigElement> = listOf(
-        PluginConfigElement("apiKey", "SteamGridDB API key", "Your SteamGridDB API key", true)
+        PluginConfigElement(
+            key = "apiKey",
+            name = "SteamGridDB API key",
+            description = "Your SteamGridDB API key",
+            isSecret = true
+        )
     )
+    override var config: Map<String, String?> = emptyMap()
 
     override fun validateConfig(config: Map<String, String?>): Boolean {
         try {

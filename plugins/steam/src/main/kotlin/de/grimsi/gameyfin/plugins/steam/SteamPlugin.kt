@@ -1,7 +1,6 @@
 package de.grimsi.gameyfin.plugins.steam
 
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import de.grimsi.gameyfin.plugins.steam.dto.SteamDetailsResultWrapper
@@ -34,13 +33,6 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             isLenient = true
             ignoreUnknownKeys = true
         }
-    }
-
-    override val configMetadata: List<PluginConfigElement> = emptyList()
-
-    override fun validateConfig(config: Map<String, String?>): Boolean {
-        // No config to validate
-        return true
     }
 
     @Extension
