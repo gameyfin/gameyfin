@@ -62,8 +62,17 @@ class GameyfinPluginManager(
         return dbPluginStatusProvider
     }
 
+    override fun createPluginDescriptorFinder(): PluginDescriptorFinder {
+        return GameyfinManifestPluginDescriptorFinder()
+    }
+
     override fun loadPluginFromPath(pluginPath: Path?): PluginWrapper? {
-        val pluginWrapper = super.loadPluginFromPath(pluginPath)
+        val pluginWrapper = try {
+            super.loadPluginFromPath(pluginPath)
+        } catch (e: Exception) {
+            log.error { "Failed to load plugin $pluginPath: ${e.message}" }
+            null
+        }
 
         if (pluginWrapper == null || pluginPath == null) return null
 

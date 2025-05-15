@@ -1,11 +1,13 @@
 import React, {useEffect, useState} from "react";
-import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {addToast, Button, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {PluginConfigEndpoint, PluginManagementEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/input/Input";
 import PluginLogo from "Frontend/components/general/PluginLogo";
+import Markdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 
 interface PluginDetailsModalProps {
     plugin: PluginDto;
@@ -58,18 +60,53 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange, update
                                     Plugin configuration for {plugin.name}
                                 </ModalHeader>
                                 <ModalBody>
-                                    <h4 className="text-l font-bold">Details</h4>
-                                    <div className="flex flex-row gap-8">
-                                        <PluginLogo plugin={plugin}/>
-                                        <div className="grid grid-cols-2">
-                                            <p>Author: {plugin.author}</p>
-                                            <p>Version: {plugin.version}</p>
-                                            <p>Plugin ID: {plugin.id}</p>
-                                            <p>Status: {plugin.state?.toLowerCase()}</p>
+                                    <div className="flex flex-col text-sm">
+                                        <div className="flex flex-row items-center gap-8 mb-4">
+                                            <PluginLogo plugin={plugin}/>
+                                            <table className="text-left table-auto">
+                                                <tbody>
+                                                {Object.entries({
+                                                    "Author": plugin.author,
+                                                    "Version": plugin.version,
+                                                    "License": plugin.license,
+                                                    "URL": <Link isExternal
+                                                                 showAnchorIcon
+                                                                 color="foreground"
+                                                                 size="sm"
+                                                                 href={plugin.url}>
+                                                        {plugin.url}
+                                                    </Link>,
+                                                }).map(([key, value]) => {
+                                                    if (!value) return;
+                                                    return (
+                                                        <tr key={key}>
+                                                            <td className="text-foreground/60 w-0 min-w-20">{key}</td>
+                                                            <td className="flex flex-row gap-1">{value}</td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                                </tbody>
+                                            </table>
                                         </div>
+                                        <p className="text-foreground/60">Description</p>
+                                        <Markdown
+                                            remarkPlugins={[remarkBreaks]}
+                                            components={{
+                                                a(props) {
+                                                    return <Link isExternal
+                                                                 showAnchorIcon
+                                                                 color="foreground"
+                                                                 underline="always"
+                                                                 href={props.href}
+                                                                 size="sm">
+                                                        {props.children}
+                                                    </Link>
+                                                }
+                                            }}
+                                        >{plugin.description}</Markdown>
                                     </div>
 
-                                    <h4 className="text-l font-bold mt-6">Configuration</h4>
+                                    <h4 className="text-l font-bold mt-4">Configuration</h4>
                                     {(pluginConfigMeta && pluginConfigMeta.length > 0) ?
                                         pluginConfigMeta.map((entry: PluginConfigElement) => (
                                             <Input key={entry.key} name={entry.key} label={entry.name}

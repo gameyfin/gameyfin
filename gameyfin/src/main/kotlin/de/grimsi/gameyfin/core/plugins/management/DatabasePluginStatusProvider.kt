@@ -10,13 +10,11 @@ class DatabasePluginStatusProvider(
 ) : PluginStatusProvider {
 
     override fun isPluginDisabled(pluginId: String): Boolean {
-        var pluginManagement = pluginManagementRepository.findByIdOrNull(pluginId)
+        val pluginManagement = pluginManagementRepository.findByIdOrNull(pluginId)
 
-        if (pluginManagement == null) {
-            return true
-        }
+        if (pluginManagement == null) return true
 
-        return pluginManagement.enabled != true
+        return !pluginManagement.enabled
     }
 
     override fun disablePlugin(pluginId: String) {

@@ -1,6 +1,10 @@
-Manifest-Version: 1.0
+Plugin-Version: 1.0.0-alpha6
 Plugin-Class: de.grimsi.gameyfin.plugins.igdb.IgdbPlugin
-Plugin-Id: igdb
-Plugin-Description: IGDB Metadata
-Plugin-Version: 1.0.0-alpha5
-Plugin-Provider: grimsi
+Plugin-Id: de.grimsi.gameyfin.igdb
+Plugin-Name: IGDB Metadata
+Plugin-Description: Fetches metadata from IGDB.<br>
+ Requires a Twitch account and IGDB API credentials.<br>
+ Details see in the [IGDB API docs](https://api-docs.igdb.com/#account-creation).
+Plugin-Author: grimsi
+Plugin-License: MIT
+Plugin-Url: https://github.com/gameyfin

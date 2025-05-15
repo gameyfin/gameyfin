@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.pluginapi.gamemetadata
 import java.net.URI
 import java.time.Instant
 
-class GameMetadata(
+data class GameMetadata(
     val originalId: String,
     val title: String,
     val description: String? = null,

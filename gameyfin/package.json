@@ -43,8 +43,10 @@
     "react-aria-components": "^1.7.1",
     "react-confetti-boom": "^1.0.0",
     "react-dom": "18.3.1",
+    "react-markdown": "^10.1.0",
     "react-player": "^2.16.0",
     "react-router": "7.5.2",
+    "remark-breaks": "^4.0.0",
     "swiper": "^11.2.6",
     "yup": "^1.6.1"
   },
@@ -132,7 +134,9 @@
     "rand-seed": "$rand-seed",
     "react-router": "$react-router",
     "swiper": "$swiper",
-    "react-player": "$react-player"
+    "react-player": "$react-player",
+    "react-markdown": "$react-markdown",
+    "remark-breaks": "$remark-breaks"
   },
   "vaadin": {
     "dependencies": {
@@ -193,6 +197,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "b7f2b9b343406ec77ce90fe42104642df3b7205f522d2cc60db71051097a32de"
+    "hash": "f66bddf01ef8dd09a431102050ddd561b4587fdd43bcbff127b93872febbee92"
   }
 }

@@ -87,15 +87,20 @@ class PluginManagementService(
             false
         }
 
+        val descriptor = pluginWrapper.descriptor as GameyfinPluginDescriptor
+
         return PluginDto(
-            pluginWrapper.pluginId,
-            pluginWrapper.descriptor.pluginDescription,
-            pluginWrapper.descriptor.version,
-            pluginWrapper.descriptor.provider,
-            hasLogo,
-            pluginWrapper.pluginState,
-            pluginManagementEntry.priority,
-            pluginManagementEntry.trustLevel
+            id = descriptor.pluginId,
+            name = descriptor.pluginName,
+            description = descriptor.pluginDescription,
+            version = descriptor.version,
+            author = descriptor.author,
+            license = descriptor.license,
+            url = descriptor.pluginUrl,
+            hasLogo = hasLogo,
+            state = pluginWrapper.pluginState,
+            priority = pluginManagementEntry.priority,
+            trustLevel = pluginManagementEntry.trustLevel
         )
     }
 }

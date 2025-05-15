@@ -1,6 +1,10 @@
-Manifest-Version: 1.0
+Plugin-Version: 1.0.0-alpha3
 Plugin-Class: de.grimsi.gameyfin.plugins.steamgriddb.SteamGridDbPlugin
-Plugin-Id: steamgriddb
-Plugin-Description: SteamGridDB covers
-Plugin-Version: 1.0.0-alpha2
-Plugin-Provider: grimsi
+Plugin-Id: de.grimsi.gameyfin.steamgriddb
+Plugin-Name: SteamGridDB Covers
+Plugin-Description: Fetches covers from SteamGridDB.<br>
+ Requires a SteamGridDB account and an API key.<br>
+ The API key can be obtained [here](https://www.steamgriddb.com/profile/preferences/api).
+Plugin-Author: grimsi
+Plugin-License: MIT
+Plugin-Url: https://github.com/gameyfin
