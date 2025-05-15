@@ -69,7 +69,10 @@ export default function GameView() {
                     <div className="flex flex-row gap-12">
                         <div className="flex flex-col flex-1 gap-2">
                             <p className="text-foreground/60">Summary</p>
-                            <p className="text-justify">{game.summary}</p>
+                            {game.summary ?
+                                <div className="text-justify" dangerouslySetInnerHTML={{__html: game.summary}}/> :
+                                <p>No summary available</p>
+                            }
                         </div>
                         <div className="flex flex-col flex-1 gap-2">
                             <p className="text-foreground/60">Details</p>
