@@ -66,6 +66,12 @@ class GameyfinPluginManager(
         return GameyfinManifestPluginDescriptorFinder()
     }
 
+    override fun createExtensionFinder(): ExtensionFinder? {
+        val extensionFinder = GameyfinExtensionFinder(this)
+        addPluginStateListener(extensionFinder)
+        return extensionFinder
+    }
+
     override fun loadPluginFromPath(pluginPath: Path?): PluginWrapper? {
         val pluginWrapper = try {
             super.loadPluginFromPath(pluginPath)
