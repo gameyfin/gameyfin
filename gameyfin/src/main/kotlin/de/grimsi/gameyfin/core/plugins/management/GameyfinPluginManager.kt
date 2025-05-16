@@ -175,6 +175,21 @@ class GameyfinPluginManager(
         return PluginConfigValidationResult.INVALID
     }
 
+    fun getExtensionTypeClasses(pluginId: String): Set<Class<ExtensionPoint>> {
+        return getExtensionClasses(pluginId)
+            .flatMap { it.interfaces.toList() }
+            .filterIsInstance<Class<ExtensionPoint>>()
+            .toSet()
+    }
+
+    fun getExtensionTypes(pluginId: String): Set<String> {
+        return getExtensionClasses(pluginId)
+            .flatMap { it.interfaces.toList() }
+            .filterIsInstance<Class<ExtensionPoint>>()
+            .map { it.simpleName }
+            .toSet()
+    }
+
     private fun configurePlugin(pluginWrapper: PluginWrapper) {
         val plugin = pluginWrapper.plugin
         if (plugin is Configurable) {

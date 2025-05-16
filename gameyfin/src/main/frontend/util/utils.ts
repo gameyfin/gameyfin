@@ -30,6 +30,12 @@ export function toTitleCase(str: string) {
     }).join(' ');
 }
 
+export function camelCaseToTitle(text: string): string {
+    return text
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/^./, str => str.toUpperCase());
+}
+
 export function roleToColor(role: string) {
     switch (role) {
         case "ROLE_SUPERADMIN":

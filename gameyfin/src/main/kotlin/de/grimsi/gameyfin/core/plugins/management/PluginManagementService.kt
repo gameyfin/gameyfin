@@ -12,8 +12,27 @@ class PluginManagementService(
     private val pluginManager: GameyfinPluginManager,
     private val pluginManagementRepository: PluginManagementRepository,
 ) {
-    fun getPluginDtos(): List<PluginDto> {
-        return pluginManager.plugins.map { toDto(it) }
+
+    fun getSupportedPluginTypes(): Set<String> {
+        return pluginManager.plugins
+            .flatMap { pluginManager.getExtensionTypes(it.pluginId) }
+            .toSet()
+    }
+
+    fun getPluginDtos(type: String?): Set<PluginDto> {
+        return pluginManager.plugins
+            .filter { type == null || type in pluginManager.getExtensionTypes(it.pluginId) }
+            .map { toDto(it) }
+            .toSet()
+    }
+
+    fun getPluginDtosMappedToTypes(): Map<String, List<PluginDto>> {
+        return pluginManager.plugins
+            .flatMap { plugin ->
+                val types = pluginManager.getExtensionTypes(plugin.pluginId)
+                types.map { it to toDto(plugin) }
+            }
+            .groupBy({ it.first }, { it.second })
     }
 
     fun getPluginDto(pluginId: String): PluginDto {

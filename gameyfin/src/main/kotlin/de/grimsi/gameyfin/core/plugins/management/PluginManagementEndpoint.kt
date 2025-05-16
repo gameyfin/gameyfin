@@ -10,7 +10,11 @@ import jakarta.annotation.security.RolesAllowed
 class PluginManagementEndpoint(
     private val pluginManagementService: PluginManagementService
 ) {
-    fun getPlugins() = pluginManagementService.getPluginDtos()
+    fun getSupportedPluginTypes() = pluginManagementService.getSupportedPluginTypes()
+
+    fun getPlugins(type: String?) = pluginManagementService.getPluginDtos(type)
+
+    fun getPluginsMappedToTypes() = pluginManagementService.getPluginDtosMappedToTypes()
 
     fun getPlugin(pluginId: String) = pluginManagementService.getPluginDto(pluginId)
 
