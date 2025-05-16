@@ -49,10 +49,9 @@ export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
             <div className="w-full relative">
                 <Card ref={containerRef} className="flex flex-row gap-2 bg-transparent" radius={radius}>
                     {games.slice(0, visibleCount).map((game, index) => (
-                        <div className="flex-shrink-0 cursor-pointer" key={index}
-                             onClick={() => navigate(`/game/${game.id}`)}>
+                        <a key={index} href={`/game/${game.id}`}>
                             <GameCover game={game} radius={radius} hover={true}/>
-                        </div>
+                        </a>
                     ))}
                 </Card>
 

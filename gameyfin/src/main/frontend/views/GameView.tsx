@@ -40,16 +40,16 @@ export default function GameView() {
 
     return (game && (
         <div className="flex flex-col gap-4">
-            {game.imageIds !== undefined && game.imageIds.length > 0 &&
-                <div className="overflow-hidden rounded-lg relative">
+            <div className="overflow-hidden relative rounded-t-lg">
+                {(game.imageIds !== undefined && game.imageIds.length > 0) ?
                     <img className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                          alt="Game screenshot"
                          src={`/images/screenshot/${game.imageIds[0]}`}
-                    />
-                    <div
-                        className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent to-background"/>
-                </div>
-            }
+                    /> :
+                    <div className="w-full h-96 bg-secondary relative"/>
+                }
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"/>
+            </div>
             <div className="flex flex-col gap-4 mx-24">
                 <div className="flex flex-row justify-between">
                     <div className="flex flex-row gap-4">
@@ -80,10 +80,12 @@ export default function GameView() {
                             <table className="text-left w-full table-auto">
                                 <tbody>
                                 {Object.entries({
-                                    "Developed by": game.developers?.sort().join(" / "),
-                                    "Published by": game.publishers?.sort().join(" / "),
-                                    "Genres": game.genres?.sort().map(p => <Chip radius="sm">{toTitleCase(p)}</Chip>),
-                                    "Themes": game.themes?.sort().map(p => <Chip radius="sm">{toTitleCase(p)}</Chip>),
+                                    "Developed by": game.developers?.sort().join(" / ") || "unknown",
+                                    "Published by": game.publishers?.sort().join(" / ") || "unknown",
+                                    "Genres": game.genres?.sort().map(p => <Chip
+                                        radius="sm">{toTitleCase(p)}</Chip>),
+                                    "Themes": game.themes?.sort().map(p => <Chip
+                                        radius="sm">{toTitleCase(p)}</Chip>),
                                     "Features": game.features?.sort().map(p => <Chip
                                         radius="sm">{toTitleCase(p)}</Chip>),
                                 }).map(([key, value]) => (
