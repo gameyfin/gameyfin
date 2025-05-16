@@ -1,7 +1,6 @@
 package de.grimsi.gameyfin.plugins.steamgriddb
 
-import de.grimsi.gameyfin.pluginapi.core.Configurable
-import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
+import de.grimsi.gameyfin.pluginapi.core.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigError
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
@@ -12,17 +11,13 @@ import de.grimsi.gameyfin.plugins.steamgriddb.dto.SteamGridDbGrid
 import kotlinx.coroutines.runBlocking
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.net.URI
 
-class SteamGridDbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Configurable {
+class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
     companion object {
         private var client: SteamGridDbApiClient? = null
     }
-
-    val log: Logger = LoggerFactory.getLogger(javaClass)
 
     override val configMetadata: List<PluginConfigElement> = listOf(
         PluginConfigElement(
@@ -32,7 +27,6 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Confi
             isSecret = true
         )
     )
-    override var config: Map<String, String?> = emptyMap()
 
     override fun validateConfig(config: Map<String, String?>): Boolean {
         try {

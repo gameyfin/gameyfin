@@ -8,6 +8,13 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     companion object {
         const val LOGO_FILE_NAME: String = "logo"
         val SUPPORTED_LOGO_FORMATS: List<String> = listOf("png", "jpg", "jpeg", "gif", "svg", "webp")
+
+        lateinit var plugin: GameyfinPlugin
+            private set
+    }
+
+    init {
+        plugin = this
     }
 
     fun hasLogo(): Boolean {

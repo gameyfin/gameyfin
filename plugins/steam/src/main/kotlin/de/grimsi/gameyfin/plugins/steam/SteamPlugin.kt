@@ -20,7 +20,6 @@ import kotlinx.serialization.json.Json
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
@@ -37,7 +36,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
     @Extension
     class SteamMetadataProvider : GameMetadataProvider {
-        val log: Logger = LoggerFactory.getLogger(javaClass)
+        private val log = LoggerFactory.getLogger(javaClass)
 
         val client = HttpClient(CIO) {
             install(ContentNegotiation) {

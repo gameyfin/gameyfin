@@ -30,7 +30,7 @@ class DownloadEndpoint(
         return when (download) {
             is FileDownload -> {
                 ResponseEntity.ok()
-                    .header("Content-Disposition", "attachment; filename=\"${game.title}.zip\"")
+                    .header("Content-Disposition", "attachment; filename=\"${game.title}.${download.fileExtension}\"")
                     .body(StreamingResponseBody { outputStream ->
                         download.data.copyTo(outputStream)
                     })

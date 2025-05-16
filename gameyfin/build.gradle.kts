@@ -66,8 +66,7 @@ dependencies {
     implementation("ch.digitalfondue.mjml4j:mjml4j:1.0.3")
 
     // Plugins
-    implementation(project(":plugin-api"))
-    ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
+    compileOnly(project(":plugin-api"))
 
     // Utils
     implementation("org.apache.tika:tika-core:3.1.0")
