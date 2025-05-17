@@ -68,6 +68,7 @@ function LibraryManagementLayout({getConfig, formik}: any) {
 
             <Section title="Scanning"/>
             <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
+            <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
             <ConfigFormField configElement={getConfig("library.scan.game-file-extensions")}/>
 
             <Section title="Metadata"/>

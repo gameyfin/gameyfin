@@ -3,45 +3,58 @@ import {Form, Formik} from "formik";
 import React, {useEffect, useState} from "react";
 import Input from "Frontend/components/general/input/Input";
 import FileTreeView from "Frontend/components/general/input/FileTreeView";
+import DirectoryMappingDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/DirectoryMappingDto";
+import {ArrowRight} from "@phosphor-icons/react";
 
 interface PathPickerModalProps {
-    returnSelectedPath: (path: string) => void;
+    returnSelectedPath: (path: DirectoryMappingDto) => void;
     isOpen: boolean;
     onOpenChange: () => void;
 }
 
 export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChange}: PathPickerModalProps) {
-    const [currentlySelectedPath, setCurrentlySelectedPath] = useState("");
+    const [internalPath, setInternalPath] = useState("");
+    const [externalPath, setExternalPath] = useState("");
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="lg">
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="3xl">
             <ModalContent>
                 {(onClose) => (
-                    <Formik initialValues={{path: currentlySelectedPath}}
-                            onSubmit={(values: any) => {
-                                returnSelectedPath(values.path);
-                                setCurrentlySelectedPath("");
+                    <Formik initialValues={{internalPath: internalPath, externalPath: externalPath}}
+                            onSubmit={(values: DirectoryMappingDto) => {
+                                returnSelectedPath(values);
+                                setInternalPath("");
+                                setExternalPath("");
                                 onClose();
                             }}>
                         {(formik) => {
                             useEffect(() => {
-                                formik.setFieldValue("path", currentlySelectedPath);
-                            }, [currentlySelectedPath]);
+                                formik.setFieldValue("internalPath", internalPath);
+                            }, [internalPath]);
 
                             return (
                                 <Form>
-                                    <ModalHeader className="flex flex-col gap-1">Add a new library</ModalHeader>
+                                    <ModalHeader className="flex flex-col gap-1">Select a folder</ModalHeader>
                                     <ModalBody>
-                                        <Input
-                                            name="path"
-                                            label="Selected directory"
-                                            placeholder="&nbsp;"
-                                            value={formik.values.path}
-                                            isDisabled
-                                            required
-                                        />
+                                        <div className="flex flex-row gap-2 items-center">
+                                            <Input
+                                                name="internalPath"
+                                                label="Selected directory"
+                                                placeholder="&nbsp;"
+                                                value={formik.values.internalPath}
+                                                isDisabled
+                                                required
+                                            />
+                                            <ArrowRight className="mb-8"/>
+                                            <Input
+                                                name="externalPath"
+                                                label="External path (optional)"
+                                                placeholder="&nbsp;"
+                                                value={formik.values.externalPath}
+                                            />
+                                        </div>
                                         <div className="h-64 overflow-auto">
-                                            <FileTreeView onPathChange={setCurrentlySelectedPath}/>
+                                            <FileTreeView onPathChange={setInternalPath}/>
                                         </div>
                                     </ModalBody>
                                     <ModalFooter>

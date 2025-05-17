@@ -5,6 +5,7 @@ import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.entities.Game
 import de.grimsi.gameyfin.games.toDto
+import de.grimsi.gameyfin.libraries.dto.DirectoryMappingDto
 import de.grimsi.gameyfin.libraries.dto.LibraryDto
 import de.grimsi.gameyfin.libraries.dto.LibraryStatsDto
 import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
@@ -56,7 +57,11 @@ class LibraryService(
 
         // Update only non-null fields
         libraryDto.name?.let { existingLibrary.name = it }
-        libraryDto.directories?.let { existingLibrary.directories = it.toMutableSet() }
+        libraryDto.directories?.let {
+            existingLibrary.directories = it
+                .map { d -> DirectoryMapping(internalPath = d.internalPath, externalPath = d.externalPath) }
+                .toMutableSet()
+        }
 
         val updatedLibrary = libraryRepository.save(existingLibrary)
         return toDto(updatedLibrary)
@@ -300,7 +305,7 @@ class LibraryService(
         return LibraryDto(
             id = libraryId,
             name = library.name,
-            directories = library.directories,
+            directories = library.directories.map { DirectoryMappingDto(it.internalPath, it.externalPath) },
             stats = statsDto
         )
     }
@@ -314,7 +319,9 @@ class LibraryService(
     private fun toEntity(library: LibraryDto): Library {
         return libraryRepository.findByIdOrNull(library.id) ?: Library(
             name = library.name,
-            directories = library.directories.toMutableSet()
+            directories = library.directories.map {
+                DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
+            }.toMutableSet()
         )
     }
 }

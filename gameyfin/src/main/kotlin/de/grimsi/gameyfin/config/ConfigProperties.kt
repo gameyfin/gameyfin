@@ -29,6 +29,13 @@ sealed class ConfigProperties<T : Serializable>(
                 true
             )
 
+            data object ScanEmptyDirectories : ConfigProperties<Boolean>(
+                Boolean::class,
+                "library.scan.scan-empty-directories",
+                "Scan empty directories",
+                false
+            )
+
             data object GameFileExtensions : ConfigProperties<Array<String>>(
                 Array<String>::class,
                 "library.scan.game-file-extensions",
@@ -237,7 +244,7 @@ sealed class ConfigProperties<T : Serializable>(
                 LogLevel::class,
                 "logs.level.root",
                 "Log level (Root)",
-                LogLevel.INFO,
+                LogLevel.WARN,
                 LogLevel.entries
             )
         }

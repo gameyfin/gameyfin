@@ -1,5 +1,8 @@
 logging.level:
+  root: warn
   org.atmosphere: warn
+  de.grimsi.gameyfin: info
+  de.grimsi.gameyfin.GameyfinApplicationKt: warn
 
 server:
   port: 8080
@@ -8,6 +11,8 @@ server:
       tracking-modes: cookie
 
 management:
+  server:
+    port: 8081
   endpoints:
     web:
       exposure:

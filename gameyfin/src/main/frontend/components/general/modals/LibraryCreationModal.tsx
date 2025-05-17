@@ -15,9 +15,10 @@ import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/Libr
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
 import PathPickerModal from "Frontend/components/general/modals/PathPickerModal";
-import {Minus, Plus, XCircle} from "@phosphor-icons/react";
+import {ArrowRight, Minus, Plus, XCircle} from "@phosphor-icons/react";
 import * as Yup from "yup";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
+import DirectoryMappingDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/DirectoryMappingDto";
 
 interface LibraryCreationModalProps {
     libraries: LibraryDto[];
@@ -57,7 +58,7 @@ export default function LibraryCreationModal({
 
     return (
         <>
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="lg">
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="xl">
                 <ModalContent>
                     {(onClose) => (
                         <Formik initialValues={{name: "", directories: []}}
@@ -66,7 +67,7 @@ export default function LibraryCreationModal({
                                         .required("Library name is required")
                                         .max(255, "Library name must be 255 characters or less"),
                                     directories: Yup.array()
-                                        .of(Yup.string())
+                                        .of(Yup.object())
                                         .min(1, "At least one directory is required")
                                 })}
                                 isInitialValid={false}
@@ -76,12 +77,12 @@ export default function LibraryCreationModal({
                                 }}
                         >
                             {(formik) => {
-                                function addDirectory(directory: string) {
+                                function addDirectoryMapping(directory: DirectoryMappingDto) {
                                     formik.setFieldValue("directories", [...formik.values.directories, directory]);
                                 }
 
-                                function removeDirectory(directory: string) {
-                                    formik.setFieldValue("directories", formik.values.directories.filter((d: string) => d !== directory));
+                                function removeDirectoryMapping(directory: DirectoryMappingDto) {
+                                    formik.setFieldValue("directories", formik.values.directories.filter((d: DirectoryMappingDto) => d.internalPath !== directory.internalPath));
                                 }
 
                                 return (
@@ -103,11 +104,38 @@ export default function LibraryCreationModal({
                                                         <Plus/>
                                                     </Button>
                                                 </div>
-                                                {formik.values.directories.map((directory: string) => (
-                                                    <Code className="flex flex-row justify-between items-center">
-                                                        {directory}
-                                                        <Button isIconOnly variant="light" size="sm" color="default"
-                                                                onPress={() => removeDirectory(directory)}>
+                                                {formik.values.directories.map((directory: DirectoryMappingDto) => (
+                                                    <Code
+                                                        className="w-full flex items-center gap-2 overflow-hidden px-2 py-1"
+                                                        key={directory.internalPath}>
+                                                        <input
+                                                            type="text"
+                                                            value={directory.internalPath}
+                                                            readOnly
+                                                            className="flex-1 bg-transparent border-none outline-none overflow-x-auto whitespace-nowrap"
+                                                        />
+                                                        {directory.externalPath && (
+                                                            <>
+                                                                <div
+                                                                    className="flex-shrink-0 flex items-center justify-center mx-2">
+                                                                    <ArrowRight size={20}/>
+                                                                </div>
+                                                                <input
+                                                                    type="text"
+                                                                    value={directory.externalPath}
+                                                                    readOnly
+                                                                    className="flex-1 bg-transparent border-none outline-none overflow-x-auto whitespace-nowrap"
+                                                                />
+                                                            </>
+                                                        )}
+                                                        <Button
+                                                            isIconOnly
+                                                            variant="light"
+                                                            size="sm"
+                                                            color="default"
+                                                            onPress={() => removeDirectoryMapping(directory)}
+                                                            className="ml-2"
+                                                        >
                                                             <Minus/>
                                                         </Button>
                                                     </Code>
@@ -134,7 +162,7 @@ export default function LibraryCreationModal({
                                                 {formik.isSubmitting ? "" : "Add"}
                                             </Button>
                                         </ModalFooter>
-                                        <PathPickerModal returnSelectedPath={addDirectory}
+                                        <PathPickerModal returnSelectedPath={addDirectoryMapping}
                                                          isOpen={pathPickerModal.isOpen}
                                                          onOpenChange={pathPickerModal.onOpenChange}/>
                                     </Form>
