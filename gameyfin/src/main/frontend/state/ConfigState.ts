@@ -47,7 +47,7 @@ export type NestedConfig = {
     [field: string]: any;
 }
 
-function toNestedConfig(entries: ConfigEntryDto[]): Record<string, any> {
+function toNestedConfig(entries: ConfigEntryDto[]): NestedConfig {
     const result: Record<string, any> = {};
 
     for (const entry of entries) {
