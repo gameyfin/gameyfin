@@ -2,15 +2,19 @@ import {proxy} from 'valtio';
 import ConfigEntryDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigEntryDto";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigUpdateDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigUpdateDto";
+import {Subscription} from "@vaadin/hilla-frontend";
 
 type ConfigState = {
+    subscription?: Subscription<ConfigUpdateDto>;
     isLoaded: boolean;
     configEntries: Record<string, ConfigEntryDto>;
     configNested: NestedConfig;
 };
 
 export const configState = proxy<ConfigState>({
-    isLoaded: false,
+    get isLoaded() {
+        return this.subscription != null;
+    },
     configEntries: {},
     get configNested() {
         return toNestedConfig(Object.values(this.configEntries));
@@ -26,10 +30,9 @@ export async function initializeConfig() {
     initialEntries.forEach((entry) => {
         configState.configEntries[entry.key] = entry;
     });
-    configState.isLoaded = true;
 
     // Subscribe to real-time updates
-    ConfigEndpoint.subscribe().onNext((updateDto: ConfigUpdateDto) => {
+    configState.subscription = ConfigEndpoint.subscribe().onNext((updateDto: ConfigUpdateDto) => {
         Object.entries(updateDto.updates).forEach(([key, value]) => {
             if (configState.configEntries[key]) {
                 configState.configEntries[key].value = value;
@@ -44,63 +47,24 @@ export type NestedConfig = {
     [field: string]: any;
 }
 
-function toNestedConfig(configArray: ConfigEntryDto[]): NestedConfig {
-    const nestedConfig: NestedConfig = {};
+function toNestedConfig(entries: ConfigEntryDto[]): Record<string, any> {
+    const result: Record<string, any> = {};
 
-    configArray.forEach(item => {
-        const keys = item.key!.split('.');
-        let currentLevel = nestedConfig;
+    for (const entry of entries) {
+        const keys = entry.key.split('.');
+        let current = result;
 
-        // Traverse the nested structure and create objects as needed
-        keys.forEach((key, index) => {
-            if (index === keys.length - 1) {
-                // Convert value to the appropriate type
-                let value: any;
-                switch (item.type) {
-                    case 'Boolean':
-                        value = typeof item.value == 'boolean' ? item.value : item.value === 'true';
-                        break;
-                    case 'Int':
-                        value = typeof item.value == 'number' ? item.value : 0;
-                        break;
-                    case 'Float':
-                        value = typeof item.value == 'number' ? item.value : 0.0;
-                        break;
-                    case 'Array':
-                        if (Array.isArray(item.value)) {
-                            switch (item.elementType) {
-                                case 'Boolean':
-                                    value = item.value.map(v => typeof v === 'boolean' ? v : v === 'true');
-                                    break;
-                                case 'Int':
-                                case 'Integer':
-                                    value = item.value.map(v => typeof v == 'number' ? v : 0);
-                                    break;
-                                case 'Float':
-                                    value = item.value.map(v => typeof v == 'number' ? v : 0.0);
-                                    break;
-                                case 'String':
-                                default:
-                                    value = item.value.map(v => v.toString());
-                                    break;
-                            }
-                        } else {
-                            value = [];
-                        }
-                        break;
-                    case 'String':
-                    default:
-                        value = item.value;
-                        break;
-                }
-                currentLevel[key] = value;
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+
+            if (i === keys.length - 1) {
+                current[key] = entry.value;
             } else {
-                if (!currentLevel[key]) {
-                    currentLevel[key] = {};
-                }
-                currentLevel = currentLevel[key];
+                current[key] = current[key] || {};
+                current = current[key];
             }
-        });
-    });
-    return nestedConfig;
+        }
+    }
+
+    return result;
 }

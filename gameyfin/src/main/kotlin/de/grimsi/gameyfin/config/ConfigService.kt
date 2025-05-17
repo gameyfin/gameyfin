@@ -97,9 +97,9 @@ class ConfigService(
         var configEntry = appConfigRepository.findByIdOrNull(key)
 
         val parsedValue =
-            if (value.javaClass.isArray)
+            if (value.javaClass.isArray) {
                 (value as Array<Serializable>).joinToString(",")
-            else
+            } else
                 value.toString()
 
         if (configEntry == null) {
@@ -173,8 +173,11 @@ class ConfigService(
             configProperty.type.java.isArray -> {
                 val componentType = configProperty.type.java.componentType
                 // Remove the brackets and split the string by commas
-                val elements = value.removeSurrounding("[", "]").split(",")
-                if (elements.isEmpty()) return emptyArray<Serializable>() as T
+                val elements = value
+                    .removeSurrounding("[", "]")
+                    .split(",")
+                    .filter { it.isNotBlank() }
+
                 when (componentType) {
                     String::class.java -> elements.toTypedArray() as T
                     Boolean::class.java -> elements.map { it.toBoolean() }.toTypedArray() as T
