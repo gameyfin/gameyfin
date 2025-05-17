@@ -7,17 +7,13 @@ type ConfigState = {
     isLoaded: boolean;
     configEntries: Record<string, ConfigEntryDto>;
     configNested: NestedConfig;
-    autoRegisterNewUsers: boolean;
 };
 
 export const configState = proxy<ConfigState>({
-    configEntries: {},
     isLoaded: false,
+    configEntries: {},
     get configNested() {
         return toNestedConfig(Object.values(this.configEntries));
-    },
-    get autoRegisterNewUsers() {
-        return this.configNested["sso.oidc.auto-register-new-users"] as boolean;
     }
 });
 

@@ -15,7 +15,7 @@ import {configState} from "Frontend/state/ConfigState";
 function UserManagementLayout({getConfig, formik}: any) {
     const inviteUserModal = useDisclosure();
     const [users, setUsers] = useState<UserInfoDto[]>([]);
-    const autoRegisterNewUsers = useSnapshot(configState);
+    const config = useSnapshot(configState);
 
     useEffect(() => {
         UserEndpoint.getAllUsers().then(
@@ -35,7 +35,7 @@ function UserManagementLayout({getConfig, formik}: any) {
 
             <div className="flex flex-row items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Users</h2>
-                {!autoRegisterNewUsers &&
+                {!config.configEntries["sso.oidc.auto-register-new-users"].value &&
                     <SmallInfoField className="mb-4 text-warning" icon={Info}
                                     message="Automatic user registration for SSO users is disabled"/>
                 }
