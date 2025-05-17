@@ -94,4 +94,4 @@ const validationSchema = Yup.object({
     })
 });
 
-export const LogManagement = withConfigPage(LogManagementLayout, "Logging", "logs", validationSchema);
+export const LogManagement = withConfigPage(LogManagementLayout, "Logging", validationSchema);

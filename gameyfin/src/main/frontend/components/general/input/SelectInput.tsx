@@ -13,7 +13,7 @@ const SelectInput = ({label, values, ...props}) => {
                 {...props}
                 id={field.name}
                 label={label}
-                defaultSelectedKeys={[field.value]}
+                selectedKeys={[field.value]}
                 disallowEmptySelection
             >
                 {values.map((value: string) => (

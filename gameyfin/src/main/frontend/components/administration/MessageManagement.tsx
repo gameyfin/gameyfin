@@ -9,7 +9,7 @@ import MessageTemplateDto from "Frontend/generated/de/grimsi/gameyfin/messages/t
 import SendTestNotificationModal from "Frontend/components/administration/messages/SendTestNotificationModal";
 import EditTemplateModal from "Frontend/components/administration/messages/EditTemplateModel";
 
-function MessageManagementLayout({getConfig, getConfigs, formik}: any) {
+function MessageManagementLayout({getConfig, formik}: any) {
 
     const editorModal = useDisclosure();
     const testNotificationModal = useDisclosure();

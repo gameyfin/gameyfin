@@ -119,4 +119,4 @@ const validationSchema = Yup.object({
     })
 });
 
-export const LibraryManagement = withConfigPage(LibraryManagementLayout, "Library Management", "library", validationSchema);
+export const LibraryManagement = withConfigPage(LibraryManagementLayout, "Library Management", validationSchema);

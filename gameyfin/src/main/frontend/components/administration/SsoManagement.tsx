@@ -121,4 +121,4 @@ const validationSchema = Yup.object({
     })
 });
 
-export const SsoManagement = withConfigPage(SsoManagementLayout, "Single Sign-On", "sso", validationSchema);
+export const SsoManagement = withConfigPage(SsoManagementLayout, "Single Sign-On", validationSchema);

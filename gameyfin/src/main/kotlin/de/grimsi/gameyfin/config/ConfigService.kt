@@ -1,7 +1,6 @@
 package de.grimsi.gameyfin.config
 
 import de.grimsi.gameyfin.config.dto.ConfigEntryDto
-import de.grimsi.gameyfin.config.dto.ConfigValuePairDto
 import de.grimsi.gameyfin.config.entities.ConfigEntry
 import de.grimsi.gameyfin.config.persistence.ConfigRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -116,11 +115,15 @@ class ConfigService(
      * Set multiple config values at once.
      * Configs with a null value will be deleted.
      *
-     * @param configs: A map of key-value pairs to set
+     * @param updates: A map of key-value pairs to set
      */
-    fun setAll(configs: List<ConfigValuePairDto>) {
-        configs.forEach {
-            it.value?.let { value -> set(it.key, value) } ?: deleteConfig(it.key)
+    fun update(updates: Map<String, Serializable?>) {
+        updates.forEach { (key, value) ->
+            if (value == null) {
+                delete(key)
+            } else {
+                set(key, value)
+            }
         }
     }
 
@@ -141,7 +144,7 @@ class ConfigService(
      *
      * @param key: Key of the config property
      */
-    fun deleteConfig(key: String) {
+    fun delete(key: String) {
 
         log.debug { "Delete config value '$key'" }
 

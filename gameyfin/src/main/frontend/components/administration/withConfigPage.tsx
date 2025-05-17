@@ -1,30 +1,22 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigEntryDto";
 import {Form, Formik} from "formik";
 import {Button, Skeleton} from "@heroui/react";
 import {Check, Info} from "@phosphor-icons/react";
-import ConfigValuePairDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/ConfigValuePairDto";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
+import {configState, initializeConfig, NestedConfig} from "Frontend/state/ConfigState";
+import {useSnapshot} from "valtio/react";
 
-type NestedConfig = {
-    [field: string]: any;
-}
-
-export default function withConfigPage(WrappedComponent: React.ComponentType<any>, title: String, configPrefix: string, validationSchema?: any) {
+export default function withConfigPage(WrappedComponent: React.ComponentType<any>, title: String, validationSchema?: any) {
     return function ConfigPage(props: any) {
-        const isInitialized = useRef(false);
         const [configSaved, setConfigSaved] = useState(false);
-        const [configDtos, setConfigDtos] = useState<ConfigEntryDto[]>([]);
-        const [nestedConfigDtos, setNestedConfigDtos] = useState<NestedConfig>({});
         const [saveMessage, setSaveMessage] = useState<string>();
 
+        const state = useSnapshot(configState);
+
         useEffect(() => {
-            ConfigEndpoint.getAll(configPrefix).then((response: any) => {
-                setConfigDtos(response as ConfigEntryDto[]);
-                setNestedConfigDtos(toNestedConfig(response as ConfigEntryDto[]));
-                isInitialized.current = true;
-            });
+            initializeConfig();
         }, []);
 
         useEffect(() => {
@@ -34,149 +26,111 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         }, [configSaved])
 
         async function handleSubmit(values: NestedConfig): Promise<void> {
-            const configValues = toConfigValuePair(values);
-            await ConfigEndpoint.setAll(configValues);
-            setNestedConfigDtos(values);
+            const changed = getChangedValues(state.configNested, values);
+            await ConfigEndpoint.update({updates: changed});
             setConfigSaved(true);
         }
 
         function getConfig(key: string): ConfigEntryDto | undefined {
-            return configDtos.find((configDto: ConfigEntryDto) => configDto.key === key);
+            // @ts-ignore
+            return state.configEntries[key];
         }
 
-        function getConfigs(prefix: string): ConfigEntryDto[] {
-            return configDtos.filter((configDto: ConfigEntryDto) => configDto.key?.startsWith(prefix));
-        }
-
-        function toNestedConfig(configArray: ConfigEntryDto[]): NestedConfig {
-            const nestedConfig: NestedConfig = {};
-
-            configArray.forEach(item => {
-                const keys = item.key!.split('.');
-                let currentLevel = nestedConfig;
-
-                // Traverse the nested structure and create objects as needed
-                keys.forEach((key, index) => {
-                    if (index === keys.length - 1) {
-                        // Convert value to the appropriate type
-                        let value: any;
-                        switch (item.type) {
-                            case 'Boolean':
-                                value = typeof item.value == 'boolean' ? item.value : item.value === 'true';
-                                break;
-                            case 'Int':
-                                value = typeof item.value == 'number' ? item.value : 0;
-                                break;
-                            case 'Float':
-                                value = typeof item.value == 'number' ? item.value : 0.0;
-                                break;
-                            case 'Array':
-                                if (Array.isArray(item.value)) {
-                                    switch (item.elementType) {
-                                        case 'Boolean':
-                                            value = item.value.map(v => typeof v === 'boolean' ? v : v === 'true');
-                                            break;
-                                        case 'Int':
-                                        case 'Integer':
-                                            value = item.value.map(v => typeof v == 'number' ? v : 0);
-                                            break;
-                                        case 'Float':
-                                            value = item.value.map(v => typeof v == 'number' ? v : 0.0);
-                                            break;
-                                        case 'String':
-                                        default:
-                                            value = item.value.map(v => v.toString());
-                                            break;
-                                    }
-                                } else {
-                                    value = [];
-                                }
-                                break;
-                            case 'String':
-                            default:
-                                value = item.value;
-                                break;
+        function getChangedValues(initial: NestedConfig, current: NestedConfig): Record<string, any> {
+            const flatten = (obj: NestedConfig, parentKey = ''): Record<string, any> => {
+                let result: Record<string, any> = {};
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        const newKey = parentKey ? `${parentKey}.${key}` : key;
+                        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                            Object.assign(result, flatten(obj[key], newKey));
+                        } else {
+                            result[newKey] = obj[key];
                         }
-                        currentLevel[key] = value;
-                    } else {
-                        if (!currentLevel[key]) {
-                            currentLevel[key] = {};
-                        }
-                        currentLevel = currentLevel[key];
-                    }
-                });
-            });
-            return nestedConfig;
-        }
-
-        function toConfigValuePair(obj: NestedConfig, parentKey: string = ''): ConfigValuePairDto[] {
-            let result: ConfigValuePairDto[] = [];
-
-            for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    const newKey = parentKey ? `${parentKey}.${key}` : key;
-                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                        result = result.concat(toConfigValuePair(obj[key], newKey));
-                    } else {
-                        result.push({key: newKey, value: obj[key]});
                     }
                 }
+                return result;
+            };
+
+            const arraysEqual = (a: any[], b: any[]): boolean => {
+                if (a.length !== b.length) return false;
+                for (let i = 0; i < a.length; i++) {
+                    if (Array.isArray(a[i]) && Array.isArray(b[i])) {
+                        if (!arraysEqual(a[i], b[i])) return false;
+                    } else if (a[i] !== b[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+
+            const flatInitial = flatten(initial);
+            const flatCurrent = flatten(current);
+
+            const changed: Record<string, any> = {};
+            for (const key in flatCurrent) {
+                const valA = flatCurrent[key];
+                const valB = flatInitial[key];
+                if (Array.isArray(valA) && Array.isArray(valB)) {
+                    if (!arraysEqual(valA, valB)) {
+                        changed[key] = valA;
+                    }
+                } else if (valA !== valB) {
+                    changed[key] = valA;
+                }
             }
-
-            return result;
-        }
-
-        if (!isInitialized.current) {
-            return (
-                [...Array(4)].map((_e, i) =>
-                    <div className="flex flex-col flex-grow gap-8 mb-12" key={i}>
-                        <Skeleton className="h-10 w-full rounded-md"/>
-                        <Skeleton className="h-12 flex w-1/3 rounded-md"/>
-                        <div className="flex flex-row gap-8">
-                            <Skeleton className="h-12 flex w-1/3 rounded-md"/>
-                            <Skeleton className="h-12 flex w-1/3 rounded-md"/>
-                        </div>
-                    </div>
-                )
-            )
+            return changed;
         }
 
         return (
-            <Formik
-                initialValues={nestedConfigDtos}
-                onSubmit={handleSubmit}
-                validationSchema={validationSchema}
-                enableReinitialize={true}
-            >
-                {(formik) => (
-                    <Form>
-                        <div className="flex flex-row flex-grow justify-between">
-                            <h1 className="text-2xl font-bold">{title}</h1>
+            <>
+                {state.isLoaded ?
+                    <Formik
+                        initialValues={state.configNested}
+                        onSubmit={handleSubmit}
+                        validationSchema={validationSchema}
+                        enableReinitialize={true}
+                    >
+                        {(formik) => (
+                            <Form>
+                                <div className="flex flex-row flex-grow justify-between">
+                                    <h1 className="text-2xl font-bold">{title}</h1>
 
-                            <div className="flex flex-row items-center gap-4">
-                                {saveMessage && <SmallInfoField icon={Info}
-                                                                message={saveMessage}
-                                                                className="text-warning"/>}
+                                    <div className="flex flex-row items-center gap-4">
+                                        {saveMessage && <SmallInfoField icon={Info}
+                                                                        message={saveMessage}
+                                                                        className="text-warning"/>}
 
-                                <Button
-                                    color="primary"
-                                    isLoading={formik.isSubmitting}
-                                    isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
-                                    type="submit"
-                                >
-                                    {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
-                                </Button>
+                                        <Button
+                                            color="primary"
+                                            isLoading={formik.isSubmitting}
+                                            isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
+                                            type="submit"
+                                        >
+                                            {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <WrappedComponent {...props}
+                                                  getConfig={getConfig}
+                                                  formik={formik}
+                                                  setSaveMessage={setSaveMessage}/>
+                            </Form>
+                        )}
+                    </Formik> :
+                    [...Array(4)].map((_e, i) =>
+                        <div className="flex flex-col flex-grow gap-8 mb-12" key={i}>
+                            <Skeleton className="h-10 w-full rounded-md"/>
+                            <Skeleton className="h-12 flex w-1/3 rounded-md"/>
+                            <div className="flex flex-row gap-8">
+                                <Skeleton className="h-12 flex w-1/3 rounded-md"/>
+                                <Skeleton className="h-12 flex w-1/3 rounded-md"/>
                             </div>
                         </div>
-
-                        <WrappedComponent {...props}
-                                          getConfig={getConfig}
-                                          getConfigs={getConfigs}
-                                          formik={formik}
-                                          setSaveMessage={setSaveMessage}/>
-                    </Form>
-                )}
-            </Formik>
+                    )
+                }
+            </>
         );
     }
 }

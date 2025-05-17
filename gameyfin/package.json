@@ -48,6 +48,7 @@
     "react-router": "7.5.2",
     "remark-breaks": "^4.0.0",
     "swiper": "^11.2.6",
+    "valtio": "^2.1.5",
     "yup": "^1.6.1"
   },
   "devDependencies": {
@@ -136,7 +137,8 @@
     "swiper": "$swiper",
     "react-player": "$react-player",
     "react-markdown": "$react-markdown",
-    "remark-breaks": "$remark-breaks"
+    "remark-breaks": "$remark-breaks",
+    "valtio": "$valtio"
   },
   "vaadin": {
     "dependencies": {
@@ -197,6 +199,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "f66bddf01ef8dd09a431102050ddd561b4587fdd43bcbff127b93872febbee92"
+    "hash": "c57af53043f6c6a9f0b03c75c28c3fde0bbfd828f9ce0e179263959c61ec888d"
   }
 }

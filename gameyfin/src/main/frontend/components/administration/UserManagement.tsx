@@ -2,26 +2,24 @@ import React, {useEffect, useState} from "react";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
-import {ConfigEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
+import {UserEndpoint} from "Frontend/generated/endpoints";
 import UserInfoDto from "Frontend/generated/de/grimsi/gameyfin/users/dto/UserInfoDto";
 import {UserManagementCard} from "Frontend/components/general/cards/UserManagementCard";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {Info, UserPlus} from "@phosphor-icons/react";
 import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
 import InviteUserModal from "Frontend/components/general/modals/InviteUserModal";
+import {useSnapshot} from "valtio/react";
+import {configState} from "Frontend/state/ConfigState";
 
 function UserManagementLayout({getConfig, formik}: any) {
     const inviteUserModal = useDisclosure();
     const [users, setUsers] = useState<UserInfoDto[]>([]);
-    const [autoRegisterNewUsers, setAutoRegisterNewUsers] = useState(true);
+    const autoRegisterNewUsers = useSnapshot(configState);
 
     useEffect(() => {
         UserEndpoint.getAllUsers().then(
             (response) => setUsers(response)
-        );
-
-        ConfigEndpoint.get("sso.oidc.auto-register-new-users").then(
-            (response) => setAutoRegisterNewUsers(response as boolean)
         );
     }, []);
 
@@ -56,4 +54,4 @@ function UserManagementLayout({getConfig, formik}: any) {
     );
 }
 
-export const UserManagement = withConfigPage(UserManagementLayout, "User Management", "users");
+export const UserManagement = withConfigPage(UserManagementLayout, "User Management");

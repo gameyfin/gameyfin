@@ -26,4 +26,4 @@ function SystemManagementLayout({getConfig, formik, setSaveMessage}: any) {
     );
 }
 
-export const SystemManagement = withConfigPage(SystemManagementLayout, "System", "system", null);
+export const SystemManagement = withConfigPage(SystemManagementLayout, "System");

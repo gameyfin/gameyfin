@@ -1,12 +1,14 @@
 package de.grimsi.gameyfin.config
 
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.config.dto.ConfigEntryDto
-import de.grimsi.gameyfin.config.dto.ConfigValuePairDto
+import de.grimsi.gameyfin.config.dto.ConfigUpdateDto
 import de.grimsi.gameyfin.core.Role
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
-import java.io.Serializable
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
@@ -15,29 +17,19 @@ class ConfigEndpoint(
 ) {
 
     /** CRUD endpoints for admins **/
+    private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>()
 
-    fun getAll(prefix: String?): List<ConfigEntryDto> {
-        return config.getAll(prefix)
+    fun getAll(): List<ConfigEntryDto> {
+        return config.getAll(null)
     }
 
-    fun get(key: String): Serializable? {
-        return config.get(key)
-    }
+    // FIXME
+    @AnonymousAllowed
+    fun subscribe(): Flux<ConfigUpdateDto> = configUpdates.asFlux()
 
-    fun set(key: String, value: String) {
-        config.set(key, value)
-    }
-
-    fun setAll(configs: List<ConfigValuePairDto>) {
-        config.setAll(configs)
-    }
-
-    fun resetConfig(key: String) {
-        config.deleteConfig(key)
-    }
-
-    fun deleteConfig(key: String) {
-        config.deleteConfig(key)
+    fun update(update: ConfigUpdateDto) {
+        config.update(update.updates)
+        configUpdates.tryEmitNext(update)
     }
 
     /** Specific read-only endpoint for all users **/
