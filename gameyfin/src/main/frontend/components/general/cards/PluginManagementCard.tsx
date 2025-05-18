@@ -30,11 +30,10 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     const [configValidationResult, setConfigValidationResult] = useState<PluginConfigValidationResult | undefined>(undefined);
 
     useEffect(() => {
-        PluginEndpoint.validatePluginConfig(plugin.id).then((response: PluginConfigValidationResult | undefined) => {
-            if (response === undefined) return;
+        PluginEndpoint.validatePluginConfig(plugin.id).then((response: PluginConfigValidationResult) => {
             setConfigValidationResult(response);
         });
-    }, [pluginDetailsModal.isOpen]);
+    }, [pluginDetailsModal.isOpen, plugin.state]);
 
     function borderColor(state: PluginState | undefined, trustLevel: PluginTrustLevel | undefined): "success" | "warning" | "danger" | "default" {
         if (trustLevel === PluginTrustLevel.UNTRUSTED) return "danger";
