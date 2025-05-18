@@ -35,7 +35,7 @@ class User(
 
     @ElementCollection(targetClass = Role::class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
-    var roles: Set<Role> = emptySet()
+    var roles: List<Role> = emptyList()
 ) {
 
     constructor(oidcUser: OidcUser) : this(

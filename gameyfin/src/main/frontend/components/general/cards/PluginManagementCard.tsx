@@ -15,8 +15,6 @@ import {
     WarningCircle,
     XCircle
 } from "@phosphor-icons/react";
-import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
-import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
 import React, {ReactNode, useEffect, useState} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
@@ -24,16 +22,15 @@ import PluginLogo from "Frontend/components/general/PluginLogo";
 import PluginTrustLevel from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginTrustLevel";
 import PluginConfigValidationResult
     from "Frontend/generated/de/grimsi/gameyfin/core/plugins/config/PluginConfigValidationResult";
+import {PluginEndpoint} from "Frontend/generated/endpoints";
+import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";
 
-export function PluginManagementCard({plugin, updatePlugin}: {
-    plugin: PluginDto,
-    updatePlugin: (plugin: PluginDto) => void
-}) {
+export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     const pluginDetailsModal = useDisclosure();
     const [configValidationResult, setConfigValidationResult] = useState<PluginConfigValidationResult | undefined>(undefined);
 
     useEffect(() => {
-        PluginManagementEndpoint.validatePluginConfig(plugin.id).then((response: PluginConfigValidationResult | undefined) => {
+        PluginEndpoint.validatePluginConfig(plugin.id).then((response: PluginConfigValidationResult | undefined) => {
             if (response === undefined) return;
             setConfigValidationResult(response);
         });
@@ -55,6 +52,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
             case PluginState.DISABLED:
                 return "warning";
             case PluginState.FAILED:
+            case PluginState.STOPPED:
                 return "danger";
             default:
                 return "default";
@@ -67,6 +65,7 @@ export function PluginManagementCard({plugin, updatePlugin}: {
                 return <PlayCircle/>;
             case PluginState.DISABLED:
                 return <PauseCircle/>;
+            case PluginState.STOPPED:
             case PluginState.FAILED:
                 return <StopCircle/>;
             case PluginState.UNLOADED:
@@ -131,19 +130,9 @@ export function PluginManagementCard({plugin, updatePlugin}: {
 
     function togglePluginEnabled() {
         if (isDisabled(plugin.state)) {
-            PluginManagementEndpoint.enablePlugin(plugin.id).then(() => {
-                PluginManagementEndpoint.getPlugin(plugin.id).then((response) => {
-                    if (response === undefined) return;
-                    updatePlugin(response);
-                });
-            });
+            PluginEndpoint.enablePlugin(plugin.id);
         } else {
-            PluginManagementEndpoint.disablePlugin(plugin.id).then(() => {
-                PluginManagementEndpoint.getPlugin(plugin.id).then((response) => {
-                    if (response === undefined) return;
-                    updatePlugin(response);
-                });
-            });
+            PluginEndpoint.disablePlugin(plugin.id);
         }
     }
 
@@ -195,7 +184,6 @@ export function PluginManagementCard({plugin, updatePlugin}: {
             <PluginDetailsModal plugin={plugin}
                                 isOpen={pluginDetailsModal.isOpen}
                                 onOpenChange={pluginDetailsModal.onOpenChange}
-                                updatePlugin={updatePlugin}
             />
         </>
 

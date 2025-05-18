@@ -45,7 +45,7 @@ class SetupDataLoader(
             email = "admin@gameyfin.org",
             emailConfirmed = true,
             enabled = true,
-            roles = setOf(Role.SUPERADMIN)
+            roles = listOf(Role.SUPERADMIN)
         )
 
         registerUserIfNotFound(superadmin)
@@ -56,7 +56,7 @@ class SetupDataLoader(
             email = "user@gameyfin.org",
             emailConfirmed = true,
             enabled = true,
-            roles = setOf(Role.USER)
+            roles = listOf(Role.USER)
         )
 
         registerUserIfNotFound(user)

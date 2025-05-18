@@ -181,19 +181,17 @@ class GameyfinPluginManager(
         return PluginConfigValidationResult.INVALID
     }
 
-    fun getExtensionTypeClasses(pluginId: String): Set<Class<ExtensionPoint>> {
+    fun getExtensionTypeClasses(pluginId: String): List<Class<ExtensionPoint>> {
         return getExtensionClasses(pluginId)
             .flatMap { it.interfaces.toList() }
             .filterIsInstance<Class<ExtensionPoint>>()
-            .toSet()
     }
 
-    fun getExtensionTypes(pluginId: String): Set<String> {
+    fun getExtensionTypes(pluginId: String): List<String> {
         return getExtensionClasses(pluginId)
             .flatMap { it.interfaces.toList() }
             .filterIsInstance<Class<ExtensionPoint>>()
             .map { it.simpleName }
-            .toSet()
     }
 
     private fun configurePlugin(pluginWrapper: PluginWrapper) {

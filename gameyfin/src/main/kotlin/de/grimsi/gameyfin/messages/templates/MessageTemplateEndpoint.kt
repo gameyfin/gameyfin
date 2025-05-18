@@ -17,8 +17,8 @@ class MessageTemplateEndpoint(
         return messageTemplateService.getMessageTemplate(key)
     }
 
-    fun getDefaultPlaceholders(type: TemplateType): Set<String> {
-        return messageTemplateService.getDefaultTemplatePlaceholders(type).keys
+    fun getDefaultPlaceholders(type: TemplateType): List<String> {
+        return messageTemplateService.getDefaultTemplatePlaceholders(type).keys.toList()
     }
 
     fun read(key: String, templateType: TemplateType): String {

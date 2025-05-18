@@ -1,9 +1,12 @@
-package de.grimsi.gameyfin.core.plugins.management
+package de.grimsi.gameyfin.core.plugins.dto
 
+import de.grimsi.gameyfin.core.plugins.management.PluginTrustLevel
+import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import org.pf4j.PluginState
 
 data class PluginDto(
     val id: String,
+    val types: List<String>,
     val name: String,
     val description: String,
     val shortDescription: String? = null,
@@ -13,6 +16,8 @@ data class PluginDto(
     val url: String? = null,
     val hasLogo: Boolean,
     val state: PluginState,
+    val configMetadata: List<PluginConfigElement>? = null,
+    val config: Map<String, String?>? = null,
     val priority: Int,
     val trustLevel: PluginTrustLevel,
 )

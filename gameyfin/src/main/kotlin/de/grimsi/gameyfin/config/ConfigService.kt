@@ -1,11 +1,14 @@
 package de.grimsi.gameyfin.config
 
 import de.grimsi.gameyfin.config.dto.ConfigEntryDto
+import de.grimsi.gameyfin.config.dto.ConfigUpdateDto
 import de.grimsi.gameyfin.config.entities.ConfigEntry
 import de.grimsi.gameyfin.config.persistence.ConfigRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.io.Serializable
 
 @Service
@@ -14,6 +17,11 @@ class ConfigService(
 ) {
     private val log = KotlinLogging.logger {}
 
+    private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>()
+
+    fun subscribe(): Flux<ConfigUpdateDto> {
+        return configUpdates.asFlux()
+    }
 
     /**
      * Get the current value of a config property in a type-safe way.
@@ -52,19 +60,14 @@ class ConfigService(
     /**
      * Get all known config values.
      *
-     * @param prefix: Optional prefix to filter the config values
      * @return A map of all config values
      */
-    fun getAll(prefix: String?): List<ConfigEntryDto> {
+    fun getAll(): List<ConfigEntryDto> {
 
-        log.debug { "Getting all config values for prefix '$prefix'" }
+        log.debug { "Getting all config values" }
 
-        var configProperties = ConfigProperties::class.sealedSubclasses.flatMap { subclass ->
+        val configProperties = ConfigProperties::class.sealedSubclasses.flatMap { subclass ->
             subclass.objectInstance?.let { listOf(it) } ?: listOf()
-        }
-
-        if (prefix != null) {
-            configProperties = configProperties.filter { it.key.startsWith(prefix) }
         }
 
         return configProperties.map { configProperty ->
@@ -115,16 +118,17 @@ class ConfigService(
      * Set multiple config values at once.
      * Configs with a null value will be deleted.
      *
-     * @param updates: A map of key-value pairs to set
+     * @param update: A [ConfigUpdateDto] containing a map of key-value pairs to set
      */
-    fun update(updates: Map<String, Serializable?>) {
-        updates.forEach { (key, value) ->
+    fun update(update: ConfigUpdateDto) {
+        update.updates.forEach { (key, value) ->
             if (value == null) {
                 delete(key)
             } else {
                 set(key, value)
             }
         }
+        configUpdates.tryEmitNext(update)
     }
 
     /**

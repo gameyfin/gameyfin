@@ -47,12 +47,12 @@ class GameService(
     }
 
     @Transactional
-    fun create(games: Collection<Game>): Collection<Game> {
+    fun create(games: List<Game>): List<Game> {
         val gamesToBePersisted = games.filter { it.id == null }
 
         gamesToBePersisted.forEach { game ->
-            game.publishers = game.publishers.map { companyService.createOrGet(it) }.toSet()
-            game.developers = game.developers.map { companyService.createOrGet(it) }.toSet()
+            game.publishers = game.publishers.map { companyService.createOrGet(it) }
+            game.developers = game.developers.map { companyService.createOrGet(it) }
             game
         }
 
@@ -87,11 +87,11 @@ class GameService(
         return mergedGame
     }
 
-    fun getAllByPaths(paths: Collection<String>): Collection<Game> {
+    fun getAllByPaths(paths: List<String>): List<Game> {
         return gameRepository.findAllByPathIn(paths)
     }
 
-    fun getAllGames(): Collection<GameDto> {
+    fun getAllGames(): List<GameDto> {
         val entities = gameRepository.findAll()
         return entities.map { it.toDto() }
     }
@@ -231,58 +231,58 @@ class GameService(
                 metadata.publishedBy?.takeIf { it.isNotEmpty() }?.let { publishedBy ->
                     if (!metadataMap.containsKey("publishers")) {
                         mergedGame.publishers =
-                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }.toSet()
+                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }
                         metadataMap["publishers"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.developedBy?.takeIf { it.isNotEmpty() }?.let { developedBy ->
                     if (!metadataMap.containsKey("developers")) {
                         mergedGame.developers =
-                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }.toSet()
+                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }
                         metadataMap["developers"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.genres?.takeIf { it.isNotEmpty() }?.let { genres ->
                     if (!metadataMap.containsKey("genres")) {
-                        mergedGame.genres = genres
+                        mergedGame.genres = genres.toList()
                         metadataMap["genres"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.themes?.takeIf { it.isNotEmpty() }?.let { themes ->
                     if (!metadataMap.containsKey("themes")) {
-                        mergedGame.themes = themes
+                        mergedGame.themes = themes.toList()
                         metadataMap["themes"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.keywords?.takeIf { it.isNotEmpty() }?.let { keywords ->
                     if (!metadataMap.containsKey("keywords")) {
-                        mergedGame.keywords = keywords
+                        mergedGame.keywords = keywords.toList()
                         metadataMap["keywords"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.features?.takeIf { it.isNotEmpty() }?.let { features ->
                     if (!metadataMap.containsKey("features")) {
-                        mergedGame.features = features
+                        mergedGame.features = features.toList()
                         metadataMap["features"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.perspectives?.takeIf { it.isNotEmpty() }?.let { perspectives ->
                     if (!metadataMap.containsKey("perspectives")) {
-                        mergedGame.perspectives = perspectives
+                        mergedGame.perspectives = perspectives.toList()
                         metadataMap["perspectives"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.screenshotUrls?.takeIf { it.isNotEmpty() }?.let { screenshotUrls ->
                     if (!metadataMap.containsKey("images")) {
                         mergedGame.images = runBlocking {
-                            screenshotUrls.map { Image(originalUrl = it.toURL(), type = ImageType.SCREENSHOT) }.toSet()
+                            screenshotUrls.map { Image(originalUrl = it.toURL(), type = ImageType.SCREENSHOT) }
                         }
                         metadataMap["images"] = FieldMetadata(sourcePlugin)
                     }
                 }
                 metadata.videoUrls?.takeIf { it.isNotEmpty() }?.let { videoUrls ->
                     if (!metadataMap.containsKey("videoUrls")) {
-                        mergedGame.videoUrls = videoUrls
+                        mergedGame.videoUrls = videoUrls.toList()
                         metadataMap["videoUrls"] = FieldMetadata(sourcePlugin)
                     }
                 }

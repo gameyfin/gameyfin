@@ -49,31 +49,31 @@ class Game(
     var criticRating: Int? = null,
 
     @ManyToMany(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH])
-    var publishers: Set<Company> = emptySet(),
+    var publishers: List<Company> = emptyList(),
 
     @ManyToMany(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH])
-    var developers: Set<Company> = emptySet(),
+    var developers: List<Company> = emptyList(),
 
     @ElementCollection(targetClass = Genre::class)
-    var genres: Set<Genre> = emptySet(),
+    var genres: List<Genre> = emptyList(),
 
     @ElementCollection(targetClass = Theme::class)
-    var themes: Set<Theme> = emptySet(),
+    var themes: List<Theme> = emptyList(),
 
     @ElementCollection
-    var keywords: Set<String> = emptySet(),
+    var keywords: List<String> = emptyList(),
 
     @ElementCollection(targetClass = GameFeature::class)
-    var features: Set<GameFeature> = emptySet(),
+    var features: List<GameFeature> = emptyList(),
 
     @ElementCollection(targetClass = PlayerPerspective::class)
-    var perspectives: Set<PlayerPerspective>? = null,
+    var perspectives: List<PlayerPerspective>? = null,
 
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    var images: Set<Image> = emptySet(),
+    var images: List<Image> = emptyList(),
 
     @ElementCollection
-    var videoUrls: Set<URI> = emptySet(),
+    var videoUrls: List<URI> = emptyList(),
 
     @Column(unique = true)
     val path: String,

@@ -32,7 +32,7 @@ class SetupService(
             password = registration.password,
             email = registration.email,
             enabled = true,
-            roles = setOf(Role.SUPERADMIN)
+            roles = listOf(Role.SUPERADMIN)
         )
 
         val user = userService.registerOrUpdateUser(superAdmin)

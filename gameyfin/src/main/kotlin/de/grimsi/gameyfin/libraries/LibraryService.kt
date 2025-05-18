@@ -60,7 +60,7 @@ class LibraryService(
         libraryDto.directories?.let {
             existingLibrary.directories = it
                 .map { d -> DirectoryMapping(internalPath = d.internalPath, externalPath = d.externalPath) }
-                .toMutableSet()
+                .toMutableList()
         }
 
         val updatedLibrary = libraryRepository.save(existingLibrary)
@@ -271,10 +271,10 @@ class LibraryService(
             libraryRepository.save(library)
 
             return LibraryScanResult(
-                libraries = setOf(library),
-                newGames = persistedGames.toSet(),
-                removedGames = removedGames.toSet(),
-                newUnmatchedPaths = newUnmatchedPaths
+                libraries = listOf(library),
+                newGames = persistedGames,
+                removedGames = removedGames,
+                newUnmatchedPaths = newUnmatchedPaths.toList()
             )
         }
 
@@ -321,7 +321,7 @@ class LibraryService(
             name = library.name,
             directories = library.directories.map {
                 DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
-            }.toMutableSet()
+            }.toMutableList()
         )
     }
 }

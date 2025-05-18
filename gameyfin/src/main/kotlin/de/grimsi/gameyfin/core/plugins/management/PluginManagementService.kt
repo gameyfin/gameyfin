@@ -1,43 +1,43 @@
 package de.grimsi.gameyfin.core.plugins.management
 
+import de.grimsi.gameyfin.core.plugins.config.PluginConfigService
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigValidationResult
+import de.grimsi.gameyfin.core.plugins.dto.PluginDto
+import de.grimsi.gameyfin.core.plugins.dto.PluginUpdateDto
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import org.pf4j.ExtensionPoint
 import org.pf4j.PluginWrapper
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 
 @Service
 class PluginManagementService(
     private val pluginManager: GameyfinPluginManager,
+    private val pluginConfigService: PluginConfigService,
     private val pluginManagementRepository: PluginManagementRepository,
 ) {
+    private val pluginUpdates = Sinks.many().multicast().onBackpressureBuffer<PluginUpdateDto>()
 
-    fun getSupportedPluginTypes(): Set<String> {
+    init {
+        pluginManager.addPluginStateListener {
+            pluginUpdates.tryEmitNext(PluginUpdateDto(id = it.plugin.pluginId, state = it.pluginState))
+        }
+    }
+
+    fun subscribe(): Flux<PluginUpdateDto> {
+        return pluginUpdates.asFlux()
+    }
+
+    fun getSupportedPluginTypes(): List<String> {
         return pluginManager.plugins
             .flatMap { pluginManager.getExtensionTypes(it.pluginId) }
-            .toSet()
     }
 
-    fun getPluginDtos(type: String?): Set<PluginDto> {
+    fun getAll(): List<PluginDto> {
         return pluginManager.plugins
-            .filter { type == null || type in pluginManager.getExtensionTypes(it.pluginId) }
             .map { toDto(it) }
-            .toSet()
-    }
-
-    fun getPluginDtosMappedToTypes(): Map<String, List<PluginDto>> {
-        return pluginManager.plugins
-            .flatMap { plugin ->
-                val types = pluginManager.getExtensionTypes(plugin.pluginId)
-                types.map { it to toDto(plugin) }
-            }
-            .groupBy({ it.first }, { it.second })
-    }
-
-    fun getPluginDto(pluginId: String): PluginDto {
-        val plugin = pluginManager.getPlugin(pluginId)
-        return toDto(plugin)
     }
 
     fun getPluginManagementEntry(pluginId: String): PluginManagementEntry {
@@ -49,18 +49,6 @@ class PluginManagementService(
         val pluginWrapper = pluginManager.whichPlugin(clazz)
         return pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
             ?: throw IllegalArgumentException("Plugin with class $clazz not found")
-    }
-
-    fun startPlugin(pluginId: String) {
-        pluginManager.startPlugin(pluginId)
-    }
-
-    fun stopPlugin(pluginId: String) {
-        pluginManager.stopPlugin(pluginId)
-    }
-
-    fun restartPlugin(pluginId: String) {
-        pluginManager.restart(pluginId)
     }
 
     fun enablePlugin(pluginId: String) {
@@ -75,10 +63,10 @@ class PluginManagementService(
         return pluginManager.validatePluginConfig(pluginId)
     }
 
-    fun setPluginPriority(pluginId: String, priority: Int) {
-        val pluginManagementEntry = getPluginManagementEntry(pluginId)
-        pluginManagementEntry.priority = priority
-        pluginManagementRepository.save(pluginManagementEntry)
+    fun updateConfig(pluginId: String, updatedConfig: Map<String, String>) {
+        pluginConfigService.updateConfig(pluginId, updatedConfig)
+        val update = PluginUpdateDto(pluginId, config = updatedConfig)
+        pluginUpdates.tryEmitNext(update)
     }
 
     fun setPluginPriorities(pluginPriorities: Map<String, Int>) {
@@ -110,6 +98,7 @@ class PluginManagementService(
 
         return PluginDto(
             id = descriptor.pluginId,
+            types = pluginManager.getExtensionTypes(pluginWrapper.pluginId),
             name = descriptor.pluginName,
             description = descriptor.pluginDescription,
             shortDescription = descriptor.pluginShortDescription,
@@ -119,6 +108,8 @@ class PluginManagementService(
             url = descriptor.pluginUrl,
             hasLogo = hasLogo,
             state = pluginWrapper.pluginState,
+            configMetadata = pluginConfigService.getConfigMetadata(pluginWrapper),
+            config = pluginConfigService.getConfig(pluginWrapper),
             priority = pluginManagementEntry.priority,
             trustLevel = pluginManagementEntry.trustLevel
         )

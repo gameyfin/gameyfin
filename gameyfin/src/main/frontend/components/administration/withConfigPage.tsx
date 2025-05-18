@@ -5,7 +5,7 @@ import {Form, Formik} from "formik";
 import {Button, Skeleton} from "@heroui/react";
 import {Check, Info} from "@phosphor-icons/react";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
-import {configState, initializeConfig, NestedConfig} from "Frontend/state/ConfigState";
+import {configState, initializeConfigState, NestedConfig} from "Frontend/state/ConfigState";
 import {useSnapshot} from "valtio/react";
 
 export default function withConfigPage(WrappedComponent: React.ComponentType<any>, title: String, validationSchema?: any) {
@@ -16,7 +16,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         const state = useSnapshot(configState);
 
         useEffect(() => {
-            initializeConfig();
+            initializeConfigState();
         }, []);
 
         useEffect(() => {
@@ -26,14 +26,14 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         }, [configSaved])
 
         async function handleSubmit(values: NestedConfig): Promise<void> {
-            const changed = getChangedValues(state.configNested, values);
+            const changed = getChangedValues(state.config, values);
             await ConfigEndpoint.update({updates: changed});
             setConfigSaved(true);
         }
 
         function getConfig(key: string): ConfigEntryDto | undefined {
             // @ts-ignore
-            return state.configEntries[key];
+            return state.state[key];
         }
 
         function getChangedValues(initial: NestedConfig, current: NestedConfig): Record<string, any> {
@@ -86,7 +86,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
             <>
                 {state.isLoaded ?
                     <Formik
-                        initialValues={state.configNested}
+                        initialValues={state.config}
                         onSubmit={handleSubmit}
                         validationSchema={validationSchema}
                         enableReinitialize={true}

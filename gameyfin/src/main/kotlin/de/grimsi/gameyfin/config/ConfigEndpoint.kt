@@ -10,42 +10,31 @@ import jakarta.annotation.security.RolesAllowed
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
 class ConfigEndpoint(
-    private val config: ConfigService
+    private val configService: ConfigService
 ) {
 
     /** CRUD endpoints for admins **/
-    private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>()
-
-    fun getAll(): List<ConfigEntryDto> {
-        return config.getAll(null)
-    }
 
     @PermitAll
     fun subscribe(): Flux<ConfigUpdateDto> {
         val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
-        return if (user.isAdmin()) configUpdates.asFlux()
+        return if (user.isAdmin()) configService.subscribe()
         else Flux.empty()
     }
 
-    fun update(update: ConfigUpdateDto) {
-        config.update(update.updates)
-        configUpdates.tryEmitNext(update)
-    }
+    fun getAll(): List<ConfigEntryDto> = configService.getAll()
+
+    fun update(update: ConfigUpdateDto) = configService.update(update)
 
     /** Specific read-only endpoint for all users **/
 
     @PermitAll
-    fun isSsoEnabled(): Boolean? {
-        return config.get(ConfigProperties.SSO.OIDC.Enabled)
-    }
+    fun isSsoEnabled(): Boolean? = configService.get(ConfigProperties.SSO.OIDC.Enabled)
 
     @PermitAll
-    fun getLogoutUrl(): String? {
-        return config.get(ConfigProperties.SSO.OIDC.LogoutUrl)
-    }
+    fun getLogoutUrl(): String? = configService.get(ConfigProperties.SSO.OIDC.LogoutUrl)
 }

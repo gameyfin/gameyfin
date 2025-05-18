@@ -7,35 +7,35 @@ import {Subscription} from "@vaadin/hilla-frontend";
 type ConfigState = {
     subscription?: Subscription<ConfigUpdateDto>;
     isLoaded: boolean;
-    configEntries: Record<string, ConfigEntryDto>;
-    configNested: NestedConfig;
+    state: Record<string, ConfigEntryDto>;
+    config: NestedConfig;
 };
 
 export const configState = proxy<ConfigState>({
     get isLoaded() {
         return this.subscription != null;
     },
-    configEntries: {},
-    get configNested() {
-        return toNestedConfig(Object.values(this.configEntries));
+    state: {},
+    get config() {
+        return toNestedConfig(Object.values(this.state));
     }
 });
 
 /** Subscribe to and process state updates from backend **/
-export async function initializeConfig() {
+export async function initializeConfigState() {
     if (configState.isLoaded) return;
 
     // Fetch initial configuration data
     const initialEntries = await ConfigEndpoint.getAll();
     initialEntries.forEach((entry) => {
-        configState.configEntries[entry.key] = entry;
+        configState.state[entry.key] = entry;
     });
 
     // Subscribe to real-time updates
     configState.subscription = ConfigEndpoint.subscribe().onNext((updateDto: ConfigUpdateDto) => {
         Object.entries(updateDto.updates).forEach(([key, value]) => {
-            if (configState.configEntries[key]) {
-                configState.configEntries[key].value = value;
+            if (configState.state[key]) {
+                configState.state[key].value = value;
             }
         });
     });

@@ -12,11 +12,11 @@ class Library(
     var name: String,
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
-    var directories: MutableSet<DirectoryMapping> = HashSet(),
+    var directories: MutableList<DirectoryMapping> = ArrayList(),
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
-    var games: MutableSet<Game> = HashSet(),
+    var games: MutableList<Game> = ArrayList(),
 
     @ElementCollection(fetch = FetchType.EAGER)
-    var unmatchedPaths: MutableSet<String> = HashSet()
+    var unmatchedPaths: MutableList<String> = ArrayList()
 )

@@ -1,10 +1,10 @@
 import React from "react";
 import {addToast, Button, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
-import {PluginManagementEndpoint} from "Frontend/generated/endpoints";
-import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import {ListBox, ListBoxItem, useDragAndDrop} from "react-aria-components";
 import {CaretUpDown} from "@phosphor-icons/react";
 import {useListData} from "@react-stately/data";
+import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";
+import {PluginEndpoint} from "Frontend/generated/endpoints";
 
 interface PluginPrioritiesModalProps {
     plugins: PluginDto[];
@@ -51,11 +51,11 @@ export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: P
     async function setPluginPriorities(onClose: () => void) {
         try {
             const prioritiesMap = generatePrioritiesMap();
-            await PluginManagementEndpoint.setPluginPriorities(prioritiesMap);
+            await PluginEndpoint.setPluginPriorities(prioritiesMap);
 
             addToast({
                 title: "Plugin order updated",
-                description: "Plugin order have been updated successfully.",
+                description: "Plugin order has been updated successfully.",
                 color: "success"
             });
             onClose();

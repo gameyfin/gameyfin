@@ -48,8 +48,8 @@ class RoleService(
         return Role.entries.filter { it.powerLevel < highestUserRole.powerLevel }
     }
 
-    fun authoritiesToRoles(authorities: Collection<GrantedAuthority>): Set<Role> {
-        return authorities.mapNotNull { Role.safeValueOf(it.authority) }.toMutableSet()
+    fun authoritiesToRoles(authorities: Collection<GrantedAuthority>): List<Role> {
+        return authorities.mapNotNull { Role.safeValueOf(it.authority) }
     }
 
     /**

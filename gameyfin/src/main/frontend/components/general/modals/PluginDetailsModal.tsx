@@ -1,53 +1,35 @@
-import React, {useEffect, useState} from "react";
+import React from "react";
 import {addToast, Button, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
-import {PluginConfigEndpoint, PluginManagementEndpoint} from "Frontend/generated/endpoints";
-import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginDto";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/input/Input";
 import PluginLogo from "Frontend/components/general/PluginLogo";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
+import {PluginEndpoint} from "Frontend/generated/endpoints";
+import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";
 
 interface PluginDetailsModalProps {
     plugin: PluginDto;
     isOpen: boolean;
     onOpenChange: () => void;
-    updatePlugin: (plugin: PluginDto) => void;
 }
 
-export default function PluginDetailsModal({plugin, isOpen, onOpenChange, updatePlugin}: PluginDetailsModalProps) {
-    const [pluginConfigMeta, setPluginConfigMeta] = useState<(PluginConfigElement)[]>();
-    const [pluginConfig, setPluginConfig] = useState<Record<string, string>>();
-
-    useEffect(() => {
-        PluginConfigEndpoint.getConfigMetadata(plugin.id).then(response => {
-            if (response === undefined) return;
-            setPluginConfigMeta(response as PluginConfigElement[]);
-        });
-        PluginConfigEndpoint.getConfig(plugin.id).then(response => {
-            if (response === undefined) return;
-            setPluginConfig(response as Record<string, string>);
-        });
-    }, []);
-
+export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: PluginDetailsModalProps) {
     async function saveConfig(values: Record<string, string>) {
-        await PluginConfigEndpoint.setConfigEntries(plugin.id, values);
+        await PluginEndpoint.updateConfig(plugin.id, values);
         addToast({
             title: "Configuration saved",
             description: `Configuration for plugin ${plugin.name} saved!`,
             color: "success"
         });
-        let updatedPlugin = await PluginManagementEndpoint.getPlugin(plugin.id);
-        if (updatedPlugin === undefined) return;
-        updatePlugin(updatedPlugin);
     }
 
     return (
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="lg">
             <ModalContent>
                 {(onClose) => (
-                    <Formik initialValues={pluginConfig}
+                    <Formik initialValues={plugin.config}
                             enableReinitialize={true}
                             onSubmit={async (values: any) => {
                                 await saveConfig(values);
@@ -107,8 +89,8 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange, update
                                     </div>
 
                                     <h4 className="text-l font-bold mt-4">Configuration</h4>
-                                    {(pluginConfigMeta && pluginConfigMeta.length > 0) ?
-                                        pluginConfigMeta.map((entry: PluginConfigElement) => (
+                                    {(plugin.configMetadata && plugin.configMetadata.length > 0) ?
+                                        plugin.configMetadata.map((entry: PluginConfigElement) => (
                                             <Input key={entry.key} name={entry.key} label={entry.name}
                                                    type={entry.secret ? "password" : "text"}/>
                                         )) : "This plugin has no configuration options."
@@ -118,7 +100,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange, update
                                     <Button variant="light" onPress={onClose}>
                                         Cancel
                                     </Button>
-                                    {(pluginConfigMeta && pluginConfigMeta?.length > 0) ?
+                                    {(plugin.configMetadata && plugin.configMetadata?.length > 0) ?
                                         <Button
                                             color="primary"
                                             isLoading={formik.isSubmitting}

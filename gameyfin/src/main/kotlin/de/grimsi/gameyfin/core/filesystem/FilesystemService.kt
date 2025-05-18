@@ -116,18 +116,18 @@ class FilesystemService(
         val newPaths = currentFilesystemPaths.filter { path ->
             val isInLibrary = allCurrentLibraryPaths.any { it == path }
             !isInLibrary
-        }.toSet()
+        }
 
         //Get all paths that are in the library (either as game or as unmatched path), but not on the filesystem
         val removedGamePaths = currentLibraryGamePaths.filter { path ->
             val isOnFilesystem = currentFilesystemPaths.any { it == path }
             !isOnFilesystem
-        }.toSet()
+        }
 
         val removedUnmatchedPaths = currentLibraryUnmatchedPaths.filter { path ->
             val isOnFilesystem = currentFilesystemPaths.any { it == path }
             !isOnFilesystem
-        }.toSet()
+        }
 
         return FilesystemScanResult(
             newPaths = newPaths,

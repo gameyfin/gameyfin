@@ -88,7 +88,6 @@ class UserService(
             val userInfoDto = toUserInfo(oidcUser)
             userInfoDto.roles = roleService.extractGrantedAuthorities(principal.authorities)
                 .mapNotNull { Role.safeValueOf(it.authority) }
-                .toSet()
             return userInfoDto
         }
 
@@ -148,7 +147,7 @@ class UserService(
             password = passwordEncoder.encode(registration.password),
             email = registration.email,
             enabled = !adminNeedsToApprove,
-            roles = setOf(Role.USER)
+            roles = listOf(Role.USER)
         )
 
         user = userRepository.save(user)
@@ -172,7 +171,7 @@ class UserService(
             email = email,
             emailConfirmed = true,
             enabled = true,
-            roles = setOf(Role.USER)
+            roles = listOf(Role.USER)
         )
 
         if (existsByUsername(user.username)) {
@@ -229,7 +228,7 @@ class UserService(
             return RoleAssignmentResult.ASSIGNED_ROLE_POWER_LEVEL_TOO_HIGH
         }
 
-        targetUser.roles = newAssignedRoles.toMutableSet()
+        targetUser.roles = newAssignedRoles
         userRepository.save(targetUser)
         return RoleAssignmentResult.SUCCESS
     }

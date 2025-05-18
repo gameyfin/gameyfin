@@ -10,5 +10,5 @@ data class UserInfoDto(
     val isEnabled: Boolean,
     val hasAvatar: Boolean,
     val avatarId: Long? = null,
-    var roles: Set<Role>
+    var roles: List<Role>
 )
