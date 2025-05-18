@@ -1,9 +1,12 @@
 package de.grimsi.gameyfin.core.logging
 
-import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
+import de.grimsi.gameyfin.users.util.isAdmin
+import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
 import reactor.core.publisher.Flux
 
 @Endpoint
@@ -16,9 +19,10 @@ class LogEndpoint(
         logService.configureFileLogging()
     }
 
-    // FIXME: see https://vaadin.com/forum/t/can-only-access-flux-endpoint-with-anonymousallowed/167117
-    @AnonymousAllowed
+    @PermitAll
     fun getApplicationLogs(): Flux<String> {
-        return logService.streamLogs()
+        val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
+        return if (user.isAdmin()) logService.streamLogs()
+        else Flux.empty()
     }
 }

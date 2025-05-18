@@ -1,6 +1,3 @@
-@file:JvmName("Utils")
-@file:JvmMultifileClass
-
 package de.grimsi.gameyfin.users.util
 
 import de.grimsi.gameyfin.core.Role
