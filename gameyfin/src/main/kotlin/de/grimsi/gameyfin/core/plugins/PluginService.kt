@@ -1,11 +1,14 @@
-package de.grimsi.gameyfin.core.plugins.management
+package de.grimsi.gameyfin.core.plugins
 
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigEntry
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigEntryKey
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigRepository
-import de.grimsi.gameyfin.core.plugins.config.PluginConfigService
 import de.grimsi.gameyfin.core.plugins.dto.PluginDto
 import de.grimsi.gameyfin.core.plugins.dto.PluginUpdateDto
+import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginDescriptor
+import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginManager
+import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
+import de.grimsi.gameyfin.core.plugins.management.PluginManagementRepository
 import de.grimsi.gameyfin.pluginapi.core.Configurable
 import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
@@ -21,7 +24,6 @@ import reactor.core.publisher.Sinks
 @Service
 class PluginService(
     private val pluginManager: GameyfinPluginManager,
-    private val pluginConfigService: PluginConfigService,
     private val pluginManagementRepository: PluginManagementRepository,
     private val pluginConfigRepository: PluginConfigRepository
 ) {

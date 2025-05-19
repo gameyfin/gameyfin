@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.media
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.annotations.DynamicPublicAccess
-import de.grimsi.gameyfin.core.plugins.management.PluginService
+import de.grimsi.gameyfin.core.plugins.PluginService
 import de.grimsi.gameyfin.games.entities.Image
 import de.grimsi.gameyfin.games.entities.ImageType
 import de.grimsi.gameyfin.users.UserService

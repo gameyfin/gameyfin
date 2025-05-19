@@ -16,8 +16,15 @@ interface PluginDetailsModalProps {
     onOpenChange: () => void;
 }
 
+enum ValidationState {
+    UNCHECKED,
+    VALID,
+    INVALID,
+    IN_PROGRESS
+}
+
 export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: PluginDetailsModalProps) {
-    const [configValidated, setConfigValidated] = useState<boolean>(false);
+    const [configValidated, setConfigValidated] = useState<ValidationState>(ValidationState.UNCHECKED);
 
     async function saveConfig(values: Record<string, string>) {
         await PluginEndpoint.updateConfig(plugin.id, values);
@@ -94,21 +101,36 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
 
                                     <div className="flex flex-row items-center mt-4 gap-2">
                                         <h4 className="text-l font-bold">Configuration</h4>
-                                        <div className="flex-1"/>
                                         {(plugin.configMetadata && plugin.configMetadata.length > 0) && <>
-                                            {configValidated &&
-                                                <p className="text-small text-success">Validation successful</p>}
+                                            <div className="flex-1"/>
+                                            {(() => {
+                                                switch (configValidated) {
+                                                    case ValidationState.VALID:
+                                                        return <p className="text-small text-success">
+                                                            Configuration valid
+                                                        </p>;
+                                                    case ValidationState.INVALID:
+                                                        return <p className="text-small text-danger">
+                                                            Configuration invalid
+                                                        </p>;
+                                                    default:
+                                                        return null;
+                                                }
+                                            })()}
                                             <Tooltip content="Re-validate configuration" placement="bottom"
                                                      color="foreground">
                                                 <Button isIconOnly variant="light" size="sm"
+                                                        isLoading={configValidated === ValidationState.IN_PROGRESS}
                                                         onPress={async () => {
-                                                            setConfigValidated(false);
+                                                            setConfigValidated(ValidationState.IN_PROGRESS);
                                                             let result = await PluginEndpoint.validateNewConfig(plugin.id, formik.values)
-                                                            if (result.errors) formik.setErrors(result.errors);
-                                                            else {
-                                                                setConfigValidated(true);
-                                                                setTimeout(() => setConfigValidated(false), 5000);
+                                                            if (result.errors) {
+                                                                formik.setErrors(result.errors);
+                                                                setConfigValidated(ValidationState.INVALID);
+                                                            } else {
+                                                                setConfigValidated(ValidationState.VALID);
                                                             }
+                                                            setTimeout(() => setConfigValidated(ValidationState.UNCHECKED), 5000);
                                                         }}>
                                                     <ArrowClockwise/>
                                                 </Button>
@@ -131,7 +153,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                         <Button
                                             color="primary"
                                             isLoading={formik.isSubmitting}
-                                            disabled={formik.isSubmitting}
+                                            isDisabled={formik.isSubmitting || !formik.dirty}
                                             type="submit"
                                         >
                                             {formik.isSubmitting ? "" : "Save"}

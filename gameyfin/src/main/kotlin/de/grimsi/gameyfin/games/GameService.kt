@@ -2,8 +2,8 @@ package de.grimsi.gameyfin.games
 
 import de.grimsi.gameyfin.core.alphaNumeric
 import de.grimsi.gameyfin.core.filterValuesNotNull
+import de.grimsi.gameyfin.core.plugins.PluginService
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
-import de.grimsi.gameyfin.core.plugins.management.PluginService
 import de.grimsi.gameyfin.core.replaceRomanNumerals
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.dto.GameMetadataDto
