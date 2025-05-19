@@ -1,8 +1,9 @@
 package de.grimsi.gameyfin.core.plugins.management
 
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigRepository
-import de.grimsi.gameyfin.core.plugins.config.PluginConfigValidationResult
 import de.grimsi.gameyfin.pluginapi.core.Configurable
+import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResultType
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
@@ -34,9 +35,9 @@ class GameyfinPluginManager(
     private val log = KotlinLogging.logger {}
     private val publicKey: PublicKey = loadPluginSignaturePublicKey()
 
-    // This took me way too long to figure out...
-    // But I learned a lot about Kotlin and Java interoperability in the process
     init {
+        // This took me way too long to figure out...
+        // But I learned a lot about Kotlin and Java interoperability in the process
         pluginStatusProvider = dbPluginStatusProvider
 
         pluginStateListeners.add { event ->
@@ -143,7 +144,7 @@ class GameyfinPluginManager(
         }
 
         // Validate config before starting the plugin
-        if (validatePluginConfig(pluginId) == PluginConfigValidationResult.INVALID) {
+        if (validatePluginConfig(pluginId).result == PluginConfigValidationResultType.INVALID) {
             log.warn { "Plugin $pluginId has invalid configuration" }
 
             val pluginWrapper = getPlugin(pluginId)
@@ -171,14 +172,28 @@ class GameyfinPluginManager(
         val plugin = try {
             getPlugin(pluginId)?.plugin
         } catch (_: NoClassDefFoundError) {
-            return PluginConfigValidationResult.UNKNWOWN
+            return PluginConfigValidationResult(PluginConfigValidationResultType.UNKNWOWN)
         }
 
-        if (plugin !is Configurable || plugin.validateConfig()) {
-            return PluginConfigValidationResult.VALID
+        if (plugin !is Configurable) {
+            return PluginConfigValidationResult(PluginConfigValidationResultType.VALID)
         }
 
-        return PluginConfigValidationResult.INVALID
+        return plugin.validateConfig()
+    }
+
+    fun validatePluginConfig(pluginId: String, configToValidate: Map<String, String>): PluginConfigValidationResult {
+        val plugin = try {
+            getPlugin(pluginId)?.plugin
+        } catch (_: NoClassDefFoundError) {
+            return PluginConfigValidationResult(PluginConfigValidationResultType.UNKNWOWN)
+        }
+
+        if (plugin !is Configurable) {
+            return PluginConfigValidationResult(PluginConfigValidationResultType.VALID)
+        }
+
+        return plugin.validateConfig(configToValidate)
     }
 
     fun getExtensionTypeClasses(pluginId: String): List<Class<ExtensionPoint>> {

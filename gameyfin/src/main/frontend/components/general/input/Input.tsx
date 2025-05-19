@@ -4,7 +4,7 @@ import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {XCircle} from "@phosphor-icons/react";
 
 // @ts-ignore
-const Input = ({label, ...props}) => {
+const Input = ({label, showErrorUntouched = false, ...props}) => {
     // @ts-ignore
     const [field, meta] = useField(props);
 
@@ -15,10 +15,10 @@ const Input = ({label, ...props}) => {
                 {...field}
                 id={label}
                 label={label}
-                isInvalid={meta.touched && !!meta.error}
+                isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
             />
             <div className="min-h-6 text-danger">
-                {meta.touched && meta.error && meta.error.trim().length > 0 && (
+                {(meta.touched || showErrorUntouched) && meta.error && meta.error.trim().length > 0 && (
                     <SmallInfoField icon={XCircle} message={meta.error}/>
                 )}
             </div>

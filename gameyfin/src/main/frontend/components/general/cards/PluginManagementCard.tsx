@@ -1,4 +1,4 @@
-import {Button, Card, Chip, Skeleton, Tooltip, useDisclosure} from "@heroui/react";
+import {Button, Card, Chip, Tooltip, useDisclosure} from "@heroui/react";
 import {
     CheckCircle,
     IconContext,
@@ -16,31 +16,24 @@ import {
     XCircle
 } from "@phosphor-icons/react";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
-import React, {ReactNode, useEffect, useState} from "react";
+import React, {ReactNode} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
 import PluginLogo from "Frontend/components/general/PluginLogo";
 import PluginTrustLevel from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginTrustLevel";
-import PluginConfigValidationResult
-    from "Frontend/generated/de/grimsi/gameyfin/core/plugins/config/PluginConfigValidationResult";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";
+import PluginConfigValidationResult
+    from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigValidationResult";
+import PluginConfigValidationResultType
+    from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigValidationResultType";
 
 export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     const pluginDetailsModal = useDisclosure();
-    const [configValidationResult, setConfigValidationResult] = useState<PluginConfigValidationResult | undefined>(undefined);
-
-    useEffect(() => {
-        PluginEndpoint.validatePluginConfig(plugin.id).then((response: PluginConfigValidationResult) => {
-            setConfigValidationResult(response);
-        });
-    }, [pluginDetailsModal.isOpen, plugin.state]);
 
     function borderColor(state: PluginState | undefined, trustLevel: PluginTrustLevel | undefined): "success" | "warning" | "danger" | "default" {
         if (trustLevel === PluginTrustLevel.UNTRUSTED) return "danger";
 
         if (isDisabled(state)) return "warning";
-        if (configValidationResult === undefined) return "default";
-        if (!configValidationResult) return "danger";
         return stateToColor(state);
     }
 
@@ -76,14 +69,14 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     }
 
     function configValidationResultToChip(validationResult: PluginConfigValidationResult | undefined): ReactNode {
-        switch (validationResult) {
-            case PluginConfigValidationResult.VALID:
+        switch (validationResult?.result) {
+            case PluginConfigValidationResultType.VALID:
                 return <Tooltip content="Config valid" placement="bottom" color="foreground">
                     <Chip size="sm" radius="sm" className="text-xs" color="success">
                         <CheckCircle/>
                     </Chip>
                 </Tooltip>
-            case PluginConfigValidationResult.INVALID:
+            case PluginConfigValidationResultType.INVALID:
                 return <Tooltip content="Config invalid" placement="bottom" color="foreground">
                     <Chip size="sm" radius="sm" className="text-xs" color="danger">
                         <WarningCircle/>
@@ -173,10 +166,7 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                                 {stateToIcon(plugin.state)}
                             </Tooltip>
                         </Chip>
-                        {configValidationResult === undefined ?
-                            <Skeleton className="rounded-md h-6 w-9"/> :
-                            configValidationResultToChip(configValidationResult)
-                        }
+                        {configValidationResultToChip(plugin.configValidation)}
                     </div>
                 </div>
             </Card>

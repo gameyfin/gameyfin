@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.media
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.Utils
 import de.grimsi.gameyfin.core.annotations.DynamicPublicAccess
-import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
+import de.grimsi.gameyfin.core.plugins.management.PluginService
 import de.grimsi.gameyfin.games.entities.Image
 import de.grimsi.gameyfin.games.entities.ImageType
 import de.grimsi.gameyfin.users.UserService
@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile
 class ImageEndpoint(
     private val imageService: ImageService,
     private val userService: UserService,
-    private val pluginManagementService: PluginManagementService
+    private val pluginService: PluginService
 ) {
 
     @GetMapping("/screenshot/{id}")
@@ -39,7 +39,7 @@ class ImageEndpoint(
 
     @GetMapping("/plugins/{id}/logo")
     fun getPluginLogo(@PathVariable("id") pluginId: String): ResponseEntity<ByteArrayResource>? {
-        val logo = pluginManagementService.getLogo(pluginId)
+        val logo = pluginService.getLogo(pluginId)
         return Utils.inputStreamToResponseEntity(logo)
     }
 

@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.plugins.directdownload
 
 import de.grimsi.gameyfin.pluginapi.core.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
+import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
 import de.grimsi.gameyfin.pluginapi.download.Download
 import de.grimsi.gameyfin.pluginapi.download.DownloadProvider
 import de.grimsi.gameyfin.pluginapi.download.FileDownload
@@ -26,21 +27,26 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
     override val configMetadata: List<PluginConfigElement> = listOf(
         PluginConfigElement(
             key = "compressionMode",
-            name = "Compression mode for generated ZIP files (\"none\", \"fast\", \"best\")",
+            name = "Compression mode for generated ZIP files (\"none\" = default, \"fast\", \"best\")",
             description = "Higher compression uses more CPU but saves bandwidth",
         )
     )
 
-    override fun validateConfig(config: Map<String, String?>): Boolean {
-        return config["compressionMode"]?.let {
-            try {
-                CompressionMode.valueOf(it.uppercase())
-                true
+    override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
+        val compressionMode = config["compressionMode"]
+
+        if (compressionMode != null) {
+            return try {
+                CompressionMode.valueOf(compressionMode.uppercase())
+                PluginConfigValidationResult.VALID
             } catch (_: IllegalArgumentException) {
-                log.error("Invalid compression mode: $it")
-                false
+                PluginConfigValidationResult.INVALID(
+                    mapOf("compressionMode" to "Invalid compression mode: $compressionMode (must be \"none\", \"fast\", or \"best\")")
+                )
             }
-        } ?: true
+        }
+
+        return PluginConfigValidationResult.VALID
     }
 
     @Extension

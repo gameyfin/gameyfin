@@ -15,12 +15,19 @@ import java.io.Serializable
 class ConfigService(
     private val appConfigRepository: ConfigRepository
 ) {
-    private val log = KotlinLogging.logger {}
+    companion object {
+        private val log = KotlinLogging.logger {}
+    }
 
     private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>()
 
     fun subscribe(): Flux<ConfigUpdateDto> {
+        log.debug { "New subscription for configUpdates (#${configUpdates.currentSubscriberCount()})" }
         return configUpdates.asFlux()
+            .doOnSubscribe { log.debug { "Subscriber added to configUpdates [${configUpdates.currentSubscriberCount()}]" } }
+            .doFinally {
+                log.debug { "Subscriber removed from configUpdates with signal type $it [${configUpdates.currentSubscriberCount()}]" }
+            }
     }
 
     /**

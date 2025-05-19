@@ -3,6 +3,7 @@ package de.grimsi.gameyfin.plugins.steamgriddb
 import de.grimsi.gameyfin.pluginapi.core.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
 import de.grimsi.gameyfin.pluginapi.core.PluginConfigError
+import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import de.grimsi.gameyfin.plugins.steamgriddb.api.SteamGridDbApiClient
@@ -28,28 +29,30 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         )
     )
 
-    override fun validateConfig(config: Map<String, String?>): Boolean {
+    override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
         try {
-            runBlocking { authenticate() }
-            return true
+            runBlocking { authenticate(config["apiKey"]) }
+            return PluginConfigValidationResult.VALID
         } catch (e: PluginConfigError) {
             log.error(e.message)
-            return false
+            return PluginConfigValidationResult.INVALID(
+                mapOf("apiKey" to "Invalid API key")
+            )
         }
     }
 
     override fun start() {
         try {
-            runBlocking { authenticate() }
+            runBlocking { authenticate(config["apiKey"]) }
         } catch (e: PluginConfigError) {
             log.error(e.message)
         }
     }
 
-    private suspend fun authenticate() {
+    private suspend fun authenticate(apiKey: String? = null) {
         log.debug("Authenticating on SteamGridDB API...")
 
-        val apiKey: String = config["apiKey"] ?: throw PluginConfigError("SteamGridDB API key not set")
+        val apiKey: String = apiKey ?: throw PluginConfigError("SteamGridDB API key not set")
         val client = SteamGridDbApiClient(apiKey)
 
         if (!client.isApiKeyValid()) {

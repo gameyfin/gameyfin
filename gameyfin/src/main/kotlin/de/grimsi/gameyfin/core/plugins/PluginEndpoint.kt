@@ -2,9 +2,9 @@ package de.grimsi.gameyfin.core.plugins
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
-import de.grimsi.gameyfin.core.plugins.config.PluginConfigValidationResult
 import de.grimsi.gameyfin.core.plugins.dto.PluginUpdateDto
-import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
+import de.grimsi.gameyfin.core.plugins.management.PluginService
+import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
 import de.grimsi.gameyfin.users.util.isAdmin
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
@@ -15,28 +15,31 @@ import reactor.core.publisher.Flux
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
 class PluginEndpoint(
-    private val pluginManagementService: PluginManagementService
+    private val pluginService: PluginService
 ) {
 
     @PermitAll
     fun subscribe(): Flux<PluginUpdateDto> {
         val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
-        return if (user.isAdmin()) pluginManagementService.subscribe()
+        return if (user.isAdmin()) pluginService.subscribe()
         else Flux.empty()
     }
 
-    fun getAll() = pluginManagementService.getAll()
+    fun getAll() = pluginService.getAll()
 
-    fun enablePlugin(pluginId: String) = pluginManagementService.enablePlugin(pluginId)
+    fun enablePlugin(pluginId: String) = pluginService.enablePlugin(pluginId)
 
-    fun disablePlugin(pluginId: String) = pluginManagementService.disablePlugin(pluginId)
+    fun disablePlugin(pluginId: String) = pluginService.disablePlugin(pluginId)
 
     fun setPluginPriorities(pluginPriorities: Map<String, Int>) =
-        pluginManagementService.setPluginPriorities(pluginPriorities)
+        pluginService.setPluginPriorities(pluginPriorities)
 
     fun validatePluginConfig(pluginId: String): PluginConfigValidationResult =
-        pluginManagementService.validatePluginConfig(pluginId)
+        pluginService.validatePluginConfig(pluginId, true)
+
+    fun validateNewConfig(pluginId: String, config: Map<String, String>): PluginConfigValidationResult =
+        pluginService.validatePluginConfig(pluginId, config)
 
     fun updateConfig(pluginId: String, updatedConfig: Map<String, String>) =
-        pluginManagementService.updateConfig(pluginId, updatedConfig)
+        pluginService.updateConfig(pluginId, updatedConfig)
 }

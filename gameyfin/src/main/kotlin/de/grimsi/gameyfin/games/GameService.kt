@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.games
 import de.grimsi.gameyfin.core.alphaNumeric
 import de.grimsi.gameyfin.core.filterValuesNotNull
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
-import de.grimsi.gameyfin.core.plugins.management.PluginManagementService
+import de.grimsi.gameyfin.core.plugins.management.PluginService
 import de.grimsi.gameyfin.core.replaceRomanNumerals
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.dto.GameMetadataDto
@@ -28,7 +28,7 @@ import java.nio.file.Path
 @Service
 class GameService(
     private val pluginManager: PluginManager,
-    private val pluginManagementService: PluginManagementService,
+    private val pluginService: PluginService,
     private val gameRepository: GameRepository,
     private val companyService: CompanyService
 ) {
@@ -179,11 +179,11 @@ class GameService(
 
         // Cache the plugin management entries for each provider
         val providerToManagementEntry =
-            results.entries.associate { it.key to pluginManagementService.getPluginManagementEntry(it.key.javaClass) }
+            results.entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
 
         // Sort results by plugin priority
         val sortedResults = results.entries.sortedByDescending {
-            pluginManagementService.getPluginManagementEntry(it.key.javaClass).priority
+            pluginService.getPluginManagementEntry(it.key.javaClass).priority
         }
 
         sortedResults.forEach { (provider, metadata) ->

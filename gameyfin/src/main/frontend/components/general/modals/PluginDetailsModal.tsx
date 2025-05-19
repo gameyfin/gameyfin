@@ -1,5 +1,5 @@
-import React from "react";
-import {addToast, Button, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import React, {useState} from "react";
+import {addToast, Button, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/input/Input";
@@ -8,6 +8,7 @@ import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";
+import {ArrowClockwise} from "@phosphor-icons/react";
 
 interface PluginDetailsModalProps {
     plugin: PluginDto;
@@ -16,6 +17,8 @@ interface PluginDetailsModalProps {
 }
 
 export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: PluginDetailsModalProps) {
+    const [configValidated, setConfigValidated] = useState<boolean>(false);
+
     async function saveConfig(values: Record<string, string>) {
         await PluginEndpoint.updateConfig(plugin.id, values);
         addToast({
@@ -30,13 +33,14 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
             <ModalContent>
                 {(onClose) => (
                     <Formik initialValues={plugin.config}
+                            initialErrors={plugin.configValidation?.errors}
                             enableReinitialize={true}
                             onSubmit={async (values: any) => {
                                 await saveConfig(values);
                                 onClose();
                             }}
                     >
-                        {(formik: { isSubmitting: any; }) => (
+                        {(formik: any) => (
                             <Form>
                                 <ModalHeader className="flex flex-col gap-1">
                                     Plugin configuration for {plugin.name}
@@ -88,10 +92,33 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                         >{plugin.description}</Markdown>
                                     </div>
 
-                                    <h4 className="text-l font-bold mt-4">Configuration</h4>
+                                    <div className="flex flex-row items-center mt-4 gap-2">
+                                        <h4 className="text-l font-bold">Configuration</h4>
+                                        <div className="flex-1"/>
+                                        {(plugin.configMetadata && plugin.configMetadata.length > 0) && <>
+                                            {configValidated &&
+                                                <p className="text-small text-success">Validation successful</p>}
+                                            <Tooltip content="Re-validate configuration" placement="bottom"
+                                                     color="foreground">
+                                                <Button isIconOnly variant="light" size="sm"
+                                                        onPress={async () => {
+                                                            setConfigValidated(false);
+                                                            let result = await PluginEndpoint.validateNewConfig(plugin.id, formik.values)
+                                                            if (result.errors) formik.setErrors(result.errors);
+                                                            else {
+                                                                setConfigValidated(true);
+                                                                setTimeout(() => setConfigValidated(false), 5000);
+                                                            }
+                                                        }}>
+                                                    <ArrowClockwise/>
+                                                </Button>
+                                            </Tooltip>
+                                        </>}
+                                    </div>
                                     {(plugin.configMetadata && plugin.configMetadata.length > 0) ?
                                         plugin.configMetadata.map((entry: PluginConfigElement) => (
                                             <Input key={entry.key} name={entry.key} label={entry.name}
+                                                   showErrorUntouched={true}
                                                    type={entry.secret ? "password" : "text"}/>
                                         )) : "This plugin has no configuration options."
                                     }
