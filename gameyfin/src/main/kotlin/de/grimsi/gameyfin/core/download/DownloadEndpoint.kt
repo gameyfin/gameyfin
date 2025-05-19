@@ -15,10 +15,6 @@ class DownloadEndpoint(
     private val downloadService: DownloadService,
     private val gameService: GameService
 ) {
-    fun getProviders(): List<String> {
-        return downloadService.getProviders()
-    }
-
     @GetMapping("/{gameId}")
     fun downloadGame(
         @PathVariable gameId: Long,

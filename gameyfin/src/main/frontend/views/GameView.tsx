@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {GameEndpoint} from "Frontend/generated/endpoints";
+import {DownloadProviderEndpoint, GameEndpoint} from "Frontend/generated/endpoints";
 import {useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
@@ -13,24 +13,23 @@ export default function GameView() {
     const {gameId} = useParams();
 
     const [game, setGame] = useState<GameDto>();
+    const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>({});
 
-    const downloadOptions: Record<string, ComboButtonOption> = {
-        browser: {
-            label: "Direct Download",
-            description: "Download the game in this browser",
-            action: () => {
-                DownloadEndpoint.downloadGame(parseInt(gameId!), "de.grimsi.gameyfin.plugins.directdownload.DirectDownloadPlugin$DirectDownloadProvider")
-            }
-        },
-        torrent: {
-            label: "Torrent Download",
-            description: "Download the game as a torrent",
-            action: () => {
-                alert("Torrent download not yet implemented")
-            },
-            isDisabled: true
-        }
-    }
+    useEffect(() => {
+        DownloadProviderEndpoint.getProviders().then((providers) => {
+            const options: Record<string, ComboButtonOption> = providers.reduce((acc, provider) => {
+                acc[provider.key] = {
+                    label: provider.name,
+                    description: provider.shortDescription ?? provider.description,
+                    action: () => {
+                        if (gameId) DownloadEndpoint.downloadGame(parseInt(gameId!), provider.key);
+                    },
+                };
+                return acc;
+            }, {} as Record<string, ComboButtonOption>);
+            setDownloadOptions(options);
+        });
+    }, []);
 
     useEffect(() => {
         if (gameId) {

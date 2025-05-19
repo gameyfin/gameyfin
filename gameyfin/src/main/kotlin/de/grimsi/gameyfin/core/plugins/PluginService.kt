@@ -59,11 +59,6 @@ class PluginService(
             .map { toDto(it) }
     }
 
-    fun getPluginManagementEntry(pluginId: String): PluginManagementEntry {
-        return pluginManagementRepository.findByIdOrNull(pluginId)
-            ?: throw IllegalArgumentException("Plugin with ID $pluginId not found")
-    }
-
     fun getPluginManagementEntry(clazz: Class<ExtensionPoint>): PluginManagementEntry {
         val pluginWrapper = pluginManager.whichPlugin(clazz)
         return pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
@@ -135,6 +130,11 @@ class PluginService(
 
     fun validatePluginConfig(pluginId: String, configToValidate: Map<String, String>): PluginConfigValidationResult {
         return pluginManager.validatePluginConfig(pluginId, configToValidate)
+    }
+
+    private fun getPluginManagementEntry(pluginId: String): PluginManagementEntry {
+        return pluginManagementRepository.findByIdOrNull(pluginId)
+            ?: throw IllegalArgumentException("Plugin with ID $pluginId not found")
     }
 
     private fun toDto(pluginWrapper: PluginWrapper): PluginDto {

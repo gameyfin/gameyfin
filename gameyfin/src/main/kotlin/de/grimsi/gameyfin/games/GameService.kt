@@ -183,7 +183,7 @@ class GameService(
 
         // Sort results by plugin priority
         val sortedResults = results.entries.sortedByDescending {
-            pluginService.getPluginManagementEntry(it.key.javaClass).priority
+            providerToManagementEntry[it.key]?.priority
         }
 
         sortedResults.forEach { (provider, metadata) ->

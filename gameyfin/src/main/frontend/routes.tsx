@@ -20,6 +20,7 @@ import InvitationRegistrationView from "Frontend/views/InvitationRegistrationVie
 import PluginManagement from "Frontend/components/administration/PluginManagement";
 import {SystemManagement} from "Frontend/components/administration/SystemManagement";
 import GameView from "Frontend/views/GameView";
+import LibraryManagementView from "Frontend/views/LibraryManagementView";
 
 export const routes = protectRoutes([
     {
@@ -49,7 +50,14 @@ export const routes = protectRoutes([
                         path: 'administration',
                         element: <AdministrationView/>,
                         children: [
-                            {path: 'libraries', element: <LibraryManagement/>},
+                            {
+                                path: 'libraries',
+                                element: <LibraryManagement/>,
+                                children: [{
+                                    path: 'library/:libraryId',
+                                    element: <LibraryManagementView/>
+                                }]
+                            },
                             {path: 'users', element: <UserManagement/>},
                             {path: 'sso', element: <SsoManagement/>},
                             {path: 'messages', element: <MessageManagement/>},

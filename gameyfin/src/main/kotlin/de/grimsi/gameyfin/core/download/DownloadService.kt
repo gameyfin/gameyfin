@@ -1,5 +1,6 @@
 package de.grimsi.gameyfin.core.download
 
+import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginDescriptor
 import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginManager
 import de.grimsi.gameyfin.pluginapi.download.Download
 import de.grimsi.gameyfin.pluginapi.download.DownloadProvider
@@ -13,8 +14,18 @@ class DownloadService(
     private val downloadPlugins: List<DownloadProvider>
         get() = pluginManager.getExtensions(DownloadProvider::class.java)
 
-    fun getProviders(): List<String> {
-        return downloadPlugins.map { it.javaClass.name }
+    fun getProviders(): List<DownloadProviderDto> {
+        return downloadPlugins.map {
+            val plugin = pluginManager.whichPlugin(it.javaClass.enclosingClass)
+            val descriptor = plugin.descriptor as GameyfinPluginDescriptor
+
+            DownloadProviderDto(
+                key = it.javaClass.name,
+                name = descriptor.pluginName,
+                description = descriptor.pluginDescription,
+                shortDescription = descriptor.pluginShortDescription,
+            )
+        }
     }
 
     fun getDownload(path: String, provider: String): Download {
