@@ -19,5 +19,5 @@ const menuItems = [
     }
 ]
 
-export const ProfileView = withSideMenu(menuItems);
+export const ProfileView = withSideMenu("/settings", menuItems);
 export default ProfileView;

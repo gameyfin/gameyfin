@@ -52,11 +52,11 @@ export const routes = protectRoutes([
                         children: [
                             {
                                 path: 'libraries',
-                                element: <LibraryManagement/>,
-                                children: [{
-                                    path: 'library/:libraryId',
-                                    element: <LibraryManagementView/>
-                                }]
+                                element: <LibraryManagement/>
+                            },
+                            {
+                                path: 'libraries/library/:libraryId',
+                                element: <LibraryManagementView/>
                             },
                             {path: 'users', element: <UserManagement/>},
                             {path: 'sso', element: <SsoManagement/>},

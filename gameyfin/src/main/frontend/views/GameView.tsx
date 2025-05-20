@@ -22,7 +22,7 @@ export default function GameView() {
                     label: provider.name,
                     description: provider.shortDescription ?? provider.description,
                     action: () => {
-                        if (gameId) DownloadEndpoint.downloadGame(parseInt(gameId!), provider.key);
+                        if (gameId) DownloadEndpoint.downloadGame(parseInt(gameId), provider.key);
                     },
                 };
                 return acc;

@@ -1,24 +1,11 @@
 import React from "react";
-import {
-    addToast,
-    Button,
-    Code,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    useDisclosure
-} from "@heroui/react";
+import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
-import PathPickerModal from "Frontend/components/general/modals/PathPickerModal";
-import {ArrowRight, Minus, Plus, XCircle} from "@phosphor-icons/react";
 import * as Yup from "yup";
-import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
-import DirectoryMappingDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/DirectoryMappingDto";
+import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMappingInput";
 
 interface LibraryCreationModalProps {
     libraries: LibraryDto[];
@@ -33,12 +20,9 @@ export default function LibraryCreationModal({
                                                  isOpen,
                                                  onOpenChange
                                              }: LibraryCreationModalProps) {
-    const pathPickerModal = useDisclosure();
-
     async function createLibrary(library: LibraryDto) {
         try {
             const newLibrary = await LibraryEndpoint.createLibrary(library as LibraryDto);
-            if (newLibrary === undefined) return;
             setLibraries([...libraries, newLibrary]);
         } catch (e) {
             addToast({
@@ -76,98 +60,35 @@ export default function LibraryCreationModal({
                                     onClose();
                                 }}
                         >
-                            {(formik) => {
-                                function addDirectoryMapping(directory: DirectoryMappingDto) {
-                                    formik.setFieldValue("directories", [...formik.values.directories, directory]);
-                                }
-
-                                function removeDirectoryMapping(directory: DirectoryMappingDto) {
-                                    formik.setFieldValue("directories", formik.values.directories.filter((d: DirectoryMappingDto) => d.internalPath !== directory.internalPath));
-                                }
-
-                                return (
-                                    <Form>
-                                        <ModalHeader className="flex flex-col gap-1">Add a new library</ModalHeader>
-                                        <ModalBody>
-                                            <div className="flex flex-col gap-2">
-                                                <Input
-                                                    name="name"
-                                                    label="Library Name"
-                                                    placeholder="Enter library name"
-                                                    value={formik.values.name}
-                                                    required
-                                                />
-                                                <div className="flex flex-row justify-between items-center">
-                                                    <p className="font-bold">Directories</p>
-                                                    <Button isIconOnly variant="light" size="sm" color="default"
-                                                            onPress={pathPickerModal.onOpen}>
-                                                        <Plus/>
-                                                    </Button>
-                                                </div>
-                                                {formik.values.directories.map((directory: DirectoryMappingDto) => (
-                                                    <Code
-                                                        className="w-full flex items-center gap-2 overflow-hidden px-2 py-1"
-                                                        key={directory.internalPath}>
-                                                        <input
-                                                            type="text"
-                                                            value={directory.internalPath}
-                                                            readOnly
-                                                            className="flex-1 bg-transparent border-none outline-none overflow-x-auto whitespace-nowrap"
-                                                        />
-                                                        {directory.externalPath && (
-                                                            <>
-                                                                <div
-                                                                    className="flex-shrink-0 flex items-center justify-center mx-2">
-                                                                    <ArrowRight size={20}/>
-                                                                </div>
-                                                                <input
-                                                                    type="text"
-                                                                    value={directory.externalPath}
-                                                                    readOnly
-                                                                    className="flex-1 bg-transparent border-none outline-none overflow-x-auto whitespace-nowrap"
-                                                                />
-                                                            </>
-                                                        )}
-                                                        <Button
-                                                            isIconOnly
-                                                            variant="light"
-                                                            size="sm"
-                                                            color="default"
-                                                            onPress={() => removeDirectoryMapping(directory)}
-                                                            className="ml-2"
-                                                        >
-                                                            <Minus/>
-                                                        </Button>
-                                                    </Code>
-                                                ))}
-                                                <div className="min-h-6 text-danger">
-                                                    {(() => {
-                                                        const meta = formik.getFieldMeta("directories");
-                                                        return meta.touched && meta.error && (
-                                                            <SmallInfoField icon={XCircle} message={meta.error}/>
-                                                        );
-                                                    })()}
-                                                </div>
-                                            </div>
-                                        </ModalBody>
-                                        <ModalFooter>
-                                            <Button variant="light" onPress={onClose}>
-                                                Cancel
-                                            </Button>
-                                            <Button color="primary"
-                                                    isLoading={formik.isSubmitting}
-                                                    isDisabled={formik.isSubmitting}
-                                                    type="submit"
-                                            >
-                                                {formik.isSubmitting ? "" : "Add"}
-                                            </Button>
-                                        </ModalFooter>
-                                        <PathPickerModal returnSelectedPath={addDirectoryMapping}
-                                                         isOpen={pathPickerModal.isOpen}
-                                                         onOpenChange={pathPickerModal.onOpenChange}/>
-                                    </Form>
-                                );
-                            }}
+                            {(formik) =>
+                                <Form>
+                                    <ModalHeader className="flex flex-col gap-1">Add a new library</ModalHeader>
+                                    <ModalBody>
+                                        <div className="flex flex-col gap-2">
+                                            <Input
+                                                name="name"
+                                                label="Library Name"
+                                                placeholder="Enter library name"
+                                                value={formik.values.name}
+                                                required
+                                            />
+                                            <DirectoryMappingInput name="directories"/>
+                                        </div>
+                                    </ModalBody>
+                                    <ModalFooter>
+                                        <Button variant="light" onPress={onClose}>
+                                            Cancel
+                                        </Button>
+                                        <Button color="primary"
+                                                isLoading={formik.isSubmitting}
+                                                isDisabled={formik.isSubmitting}
+                                                type="submit"
+                                        >
+                                            {formik.isSubmitting ? "" : "Add"}
+                                        </Button>
+                                    </ModalFooter>
+                                </Form>
+                            }
                         </Formik>
                     )}
                 </ModalContent>

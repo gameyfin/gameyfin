@@ -18,6 +18,8 @@ class LibraryEndpoint(
         return libraryService.getAllLibraries()
     }
 
+    fun getById(libraryId: Long): LibraryDto = libraryService.getById(libraryId)
+
     fun getGamesInLibrary(libraryId: Long): Collection<GameDto> {
         return libraryService.getGamesInLibrary(libraryId)
     }

@@ -9,7 +9,7 @@ export type MenuItem = {
     icon: ReactElement<Icon>
 }
 
-export default function withSideMenu(menuItems: MenuItem[]) {
+export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
     return function PageWithSideMenu() {
         const [selectedItem, setSelectedItem] = useState<string>(initialSelected)
 
@@ -24,24 +24,26 @@ export default function withSideMenu(menuItems: MenuItem[]) {
          * If the key starts with "/" assume it's an absolute link, else assume it's relative
          */
         function link(l: string): string {
-            if (l.startsWith("/")) return l;
-            const p = window.location.pathname
-            return p.substring(0, p.lastIndexOf("/") + 1) + l;
+            if (l.startsWith("/")) return baseUrl + l;
+            return baseUrl + "/" + l;
         }
 
         /**
          * Match the initially selected item by current URL path
          */
         function initialSelected(): string {
-            const p = window.location.pathname
-            return p.substring(p.lastIndexOf("/") + 1, p.length);
+            const p = window.location.pathname;
+            const idx = p.indexOf(baseUrl);
+            if (idx === -1) return "";
+            const afterBase = p.substring(idx + baseUrl.length);
+            // Remove leading slash, then split and take the first segment
+            return afterBase.replace(/^\/+/, "").split("/")[0] || "";
         }
 
         return (
             <div className="flex flex-row">
                 <div className="flex flex-col pr-8">
-                    <Listbox className="min-w-60"
-                             color="primary">
+                    <Listbox className="min-w-60" color="primary">
                         {menuItems.map((i) => (
                             <ListboxItem key={key(i.url)} startContent={i.icon} href={link(i.url)}
                                          onPress={() => setSelectedItem(i.url)}

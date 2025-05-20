@@ -76,6 +76,19 @@ class LibraryService(
     }
 
     /**
+     * Retrieves a library by its ID.
+     *
+     * @param libraryId: ID of the library to retrieve.
+     * @return The LibraryDto object representing the library.
+     */
+    fun getById(libraryId: Long): LibraryDto {
+        val library = libraryRepository.findByIdOrNull(libraryId)
+            ?: throw IllegalArgumentException("Library with ID $libraryId not found")
+
+        return toDto(library)
+    }
+
+    /**
      * Deletes a library from the repository.
      *
      * @param libraryId: ID of the library to delete.

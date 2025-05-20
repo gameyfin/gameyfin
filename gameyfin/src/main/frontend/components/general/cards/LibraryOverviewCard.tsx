@@ -1,4 +1,4 @@
-import {Button, Card, Chip, Tooltip, useDisclosure} from "@heroui/react";
+import {Button, Card, Chip, Tooltip} from "@heroui/react";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import React, {useEffect, useState} from "react";
@@ -20,10 +20,10 @@ import {
     TreasureChest,
     Trophy
 } from "@phosphor-icons/react";
-import LibraryDetailsModal from "Frontend/components/general/modals/LibraryDetailsModal";
 import LibraryUpdateDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryUpdateDto";
 import ScanType from "Frontend/generated/de/grimsi/gameyfin/libraries/enums/ScanType";
 import {randomGamesFromLibrary} from "Frontend/util/utils";
+import {useNavigate} from "react-router";
 
 export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
     library: LibraryDto,
@@ -31,9 +31,8 @@ export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
     removeLibrary: (library: LibraryDto) => Promise<void>
 }) {
     const MAX_COVER_COUNT = 5;
-
+    const navigate = useNavigate();
     const [randomGames, setRandomGames] = useState<GameDto[]>([]);
-    const libraryDetailsModal = useDisclosure();
 
     useEffect(() => {
         randomGamesFromLibrary(library, MAX_COVER_COUNT).then((games) => {
@@ -85,7 +84,7 @@ export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
                             </Button>
                         </Tooltip>
                         <Tooltip content="Configuration" placement="bottom" color="foreground">
-                            <Button isIconOnly variant="light" onPress={libraryDetailsModal.onOpen}>
+                            <Button isIconOnly variant="light" onPress={() => navigate('library/' + library.id)}>
                                 <SlidersHorizontal/>
                             </Button>
                         </Tooltip>
@@ -103,13 +102,6 @@ export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
                     </div>
                 }
             </Card>
-            <LibraryDetailsModal
-                library={library}
-                isOpen={libraryDetailsModal.isOpen}
-                onOpenChange={libraryDetailsModal.onOpenChange}
-                updateLibrary={updateLibrary}
-                removeLibrary={removeLibrary}
-            />
         </>
     );
 }

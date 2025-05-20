@@ -137,5 +137,55 @@ export async function randomGamesFromLibrary(library: LibraryDto, count?: number
     return games
         .sort((a: GameDto, b: GameDto) => a.id - b.id)
         .sort(() => rand.next() - 0.5)
+        .filter(g => g.imageIds && g.imageIds.length > 0)
         .slice(0, count ?? games.length);
+}
+
+
+/**
+ * Return an object with the changed fields between two objects.
+ * The returned object will only contain the changed fields with values from the current object.
+ * @param initial
+ * @param current
+ */
+export function deepDiff<T extends object>(initial: T, current: T): Partial<T> {
+    const diff: Partial<T> = {};
+
+    function compareObjects(obj1: any, obj2: any): any {
+        if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
+            if (obj1 !== obj2) {
+                return obj2;
+            }
+            return undefined;
+        }
+
+        if (Array.isArray(obj1) && Array.isArray(obj2)) {
+            if (obj1.length !== obj2.length) {
+                return obj2;
+            } else {
+                const arrayDiff = obj1.map((item: any, index: number) => compareObjects(item, obj2[index]));
+                if (arrayDiff.some(item => item !== undefined)) {
+                    return arrayDiff;
+                }
+                return undefined;
+            }
+        }
+
+        const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+        const objDiff: any = {};
+        keys.forEach(key => {
+            const valueDiff = compareObjects(obj1[key], obj2[key]);
+            if (valueDiff !== undefined) {
+                objDiff[key] = valueDiff;
+            }
+        });
+
+        if (Object.keys(objDiff).length > 0) {
+            return objDiff;
+        }
+        return undefined;
+    }
+
+    const result = compareObjects(initial, current);
+    return result || {};
 }
