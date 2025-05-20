@@ -26,7 +26,6 @@ export interface ComboButtonProps {
 
 export default function ComboButton({options, preferredOptionKey, description}: ComboButtonProps) {
     const [selectedOption, setSelectedOption] = useState(new Set([Object.keys(options)[0]]));
-    const [disabledOptions] = useState<string[]>(getDisabledKeys(options));
     const selectedOptionValue = Array.from(selectedOption)[0];
 
     useEffect(() => {
@@ -51,11 +50,7 @@ export default function ComboButton({options, preferredOptionKey, description}: 
         setSelectedOption(new Set([keys.currentKey]));
     }
 
-    function getDisabledKeys(options: Record<string, ComboButtonOption>): string[] {
-        return Object.keys(options).filter(key => options[key].isDisabled);
-    }
-
-    return (
+    return options[selectedOptionValue] && (
         <ButtonGroup className="gap-[1px]">
             <Button color="primary" className="w-52"
                     onPress={options[selectedOptionValue].action}>
@@ -74,9 +69,7 @@ export default function ComboButton({options, preferredOptionKey, description}: 
                     disallowEmptySelection
                     aria-label="Merge options"
                     selectedKeys={selectedOption}
-                    disabledKeys={disabledOptions}
                     selectionMode="single"
-                    /*@ts-ignore*/
                     onSelectionChange={onSelectionChange}
                     className="w-60"
                 >
