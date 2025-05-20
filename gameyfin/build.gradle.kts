@@ -46,15 +46,15 @@ dependencies {
     implementation("com.vaadin:vaadin-core") {
         exclude("com.vaadin:flow-react")
     }
-    api("com.vaadin:vaadin-spring-boot-starter")
+    implementation("com.vaadin:vaadin-spring-boot-starter")
 
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.17")
-    implementation("commons-io:commons-io:2.18.0")
+    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.17") K
+            implementation("commons-io:commons-io:2.18.0")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -66,7 +66,7 @@ dependencies {
     implementation("ch.digitalfondue.mjml4j:mjml4j:1.0.3")
 
     // Plugins
-    compileOnly(project(":plugin-api"))
+    implementation(project(":plugin-api"))
 
     // Utils
     implementation("org.apache.tika:tika-core:3.1.0")
