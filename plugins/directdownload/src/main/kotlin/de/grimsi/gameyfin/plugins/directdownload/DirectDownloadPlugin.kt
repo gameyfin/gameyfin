@@ -27,8 +27,8 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
     override val configMetadata: List<PluginConfigElement> = listOf(
         PluginConfigElement(
             key = "compressionMode",
-            name = "Compression mode for generated ZIP files (\"none\" = default, \"fast\", \"best\")",
-            description = "Higher compression uses more CPU but saves bandwidth",
+            name = "Compression mode (\"none\" = default, \"fast\", \"best\")",
+            description = "Higher compression modes are more resource intensive, but save bandwidth",
         )
     )
 

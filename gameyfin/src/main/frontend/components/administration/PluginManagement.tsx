@@ -1,5 +1,5 @@
 import React, {useEffect} from "react";
-import {PluginManagementSection} from "Frontend/components/general/PluginManagementSection";
+import {PluginManagementSection} from "Frontend/components/general/plugin/PluginManagementSection";
 import {initializePluginState, pluginState} from "Frontend/state/PluginState";
 import {useSnapshot} from "valtio/react";
 

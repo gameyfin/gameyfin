@@ -18,7 +18,7 @@ import {
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
 import React, {ReactNode} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
-import PluginLogo from "Frontend/components/general/PluginLogo";
+import PluginLogo from "Frontend/components/general/plugin/PluginLogo";
 import PluginTrustLevel from "Frontend/generated/de/grimsi/gameyfin/core/plugins/management/PluginTrustLevel";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";

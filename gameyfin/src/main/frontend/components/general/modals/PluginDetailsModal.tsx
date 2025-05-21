@@ -3,7 +3,7 @@ import {addToast, Button, Link, Modal, ModalBody, ModalContent, ModalFooter, Mod
 import {Form, Formik} from "formik";
 import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
 import Input from "Frontend/components/general/input/Input";
-import PluginLogo from "Frontend/components/general/PluginLogo";
+import PluginLogo from "Frontend/components/general/plugin/PluginLogo";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {PluginEndpoint} from "Frontend/generated/endpoints";

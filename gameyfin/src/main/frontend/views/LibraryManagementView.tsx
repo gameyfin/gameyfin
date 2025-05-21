@@ -6,7 +6,8 @@ import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import LibraryHeader from "Frontend/components/general/covers/LibraryHeader";
 import {Button, Tab, Tabs} from "@heroui/react";
 import {ArrowLeft} from "@phosphor-icons/react";
-import LibraryManagementDetails from "Frontend/components/general/LibraryManagementDetails";
+import LibraryManagementDetails from "Frontend/components/general/library/LibraryManagementDetails";
+import LibraryManagementGames from "Frontend/components/general/library/LibraryManagementGames";
 
 
 export default function LibraryManagementView() {
@@ -38,7 +39,7 @@ export default function LibraryManagementView() {
                 <LibraryManagementDetails library={library}/>
             </Tab>
             <Tab title="Games">
-                <p>Games</p>
+                <LibraryManagementGames library={library}/>
             </Tab>
             <Tab title="Unmatched paths">
                 <p>Unmatched paths</p>
