@@ -81,7 +81,7 @@ class FilesystemService(
         val gamefileExtensions = gameFileExtensions
 
         // Filter out invalid directories (directories could have been changed externally after the library was created)
-        val validDirectories = library.directories.map { Path(it.internalPath) }
+        val validPaths = library.directories.map { Path(it.internalPath) }
             .filter { path ->
                 if (!path.isDirectory()) {
                     log.warn { "Invalid directory '$path' in library '${library.name}'" }
@@ -93,16 +93,18 @@ class FilesystemService(
 
         // Get all paths that are directories or match the game file extensions
         // Also check if the directory is empty and if empty directories should be included
-        val currentFilesystemPaths = validDirectories.flatMap { validDirectory ->
+        val currentFilesystemPaths = validPaths.flatMap { validDirectory ->
             safeReadDirectoryContents(validDirectory)
                 .filter { it.isDirectory() || it.extension.lowercase() in gamefileExtensions }
                 .filter {
+                    if (!it.isDirectory()) return@filter true
+
                     val contents = safeReadDirectoryContents(it)
                     if (contents.isEmpty() && !config.get(ConfigProperties.Libraries.Scan.ScanEmptyDirectories)!!) {
                         log.debug { "Directory '$it' is empty and will be ignored" }
-                        false
+                        return@filter false
                     } else {
-                        true
+                        return@filter true
                     }
                 }
         }
