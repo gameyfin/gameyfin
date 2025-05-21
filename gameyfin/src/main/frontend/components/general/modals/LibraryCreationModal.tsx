@@ -16,14 +16,13 @@ interface LibraryCreationModalProps {
 
 export default function LibraryCreationModal({
                                                  libraries,
-                                                 setLibraries,
                                                  isOpen,
                                                  onOpenChange
                                              }: LibraryCreationModalProps) {
+
     async function createLibrary(library: LibraryDto) {
         try {
-            const newLibrary = await LibraryEndpoint.createLibrary(library as LibraryDto);
-            setLibraries([...libraries, newLibrary]);
+            await LibraryEndpoint.createLibrary(library as LibraryDto);
         } catch (e) {
             addToast({
                 title: "Error creating library",

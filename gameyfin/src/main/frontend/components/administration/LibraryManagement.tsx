@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
@@ -10,38 +10,19 @@ import {LibraryOverviewCard} from "Frontend/components/general/cards/LibraryOver
 import LibraryCreationModal from "Frontend/components/general/modals/LibraryCreationModal";
 import LibraryUpdateDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryUpdateDto";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
+import {useSnapshot} from "valtio/react";
+import {initializeLibraryState, libraryState} from "Frontend/state/LibraryState";
 
 function LibraryManagementLayout({getConfig, formik}: any) {
-    const [libraries, setLibraries] = useState<LibraryDto[]>([]);
     const libraryCreationModal = useDisclosure();
+    const state = useSnapshot(libraryState);
 
     useEffect(() => {
-        LibraryEndpoint.getAllLibraries().then((response) => {
-            if (response === undefined) return;
-            let sortedLibraries: LibraryDto[] = response
-                .filter(l => !!l)
-                .sort((a: LibraryDto, b: LibraryDto) => {
-                    if (a.name === undefined || b.name === undefined) return 0;
-                    return a.name.localeCompare(b.name);
-                });
-            setLibraries(sortedLibraries);
-        });
+        initializeLibraryState();
     }, []);
 
     async function updateLibrary(library: LibraryUpdateDto) {
-        let updatedLibrary = await LibraryEndpoint.updateLibrary(library);
-        if (updatedLibrary === undefined) return;
-
-        setLibraries((prevLibraries) => {
-            const index = prevLibraries.findIndex((l) => l.id === updatedLibrary.id);
-            if (index !== -1) {
-                const updatedLibraries = [...prevLibraries];
-                updatedLibraries[index] = updatedLibrary;
-                return updatedLibraries;
-            }
-            return [...prevLibraries, updatedLibrary];
-        });
-
+        await LibraryEndpoint.updateLibrary(library);
         addToast({
             title: "Library updated",
             description: `Library ${library.name} has been updated.`,
@@ -51,9 +32,6 @@ function LibraryManagementLayout({getConfig, formik}: any) {
 
     async function removeLibrary(library: LibraryDto) {
         await LibraryEndpoint.removeLibrary(library.id);
-        setLibraries((prevLibraries) => {
-            return prevLibraries.filter((l) => l.id !== library.id);
-        });
         addToast({
             title: "Library removed",
             description: `Library ${library.name} has been removed.`,
@@ -87,10 +65,11 @@ function LibraryManagementLayout({getConfig, formik}: any) {
                 </Tooltip>
             </div>
             <Divider className="mb-4"/>
-            {libraries.length > 0 ?
+            {state.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
                 <div id="library-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
-                    {libraries.map((library) =>
+                    {state.sorted.map((library) =>
+                        // @ts-ignore
                         <LibraryOverviewCard library={library} updateLibrary={updateLibrary}
                                              removeLibrary={removeLibrary} key={library.name}/>
                     )}
@@ -99,8 +78,8 @@ function LibraryManagementLayout({getConfig, formik}: any) {
             }
 
             <LibraryCreationModal
-                libraries={libraries}
-                setLibraries={setLibraries}
+                // @ts-ignore
+                libraries={state.sorted}
                 isOpen={libraryCreationModal.isOpen}
                 onOpenChange={libraryCreationModal.onOpenChange}
             />

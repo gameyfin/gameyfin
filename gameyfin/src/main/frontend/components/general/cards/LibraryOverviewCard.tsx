@@ -20,16 +20,15 @@ import {
     TreasureChest,
     Trophy
 } from "@phosphor-icons/react";
-import LibraryUpdateDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryUpdateDto";
 import ScanType from "Frontend/generated/de/grimsi/gameyfin/libraries/enums/ScanType";
 import {randomGamesFromLibrary} from "Frontend/util/utils";
 import {useNavigate} from "react-router";
 
-export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
-    library: LibraryDto,
-    updateLibrary: (library: LibraryUpdateDto) => Promise<void>,
-    removeLibrary: (library: LibraryDto) => Promise<void>
-}) {
+interface LibraryOverviewCardProps {
+    library: LibraryDto;
+}
+
+export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     const MAX_COVER_COUNT = 5;
     const navigate = useNavigate();
     const [randomGames, setRandomGames] = useState<GameDto[]>([]);
@@ -42,7 +41,6 @@ export function LibraryOverviewCard({library, updateLibrary, removeLibrary}: {
 
     async function triggerScan() {
         await LibraryEndpoint.triggerScan(ScanType.QUICK, [library]);
-        await updateLibrary({id: library.id});
     }
 
     return (

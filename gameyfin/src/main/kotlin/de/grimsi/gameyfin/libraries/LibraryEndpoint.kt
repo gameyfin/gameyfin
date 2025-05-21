@@ -2,50 +2,37 @@ package de.grimsi.gameyfin.libraries
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
-import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.libraries.dto.LibraryDto
+import de.grimsi.gameyfin.libraries.dto.LibraryEvent
 import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
 import de.grimsi.gameyfin.libraries.enums.ScanType
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
+import reactor.core.publisher.Flux
 
 @Endpoint
 @PermitAll
 class LibraryEndpoint(
     private val libraryService: LibraryService
 ) {
-    fun getAllLibraries(): Collection<LibraryDto> {
-        return libraryService.getAllLibraries()
+    fun subscribe(): Flux<LibraryEvent> {
+        return libraryService.subscribe()
     }
 
-    fun getById(libraryId: Long): LibraryDto = libraryService.getById(libraryId)
+    fun getAll() = libraryService.getAll()
 
-    fun getGamesInLibrary(libraryId: Long): Collection<GameDto> {
-        return libraryService.getGamesInLibrary(libraryId)
-    }
+    fun getGamesInLibrary(libraryId: Long) = libraryService.getGamesInLibrary(libraryId)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun triggerScan(scanType: ScanType = ScanType.QUICK, libraries: Collection<LibraryDto>?) {
-        return libraryService.triggerScan(scanType, libraries)
-    }
+    fun triggerScan(scanType: ScanType = ScanType.QUICK, libraries: Collection<LibraryDto>?) =
+        libraryService.triggerScan(scanType, libraries)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun createLibrary(library: LibraryDto): LibraryDto {
-        return libraryService.create(library)
-    }
+    fun createLibrary(library: LibraryDto) = libraryService.create(library)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun updateLibrary(library: LibraryUpdateDto): LibraryDto {
-        return libraryService.update(library)
-    }
+    fun updateLibrary(library: LibraryUpdateDto) = libraryService.update(library)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun removeLibrary(libraryId: Long) {
-        return libraryService.deleteLibrary(libraryId)
-    }
-
-    @RolesAllowed(Role.Names.ADMIN)
-    fun removeLibraries() {
-        return libraryService.deleteAllLibraries()
-    }
+    fun removeLibrary(libraryId: Long) = libraryService.deleteLibrary(libraryId)
 }

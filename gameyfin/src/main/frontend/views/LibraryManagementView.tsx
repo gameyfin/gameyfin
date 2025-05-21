@@ -1,45 +1,44 @@
-import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import {useNavigate, useParams} from "react-router";
-import React, {useEffect, useState} from "react";
-import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {LibraryEndpoint} from "Frontend/generated/endpoints";
+import React, {useEffect} from "react";
 import LibraryHeader from "Frontend/components/general/covers/LibraryHeader";
 import {Button, Tab, Tabs} from "@heroui/react";
 import {ArrowLeft} from "@phosphor-icons/react";
 import LibraryManagementDetails from "Frontend/components/general/library/LibraryManagementDetails";
 import LibraryManagementGames from "Frontend/components/general/library/LibraryManagementGames";
+import {useSnapshot} from "valtio/react";
+import {initializeLibraryState, libraryState} from "Frontend/state/LibraryState";
 
 
 export default function LibraryManagementView() {
     const {libraryId} = useParams();
     const navigate = useNavigate();
-    const [library, setLibrary] = useState<LibraryDto>();
-    const [games, setGames] = useState<GameDto[]>([]);
+    const state = useSnapshot(libraryState);
 
     useEffect(() => {
-        if (!libraryId) return;
-        LibraryEndpoint.getById(parseInt(libraryId)).then((library: LibraryDto) => {
-            setLibrary(library);
-        });
-        LibraryEndpoint.getGamesInLibrary(parseInt(libraryId)).then((games) => {
-            setGames(games);
+        initializeLibraryState().then((state) => {
+            if (!libraryId || !state.state[libraryId]) {
+                navigate("/administration/libraries");
+            }
         });
     }, []);
 
-    return library && <div className="flex flex-col gap-4">
+    return libraryId && state.state[libraryId] && <div className="flex flex-col gap-4">
         <div className="flex flex-row gap-4 items-center">
             <Button isIconOnly variant="light" onPress={() => navigate("/administration/libraries")}>
                 <ArrowLeft/>
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>
         </div>
-        <LibraryHeader library={library} className="h-32"/>
+        {/* @ts-ignore */}
+        <LibraryHeader library={state.state[libraryId]} className="h-32"/>
         <Tabs color="primary" fullWidth>
             <Tab title="Details">
-                <LibraryManagementDetails library={library}/>
+                {/* @ts-ignore */}
+                <LibraryManagementDetails library={state.state[libraryId]}/>
             </Tab>
             <Tab title="Games">
-                <LibraryManagementGames library={library}/>
+                {/* @ts-ignore */}
+                <LibraryManagementGames library={state.state[libraryId]}/>
             </Tab>
             <Tab title="Unmatched paths">
                 <p>Unmatched paths</p>

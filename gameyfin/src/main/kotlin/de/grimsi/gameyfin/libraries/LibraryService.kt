@@ -5,15 +5,14 @@ import de.grimsi.gameyfin.games.GameService
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.entities.Game
 import de.grimsi.gameyfin.games.toDto
-import de.grimsi.gameyfin.libraries.dto.DirectoryMappingDto
-import de.grimsi.gameyfin.libraries.dto.LibraryDto
-import de.grimsi.gameyfin.libraries.dto.LibraryStatsDto
-import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
+import de.grimsi.gameyfin.libraries.dto.*
 import de.grimsi.gameyfin.libraries.enums.ScanType
 import de.grimsi.gameyfin.media.ImageService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -33,15 +32,27 @@ class LibraryService(
         private val executor = Executors.newVirtualThreadPerTaskExecutor()
     }
 
+    private val libraryEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryEvent>(1024, false)
+
+    fun subscribe(): Flux<LibraryEvent> {
+        log.debug { "New subscription for libraryUpdates" }
+        return libraryEvents.asFlux()
+            .doOnSubscribe { log.debug { "Subscriber added to libraryUpdates [${libraryEvents.currentSubscriberCount()}]" } }
+            .doFinally {
+                log.debug { "Subscriber removed from libraryUpdates with signal type $it [${libraryEvents.currentSubscriberCount()}]" }
+            }
+    }
+
     /**
      * Creates or updates a library in the repository.
      *
      * @param library: The library to create or update.
      * @return The created or updated LibraryDto object.
      */
-    fun create(library: LibraryDto): LibraryDto {
+    fun create(library: LibraryDto) {
         val entity = libraryRepository.save(toEntity(library))
-        return toDto(entity)
+        val libraryDto = toDto(entity)
+        libraryEvents.tryEmitNext(LibraryEvent.Created(libraryDto))
     }
 
     /**
@@ -51,7 +62,7 @@ class LibraryService(
      * @return The updated LibraryDto.
      * @throws IllegalArgumentException if the library ID is null or the library is not found.
      */
-    fun update(libraryDto: LibraryUpdateDto): LibraryDto {
+    fun update(libraryDto: LibraryUpdateDto) {
         val existingLibrary = libraryRepository.findByIdOrNull(libraryDto.id)
             ?: throw IllegalArgumentException("Library with ID $libraryDto.id not found")
 
@@ -64,13 +75,14 @@ class LibraryService(
         }
 
         val updatedLibrary = libraryRepository.save(existingLibrary)
-        return toDto(updatedLibrary)
+        val updatedLibraryDto = toDto(updatedLibrary)
+        libraryEvents.tryEmitNext(LibraryEvent.Updated(updatedLibraryDto))
     }
 
     /**
      * Retrieves all libraries from the repository.
      */
-    fun getAllLibraries(): Collection<LibraryDto> {
+    fun getAll(): List<LibraryDto> {
         val entities = libraryRepository.findAll()
         return entities.map { toDto(it) }
     }
@@ -95,13 +107,7 @@ class LibraryService(
      */
     fun deleteLibrary(libraryId: Long) {
         libraryRepository.deleteById(libraryId)
-    }
-
-    /**
-     * Deletes all libraries from the repository.
-     */
-    fun deleteAllLibraries() {
-        libraryRepository.deleteAll()
+        libraryEvents.tryEmitNext(LibraryEvent.Deleted(libraryId))
     }
 
     /**
