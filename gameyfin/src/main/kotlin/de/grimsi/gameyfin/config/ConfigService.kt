@@ -19,7 +19,7 @@ class ConfigService(
         private val log = KotlinLogging.logger {}
     }
 
-    private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>()
+    private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>(1024, false)
 
     fun subscribe(): Flux<ConfigUpdateDto> {
         log.debug { "New subscription for configUpdates (#${configUpdates.currentSubscriberCount()})" }

@@ -31,7 +31,7 @@ class PluginService(
         private val log = KotlinLogging.logger {}
     }
 
-    private val pluginUpdates = Sinks.many().multicast().onBackpressureBuffer<PluginUpdateDto>()
+    private val pluginUpdates = Sinks.many().multicast().onBackpressureBuffer<PluginUpdateDto>(1024, false)
     private val pluginConfigValidationCache = mutableMapOf<String, PluginConfigValidationResult>()
 
     init {
