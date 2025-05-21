@@ -33,7 +33,7 @@ export default function LibraryManagementView() {
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>
         </div>
-        <LibraryHeader library={library} maxCoverCount={Math.min(games.length, 10)} className="h-32"/>
+        <LibraryHeader library={library} className="h-32"/>
         <Tabs color="primary" fullWidth>
             <Tab title="Details">
                 <LibraryManagementDetails library={library}/>

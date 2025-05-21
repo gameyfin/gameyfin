@@ -5,12 +5,12 @@ import {randomGamesFromLibrary} from "Frontend/util/utils";
 
 interface LibraryHeaderProps {
     library: LibraryDto;
-    maxCoverCount?: number;
     className?: string;
 }
 
-export default function LibraryHeader({library, maxCoverCount = 5, className}: LibraryHeaderProps) {
+export default function LibraryHeader({library, className}: LibraryHeaderProps) {
     const [randomGames, setRandomGames] = useState<GameDto[]>([]);
+    const maxCoverCount = 5;
 
     useEffect(() => {
         randomGamesFromLibrary(library, maxCoverCount).then((games) => {
