@@ -10,6 +10,7 @@ import {Heart} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {UserPreferenceService} from "Frontend/util/user-preference-service";
+import SearchBar from "Frontend/components/general/SearchBar";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -57,9 +58,14 @@ export default function MainLayout() {
             {isExploding ? <Confetti {...confettiProps}/> : <></>}
 
             <Navbar maxWidth="full" className="2xl:px-[12.5%]">
-                <NavbarBrand as="button" onClick={() => navigate('/')}>
-                    <GameyfinLogo className="h-10 fill-foreground"/>
+                <NavbarBrand>
+                    <div className="cursor-pointer" onClick={() => navigate('/')}>
+                        <GameyfinLogo className="h-10 fill-foreground"/>
+                    </div>
                 </NavbarBrand>
+                <NavbarContent justify="center" className="flex-1 max-w-96">
+                    <SearchBar/>
+                </NavbarContent>
                 <NavbarContent justify="end">
                     {auth.state.user?.emailConfirmed === false ?
                         <NavbarItem>

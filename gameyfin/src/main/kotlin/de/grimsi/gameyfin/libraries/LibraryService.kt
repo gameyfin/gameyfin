@@ -75,9 +75,10 @@ class LibraryService(
         // Update only non-null fields
         libraryUpdateDto.name?.let { existingLibrary.name = it }
         libraryUpdateDto.directories?.let {
-            existingLibrary.directories = it
-                .map { d -> DirectoryMapping(internalPath = d.internalPath, externalPath = d.externalPath) }
-                .toMutableList()
+            existingLibrary.directories.clear()
+            existingLibrary.directories.addAll(
+                it.map { d -> DirectoryMapping(internalPath = d.internalPath, externalPath = d.externalPath) }
+            )
         }
 
         val updatedLibrary = libraryRepository.save(existingLibrary)
