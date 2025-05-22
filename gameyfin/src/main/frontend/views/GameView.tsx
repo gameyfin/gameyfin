@@ -1,18 +1,22 @@
 import {useEffect, useState} from "react";
-import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {DownloadProviderEndpoint, GameEndpoint} from "Frontend/generated/endpoints";
-import {useParams} from "react-router";
+import {DownloadProviderEndpoint} from "Frontend/generated/endpoints";
+import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Chip} from "@heroui/react";
 import {humanFileSize, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
+import {gameState, initializeGameState} from "Frontend/state/GameState";
+import {useSnapshot} from "valtio/react";
+import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 
 export default function GameView() {
     const {gameId} = useParams();
+    const navigate = useNavigate();
+    const state = useSnapshot(gameState);
+    const game = gameId ? state.state[parseInt(gameId)] as GameDto : undefined;
 
-    const [game, setGame] = useState<GameDto>();
     const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>({});
 
     useEffect(() => {
@@ -32,15 +36,17 @@ export default function GameView() {
     }, []);
 
     useEffect(() => {
-        if (gameId) {
-            GameEndpoint.getGame(parseInt(gameId)).then((game) => setGame(game));
-        }
+        initializeGameState().then((state) => {
+            if (!gameId || !state.state[parseInt(gameId)]) {
+                navigate("/");
+            }
+        });
     }, [gameId]);
 
-    return (game && (
+    return game && (
         <div className="flex flex-col gap-4">
             <div className="overflow-hidden relative rounded-t-lg">
-                {(game.imageIds !== undefined && game.imageIds.length > 0) ?
+                {(game.imageIds && game.imageIds.length > 0) ?
                     <img className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                          alt="Game screenshot"
                          src={`/images/screenshot/${game.imageIds[0]}`}
@@ -79,14 +85,14 @@ export default function GameView() {
                             <table className="text-left w-full table-auto">
                                 <tbody>
                                 {Object.entries({
-                                    "Developed by": game.developers?.sort().join(" / ") || "unknown",
-                                    "Published by": game.publishers?.sort().join(" / ") || "unknown",
-                                    "Genres": game.genres?.sort().map(p => <Chip
-                                        radius="sm">{toTitleCase(p)}</Chip>),
-                                    "Themes": game.themes?.sort().map(p => <Chip
-                                        radius="sm">{toTitleCase(p)}</Chip>),
-                                    "Features": game.features?.sort().map(p => <Chip
-                                        radius="sm">{toTitleCase(p)}</Chip>),
+                                    "Developed by": game.developers ? [...game.developers].sort().join(" / ") : "unknown",
+                                    "Published by": game.publishers ? [...game.publishers].sort().join(" / ") : "unknown",
+                                    "Genres": game.genres ? [...game.genres].sort().map(p =>
+                                        <Chip radius="sm" key={p}>{toTitleCase(p)}</Chip>) : undefined,
+                                    "Themes": game.themes ? [...game.themes].sort().map(p =>
+                                        <Chip radius="sm" key={p}>{toTitleCase(p)}</Chip>) : undefined,
+                                    "Features": game.features ? [...game.features].sort().map(p =>
+                                        <Chip radius="sm" key={p}>{toTitleCase(p)}</Chip>) : undefined,
                                 }).map(([key, value]) => (
                                     <tr key={key}>
                                         <td className="text-foreground/60 w-0 min-w-32">{key}</td>
@@ -108,5 +114,5 @@ export default function GameView() {
                 </div>
             </div>
         </div>
-    ));
+    );
 }

@@ -1,49 +1,66 @@
 package de.grimsi.gameyfin.games
 
+import de.grimsi.gameyfin.config.ConfigProperties
+import de.grimsi.gameyfin.config.ConfigService
 import de.grimsi.gameyfin.core.alphaNumeric
 import de.grimsi.gameyfin.core.filterValuesNotNull
 import de.grimsi.gameyfin.core.plugins.PluginService
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.replaceRomanNumerals
 import de.grimsi.gameyfin.games.dto.GameDto
+import de.grimsi.gameyfin.games.dto.GameEvent
 import de.grimsi.gameyfin.games.dto.GameMetadataDto
+import de.grimsi.gameyfin.games.dto.GameUpdateDto
 import de.grimsi.gameyfin.games.entities.*
 import de.grimsi.gameyfin.games.repositories.GameRepository
 import de.grimsi.gameyfin.libraries.Library
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.persistence.EntityManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.apache.commons.io.FilenameUtils
 import org.pf4j.PluginManager
-import org.springframework.data.domain.Limit
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.nio.file.Path
 
 @Service
 class GameService(
     private val pluginManager: PluginManager,
     private val pluginService: PluginService,
+    private val config: ConfigService,
+    private val companyService: CompanyService,
     private val gameRepository: GameRepository,
-    private val companyService: CompanyService
+    private val entityManager: EntityManager
 ) {
     companion object {
-        const val TITLE_MATCH_MIN_RATIO = 90
-
         private val log = KotlinLogging.logger {}
     }
 
     private val metadataPlugins: List<GameMetadataProvider>
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
 
-    fun createOrUpdate(game: Game): Game {
-        gameRepository.findByPath(game.path)?.let { game.id = it.id }
-        return gameRepository.save(game)
+    private val gameEvents = Sinks.many().multicast().onBackpressureBuffer<GameEvent>(1024, false)
+
+    fun subscribe(): Flux<GameEvent> {
+        log.debug { "New subscription for gameUpdates" }
+        return gameEvents.asFlux()
+            .doOnSubscribe { log.debug { "Subscriber added to gameEvents [${gameEvents.currentSubscriberCount()}]" } }
+            .doFinally {
+                log.debug { "Subscriber removed from gameEvents with signal type $it [${gameEvents.currentSubscriberCount()}]" }
+            }
+    }
+
+    fun getAll(): List<GameDto> {
+        val entities = gameRepository.findAll()
+        return entities.map { it.toDto() }
     }
 
     @Transactional
@@ -56,12 +73,39 @@ class GameService(
             game
         }
 
-        return gameRepository.saveAll(gamesToBePersisted)
+        val games = gameRepository.saveAll(gamesToBePersisted)
+
+        // force flush to populate creation and update timestamp
+        entityManager.flush()
+
+        games.forEach { game ->
+            val gameDto = game.toDto()
+            gameEvents.tryEmitNext(GameEvent.Created(gameDto))
+        }
+        return games
     }
 
-    fun getGame(id: Long): GameDto {
-        return gameRepository.findByIdOrNull(id)?.toDto()
-            ?: throw IllegalArgumentException("Game with id $id not found")
+    fun update(gameUpdateDto: GameUpdateDto) {
+        val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
+            ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
+
+        // Update only non-null fields
+        gameUpdateDto.title?.let { existingGame.title = it }
+        gameUpdateDto.comment?.let { existingGame.comment = it }
+        gameUpdateDto.summary?.let { existingGame.summary = it }
+
+        val updatedGame = gameRepository.save(existingGame)
+        val updatedGameDto = updatedGame.toDto()
+        gameEvents.tryEmitNext(GameEvent.Updated(updatedGameDto))
+    }
+
+    fun delete(gameId: Long) {
+        gameRepository.deleteById(gameId)
+        gameEvents.tryEmitNext(GameEvent.Deleted(gameId))
+    }
+
+    fun emitDeletionEvent(gameId: Long) {
+        gameEvents.tryEmitNext(GameEvent.Deleted(gameId))
     }
 
     fun matchFromFile(path: Path, library: Library): Game? {
@@ -91,30 +135,7 @@ class GameService(
         return gameRepository.findAllByPathIn(paths)
     }
 
-    fun getAllGames(): List<GameDto> {
-        val entities = gameRepository.findAll()
-        return entities.map { it.toDto() }
-    }
-
-    fun delete(game: Game) {
-        gameRepository.delete(game)
-    }
-
-    fun deleteAll() {
-        gameRepository.deleteAll()
-    }
-
-    fun getMostRecentlyAdded(count: Int): List<GameDto> {
-        return gameRepository.findByOrderByCreatedAtDesc(Limit.of(count))
-            .map { it.toDto() }
-    }
-
-    fun getMostRecentlyUpdated(count: Int): List<GameDto> {
-        return gameRepository.findByOrderByCreatedAtDesc(Limit.of(count))
-            .map { it.toDto() }
-    }
-
-    private fun getById(id: Long): Game {
+    fun getById(id: Long): Game {
         return gameRepository.findByIdOrNull(id) ?: throw IllegalArgumentException("Game with id $id not found")
     }
 
@@ -295,7 +316,8 @@ class GameService(
         return mergedGame
     }
 
-    private fun String.fuzzyMatchTitle(other: String, minRatio: Int = TITLE_MATCH_MIN_RATIO): Boolean {
+    private fun String.fuzzyMatchTitle(other: String): Boolean {
+        val minRatio = config.get(ConfigProperties.Libraries.Scan.TitleMatchMinRatio)!!
         return FuzzySearch.ratio(this.normalizeGameTitle(), other.normalizeGameTitle()) > minRatio
     }
 
@@ -317,18 +339,18 @@ fun Game.toDto(): GameDto {
     }
 
 
-    val thisId = this.id ?: throw IllegalArgumentException("this ID is null")
-    val createdAt = this.createdAt ?: throw IllegalArgumentException("this creation timestamp is null")
-    val updatedAt = this.updatedAt ?: throw IllegalArgumentException("this update timestamp is null")
-    val thisLibraryId = this.library.id ?: throw IllegalArgumentException("this library ID is null")
-    val thisTitle = this.title ?: throw IllegalArgumentException("this title is null")
+    val id = this.id ?: throw IllegalArgumentException("ID is null")
+    val createdAt = this.createdAt ?: throw IllegalArgumentException("creation timestamp is null")
+    val updatedAt = this.updatedAt ?: throw IllegalArgumentException("update timestamp is null")
+    val libraryId = this.library.id ?: throw IllegalArgumentException("library ID is null")
+    val title = this.title ?: throw IllegalArgumentException("title is null")
 
     return GameDto(
-        id = thisId,
+        id = id,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        libraryId = thisLibraryId,
-        title = thisTitle,
+        libraryId = libraryId,
+        title = title,
         coverId = this.coverImage?.id,
         comment = this.comment,
         summary = this.summary,

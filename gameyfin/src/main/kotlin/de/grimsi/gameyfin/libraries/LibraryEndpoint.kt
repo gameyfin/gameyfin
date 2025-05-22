@@ -21,8 +21,6 @@ class LibraryEndpoint(
 
     fun getAll() = libraryService.getAll()
 
-    fun getGamesInLibrary(libraryId: Long) = libraryService.getGamesInLibrary(libraryId)
-
     @RolesAllowed(Role.Names.ADMIN)
     fun triggerScan(scanType: ScanType = ScanType.QUICK, libraries: Collection<LibraryDto>?) =
         libraryService.triggerScan(scanType, libraries)
@@ -34,5 +32,5 @@ class LibraryEndpoint(
     fun updateLibrary(library: LibraryUpdateDto) = libraryService.update(library)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun removeLibrary(libraryId: Long) = libraryService.deleteLibrary(libraryId)
+    fun deleteLibrary(libraryId: Long) = libraryService.delete(libraryId)
 }

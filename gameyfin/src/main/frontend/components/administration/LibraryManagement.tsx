@@ -31,7 +31,7 @@ function LibraryManagementLayout({getConfig, formik}: any) {
     }
 
     async function removeLibrary(library: LibraryDto) {
-        await LibraryEndpoint.removeLibrary(library.id);
+        await LibraryEndpoint.deleteLibrary(library.id);
         addToast({
             title: "Library removed",
             description: `Library ${library.name} has been removed.`,
@@ -47,6 +47,12 @@ function LibraryManagementLayout({getConfig, formik}: any) {
             <Section title="Scanning"/>
             <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
             <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
+            <div className="flex flex-row gap-4">
+                <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
+                <p className="text-foreground/80">
+                    Minimum required Levenshtein ratio to consider two titles the same.
+                </p>
+            </div>
             <ConfigFormField configElement={getConfig("library.scan.game-file-extensions")}/>
 
             <Section title="Metadata"/>

@@ -16,13 +16,13 @@ export default function LibraryManagementView() {
 
     useEffect(() => {
         initializeLibraryState().then((state) => {
-            if (!libraryId || !state.state[libraryId]) {
+            if (!libraryId || !state.state[parseInt(libraryId)]) {
                 navigate("/administration/libraries");
             }
         });
-    }, []);
+    }, [libraryId]);
 
-    return libraryId && state.state[libraryId] && <div className="flex flex-col gap-4">
+    return libraryId && state.state[parseInt(libraryId)] && <div className="flex flex-col gap-4">
         <div className="flex flex-row gap-4 items-center">
             <Button isIconOnly variant="light" onPress={() => navigate("/administration/libraries")}>
                 <ArrowLeft/>

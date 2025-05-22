@@ -33,7 +33,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
 
     async function handleDelete(): Promise<void> {
         try {
-            await LibraryEndpoint.removeLibrary(library.id);
+            await LibraryEndpoint.deleteLibrary(library.id);
 
             addToast({
                 title: "Library deleted",

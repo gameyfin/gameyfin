@@ -7,7 +7,7 @@ import LibraryEvent from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/Li
 type LibraryState = {
     subscription?: Subscription<LibraryEvent>;
     isLoaded: boolean;
-    state: Record<string, LibraryDto>;
+    state: Record<number, LibraryDto>;
     libraries: LibraryDto[];
     sorted: LibraryDto[];
 };

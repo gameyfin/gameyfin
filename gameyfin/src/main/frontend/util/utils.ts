@@ -1,23 +1,5 @@
 import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
-import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
-import Rand from "rand-seed";
-import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {LibraryEndpoint} from "Frontend/generated/endpoints";
-
-export function cssVar(variable: string) {
-    return getComputedStyle(document.documentElement).getPropertyValue(`--${variable}`);
-}
-
-export function hsl(hsl: string) {
-    return `hsl(${hsl}`;
-}
-
-export function rand(min: number, max: number) {
-    const minCeiled = Math.ceil(min);
-    const maxFloored = Math.floor(max);
-    return Math.floor(Math.random() * (maxFloored - minCeiled) + minCeiled);
-}
 
 export function roleToRoleName(role: string) {
     role = role.replace("ROLE_", "").toLowerCase();
@@ -126,31 +108,12 @@ export function humanFileSize(bytes: number, si: boolean = false, dp: number = 1
 }
 
 /**
- * Select a random number of games from the library based on the library ID.
- * @param library
- * @param count
- * @returns {GameDto[]}
- */
-export async function randomGamesFromLibrary(library: LibraryDto, count?: number): Promise<GameDto[]> {
-    const rand = new Rand(library.id.toString());
-    const games = await LibraryEndpoint.getGamesInLibrary(library.id);
-    return games
-        .sort((a: GameDto, b: GameDto) => a.id - b.id)
-        .sort(() => rand.next() - 0.5)
-        .filter(g => g.imageIds && g.imageIds.length > 0)
-        .slice(0, count ?? games.length);
-}
-
-
-/**
  * Return an object with the changed fields between two objects.
  * The returned object will only contain the changed fields with values from the current object.
  * @param initial
  * @param current
  */
 export function deepDiff<T extends object>(initial: T, current: T): Partial<T> {
-    const diff: Partial<T> = {};
-
     function compareObjects(obj1: any, obj2: any): any {
         if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
             if (obj1 !== obj2) {

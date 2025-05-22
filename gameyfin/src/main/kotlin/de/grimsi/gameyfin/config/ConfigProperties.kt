@@ -36,6 +36,13 @@ sealed class ConfigProperties<T : Serializable>(
                 false
             )
 
+            data object TitleMatchMinRatio : ConfigProperties<Int>(
+                Int::class,
+                "library.scan.title-match-min-ratio",
+                "Minimum ratio for title matching (0-100)",
+                90
+            )
+
             data object GameFileExtensions : ConfigProperties<Array<String>>(
                 Array<String>::class,
                 "library.scan.game-file-extensions",

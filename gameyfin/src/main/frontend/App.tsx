@@ -10,6 +10,7 @@ import {IconContext, X} from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
+import {initializeGameState} from "Frontend/state/GameState";
 
 export default function App() {
     const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
 
     initializeLibraryState();
+    initializeGameState();
 
     return (
         <HeroUIProvider className="size-full" navigate={navigate} useHref={useHref}>

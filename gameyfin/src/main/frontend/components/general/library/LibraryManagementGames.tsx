@@ -1,22 +1,17 @@
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
-import {useEffect, useState} from "react";
-import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow} from "@heroui/react";
 import {CheckCircle, Pencil, Trash} from "@phosphor-icons/react";
+import {useSnapshot} from "valtio/react";
+import {gameState} from "Frontend/state/GameState";
 
 interface LibraryManagementGamesProps {
     library: LibraryDto;
 }
 
 export default function LibraryManagementGames({library}: LibraryManagementGamesProps) {
-    const [games, setGames] = useState<GameDto[]>([]);
-
-    useEffect(() => {
-        LibraryEndpoint.getGamesInLibrary(library.id).then((games) => {
-            setGames(games);
-        })
-    }, []);
+    const state = useSnapshot(gameState);
+    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameDto[] : undefined;
 
     return <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Manage games in library</h1>

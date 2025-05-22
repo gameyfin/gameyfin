@@ -36,7 +36,7 @@ class Game(
 
     @Lob
     @Column(columnDefinition = "CLOB")
-    val comment: String? = null,
+    var comment: String? = null,
 
     @Lob
     @Column(columnDefinition = "CLOB")

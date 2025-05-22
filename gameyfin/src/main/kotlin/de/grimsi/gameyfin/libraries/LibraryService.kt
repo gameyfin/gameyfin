@@ -2,9 +2,7 @@ package de.grimsi.gameyfin.libraries
 
 import de.grimsi.gameyfin.core.filesystem.FilesystemService
 import de.grimsi.gameyfin.games.GameService
-import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.entities.Game
-import de.grimsi.gameyfin.games.toDto
 import de.grimsi.gameyfin.libraries.dto.*
 import de.grimsi.gameyfin.libraries.enums.ScanType
 import de.grimsi.gameyfin.media.ImageService
@@ -35,12 +33,20 @@ class LibraryService(
     private val libraryEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryEvent>(1024, false)
 
     fun subscribe(): Flux<LibraryEvent> {
-        log.debug { "New subscription for libraryUpdates" }
+        log.debug { "New subscription for libraryEvents" }
         return libraryEvents.asFlux()
-            .doOnSubscribe { log.debug { "Subscriber added to libraryUpdates [${libraryEvents.currentSubscriberCount()}]" } }
+            .doOnSubscribe { log.debug { "Subscriber added to libraryEvents [${libraryEvents.currentSubscriberCount()}]" } }
             .doFinally {
-                log.debug { "Subscriber removed from libraryUpdates with signal type $it [${libraryEvents.currentSubscriberCount()}]" }
+                log.debug { "Subscriber removed from libraryEvents with signal type $it [${libraryEvents.currentSubscriberCount()}]" }
             }
+    }
+
+    /**
+     * Retrieves all libraries from the repository.
+     */
+    fun getAll(): List<LibraryDto> {
+        val entities = libraryRepository.findAll()
+        return entities.map { toDto(it) }
     }
 
     /**
@@ -58,17 +64,17 @@ class LibraryService(
     /**
      * Updates a library entity with the non-null fields from a LibraryUpdateDto.
      *
-     * @param libraryDto: The LibraryUpdateDto containing the fields to update.
+     * @param libraryUpdateDto: The LibraryUpdateDto containing the fields to update.
      * @return The updated LibraryDto.
      * @throws IllegalArgumentException if the library ID is null or the library is not found.
      */
-    fun update(libraryDto: LibraryUpdateDto) {
-        val existingLibrary = libraryRepository.findByIdOrNull(libraryDto.id)
-            ?: throw IllegalArgumentException("Library with ID $libraryDto.id not found")
+    fun update(libraryUpdateDto: LibraryUpdateDto) {
+        val existingLibrary = libraryRepository.findByIdOrNull(libraryUpdateDto.id)
+            ?: throw IllegalArgumentException("Library with ID $libraryUpdateDto.id not found")
 
         // Update only non-null fields
-        libraryDto.name?.let { existingLibrary.name = it }
-        libraryDto.directories?.let {
+        libraryUpdateDto.name?.let { existingLibrary.name = it }
+        libraryUpdateDto.directories?.let {
             existingLibrary.directories = it
                 .map { d -> DirectoryMapping(internalPath = d.internalPath, externalPath = d.externalPath) }
                 .toMutableList()
@@ -80,76 +86,18 @@ class LibraryService(
     }
 
     /**
-     * Retrieves all libraries from the repository.
-     */
-    fun getAll(): List<LibraryDto> {
-        val entities = libraryRepository.findAll()
-        return entities.map { toDto(it) }
-    }
-
-    /**
-     * Retrieves a library by its ID.
-     *
-     * @param libraryId: ID of the library to retrieve.
-     * @return The LibraryDto object representing the library.
-     */
-    fun getById(libraryId: Long): LibraryDto {
-        val library = libraryRepository.findByIdOrNull(libraryId)
-            ?: throw IllegalArgumentException("Library with ID $libraryId not found")
-
-        return toDto(library)
-    }
-
-    /**
      * Deletes a library from the repository.
      *
      * @param libraryId: ID of the library to delete.
      */
-    fun deleteLibrary(libraryId: Long) {
-        libraryRepository.deleteById(libraryId)
-        libraryEvents.tryEmitNext(LibraryEvent.Deleted(libraryId))
-    }
-
-    /**
-     * Retrieves all games in a library.
-     *
-     * @param libraryId: The ID of the library to retrieve games from.
-     * @return A collection of GameDto objects representing the games in the library.
-     */
-    fun getGamesInLibrary(libraryId: Long): Collection<GameDto> {
-        val library = libraryRepository.findByIdOrNull(libraryId)
+    fun delete(libraryId: Long) {
+        val gameIds = libraryRepository.findByIdOrNull(libraryId)?.games?.mapNotNull { it.id }
             ?: throw IllegalArgumentException("Library with ID $libraryId not found")
 
-        val games = library.games.map { it.toDto() }
+        libraryRepository.deleteById(libraryId)
 
-        return games
-    }
-
-    /**
-     * Adds a game to the library.
-     *
-     * @param game: The game to add.
-     * @param library: The library to add the game to.
-     * @return The updated library.
-     */
-    fun addGameToLibrary(game: Game, library: Library): Library {
-        if (library.games.any { it.id == game.id }) return library
-
-        library.games.add(game)
-        return libraryRepository.save(library)
-    }
-
-    /**
-     * Adds a collection of games to the library.
-     *
-     * @param games: The collection of games to add.
-     * @param library: The library to add the games to.
-     * @return The updated library.
-     */
-    fun addGamesToLibrary(games: Collection<Game>, library: Library): Library {
-        val newGames = games.filter { game -> library.games.none { it.id == game.id } }
-        library.games.addAll(newGames)
-        return library
+        libraryEvents.tryEmitNext(LibraryEvent.Deleted(libraryId))
+        gameIds.forEach { gameService.emitDeletionEvent(it) }
     }
 
     /**
@@ -325,8 +273,22 @@ class LibraryService(
             id = libraryId,
             name = library.name,
             directories = library.directories.map { DirectoryMappingDto(it.internalPath, it.externalPath) },
+            games = library.games.mapNotNull { it.id },
             stats = statsDto
         )
+    }
+
+    /**
+     * Adds a collection of games to the library.
+     *
+     * @param games: The collection of games to add.
+     * @param library: The library to add the games to.
+     * @return The updated library.
+     */
+    private fun addGamesToLibrary(games: Collection<Game>, library: Library): Library {
+        val newGames = games.filter { game -> library.games.none { it.id == game.id } }
+        library.games.addAll(newGames)
+        return library
     }
 
     /**
