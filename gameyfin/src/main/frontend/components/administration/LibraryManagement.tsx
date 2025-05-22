@@ -47,11 +47,8 @@ function LibraryManagementLayout({getConfig, formik}: any) {
             <Section title="Scanning"/>
             <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
             <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-row gap-4 items-baseline">
                 <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
-                <p className="text-foreground/80">
-                    Minimum required Levenshtein ratio to consider two titles the same.
-                </p>
             </div>
             <ConfigFormField configElement={getConfig("library.scan.game-file-extensions")}/>
 

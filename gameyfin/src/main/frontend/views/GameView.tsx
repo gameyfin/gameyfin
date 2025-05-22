@@ -17,7 +17,7 @@ export default function GameView() {
     const state = useSnapshot(gameState);
     const game = gameId ? state.state[parseInt(gameId)] as GameDto : undefined;
 
-    const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>({});
+    const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
 
     useEffect(() => {
         DownloadProviderEndpoint.getProviders().then((providers) => {
@@ -66,10 +66,10 @@ export default function GameView() {
                             <p className="text-foreground/60">{game.release !== undefined ? new Date(game.release).getFullYear() : "unknown"}</p>
                         </div>
                     </div>
-                    <ComboButton description={humanFileSize(game.fileSize)}
-                                 options={downloadOptions}
-                                 preferredOptionKey="preferred-download-method"
-                    />
+                    {downloadOptions && <ComboButton description={humanFileSize(game.fileSize)}
+                                                     options={downloadOptions}
+                                                     preferredOptionKey="preferred-download-method"
+                    />}
                 </div>
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-row gap-12">

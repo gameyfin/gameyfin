@@ -39,7 +39,7 @@ sealed class ConfigProperties<T : Serializable>(
             data object TitleMatchMinRatio : ConfigProperties<Int>(
                 Int::class,
                 "library.scan.title-match-min-ratio",
-                "Minimum ratio for title matching (0-100)",
+                "Minimum ratio for title matching (0-100). Higher values mean stricter matching.",
                 90
             )
 
