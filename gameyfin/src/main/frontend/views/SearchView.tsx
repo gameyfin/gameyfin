@@ -21,6 +21,7 @@ export default function SearchView() {
     const libraries = useSnapshot(libraryState).libraries as LibraryDto[];
 
     const [searchParams, setSearchParams] = useSearchParams();
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
     // State to track selected filter values
     const [searchTerm, setSearchTerm] = useState<string>("");
@@ -49,10 +50,14 @@ export default function SearchView() {
         setSelectedThemes(new Set(themes));
         setSelectedFeatures(new Set(features));
         setSelectedPerspectives(new Set(perspectives));
+
+        setInitialLoadComplete(true);
     }, []);
 
     // Update search parameters whenever the filters change
     useEffect(() => {
+        if (!initialLoadComplete) return;
+
         const newParams = new URLSearchParams();
 
         // Preserve search term if exists
@@ -97,7 +102,7 @@ export default function SearchView() {
             });
         }
 
-        setSearchParams(newParams);
+        setSearchParams(newParams, {replace: true});
     }, [searchTerm, selectedLibraries, selectedDevelopers, selectedGenres,
         selectedThemes, selectedFeatures, selectedPerspectives]);
 
