@@ -38,7 +38,7 @@ export default function GameView() {
     useEffect(() => {
         initializeGameState().then((state) => {
             if (!gameId || !state.state[parseInt(gameId)]) {
-                navigate("/");
+                navigate("/", {replace: true});
             }
         });
     }, [gameId]);

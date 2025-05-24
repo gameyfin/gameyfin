@@ -22,6 +22,8 @@ import {SystemManagement} from "Frontend/components/administration/SystemManagem
 import GameView from "Frontend/views/GameView";
 import LibraryManagementView from "Frontend/views/LibraryManagementView";
 import SearchView from "Frontend/views/SearchView";
+import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
+import LibraryView from "Frontend/views/LibraryView";
 
 export const routes = protectRoutes([
     {
@@ -36,12 +38,20 @@ export const routes = protectRoutes([
                         index: true, element: <HomeView/>
                     },
                     {
-                        path: 'game/:gameId',
-                        element: <GameView/>
-                    },
-                    {
                         path: '/search',
                         element: <SearchView/>
+                    },
+                    {
+                        path: 'recently-added',
+                        element: <RecentlyAddedView/>
+                    },
+                    {
+                        path: 'library/:libraryId',
+                        element: <LibraryView/>
+                    },
+                    {
+                        path: 'game/:gameId',
+                        element: <GameView/>
                     },
                     {
                         path: 'settings',

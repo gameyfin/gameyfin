@@ -141,7 +141,8 @@
     "react-markdown": "$react-markdown",
     "remark-breaks": "$remark-breaks",
     "valtio": "$valtio",
-    "valtio-reactive": "$valtio-reactive"
+    "valtio-reactive": "$valtio-reactive",
+    "fzf": "$fzf"
   },
   "vaadin": {
     "dependencies": {
@@ -202,6 +203,6 @@
       "workbox-core": "7.3.0",
       "workbox-precaching": "7.3.0"
     },
-    "hash": "dc682332ca36d64f455f6e13888e1ffcca97e888cbad8d356973e830f7463a10"
+    "hash": "5946db89f1666178a141f4993199185e21c2d2fba31f8cbe64550829f8450c78"
   }
 }

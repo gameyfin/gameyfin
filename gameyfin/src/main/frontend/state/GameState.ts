@@ -12,8 +12,8 @@ type GameState = {
     games: GameDto[];
     gamesByLibraryId: Record<number, GameDto[]>;
     sortedAlphabetically: GameDto[];
-    sortedByMostRecentlyAdded: GameDto[];
-    sortedByMostRecentlyUpdated: GameDto[];
+    recentlyAdded: GameDto[];
+    recentlyUpdated: GameDto[];
     randomlyOrderedGamesByLibraryId: Record<number, GameDto[]>;
     knownPublishers: Set<string>;
     knownDevelopers: Set<string>;
@@ -33,7 +33,7 @@ export const gameState = proxy<GameState>({
         return Object.values<GameDto>(this.state);
     },
     get gamesByLibraryId() {
-        return this.games.reduce((acc: Record<number, GameDto[]>, game: GameDto) => {
+        return this.sortedAlphabetically.reduce((acc: Record<number, GameDto[]>, game: GameDto) => {
             (acc[game.libraryId] ||= []).push(game);
             return acc;
         }, {});
@@ -42,13 +42,15 @@ export const gameState = proxy<GameState>({
         return this.games
             .sort((a: GameDto, b: GameDto) => a.title.localeCompare(b.title, undefined, {sensitivity: 'base'}));
     },
-    get sortedByMostRecentlyAdded() {
+    get recentlyAdded() {
         return this.games
-            .sort((a: GameDto, b: GameDto) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            .sort((a: GameDto, b: GameDto) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, 25);
     },
-    get sortedByMostRecentlyUpdated() {
+    get recentlyUpdated() {
         return this.games
-            .sort((a: GameDto, b: GameDto) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+            .sort((a: GameDto, b: GameDto) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+            .slice(0, 25);
     },
     get randomlyOrderedGamesByLibraryId() {
         const result: Record<number, GameDto[]> = {};
