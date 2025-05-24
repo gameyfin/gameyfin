@@ -1,5 +1,5 @@
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {CoverRow} from "Frontend/components/general/CoverRow";
+import {CoverRow} from "Frontend/components/general/covers/CoverRow";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";

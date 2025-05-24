@@ -48,7 +48,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
         })) || [];
 
         setElements([...images, ...videos]);
-    }, [])
+    }, [imageUrls, videosUrls])
 
     function showImagePopup(imageUrl: string) {
         setSelectedImageUrl(imageUrl);

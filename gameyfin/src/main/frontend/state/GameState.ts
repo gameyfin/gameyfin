@@ -11,6 +11,7 @@ type GameState = {
     state: Record<number, GameDto>;
     games: GameDto[];
     gamesByLibraryId: Record<number, GameDto[]>;
+    sortedAlphabetically: GameDto[];
     sortedByMostRecentlyAdded: GameDto[];
     sortedByMostRecentlyUpdated: GameDto[];
     randomlyOrderedGamesByLibraryId: Record<number, GameDto[]>;
@@ -37,6 +38,10 @@ export const gameState = proxy<GameState>({
             return acc;
         }, {});
     },
+    get sortedAlphabetically() {
+        return this.games
+            .sort((a: GameDto, b: GameDto) => a.title.localeCompare(b.title, undefined, {sensitivity: 'base'}));
+    },
     get sortedByMostRecentlyAdded() {
         return this.games
             .sort((a: GameDto, b: GameDto) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -57,25 +62,53 @@ export const gameState = proxy<GameState>({
         return result;
     },
     get knownPublishers() {
-        return new Set<string>(this.games.flatMap((game: GameDto) => game.publishers ? game.publishers : []));
+        return new Set<string>(
+            this.games
+                .flatMap((game: GameDto) => game.publishers ? game.publishers : [])
+                .sort()
+        );
     },
     get knownDevelopers() {
-        return new Set<string>(this.games.flatMap((game: GameDto) => game.developers ? game.developers : []));
+        return new Set<string>(
+            this.games
+                .flatMap((game: GameDto) => game.developers ? game.developers : [])
+                .sort()
+        );
     },
     get knownGenres() {
-        return new Set<string>(this.games.flatMap((game: GameDto) => game.genres ? game.genres : []));
+        return new Set<string>(
+            this.games
+                .flatMap((game: GameDto) => game.genres ? game.genres : [])
+                .sort()
+        );
     },
     get knownThemes() {
-        return new Set<string>(this.games.flatMap((game: GameDto) => game.themes ? game.themes : []));
+        return new Set<string>(
+            this.games
+                .flatMap((game: GameDto) => game.themes ? game.themes : [])
+                .sort()
+        );
     },
     get knownKeywords() {
-        return new Set<string>(this.games.flatMap((game: GameDto) => game.keywords ? game.keywords : []));
+        return new Set<string>(
+            this.games
+                .flatMap((game: GameDto) => game.keywords ? game.keywords : [])
+                .sort()
+        );
     },
     get knownFeatures() {
-        return new Set<string>(this.games.flatMap((game: GameDto) => game.features ? game.features : []));
+        return new Set<string>(
+            this.games
+                .flatMap((game: GameDto) => game.features ? game.features : [])
+                .sort()
+        );
     },
     get knownPerspectives() {
-        return new Set<string>(this.games.flatMap((game: GameDto) => game.perspectives ? game.perspectives : []));
+        return new Set<string>(
+            this.games
+                .flatMap((game: GameDto) => game.perspectives ? game.perspectives : [])
+                .sort()
+        );
     }
 });
 

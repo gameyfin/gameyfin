@@ -6,11 +6,13 @@ import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
-import {Heart, ListMagnifyingGlass} from "@phosphor-icons/react";
+import {ArrowLeft, DiceSix, Heart, House, ListMagnifyingGlass} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {UserPreferenceService} from "Frontend/util/user-preference-service";
 import SearchBar from "Frontend/components/general/SearchBar";
+import {useSnapshot} from "valtio/react";
+import {gameState} from "Frontend/state/GameState";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -19,7 +21,9 @@ export default function MainLayout() {
     const routeMetadata = useRouteMetadata();
     const {setTheme} = useTheme();
     const isSearchPage = location.pathname.startsWith("/search");
+    const isHomePage = location.pathname === "/";
     const [isExploding, setIsExploding] = useState(false);
+    const games = useSnapshot(gameState).games;
 
     useEffect(() => {
         let newTitle = `Gameyfin - ${routeMetadata?.title}`;
@@ -55,17 +59,33 @@ export default function MainLayout() {
         }
     }
 
+    function getRandomGameId() {
+        return games[Math.floor(Math.random() * games.length)].id;
+    }
+
     return (
         <div className="flex flex-col min-h-screen">
             {isExploding ? <Confetti {...confettiProps}/> : <></>}
 
             <Navbar maxWidth="full" className="2xl:px-[12.5%]">
                 <NavbarBrand>
-                    <div className="cursor-pointer" onClick={() => navigate('/')}>
-                        <GameyfinLogo className="h-10 fill-foreground"/>
-                    </div>
+                    {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
+                        <div className="flex flex-row gap-2">
+                            <Button isIconOnly onPress={() => history.back()} variant="light">
+                                <ArrowLeft size={26} weight="bold"/>
+                            </Button>
+                            <Button isIconOnly onPress={() => navigate("/")} variant="light">
+                                <House size={26} weight="fill"/>
+                            </Button>
+                        </div>
+                    }
                 </NavbarBrand>
                 {!isSearchPage && <NavbarContent justify="center" className="flex-1 max-w-96">
+                    <Tooltip content="I'm feeling lucky" placement="bottom">
+                        <Button isIconOnly variant="light" onPress={() => navigate("/game/" + getRandomGameId())}>
+                            <DiceSix/>
+                        </Button>
+                    </Tooltip>
                     <SearchBar/>
                     <Tooltip content="Advanced search" placement="bottom">
                         <Button isIconOnly variant="light" onPress={() => navigate("/search")}>

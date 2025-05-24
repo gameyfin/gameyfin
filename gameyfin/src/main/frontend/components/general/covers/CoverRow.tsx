@@ -1,7 +1,6 @@
 import React, {useEffect, useRef, useState} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {Card} from "@heroui/react";
 import {ArrowRight} from "@phosphor-icons/react";
 import {useNavigate} from "react-router";
 
@@ -14,7 +13,6 @@ interface CoverRowProps {
 const aspectRatio = 12 / 17; // aspect ratio of the game cover
 const defaultImageHeight = 300; // default height for the image
 const defaultImageWidth = aspectRatio * defaultImageHeight; // default width for the image
-const radius = "sm";
 
 export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
 
@@ -47,13 +45,11 @@ export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
         <div className="flex flex-col mb-4">
             <p className="text-2xl font-bold mb-4">{title}</p>
             <div className="w-full relative">
-                <Card ref={containerRef} className="flex flex-row gap-2 bg-transparent" radius={radius}>
+                <div ref={containerRef} className="flex flex-row gap-2 rounded-md bg-transparent">
                     {games.slice(0, visibleCount).map((game, index) => (
-                        <a key={index} href={`/game/${game.id}`}>
-                            <GameCover game={game} radius={radius} hover={true}/>
-                        </a>
+                        <GameCover key={index} game={game} radius="sm" interactive={true}/>
                     ))}
-                </Card>
+                </div>
 
                 {showMore && (
                     <div className="flex flex-row items-center justify-end cursor-pointer"
