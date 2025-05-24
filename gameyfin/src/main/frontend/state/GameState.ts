@@ -14,6 +14,13 @@ type GameState = {
     sortedByMostRecentlyAdded: GameDto[];
     sortedByMostRecentlyUpdated: GameDto[];
     randomlyOrderedGamesByLibraryId: Record<number, GameDto[]>;
+    knownPublishers: Set<string>;
+    knownDevelopers: Set<string>;
+    knownGenres: Set<string>;
+    knownThemes: Set<string>;
+    knownKeywords: Set<string>;
+    knownFeatures: Set<string>;
+    knownPerspectives: Set<string>;
 };
 
 export const gameState = proxy<GameState>({
@@ -48,6 +55,27 @@ export const gameState = proxy<GameState>({
                 .sort(() => rand.next() - 0.5);
         }
         return result;
+    },
+    get knownPublishers() {
+        return new Set<string>(this.games.flatMap((game: GameDto) => game.publishers ? game.publishers : []));
+    },
+    get knownDevelopers() {
+        return new Set<string>(this.games.flatMap((game: GameDto) => game.developers ? game.developers : []));
+    },
+    get knownGenres() {
+        return new Set<string>(this.games.flatMap((game: GameDto) => game.genres ? game.genres : []));
+    },
+    get knownThemes() {
+        return new Set<string>(this.games.flatMap((game: GameDto) => game.themes ? game.themes : []));
+    },
+    get knownKeywords() {
+        return new Set<string>(this.games.flatMap((game: GameDto) => game.keywords ? game.keywords : []));
+    },
+    get knownFeatures() {
+        return new Set<string>(this.games.flatMap((game: GameDto) => game.features ? game.features : []));
+    },
+    get knownPerspectives() {
+        return new Set<string>(this.games.flatMap((game: GameDto) => game.perspectives ? game.perspectives : []));
     }
 });
 

@@ -1,12 +1,12 @@
 import {useRouteMetadata} from 'Frontend/util/routing.js';
 import {useEffect, useState} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
-import {Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem} from "@heroui/react";
+import {Button, Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, Tooltip} from "@heroui/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
-import {Outlet, useNavigate} from "react-router";
+import {Outlet, useLocation, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
-import {Heart} from "@phosphor-icons/react";
+import {Heart, ListMagnifyingGlass} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {UserPreferenceService} from "Frontend/util/user-preference-service";
@@ -14,9 +14,11 @@ import SearchBar from "Frontend/components/general/SearchBar";
 
 export default function MainLayout() {
     const navigate = useNavigate();
+    const location = useLocation();
     const auth = useAuth();
     const routeMetadata = useRouteMetadata();
     const {setTheme} = useTheme();
+    const isSearchPage = location.pathname.startsWith("/search");
     const [isExploding, setIsExploding] = useState(false);
 
     useEffect(() => {
@@ -63,9 +65,14 @@ export default function MainLayout() {
                         <GameyfinLogo className="h-10 fill-foreground"/>
                     </div>
                 </NavbarBrand>
-                <NavbarContent justify="center" className="flex-1 max-w-96">
+                {!isSearchPage && <NavbarContent justify="center" className="flex-1 max-w-96">
                     <SearchBar/>
-                </NavbarContent>
+                    <Tooltip content="Advanced search" placement="bottom">
+                        <Button isIconOnly variant="light" onPress={() => navigate("/search")}>
+                            <ListMagnifyingGlass/>
+                        </Button>
+                    </Tooltip>
+                </NavbarContent>}
                 <NavbarContent justify="end">
                     {auth.state.user?.emailConfirmed === false ?
                         <NavbarItem>

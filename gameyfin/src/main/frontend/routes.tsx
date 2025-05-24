@@ -21,6 +21,7 @@ import PluginManagement from "Frontend/components/administration/PluginManagemen
 import {SystemManagement} from "Frontend/components/administration/SystemManagement";
 import GameView from "Frontend/views/GameView";
 import LibraryManagementView from "Frontend/views/LibraryManagementView";
+import SearchView from "Frontend/views/SearchView";
 
 export const routes = protectRoutes([
     {
@@ -37,6 +38,10 @@ export const routes = protectRoutes([
                     {
                         path: 'game/:gameId',
                         element: <GameView/>
+                    },
+                    {
+                        path: '/search',
+                        element: <SearchView/>
                     },
                     {
                         path: 'settings',

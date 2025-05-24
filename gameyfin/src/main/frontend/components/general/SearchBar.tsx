@@ -4,34 +4,19 @@ import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {useNavigate} from "react-router";
-import {Key, KeyboardEvent, useState} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 
 export default function SearchBar() {
 
     const navigate = useNavigate();
     const state = useSnapshot(gameState);
-    const games = state.games as GameDto[];
-
-    const [selectedId, setSelectedId] = useState<number>();
-
-    function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            navigate("/game/" + selectedId);
-        }
-    }
-
-    function updateSelectedId(key: Key | null) {
-        if (key === null) return;
-        setSelectedId(key as number);
-    }
+    const games = state.sortedByMostRecentlyUpdated as GameDto[];
 
     return <Autocomplete
         aria-label="Search for games"
         classNames={{
-            listboxWrapper: "max-h-[320px]",
             selectorButton: "text-default-500",
+            endContentWrapper: "display-none"
         }}
         defaultItems={games}
         inputProps={{
@@ -57,8 +42,6 @@ export default function SearchBar() {
         }}
         placeholder="Type to search..."
         startContent={<MagnifyingGlass/>}
-        onSelectionChange={updateSelectedId}
-        onKeyDown={handleKeyDown}
         isVirtualized={true}
         maxListboxHeight={300}
         itemHeight={91} // 75px (cover) + 16px (margin top/bottom) = 91px
