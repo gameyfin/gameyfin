@@ -16,7 +16,7 @@ class LibraryEndpoint(
     private val libraryService: LibraryService
 ) {
     fun subscribe(): Flux<LibraryEvent> {
-        return libraryService.subscribe()
+        return LibraryService.subscribe()
     }
 
     fun getAll() = libraryService.getAll()

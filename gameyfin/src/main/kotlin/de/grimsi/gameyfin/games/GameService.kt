@@ -17,7 +17,6 @@ import de.grimsi.gameyfin.libraries.Library
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.persistence.EntityManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
@@ -37,26 +36,31 @@ class GameService(
     private val pluginService: PluginService,
     private val config: ConfigService,
     private val companyService: CompanyService,
-    private val gameRepository: GameRepository,
-    private val entityManager: EntityManager
+    private val gameRepository: GameRepository
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
+
+        /* Websockets */
+        private val gameEvents = Sinks.many().multicast().onBackpressureBuffer<GameEvent>(1024, false)
+
+        fun subscribe(): Flux<GameEvent> {
+            log.debug { "New subscription for gameUpdates" }
+            return gameEvents.asFlux()
+                .doOnSubscribe { log.debug { "Subscriber added to gameEvents [${gameEvents.currentSubscriberCount()}]" } }
+                .doFinally {
+                    log.debug { "Subscriber removed from gameEvents with signal type $it [${gameEvents.currentSubscriberCount()}]" }
+                }
+        }
+
+        fun emit(event: GameEvent) {
+            gameEvents.tryEmitNext(event)
+        }
     }
 
     private val metadataPlugins: List<GameMetadataProvider>
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
 
-    private val gameEvents = Sinks.many().multicast().onBackpressureBuffer<GameEvent>(1024, false)
-
-    fun subscribe(): Flux<GameEvent> {
-        log.debug { "New subscription for gameUpdates" }
-        return gameEvents.asFlux()
-            .doOnSubscribe { log.debug { "Subscriber added to gameEvents [${gameEvents.currentSubscriberCount()}]" } }
-            .doFinally {
-                log.debug { "Subscriber removed from gameEvents with signal type $it [${gameEvents.currentSubscriberCount()}]" }
-            }
-    }
 
     fun getAll(): List<GameDto> {
         val entities = gameRepository.findAll()
@@ -73,16 +77,7 @@ class GameService(
             game
         }
 
-        val games = gameRepository.saveAll(gamesToBePersisted)
-
-        // force flush to populate creation and update timestamp
-        entityManager.flush()
-
-        games.forEach { game ->
-            val gameDto = game.toDto()
-            gameEvents.tryEmitNext(GameEvent.Created(gameDto))
-        }
-        return games
+        return gameRepository.saveAll(gamesToBePersisted)
     }
 
     fun update(gameUpdateDto: GameUpdateDto) {
@@ -94,18 +89,11 @@ class GameService(
         gameUpdateDto.comment?.let { existingGame.comment = it }
         gameUpdateDto.summary?.let { existingGame.summary = it }
 
-        val updatedGame = gameRepository.save(existingGame)
-        val updatedGameDto = updatedGame.toDto()
-        gameEvents.tryEmitNext(GameEvent.Updated(updatedGameDto))
+        gameRepository.save(existingGame)
     }
 
     fun delete(gameId: Long) {
         gameRepository.deleteById(gameId)
-        gameEvents.tryEmitNext(GameEvent.Deleted(gameId))
-    }
-
-    fun emitDeletionEvent(gameId: Long) {
-        gameEvents.tryEmitNext(GameEvent.Deleted(gameId))
     }
 
     fun matchFromFile(path: Path, library: Library): Game? {

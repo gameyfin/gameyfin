@@ -15,7 +15,7 @@ class GameEndpoint(
     private val gameService: GameService
 ) {
     fun subscribe(): Flux<GameEvent> {
-        return gameService.subscribe()
+        return GameService.subscribe()
     }
 
     fun getAll(): List<GameDto> = gameService.getAll()
@@ -25,5 +25,4 @@ class GameEndpoint(
 
     @RolesAllowed(Role.Names.ADMIN)
     fun deleteGame(gameId: Long) = gameService.delete(gameId)
-
 }

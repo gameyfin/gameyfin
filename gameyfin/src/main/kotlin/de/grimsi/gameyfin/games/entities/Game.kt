@@ -13,6 +13,7 @@ import java.net.URI
 import java.time.Instant
 
 @Entity
+@EntityListeners(GameEntityListener::class)
 class Game(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

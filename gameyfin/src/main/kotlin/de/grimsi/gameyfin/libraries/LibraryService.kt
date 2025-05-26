@@ -28,25 +28,31 @@ class LibraryService(
     companion object {
         private val log = KotlinLogging.logger {}
         private val executor = Executors.newVirtualThreadPerTaskExecutor()
+
+        /* Websockets */
+        private val libraryEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryEvent>(1024, false)
+
+        fun subscribe(): Flux<LibraryEvent> {
+            log.debug { "New subscription for libraryEvents" }
+            return libraryEvents.asFlux()
+                .doOnSubscribe { log.debug { "Subscriber added to libraryEvents [${libraryEvents.currentSubscriberCount()}]" } }
+                .doFinally {
+                    log.debug { "Subscriber removed from libraryEvents with signal type $it [${libraryEvents.currentSubscriberCount()}]" }
+                }
+        }
+
+        fun emit(event: LibraryEvent) {
+            libraryEvents.tryEmitNext(event)
+        }
     }
 
-    private val libraryEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryEvent>(1024, false)
-
-    fun subscribe(): Flux<LibraryEvent> {
-        log.debug { "New subscription for libraryEvents" }
-        return libraryEvents.asFlux()
-            .doOnSubscribe { log.debug { "Subscriber added to libraryEvents [${libraryEvents.currentSubscriberCount()}]" } }
-            .doFinally {
-                log.debug { "Subscriber removed from libraryEvents with signal type $it [${libraryEvents.currentSubscriberCount()}]" }
-            }
-    }
 
     /**
      * Retrieves all libraries from the repository.
      */
     fun getAll(): List<LibraryDto> {
         val entities = libraryRepository.findAll()
-        return entities.map { toDto(it) }
+        return entities.map { it.toDto() }
     }
 
     /**
@@ -57,8 +63,6 @@ class LibraryService(
      */
     fun create(library: LibraryDto) {
         val entity = libraryRepository.save(toEntity(library))
-        val libraryDto = toDto(entity)
-        libraryEvents.tryEmitNext(LibraryEvent.Created(libraryDto))
     }
 
     /**
@@ -81,9 +85,7 @@ class LibraryService(
             )
         }
 
-        val updatedLibrary = libraryRepository.save(existingLibrary)
-        val updatedLibraryDto = toDto(updatedLibrary)
-        libraryEvents.tryEmitNext(LibraryEvent.Updated(updatedLibraryDto))
+        libraryRepository.save(existingLibrary)
     }
 
     /**
@@ -92,13 +94,7 @@ class LibraryService(
      * @param libraryId: ID of the library to delete.
      */
     fun delete(libraryId: Long) {
-        val gameIds = libraryRepository.findByIdOrNull(libraryId)?.games?.mapNotNull { it.id }
-            ?: throw IllegalArgumentException("Library with ID $libraryId not found")
-
         libraryRepository.deleteById(libraryId)
-
-        libraryEvents.tryEmitNext(LibraryEvent.Deleted(libraryId))
-        gameIds.forEach { gameService.emitDeletionEvent(it) }
     }
 
     /**
@@ -257,29 +253,6 @@ class LibraryService(
     }
 
     /**
-     * Converts a Library entity to a LibraryDto.
-     *
-     * @param library: The Library entity to convert.
-     * @return The converted LibraryDto.
-     */
-    private fun toDto(library: Library): LibraryDto {
-        val libraryId = library.id ?: throw IllegalArgumentException("Library ID is null")
-
-        val statsDto = LibraryStatsDto(
-            gamesCount = library.games.size,
-            downloadedGamesCount = library.games.sumOf { it.downloadCount }
-        )
-
-        return LibraryDto(
-            id = libraryId,
-            name = library.name,
-            directories = library.directories.map { DirectoryMappingDto(it.internalPath, it.externalPath) },
-            games = library.games.mapNotNull { it.id },
-            stats = statsDto
-        )
-    }
-
-    /**
      * Adds a collection of games to the library.
      *
      * @param games: The collection of games to add.
@@ -306,4 +279,21 @@ class LibraryService(
             }.toMutableList()
         )
     }
+}
+
+fun Library.toDto(): LibraryDto {
+    val libraryId = this.id ?: throw IllegalArgumentException("Library ID is null")
+
+    val statsDto = LibraryStatsDto(
+        gamesCount = this.games.size,
+        downloadedGamesCount = this.games.sumOf { it.downloadCount }
+    )
+
+    return LibraryDto(
+        id = libraryId,
+        name = this.name,
+        directories = this.directories.map { DirectoryMappingDto(it.internalPath, it.externalPath) },
+        games = this.games.mapNotNull { it.id },
+        stats = statsDto
+    )
 }

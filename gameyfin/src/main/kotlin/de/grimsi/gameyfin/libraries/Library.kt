@@ -1,9 +1,11 @@
 package de.grimsi.gameyfin.libraries
 
 import de.grimsi.gameyfin.games.entities.Game
+import de.grimsi.gameyfin.games.entities.LibraryEntityListener
 import jakarta.persistence.*
 
 @Entity
+@EntityListeners(LibraryEntityListener::class)
 class Library(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
