@@ -14,7 +14,7 @@ import reactor.core.publisher.Flux
 class GameEndpoint(
     private val gameService: GameService
 ) {
-    fun subscribe(): Flux<GameEvent> {
+    fun subscribe(): Flux<List<GameEvent>> {
         return GameService.subscribe()
     }
 

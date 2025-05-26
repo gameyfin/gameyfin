@@ -20,6 +20,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaDuration
 
 @Service
 class PluginService(
@@ -29,24 +31,32 @@ class PluginService(
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
+
+        /* Websockets */
+        private val pluginUpdates = Sinks.many().multicast().onBackpressureBuffer<PluginUpdateDto>(1024, false)
+
+        fun subscribe(): Flux<List<PluginUpdateDto>> {
+            log.debug { "New subscription for pluginUpdates" }
+            return pluginUpdates.asFlux()
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe { log.debug { "Subscriber added to pluginUpdates [${pluginUpdates.currentSubscriberCount()}]" } }
+                .doFinally {
+                    log.debug { "Subscriber removed from pluginUpdates with signal type $it [${pluginUpdates.currentSubscriberCount()}]" }
+                }
+        }
+
+        fun emit(update: PluginUpdateDto) {
+            pluginUpdates.tryEmitNext(update)
+        }
     }
 
-    private val pluginUpdates = Sinks.many().multicast().onBackpressureBuffer<PluginUpdateDto>(1024, false)
     private val pluginConfigValidationCache = mutableMapOf<String, PluginConfigValidationResult>()
 
     init {
         pluginManager.addPluginStateListener { event ->
-            pluginUpdates.tryEmitNext(PluginUpdateDto(id = event.plugin.pluginId, state = event.pluginState))
+            val update = PluginUpdateDto(id = event.plugin.pluginId, state = event.pluginState)
+            emit(update)
         }
-    }
-
-    fun subscribe(): Flux<PluginUpdateDto> {
-        log.debug { "New subscription for pluginUpdates" }
-        return pluginUpdates.asFlux()
-            .doOnSubscribe { log.debug { "Subscriber added to pluginUpdates [${pluginUpdates.currentSubscriberCount()}]" } }
-            .doFinally {
-                log.debug { "Subscriber removed from pluginUpdates with signal type $it [${pluginUpdates.currentSubscriberCount()}]" }
-            }
     }
 
     fun getSupportedPluginTypes(): List<String> {
@@ -113,7 +123,7 @@ class PluginService(
 
         // Emit update event
         val update = PluginUpdateDto(pluginId, config = config, configValidation = result)
-        pluginUpdates.tryEmitNext(update)
+        emit(update)
     }
 
     fun validatePluginConfig(pluginId: String, forceRevalidation: Boolean = false): PluginConfigValidationResult {

@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.io.Serializable
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaDuration
 
 @Service
 class ConfigService(
@@ -17,17 +19,23 @@ class ConfigService(
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
-    }
 
-    private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>(1024, false)
+        /* Websockets */
+        private val configUpdates = Sinks.many().multicast().onBackpressureBuffer<ConfigUpdateDto>(1024, false)
 
-    fun subscribe(): Flux<ConfigUpdateDto> {
-        log.debug { "New subscription for configUpdates (#${configUpdates.currentSubscriberCount()})" }
-        return configUpdates.asFlux()
-            .doOnSubscribe { log.debug { "Subscriber added to configUpdates [${configUpdates.currentSubscriberCount()}]" } }
-            .doFinally {
-                log.debug { "Subscriber removed from configUpdates with signal type $it [${configUpdates.currentSubscriberCount()}]" }
-            }
+        fun subscribe(): Flux<List<ConfigUpdateDto>> {
+            log.debug { "New subscription for configUpdates (#${configUpdates.currentSubscriberCount()})" }
+            return configUpdates.asFlux()
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe { log.debug { "Subscriber added to configUpdates [${configUpdates.currentSubscriberCount()}]" } }
+                .doFinally {
+                    log.debug { "Subscriber removed from configUpdates with signal type $it [${configUpdates.currentSubscriberCount()}]" }
+                }
+        }
+
+        fun emit(update: ConfigUpdateDto) {
+            configUpdates.tryEmitNext(update)
+        }
     }
 
     /**
@@ -135,7 +143,7 @@ class ConfigService(
                 set(key, value)
             }
         }
-        configUpdates.tryEmitNext(update)
+        emit(update)
     }
 
     /**

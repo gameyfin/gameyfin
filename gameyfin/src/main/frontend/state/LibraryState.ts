@@ -5,7 +5,7 @@ import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/Libr
 import LibraryEvent from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryEvent";
 
 type LibraryState = {
-    subscription?: Subscription<LibraryEvent>;
+    subscription?: Subscription<LibraryEvent[]>;
     isLoaded: boolean;
     state: Record<number, LibraryDto>;
     libraries: LibraryDto[];
@@ -39,18 +39,20 @@ export async function initializeLibraryState() {
     });
 
     // Subscribe to real-time updates
-    libraryState.subscription = LibraryEndpoint.subscribe().onNext((libraryEvent) => {
-        switch (libraryEvent.type) {
-            case "created":
-            case "updated":
-                //@ts-ignore
-                libraryState.state[libraryEvent.library.id] = libraryEvent.library;
-                break;
-            case "deleted":
-                //@ts-ignore
-                delete libraryState.state[libraryEvent.libraryId];
-                break;
-        }
+    libraryState.subscription = LibraryEndpoint.subscribe().onNext((libraryEvents: LibraryEvent[]) => {
+        libraryEvents.forEach((libraryEvent: LibraryEvent) => {
+            switch (libraryEvent.type) {
+                case "created":
+                case "updated":
+                    //@ts-ignore
+                    libraryState.state[libraryEvent.library.id] = libraryEvent.library;
+                    break;
+                case "deleted":
+                    //@ts-ignore
+                    delete libraryState.state[libraryEvent.libraryId];
+                    break;
+            }
+        })
     });
 
     return libraryState;

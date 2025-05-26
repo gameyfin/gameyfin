@@ -24,9 +24,9 @@ class ConfigEndpoint(
     /** CRUD endpoints for admins **/
 
     @PermitAll
-    fun subscribe(): Flux<ConfigUpdateDto> {
+    fun subscribe(): Flux<List<ConfigUpdateDto>> {
         val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
-        return if (user.isAdmin()) configService.subscribe()
+        return if (user.isAdmin()) ConfigService.subscribe()
         else Flux.empty()
     }
 

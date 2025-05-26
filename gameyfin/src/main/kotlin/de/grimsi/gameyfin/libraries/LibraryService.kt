@@ -15,7 +15,9 @@ import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.measureTimedValue
+import kotlin.time.toJavaDuration
 
 @Service
 class LibraryService(
@@ -32,10 +34,13 @@ class LibraryService(
         /* Websockets */
         private val libraryEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryEvent>(1024, false)
 
-        fun subscribe(): Flux<LibraryEvent> {
+        fun subscribe(): Flux<List<LibraryEvent>> {
             log.debug { "New subscription for libraryEvents" }
             return libraryEvents.asFlux()
-                .doOnSubscribe { log.debug { "Subscriber added to libraryEvents [${libraryEvents.currentSubscriberCount()}]" } }
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe {
+                    log.debug { "Subscriber added to libraryEvents [${libraryEvents.currentSubscriberCount()}]" }
+                }
                 .doFinally {
                     log.debug { "Subscriber removed from libraryEvents with signal type $it [${libraryEvents.currentSubscriberCount()}]" }
                 }

@@ -15,7 +15,7 @@ import reactor.core.publisher.Flux
 class LibraryEndpoint(
     private val libraryService: LibraryService
 ) {
-    fun subscribe(): Flux<LibraryEvent> {
+    fun subscribe(): Flux<List<LibraryEvent>> {
         return LibraryService.subscribe()
     }
 

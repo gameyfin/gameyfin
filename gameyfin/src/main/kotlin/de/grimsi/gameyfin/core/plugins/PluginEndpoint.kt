@@ -18,9 +18,9 @@ class PluginEndpoint(
 ) {
 
     @PermitAll
-    fun subscribe(): Flux<PluginUpdateDto> {
+    fun subscribe(): Flux<List<PluginUpdateDto>> {
         val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
-        return if (user.isAdmin()) pluginService.subscribe()
+        return if (user.isAdmin()) PluginService.subscribe()
         else Flux.empty()
     }
 

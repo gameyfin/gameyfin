@@ -6,7 +6,7 @@ import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import Rand from "rand-seed";
 
 type GameState = {
-    subscription?: Subscription<GameEvent>;
+    subscription?: Subscription<GameEvent[]>;
     isLoaded: boolean;
     state: Record<number, GameDto>;
     games: GameDto[];
@@ -125,18 +125,20 @@ export async function initializeGameState() {
     });
 
     // Subscribe to real-time updates
-    gameState.subscription = GameEndpoint.subscribe().onNext((gameEvent) => {
-        switch (gameEvent.type) {
-            case "created":
-            case "updated":
-                //@ts-ignore
-                gameState.state[gameEvent.game.id] = gameEvent.game;
-                break;
-            case "deleted":
-                //@ts-ignore
-                delete gameState.state[gameEvent.gameId];
-                break;
-        }
+    gameState.subscription = GameEndpoint.subscribe().onNext((gameEvents: GameEvent[]) => {
+        gameEvents.forEach((gameEvent: GameEvent) => {
+            switch (gameEvent.type) {
+                case "created":
+                case "updated":
+                    //@ts-ignore
+                    gameState.state[gameEvent.game.id] = gameEvent.game;
+                    break;
+                case "deleted":
+                    //@ts-ignore
+                    delete gameState.state[gameEvent.gameId];
+                    break;
+            }
+        })
     });
 
     return gameState;

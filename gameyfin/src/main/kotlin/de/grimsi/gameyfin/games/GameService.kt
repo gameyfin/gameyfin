@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaDuration
 
 @Service
 class GameService(
@@ -44,10 +46,13 @@ class GameService(
         /* Websockets */
         private val gameEvents = Sinks.many().multicast().onBackpressureBuffer<GameEvent>(1024, false)
 
-        fun subscribe(): Flux<GameEvent> {
+        fun subscribe(): Flux<List<GameEvent>> {
             log.debug { "New subscription for gameUpdates" }
             return gameEvents.asFlux()
-                .doOnSubscribe { log.debug { "Subscriber added to gameEvents [${gameEvents.currentSubscriberCount()}]" } }
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe {
+                    log.debug { "Subscriber added to gameEvents [${gameEvents.currentSubscriberCount()}]" }
+                }
                 .doFinally {
                     log.debug { "Subscriber removed from gameEvents with signal type $it [${gameEvents.currentSubscriberCount()}]" }
                 }

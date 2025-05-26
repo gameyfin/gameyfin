@@ -5,7 +5,7 @@ import {proxy} from "valtio/index";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 
 type PluginState = {
-    subscription?: Subscription<PluginUpdateDto>;
+    subscription?: Subscription<PluginUpdateDto[]>;
     isLoaded: boolean;
     state: Record<string, PluginDto>;
     plugins: PluginDto[];
@@ -36,15 +36,17 @@ export async function initializePluginState() {
     });
 
     // Subscribe to real-time updates
-    pluginState.subscription = PluginEndpoint.subscribe().onNext((updateDto: PluginUpdateDto) => {
-        // Make sure the plugin exists in the state
-        if (pluginState.state[updateDto.id]) {
-            // Update the existing plugin by merging the new data using destructuring
-            pluginState.state[updateDto.id] = {
-                ...pluginState.state[updateDto.id],
-                ...updateDto
-            };
-        }
+    pluginState.subscription = PluginEndpoint.subscribe().onNext((updateDtos: PluginUpdateDto[]) => {
+        updateDtos.forEach((updateDto: PluginUpdateDto) => {
+            // Make sure the plugin exists in the state
+            if (pluginState.state[updateDto.id]) {
+                // Update the existing plugin by merging the new data using destructuring
+                pluginState.state[updateDto.id] = {
+                    ...pluginState.state[updateDto.id],
+                    ...updateDto
+                };
+            }
+        })
     });
 }
 

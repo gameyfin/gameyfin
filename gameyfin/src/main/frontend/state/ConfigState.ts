@@ -5,7 +5,7 @@ import ConfigUpdateDto from "Frontend/generated/de/grimsi/gameyfin/config/dto/Co
 import {Subscription} from "@vaadin/hilla-frontend";
 
 type ConfigState = {
-    subscription?: Subscription<ConfigUpdateDto>;
+    subscription?: Subscription<ConfigUpdateDto[]>;
     isLoaded: boolean;
     state: Record<string, ConfigEntryDto>;
     config: NestedConfig;
@@ -32,12 +32,14 @@ export async function initializeConfigState() {
     });
 
     // Subscribe to real-time updates
-    configState.subscription = ConfigEndpoint.subscribe().onNext((updateDto: ConfigUpdateDto) => {
-        Object.entries(updateDto.updates).forEach(([key, value]) => {
-            if (configState.state[key]) {
-                configState.state[key].value = value;
-            }
-        });
+    configState.subscription = ConfigEndpoint.subscribe().onNext((updateDtos: ConfigUpdateDto[]) => {
+        updateDtos.forEach((updateDto: ConfigUpdateDto) => {
+            Object.entries(updateDto.updates).forEach(([key, value]) => {
+                if (configState.state[key]) {
+                    configState.state[key].value = value;
+                }
+            });
+        })
     });
 }
 
