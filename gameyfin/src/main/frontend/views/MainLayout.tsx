@@ -82,7 +82,9 @@ export default function MainLayout() {
                 </NavbarBrand>
                 {!isSearchPage && <NavbarContent justify="center" className="flex-1 max-w-96">
                     <Tooltip content="I'm feeling lucky" placement="bottom">
-                        <Button isIconOnly variant="light" onPress={() => navigate("/game/" + getRandomGameId())}>
+                        <Button isIconOnly variant="light"
+                                onPress={() => navigate("/game/" + getRandomGameId())}
+                                isDisabled={gameState.games.length === 0}>
                             <DiceSix/>
                         </Button>
                     </Tooltip>
