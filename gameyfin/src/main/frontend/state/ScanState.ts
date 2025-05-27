@@ -44,10 +44,6 @@ export function initializeScanState() {
     });
 }
 
-export function clear() {
-    scanState.state = {};
-}
-
 export function handleLibraryDeletion(libraryId: number) {
     for (const scanId in scanState.state) {
         if (scanState.state[scanId].libraryId === libraryId) {
