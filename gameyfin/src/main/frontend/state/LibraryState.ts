@@ -3,6 +3,7 @@ import {proxy} from "valtio/index";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import LibraryEvent from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryEvent";
+import {handleLibraryDeletion} from "./ScanState";
 
 type LibraryState = {
     subscription?: Subscription<LibraryEvent[]>;
@@ -39,7 +40,7 @@ export async function initializeLibraryState() {
     });
 
     // Subscribe to real-time updates
-    libraryState.subscription = LibraryEndpoint.subscribe().onNext((libraryEvents: LibraryEvent[]) => {
+    libraryState.subscription = LibraryEndpoint.subscribeToLibraryEvents().onNext((libraryEvents: LibraryEvent[]) => {
         libraryEvents.forEach((libraryEvent: LibraryEvent) => {
             switch (libraryEvent.type) {
                 case "created":
@@ -48,6 +49,8 @@ export async function initializeLibraryState() {
                     libraryState.state[libraryEvent.library.id] = libraryEvent.library;
                     break;
                 case "deleted":
+                    //@ts-ignore
+                    handleLibraryDeletion(libraryEvent.libraryId);
                     //@ts-ignore
                     delete libraryState.state[libraryEvent.libraryId];
                     break;

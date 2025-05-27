@@ -43,12 +43,12 @@ export default function PasswordResetTokenModal({isOpen, onOpenChange, token}: P
                         <ModalBody>
                             <Snippet symbol="">{passwordResetLink()}</Snippet>
                             {
-                                !timeUntilExpiry.startsWith("-")
+                                !timeUntilExpiry.endsWith("ago")
                                     ? <small className="text-warning">
-                                        This link will expire in {timeUntilExpiry}
+                                        This link will expire {timeUntilExpiry}
                                     </small>
                                     : <small className="text-danger">
-                                        This link has expired {timeUntilExpiry.substring(1)} ago
+                                        This link has expired {timeUntilExpiry}
                                     </small>
                             }
                         </ModalBody>

@@ -68,11 +68,37 @@ export function timeUntil(instantString: string, timeZone: string = moment.tz.gu
     for (const unit of units) {
         const value = Math.floor(absDiffInSeconds / unit.seconds);
         if (value >= 1) {
-            return `${isPast ? '-' : ''}${value} ${unit.name}${value > 1 ? 's' : ''}`;
+            return `${isPast ? '' : 'in'} ${value} ${unit.name}${value > 1 ? 's' : ''} ${isPast ? 'ago' : ''}`;
         }
     }
 
     return "just now";
+}
+
+export function timeBetween(start: string, end: string, timeZone: string = moment.tz.guess()): string {
+    const startDate = moment.tz(start, timeZone);
+    const endDate = moment.tz(end, timeZone);
+    const diffInSeconds = startDate.diff(endDate, 'seconds');
+
+    const units = [
+        {name: "year", seconds: 31536000},
+        {name: "month", seconds: 2592000},
+        {name: "day", seconds: 86400},
+        {name: "hour", seconds: 3600},
+        {name: "minute", seconds: 60},
+        {name: "second", seconds: 1}
+    ];
+
+    const absDiffInSeconds = Math.abs(diffInSeconds);
+
+    for (const unit of units) {
+        const value = Math.floor(absDiffInSeconds / unit.seconds);
+        if (value >= 1) {
+            return `${value} ${unit.name}${value > 1 ? 's' : ''}`;
+        }
+    }
+
+    return "under a second";
 }
 
 /**

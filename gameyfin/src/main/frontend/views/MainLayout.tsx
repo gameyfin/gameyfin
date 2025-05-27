@@ -13,6 +13,8 @@ import {UserPreferenceService} from "Frontend/util/user-preference-service";
 import SearchBar from "Frontend/components/general/SearchBar";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
+import {scanState} from "Frontend/state/ScanState";
+import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -24,6 +26,7 @@ export default function MainLayout() {
     const isHomePage = location.pathname === "/";
     const [isExploding, setIsExploding] = useState(false);
     const games = useSnapshot(gameState).games;
+    const scans = useSnapshot(scanState);
 
     useEffect(() => {
         let newTitle = `Gameyfin - ${routeMetadata?.title}`;
@@ -96,12 +99,10 @@ export default function MainLayout() {
                     </Tooltip>
                 </NavbarContent>}
                 <NavbarContent justify="end">
-                    {auth.state.user?.emailConfirmed === false ?
+                    {auth.state.user?.roles?.some(a => a?.includes("ADMIN")) &&
                         <NavbarItem>
-                            <small className="text-warning">Please confirm your email</small>
+                            <ScanProgressPopover/>
                         </NavbarItem>
-                        :
-                        ""
                     }
                     <NavbarItem>
                         <ProfileMenu/>

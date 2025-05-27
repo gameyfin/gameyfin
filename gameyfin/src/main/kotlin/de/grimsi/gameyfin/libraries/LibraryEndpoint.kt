@@ -4,10 +4,14 @@ import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.libraries.dto.LibraryDto
 import de.grimsi.gameyfin.libraries.dto.LibraryEvent
+import de.grimsi.gameyfin.libraries.dto.LibraryScanProgress
 import de.grimsi.gameyfin.libraries.dto.LibraryUpdateDto
 import de.grimsi.gameyfin.libraries.enums.ScanType
+import de.grimsi.gameyfin.users.util.isAdmin
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
 import reactor.core.publisher.Flux
 
 @Endpoint
@@ -15,11 +19,18 @@ import reactor.core.publisher.Flux
 class LibraryEndpoint(
     private val libraryService: LibraryService
 ) {
-    fun subscribe(): Flux<List<LibraryEvent>> {
-        return LibraryService.subscribe()
+    fun subscribeToLibraryEvents(): Flux<List<LibraryEvent>> {
+        return LibraryService.subscribeToLibraryEvents()
     }
 
     fun getAll() = libraryService.getAll()
+
+
+    fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
+        val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
+        return if (user.isAdmin()) LibraryService.subscribeToScanProgressEvents()
+        else Flux.empty()
+    }
 
     @RolesAllowed(Role.Names.ADMIN)
     fun triggerScan(scanType: ScanType = ScanType.QUICK, libraries: Collection<LibraryDto>?) =

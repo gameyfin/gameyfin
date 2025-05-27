@@ -11,6 +11,7 @@ import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
+import {initializeScanState} from "Frontend/state/ScanState";
 
 export default function App() {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function App() {
 
     initializeLibraryState();
     initializeGameState();
+    initializeScanState();
 
     return (
         <HeroUIProvider className="size-full" navigate={navigate} useHref={useHref}>
