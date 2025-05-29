@@ -1,7 +1,9 @@
 package de.grimsi.gameyfin.games.dto
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.Instant
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 class GameDto(
     val id: Long,
     val createdAt: Instant,
@@ -23,8 +25,5 @@ class GameDto(
     val perspectives: List<String>?,
     val imageIds: List<Long>?,
     val videoUrls: List<String>?,
-    val path: String,
-    val fileSize: Long,
-    val metadata: Map<String, GameMetadataDto>,
-    val originalIds: Map<String, String>
+    val metadata: GameMetadataDto
 )

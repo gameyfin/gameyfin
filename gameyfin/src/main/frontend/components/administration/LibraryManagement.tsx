@@ -77,7 +77,7 @@ function LibraryManagementLayout({getConfig, formik}: any) {
                                              removeLibrary={removeLibrary} key={library.name}/>
                     )}
                 </div> :
-                "No libraries configured. Add your first library!"
+                <p className="mt-4 text-center text-default-500">No libraries found</p>
             }
 
             <LibraryCreationModal

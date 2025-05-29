@@ -1,6 +1,5 @@
 package de.grimsi.gameyfin.games.entities
 
-import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.libraries.Library
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameFeature
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
@@ -10,6 +9,7 @@ import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import java.net.URI
+import java.nio.file.Path
 import java.time.Instant
 
 @Entity
@@ -76,16 +76,8 @@ class Game(
     @ElementCollection
     var videoUrls: List<URI> = emptyList(),
 
-    @Column(unique = true)
-    val path: String,
-
-    var fileSize: Long? = null,
-
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    var metadata: Map<String, FieldMetadata> = emptyMap(),
-
-    @ElementCollection
-    var originalIds: Map<PluginManagementEntry, String> = emptyMap(),
-
-    var downloadCount: Int = 0
-)
+    @Embedded
+    var metadata: GameMetadata
+) {
+    constructor(path: Path, library: Library) : this(library = library, metadata = GameMetadata(path = path.toString()))
+}

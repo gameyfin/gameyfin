@@ -110,7 +110,7 @@ class FilesystemService(
         }
 
         // Get all paths already in the library as game files or as unmatched paths
-        val currentLibraryGamePaths = library.games.map { Path(it.path) }
+        val currentLibraryGamePaths = library.games.map { Path(it.metadata.path) }
         val currentLibraryUnmatchedPaths = library.unmatchedPaths.map { Path(it) }
         val allCurrentLibraryPaths = currentLibraryGamePaths + currentLibraryUnmatchedPaths
 

@@ -1,8 +1,12 @@
 package de.grimsi.gameyfin.games.dto
 
-import java.time.Instant
+import com.fasterxml.jackson.annotation.JsonInclude
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 class GameMetadataDto(
-    val source: String,
-    val lastUpdated: Instant
+    val path: String?,
+    val fileSize: Long,
+    val fields: Map<String, GameFieldMetadataDto>?,
+    val originalIds: Map<String, String>?,
+    val downloadCount: Int
 )

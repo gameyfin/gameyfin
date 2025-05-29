@@ -7,14 +7,10 @@ import de.grimsi.gameyfin.core.filterValuesNotNull
 import de.grimsi.gameyfin.core.plugins.PluginService
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.replaceRomanNumerals
-import de.grimsi.gameyfin.games.dto.GameDto
-import de.grimsi.gameyfin.games.dto.GameEvent
-import de.grimsi.gameyfin.games.dto.GameMetadataDto
-import de.grimsi.gameyfin.games.dto.GameUpdateDto
+import de.grimsi.gameyfin.games.dto.*
 import de.grimsi.gameyfin.games.entities.*
 import de.grimsi.gameyfin.games.repositories.GameRepository
 import de.grimsi.gameyfin.libraries.Library
-import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.async
@@ -31,6 +27,7 @@ import reactor.core.publisher.Sinks
 import java.nio.file.Path
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
+import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
 
 @Service
 class GameService(
@@ -125,7 +122,7 @@ class GameService(
     }
 
     fun getAllByPaths(paths: List<String>): List<Game> {
-        return gameRepository.findAllByPathIn(paths)
+        return gameRepository.findAllByMetadata_PathIn(paths)
     }
 
     fun getById(id: Long): Game {
@@ -137,7 +134,7 @@ class GameService(
      * Runs the queries concurrently and asynchronously
      * @return A map of metadata plugins and their respective results
      */
-    private fun queryPlugins(gameTitle: String): Map<GameMetadataProvider, GameMetadata?> {
+    private fun queryPlugins(gameTitle: String): Map<GameMetadataProvider, PluginApiMetadata?> {
         return runBlocking {
             coroutineScope {
                 metadataPlugins.associateWith {
@@ -160,8 +157,8 @@ class GameService(
      */
     private fun filterResults(
         originalQuery: String,
-        results: Map<GameMetadataProvider, GameMetadata>
-    ): Map<GameMetadataProvider, GameMetadata> {
+        results: Map<GameMetadataProvider, PluginApiMetadata>
+    ): Map<GameMetadataProvider, PluginApiMetadata> {
         val providerToTitle = results.entries.associate {
             pluginManager.whichPlugin(it.key.javaClass).pluginId to it.value.title
         }
@@ -183,12 +180,12 @@ class GameService(
      * The plugin with the highest possible priority is used as the source for each field
      */
     private fun mergeResults(
-        results: Map<GameMetadataProvider, GameMetadata?>,
+        results: Map<GameMetadataProvider, PluginApiMetadata?>,
         path: Path,
         library: Library
     ): Game {
-        val mergedGame = Game(path = path.toString(), library = library)
-        val metadataMap = mutableMapOf<String, FieldMetadata>()
+        val mergedGame = Game(path = path, library = library)
+        val metadataMap = mutableMapOf<String, GameFieldMetadata>()
         val originalIdsMap = mutableMapOf<PluginManagementEntry, String>()
 
         // Cache the plugin management entries for each provider
@@ -209,81 +206,81 @@ class GameService(
                 metadata.title.takeIf { it.isNotBlank() }?.let { title ->
                     if (!metadataMap.containsKey("title")) {
                         mergedGame.title = title
-                        metadataMap["title"] = FieldMetadata(sourcePlugin)
+                        metadataMap["title"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.description?.takeIf { it.isNotBlank() }?.let { description ->
                     if (!metadataMap.containsKey("summary")) {
                         mergedGame.summary = description
-                        metadataMap["summary"] = FieldMetadata(sourcePlugin)
+                        metadataMap["summary"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.coverUrl?.let { coverUrl ->
                     if (!metadataMap.containsKey("coverImage")) {
                         mergedGame.coverImage = Image(originalUrl = coverUrl.toURL(), type = ImageType.COVER)
-                        metadataMap["coverImage"] = FieldMetadata(sourcePlugin)
+                        metadataMap["coverImage"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.release?.let { release ->
                     if (!metadataMap.containsKey("release")) {
                         mergedGame.release = release
-                        metadataMap["release"] = FieldMetadata(sourcePlugin)
+                        metadataMap["release"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.userRating?.let { userRating ->
                     if (!metadataMap.containsKey("userRating")) {
                         mergedGame.userRating = userRating
-                        metadataMap["userRating"] = FieldMetadata(sourcePlugin)
+                        metadataMap["userRating"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.criticRating?.let { criticRating ->
                     if (!metadataMap.containsKey("criticRating")) {
                         mergedGame.criticRating = criticRating
-                        metadataMap["criticRating"] = FieldMetadata(sourcePlugin)
+                        metadataMap["criticRating"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.publishedBy?.takeIf { it.isNotEmpty() }?.let { publishedBy ->
                     if (!metadataMap.containsKey("publishers")) {
                         mergedGame.publishers =
                             publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }
-                        metadataMap["publishers"] = FieldMetadata(sourcePlugin)
+                        metadataMap["publishers"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.developedBy?.takeIf { it.isNotEmpty() }?.let { developedBy ->
                     if (!metadataMap.containsKey("developers")) {
                         mergedGame.developers =
                             developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }
-                        metadataMap["developers"] = FieldMetadata(sourcePlugin)
+                        metadataMap["developers"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.genres?.takeIf { it.isNotEmpty() }?.let { genres ->
                     if (!metadataMap.containsKey("genres")) {
                         mergedGame.genres = genres.toList()
-                        metadataMap["genres"] = FieldMetadata(sourcePlugin)
+                        metadataMap["genres"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.themes?.takeIf { it.isNotEmpty() }?.let { themes ->
                     if (!metadataMap.containsKey("themes")) {
                         mergedGame.themes = themes.toList()
-                        metadataMap["themes"] = FieldMetadata(sourcePlugin)
+                        metadataMap["themes"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.keywords?.takeIf { it.isNotEmpty() }?.let { keywords ->
                     if (!metadataMap.containsKey("keywords")) {
                         mergedGame.keywords = keywords.toList()
-                        metadataMap["keywords"] = FieldMetadata(sourcePlugin)
+                        metadataMap["keywords"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.features?.takeIf { it.isNotEmpty() }?.let { features ->
                     if (!metadataMap.containsKey("features")) {
                         mergedGame.features = features.toList()
-                        metadataMap["features"] = FieldMetadata(sourcePlugin)
+                        metadataMap["features"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.perspectives?.takeIf { it.isNotEmpty() }?.let { perspectives ->
                     if (!metadataMap.containsKey("perspectives")) {
                         mergedGame.perspectives = perspectives.toList()
-                        metadataMap["perspectives"] = FieldMetadata(sourcePlugin)
+                        metadataMap["perspectives"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.screenshotUrls?.takeIf { it.isNotEmpty() }?.let { screenshotUrls ->
@@ -291,20 +288,20 @@ class GameService(
                         mergedGame.images = runBlocking {
                             screenshotUrls.map { Image(originalUrl = it.toURL(), type = ImageType.SCREENSHOT) }
                         }
-                        metadataMap["images"] = FieldMetadata(sourcePlugin)
+                        metadataMap["images"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
                 metadata.videoUrls?.takeIf { it.isNotEmpty() }?.let { videoUrls ->
                     if (!metadataMap.containsKey("videoUrls")) {
                         mergedGame.videoUrls = videoUrls.toList()
-                        metadataMap["videoUrls"] = FieldMetadata(sourcePlugin)
+                        metadataMap["videoUrls"] = GameFieldMetadata(source = sourcePlugin)
                     }
                 }
             }
         }
 
-        mergedGame.metadata = metadataMap
-        mergedGame.originalIds = originalIdsMap
+        mergedGame.metadata.fields = metadataMap
+        mergedGame.metadata.originalIds = originalIdsMap
 
         return mergedGame
     }
@@ -320,30 +317,29 @@ class GameService(
 
 fun Game.toDto(): GameDto {
     // Helper functions
-    fun toDto(metadata: FieldMetadata): GameMetadataDto {
-        return GameMetadataDto(
-            source = metadata.source.pluginId,
-            lastUpdated = metadata.lastUpdated
+    fun toDto(fieldMetadata: GameFieldMetadata): GameFieldMetadataDto {
+        return GameFieldMetadataDto(
+            source = fieldMetadata.source.pluginId,
+            updatedAt = fieldMetadata.updatedAt!!
         )
     }
 
-    fun toDto(metadata: Map<String, FieldMetadata>): Map<String, GameMetadataDto> {
-        return metadata.mapValues { toDto(it.value) }
+    fun toDto(metadata: GameMetadata): GameMetadataDto {
+        return GameMetadataDto(
+            fileSize = metadata.fileSize ?: 0L,
+            downloadCount = metadata.downloadCount,
+            path = metadata.path,
+            fields = metadata.fields.mapValues { toDto(it.value) },
+            originalIds = metadata.originalIds.mapKeys { it.key.pluginId }
+        )
     }
 
-
-    val id = this.id ?: throw IllegalArgumentException("ID is null")
-    val createdAt = this.createdAt ?: throw IllegalArgumentException("creation timestamp is null")
-    val updatedAt = this.updatedAt ?: throw IllegalArgumentException("update timestamp is null")
-    val libraryId = this.library.id ?: throw IllegalArgumentException("library ID is null")
-    val title = this.title ?: throw IllegalArgumentException("title is null")
-
     return GameDto(
-        id = id,
-        createdAt = createdAt,
-        updatedAt = updatedAt,
-        libraryId = libraryId,
-        title = title,
+        id = id!!,
+        createdAt = createdAt!!,
+        updatedAt = updatedAt!!,
+        libraryId = this.library.id!!,
+        title = title!!,
         coverId = this.coverImage?.id,
         comment = this.comment,
         summary = this.summary,
@@ -359,9 +355,6 @@ fun Game.toDto(): GameDto {
         perspectives = this.perspectives?.map { it.name },
         imageIds = this.images.mapNotNull { it.id },
         videoUrls = this.videoUrls.map { it.toString() },
-        path = this.path,
-        fileSize = this.fileSize ?: 0L,
-        metadata = toDto(this.metadata),
-        originalIds = this.originalIds.mapKeys { it.key.pluginId }
+        metadata = toDto(this.metadata)
     )
 }

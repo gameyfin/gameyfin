@@ -256,9 +256,9 @@ class LibraryService(
 
         val calculateFileSizeTask = gamesWithImages.map { game ->
             Callable {
-                game.path.let { path ->
+                game.metadata.path.let { path ->
                     val fileSize = filesystemService.calculateFileSize(path)
-                    game.fileSize = fileSize
+                    game.metadata.fileSize = fileSize
 
                     progress.currentStep.current = calculatedFileSize.incrementAndGet()
                     emit(progress)
@@ -324,21 +324,19 @@ class LibraryService(
             name = library.name,
             directories = library.directories.map {
                 DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
-            }.toMutableList()
+            }.toMutableList(),
         )
     }
 }
 
 fun Library.toDto(): LibraryDto {
-    val libraryId = this.id ?: throw IllegalArgumentException("Library ID is null")
-
     val statsDto = LibraryStatsDto(
         gamesCount = this.games.size,
-        downloadedGamesCount = this.games.sumOf { it.downloadCount }
+        downloadedGamesCount = this.games.sumOf { it.metadata.downloadCount }
     )
 
     return LibraryDto(
-        id = libraryId,
+        id = this.id!!,
         name = this.name,
         directories = this.directories.map { DirectoryMappingDto(it.internalPath, it.externalPath) },
         games = this.games.mapNotNull { it.id },

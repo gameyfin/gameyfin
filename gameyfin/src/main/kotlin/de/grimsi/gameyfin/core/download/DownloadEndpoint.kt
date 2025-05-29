@@ -21,7 +21,7 @@ class DownloadEndpoint(
         @RequestParam provider: String
     ): ResponseEntity<StreamingResponseBody> {
         val game = gameService.getById(gameId)
-        val download = downloadService.getDownload(game.path, provider)
+        val download = downloadService.getDownload(game.metadata.path, provider)
 
         return when (download) {
             is FileDownload -> {

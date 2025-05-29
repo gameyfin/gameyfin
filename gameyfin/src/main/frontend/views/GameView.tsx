@@ -66,7 +66,7 @@ export default function GameView() {
                             <p className="text-foreground/60">{game.release !== undefined ? new Date(game.release).getFullYear() : "unknown"}</p>
                         </div>
                     </div>
-                    {downloadOptions && <ComboButton description={humanFileSize(game.fileSize)}
+                    {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
                                                      options={downloadOptions}
                                                      preferredOptionKey="preferred-download-method"
                     />}

@@ -32,7 +32,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                             {new Date(item.createdAt).toLocaleString()}
                         </TableCell>
                         <TableCell>
-                            {item.path}
+                            {item.metadata.path}
                         </TableCell>
                         <TableCell className="flex flex-row gap-2">
                             <Button isIconOnly size="sm" isDisabled={true}><CheckCircle/></Button>
