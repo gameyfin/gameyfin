@@ -25,6 +25,17 @@ theme:
         name: Switch to system preference
   font:
     code: JetBrains Mono
+  features:
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+
+repo_url: https://github.com/gameyfin/gameyfin/tree/v2
+repo_name: gameyfin
+copyright: Copyright &copy; <script>document.write(new Date().getFullYear())</script> <a href="https://github.com/grimsi">grimsi</a> and <a href="https://github.com/gameyfin/gameyfin/graphs/contributors">contributors</a>
+
+plugins:
+  - search
 
 markdown_extensions:
   - pymdownx.highlight:
