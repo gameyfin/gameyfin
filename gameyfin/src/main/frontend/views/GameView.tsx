@@ -4,12 +4,13 @@ import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
-import {Chip} from "@heroui/react";
+import {Chip, Link, Tooltip} from "@heroui/react";
 import {humanFileSize, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState, initializeGameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
+import {TriangleDashed} from "@phosphor-icons/react";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -63,7 +64,8 @@ export default function GameView() {
                         </div>
                         <div className="flex flex-col gap-1">
                             <p className="font-semibold text-3xl">{game.title}</p>
-                            <p className="text-foreground/60">{game.release !== undefined ? new Date(game.release).getFullYear() : "unknown"}</p>
+                            <p className="text-default-500">{game.release !== undefined ? new Date(game.release).getFullYear() :
+                                <p className="text-default-500">no data</p>}</p>
                         </div>
                     </div>
                     {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
@@ -74,37 +76,95 @@ export default function GameView() {
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-row gap-12">
                         <div className="flex flex-col flex-1 gap-2">
-                            <p className="text-foreground/60">Summary</p>
+                            <p className="text-default-500">Summary</p>
                             {game.summary ?
                                 <div className="text-justify" dangerouslySetInnerHTML={{__html: game.summary}}/> :
                                 <p>No summary available</p>
                             }
                         </div>
                         <div className="flex flex-col flex-1 gap-2">
-                            <p className="text-foreground/60">Details</p>
+                            <p className="text-default-500">Details</p>
                             <table className="text-left w-full table-auto">
                                 <tbody>
-                                {Object.entries({
-                                    "Developed by": game.developers ? [...game.developers].sort().join(" / ") : "unknown",
-                                    "Published by": game.publishers ? [...game.publishers].sort().join(" / ") : "unknown",
-                                    "Genres": game.genres ? [...game.genres].sort().map(p =>
-                                        <Chip radius="sm" key={p}>{toTitleCase(p)}</Chip>) : undefined,
-                                    "Themes": game.themes ? [...game.themes].sort().map(p =>
-                                        <Chip radius="sm" key={p}>{toTitleCase(p)}</Chip>) : undefined,
-                                    "Features": game.features ? [...game.features].sort().map(p =>
-                                        <Chip radius="sm" key={p}>{toTitleCase(p)}</Chip>) : undefined,
-                                }).map(([key, value]) => (
-                                    <tr key={key}>
-                                        <td className="text-foreground/60 w-0 min-w-32">{key}</td>
-                                        <td className="flex flex-row gap-1">{value}</td>
-                                    </tr>
-                                ))}
+                                <tr className="h-6">
+                                    <td className="text-default-500 w-0 min-w-32">Developed by</td>
+                                    <td className="flex flex-row gap-1">
+                                        {game.developers && game.developers.length > 0
+                                            ? [...game.developers].sort().map(dev =>
+                                                <Link key={dev} href={`/search?dev=${encodeURIComponent(dev)}`}
+                                                      color="foreground" underline="hover">
+                                                    {dev}
+                                                </Link>
+                                            )
+                                            : <Tooltip content="Missing data" color="foreground" placement="right">
+                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                            </Tooltip>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr className="h-6">
+                                    <td className="text-default-500 w-0 min-w-32">Published by</td>
+                                    <td className="flex flex-row gap-1">
+                                        {game.publishers && game.publishers.length > 0
+                                            ? [...game.publishers].sort().join(" / ")
+                                            : <Tooltip content="Missing data" color="foreground" placement="right">
+                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                            </Tooltip>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr className="h-6">
+                                    <td className="text-default-500 w-0 min-w-32">Genres</td>
+                                    <td className="flex flex-row gap-1">
+                                        {game.genres && game.genres.length > 0
+                                            ? [...game.genres].sort().map(genre =>
+                                                <Link key={genre} href={`/search?genre=${encodeURIComponent(genre)}`}>
+                                                    <Chip radius="sm">{toTitleCase(genre)}</Chip>
+                                                </Link>
+                                            )
+                                            : <Tooltip content="Missing data" color="foreground" placement="right">
+                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                            </Tooltip>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr className="h-6">
+                                    <td className="text-default-500 w-0 min-w-32">Themes</td>
+                                    <td className="flex flex-row gap-1">
+                                        {game.themes && game.themes.length > 0
+                                            ? [...game.themes].sort().map(theme =>
+                                                <Link key={theme} href={`/search?theme=${encodeURIComponent(theme)}`}>
+                                                    <Chip radius="sm">{toTitleCase(theme)}</Chip>
+                                                </Link>
+                                            )
+                                            : <Tooltip content="Missing data" color="foreground" placement="right">
+                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                            </Tooltip>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr className="h-6">
+                                    <td className="text-default-500 w-0 min-w-32">Features</td>
+                                    <td className="flex flex-row gap-1">
+                                        {game.features && game.features.length > 0
+                                            ? [...game.features].sort().map(feature =>
+                                                <Link key={feature}
+                                                      href={`/search?feature=${encodeURIComponent(feature)}`}>
+                                                    <Chip radius="sm">{toTitleCase(feature)}</Chip>
+                                                </Link>
+                                            )
+                                            : <Tooltip content="Missing data" color="foreground" placement="right">
+                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                            </Tooltip>
+                                        }
+                                    </td>
+                                </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     <div className="flex flex-col gap-4">
-                        <p className="text-foreground/60">Media</p>
+                        <p className="text-default-500">Media</p>
                         <ImageCarousel
                             imageUrls={game.imageIds?.map(id => `/images/screenshot/${id}`)}
                             videosUrls={game.videoUrls}

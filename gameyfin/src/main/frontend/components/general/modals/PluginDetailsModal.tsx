@@ -73,7 +73,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                     if (!value) return;
                                                     return (
                                                         <tr key={key}>
-                                                            <td className="text-foreground/60 w-0 min-w-20">{key}</td>
+                                                            <td className="text-default-500 w-0 min-w-20">{key}</td>
                                                             <td className="flex flex-row gap-1">{value}</td>
                                                         </tr>
                                                     )
@@ -81,7 +81,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                 </tbody>
                                             </table>
                                         </div>
-                                        <p className="text-foreground/60">Description</p>
+                                        <p className="text-default-500">Description</p>
                                         <Markdown
                                             remarkPlugins={[remarkBreaks]}
                                             components={{
