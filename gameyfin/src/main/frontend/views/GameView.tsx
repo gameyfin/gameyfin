@@ -10,7 +10,7 @@ import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState, initializeGameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {TriangleDashed} from "@phosphor-icons/react";
+import {Info, TriangleDashed} from "@phosphor-icons/react";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -64,8 +64,16 @@ export default function GameView() {
                         </div>
                         <div className="flex flex-col gap-1">
                             <p className="font-semibold text-3xl">{game.title}</p>
-                            <p className="text-default-500">{game.release !== undefined ? new Date(game.release).getFullYear() :
-                                <p className="text-default-500">no data</p>}</p>
+                            <div className="flex flex-row items-center gap-2">
+                                <p className="text-default-500">
+                                    {game.release !== undefined ? new Date(game.release).getFullYear() :
+                                        <p className="text-default-500">no data</p>}
+                                </p>
+                                <Tooltip content={`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
+                                         placement="right">
+                                    <Info/>
+                                </Tooltip>
+                            </div>
                         </div>
                     </div>
                     {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
