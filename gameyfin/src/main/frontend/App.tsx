@@ -2,7 +2,6 @@ import {Outlet, useHref, useNavigate} from 'react-router';
 import "./main.css";
 import "Frontend/util/custom-validators";
 import {HeroUIProvider} from "@heroui/react";
-import {ToastProvider} from "@heroui/toast";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
 import {AuthProvider} from "Frontend/util/auth";
@@ -12,10 +11,9 @@ import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
 import {initializeScanState} from "Frontend/state/ScanState";
+import {ToastProvider} from "@heroui/toast";
 
 export default function App() {
-    const navigate = useNavigate();
-
     client.middlewares = [ErrorHandlingMiddleware];
 
     initializeLibraryState();
@@ -23,7 +21,7 @@ export default function App() {
     initializeScanState();
 
     return (
-        <HeroUIProvider className="size-full" navigate={navigate} useHref={useHref}>
+        <HeroUIProvider className="size-full" navigate={useNavigate} useHref={useHref}>
             <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark">
                 <AuthProvider>
                     <IconContext.Provider value={{size: 20}}>
