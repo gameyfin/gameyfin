@@ -56,7 +56,9 @@ const Wizard = ({children, initialValues, onSubmit}: {
                                  lineClassName="bg-foreground"
                                  placeholder={undefined}
                                  onPointerEnterCapture={undefined}
-                                 onPointerLeaveCapture={undefined}>
+                                 onPointerLeaveCapture={undefined}
+                                 onResize={undefined}
+                                 onResizeCapture={undefined}>
                             {steps.map((child, index) => (
                                 <Step key={index}
                                       className="bg-foreground text-background"
@@ -64,7 +66,9 @@ const Wizard = ({children, initialValues, onSubmit}: {
                                       completedClassName="bg-primary"
                                       placeholder={undefined}
                                       onPointerEnterCapture={undefined}
-                                      onPointerLeaveCapture={undefined}>
+                                      onPointerLeaveCapture={undefined}
+                                      onResize={undefined}
+                                      onResizeCapture={undefined}>
                                     {/*@ts-ignore*/}
                                     {child.props.icon}
                                 </Step>
