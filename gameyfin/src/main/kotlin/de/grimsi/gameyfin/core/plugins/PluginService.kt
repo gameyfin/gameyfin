@@ -3,16 +3,16 @@ package de.grimsi.gameyfin.core.plugins
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigEntry
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigEntryKey
 import de.grimsi.gameyfin.core.plugins.config.PluginConfigRepository
+import de.grimsi.gameyfin.core.plugins.dto.PluginConfigMetadataDto
 import de.grimsi.gameyfin.core.plugins.dto.PluginDto
 import de.grimsi.gameyfin.core.plugins.dto.PluginUpdateDto
 import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginDescriptor
 import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginManager
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementRepository
-import de.grimsi.gameyfin.pluginapi.core.Configurable
-import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.config.Configurable
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.ExtensionPoint
 import org.pf4j.PluginWrapper
@@ -96,11 +96,24 @@ class PluginService(
         return plugin.getLogo()
     }
 
-    fun getConfigMetadata(pluginWrapper: PluginWrapper): List<PluginConfigElement> {
+    fun getConfigMetadata(pluginWrapper: PluginWrapper): List<PluginConfigMetadataDto>? {
         log.debug { "Getting config metadata for plugin ${pluginWrapper.pluginId}" }
         val plugin = pluginWrapper.plugin
-        if (plugin !is Configurable) return emptyList()
-        return plugin.configMetadata
+
+        if (plugin !is Configurable) return null
+
+        return plugin.configMetadata.map { meta ->
+            PluginConfigMetadataDto(
+                key = meta.key,
+                type = meta.type.simpleName ?: "Unknown",
+                label = meta.label,
+                description = meta.description,
+                default = meta.default,
+                isSecret = meta.isSecret,
+                isRequired = meta.isRequired,
+                allowedValues = meta.allowedValues?.map { it.toString() }
+            )
+        }
     }
 
     fun getConfig(pluginWrapper: PluginWrapper): Map<String, String?> {

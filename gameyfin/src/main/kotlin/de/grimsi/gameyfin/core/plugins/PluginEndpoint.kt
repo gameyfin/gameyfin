@@ -3,7 +3,7 @@ package de.grimsi.gameyfin.core.plugins
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.core.plugins.dto.PluginUpdateDto
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import de.grimsi.gameyfin.users.util.isAdmin
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed

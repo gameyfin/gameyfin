@@ -16,20 +16,19 @@ import settings from './build/vaadin-dev-server-settings.json';
 import {
   AssetInfo,
   ChunkInfo,
-  build,
   defineConfig,
   mergeConfig,
   OutputOptions,
   PluginOption,
-  InlineConfig,
   UserConfigFn
 } from 'vite';
-import { getManifest, type ManifestTransform } from 'workbox-build';
 
 import * as rollup from 'rollup';
 import brotli from 'rollup-plugin-brotli';
 import checker from 'vite-plugin-checker';
 import postcssLit from './build/plugins/rollup-plugin-postcss-lit-custom/rollup-plugin-postcss-lit.js';
+import vaadinI18n from './build/plugins/rollup-plugin-vaadin-i18n/rollup-plugin-vaadin-i18n.js';
+import serviceWorkerPlugin from './build/plugins/vite-plugin-service-worker';
 
 import { createRequire } from 'module';
 
@@ -40,8 +39,6 @@ import vitePluginFileSystemRouter from '@vaadin/hilla-file-router/vite-plugin.js
 
 // Make `require` compatible with ES modules
 const require = createRequire(import.meta.url);
-
-const appShellUrl = '.';
 
 const frontendFolder = path.resolve(__dirname, settings.frontendFolder);
 const themeFolder = path.resolve(frontendFolder, settings.themeFolder);
@@ -56,6 +53,7 @@ const buildOutputFolder = devBundle ? devBundleFolder : frontendBundleFolder;
 const statsFolder = path.resolve(__dirname, devBundle ? settings.devBundleStatsOutput : settings.statsOutput);
 const statsFile = path.resolve(statsFolder, 'stats.json');
 const bundleSizeFile = path.resolve(statsFolder, 'bundle-size.html');
+const i18nFolder = path.resolve(__dirname, settings.i18nOutput);
 const nodeModulesFolder = path.resolve(__dirname, 'node_modules');
 const webComponentTags = '';
 
@@ -90,94 +88,6 @@ const target = ['safari15', 'es2022'];
 // Block debug and trace logs.
 console.trace = () => {};
 console.debug = () => {};
-
-function injectManifestToSWPlugin(): rollup.Plugin {
-  const rewriteManifestIndexHtmlUrl: ManifestTransform = (manifest) => {
-    const indexEntry = manifest.find((entry) => entry.url === 'index.html');
-    if (indexEntry) {
-      indexEntry.url = appShellUrl;
-    }
-
-    return { manifest, warnings: [] };
-  };
-
-  return {
-    name: 'vaadin:inject-manifest-to-sw',
-    async transform(code, id) {
-      if (/sw\.(ts|js)$/.test(id)) {
-        const { manifestEntries } = await getManifest({
-          globDirectory: buildOutputFolder,
-          globPatterns: ['**/*'],
-          globIgnores: ['**/*.br', 'pwa-icons/**'],
-          manifestTransforms: [rewriteManifestIndexHtmlUrl],
-          maximumFileSizeToCacheInBytes: 100 * 1024 * 1024 // 100mb,
-        });
-
-        return code.replace('self.__WB_MANIFEST', JSON.stringify(manifestEntries));
-      }
-    }
-  };
-}
-
-function buildSWPlugin(opts: { devMode: boolean }): PluginOption {
-  let buildConfig: InlineConfig;
-  let buildOutput: rollup.RollupOutput;
-  const devMode = opts.devMode;
-
-  return {
-    name: 'vaadin:build-sw',
-    enforce: 'post',
-    async configResolved(viteConfig) {
-      buildConfig = {
-        base: viteConfig.base,
-        root: viteConfig.root,
-        mode: viteConfig.mode,
-        resolve: viteConfig.resolve,
-        define: {
-          ...viteConfig.define,
-          'process.env.NODE_ENV': JSON.stringify(viteConfig.mode),
-        },
-        build: {
-          write: !devMode,
-          minify: viteConfig.build.minify,
-          outDir: viteConfig.build.outDir,
-          target,
-          sourcemap: viteConfig.command === 'serve' || viteConfig.build.sourcemap,
-          emptyOutDir: false,
-          modulePreload: false,
-          rollupOptions: {
-            input: {
-              sw: settings.clientServiceWorkerSource
-            },
-            output: {
-              exports: 'none',
-              entryFileNames: 'sw.js',
-              inlineDynamicImports: true,
-            },
-          },
-        },
-      };
-    },
-    async buildStart() {
-      if (devMode) {
-        buildOutput = await build(buildConfig) as rollup.RollupOutput;
-      }
-    },
-    async load(id) {
-      if (id.endsWith('sw.js')) {
-        return buildOutput.output[0].code;
-      }
-    },
-    async closeBundle() {
-      if (!devMode) {
-        await build({
-          ...buildConfig,
-          plugins: [injectManifestToSWPlugin(), brotli()]
-        });
-      }
-    },
-  };
-}
 
 function statsExtracterPlugin(): PluginOption {
   function collectThemeJsonsInFrontend(themeJsonContents: Record<string, string>, themeName: string) {
@@ -276,7 +186,7 @@ function statsExtracterPlugin(): PluginOption {
       const frontendFiles: Record<string, string> = {};
       frontendFiles['index.html'] = createHash('sha256').update(customIndexData.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
 
-      const projectFileExtensions = ['.js', '.js.map', '.ts', '.ts.map', '.tsx', '.tsx.map', '.css', '.css.map', '.'];
+      const projectFileExtensions = ['.js', '.js.map', '.ts', '.ts.map', '.tsx', '.tsx.map', '.css', '.css.map'];
 
       const isThemeComponentsResource = (id: string) =>
           id.startsWith(themeOptions.frontendGeneratedFolder.replace(/\\/g, '/'))
@@ -753,7 +663,9 @@ export const vaadinConfig: UserConfigFn = (env) => {
       productionMode && brotli(),
       devMode && vaadinBundlesPlugin(),
       devMode && showRecompileReason(),
-      settings.offlineEnabled && buildSWPlugin({ devMode }),
+      settings.offlineEnabled && serviceWorkerPlugin({
+        srcPath: settings.clientServiceWorkerSource,
+      }),
       !devMode && statsExtracterPlugin(),
       !productionMode && preserveUsageStats(),
       themePlugin({ devMode }),
@@ -794,6 +706,14 @@ export const vaadinConfig: UserConfigFn = (env) => {
             ]
           ].filter(Boolean)
         }
+      }),
+      productionMode && vaadinI18n({
+        cwd: __dirname,
+        meta: {
+          output: {
+            dir: i18nFolder,
+          },
+        },
       }),
       {
         name: 'vaadin:force-remove-html-middleware',

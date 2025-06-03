@@ -6,23 +6,19 @@ const SelectInput = ({label, values, ...props}) => {
     // @ts-ignore
     const [field] = useField(props);
 
+    const items = values.map((v: string) => ({key: v, label: v}));
+
     return (
-        <div className="flex flex-row flex-1 justify-center gap-2">
-            <Select
-                {...field}
-                {...props}
-                id={field.name}
-                label={label}
-                selectedKeys={[field.value]}
-                disallowEmptySelection
-            >
-                {values.map((value: string) => (
-                    <SelectItem key={value}>
-                        {value}
-                    </SelectItem>
-                ))}
-            </Select>
-        </div>
+        <Select
+            {...field}
+            {...props}
+            label={label}
+            items={items}
+            selectedKeys={[field.value]}
+            disallowEmptySelection
+        >
+            {(item: { key: string, label: string }) => <SelectItem>{item.label}</SelectItem>}
+        </Select>
     );
 }
 

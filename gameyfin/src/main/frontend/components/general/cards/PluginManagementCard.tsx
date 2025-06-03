@@ -23,9 +23,9 @@ import PluginTrustLevel from "Frontend/generated/de/grimsi/gameyfin/core/plugins
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";
 import PluginConfigValidationResult
-    from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigValidationResult";
+    from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/config/PluginConfigValidationResult";
 import PluginConfigValidationResultType
-    from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigValidationResultType";
+    from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/config/PluginConfigValidationResultType";
 
 export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     const pluginDetailsModal = useDisclosure();

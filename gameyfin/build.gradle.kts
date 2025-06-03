@@ -35,7 +35,7 @@ dependencies {
     implementation("jakarta.validation:jakarta.validation-api:3.1.0")
 
     // Kotlin extensions
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation(kotlin("reflect"))
 
     // Reactive
     implementation("org.springframework.boot:spring-boot-starter-webflux")

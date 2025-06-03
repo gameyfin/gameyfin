@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.pluginapi.core
+package de.grimsi.gameyfin.pluginapi.core.config
 
 data class PluginConfigValidationResult(
     val result: PluginConfigValidationResultType,

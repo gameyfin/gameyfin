@@ -5,7 +5,8 @@ import com.api.igdb.exceptions.RequestException
 import com.api.igdb.request.IGDBWrapper
 import com.api.igdb.request.TwitchAuthenticator
 import com.api.igdb.request.games
-import de.grimsi.gameyfin.pluginapi.core.*
+import de.grimsi.gameyfin.pluginapi.core.config.*
+import de.grimsi.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import me.xdrop.fuzzywuzzy.FuzzySearch
@@ -16,26 +17,35 @@ import proto.Game
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
-class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Configurable {
+class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
-    override val configMetadata = listOf(
-        PluginConfigElement(
+    override val configMetadata: PluginConfigMetadata = listOf(
+        ConfigMetadata(
             key = "clientId",
-            name = "Twitch client ID",
+            type = String::class.java,
+            label = "Twitch client ID",
             description = "Your Twitch Client ID"
         ),
-        PluginConfigElement(
+        ConfigMetadata(
             key = "clientSecret",
-            name = "Twitch client secret",
+            type = String::class.java,
+            label = "Twitch client secret",
             description = "Your Twitch Client Secret",
             isSecret = true
         )
     )
-    override var config: Map<String, String?> = emptyMap()
 
     override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
+        val pluginConfigValidationResult = super.validateConfig(config)
+
+        if (pluginConfigValidationResult.result == PluginConfigValidationResultType.INVALID) {
+            return pluginConfigValidationResult
+        }
+
         try {
-            authenticate(config["clientId"], config["clientSecret"])
+            val clientIdToValidate = config["clientId"]
+            val clientSecretToValidate = config["clientSecret"]
+            authenticate(clientIdToValidate, clientSecretToValidate)
             return PluginConfigValidationResult.VALID
         } catch (e: PluginConfigError) {
             log.error(e.message)
@@ -50,7 +60,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Configurable
 
     override fun start() {
         try {
-            authenticate(config["clientId"], config["clientSecret"])
+            authenticate(config("clientId"), config("clientSecret"))
         } catch (e: PluginConfigError) {
             log.error(e.message)
         }

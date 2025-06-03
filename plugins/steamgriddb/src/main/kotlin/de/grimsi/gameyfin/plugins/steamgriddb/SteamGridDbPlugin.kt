@@ -1,9 +1,7 @@
 package de.grimsi.gameyfin.plugins.steamgriddb
 
-import de.grimsi.gameyfin.pluginapi.core.ConfigurableGameyfinPlugin
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigError
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.config.*
+import de.grimsi.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import de.grimsi.gameyfin.plugins.steamgriddb.api.SteamGridDbApiClient
@@ -20,18 +18,26 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         private var client: SteamGridDbApiClient? = null
     }
 
-    override val configMetadata: List<PluginConfigElement> = listOf(
-        PluginConfigElement(
+    override val configMetadata: PluginConfigMetadata = listOf(
+        ConfigMetadata(
             key = "apiKey",
-            name = "SteamGridDB API key",
-            description = "Your SteamGridDB API key",
+            type = String::class.java,
+            label = "SteamGridDB API key",
+            description = "The API key can be obtained from your SteamGridDB account preferences",
             isSecret = true
         )
     )
 
     override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
+        val pluginConfigValidationResult = super.validateConfig(config)
+
+        if (pluginConfigValidationResult.result == PluginConfigValidationResultType.INVALID) {
+            return pluginConfigValidationResult
+        }
+
         try {
-            runBlocking { authenticate(config["apiKey"]) }
+            val apiKeyToValidate = config["apiKey"]
+            runBlocking { authenticate(apiKeyToValidate) }
             return PluginConfigValidationResult.VALID
         } catch (e: PluginConfigError) {
             log.error(e.message)
@@ -43,7 +49,7 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
 
     override fun start() {
         try {
-            runBlocking { authenticate(config["apiKey"]) }
+            runBlocking { authenticate(config("apiKey")) }
         } catch (e: PluginConfigError) {
             log.error(e.message)
         }

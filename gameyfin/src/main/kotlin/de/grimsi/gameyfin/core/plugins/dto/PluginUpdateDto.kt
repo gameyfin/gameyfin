@@ -1,7 +1,7 @@
 package de.grimsi.gameyfin.core.plugins.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.pf4j.PluginState
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

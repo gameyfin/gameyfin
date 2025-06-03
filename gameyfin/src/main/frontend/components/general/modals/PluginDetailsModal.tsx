@@ -1,14 +1,14 @@
 import React, {useState} from "react";
 import {addToast, Button, Link, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
-import PluginConfigElement from "Frontend/generated/de/grimsi/gameyfin/pluginapi/core/PluginConfigElement";
-import Input from "Frontend/components/general/input/Input";
 import PluginLogo from "Frontend/components/general/plugin/PluginLogo";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginDto";
 import {ArrowClockwise} from "@phosphor-icons/react";
+import PluginConfigMetadataDto from "Frontend/generated/de/grimsi/gameyfin/core/plugins/dto/PluginConfigMetadataDto";
+import PluginConfigFormField from "Frontend/components/general/input/PluginConfigFormField";
 
 interface PluginDetailsModalProps {
     plugin: PluginDto;
@@ -35,11 +35,28 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
         });
     }
 
+    function getEffectiveConfig(): Record<string, string> {
+        const effectiveConfig: Record<string, string> = {};
+        if (!plugin.configMetadata) return effectiveConfig;
+
+        for (const meta of plugin.configMetadata) {
+            const key = meta.key;
+            let value = plugin.config?.[key]?.toString();
+            if (value == null && meta.default != null) {
+                value = meta.default.toString();
+            }
+            if (value) {
+                effectiveConfig[key] = value;
+            }
+        }
+        return effectiveConfig;
+    }
+
     return (
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="lg">
             <ModalContent>
                 {(onClose) => (
-                    <Formik initialValues={plugin.config}
+                    <Formik initialValues={getEffectiveConfig()}
                             initialErrors={plugin.configValidation?.errors}
                             enableReinitialize={true}
                             onSubmit={async (values: any) => {
@@ -138,10 +155,11 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                         </>}
                                     </div>
                                     {(plugin.configMetadata && plugin.configMetadata.length > 0) ?
-                                        plugin.configMetadata.map((entry: PluginConfigElement) => (
-                                            <Input key={entry.key} name={entry.key} label={entry.name}
-                                                   showErrorUntouched={true}
-                                                   type={entry.secret ? "password" : "text"}/>
+                                        plugin.configMetadata.map((entry: PluginConfigMetadataDto) => (
+                                            <PluginConfigFormField
+                                                key={entry.key}
+                                                pluginConfigMetadata={entry}
+                                                showErrorUntouched={true}/>
                                         )) : "This plugin has no configuration options."
                                     }
                                 </ModalBody>

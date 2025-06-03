@@ -1,8 +1,9 @@
-package de.grimsi.gameyfin.pluginapi.core
+package de.grimsi.gameyfin.pluginapi.core.wrapper
 
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
 
+@Suppress("DEPRECATION")
 abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
 
     companion object {

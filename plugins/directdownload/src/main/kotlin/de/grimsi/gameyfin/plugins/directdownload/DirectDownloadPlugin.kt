@@ -1,8 +1,8 @@
 package de.grimsi.gameyfin.plugins.directdownload
 
-import de.grimsi.gameyfin.pluginapi.core.ConfigurableGameyfinPlugin
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.config.ConfigMetadata
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigMetadata
+import de.grimsi.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.download.Download
 import de.grimsi.gameyfin.pluginapi.download.DownloadProvider
 import de.grimsi.gameyfin.pluginapi.download.FileDownload
@@ -14,7 +14,6 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.exists
@@ -24,30 +23,24 @@ import kotlin.io.path.isDirectory
 
 class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
-    override val configMetadata: List<PluginConfigElement> = listOf(
-        PluginConfigElement(
+    companion object {
+        lateinit var plugin: DirectDownloadPlugin
+            private set
+    }
+
+    init {
+        plugin = this
+    }
+
+    override val configMetadata: PluginConfigMetadata = listOf(
+        ConfigMetadata(
             key = "compressionMode",
-            name = "Compression mode (\"none\" = default, \"fast\", \"best\")",
+            type = CompressionMode::class.java,
+            label = "Compression mode",
             description = "Higher compression modes are more resource intensive, but save bandwidth",
+            default = CompressionMode.NONE
         )
     )
-
-    override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
-        val compressionMode = config["compressionMode"]
-
-        if (compressionMode != null) {
-            return try {
-                CompressionMode.valueOf(compressionMode.uppercase())
-                PluginConfigValidationResult.VALID
-            } catch (_: IllegalArgumentException) {
-                PluginConfigValidationResult.INVALID(
-                    mapOf("compressionMode" to "Invalid compression mode: $compressionMode (must be \"none\", \"fast\", or \"best\")")
-                )
-            }
-        }
-
-        return PluginConfigValidationResult.VALID
-    }
 
     @Extension
     class DirectDownloadProvider : DownloadProvider {
@@ -95,9 +88,8 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
                 try {
                     ZipOutputStream(pipeOut).use { zos ->
 
-                        zos.setLevel(CompressionMode.toDeflaterLevel(plugin.config["compressionMode"]?.let {
-                            CompressionMode.valueOf(it.uppercase())
-                        } ?: CompressionMode.NONE))
+                        val compressionMode = plugin.config<CompressionMode>("compressionMode")
+                        zos.setLevel(compressionMode.deflaterLevel())
 
                         Files.walkFileTree(path, object : SimpleFileVisitor<Path>() {
                             override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
@@ -122,23 +114,6 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
             }
 
             return pipeIn
-        }
-    }
-}
-
-
-enum class CompressionMode {
-    NONE,
-    FAST,
-    BEST;
-
-    companion object {
-        fun toDeflaterLevel(mode: CompressionMode): Int {
-            return when (mode) {
-                NONE -> Deflater.NO_COMPRESSION
-                FAST -> Deflater.BEST_SPEED
-                BEST -> Deflater.BEST_COMPRESSION
-            }
         }
     }
 }

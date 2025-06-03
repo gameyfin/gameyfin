@@ -1,8 +1,7 @@
 package de.grimsi.gameyfin.core.plugins.dto
 
 import de.grimsi.gameyfin.core.plugins.management.PluginTrustLevel
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigElement
-import de.grimsi.gameyfin.pluginapi.core.PluginConfigValidationResult
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.pf4j.PluginState
 
 data class PluginDto(
@@ -17,7 +16,7 @@ data class PluginDto(
     val url: String? = null,
     val hasLogo: Boolean,
     val state: PluginState,
-    val configMetadata: List<PluginConfigElement>? = null,
+    val configMetadata: List<PluginConfigMetadataDto>? = null,
     val config: Map<String, String?>? = null,
     val configValidation: PluginConfigValidationResult? = null,
     val priority: Int,

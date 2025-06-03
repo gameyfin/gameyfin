@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
@@ -11,15 +11,11 @@ import LibraryCreationModal from "Frontend/components/general/modals/LibraryCrea
 import LibraryUpdateDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryUpdateDto";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import {useSnapshot} from "valtio/react";
-import {initializeLibraryState, libraryState} from "Frontend/state/LibraryState";
+import {libraryState} from "Frontend/state/LibraryState";
 
 function LibraryManagementLayout({getConfig, formik}: any) {
     const libraryCreationModal = useDisclosure();
     const state = useSnapshot(libraryState);
-
-    useEffect(() => {
-        initializeLibraryState();
-    }, []);
 
     async function updateLibrary(library: LibraryUpdateDto) {
         await LibraryEndpoint.updateLibrary(library);

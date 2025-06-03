@@ -1,6 +1,6 @@
 package de.grimsi.gameyfin.plugins.steam
 
-import de.grimsi.gameyfin.pluginapi.core.GameyfinPlugin
+import de.grimsi.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import de.grimsi.gameyfin.plugins.steam.dto.SteamDetailsResultWrapper
