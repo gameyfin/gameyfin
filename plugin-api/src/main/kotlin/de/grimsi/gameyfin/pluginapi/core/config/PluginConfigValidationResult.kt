@@ -11,6 +11,10 @@ data class PluginConfigValidationResult(
             return PluginConfigValidationResult(PluginConfigValidationResultType.INVALID, errors)
         }
     }
+
+    fun isValid(): Boolean {
+        return result == PluginConfigValidationResultType.VALID
+    }
 }
 
 enum class PluginConfigValidationResultType {
