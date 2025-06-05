@@ -15,27 +15,27 @@ export default function ConfigFormField({configElement, ...props}: any) {
             );
         }
 
-        switch (configElement.type) {
-            case "Boolean":
+        switch (configElement.type.toLowerCase()) {
+            case "boolean":
                 return (
                     <CheckboxInput label={configElement.description} name={configElement.key} {...props}/>
                 );
-            case "String":
+            case "string":
                 return (
                     <Input label={configElement.description} name={configElement.key}
                            type={props.type && "text"} {...props}/>
                 );
-            case "Float":
+            case "float":
                 return (
                     <Input label={configElement.description} name={configElement.key} type="number"
                            step="0.1" {...props}/>
                 );
-            case "Int":
+            case "int":
                 return (
                     <Input label={configElement.description} name={configElement.key} type="number"
                            step="1" {...props}/>
                 );
-            case "Array":
+            case "array":
                 return (
                     <ArrayInput label={configElement.description} name={configElement.key} type="text" {...props}/>
                 );

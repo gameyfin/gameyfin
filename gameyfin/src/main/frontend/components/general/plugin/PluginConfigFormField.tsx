@@ -12,18 +12,19 @@ export default function PluginConfigFormField({pluginConfigMetadata, ...props}: 
                 <SelectInput label={metadata.label}
                              name={metadata.key}
                              values={metadata.allowedValues}
+                             isRequired={metadata.required}
                              {...props}/>
             );
         }
 
-        switch (metadata.type) {
-            case "Boolean":
+        switch (metadata.type.toLowerCase()) {
+            case "boolean":
                 return (
                     <CheckboxInput label={metadata.label}
                                    name={metadata.key}
                                    {...props}/>
                 );
-            case "String":
+            case "string":
                 return (
                     <Input label={metadata.label}
                            name={metadata.key}
@@ -31,7 +32,7 @@ export default function PluginConfigFormField({pluginConfigMetadata, ...props}: 
                            isRequired={metadata.required}
                            {...props}/>
                 );
-            case "Float":
+            case "float":
                 return (
                     <Input label={metadata.label}
                            name={metadata.key}
@@ -40,7 +41,7 @@ export default function PluginConfigFormField({pluginConfigMetadata, ...props}: 
                            step="0.1"
                            {...props}/>
                 );
-            case "Int":
+            case "int":
                 return (
                     <Input label={metadata.label}
                            name={metadata.key}

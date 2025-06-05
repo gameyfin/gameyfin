@@ -1,8 +1,7 @@
 import {FieldArray, useField} from "formik";
 import {Button, Chip, Input, Popover, PopoverContent, PopoverTrigger} from "@heroui/react";
 import {KeyboardEvent, useState} from "react";
-import {Plus, XCircle} from "@phosphor-icons/react";
-import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
+import {Plus} from "@phosphor-icons/react";
 
 // @ts-ignore
 const ArrayInput = ({label, ...props}) => {
@@ -16,7 +15,7 @@ const ArrayInput = ({label, ...props}) => {
                         function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
                             if (event.key === "Enter" || event.key == "Tab" || event.key === ",") {
                                 event.preventDefault();
-                                
+
                                 newElementValue
                                     .split(",")
                                     .map((value) => value.trim())
@@ -58,7 +57,7 @@ const ArrayInput = ({label, ...props}) => {
 
                                 <div className="min-h-6 text-danger">
                                     {meta.touched && meta.error && meta.error.trim().length > 0 && (
-                                        <SmallInfoField icon={XCircle} message={meta.error}/>
+                                        meta.error
                                     )}
                                 </div>
                             </div>

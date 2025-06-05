@@ -1,22 +1,28 @@
 import {useField} from "formik";
-import {Checkbox} from "@heroui/react";
+import {Checkbox, CheckboxGroup} from "@heroui/react";
 
 // @ts-ignore
 const CheckboxInput = ({label, ...props}) => {
     // @ts-ignore
-    const [field] = useField(props);
+    const [field, meta] = useField(props);
 
     return (
-        <div className="flex flex-row flex-1 items-center gap-2 mb-6">
+        <CheckboxGroup
+            className="flex flex-row flex-1 items-baseline gap-2"
+            isInvalid={!!meta.error}
+            errorMessage={meta.initialError || meta.error}
+            value={field.value ? [field.name] : []}
+        >
             <Checkbox
+                className="items-baseline"
                 {...field}
                 {...props}
-                id={field.name}
-                isSelected={field.value}
+                // @ts-ignore
+                value={field.name}
             >
                 {label}
             </Checkbox>
-        </div>
+        </CheckboxGroup>
     );
 }
 
