@@ -1,3 +1,5 @@
+import java.util.jar.Manifest
+
 plugins {
     kotlin("jvm")
 }
@@ -8,6 +10,13 @@ subprojects {
     dependencies {
         compileOnly(project(":plugin-api"))
     }
+
+    // Read the version from the MANIFEST.MF file in resources
+    val manifestFile = file("src/main/resources/MANIFEST.MF")
+    val manifestVersion: String? = if (manifestFile.exists()) {
+        Manifest(manifestFile.inputStream()).mainAttributes.getValue("Plugin-Version")
+    } else null
+    version = manifestVersion ?: "1.0-SNAPSHOT"
 
     tasks.jar {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
