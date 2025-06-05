@@ -21,7 +21,7 @@ subprojects {
     tasks.jar {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         isZip64 = true
-        archiveBaseName.set("plugin-${project.name}")
+        archiveBaseName.set(project.name)
 
         manifest {
             from("./src/main/resources/MANIFEST.MF")
