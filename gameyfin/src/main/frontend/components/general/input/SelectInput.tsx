@@ -9,9 +9,9 @@ const SelectInput = ({label, values, ...props}) => {
     const items = values.map((v: string) => ({key: v, label: v}));
 
     return (
-        <div>
+        <div className="min-h-20 flex-grow">
             <Select
-                className="min-h-20"
+                fullWidth={true}
                 {...field}
                 {...props}
                 label={label}

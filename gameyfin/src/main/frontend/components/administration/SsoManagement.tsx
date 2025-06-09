@@ -49,14 +49,12 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                     <ConfigFormField configElement={getConfig("sso.oidc.enabled")}/>
 
                     <Section title="SSO user handling"/>
-                    <div className="flex flex-row">
+                    <div className="flex flex-row items-baseline">
                         <ConfigFormField configElement={getConfig("sso.oidc.auto-register-new-users")}
                                          isDisabled={!formik.values.sso.oidc.enabled}/>
-                        <div className="flex flex-row flex-1 justify-center gap-2">
-                            <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
-                                             isDisabled={!formik.values.sso.oidc.enabled ||
-                                                 !formik.values.sso.oidc["auto-register-new-users"]}/>
-                        </div>
+                        <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
+                                         isDisabled={!formik.values.sso.oidc.enabled ||
+                                             !formik.values.sso.oidc["auto-register-new-users"]}/>
                     </div>
 
                     <Section title="SSO provider configuration"/>
@@ -71,7 +69,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                         <Button
                             isDisabled={isAutoPopulateDisabled()}
                             onPress={autoPopulate}
-                            className="h-14"><MagicWand className="min-w-5"/> Auto-populate</Button>
+                            className="h-14"><MagicWand className="min-w-5"/>Auto-populate</Button>
                     </div>
                     <ConfigFormField configElement={getConfig("sso.oidc.authorize-url")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
