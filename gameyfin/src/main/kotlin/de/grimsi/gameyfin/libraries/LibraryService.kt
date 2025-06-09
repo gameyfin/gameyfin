@@ -206,7 +206,7 @@ class LibraryService(
         library.unmatchedPaths.addAll(newUnmatchedPaths)
 
         // 1.3 Remove deleted games from the library
-        val removedGames = gameService.getAllByPaths(removedGamePaths)
+        val removedGames = library.games.filter { removedGamePaths.contains(it.metadata.path) }
         library.games.removeAll(removedGames)
 
         // 2. Download all images
