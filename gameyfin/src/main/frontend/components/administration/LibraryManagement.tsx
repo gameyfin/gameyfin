@@ -41,22 +41,24 @@ function LibraryManagementLayout({getConfig, formik}: any) {
             <ConfigFormField configElement={getConfig("library.allow-public-access")}/>
 
             <Section title="Scanning"/>
-            <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
-            <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
-            <div className="flex flex-row gap-4 items-baseline">
-                <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
+            <div className="flex flex-col gap-4">
+                <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
+                <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
+                <div className="flex flex-row gap-4 items-baseline">
+                    <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
+                </div>
+                <ConfigFormField configElement={getConfig("library.scan.game-file-extensions")}/>
             </div>
-            <ConfigFormField configElement={getConfig("library.scan.game-file-extensions")}/>
 
             <Section title="Metadata"/>
-            <div className="flex flex-row">
+            <div className="flex flex-row items-baseline">
                 <ConfigFormField configElement={getConfig("library.metadata.update.enabled")}/>
                 <ConfigFormField configElement={getConfig("library.metadata.update.schedule")}
                                  isDisabled={!formik.values.library.metadata.update.enabled}/>
             </div>
 
             <div className="flex flex-row items-baseline justify-between">
-                <h2 className={"text-xl font-bold mt-8 mb-1"}>Libraries</h2>
+                <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
                 <Tooltip content="Add new library">
                     <Button isIconOnly variant="flat" onPress={libraryCreationModal.onOpen}>
                         <Plus/>

@@ -8,7 +8,8 @@ const Input = ({label, showErrorUntouched = false, ...props}) => {
 
     return (
         <NextUiInput
-            className="min-h-20"
+            className="min-h-20 flex-grow"
+            fullWidth={false}
             {...props}
             {...field}
             id={label}
