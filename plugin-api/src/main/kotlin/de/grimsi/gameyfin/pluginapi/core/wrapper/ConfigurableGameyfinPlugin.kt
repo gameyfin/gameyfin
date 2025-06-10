@@ -57,17 +57,44 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
 
     private fun castConfigValue(meta: ConfigMetadata<*>, value: Any): Any? {
         val expectedType = meta.type
-        return if (expectedType.isEnum) {
+
+        // Handle enums
+        if (expectedType.isEnum) {
             try {
-                java.lang.Enum.valueOf(expectedType as Class<out Enum<*>>, value.toString())
+                return java.lang.Enum.valueOf(expectedType as Class<out Enum<*>>, value.toString())
             } catch (_: IllegalArgumentException) {
                 throw PluginConfigError("Invalid value '${value}', must be one of ${meta.allowedValues!!.joinToString(", ")}")
             }
-        } else {
-            if (!expectedType.isInstance(value)) {
-                throw PluginConfigError("Value for key '${meta.key}' is not of type ${expectedType.simpleName}")
+        }
+
+        // If already correct type
+        if (expectedType.isInstance(value)) return value
+
+        // Try to convert common types
+        try {
+            return when (expectedType) {
+                Int::class.java, Integer::class.java -> value.toString().toInt()
+                Float::class.java, java.lang.Float::class.java -> value.toString().toFloat()
+                Double::class.java, java.lang.Double::class.java -> value.toString().toDouble()
+                Long::class.java, java.lang.Long::class.java -> value.toString().toLong()
+                Boolean::class.java, java.lang.Boolean::class.java -> value.toString().toBooleanStrict()
+                String::class.java -> value.toString()
+                else -> {
+                    // Try valueOf(String) or parse(String) via reflection
+                    val method = expectedType.methods.find {
+                        (it.name == "valueOf" || it.name == "parse") &&
+                                it.parameterTypes.size == 1 &&
+                                it.parameterTypes[0] == String::class.java
+                    }
+                    if (method != null) {
+                        method.invoke(null, value.toString())
+                    } else {
+                        throw IllegalArgumentException()
+                    }
+                }
             }
-            value
+        } catch (_: Exception) {
+            throw PluginConfigError("Value must be of type ${expectedType.simpleName}")
         }
     }
 
