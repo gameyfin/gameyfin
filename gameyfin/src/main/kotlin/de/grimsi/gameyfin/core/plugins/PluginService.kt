@@ -85,7 +85,7 @@ class PluginService(
 
     fun setPluginPriorities(pluginPriorities: Map<String, Int>) {
         pluginPriorities.forEach { (pluginId, priority) ->
-            val pluginManagementEntry = getPluginManagementEntry(pluginId)
+            val pluginManagementEntry = pluginManager.getManagementEntry(pluginId)
             pluginManagementEntry.priority = priority
             pluginManagementRepository.save(pluginManagementEntry)
         }
@@ -155,13 +155,8 @@ class PluginService(
         return pluginManager.validatePluginConfig(pluginId, configToValidate)
     }
 
-    private fun getPluginManagementEntry(pluginId: String): PluginManagementEntry {
-        return pluginManagementRepository.findByIdOrNull(pluginId)
-            ?: throw IllegalArgumentException("Plugin with ID $pluginId not found")
-    }
-
     private fun toDto(pluginWrapper: PluginWrapper): PluginDto {
-        val pluginManagementEntry = getPluginManagementEntry(pluginWrapper.pluginId)
+        val pluginManagementEntry = pluginManager.getManagementEntry(pluginWrapper.pluginId)
 
         val hasLogo = try {
             when (pluginWrapper.plugin is GameyfinPlugin) {

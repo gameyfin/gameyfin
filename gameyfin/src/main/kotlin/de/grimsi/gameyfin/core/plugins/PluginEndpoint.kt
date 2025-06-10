@@ -24,7 +24,7 @@ class PluginEndpoint(
         else Flux.empty()
     }
 
-    fun getAll() = pluginService.getAll()
+    fun getAll() = pluginService.getAll().sortedByDescending { it.priority }
 
     fun enablePlugin(pluginId: String) = pluginService.enablePlugin(pluginId)
 

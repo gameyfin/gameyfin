@@ -17,11 +17,13 @@ class DownloadService(
     fun getProviders(): List<DownloadProviderDto> {
         return downloadPlugins.map {
             val plugin = pluginManager.whichPlugin(it.javaClass.enclosingClass)
+            val managementEntry = pluginManager.getManagementEntry(plugin.pluginId)
             val descriptor = plugin.descriptor as GameyfinPluginDescriptor
 
             DownloadProviderDto(
                 key = it.javaClass.name,
                 name = descriptor.pluginName,
+                priority = managementEntry.priority,
                 description = descriptor.pluginDescription,
                 shortDescription = descriptor.pluginShortDescription,
             )

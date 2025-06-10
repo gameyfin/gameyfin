@@ -9,6 +9,6 @@ class DownloadProviderEndpoint(
     private val downloadService: DownloadService
 ) {
     fun getProviders(): List<DownloadProviderDto> {
-        return downloadService.getProviders()
+        return downloadService.getProviders().sortedByDescending { it.priority }
     }
 }

@@ -209,6 +209,11 @@ class GameyfinPluginManager(
             .map { it.simpleName }
     }
 
+    fun getManagementEntry(pluginId: String): PluginManagementEntry {
+        return pluginManagementRepository.findByIdOrNull(pluginId)
+            ?: throw IllegalArgumentException("Plugin with ID $pluginId not found")
+    }
+
     private fun configurePlugin(pluginWrapper: PluginWrapper) {
         val plugin = pluginWrapper.plugin
         if (plugin is Configurable) {

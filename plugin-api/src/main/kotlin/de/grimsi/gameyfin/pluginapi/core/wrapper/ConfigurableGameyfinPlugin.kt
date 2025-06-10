@@ -55,6 +55,14 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
         }
     }
 
+    override fun <T : Serializable> config(key: String): T {
+        val value = optionalConfig<T>(key)
+        if (value == null) {
+            throw PluginConfigError("Required configuration key '$key' is missing or has no value")
+        }
+        return value
+    }
+
     private fun castConfigValue(meta: ConfigMetadata<*>, value: Any): Any? {
         val expectedType = meta.type
 
@@ -96,14 +104,6 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
         } catch (_: Exception) {
             throw PluginConfigError("Value must be of type ${expectedType.simpleName}")
         }
-    }
-
-    override fun <T : Serializable> config(key: String): T {
-        val value = optionalConfig<T>(key)
-        if (value == null) {
-            throw PluginConfigError("Required configuration key '$key' is missing or has no value")
-        }
-        return value
     }
 
     private fun resolveMetadata(key: String): ConfigMetadata<*> {
