@@ -1,7 +1,7 @@
-package de.grimsi.gameyfin.plugins.steam.mapper
+package de.grimsi.gameyfinplugins.steam.mapper
 
 import de.grimsi.gameyfin.pluginapi.gamemetadata.Genre
-import de.grimsi.gameyfin.plugins.steam.dto.SteamGenre
+import de.grimsi.gameyfinplugins.steam.dto.SteamGenre
 
 class Mapper {
     companion object {

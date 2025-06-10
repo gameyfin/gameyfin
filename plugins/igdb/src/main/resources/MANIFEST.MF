@@ -1,5 +1,5 @@
-Plugin-Version: 1.0.0-alpha7
-Plugin-Class: de.grimsi.gameyfin.plugins.igdb.IgdbPlugin
+Plugin-Version: 1.0.0-alpha8
+Plugin-Class: de.grimsi.gameyfinplugins.igdb.IgdbPlugin
 Plugin-Id: de.grimsi.gameyfin.igdb
 Plugin-Name: IGDB Metadata
 Plugin-Description: Fetches metadata from IGDB.<br>

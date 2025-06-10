@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.plugins.steamgriddb.dto
+package de.grimsi.gameyfinplugins.steamgriddb.dto
 
 import kotlinx.serialization.Serializable
 

@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.plugins.directdownload
+package de.grimsi.gameyfinplugins.directdownload
 
 import de.grimsi.gameyfin.pluginapi.core.config.ConfigMetadata
 import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigMetadata

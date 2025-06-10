@@ -1,5 +1,5 @@
-Plugin-Version: 1.0.0-alpha7
-Plugin-Class: de.grimsi.gameyfin.plugins.steam.SteamPlugin
+Plugin-Version: 1.0.0-alpha8
+Plugin-Class: de.grimsi.gameyfinplugins.steam.SteamPlugin
 Plugin-Id: de.grimsi.gameyfin.steam
 Plugin-Name: Steam Metadata
 Plugin-Description: Fetches metadata from Steam using undocumented public API endpoints.<br>

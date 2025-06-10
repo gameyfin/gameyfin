@@ -1,12 +1,12 @@
-package de.grimsi.gameyfin.plugins.steamgriddb
+package de.grimsi.gameyfinplugins.steamgriddb
 
 import de.grimsi.gameyfin.pluginapi.core.config.*
 import de.grimsi.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
-import de.grimsi.gameyfin.plugins.steamgriddb.api.SteamGridDbApiClient
-import de.grimsi.gameyfin.plugins.steamgriddb.dto.SteamGridDbGame
-import de.grimsi.gameyfin.plugins.steamgriddb.dto.SteamGridDbGrid
+import de.grimsi.gameyfinplugins.steamgriddb.api.SteamGridDbApiClient
+import de.grimsi.gameyfinplugins.steamgriddb.dto.SteamGridDbGame
+import de.grimsi.gameyfinplugins.steamgriddb.dto.SteamGridDbGrid
 import kotlinx.coroutines.runBlocking
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper

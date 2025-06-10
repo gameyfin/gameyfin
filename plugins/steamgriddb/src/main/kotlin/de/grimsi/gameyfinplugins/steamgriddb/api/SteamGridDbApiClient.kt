@@ -1,7 +1,7 @@
-package de.grimsi.gameyfin.plugins.steamgriddb.api
+package de.grimsi.gameyfinplugins.steamgriddb.api
 
-import de.grimsi.gameyfin.plugins.steamgriddb.dto.SteamGridDbGridResult
-import de.grimsi.gameyfin.plugins.steamgriddb.dto.SteamGridDbSearchResult
+import de.grimsi.gameyfinplugins.steamgriddb.dto.SteamGridDbGridResult
+import de.grimsi.gameyfinplugins.steamgriddb.dto.SteamGridDbSearchResult
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*

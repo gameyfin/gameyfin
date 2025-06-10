@@ -1,6 +1,5 @@
 plugins {
     id("com.google.devtools.ksp")
-    kotlin("plugin.serialization")
 }
 
 dependencies {

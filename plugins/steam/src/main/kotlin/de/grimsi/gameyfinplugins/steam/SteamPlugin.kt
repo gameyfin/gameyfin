@@ -1,12 +1,12 @@
-package de.grimsi.gameyfin.plugins.steam
+package de.grimsi.gameyfinplugins.steam
 
 import de.grimsi.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
-import de.grimsi.gameyfin.plugins.steam.dto.SteamDetailsResultWrapper
-import de.grimsi.gameyfin.plugins.steam.dto.SteamGame
-import de.grimsi.gameyfin.plugins.steam.dto.SteamSearchResult
-import de.grimsi.gameyfin.plugins.steam.mapper.Mapper
+import de.grimsi.gameyfinplugins.steam.dto.SteamDetailsResultWrapper
+import de.grimsi.gameyfinplugins.steam.dto.SteamGame
+import de.grimsi.gameyfinplugins.steam.dto.SteamSearchResult
+import de.grimsi.gameyfinplugins.steam.mapper.Mapper
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*

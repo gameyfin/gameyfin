@@ -1,5 +1,5 @@
-Plugin-Version: 1.0.0-alpha4
-Plugin-Class: de.grimsi.gameyfin.plugins.steamgriddb.SteamGridDbPlugin
+Plugin-Version: 1.0.0-alpha5
+Plugin-Class: de.grimsi.gameyfinplugins.steamgriddb.SteamGridDbPlugin
 Plugin-Id: de.grimsi.gameyfin.steamgriddb
 Plugin-Name: SteamGridDB Covers
 Plugin-Description: Fetches covers from SteamGridDB.<br>

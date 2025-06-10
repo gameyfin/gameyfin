@@ -1,11 +1,14 @@
-package de.grimsi.gameyfin.plugins.igdb
+package de.grimsi.gameyfinplugins.igdb
 
 import com.api.igdb.apicalypse.APICalypse
 import com.api.igdb.exceptions.RequestException
 import com.api.igdb.request.IGDBWrapper
 import com.api.igdb.request.TwitchAuthenticator
 import com.api.igdb.request.games
-import de.grimsi.gameyfin.pluginapi.core.config.*
+import de.grimsi.gameyfin.pluginapi.core.config.ConfigMetadata
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigError
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigMetadata
+import de.grimsi.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import de.grimsi.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
@@ -38,9 +41,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
     override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
         val pluginConfigValidationResult = super.validateConfig(config)
 
-        if (pluginConfigValidationResult.result == PluginConfigValidationResultType.INVALID) {
-            return pluginConfigValidationResult
-        }
+        if (!pluginConfigValidationResult.isValid()) return pluginConfigValidationResult
 
         try {
             val clientIdToValidate = config["clientId"]

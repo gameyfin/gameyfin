@@ -1,4 +1,4 @@
-package de.grimsi.gameyfin.plugins.igdb
+package de.grimsi.gameyfinplugins.igdb
 
 import com.api.igdb.utils.ImageSize
 import com.api.igdb.utils.ImageType
