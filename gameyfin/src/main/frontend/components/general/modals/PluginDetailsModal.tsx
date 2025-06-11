@@ -88,7 +88,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                 <table className="text-left table-auto">
                                                     <tbody>
                                                     {Object.entries({
-                                                        "Author": plugin.author,
+                                                        "Author(s)": plugin.author,
                                                         "Version": plugin.version,
                                                         "License": plugin.license,
                                                         "URL": <Link isExternal
