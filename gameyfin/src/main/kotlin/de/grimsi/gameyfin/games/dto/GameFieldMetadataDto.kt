@@ -1,11 +1,10 @@
 package de.grimsi.gameyfin.games.dto
 
-import java.io.Serializable
 import java.time.Instant
 
 class GameFieldMetadataDto(
     val type: GameFieldMetadataType,
-    val source: Serializable,
+    val source: String,
     val updatedAt: Instant
 )
 

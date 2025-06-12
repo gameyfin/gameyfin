@@ -13,7 +13,7 @@ class GameFieldMetadata(
     var id: Long? = null,
 
     @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
-    val source: GameFieldSource,
+    var source: GameFieldSource,
 
     @UpdateTimestamp
     var updatedAt: Instant? = Instant.now()

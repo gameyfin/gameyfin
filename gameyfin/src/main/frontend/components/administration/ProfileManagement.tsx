@@ -97,7 +97,7 @@ export default function ProfileManagement() {
                                 <Button
                                     color="primary"
                                     isLoading={formik.isSubmitting}
-                                    disabled={formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
+                                    isDisabled={formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
                                     type="submit"
                                 >
                                     {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}

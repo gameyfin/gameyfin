@@ -4,6 +4,7 @@ import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
 import de.grimsi.gameyfin.games.dto.GameDto
 import de.grimsi.gameyfin.games.dto.GameEvent
+import de.grimsi.gameyfin.games.dto.GameSearchResultDto
 import de.grimsi.gameyfin.games.dto.GameUpdateDto
 import de.grimsi.gameyfin.libraries.LibraryService
 import jakarta.annotation.security.PermitAll
@@ -29,5 +30,10 @@ class GameEndpoint(
     fun deleteGame(gameId: Long) {
         libraryService.deleteGameFromLibrary(gameId)
         gameService.delete(gameId)
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
+        return gameService.getPotentialMatches(searchTerm)
     }
 }

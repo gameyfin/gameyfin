@@ -2,6 +2,7 @@ import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/Libr
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {
     Button,
+    Link,
     Pagination,
     Select,
     SelectItem,
@@ -11,14 +12,17 @@ import {
     TableColumn,
     TableHeader,
     TableRow,
-    Tooltip
+    Tooltip,
+    useDisclosure
 } from "@heroui/react";
-import {CheckCircle, Pencil, Trash} from "@phosphor-icons/react";
+import {CheckCircle, MagnifyingGlass, Pencil, Trash} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import GameUpdateDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameUpdateDto";
 import {useMemo, useState} from "react";
+import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
+import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 
 interface LibraryManagementGamesProps {
     library: LibraryDto;
@@ -31,6 +35,10 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameDto[] : [];
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
 
+    const [selectedGame, setSelectedGame] = useState<GameDto>(games[0]);
+    const editGameModal = useDisclosure();
+    const matchGameModal = useDisclosure();
+
     const [page, setPage] = useState(1);
     const pages = useMemo(() => {
         return Math.ceil(getFilteredGames().length / rowsPerPage);
@@ -42,6 +50,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
 
         return getFilteredGames().slice(start, end);
     }, [page, games, filter]);
+
 
     function getFilteredGames() {
         if (filter === "confirmed") {
@@ -98,6 +107,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
             <TableHeader>
                 <TableColumn allowsSorting>Game</TableColumn>
                 <TableColumn allowsSorting>Added to library</TableColumn>
+                <TableColumn allowsSorting>Download count</TableColumn>
                 <TableColumn>Path</TableColumn>
                 {/* width={1} keeps the column as far to the right as possible*/}
                 <TableColumn width={1}>Actions</TableColumn>
@@ -106,10 +116,17 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 {(item) => (
                     <TableRow key={item.id}>
                         <TableCell>
-                            {item.title} ({item.release !== undefined ? new Date(item.release).getFullYear() : "unknown"})
+                            <Link href={`/game/${item.id}`}
+                                  color="foreground"
+                                  className="text-sm"
+                                  underline="hover">{item.title} ({item.release !== undefined ? new Date(item.release).getFullYear() : "unknown"})
+                            </Link>
                         </TableCell>
                         <TableCell>
                             {new Date(item.createdAt).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                            {item.metadata.downloadCount}
                         </TableCell>
                         <TableCell>
                             {item.metadata.path}
@@ -124,13 +141,38 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                         <CheckCircle/>
                                     </Tooltip>}
                             </Button>
-                            <Button isIconOnly size="sm" isDisabled={true}><Pencil/></Button>
+                            <Button isIconOnly size="sm" onPress={() => {
+                                setSelectedGame(item);
+                                editGameModal.onOpenChange();
+                            }}>
+                                <Tooltip content="Edit metadata">
+                                    <Pencil/>
+                                </Tooltip>
+                            </Button>
+                            <Button isIconOnly size="sm" onPress={() => {
+                                setSelectedGame(item);
+                                matchGameModal.onOpenChange();
+                            }}>
+                                <Tooltip content="Match game">
+                                    <MagnifyingGlass/>
+                                </Tooltip>
+                            </Button>
                             <Button isIconOnly size="sm" color="danger"
-                                    onPress={() => deleteGame(item)}><Trash/></Button>
+                                    onPress={() => deleteGame(item)}>
+                                <Tooltip content="Remove from library">
+                                    <Trash/>
+                                </Tooltip>
+                            </Button>
                         </TableCell>
                     </TableRow>
                 )}
             </TableBody>
         </Table>
+        <EditGameMetadataModal game={selectedGame}
+                               isOpen={editGameModal.isOpen}
+                               onOpenChange={editGameModal.onOpenChange}/>
+        <MatchGameModal initialSearchTerm={selectedGame.title}
+                        isOpen={matchGameModal.isOpen}
+                        onOpenChange={matchGameModal.onOpenChange}/>
     </div>;
 }

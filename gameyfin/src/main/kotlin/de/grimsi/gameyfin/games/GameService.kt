@@ -12,6 +12,7 @@ import de.grimsi.gameyfin.games.entities.*
 import de.grimsi.gameyfin.games.repositories.GameRepository
 import de.grimsi.gameyfin.libraries.Library
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import de.grimsi.gameyfin.users.UserService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -20,11 +21,14 @@ import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.apache.commons.io.FilenameUtils
 import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
+import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
@@ -35,7 +39,8 @@ class GameService(
     private val pluginService: PluginService,
     private val config: ConfigService,
     private val companyService: CompanyService,
-    private val gameRepository: GameRepository
+    private val gameRepository: GameRepository,
+    private val userService: UserService
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
@@ -86,10 +91,24 @@ class GameService(
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
 
+        val userDetails = SecurityContextHolder.getContext().authentication.principal as UserDetails
+        val user = userService.getByUsernameNonNull(userDetails.username)
+
         // Update only non-null fields
-        gameUpdateDto.title?.let { existingGame.title = it }
-        gameUpdateDto.comment?.let { existingGame.comment = it }
-        gameUpdateDto.summary?.let { existingGame.summary = it }
+        gameUpdateDto.title?.let {
+            existingGame.title = it
+            existingGame.metadata.fields["title"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.comment?.let {
+            existingGame.comment = it
+            existingGame.metadata.fields["comment"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.summary?.let {
+            existingGame.summary = it
+            existingGame.metadata.fields["summary"]?.source = GameFieldUserSource(user = user)
+        }
+
+
         gameUpdateDto.metadata?.let { metadata ->
             metadata.matchConfirmed?.let { existingGame.metadata.matchConfirmed = it }
         }
@@ -99,6 +118,79 @@ class GameService(
 
     fun delete(gameId: Long) {
         gameRepository.deleteById(gameId)
+    }
+
+    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
+        // 1. Query all plugins for up to 5 results each
+        val results = metadataPlugins.flatMap { plugin ->
+            try {
+                plugin.fetchMetadata(searchTerm, 5)
+                    // Filter out invalid results (null release or coverUrl)
+                    .filter { it.release != null && it.coverUrl != null }
+                    .map { plugin to it }
+            } catch (e: Exception) {
+                log.error(e) { "Error fetching metadata for game with plugin ${plugin.javaClass.name}" }
+                emptyList()
+            }
+        }
+
+        // 2. Group by title, release year, and release month
+        data class GroupKey(val title: String, val year: Int?, val month: Int?)
+
+        fun PluginApiMetadata.groupKey(): GroupKey {
+            val releaseZdt = this.release?.atZone(ZoneId.systemDefault())
+
+            return GroupKey(
+                title = this.title.normalizeGameTitle(),
+                year = releaseZdt?.year,
+                month = releaseZdt?.monthValue
+            )
+        }
+
+        val grouped = results.groupBy { (_, metadata) -> metadata.groupKey() }
+
+        // 3. Merge each group into one GameSearchResultDto using plugin priorities
+        val providerToManagementEntry =
+            results.toMap().entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
+
+        fun pluginPriority(plugin: GameMetadataProvider) = providerToManagementEntry[plugin]?.priority ?: 0
+
+        fun mergeGroup(group: List<Pair<GameMetadataProvider, PluginApiMetadata>>): GameSearchResultDto {
+            val sorted = group.sortedByDescending { (provider, _) -> pluginPriority(provider) }
+
+            fun <T> pick(selector: (PluginApiMetadata) -> T?): T? = sorted.firstNotNullOfOrNull { selector(it.second) }
+            fun <T> pickList(selector: (PluginApiMetadata) -> List<T>?): List<T>? =
+                sorted.mapNotNull { selector(it.second) }.firstOrNull { it.isNotEmpty() }
+
+            // Collect originalIds for this group
+            val originalIds: Map<String, String> = group
+                .mapNotNull { (provider, metadata) ->
+                    val pluginId = providerToManagementEntry[provider]?.pluginId
+                    val originalId = metadata.originalId
+                    if (pluginId != null) pluginId to originalId else null
+                }
+                .toMap()
+
+            return GameSearchResultDto(
+                title = pick { it.title }!!,
+                coverUrl = pick { it.coverUrl.toString() }!!,
+                release = pick { it.release }!!,
+                publishers = pickList { it.publishedBy?.toList() },
+                developers = pickList { it.developedBy?.toList() },
+                originalIds = originalIds
+            )
+        }
+
+        // 4. Sort & return merged results
+        val mergedResults = grouped.values.map { mergeGroup(it) }
+
+        return mergedResults
+            .map { result ->
+                val ratio = FuzzySearch.ratio(searchTerm, result.title)
+                result to ratio
+            }
+            .sortedByDescending { it.second }
+            .map { it.first }
     }
 
     fun matchFromFile(path: Path, library: Library): Game? {
@@ -132,9 +224,8 @@ class GameService(
         return gameRepository.findByIdOrNull(id) ?: throw IllegalArgumentException("Game with id $id not found")
     }
 
-    fun setMatchConfirmed(gameId: Long, confirmed: Boolean) {
-        val game = getById(gameId)
-        game.metadata.matchConfirmed = confirmed
+    fun incrementDownloadCount(game: Game) {
+        game.metadata.downloadCount++
         gameRepository.save(game)
     }
 
@@ -352,7 +443,7 @@ fun Game.toDto(): GameDto {
             is GameFieldUserSource -> {
                 GameFieldMetadataDto(
                     type = GameFieldMetadataType.USER,
-                    source = source.user.id!!,
+                    source = source.user.username,
                     updatedAt = fieldMetadata.updatedAt!!
                 )
             }

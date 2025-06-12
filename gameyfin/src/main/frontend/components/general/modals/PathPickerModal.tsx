@@ -63,7 +63,7 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                                         </Button>
                                         <Button color="primary"
                                                 isLoading={formik.isSubmitting}
-                                                disabled={formik.isSubmitting}
+                                                isDisabled={formik.isSubmitting}
                                                 type="submit"
                                         >
                                             {formik.isSubmitting ? "" : "Select"}
