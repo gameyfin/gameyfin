@@ -60,13 +60,6 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             isRequired = false
         ),
         ConfigMetadata(
-            key = "trackerSsl",
-            label = "Use SSL for tracker",
-            description = "Enables use of SSL for the torrent tracker",
-            type = Boolean::class.java,
-            default = false
-        ),
-        ConfigMetadata(
             key = "privateMode",
             label = "Create torrents with private mode enabled",
             description = "Enables private mode for the torrent tracker according to BEP-27",
@@ -137,7 +130,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
     }
 
     private fun getTrackerUri(): URI {
-        val protocol = if (config("trackerSsl")) "https" else "http"
+        val protocol = "http" // No SSL support in ttorrent: https://github.com/mpetazzoni/ttorrent/issues/4
         val host = getHostname().getCanonicalHostName()
         val port = config<Int>("trackerPort")
         val path = "announce"
