@@ -124,7 +124,7 @@ class GameService(
         // 1. Query all plugins for up to 5 results each
         val results = metadataPlugins.flatMap { plugin ->
             try {
-                plugin.fetchMetadata(searchTerm, 5)
+                plugin.fetchByTitle(searchTerm, 5)
                     // Filter out invalid results (null release or coverUrl)
                     .filter { it.release != null && it.coverUrl != null }
                     .map { plugin to it }
@@ -240,7 +240,7 @@ class GameService(
                 metadataPlugins.associateWith {
                     async {
                         try {
-                            it.fetchMetadata(gameTitle).firstOrNull()
+                            it.fetchByTitle(gameTitle).firstOrNull()
                         } catch (e: Exception) {
                             log.error(e) { "Error fetching metadata for game with plugin ${it.javaClass.name}" }
                             null

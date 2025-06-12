@@ -48,14 +48,19 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
          * The Steam Store API I am using provides far less info than IGDB for example
          * See it more as a proof of concept than a fully functional plugin
          **/
-        override fun fetchMetadata(gameId: String, maxResults: Int): List<GameMetadata> {
-            val searchResult: List<SteamGame> = runBlocking { searchStore(gameId) }
+        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
+            val searchResult: List<SteamGame> = runBlocking { searchStore(gameTitle) }
             if (searchResult.isEmpty()) return emptyList()
 
-            val bestMatchingTitles = FuzzySearch.extractTop(gameId, searchResult.map { it.name }, maxResults)
+            val bestMatchingTitles = FuzzySearch.extractTop(gameTitle, searchResult.map { it.name }, maxResults)
             val bestMatches = bestMatchingTitles.mapNotNull { title -> searchResult.find { it.name == title.string } }
 
             return runBlocking { bestMatches.map { getGameDetails(it.id) } }.filterNotNull()
+        }
+
+        override fun fetchById(id: String): GameMetadata? {
+            val id = id.toIntOrNull() ?: return null
+            return runBlocking { getGameDetails(id) }
         }
 
         private suspend fun searchStore(title: String): List<SteamGame> {

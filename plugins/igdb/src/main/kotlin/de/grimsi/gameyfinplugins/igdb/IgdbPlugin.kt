@@ -126,37 +126,52 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
             ).joinToString(",")
         }
 
-        override fun fetchMetadata(gameId: String, maxResults: Int): List<GameMetadata> {
-            try {
-                // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
-                val searchByNameQuery = APICalypse()
-                    .fields(QUERY_FIELDS)
-                    .limit(100)
-                    .search(gameId)
+        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
+            // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
+            val searchByNameQuery = APICalypse()
+                .fields(QUERY_FIELDS)
+                .limit(100)
+                .search(gameTitle)
 
-                // Use IGDBs search function to get a list of games that match the search query
-                var games = IGDBWrapper.games(searchByNameQuery)
+            // Use IGDBs search function to get a list of games that match the search query
+            var games = queryIgdbGames(searchByNameQuery)
 
-                if (games.isEmpty()) return emptyList()
+            if (games.isEmpty()) return emptyList()
 
-                // Use fuzzy search to find the best matching game name
-                val bestMatchingTitles = FuzzySearch.extractTop(gameId, games.map { it.name }, maxResults)
-                games = bestMatchingTitles.mapNotNull { title -> games.find { it.name == title.string } }
+            // Use fuzzy search to find the best matching game name
+            val bestMatchingTitles = FuzzySearch.extractTop(gameTitle, games.map { it.name }, maxResults)
+            games = bestMatchingTitles.mapNotNull { title -> games.find { it.name == title.string } }
 
-                return games.map { toGameMetadata(it) }
+            return games.map { toGameMetadata(it) }
+        }
+
+        override fun fetchById(id: String): GameMetadata? {
+            // For slug we can limit the results to 1, since slugs are unique
+            val findBySlugQuery = APICalypse()
+                .fields(QUERY_FIELDS)
+                .limit(1)
+                .where("slug = \"$id\"")
+
+            val game = queryIgdbGames(findBySlugQuery).firstOrNull()
+            return game?.let { toGameMetadata(it) }
+        }
+
+        private fun queryIgdbGames(query: APICalypse): List<Game> {
+            return try {
+                IGDBWrapper.games(query)
             } catch (e: RequestException) {
                 // FIXME: Handle rate limit errors with exponential backoff
                 if (e.statusCode == 429) {
                     val randomInterval = (1..5).random().toLong()
                     log.warn("IGDB rate limit exceeded, retrying in $randomInterval seconds...")
                     TimeUnit.SECONDS.sleep(randomInterval)
-                    return fetchMetadata(gameId, maxResults)
+                    
+                    queryIgdbGames(query)
                 }
 
                 log.error("Request to IGDB API failed with HTTP ${e.statusCode}")
+                emptyList()
             }
-
-            return emptyList()
         }
 
         private fun toGameMetadata(game: Game): GameMetadata {

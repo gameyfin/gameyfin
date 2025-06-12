@@ -51,6 +51,10 @@ class SteamGridDbApiClient(private val apiKey: String) {
         }.body()
     }
 
+    suspend fun game(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbSearchResult {
+        return get("games/id/$gameId", block).body()
+    }
+
     private suspend fun get(endpoint: String, block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
         return client.get("$BASE_URL/$endpoint".encodeURLPath(encodeEncoded = false)) {
             bearerAuth(apiKey)

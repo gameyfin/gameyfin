@@ -72,9 +72,9 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
     @Extension
     class SteamGridDBGameCoverProvider : GameMetadataProvider {
 
-        override fun fetchMetadata(gameId: String, maxResults: Int): List<GameMetadata> {
+        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
             return runBlocking {
-                var searchResults = searchSteamGridDb(gameId)
+                var searchResults = searchSteamGridDb(gameTitle)
 
                 if (searchResults.isEmpty()) return@runBlocking emptyList()
                 if (searchResults.size > maxResults) searchResults = searchResults.slice(0 until maxResults)
@@ -88,6 +88,19 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                         )
                     }
                     .filter { it.coverUrl != null }
+            }
+        }
+
+        override fun fetchById(id: String): GameMetadata? {
+            return runBlocking {
+                val gameId = id.toIntOrNull() ?: return@runBlocking null
+                val game = getGameById(gameId) ?: return@runBlocking null
+
+                return@runBlocking GameMetadata(
+                    originalId = game.id.toString(),
+                    title = game.name,
+                    coverUrl = getGridForGame(game.id)?.let { grid -> URI(grid.url) }
+                )
             }
         }
 
@@ -107,6 +120,14 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
             val client = client ?: throw PluginConfigError("SteamGridDB API client not initialized")
 
             val gameDetails = client.grids(gameId)
+
+            return gameDetails.data?.firstOrNull()
+        }
+
+        private suspend fun getGameById(gameId: Int): SteamGridDbGame? {
+            val client = client ?: throw PluginConfigError("SteamGridDB API client not initialized")
+
+            val gameDetails = client.game(gameId)
 
             return gameDetails.data?.firstOrNull()
         }
