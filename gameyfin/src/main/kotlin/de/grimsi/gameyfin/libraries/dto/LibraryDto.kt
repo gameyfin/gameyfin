@@ -5,5 +5,6 @@ data class LibraryDto(
     val name: String,
     val directories: List<DirectoryMappingDto>,
     val games: List<Long>?,
-    val stats: LibraryStatsDto?
+    val stats: LibraryStatsDto?,
+    val unmatchedPaths: List<String>? = emptyList()
 )

@@ -78,6 +78,8 @@ class Game(
 
     @Embedded
     var metadata: GameMetadata
+
+
 ) {
     constructor(path: Path, library: Library) : this(library = library, metadata = GameMetadata(path = path.toString()))
 }

@@ -1,28 +1,108 @@
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow} from "@heroui/react";
+import {
+    Button,
+    Pagination,
+    Select,
+    SelectItem,
+    Table,
+    TableBody,
+    TableCell,
+    TableColumn,
+    TableHeader,
+    TableRow,
+    Tooltip
+} from "@heroui/react";
 import {CheckCircle, Pencil, Trash} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
+import {GameEndpoint} from "Frontend/generated/endpoints";
+import GameUpdateDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameUpdateDto";
+import {useMemo, useState} from "react";
 
 interface LibraryManagementGamesProps {
     library: LibraryDto;
 }
 
 export default function LibraryManagementGames({library}: LibraryManagementGamesProps) {
+    const rowsPerPage = 25;
+
     const state = useSnapshot(gameState);
-    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameDto[] : undefined;
+    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameDto[] : [];
+    const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
+
+    const [page, setPage] = useState(1);
+    const pages = useMemo(() => {
+        return Math.ceil(getFilteredGames().length / rowsPerPage);
+    }, [games, filter]);
+
+    const items = useMemo(() => {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        return getFilteredGames().slice(start, end);
+    }, [page, games, filter]);
+
+    function getFilteredGames() {
+        if (filter === "confirmed") {
+            return games.filter(g => g.metadata.matchConfirmed);
+        }
+        if (filter === "nonConfirmed") {
+            return games.filter(g => !g.metadata.matchConfirmed);
+        }
+        return games;
+    }
+
+    async function toggleMatchConfirmed(game: GameDto) {
+        await GameEndpoint.updateGame(
+            {
+                id: game.id,
+                metadata: {matchConfirmed: !game.metadata.matchConfirmed}
+            } as GameUpdateDto
+        )
+    }
+
+    async function deleteGame(game: GameDto) {
+        await GameEndpoint.deleteGame(game.id);
+    }
 
     return <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Manage games in library</h1>
-        <Table removeWrapper isStriped isHeaderSticky>
+        <div className="flex flex-row gap-2 justify-end">
+            <Select
+                selectedKeys={[filter]}
+                disallowEmptySelection
+                onSelectionChange={keys => setFilter(Array.from(keys)[0] as any)}
+                className="w-64"
+            >
+                <SelectItem key="all">Show all</SelectItem>
+                <SelectItem key="confirmed">Show only confirmed</SelectItem>
+                <SelectItem key="nonConfirmed">Show only non confirmed</SelectItem>
+            </Select>
+        </div>
+        <Table removeWrapper isStriped isHeaderSticky
+               bottomContent={
+                   <div className="flex w-full justify-center">
+                       {items.length > 0 &&
+                           <Pagination
+                               isCompact
+                               showControls
+                               showShadow
+                               color="primary"
+                               page={page}
+                               total={pages}
+                               onChange={(page) => setPage(page)}
+                           />}
+                   </div>
+               }>
             <TableHeader>
                 <TableColumn allowsSorting>Game</TableColumn>
                 <TableColumn allowsSorting>Added to library</TableColumn>
                 <TableColumn>Path</TableColumn>
-                <TableColumn>Actions</TableColumn>
+                {/* width={1} keeps the column as far to the right as possible*/}
+                <TableColumn width={1}>Actions</TableColumn>
             </TableHeader>
-            <TableBody emptyContent="This library is empty." items={games}>
+            <TableBody emptyContent="Your filter did not match any games." items={items}>
                 {(item) => (
                     <TableRow key={item.id}>
                         <TableCell>
@@ -35,9 +115,18 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                             {item.metadata.path}
                         </TableCell>
                         <TableCell className="flex flex-row gap-2">
-                            <Button isIconOnly size="sm" isDisabled={true}><CheckCircle/></Button>
+                            <Button isIconOnly size="sm" onPress={() => toggleMatchConfirmed(item)}>
+                                {item.metadata.matchConfirmed ?
+                                    <Tooltip content="Unconfirm match">
+                                        <CheckCircle weight="fill" className="fill-success"/>
+                                    </Tooltip> :
+                                    <Tooltip content="Confirm match">
+                                        <CheckCircle/>
+                                    </Tooltip>}
+                            </Button>
                             <Button isIconOnly size="sm" isDisabled={true}><Pencil/></Button>
-                            <Button isIconOnly size="sm" isDisabled={true} color="danger"><Trash/></Button>
+                            <Button isIconOnly size="sm" color="danger"
+                                    onPress={() => deleteGame(item)}><Trash/></Button>
                         </TableCell>
                     </TableRow>
                 )}

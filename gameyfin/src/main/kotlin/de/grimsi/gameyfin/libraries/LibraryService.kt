@@ -11,6 +11,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.time.Instant
 import java.util.concurrent.Callable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -85,8 +86,12 @@ class LibraryService(
      * @param library: The library to create or update.
      * @return The created or updated LibraryDto object.
      */
-    fun create(library: LibraryDto) {
-        libraryRepository.save(toEntity(library))
+    fun create(library: LibraryDto, scanAfterCreation: Boolean) {
+        val newLibrary = libraryRepository.save(toEntity(library))
+
+        if (scanAfterCreation) {
+            triggerScanSingleLibrary(ScanType.QUICK, newLibrary)
+        }
     }
 
     /**
@@ -97,19 +102,24 @@ class LibraryService(
      * @throws IllegalArgumentException if the library ID is null or the library is not found.
      */
     fun update(libraryUpdateDto: LibraryUpdateDto) {
-        val existingLibrary = libraryRepository.findByIdOrNull(libraryUpdateDto.id)
+        var library = libraryRepository.findByIdOrNull(libraryUpdateDto.id)
             ?: throw IllegalArgumentException("Library with ID $libraryUpdateDto.id not found")
 
         // Update only non-null fields
-        libraryUpdateDto.name?.let { existingLibrary.name = it }
+        libraryUpdateDto.name?.let { library.name = it }
         libraryUpdateDto.directories?.let {
-            existingLibrary.directories.clear()
-            existingLibrary.directories.addAll(
+            library.directories.clear()
+            library.directories.addAll(
                 it.map { d -> DirectoryMapping(internalPath = d.internalPath, externalPath = d.externalPath) }
             )
         }
+        libraryUpdateDto.unmatchedPaths?.let {
+            library.unmatchedPaths.clear()
+            library.unmatchedPaths.addAll(it)
+        }
 
-        libraryRepository.save(existingLibrary)
+        library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
+        libraryRepository.save(library)
     }
 
     /**
@@ -119,6 +129,17 @@ class LibraryService(
      */
     fun delete(libraryId: Long) {
         libraryRepository.deleteById(libraryId)
+    }
+
+    fun deleteGameFromLibrary(gameId: Long) {
+        val game = gameService.getById(gameId)
+        var library = game.library
+
+        library.games.removeIf { it.id == gameId }
+        library.unmatchedPaths.add(game.metadata.path)
+        
+        library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
+        libraryRepository.save(library)
     }
 
     /**
@@ -131,6 +152,10 @@ class LibraryService(
                 ScanType.FULL -> TODO()
             }
         }
+    }
+
+    fun triggerScanSingleLibrary(scanType: ScanType, library: Library) {
+        triggerScan(scanType, listOf(library.toDto()))
     }
 
     /**
@@ -287,6 +312,7 @@ class LibraryService(
         addGamesToLibrary(persistedGames, library)
 
         // 6. Persist library
+        library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
         libraryRepository.save(library)
 
         progress.currentStep = LibraryScanStep(description = "Finished")
@@ -340,6 +366,7 @@ fun Library.toDto(): LibraryDto {
         name = this.name,
         directories = this.directories.map { DirectoryMappingDto(it.internalPath, it.externalPath) },
         games = this.games.mapNotNull { it.id },
-        stats = statsDto
+        stats = statsDto,
+        unmatchedPaths = this.unmatchedPaths
     )
 }

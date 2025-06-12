@@ -5,4 +5,5 @@ data class GameUpdateDto(
     val title: String?,
     val comment: String?,
     val summary: String?,
+    val metadata: GameUpdateMetadataDto?
 )

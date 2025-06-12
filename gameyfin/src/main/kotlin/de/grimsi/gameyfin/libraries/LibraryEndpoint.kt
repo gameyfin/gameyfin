@@ -37,7 +37,8 @@ class LibraryEndpoint(
         libraryService.triggerScan(scanType, libraries)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun createLibrary(library: LibraryDto) = libraryService.create(library)
+    fun createLibrary(library: LibraryDto, scanAfterCreation: Boolean = true) =
+        libraryService.create(library, scanAfterCreation)
 
     @RolesAllowed(Role.Names.ADMIN)
     fun updateLibrary(library: LibraryUpdateDto) = libraryService.update(library)

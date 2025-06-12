@@ -16,5 +16,7 @@ class GameMetadata(
     @ElementCollection
     var originalIds: Map<PluginManagementEntry, String> = emptyMap(),
 
-    var downloadCount: Int = 0
+    var downloadCount: Int = 0,
+
+    var matchConfirmed: Boolean = false
 )

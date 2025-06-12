@@ -8,5 +8,6 @@ class GameMetadataDto(
     val fileSize: Long,
     val fields: Map<String, GameFieldMetadataDto>?,
     val originalIds: Map<String, String>?,
-    val downloadCount: Int
+    val downloadCount: Int,
+    val matchConfirmed: Boolean
 )

@@ -3,6 +3,9 @@ package de.grimsi.gameyfin.libraries
 import de.grimsi.gameyfin.games.entities.Game
 import de.grimsi.gameyfin.games.entities.LibraryEntityListener
 import jakarta.persistence.*
+import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.UpdateTimestamp
+import java.time.Instant
 
 @Entity
 @EntityListeners(LibraryEntityListener::class)
@@ -10,6 +13,13 @@ class Library(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    var createdAt: Instant? = null,
+
+    @UpdateTimestamp
+    var updatedAt: Instant? = null,
 
     var name: String,
 
@@ -20,5 +30,5 @@ class Library(
     var games: MutableList<Game> = ArrayList(),
 
     @ElementCollection(fetch = FetchType.EAGER)
-    var unmatchedPaths: MutableList<String> = ArrayList()
+    var unmatchedPaths: MutableList<String> = ArrayList(),
 )

@@ -1,5 +1,5 @@
-import React from "react";
-import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import React, {useState} from "react";
+import {addToast, Button, Checkbox, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
 import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/LibraryDto";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
@@ -20,23 +20,25 @@ export default function LibraryCreationModal({
                                                  onOpenChange
                                              }: LibraryCreationModalProps) {
 
+    const [scanAfterCreation, setScanAfterCreation] = useState<boolean>(true);
+
     async function createLibrary(library: LibraryDto) {
         try {
-            await LibraryEndpoint.createLibrary(library as LibraryDto);
+            await LibraryEndpoint.createLibrary(library as LibraryDto, scanAfterCreation);
+
+            addToast({
+                title: "New library created",
+                description: `Library ${library.name} created!`,
+                color: "success"
+            });
         } catch (e) {
             addToast({
                 title: "Error creating library",
                 description: `Library ${library.name} could not be created!`,
                 color: "warning"
             });
-            return;
+            throw "Error creating library: " + e;
         }
-
-        addToast({
-            title: "New library created",
-            description: `Library ${library.name} created!`,
-            color: "success"
-        });
     }
 
     return (
@@ -74,17 +76,21 @@ export default function LibraryCreationModal({
                                             <DirectoryMappingInput name="directories"/>
                                         </div>
                                     </ModalBody>
-                                    <ModalFooter>
-                                        <Button variant="light" onPress={onClose}>
-                                            Cancel
-                                        </Button>
-                                        <Button color="primary"
-                                                isLoading={formik.isSubmitting}
-                                                isDisabled={formik.isSubmitting}
-                                                type="submit"
-                                        >
-                                            {formik.isSubmitting ? "" : "Add"}
-                                        </Button>
+                                    <ModalFooter className="flex flex-row justify-between">
+                                        <Checkbox isSelected={scanAfterCreation} onValueChange={setScanAfterCreation}>Scan
+                                            after creation?</Checkbox>
+                                        <div className="flex flex-row">
+                                            <Button variant="light" onPress={onClose}>
+                                                Cancel
+                                            </Button>
+                                            <Button color="primary"
+                                                    isLoading={formik.isSubmitting}
+                                                    isDisabled={formik.isSubmitting}
+                                                    type="submit"
+                                            >
+                                                {formik.isSubmitting ? "" : "Add"}
+                                            </Button>
+                                        </div>
                                     </ModalFooter>
                                 </Form>
                             }

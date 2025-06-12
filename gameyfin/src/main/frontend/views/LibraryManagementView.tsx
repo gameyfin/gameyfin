@@ -7,6 +7,7 @@ import LibraryManagementDetails from "Frontend/components/general/library/Librar
 import LibraryManagementGames from "Frontend/components/general/library/LibraryManagementGames";
 import {useSnapshot} from "valtio/react";
 import {initializeLibraryState, libraryState} from "Frontend/state/LibraryState";
+import LibraryManagementUnmatchedPaths from "Frontend/components/general/library/LibraryManagementUnmatchedPaths";
 
 
 export default function LibraryManagementView() {
@@ -41,7 +42,8 @@ export default function LibraryManagementView() {
                 <LibraryManagementGames library={state.state[libraryId]}/>
             </Tab>
             <Tab title="Unmatched paths">
-                <p>Unmatched paths</p>
+                {/* @ts-ignore */}
+                <LibraryManagementUnmatchedPaths library={state.state[libraryId]}/>
             </Tab>
         </Tabs>
     </div>;
