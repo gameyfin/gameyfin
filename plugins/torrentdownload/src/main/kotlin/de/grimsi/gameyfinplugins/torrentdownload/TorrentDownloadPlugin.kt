@@ -16,12 +16,14 @@ import de.grimsi.gameyfin.pluginapi.download.DownloadProvider
 import de.grimsi.gameyfin.pluginapi.download.FileDownload
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
+import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.Executors
 import kotlin.io.path.*
+import kotlin.time.measureTimedValue
 
 class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
@@ -146,15 +148,16 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
     @Extension
     class TorrentDownloadProvider : DownloadProvider {
-        override fun download(path: Path): Download {
-            val torrentFile = createTorrentFile(path)
+        private val log = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
 
-            tracker.announce(TrackedTorrent.load(torrentFile.toFile()))
-            communicationManager.addTorrent(
-                torrentFile.toString(),
-                getRootPath(path).toString(),
-                FullyPieceStorageFactory.INSTANCE
-            )
+        override fun download(path: Path): Download {
+            log.info("Creating torrent for '${path.name}'...")
+
+            val (torrentFile, timeTaken) = measureTimedValue {
+                createTorrent(path)
+            }
+
+            log.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
 
             return FileDownload(
                 data = torrentFile.inputStream(),
@@ -163,7 +166,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             )
         }
 
-        private fun createTorrentFile(gameFilesPath: Path): Path {
+        private fun createTorrent(gameFilesPath: Path): Path {
             val torrentFile =
                 TORRENT_FILE_DIRECTORY.resolve("${gameFilesPath.nameWithoutExtension}-${gameFilesPath.hashCode()}.torrent")
 
@@ -173,6 +176,14 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
             Files.createFile(torrentFile)
             Files.write(torrentFile, torrentFileContent(gameFilesPath))
+
+            tracker.announce(TrackedTorrent.load(torrentFile.toFile()))
+            communicationManager.addTorrent(
+                torrentFile.toString(),
+                getRootPath(gameFilesPath).toString(),
+                FullyPieceStorageFactory.INSTANCE
+            )
+
             return torrentFile
         }
 
