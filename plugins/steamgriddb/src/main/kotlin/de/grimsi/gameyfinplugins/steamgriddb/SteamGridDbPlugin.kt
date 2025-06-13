@@ -129,7 +129,7 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
 
             val gameDetails = client.game(gameId)
 
-            return gameDetails.data?.firstOrNull()
+            return gameDetails.data
         }
     }
 }

@@ -1,5 +1,6 @@
 package de.grimsi.gameyfinplugins.steamgriddb.api
 
+import de.grimsi.gameyfinplugins.steamgriddb.dto.SteamGridDbGameResult
 import de.grimsi.gameyfinplugins.steamgriddb.dto.SteamGridDbGridResult
 import de.grimsi.gameyfinplugins.steamgriddb.dto.SteamGridDbSearchResult
 import io.ktor.client.*
@@ -51,7 +52,7 @@ class SteamGridDbApiClient(private val apiKey: String) {
         }.body()
     }
 
-    suspend fun game(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbSearchResult {
+    suspend fun game(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbGameResult {
         return get("games/id/$gameId", block).body()
     }
 
