@@ -4,7 +4,7 @@ import "Frontend/util/custom-validators";
 import {HeroUIProvider} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
-import {AuthProvider} from "Frontend/util/auth";
+import {AuthProvider, useAuth} from "Frontend/util/auth";
 import {IconContext, X} from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
@@ -12,37 +12,51 @@ import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
 import {initializeScanState} from "Frontend/state/ScanState";
 import {ToastProvider} from "@heroui/toast";
+import {initializePluginState} from "Frontend/state/PluginState";
+import {isAdmin} from "Frontend/util/utils";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
-
-    initializeLibraryState();
-    initializeGameState();
-    initializeScanState();
 
     return (
         <HeroUIProvider className="size-full" navigate={useNavigate} useHref={useHref}>
             <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark">
                 <AuthProvider>
-                    <IconContext.Provider value={{size: 20}}>
-                        <Outlet/>
-                        <ToastProvider
-                            toastProps={{
-                                shouldShowTimeoutProgress: true,
-                                radius: "sm",
-                                variant: "flat",
-                                hideIcon: true,
-                                closeIcon: <X/>,
-                                classNames: {
-                                    closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
-                                    progressTrack: "h-1",
-                                }
-                            }}
-                            toastOffset={64}
-                        />
-                    </IconContext.Provider>
+                    <ViewWithAuth/>
                 </AuthProvider>
             </NextThemesProvider>
         </HeroUIProvider>
     );
+}
+
+function ViewWithAuth() {
+    const auth = useAuth();
+
+    initializeLibraryState();
+    initializeGameState();
+
+    if (isAdmin(auth)) {
+        initializeScanState();
+        initializePluginState();
+    }
+
+    return <>
+        <IconContext.Provider value={{size: 20}}>
+            <Outlet/>
+            <ToastProvider
+                toastProps={{
+                    shouldShowTimeoutProgress: true,
+                    radius: "sm",
+                    variant: "flat",
+                    hideIcon: true,
+                    closeIcon: <X/>,
+                    classNames: {
+                        closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+                        progressTrack: "h-1",
+                    }
+                }}
+                toastOffset={64}
+            />
+        </IconContext.Provider>
+    </>;
 }
