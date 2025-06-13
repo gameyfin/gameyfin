@@ -51,7 +51,7 @@ export default function MatchGameModal({
 
     async function search() {
         setIsSearching(true);
-        const results = await GameEndpoint.getPotentialMatches(searchTerm);
+        const results = await GameEndpoint.getPotentialMatches(searchTerm, true);
         setSearchResults(results);
         setIsSearching(false);
     }

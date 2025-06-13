@@ -7,6 +7,9 @@ import GameUpdateDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameU
 import {deepDiff} from "Frontend/util/utils";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
+import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
+import * as Yup from "yup";
+import GameCoverPicker from "Frontend/components/general/input/GameCoverPicker";
 
 interface EditGameMetadataModalProps {
     game: GameDto;
@@ -21,6 +24,7 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                 {(onClose) => {
 
                     async function updateGame(values: GameUpdateDto) {
+                        //@ts-ignore
                         const changed = deepDiff(game, values) as GameUpdateDto;
                         if (Object.keys(changed).length === 0) return;
 
@@ -33,6 +37,9 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                         <Formik initialValues={game}
                                 enableReinitialize={true}
                                 onSubmit={updateGame}
+                                validationSchema={Yup.object({
+                                    title: Yup.string().required("Title is required")
+                                })}
                         >
                             {(formik: any) => (
                                 <Form>
@@ -40,8 +47,17 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                         Update game metadata
                                     </ModalHeader>
                                     <ModalBody>
-                                        <Input key="title" name="title" label="Title"/>
-                                        <TextAreaInput key="summary" name="summary" label="Summary (Markdown)"/>
+                                        <div className="flex flex-row gap-8">
+                                            {/*@ts-ignore*/}
+                                            <GameCoverPicker key="coverUrl" name="coverUrl" game={game}/>
+                                            <div className="flex flex-col flex-1">
+                                                <Input key="metadata.path" name="metadata.path" label="Path"
+                                                       isDisabled/>
+                                                <Input key="title" name="title" label="Title"/>
+                                                <DatePickerInput key="release" name="release" label="Release"/>
+                                            </div>
+                                        </div>
+                                        <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
                                         <TextAreaInput key="comment" name="comment" label="Comment (Markdown)"/>
                                     </ModalBody>
                                     <ModalFooter>

@@ -31,8 +31,8 @@ class GameEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
-        return gameService.getPotentialMatches(searchTerm)
+    fun getPotentialMatches(searchTerm: String, groupResults: Boolean): List<GameSearchResultDto> {
+        return gameService.getPotentialMatches(searchTerm, groupResults)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

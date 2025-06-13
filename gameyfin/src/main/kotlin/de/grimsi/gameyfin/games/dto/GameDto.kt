@@ -2,6 +2,7 @@ package de.grimsi.gameyfin.games.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.Instant
+import java.time.LocalDate
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class GameDto(
@@ -13,7 +14,7 @@ class GameDto(
     val coverId: Long?,
     val comment: String?,
     val summary: String?,
-    val release: Instant?,
+    val release: LocalDate?,
     val userRating: Int?,
     val criticRating: Int?,
     val publishers: List<String>?,

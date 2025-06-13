@@ -29,7 +29,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.net.URI
 import java.nio.file.Path
+import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
@@ -125,6 +127,17 @@ class GameService(
             existingGame.title = it
             existingGame.metadata.fields["title"]?.source = GameFieldUserSource(user = user)
         }
+        gameUpdateDto.release?.let {
+            existingGame.release = it.atStartOfDay(ZoneOffset.UTC).toInstant()
+            existingGame.metadata.fields["release"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.coverUrl?.let {
+            val newCoverImage = Image(originalUrl = URI.create(it).toURL(), type = ImageType.COVER)
+            imageService.downloadIfNew(newCoverImage)
+
+            existingGame.coverImage = newCoverImage
+            existingGame.metadata.fields["coverImage"]?.source = GameFieldUserSource(user = user)
+        }
         gameUpdateDto.comment?.let {
             existingGame.comment = it
             existingGame.metadata.fields["comment"]?.source = GameFieldUserSource(user = user)
@@ -146,7 +159,7 @@ class GameService(
         gameRepository.deleteById(gameId)
     }
 
-    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
+    fun getPotentialMatches(searchTerm: String, groupResults: Boolean = true): List<GameSearchResultDto> {
         // 1. Query all plugins for up to 10 results each
         val results = metadataPlugins.flatMap { plugin ->
             try {
@@ -157,14 +170,32 @@ class GameService(
                 emptyList()
             }
         }
+        val providerToManagementEntry =
+            results.toMap().entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
+
+        if (!groupResults) {
+            // If grouping is not requested, return the results directly
+            return results.mapNotNull { (plugin, metadata) ->
+                GameSearchResultDto(
+                    title = metadata.title.normalizeGameTitle(),
+                    coverUrl = metadata.coverUrl.toString(),
+                    release = metadata.release,
+                    publishers = metadata.publishedBy?.toList(),
+                    developers = metadata.developedBy?.toList(),
+                    originalIds = mapOf(
+                        plugin.javaClass.name to OriginalIdDto(
+                            providerToManagementEntry[plugin]?.pluginId ?: return@mapNotNull null, metadata.originalId
+                        )
+                    )
+                )
+            }.sortedByDescending { FuzzySearch.ratio(searchTerm, it.title) }
+        }
 
         // 2. Group by title
         // (NOTE: This _could_ lead to problems if multiple games have the (almost) same title - see Battlefront 2)
         val grouped = results.groupBy { (_, metadata) -> metadata.title.normalizeGameTitle() }
 
         // 3. Merge each group into one GameSearchResultDto using plugin priorities
-        val providerToManagementEntry =
-            results.toMap().entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
 
         fun pluginPriority(plugin: GameMetadataProvider) = providerToManagementEntry[plugin]?.priority ?: 0
 
@@ -538,7 +569,7 @@ fun Game.toDto(): GameDto {
         coverId = this.coverImage?.id,
         comment = this.comment,
         summary = this.summary,
-        release = this.release,
+        release = this.release?.atZone(ZoneOffset.UTC)?.toLocalDate(),
         userRating = this.userRating,
         criticRating = this.criticRating,
         publishers = this.publishers.map { it.name },
