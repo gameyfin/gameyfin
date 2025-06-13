@@ -146,6 +146,7 @@
     "fzf": "$fzf"
   },
   "vaadin": {
+    "disableUsageStatistics": true,
     "dependencies": {
       "@polymer/polymer": "3.5.2",
       "@vaadin/bundles": "24.8.0-rc1",
