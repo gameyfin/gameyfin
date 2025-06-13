@@ -9,16 +9,16 @@ dependencies {
     ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
 
     implementation("io.ktor:ktor-client-core:$ktor_version") {
-        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.slf4j")
     }
     implementation("io.ktor:ktor-client-cio:$ktor_version") {
-        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.slf4j")
     }
     implementation("io.ktor:ktor-client-content-negotiation:$ktor_version") {
-        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.slf4j")
     }
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktor_version") {
-        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.slf4j")
     }
 
     implementation("me.xdrop:fuzzywuzzy:1.4.0")

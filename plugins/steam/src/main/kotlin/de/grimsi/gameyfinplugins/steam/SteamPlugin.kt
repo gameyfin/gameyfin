@@ -10,6 +10,7 @@ import de.grimsi.gameyfinplugins.steam.mapper.Mapper
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -22,8 +23,6 @@ import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import java.net.URI
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 
 class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
@@ -39,6 +38,9 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         private val log = LoggerFactory.getLogger(javaClass)
 
         val client = HttpClient(CIO) {
+            // Use a fake browser user agent to avoid being blocked by Steam
+            BrowserUserAgent()
+
             install(ContentNegotiation) {
                 json(json)
             }
@@ -64,10 +66,9 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         }
 
         private suspend fun searchStore(title: String): List<SteamGame> {
-            val encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8.toString())
             return try {
                 val response = client.get("https://store.steampowered.com/api/storesearch") {
-                    parameter("term", encodedTitle)
+                    parameter("term", title)
                     parameter("cc", "en")
                     parameter("l", "en")
                 }
