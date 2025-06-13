@@ -27,8 +27,25 @@ class SteamDateSerializer : KSerializer<Instant> {
     override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
 
     private fun fromString(dateString: String): Instant {
+        // Match "Coming Soon" and return a fallback date
         if (dateString.equals(COMING_SOON_TEXT, true)) {
             return COMING_SOON_FALLBACK_DATE.atStartOfDay().toInstant(ZoneOffset.UTC)
+        }
+
+        // Match quarters like "Q1 2023", "Q2 2023", etc.
+        val quarterMatch = Regex("""Q([1-4]) (\d{4})""").matchEntire(dateString)
+        if (quarterMatch != null) {
+            val (qStr, yearStr) = quarterMatch.destructured
+            val month = when (qStr.toInt()) {
+                1 -> 1
+                2 -> 4
+                3 -> 7
+                4 -> 10
+                else -> 1
+            }
+            return LocalDate.of(yearStr.toInt(), month, 1)
+                .atStartOfDay()
+                .toInstant(ZoneOffset.UTC)
         }
 
         val localDate = LocalDate.parse(dateString, formatter)
