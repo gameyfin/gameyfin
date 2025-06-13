@@ -21,7 +21,8 @@ class SteamDateSerializer : KSerializer<Instant?> {
         val log: Logger = LoggerFactory.getLogger(SteamDateSerializer::class.java)
 
         const val COMING_SOON_TEXT = "Coming Soon"
-        val COMING_SOON_FALLBACK_DATE: LocalDate = LocalDate.parse("2999-12-31")
+        const val TO_BE_ANNOUNCED_TEXT = "To be announced"
+        val FALLBACK_DATE: LocalDate = LocalDate.parse("2999-12-31")
 
         val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, yyyy", Locale.ENGLISH)
     }
@@ -38,8 +39,8 @@ class SteamDateSerializer : KSerializer<Instant?> {
             }
 
             // Match "Coming Soon" and return a fallback date
-            if (dateString.equals(COMING_SOON_TEXT, true)) {
-                return COMING_SOON_FALLBACK_DATE.atStartOfDay().toInstant(ZoneOffset.UTC)
+            if (dateString.equals(COMING_SOON_TEXT, true) || dateString.equals(TO_BE_ANNOUNCED_TEXT, true)) {
+                return FALLBACK_DATE.atStartOfDay().toInstant(ZoneOffset.UTC)
             }
 
             // Match quarters like "Q1 2023", "Q2 2023", etc.
