@@ -15,10 +15,11 @@ class Library(
     var id: Long? = null,
 
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column(nullable = false, updatable = false)
     var createdAt: Instant? = null,
 
     @UpdateTimestamp
+    @Column(nullable = false)
     var updatedAt: Instant? = null,
 
     var name: String,

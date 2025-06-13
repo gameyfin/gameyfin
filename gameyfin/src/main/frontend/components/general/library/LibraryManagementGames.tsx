@@ -2,6 +2,7 @@ import LibraryDto from "Frontend/generated/de/grimsi/gameyfin/libraries/dto/Libr
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
 import {
     Button,
+    Input,
     Link,
     Pagination,
     Select,
@@ -33,6 +34,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
 
     const state = useSnapshot(gameState);
     const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameDto[] : [];
+    const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
 
     const [selectedGame, setSelectedGame] = useState<GameDto>(games[0]);
@@ -49,17 +51,24 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         const end = start + rowsPerPage;
 
         return getFilteredGames().slice(start, end);
-    }, [page, games, filter]);
+    }, [page, games, filter, searchTerm]);
 
 
     function getFilteredGames() {
+        let filteredGames = games.filter((game) =>
+            game.metadata.path!!.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            game.publishers?.some(publisher => publisher.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            game.developers?.some(developer => developer.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+
         if (filter === "confirmed") {
-            return games.filter(g => g.metadata.matchConfirmed);
+            return filteredGames.filter(g => g.metadata.matchConfirmed);
         }
         if (filter === "nonConfirmed") {
-            return games.filter(g => !g.metadata.matchConfirmed);
+            return filteredGames.filter(g => !g.metadata.matchConfirmed);
         }
-        return games;
+        return filteredGames;
     }
 
     async function toggleMatchConfirmed(game: GameDto) {
@@ -75,9 +84,17 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         await GameEndpoint.deleteGame(game.id);
     }
 
-    return <div className="flex flex-col gap-4">
+    return selectedGame && <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Manage games in library</h1>
-        <div className="flex flex-row gap-2 justify-end">
+        <div className="flex flex-row gap-2 justify-between">
+            <Input
+                className="w-96"
+                isClearable
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onClear={() => setSearchTerm("")}
+            />
             <Select
                 selectedKeys={[filter]}
                 disallowEmptySelection
@@ -89,9 +106,9 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 <SelectItem key="nonConfirmed">Show only non confirmed</SelectItem>
             </Select>
         </div>
-        <Table removeWrapper isStriped isHeaderSticky
+        <Table removeWrapper isStriped
                bottomContent={
-                   <div className="flex w-full justify-center">
+                   <div className="flex w-full justify-center sticky">
                        {items.length > 0 &&
                            <Pagination
                                isCompact
@@ -171,7 +188,10 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         <EditGameMetadataModal game={selectedGame}
                                isOpen={editGameModal.isOpen}
                                onOpenChange={editGameModal.onOpenChange}/>
-        <MatchGameModal initialSearchTerm={selectedGame.title}
+        <MatchGameModal path={selectedGame.metadata.path!!}
+                        libraryId={library.id}
+                        replaceGameId={selectedGame.id}
+                        initialSearchTerm={selectedGame.title}
                         isOpen={matchGameModal.isOpen}
                         onOpenChange={matchGameModal.onOpenChange}/>
     </div>;

@@ -4,17 +4,24 @@ import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
-import {Chip, Link, Tooltip} from "@heroui/react";
-import {humanFileSize, toTitleCase} from "Frontend/util/utils";
+import {Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
+import {humanFileSize, isAdmin, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState, initializeGameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {Info, TriangleDashed} from "@phosphor-icons/react";
+import {Info, MagnifyingGlass, TriangleDashed} from "@phosphor-icons/react";
+import {useAuth} from "Frontend/util/auth";
+import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 
 export default function GameView() {
     const {gameId} = useParams();
+
     const navigate = useNavigate();
+    const auth = useAuth();
+
+    const matchGameModal = useDisclosure();
+
     const state = useSnapshot(gameState);
     const game = gameId ? state.state[parseInt(gameId)] as GameDto : undefined;
 
@@ -76,10 +83,17 @@ export default function GameView() {
                             </div>
                         </div>
                     </div>
-                    {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
-                                                     options={downloadOptions}
-                                                     preferredOptionKey="preferred-download-method"
-                    />}
+                    <div className="flex flex-row items-center gap-8">
+                        {isAdmin(auth) && <Tooltip content="Edit game">
+                            <Button isIconOnly onPress={matchGameModal.onOpenChange}>
+                                <MagnifyingGlass/>
+                            </Button>
+                        </Tooltip>}
+                        {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
+                                                         options={downloadOptions}
+                                                         preferredOptionKey="preferred-download-method"
+                        />}
+                    </div>
                 </div>
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-row gap-12">
@@ -181,6 +195,12 @@ export default function GameView() {
                     </div>
                 </div>
             </div>
+            <MatchGameModal path={game.metadata.path!!}
+                            libraryId={game.libraryId}
+                            replaceGameId={game.id}
+                            initialSearchTerm={game.title}
+                            isOpen={matchGameModal.isOpen}
+                            onOpenChange={matchGameModal.onOpenChange}/>
         </div>
     );
 }

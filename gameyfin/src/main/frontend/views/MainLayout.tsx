@@ -15,6 +15,7 @@ import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {scanState} from "Frontend/state/ScanState";
 import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
+import {isAdmin} from "Frontend/util/utils";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -99,7 +100,7 @@ export default function MainLayout() {
                     </Tooltip>
                 </NavbarContent>}
                 <NavbarContent justify="end">
-                    {auth.state.user?.roles?.some(a => a?.includes("ADMIN")) &&
+                    {isAdmin(auth) &&
                         <NavbarItem>
                             <ScanProgressPopover/>
                         </NavbarItem>

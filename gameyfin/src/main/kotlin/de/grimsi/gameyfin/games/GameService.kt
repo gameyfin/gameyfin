@@ -3,14 +3,17 @@ package de.grimsi.gameyfin.games
 import de.grimsi.gameyfin.config.ConfigProperties
 import de.grimsi.gameyfin.config.ConfigService
 import de.grimsi.gameyfin.core.alphaNumeric
+import de.grimsi.gameyfin.core.filesystem.FilesystemService
 import de.grimsi.gameyfin.core.filterValuesNotNull
 import de.grimsi.gameyfin.core.plugins.PluginService
+import de.grimsi.gameyfin.core.plugins.management.GameyfinPluginManager
 import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.replaceRomanNumerals
 import de.grimsi.gameyfin.games.dto.*
 import de.grimsi.gameyfin.games.entities.*
 import de.grimsi.gameyfin.games.repositories.GameRepository
 import de.grimsi.gameyfin.libraries.Library
+import de.grimsi.gameyfin.media.ImageService
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import de.grimsi.gameyfin.users.UserService
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -19,7 +22,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.apache.commons.io.FilenameUtils
-import org.pf4j.PluginManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
@@ -28,19 +30,20 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
-import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
 
 @Service
 class GameService(
-    private val pluginManager: PluginManager,
+    private val gameRepository: GameRepository,
+    private val pluginManager: GameyfinPluginManager,
     private val pluginService: PluginService,
     private val config: ConfigService,
     private val companyService: CompanyService,
-    private val gameRepository: GameRepository,
-    private val userService: UserService
+    private val userService: UserService,
+    private val imageService: ImageService,
+    private val filesystemService: FilesystemService
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
@@ -72,6 +75,29 @@ class GameService(
     fun getAll(): List<GameDto> {
         val entities = gameRepository.findAll()
         return entities.map { it.toDto() }
+    }
+
+    @Transactional
+    fun create(game: Game): Game? {
+        game.publishers = game.publishers.map { companyService.createOrGet(it) }
+        game.developers = game.developers.map { companyService.createOrGet(it) }
+
+        try {
+            game.coverImage?.let {
+                imageService.downloadIfNew(it)
+            }
+
+            game.images.map {
+                imageService.downloadIfNew(it)
+            }
+        } catch (e: Exception) {
+            log.error(e) { "Error downloading images for game: ${e.message}" }
+            null
+        }
+
+        game.metadata.fileSize = filesystemService.calculateFileSize(game.metadata.path)
+
+        return gameRepository.save(game)
     }
 
     @Transactional
@@ -121,12 +147,10 @@ class GameService(
     }
 
     fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
-        // 1. Query all plugins for up to 5 results each
+        // 1. Query all plugins for up to 10 results each
         val results = metadataPlugins.flatMap { plugin ->
             try {
-                plugin.fetchByTitle(searchTerm, 5)
-                    // Filter out invalid results (null release or coverUrl)
-                    .filter { it.release != null && it.coverUrl != null }
+                plugin.fetchByTitle(searchTerm, 10)
                     .map { plugin to it }
             } catch (e: Exception) {
                 log.error(e) { "Error fetching metadata for game with plugin ${plugin.javaClass.name}" }
@@ -134,20 +158,9 @@ class GameService(
             }
         }
 
-        // 2. Group by title, release year, and release month
-        data class GroupKey(val title: String, val year: Int?, val month: Int?)
-
-        fun PluginApiMetadata.groupKey(): GroupKey {
-            val releaseZdt = this.release?.atZone(ZoneId.systemDefault())
-
-            return GroupKey(
-                title = this.title.normalizeGameTitle(),
-                year = releaseZdt?.year,
-                month = releaseZdt?.monthValue
-            )
-        }
-
-        val grouped = results.groupBy { (_, metadata) -> metadata.groupKey() }
+        // 2. Group by title
+        // (NOTE: This _could_ lead to problems if multiple games have the (almost) same title - see Battlefront 2)
+        val grouped = results.groupBy { (_, metadata) -> metadata.title.normalizeGameTitle() }
 
         // 3. Merge each group into one GameSearchResultDto using plugin priorities
         val providerToManagementEntry =
@@ -163,18 +176,19 @@ class GameService(
                 sorted.mapNotNull { selector(it.second) }.firstOrNull { it.isNotEmpty() }
 
             // Collect originalIds for this group
-            val originalIds: Map<String, String> = group
+            val originalIds: Map<String, OriginalIdDto> = group
                 .mapNotNull { (provider, metadata) ->
-                    val pluginId = providerToManagementEntry[provider]?.pluginId
+                    val providerId = provider.javaClass.name
+                    val pluginId = providerToManagementEntry[provider]?.pluginId ?: return@mapNotNull null
                     val originalId = metadata.originalId
-                    if (pluginId != null) pluginId to originalId else null
+                    if (providerId != null) providerId to OriginalIdDto(pluginId, originalId) else null
                 }
                 .toMap()
 
             return GameSearchResultDto(
                 title = pick { it.title }!!,
-                coverUrl = pick { it.coverUrl.toString() }!!,
-                release = pick { it.release }!!,
+                coverUrl = pick { it.coverUrl.toString() },
+                release = pick { it.release },
                 publishers = pickList { it.publishedBy?.toList() },
                 developers = pickList { it.developedBy?.toList() },
                 originalIds = originalIds
@@ -191,6 +205,56 @@ class GameService(
             }
             .sortedByDescending { it.second }
             .map { it.first }
+    }
+
+    fun matchManually(
+        originalIds: Map<String, OriginalIdDto>,
+        path: Path,
+        library: Library,
+        replaceGameId: Long? = null
+    ): Game? {
+        // Step 0: Query all metadata plugins for metadata on the provided originalIds
+        val metadataResults = runBlocking {
+            coroutineScope {
+                metadataPlugins.associateWith { plugin ->
+                    async {
+                        val originalId = originalIds[plugin.javaClass.name]?.originalId ?: return@async null
+                        try {
+                            return@async plugin.fetchById(originalId)
+                        } catch (e: Exception) {
+                            log.error(e) { "Error fetching metadata for game [id: $originalId] with plugin ${plugin.javaClass.name}" }
+                            null
+                        }
+                    }.await()
+                }
+            }
+        }
+
+        // Step 1: Filter out invalid (empty) results
+        // In theory all results should be valid
+        val validResults = metadataResults.filterValuesNotNull()
+        if (validResults.isEmpty()) {
+            log.error { "No results found for originalIds: $originalIds" }
+            return null
+        }
+
+        // Step 3: Merge results into a single Game entity
+        val mergedGame = mergeResults(validResults, path, library)
+
+        // Step 4: If a replaceGameId is provided, set it (overwriting the existing entity)
+        if (replaceGameId != null) {
+            val existingGame = getById(replaceGameId)
+
+            // Copy fields from the existing game to the merged game
+            mergedGame.id = existingGame.id
+            mergedGame.createdAt = existingGame.createdAt
+            mergedGame.metadata.downloadCount = existingGame.metadata.downloadCount
+        }
+
+        mergedGame.metadata.matchConfirmed = true
+
+        // Step 6: Save the game
+        return create(mergedGame)
     }
 
     fun matchFromFile(path: Path, library: Library): Game? {
@@ -214,10 +278,6 @@ class GameService(
 
         // Step 4: Save the new game
         return mergedGame
-    }
-
-    fun getAllByPaths(paths: List<String>): List<Game> {
-        return gameRepository.findAllByMetadata_PathIn(paths)
     }
 
     fun getById(id: Long): Game {

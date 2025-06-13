@@ -209,6 +209,12 @@ class GameyfinPluginManager(
             .map { it.simpleName }
     }
 
+    fun getPluginForExtension(extensionClass: Class<ExtensionPoint>): PluginWrapper? {
+        return getPlugins().firstOrNull { pluginWrapper ->
+            getExtensionTypeClasses(pluginWrapper.pluginId).any { it == extensionClass.javaClass }
+        }
+    }
+
     fun getManagementEntry(pluginId: String): PluginManagementEntry {
         return pluginManagementRepository.findByIdOrNull(pluginId)
             ?: throw IllegalArgumentException("Plugin with ID $pluginId not found")

@@ -1,6 +1,6 @@
-import React, {useEffect} from "react";
+import React from "react";
 import {PluginManagementSection} from "Frontend/components/general/plugin/PluginManagementSection";
-import {initializePluginState, pluginState} from "Frontend/state/PluginState";
+import {pluginState} from "Frontend/state/PluginState";
 import {useSnapshot} from "valtio/react";
 
 export default function PluginManagement() {
@@ -9,10 +9,6 @@ export default function PluginManagement() {
     const pluginTypes = ["GameMetadataProvider", "DownloadProvider"];
 
     const state = useSnapshot(pluginState);
-
-    useEffect(() => {
-        initializePluginState();
-    }, []);
 
     return state.isLoaded && (
         <div className="flex flex-col">

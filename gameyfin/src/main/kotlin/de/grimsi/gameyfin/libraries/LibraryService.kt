@@ -81,6 +81,15 @@ class LibraryService(
     }
 
     /**
+     * Retrieves a library by its ID.
+     */
+    fun getById(libraryId: Long): Library {
+        val library = libraryRepository.findByIdOrNull(libraryId)
+            ?: throw IllegalArgumentException("Library with ID $libraryId not found")
+        return library
+    }
+
+    /**
      * Creates or updates a library in the repository.
      *
      * @param library: The library to create or update.
@@ -102,7 +111,7 @@ class LibraryService(
      * @throws IllegalArgumentException if the library ID is null or the library is not found.
      */
     fun update(libraryUpdateDto: LibraryUpdateDto) {
-        var library = libraryRepository.findByIdOrNull(libraryUpdateDto.id)
+        val library = libraryRepository.findByIdOrNull(libraryUpdateDto.id)
             ?: throw IllegalArgumentException("Library with ID $libraryUpdateDto.id not found")
 
         // Update only non-null fields
@@ -133,11 +142,11 @@ class LibraryService(
 
     fun deleteGameFromLibrary(gameId: Long) {
         val game = gameService.getById(gameId)
-        var library = game.library
+        val library = game.library
 
         library.games.removeIf { it.id == gameId }
         library.unmatchedPaths.add(game.metadata.path)
-        
+
         library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
         libraryRepository.save(library)
     }
@@ -316,7 +325,7 @@ class LibraryService(
         libraryRepository.save(library)
 
         progress.currentStep = LibraryScanStep(description = "Finished")
-        progress.finishedAt = java.time.Instant.now()
+        progress.finishedAt = Instant.now()
         progress.status = LibraryScanStatus.COMPLETED
         progress.result = LibraryScanResult(
             new = persistedGames.size,
@@ -333,9 +342,23 @@ class LibraryService(
      * @param library: The library to add the games to.
      * @return The updated library.
      */
-    private fun addGamesToLibrary(games: Collection<Game>, library: Library): Library {
+    fun addGamesToLibrary(games: Collection<Game>, library: Library, persist: Boolean = false): Library {
         val newGames = games.filter { game -> library.games.none { it.id == game.id } }
         library.games.addAll(newGames)
+
+        var removedAnyUnmatchedPaths = false
+        for (game in newGames) {
+            if (library.unmatchedPaths.contains(game.metadata.path)) {
+                library.unmatchedPaths.remove(game.metadata.path)
+                removedAnyUnmatchedPaths = true
+            }
+        }
+
+        if (removedAnyUnmatchedPaths || persist) {
+            library.updatedAt = Instant.now()
+            return libraryRepository.save(library)
+        }
+
         return library
     }
 

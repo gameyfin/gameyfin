@@ -21,7 +21,7 @@ export default function SearchBar() {
         defaultItems={games}
         inputProps={{
             classNames: {
-                input: "text-small",
+                input: "text-small w-96",
                 inputWrapper: "h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20"
             },
         }}

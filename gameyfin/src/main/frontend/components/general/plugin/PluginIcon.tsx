@@ -1,8 +1,7 @@
 import {Image, Tooltip} from "@heroui/react";
 import {Plug} from "@phosphor-icons/react";
-import {initializePluginState, pluginState} from "Frontend/state/PluginState";
+import {pluginState} from "Frontend/state/PluginState";
 import {useSnapshot} from "valtio/react";
-import {useEffect} from "react";
 
 interface PluginLogoProps {
     pluginId: string;
@@ -10,10 +9,6 @@ interface PluginLogoProps {
 
 export default function PluginIcon({pluginId}: PluginLogoProps) {
     const state = useSnapshot(pluginState);
-
-    useEffect(() => {
-        initializePluginState();
-    }, []);
 
     return state.isLoaded && (
         <Tooltip content={state.state[pluginId].name}>

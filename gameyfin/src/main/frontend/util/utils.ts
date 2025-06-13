@@ -1,6 +1,10 @@
 import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
 
+export function isAdmin(auth: any): boolean {
+    return auth.state.user?.roles?.some((a: string) => a?.includes("ADMIN"));
+}
+
 export function roleToRoleName(role: string) {
     role = role.replace("ROLE_", "").toLowerCase();
     return role.charAt(0).toUpperCase() + role.slice(1);
@@ -188,4 +192,19 @@ export function deepDiff<T extends object>(initial: T, current: T): Partial<T> {
 
     const result = compareObjects(initial, current);
     return result || {};
+}
+
+/**
+ * Extract the file name from a given path.
+ * Supports both Windows and Unix-style paths.
+ * @param path
+ * @param includeExtension
+ */
+export function fileNameFromPath(path: string, includeExtension: boolean = true): string {
+    let fileName = (path.split('\\').pop() ?? '').split('/').pop() ?? '';
+    if (includeExtension) {
+        return fileName;
+    }
+    const dotIndex = fileName.lastIndexOf('.');
+    return dotIndex < 0 ? fileName : fileName.substring(0, dotIndex);
 }

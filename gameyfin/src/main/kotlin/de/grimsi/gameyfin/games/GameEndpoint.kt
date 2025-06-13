@@ -2,14 +2,12 @@ package de.grimsi.gameyfin.games
 
 import com.vaadin.hilla.Endpoint
 import de.grimsi.gameyfin.core.Role
-import de.grimsi.gameyfin.games.dto.GameDto
-import de.grimsi.gameyfin.games.dto.GameEvent
-import de.grimsi.gameyfin.games.dto.GameSearchResultDto
-import de.grimsi.gameyfin.games.dto.GameUpdateDto
+import de.grimsi.gameyfin.games.dto.*
 import de.grimsi.gameyfin.libraries.LibraryService
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import reactor.core.publisher.Flux
+import java.nio.file.Path
 
 @Endpoint
 @PermitAll
@@ -35,5 +33,14 @@ class GameEndpoint(
     @RolesAllowed(Role.Names.ADMIN)
     fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
         return gameService.getPotentialMatches(searchTerm)
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun matchManually(originalIds: Map<String, OriginalIdDto>, path: String, libraryId: Long, replaceGameId: Long?) {
+        val library = libraryService.getById(libraryId)
+        val game = gameService.matchManually(originalIds, Path.of(path), library, replaceGameId)
+        if (game != null) {
+            libraryService.addGamesToLibrary(listOf(game), library, true)
+        }
     }
 }
