@@ -130,6 +130,8 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
             // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
             val searchByNameQuery = APICalypse()
                 .fields(QUERY_FIELDS)
+                // TODO: Change for multi-platform support
+                .where("platforms.slug = \"win\"")
                 .limit(100)
                 .search(gameTitle)
 
