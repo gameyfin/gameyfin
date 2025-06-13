@@ -165,8 +165,8 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
                     val randomInterval = (1..5).random().toLong()
                     log.warn("IGDB rate limit exceeded, retrying in $randomInterval seconds...")
                     TimeUnit.SECONDS.sleep(randomInterval)
-                    
-                    queryIgdbGames(query)
+
+                    return queryIgdbGames(query)
                 }
 
                 log.error("Request to IGDB API failed with HTTP ${e.statusCode}")
