@@ -26,7 +26,7 @@ sealed class ConfigProperties<T : Serializable>(
                 Boolean::class,
                 "library.scan.enable-filesystem-watcher",
                 "Enable automatic library scanning using file system watchers (coming soon™)",
-                true
+                false
             )
 
             data object ScanEmptyDirectories : ConfigProperties<Boolean>(
@@ -77,7 +77,7 @@ sealed class ConfigProperties<T : Serializable>(
                 Boolean::class,
                 "library.metadata.update.enabled",
                 "Enable periodic refresh of video game metadata (coming soon™)",
-                true
+                false
             )
 
             data object UpdateSchedule : ConfigProperties<String>(
