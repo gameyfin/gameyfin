@@ -10,8 +10,8 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="clean" />
-          <option value="build" />
+          <option value=":gameyfin:clean" />
+          <option value=":gameyfin:build" />
         </list>
       </option>
       <option name="vmOptions" />
