@@ -17,7 +17,8 @@ export default withMT({
                 'gf-secondary': '#6441a5'
             },
             gridTemplateColumns: {
-                '300px': 'repeat(auto-fit, 300px)'
+                '300px': 'repeat(auto-fit, 300px)',
+                'auto-fill': 'repeat(auto-fill, minmax(150px, 1fr))',
             }
         }
     },

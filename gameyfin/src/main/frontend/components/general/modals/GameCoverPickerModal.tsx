@@ -71,22 +71,34 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                                     <MagnifyingGlass/>
                                 </Button>
                             </div>
+                            {searchResults.length === 0 && !isSearching &&
+                                <p className="text-center">No results found.</p>
+                            }
+                            {searchResults.length === 0 && isSearching &&
+                                <p className="text-center text-foreground/70">Searching...</p>
+                            }
                             <ScrollShadow
-                                className="flex flex-row flex-wrap gap-4 h-96 overflow-scroll justify-evenly">
-                                {searchResults.length === 0 && "No results found."}
+                                className="grid grid-cols-auto-fill gap-4 h-96 overflow-scroll justify-evenly">
                                 {searchResults.map((result) => (
-                                    <Image
-                                        key={result.id}
-                                        alt={result.title}
-                                        className="z-0 object-cover aspect-[12/17] cursor-pointer"
-                                        src={result.coverUrl!}
-                                        radius="none"
-                                        height={216}
-                                        onClick={() => {
-                                            setCoverUrl(result.coverUrl!);
-                                            onClose();
-                                        }}
-                                    />
+                                    <div className="relative group w-fit h-fit cursor-pointer"
+                                         onClick={() => {
+                                             setCoverUrl(result.coverUrl!);
+                                             onClose();
+                                         }}>
+                                        <Image
+                                            key={result.id}
+                                            alt={result.title}
+                                            className="z-0 object-cover aspect-[12/17] group-hover:brightness-50"
+                                            src={result.coverUrl!}
+                                            radius="none"
+                                            height={216}
+                                        />
+                                        <div
+                                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                                        >
+                                            <ArrowRight size={46}/>
+                                        </div>
+                                    </div>
                                 ))}
                             </ScrollShadow>
                         </ModalBody>
