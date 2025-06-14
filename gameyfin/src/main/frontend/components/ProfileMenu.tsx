@@ -5,6 +5,7 @@ import {useNavigate} from "react-router";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
 import {CollectionElement} from "@react-types/shared";
+import {isAdmin} from "Frontend/util/utils";
 
 export default function ProfileMenu() {
     const auth = useAuth();
@@ -28,12 +29,12 @@ export default function ProfileMenu() {
             label: "Administration",
             icon: <GearFine/>,
             onClick: () => navigate("/administration/libraries"),
-            showIf: auth.state.user?.roles?.some(a => a?.includes("ADMIN"))
+            showIf: isAdmin(auth)
         },
         {
             label: "Help",
             icon: <Question/>,
-            onClick: () => window.open("https://github.com/gameyfin/gameyfin/tree/v2", "_blank")
+            onClick: () => window.open("https://gameyfin.org", "_blank")
         },
         {
             label: "Sign Out",
