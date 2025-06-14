@@ -117,20 +117,22 @@ export default function LibraryManagementUnmatchedPaths({library}: LibraryManage
                         <TableCell>
                             {item.path}
                         </TableCell>
-                        <TableCell className="flex flex-row gap-2">
-                            <Tooltip content="Match game">
-                                <Button isIconOnly size="sm" onPress={() => {
-                                    setSelectedPath(item.path);
-                                    matchGameModal.onOpenChange();
-                                }}>
-                                    <MagnifyingGlass/>
-                                </Button>
-                            </Tooltip>
-                            <Tooltip content="Remove entry from list">
-                                <Button isIconOnly size="sm" color="danger"
-                                        onPress={() => deleteUnmatchedPath(item.path)}><Trash/>
-                                </Button>
-                            </Tooltip>
+                        <TableCell>
+                            <div className="flex flex-row gap-2">
+                                <Tooltip content="Match game">
+                                    <Button isIconOnly size="sm" onPress={() => {
+                                        setSelectedPath(item.path);
+                                        matchGameModal.onOpenChange();
+                                    }}>
+                                        <MagnifyingGlass/>
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Remove entry from list">
+                                    <Button isIconOnly size="sm" color="danger"
+                                            onPress={() => deleteUnmatchedPath(item.path)}><Trash/>
+                                    </Button>
+                                </Tooltip>
+                            </div>
                         </TableCell>
                     </TableRow>
                 )}

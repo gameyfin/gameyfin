@@ -69,32 +69,22 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                         </div>
                                         <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
                                         <TextAreaInput key="comment" name="comment" label="Comment (Markdown)"/>
-                                        <Accordion>
+                                        <Accordion variant="splitted"
+                                                   itemClasses={{
+                                                       base: "-mx-2",
+                                                       content: "max-h-80 overflow-y-auto",
+                                                   }}>
                                             <AccordionItem key="additional-metadata"
                                                            aria-label="Additional Metadata"
-                                                           title="Additional Metadata"
-                                                           className="flex flex-col">
-                                                <div className="flex flex-row gap-4">
-                                                    <ArrayInput key="developers" name="developers" label="Developers"/>
-                                                    <div className="w-0 border-s border-foreground/70"/>
-                                                    <ArrayInput key="publishers" name="publishers" label="Publishers"/>
-                                                </div>
-                                                <div className="flex flex-row gap-4">
-                                                    <ArrayInput key="genres" name="genres" label="Genres"/>
-                                                    <div className="w-0 border-s border-foreground/70"/>
-                                                    <ArrayInput key="themes" name="themes" label="Themes"/>
-                                                </div>
-                                                <div className="flex flex-row gap-4">
-                                                    <ArrayInput key="keywords" name="keywords" label="Keywords"/>
-                                                    <div className="w-0 border-s border-foreground/70"/>
-                                                    <ArrayInput key="features" name="features" label="Features"/>
-                                                </div>
-                                                <div className="flex flex-row gap-4">
-                                                    <ArrayInput key="perspectives" name="perspectives"
-                                                                label="Perspectives"/>
-                                                    <div className="w-0 border-s border-foreground/70"/>
-                                                    <div className="flex-1"/>
-                                                </div>
+                                                           title="Additional Metadata">
+                                                <ArrayInput key="developers" name="developers" label="Developers"/>
+                                                <ArrayInput key="publishers" name="publishers" label="Publishers"/>
+                                                <ArrayInput key="genres" name="genres" label="Genres"/>
+                                                <ArrayInput key="themes" name="themes" label="Themes"/>
+                                                <ArrayInput key="keywords" name="keywords" label="Keywords"/>
+                                                <ArrayInput key="features" name="features" label="Features"/>
+                                                <ArrayInput key="perspectives" name="perspectives"
+                                                            label="Perspectives"/>
                                             </AccordionItem>
                                         </Accordion>
                                     </ModalBody>

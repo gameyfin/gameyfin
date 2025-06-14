@@ -181,38 +181,40 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                         <TableCell>
                             {item.metadata.path}
                         </TableCell>
-                        <TableCell className="flex flex-row gap-2">
-                            <Button isIconOnly size="sm" onPress={() => toggleMatchConfirmed(item)}>
-                                {item.metadata.matchConfirmed ?
-                                    <Tooltip content="Unconfirm match">
-                                        <CheckCircle weight="fill" className="fill-success"/>
-                                    </Tooltip> :
-                                    <Tooltip content="Confirm match">
-                                        <CheckCircle/>
-                                    </Tooltip>}
-                            </Button>
-                            <Button isIconOnly size="sm" onPress={() => {
-                                setSelectedGame(item);
-                                editGameModal.onOpenChange();
-                            }}>
-                                <Tooltip content="Edit metadata">
-                                    <Pencil/>
-                                </Tooltip>
-                            </Button>
-                            <Button isIconOnly size="sm" onPress={() => {
-                                setSelectedGame(item);
-                                matchGameModal.onOpenChange();
-                            }}>
-                                <Tooltip content="Match game">
-                                    <MagnifyingGlass/>
-                                </Tooltip>
-                            </Button>
-                            <Button isIconOnly size="sm" color="danger"
-                                    onPress={() => deleteGame(item)}>
-                                <Tooltip content="Remove from library">
-                                    <Trash/>
-                                </Tooltip>
-                            </Button>
+                        <TableCell>
+                            <div className="flex flex-row gap-2">
+                                <Button isIconOnly size="sm" onPress={() => toggleMatchConfirmed(item)}>
+                                    {item.metadata.matchConfirmed ?
+                                        <Tooltip content="Unconfirm match">
+                                            <CheckCircle weight="fill" className="fill-success"/>
+                                        </Tooltip> :
+                                        <Tooltip content="Confirm match">
+                                            <CheckCircle/>
+                                        </Tooltip>}
+                                </Button>
+                                <Button isIconOnly size="sm" onPress={() => {
+                                    setSelectedGame(item);
+                                    editGameModal.onOpenChange();
+                                }}>
+                                    <Tooltip content="Edit metadata">
+                                        <Pencil/>
+                                    </Tooltip>
+                                </Button>
+                                <Button isIconOnly size="sm" onPress={() => {
+                                    setSelectedGame(item);
+                                    matchGameModal.onOpenChange();
+                                }}>
+                                    <Tooltip content="Match game">
+                                        <MagnifyingGlass/>
+                                    </Tooltip>
+                                </Button>
+                                <Button isIconOnly size="sm" color="danger"
+                                        onPress={() => deleteGame(item)}>
+                                    <Tooltip content="Remove from library">
+                                        <Trash/>
+                                    </Tooltip>
+                                </Button>
+                            </div>
                         </TableCell>
                     </TableRow>
                 )}
