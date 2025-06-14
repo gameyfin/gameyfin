@@ -18,8 +18,10 @@ import {isAdmin} from "Frontend/util/utils";
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
 
+    const navigate = useNavigate();
+
     return (
-        <HeroUIProvider className="size-full" navigate={useNavigate} useHref={useHref}>
+        <HeroUIProvider className="size-full" navigate={navigate} useHref={useHref}>
             <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark">
                 <AuthProvider>
                     <ViewWithAuth/>
