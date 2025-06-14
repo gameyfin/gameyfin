@@ -31,6 +31,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.net.URI
 import java.nio.file.Path
+import java.time.ZoneId
 import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
@@ -191,9 +192,17 @@ class GameService(
             }.sortedByDescending { FuzzySearch.ratio(searchTerm, it.title) }
         }
 
-        // 2. Group by title
+        // 2. Group by title and release year (if available)
         // (NOTE: This _could_ lead to problems if multiple games have the (almost) same title - see Battlefront 2)
-        val grouped = results.groupBy { (_, metadata) -> metadata.title.normalizeGameTitle() }
+        data class GroupKey(val title: String, val year: Int?)
+
+        fun PluginApiMetadata.groupKey(): GroupKey =
+            GroupKey(
+                title = this.title.trim().lowercase(),
+                year = this.release?.atZone(ZoneId.systemDefault())?.year
+            )
+
+        val grouped = results.groupBy { (_, metadata) -> metadata.groupKey() }
 
         // 3. Merge each group into one GameSearchResultDto using plugin priorities
 
