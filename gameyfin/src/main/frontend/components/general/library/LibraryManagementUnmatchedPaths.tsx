@@ -3,6 +3,7 @@ import {
     Button,
     Input,
     Pagination,
+    SortDescriptor,
     Table,
     TableBody,
     TableCell,
@@ -25,23 +26,45 @@ interface LibraryManagementUnmatchedPathsProps {
 
 export default function LibraryManagementUnmatchedPaths({library}: LibraryManagementUnmatchedPathsProps) {
     const matchGameModal = useDisclosure();
-    const [searchTerm, setSearchTerm] = useState("");
     const [page, setPage] = useState(1);
     const rowsPerPage = 25;
 
-    const filteredItems = useMemo(() => {
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedPath, setSelectedPath] = useState(library.unmatchedPaths ? library.unmatchedPaths[0] : null);
+    const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "path", direction: "ascending"});
+
+    const pages = useMemo(() => {
+        return Math.ceil(getFilteredPaths().length / rowsPerPage);
+    }, [library.unmatchedPaths, searchTerm]);
+
+    const filteredPaths = useMemo(() => {
         return library.unmatchedPaths!
             .filter((path) => path.toLowerCase().includes(searchTerm.toLowerCase()))
             .map((path) => ({key: hashCode(path), path}));
-    }, [searchTerm, library]);
+    }, [library, searchTerm]);
 
-    const pages = useMemo(() => Math.ceil(filteredItems.length / rowsPerPage), [filteredItems]);
-    const items = useMemo(() => {
+    const sortedPaths = useMemo(() => {
+        return filteredPaths.slice().sort((a, b) => {
+            let cmp: number;
+            switch (sortDescriptor.column) {
+                case "path":
+                    cmp = a.path.localeCompare(b.path);
+                    break;
+                default:
+                    cmp = 0;
+            }
+            if (sortDescriptor.direction === "descending") {
+                cmp *= -1;
+            }
+            return cmp;
+        });
+    }, [filteredPaths, sortDescriptor]);
+
+    const pagedPaths = useMemo(() => {
         const start = (page - 1) * rowsPerPage;
-        return filteredItems.slice(start, start + rowsPerPage);
-    }, [page, filteredItems]);
-
-    const [selectedPath, setSelectedPath] = useState(library.unmatchedPaths ? library.unmatchedPaths[0] : null);
+        const end = start + rowsPerPage;
+        return sortedPaths.slice(start, end);
+    }, [page, sortedPaths]);
 
     async function deleteUnmatchedPath(unmatchedPath: string) {
         const libraryUpdateDto: LibraryUpdateDto = {
@@ -49,6 +72,12 @@ export default function LibraryManagementUnmatchedPaths({library}: LibraryManage
             unmatchedPaths: library.unmatchedPaths!.filter((path) => path !== unmatchedPath)
         }
         await LibraryEndpoint.updateLibrary(libraryUpdateDto);
+    }
+
+    function getFilteredPaths() {
+        return library.unmatchedPaths!!.filter((path) =>
+            path.toLowerCase().includes(searchTerm.toLowerCase())
+        )
     }
 
     return <div className="flex flex-col gap-4">
@@ -62,9 +91,11 @@ export default function LibraryManagementUnmatchedPaths({library}: LibraryManage
             onClear={() => setSearchTerm("")}
         />
         <Table removeWrapper isStriped isHeaderSticky
+               sortDescriptor={sortDescriptor}
+               onSortChange={setSortDescriptor}
                bottomContent={
                    <div className="flex w-full justify-center">
-                       {items.length > 0 &&
+                       {pagedPaths.length > 0 &&
                            <Pagination
                                isCompact
                                showControls
@@ -77,10 +108,10 @@ export default function LibraryManagementUnmatchedPaths({library}: LibraryManage
                    </div>
                }>
             <TableHeader>
-                <TableColumn allowsSorting>Path</TableColumn>
+                <TableColumn key="path" allowsSorting>Path</TableColumn>
                 <TableColumn width={1}>Actions</TableColumn>
             </TableHeader>
-            <TableBody emptyContent="This library has no unmatched paths." items={items}>
+            <TableBody emptyContent="This library has no unmatched paths." items={pagedPaths}>
                 {(item) => (
                     <TableRow key={item.key}>
                         <TableCell>

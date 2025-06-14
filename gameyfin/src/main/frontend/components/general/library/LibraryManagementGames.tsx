@@ -7,6 +7,7 @@ import {
     Pagination,
     Select,
     SelectItem,
+    SortDescriptor,
     Table,
     TableBody,
     TableCell,
@@ -36,6 +37,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameDto[] : [];
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
+    const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "title", direction: "ascending"});
 
     const [selectedGame, setSelectedGame] = useState<GameDto>(games[0]);
     const editGameModal = useDisclosure();
@@ -46,12 +48,41 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         return Math.ceil(getFilteredGames().length / rowsPerPage);
     }, [games, filter]);
 
-    const items = useMemo(() => {
+    const filteredItems = useMemo(() => {
+        return getFilteredGames();
+    }, [games, filter, searchTerm]);
+
+    const sortedItems = useMemo(() => {
+        return filteredItems.slice().sort((a, b) => {
+            let cmp: number;
+
+            switch (sortDescriptor.column) {
+                case "title":
+                    cmp = a.title.localeCompare(b.title);
+                    break;
+                case "addedToLibrary":
+                    cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                    break;
+                case "downloadCount":
+                    cmp = a.metadata.downloadCount - b.metadata.downloadCount;
+                    break;
+                default:
+                    return 0; // No sorting if the column is not recognized
+            }
+
+            if (sortDescriptor.direction === "descending") {
+                cmp *= -1; // Reverse the comparison if sorting in descending order
+            }
+
+            return cmp;
+        });
+    }, [filteredItems, sortDescriptor]);
+
+    const pagedItems = useMemo(() => {
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
-
-        return getFilteredGames().slice(start, end);
-    }, [page, games, filter, searchTerm]);
+        return sortedItems.slice(start, end);
+    }, [page, sortedItems]);
 
 
     function getFilteredGames() {
@@ -107,9 +138,11 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
             </Select>
         </div>
         <Table removeWrapper isStriped
+               sortDescriptor={sortDescriptor}
+               onSortChange={setSortDescriptor}
                bottomContent={
                    <div className="flex w-full justify-center sticky">
-                       {items.length > 0 &&
+                       {pagedItems.length > 0 &&
                            <Pagination
                                isCompact
                                showControls
@@ -122,14 +155,14 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                    </div>
                }>
             <TableHeader>
-                <TableColumn allowsSorting>Game</TableColumn>
-                <TableColumn allowsSorting>Added to library</TableColumn>
-                <TableColumn allowsSorting>Download count</TableColumn>
+                <TableColumn key="title" allowsSorting>Game</TableColumn>
+                <TableColumn key="addedToLibrary" allowsSorting>Added to library</TableColumn>
+                <TableColumn key="downloadCount" allowsSorting>Download count</TableColumn>
                 <TableColumn>Path</TableColumn>
                 {/* width={1} keeps the column as far to the right as possible*/}
                 <TableColumn width={1}>Actions</TableColumn>
             </TableHeader>
-            <TableBody emptyContent="Your filter did not match any games." items={items}>
+            <TableBody emptyContent="Your filter did not match any games." items={pagedItems}>
                 {(item) => (
                     <TableRow key={item.id}>
                         <TableCell>
