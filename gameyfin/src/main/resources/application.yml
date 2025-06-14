@@ -3,6 +3,7 @@ logging.level:
   org.atmosphere: warn
   de.grimsi.gameyfin: info
   de.grimsi.gameyfin.GameyfinApplicationKt: warn
+  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
 server:
   port: 8080
