@@ -1,4 +1,4 @@
-import {useNavigate, useParams} from "react-router";
+import {useLocation, useNavigate, useParams} from "react-router";
 import React, {useEffect} from "react";
 import LibraryHeader from "Frontend/components/general/covers/LibraryHeader";
 import {Button, Tab, Tabs} from "@heroui/react";
@@ -12,6 +12,7 @@ import LibraryManagementUnmatchedPaths from "Frontend/components/general/library
 
 export default function LibraryManagementView() {
     const {libraryId} = useParams();
+    const {hash} = useLocation();
     const navigate = useNavigate();
     const state = useSnapshot(libraryState);
 
@@ -32,16 +33,19 @@ export default function LibraryManagementView() {
         </div>
         {/* @ts-ignore */}
         <LibraryHeader library={state.state[libraryId]} className="h-32"/>
-        <Tabs color="primary" fullWidth>
-            <Tab title="Details">
+        {/* @ts-ignore */}
+        <Tabs color="primary" fullWidth
+              selectedKey={hash.length > 0 ? hash : "#details"}
+              onSelectionChange={(newKey) => navigate(newKey.toString(), {replace: true})}>
+            <Tab key="#details" title="Details">
                 {/* @ts-ignore */}
                 <LibraryManagementDetails library={state.state[libraryId]}/>
             </Tab>
-            <Tab title="Games">
+            <Tab key="#games" title="Games">
                 {/* @ts-ignore */}
                 <LibraryManagementGames library={state.state[libraryId]}/>
             </Tab>
-            <Tab title="Unmatched paths">
+            <Tab key="#unmatched-paths" title="Unmatched paths">
                 {/* @ts-ignore */}
                 <LibraryManagementUnmatchedPaths library={state.state[libraryId]}/>
             </Tab>
