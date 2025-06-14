@@ -7,7 +7,7 @@ import {useState} from "react";
 export default function DatePickerInput({label, showErrorUntouched = false, ...props}) {
     // @ts-ignore
     const [field, meta] = useField(props);
-    const [value, setValue] = useState<DateValue | null>(parseDate(field.value));
+    const [value, setValue] = useState<DateValue | null>(field.value ? parseDate(field.value) : null);
 
     return (
         <DatePicker
