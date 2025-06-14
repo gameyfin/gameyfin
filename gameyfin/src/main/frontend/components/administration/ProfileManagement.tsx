@@ -80,7 +80,7 @@ export default function ProfileManagement() {
                         .equals([Yup.ref('newPassword')], 'Passwords do not match')
                 })}
             >
-                {(formik: { values: any; isSubmitting: any; }) => (
+                {(formik: { values: any; isSubmitting: any; dirty: boolean; }) => (
                     <Form>
                         <div className="flex flex-row flex-grow justify-between mb-8">
                             <h2 className="text-2xl font-bold">My Profile</h2>
@@ -97,7 +97,7 @@ export default function ProfileManagement() {
                                 <Button
                                     color="primary"
                                     isLoading={formik.isSubmitting}
-                                    isDisabled={formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
+                                    isDisabled={!formik.dirty || formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
                                     type="submit"
                                 >
                                     {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
