@@ -85,7 +85,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
         log.debug("Authentication successful")
     }
 
-    @Extension
+    @Extension(ordinal = 2)
     class IgdbMetadataProvider : GameMetadataProvider {
 
         companion object {

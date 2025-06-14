@@ -42,7 +42,7 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
         )
     )
 
-    @Extension
+    @Extension(ordinal = 1)
     class DirectDownloadProvider : DownloadProvider {
         override fun download(path: Path): Download {
             if (!path.exists()) throw IllegalArgumentException("Path $path does not exist")

@@ -69,7 +69,7 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         log.debug("Authentication successful")
     }
 
-    @Extension
+    @Extension(ordinal = 1)
     class SteamGridDBGameCoverProvider : GameMetadataProvider {
 
         override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {

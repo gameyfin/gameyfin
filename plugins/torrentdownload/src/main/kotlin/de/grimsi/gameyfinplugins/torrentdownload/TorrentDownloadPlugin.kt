@@ -146,7 +146,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         )
     }
 
-    @Extension
+    @Extension(ordinal = 2)
     class TorrentDownloadProvider : DownloadProvider {
         private val log = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
 

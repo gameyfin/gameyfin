@@ -33,7 +33,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         }
     }
 
-    @Extension
+    @Extension(ordinal = 3)
     class SteamMetadataProvider : GameMetadataProvider {
         private val log = LoggerFactory.getLogger(javaClass)
 
