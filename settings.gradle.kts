@@ -19,7 +19,7 @@ pluginManagement {
 
 
 include(":plugin-api")
-include(":gameyfin")
+include(":app")
 
 include(":plugins")
 

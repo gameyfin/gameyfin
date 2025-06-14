@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
 }
 
-group = "de.grimsi.gameyfin"
+group = "org.gameyfin"
 
 repositories {
     mavenCentral()

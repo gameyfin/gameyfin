@@ -1,22 +1,23 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="GameyfinApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-    <option name="ACTIVE_PROFILES" value="dev" />
-    <option name="ALTERNATIVE_JRE_PATH" value="BUNDLED" />
-    <envs>
-      <env name="APP_KEY" value="8ODYedBBEA6qTd2Z/dZiWA==" />
-    </envs>
-    <module name="Gameyfin.gameyfin.main" />
-    <option name="SHORTEN_COMMAND_LINE" value="ARGS_FILE" />
-    <option name="SPRING_BOOT_MAIN_CLASS" value="de.grimsi.gameyfin.GameyfinApplication" />
-    <option name="VM_PARAMETERS" value="-Dpf4j.mode=development" />
-    <extension name="coverage">
-      <pattern>
-        <option name="PATTERN" value="de.grimsi.gameyfin.*" />
-        <option name="ENABLED" value="true" />
-      </pattern>
-    </extension>
-    <method v="2">
-      <option name="Make" enabled="true" />
-    </method>
-  </configuration>
+    <configuration default="false" name="GameyfinApplication" type="SpringBootApplicationConfigurationType"
+                   factoryName="Spring Boot" nameIsGenerated="true">
+        <option name="ACTIVE_PROFILES" value="dev"/>
+        <option name="ALTERNATIVE_JRE_PATH" value="BUNDLED"/>
+        <envs>
+            <env name="APP_KEY" value="8ODYedBBEA6qTd2Z/dZiWA=="/>
+        </envs>
+        <module name="Gameyfin.app.main"/>
+        <option name="SHORTEN_COMMAND_LINE" value="ARGS_FILE"/>
+        <option name="SPRING_BOOT_MAIN_CLASS" value="org.gameyfin.app.GameyfinApplication"/>
+        <option name="VM_PARAMETERS" value="-Dpf4j.mode=development"/>
+        <extension name="coverage">
+            <pattern>
+                <option name="PATTERN" value="org.gameyfin.app.*"/>
+                <option name="ENABLED" value="true"/>
+            </pattern>
+        </extension>
+        <method v="2">
+            <option name="Make" enabled="true"/>
+        </method>
+    </configuration>
 </component>

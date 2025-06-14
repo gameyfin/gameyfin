@@ -41,13 +41,12 @@ out/
 .kotlin
 
 ### Custom ###
-docker-compose.yml
-generated
-db
-data
-packaged_plugins
-logs
-templates
+/generated
+/db
+/data
+/packaged_plugins
+/logs
+/templates
 /gameyfin/src/main/frontend/**/*.js
 /gameyfin/src/main/frontend/**/*.js.map
 /gameyfin/src/main/bundles/
