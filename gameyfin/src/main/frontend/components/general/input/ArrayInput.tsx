@@ -27,7 +27,7 @@ const ArrayInput = ({label, ...props}) => {
                         }
 
                         return (
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col flex-1 gap-2">
                                 <div className="flex flex-row justify-between">
                                     <p>{label}</p>
                                     <small>{field.value.length} {field.value.length == 1 ? "element" : "elements"}</small>

@@ -1,5 +1,14 @@
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {
+    Accordion,
+    AccordionItem,
+    Button,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader
+} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import React from "react";
@@ -7,9 +16,10 @@ import GameUpdateDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameU
 import {deepDiff} from "Frontend/util/utils";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
-import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
 import * as Yup from "yup";
 import GameCoverPicker from "Frontend/components/general/input/GameCoverPicker";
+import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
+import ArrayInput from "Frontend/components/general/input/ArrayInput";
 
 interface EditGameMetadataModalProps {
     game: GameDto;
@@ -53,12 +63,40 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                             <div className="flex flex-col flex-1">
                                                 <Input key="metadata.path" name="metadata.path" label="Path"
                                                        isDisabled/>
-                                                <Input key="title" name="title" label="Title"/>
+                                                <Input key="title" name="title" label="Title" isRequired/>
                                                 <DatePickerInput key="release" name="release" label="Release"/>
                                             </div>
                                         </div>
                                         <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
                                         <TextAreaInput key="comment" name="comment" label="Comment (Markdown)"/>
+                                        <Accordion>
+                                            <AccordionItem key="additional-metadata"
+                                                           aria-label="Additional Metadata"
+                                                           title="Additional Metadata"
+                                                           className="flex flex-col">
+                                                <div className="flex flex-row gap-4">
+                                                    <ArrayInput key="developers" name="developers" label="Developers"/>
+                                                    <div className="w-0 border-s border-foreground/70"/>
+                                                    <ArrayInput key="publishers" name="publishers" label="Publishers"/>
+                                                </div>
+                                                <div className="flex flex-row gap-4">
+                                                    <ArrayInput key="genres" name="genres" label="Genres"/>
+                                                    <div className="w-0 border-s border-foreground/70"/>
+                                                    <ArrayInput key="themes" name="themes" label="Themes"/>
+                                                </div>
+                                                <div className="flex flex-row gap-4">
+                                                    <ArrayInput key="keywords" name="keywords" label="Keywords"/>
+                                                    <div className="w-0 border-s border-foreground/70"/>
+                                                    <ArrayInput key="features" name="features" label="Features"/>
+                                                </div>
+                                                <div className="flex flex-row gap-4">
+                                                    <ArrayInput key="perspectives" name="perspectives"
+                                                                label="Perspectives"/>
+                                                    <div className="w-0 border-s border-foreground/70"/>
+                                                    <div className="flex-1"/>
+                                                </div>
+                                            </AccordionItem>
+                                        </Accordion>
                                     </ModalBody>
                                     <ModalFooter>
                                         <Button variant="light" onPress={onClose}>

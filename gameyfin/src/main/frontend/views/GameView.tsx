@@ -1,18 +1,22 @@
-import {useEffect, useState} from "react";
-import {DownloadProviderEndpoint} from "Frontend/generated/endpoints";
+import React, {useEffect, useState} from "react";
+import {DownloadProviderEndpoint, GameEndpoint} from "Frontend/generated/endpoints";
 import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
-import {Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
+import {Accordion, AccordionItem, addToast, Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
 import {humanFileSize, isAdmin, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState, initializeGameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
 import GameDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameDto";
-import {Info, MagnifyingGlass, TriangleDashed} from "@phosphor-icons/react";
+import {CheckCircle, Info, MagnifyingGlass, Pencil, Trash, TriangleDashed} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
+import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
+import GameUpdateDto from "Frontend/generated/de/grimsi/gameyfin/games/dto/GameUpdateDto";
+import Markdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -20,6 +24,7 @@ export default function GameView() {
     const navigate = useNavigate();
     const auth = useAuth();
 
+    const editGameModal = useDisclosure();
     const matchGameModal = useDisclosure();
 
     const state = useSnapshot(gameState);
@@ -50,6 +55,26 @@ export default function GameView() {
             }
         });
     }, [gameId]);
+
+    async function toggleMatchConfirmed() {
+        if (!game) return;
+        await GameEndpoint.updateGame(
+            {
+                id: game.id,
+                metadata: {matchConfirmed: !game.metadata.matchConfirmed}
+            } as GameUpdateDto
+        )
+    }
+
+    async function deleteGame() {
+        if (!game) return;
+        await GameEndpoint.deleteGame(game.id);
+        addToast({
+            title: "Game deleted",
+            description: `${game.title} removed from Gameyfin!`,
+            color: "success"
+        });
+    }
 
     return game && (
         <div className="flex flex-col gap-4">
@@ -84,11 +109,36 @@ export default function GameView() {
                         </div>
                     </div>
                     <div className="flex flex-row items-center gap-8">
-                        {isAdmin(auth) && <Tooltip content="Edit game">
-                            <Button isIconOnly onPress={matchGameModal.onOpenChange}>
-                                <MagnifyingGlass/>
+                        {isAdmin(auth) && <div className="flex flex-row gap-2">
+                            <Button isIconOnly onPress={toggleMatchConfirmed}>
+                                {game.metadata.matchConfirmed ?
+                                    <Tooltip content="Unconfirm match">
+                                        <CheckCircle weight="fill" className="fill-success"/>
+                                    </Tooltip> :
+                                    <Tooltip content="Confirm match">
+                                        <CheckCircle/>
+                                    </Tooltip>}
                             </Button>
-                        </Tooltip>}
+                            <Tooltip content="Edit metadata">
+                                <Button isIconOnly onPress={editGameModal.onOpenChange}>
+                                    <Pencil/>
+                                </Button>
+                            </Tooltip>
+                            <Tooltip content="Search for metadata">
+                                <Button isIconOnly onPress={matchGameModal.onOpenChange}>
+                                    <MagnifyingGlass/>
+                                </Button>
+                            </Tooltip>
+                            <Tooltip content="Remove from library">
+                                <Button isIconOnly color="danger"
+                                        onPress={async () => {
+                                            await deleteGame();
+                                            navigate("/");
+                                        }}>
+                                    <Trash/>
+                                </Button>
+                            </Tooltip>
+                        </div>}
                         {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
                                                          options={downloadOptions}
                                                          preferredOptionKey="preferred-download-method"
@@ -96,6 +146,31 @@ export default function GameView() {
                     </div>
                 </div>
                 <div className="flex flex-col gap-8">
+                    {game.comment &&
+                        <Accordion variant="splitted"
+                                   itemClasses={{base: "-mx-2", content: "mx-8 mb-4", heading: "font-bold"}}>
+                            <AccordionItem key="information"
+                                           aria-label="Information"
+                                           title="Information"
+                                           startContent={<Info weight="fill"/>}>
+                                <Markdown
+                                    remarkPlugins={[remarkBreaks]}
+                                    components={{
+                                        a(props) {
+                                            return <Link isExternal
+                                                         showAnchorIcon
+                                                         color="foreground"
+                                                         underline="always"
+                                                         href={props.href}
+                                                         size="sm">
+                                                {props.children}
+                                            </Link>
+                                        }
+                                    }}
+                                >{game.comment}</Markdown>
+                            </AccordionItem>
+                        </Accordion>
+                    }
                     <div className="flex flex-row gap-12">
                         <div className="flex flex-col flex-1 gap-2">
                             <p className="text-default-500">Summary</p>
@@ -112,11 +187,14 @@ export default function GameView() {
                                     <td className="text-default-500 w-0 min-w-32">Developed by</td>
                                     <td className="flex flex-row gap-1">
                                         {game.developers && game.developers.length > 0
-                                            ? [...game.developers].sort().map(dev =>
-                                                <Link key={dev} href={`/search?dev=${encodeURIComponent(dev)}`}
-                                                      color="foreground" underline="hover">
-                                                    {dev}
-                                                </Link>
+                                            ? [...game.developers].sort().map((dev, index) =>
+                                                <>
+                                                    <Link key={dev} href={`/search?dev=${encodeURIComponent(dev)}`}
+                                                          color="foreground" underline="hover">
+                                                        {dev}
+                                                    </Link>
+                                                    {index !== game.developers!!.length - 1 && <p>/</p>}
+                                                </>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
                                                 <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
@@ -195,6 +273,9 @@ export default function GameView() {
                     </div>
                 </div>
             </div>
+            <EditGameMetadataModal game={game}
+                                   isOpen={editGameModal.isOpen}
+                                   onOpenChange={editGameModal.onOpenChange}/>
             <MatchGameModal path={game.metadata.path!!}
                             libraryId={game.libraryId}
                             replaceGameId={game.id}

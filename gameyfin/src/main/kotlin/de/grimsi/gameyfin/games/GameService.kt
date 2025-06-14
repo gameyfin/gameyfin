@@ -11,10 +11,11 @@ import de.grimsi.gameyfin.core.plugins.management.PluginManagementEntry
 import de.grimsi.gameyfin.core.replaceRomanNumerals
 import de.grimsi.gameyfin.games.dto.*
 import de.grimsi.gameyfin.games.entities.*
+import de.grimsi.gameyfin.games.entities.GameMetadata
 import de.grimsi.gameyfin.games.repositories.GameRepository
 import de.grimsi.gameyfin.libraries.Library
 import de.grimsi.gameyfin.media.ImageService
-import de.grimsi.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import de.grimsi.gameyfin.pluginapi.gamemetadata.*
 import de.grimsi.gameyfin.users.UserService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.async
@@ -146,6 +147,64 @@ class GameService(
         gameUpdateDto.summary?.let {
             existingGame.summary = it
             existingGame.metadata.fields["summary"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.developers?.let {
+            existingGame.developers =
+                it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.DEVELOPER)) }
+            existingGame.metadata.fields["developers"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.publishers?.let {
+            existingGame.publishers =
+                it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.PUBLISHER)) }
+            existingGame.metadata.fields["publishers"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.genres?.let {
+            existingGame.genres = it.mapNotNull { name ->
+                try {
+                    Genre.valueOf(name)
+                } catch (_: IllegalArgumentException) {
+                    log.error { "Invalid value for genre '$name', must be one of ${Genre.entries}" }
+                    null
+                }
+            }
+            existingGame.metadata.fields["genres"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.themes?.let {
+            existingGame.themes = it.mapNotNull { name ->
+                try {
+                    Theme.valueOf(name)
+                } catch (_: IllegalArgumentException) {
+                    log.error { "Invalid value for theme '$name', must be one of ${Theme.entries}" }
+                    null
+                }
+            }
+            existingGame.metadata.fields["themes"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.keywords?.let {
+            existingGame.keywords = it
+            existingGame.metadata.fields["keywords"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.features?.let {
+            existingGame.features = it.mapNotNull { name ->
+                try {
+                    GameFeature.valueOf(name)
+                } catch (_: IllegalArgumentException) {
+                    log.error { "Invalid value for feature '$name', must be one of ${GameFeature.entries}" }
+                    null
+                }
+            }
+            existingGame.metadata.fields["features"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.perspectives?.let {
+            existingGame.perspectives = it.mapNotNull { name ->
+                try {
+                    PlayerPerspective.valueOf(name)
+                } catch (_: IllegalArgumentException) {
+                    log.error { "Invalid value for perspective '$name', must be one of ${PlayerPerspective.entries}" }
+                    null
+                }
+            }
+            existingGame.metadata.fields["perspectives"]?.source = GameFieldUserSource(user = user)
         }
 
 
