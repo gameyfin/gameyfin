@@ -38,11 +38,11 @@ function LibraryManagementLayout({getConfig, formik}: any) {
     return (
         <div className="flex flex-col">
             <Section title="Permissions"/>
-            <ConfigFormField configElement={getConfig("library.allow-public-access")}/>
+            <ConfigFormField configElement={getConfig("library.allow-public-access")} isDisabled/>
 
             <Section title="Scanning"/>
             <div className="flex flex-col gap-4">
-                <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
+                <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")} isDisabled/>
                 <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
                 <div className="flex flex-row gap-4 items-baseline">
                     <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
@@ -52,7 +52,7 @@ function LibraryManagementLayout({getConfig, formik}: any) {
 
             <Section title="Metadata"/>
             <div className="flex flex-row items-baseline">
-                <ConfigFormField configElement={getConfig("library.metadata.update.enabled")}/>
+                <ConfigFormField configElement={getConfig("library.metadata.update.enabled")} isDisabled/>
                 <ConfigFormField configElement={getConfig("library.metadata.update.schedule")}
                                  isDisabled={!formik.values.library.metadata.update.enabled}/>
             </div>

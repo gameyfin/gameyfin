@@ -17,7 +17,7 @@ sealed class ConfigProperties<T : Serializable>(
         data object AllowPublicAccess : ConfigProperties<Boolean>(
             Boolean::class,
             "library.allow-public-access",
-            "Allow access to game libraries without login",
+            "Allow access to game libraries without login (coming soon™)",
             false
         )
 
@@ -25,7 +25,7 @@ sealed class ConfigProperties<T : Serializable>(
             data object EnableFilesystemWatcher : ConfigProperties<Boolean>(
                 Boolean::class,
                 "library.scan.enable-filesystem-watcher",
-                "Enable automatic library scanning using file system watchers",
+                "Enable automatic library scanning using file system watchers (coming soon™)",
                 true
             )
 
@@ -76,7 +76,7 @@ sealed class ConfigProperties<T : Serializable>(
             data object UpdateEnabled : ConfigProperties<Boolean>(
                 Boolean::class,
                 "library.metadata.update.enabled",
-                "Enable periodic refresh of video game metadata",
+                "Enable periodic refresh of video game metadata (coming soon™)",
                 true
             )
 
