@@ -74,20 +74,25 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
 
         override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
             return runBlocking {
-                var searchResults = searchSteamGridDb(gameTitle)
+                val covers = mutableListOf<GameMetadata>()
+                val games = searchSteamGridDb(gameTitle)
 
-                if (searchResults.isEmpty()) return@runBlocking emptyList()
-                if (searchResults.size > maxResults) searchResults = searchResults.slice(0 until maxResults)
-
-                return@runBlocking searchResults
-                    .map { game ->
-                        GameMetadata(
-                            originalId = game.id.toString(),
-                            title = game.name,
-                            coverUrl = getGridForGame(game.id)?.let { grid -> URI(grid.url) }
+                for (game in games) {
+                    val gameDetails = client?.grids(game.id)
+                    val grids = gameDetails?.data.orEmpty()
+                    for (grid in grids) {
+                        covers.add(
+                            GameMetadata(
+                                originalId = game.id.toString(),
+                                title = game.name,
+                                coverUrl = URI(grid.url)
+                            )
                         )
+                        if (covers.size >= maxResults) break
                     }
-                    .filter { it.coverUrl != null }
+                    if (covers.size >= maxResults) break
+                }
+                covers
             }
         }
 

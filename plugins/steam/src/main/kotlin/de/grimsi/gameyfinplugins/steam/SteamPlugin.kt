@@ -54,10 +54,21 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             val searchResult: List<SteamGame> = runBlocking { searchStore(gameTitle) }
             if (searchResult.isEmpty()) return emptyList()
 
+            // Use fuzzy search to find the best matching game name
             val bestMatchingTitles = FuzzySearch.extractTop(gameTitle, searchResult.map { it.name }, maxResults)
-            val bestMatches = bestMatchingTitles.mapNotNull { title -> searchResult.find { it.name == title.string } }
+            val bestMatchingTitleStrings = bestMatchingTitles.map { it.string }
+            val bestMatchesMap = bestMatchingTitles.associateBy({ it.string }, { it.score })
 
-            return runBlocking { bestMatches.map { getGameDetails(it.id) } }.filterNotNull()
+            // Filter the games to only include those that match the best matching titles
+            var bestMatches = searchResult.filter { it.name in bestMatchingTitleStrings }
+
+            // If we have more than maxResults, sort by the best match score and take the top results
+            bestMatches = bestMatches.filter { it.name in bestMatchesMap.keys }
+                .sortedByDescending { bestMatchesMap[it.name] }
+
+            return runBlocking { bestMatches.map { getGameDetails(it.id) } }
+                .filterNotNull()
+                .take(maxResults)
         }
 
         override fun fetchById(id: String): GameMetadata? {

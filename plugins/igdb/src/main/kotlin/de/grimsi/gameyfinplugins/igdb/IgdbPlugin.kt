@@ -142,7 +142,16 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
             // Use fuzzy search to find the best matching game name
             val bestMatchingTitles = FuzzySearch.extractTop(gameTitle, games.map { it.name }, maxResults)
-            games = bestMatchingTitles.mapNotNull { title -> games.find { it.name == title.string } }
+            val bestMatchingTitleStrings = bestMatchingTitles.map { it.string }
+            val bestMatchesMap = bestMatchingTitles.associateBy({ it.string }, { it.score })
+
+            // Filter the games to only include those that match the best matching titles
+            games = games.filter { it.name in bestMatchingTitleStrings }
+
+            // If we have more than maxResults, sort by the best match score and take the top results
+            games = games.filter { it.name in bestMatchesMap.keys }
+                .sortedByDescending { bestMatchesMap[it.name] }
+                .take(maxResults)
 
             return games.map { toGameMetadata(it) }
         }
