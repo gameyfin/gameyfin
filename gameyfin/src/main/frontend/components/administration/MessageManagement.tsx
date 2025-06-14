@@ -62,7 +62,8 @@ function MessageManagementLayout({getConfig, formik}: any) {
                     <div className="flex flex-row gap-8">
                         <div className="flex flex-col flex-1 h-fit">
                             <Section title="E-Mail"/>
-                            <ConfigFormField configElement={getConfig("messages.providers.email.enabled")}/>
+                            <ConfigFormField configElement={getConfig("messages.providers.email.enabled")}
+                                             className="mb-2"/>
                             <ConfigFormField configElement={getConfig("messages.providers.email.host")}
                                              isDisabled={!formik.values.messages.providers.email.enabled}/>
                             <ConfigFormField configElement={getConfig("messages.providers.email.port")}
