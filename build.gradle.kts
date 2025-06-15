@@ -19,7 +19,7 @@ plugins {
 subprojects {
     apply(plugin = "java")
 
-    version = "2.0.0-beta1"
+    version = "2.0.0.beta1"
 
     java.sourceCompatibility = JavaVersion.VERSION_21
     java.targetCompatibility = JavaVersion.VERSION_21

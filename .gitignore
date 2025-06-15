@@ -47,7 +47,8 @@ out/
 /packaged_plugins
 /logs
 /templates
-/gameyfin/src/main/frontend/**/*.js
-/gameyfin/src/main/frontend/**/*.js.map
-/gameyfin/src/main/bundles/
+/app/src/main/bundles/
+/app/src/main/frontend/**/*.js
+/app/src/main/frontend/**/*.js.map
+/app/src/main/frontend/generated/
 /torrent_dotfiles/
