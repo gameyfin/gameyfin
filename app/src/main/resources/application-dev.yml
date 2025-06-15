@@ -1,0 +1,7 @@
+logging.level:
+  root: info
+  org.gameyfin.GameyfinApplicationKt: info
+
+spring:
+  datasource:
+    url: jdbc:h2:file:./db/${spring.datasource.db-name};AUTO_SERVER=TRUE

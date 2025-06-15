@@ -1,0 +1,29 @@
+<mjml>
+    <mj-head>
+        <mj-title>You have been invited to Gameyfin</mj-title>
+        <mj-attributes>
+            <mj-all font-family="Arial, sans-serif"/>
+            <mj-text font-size="16px"/>
+        </mj-attributes>
+    </mj-head>
+    <mj-body>
+        <mj-section>
+            <mj-column>
+                <mj-image alt="Gameyfin Logo" title="Gameyfin Logo" width="128px" src="{logo}"/>
+                <mj-image alt="Gameyfin Logo" title="Gameyfin Logo" height="2px" padding-bottom="20px"
+                          src="{gradient}"/>
+
+                <mj-text font-size="20px" font-family="helvetica">Congratulations,
+                    <br/>
+                    <br/>
+                </mj-text>
+                <mj-text>you have been invited to Gameyfin!
+                    <br/>
+                    Create your account here: {invitationLink}
+                    <br/>
+                </mj-text>
+
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>

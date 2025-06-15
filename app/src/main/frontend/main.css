@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+    .gradient-primary {
+        @apply bg-gradient-to-br from-primary-400 to-primary-700;
+    }
+
+    .button-secondary {
+        @apply bg-primary-300 text-background/80;
+    }
+}
+
+/* Custom CSS */
+
+:root {
+    /* Overwrite default Hilla styles (e.g. loading indicator) */
+    --lumo-primary-color: theme(colors.primary);
+
+    /* Overwrite SwiperJS styles */
+    --swiper-navigation-color: theme(colors.primary);
+    --swiper-pagination-color: theme(colors.primary);
+
+    .swiper-pagination-bullet {
+        background-color: theme(colors.primary);
+    }
+
+}
+
+/* List box drag & drop */
+.react-aria-ListBoxItem {
+    &[data-dragging] {
+        opacity: 0.6;
+    }
+}
+
+.react-aria-DropIndicator[data-drop-target] {
+    outline: 1px solid theme(colors.primary);
+}
+
+.shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.shine::before {
+    background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.7) 100%
+    );
+    content: "";
+    display: block;
+    height: 100%;
+    left: -100%;
+    position: absolute;
+    top: 0;
+    transform: skewX(-25deg);
+    width: 50%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.shine:hover::before,
+.shine:focus::before {
+    animation: shine 0.85s;
+}
+
+@keyframes shine {
+    100% {
+        left: 125%;
+    }
+}

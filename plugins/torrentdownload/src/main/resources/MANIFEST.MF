@@ -1,0 +1,10 @@
+Plugin-Version: 1.0.0-beta1
+Plugin-Class: org.gameyfin.plugins.download.torrent.TorrentDownloadPlugin
+Plugin-Id: org.gameyfin.plugins.download.torrent
+Plugin-Name: Torrent Download
+Plugin-Description: Distributes games via a built-in torrent tracker.<br>
+ Users need to install a torrent client to be able to download the games.
+Plugin-Short-Description: Download via Torrent
+Plugin-Author: grimsi, Pfuenzle
+Plugin-License: MIT
+Plugin-Url: https://github.com/gameyfin
