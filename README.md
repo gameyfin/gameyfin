@@ -1,7 +1,10 @@
 <div align="center">
-<img src="assets/v2/Banner.svg" width="auto" alt="Gameyfin Logo">
-<h2>Gameyfin</h2>
-  <p align="center">Manage your video games.</p>
+    <a href="https://gameyfin.org">
+        <img src="assets/v2/Banner.svg" width="auto" alt="Gameyfin Logo">
+    </a>
+    <h2>Gameyfin</h2>
+    <h4>Manage your video games.</h4>
+    <p>simple / fast / <a href="https://github.com/gameyfin/gameyfin/blob/main/LICENSE.md">FOSS</a></p>
 </div>
 
 > [!IMPORTANT]
@@ -18,8 +21,8 @@ Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 ⬇️ Access your library via your web browser & download games directly from there  
 👥 Share your library with friends & family  
 ⚛️ LAN-friendly (everything is cached locally)  
-🐋 Runs in a container or as single <binary file / JAR file> on bare metal  
-🌈 Themes (including light and dark mode)  
+🐋 Runs in a container or any system with a JVM
+🌈 Themes (including colorblind support)  
 🔌 Easily expandable with plugins  
 🔒 Integrates into your SSO solution via OAuth2 / OpenID Connect
 
