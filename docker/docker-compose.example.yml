@@ -1,11 +1,18 @@
 version: "3"
 services:
   gameyfin:
-    image: grimsi/gameyfin:v2
+    image: gameyfin/app:2.0.0.beta2
     container_name: gameyfin
     environment:
-      PLACEHOLDER: ""
+      # Generate a new APP_KEY using the command `openssl rand -base64 32` or similar.
+      APP_KEY: <you app key here>
     volumes:
-      - <path to your game library>:/opt/gameyfin-library
+      - "./db:/opt/gameyfin/db"
+      - "./data:/opt/gameyfin/data"
+      - "./logs:/opt/gameyfin/logs"
+      - <mount your library folder(s) here>
     ports:
       - "8080:8080"
+      # If you plan to use the included torrent plugin, uncomment the following lines:
+      # - "6969:6969"
+      # - "6881:6881"

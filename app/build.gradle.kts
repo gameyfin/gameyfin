@@ -1,5 +1,5 @@
 group = "de.grimsi"
-val appMainClass = "org.gameyfin.GameyfinApplicationKt"
+val appMainClass = "org.gameyfin.app.GameyfinApplicationKt"
 
 plugins {
     id("org.springframework.boot")

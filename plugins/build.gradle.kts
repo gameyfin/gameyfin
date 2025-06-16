@@ -4,6 +4,13 @@ plugins {
     kotlin("jvm")
 }
 
+val keystorePath: String = rootProject.file("certs/gameyfin.jks").absolutePath
+val keystoreAlias = "gameyfin-plugins"
+val keystorePassword: String = (findProperty("keystorePassword") as String?)
+    ?: System.getenv("GAMEYFIN_KEYSTORE_PASSWORD")
+    ?: ""
+
+
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
@@ -55,5 +62,31 @@ subprojects {
 
     tasks.build {
         dependsOn("copyDependencyClasses")
+    }
+
+
+    tasks.register<Exec>("signJar") {
+        dependsOn(tasks.jar)
+        val jarFile = tasks.jar.get().archiveFile.get().asFile
+
+        // Only enable if password is present
+        enabled = keystorePassword.isNotEmpty()
+
+        commandLine(
+            "jarsigner",
+            "-keystore", keystorePath,
+            "-storepass", keystorePassword,
+            jarFile.absolutePath,
+            keystoreAlias
+        )
+        doFirst {
+            if (keystorePassword.isEmpty()) {
+                logger.lifecycle("Keystore password not provided, skipping JAR signing.")
+            }
+        }
+    }
+
+    tasks.build {
+        dependsOn("signJar")
     }
 }
