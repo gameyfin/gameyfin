@@ -36,6 +36,9 @@ class Game(
     @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
     var coverImage: Image? = null,
 
+    @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
+    var headerImage: Image? = null,
+
     @Lob
     @Column(columnDefinition = "CLOB")
     var comment: String? = null,

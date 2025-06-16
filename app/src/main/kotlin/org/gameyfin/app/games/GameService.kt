@@ -17,6 +17,7 @@ import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.replaceRomanNumerals
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
+import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.Library
 import org.gameyfin.app.media.ImageService
@@ -90,6 +91,10 @@ class GameService(
                 imageService.downloadIfNew(it)
             }
 
+            game.headerImage?.let {
+                imageService.downloadIfNew(it)
+            }
+
             game.images.map {
                 imageService.downloadIfNew(it)
             }
@@ -138,6 +143,13 @@ class GameService(
 
             existingGame.coverImage = newCoverImage
             existingGame.metadata.fields["coverImage"]?.source = GameFieldUserSource(user = user)
+        }
+        gameUpdateDto.headerUrl?.let {
+            val newHeaderImage = Image(originalUrl = URI.create(it).toURL(), type = ImageType.HEADER)
+            imageService.downloadIfNew(newHeaderImage)
+
+            existingGame.headerImage = newHeaderImage
+            existingGame.metadata.fields["headerImage"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.comment?.let {
             existingGame.comment = it
@@ -218,7 +230,7 @@ class GameService(
         gameRepository.deleteById(gameId)
     }
 
-    fun getPotentialMatches(searchTerm: String, groupResults: Boolean = true): List<GameSearchResultDto> {
+    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
         // 1. Query all plugins for up to 10 results each
         val results = metadataPlugins.flatMap { plugin ->
             try {
@@ -232,31 +244,13 @@ class GameService(
         val providerToManagementEntry =
             results.toMap().entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
 
-        if (!groupResults) {
-            // If grouping is not requested, return the results directly
-            return results.mapNotNull { (plugin, metadata) ->
-                GameSearchResultDto(
-                    title = metadata.title.normalizeGameTitle(),
-                    coverUrl = metadata.coverUrl.toString(),
-                    release = metadata.release,
-                    publishers = metadata.publishedBy?.toList(),
-                    developers = metadata.developedBy?.toList(),
-                    originalIds = mapOf(
-                        plugin.javaClass.name to OriginalIdDto(
-                            providerToManagementEntry[plugin]?.pluginId ?: return@mapNotNull null, metadata.originalId
-                        )
-                    )
-                )
-            }.sortedByDescending { FuzzySearch.ratio(searchTerm, it.title) }
-        }
-
         // 2. Group by title and release year (if available)
         // (NOTE: This _could_ lead to problems if multiple games have the (almost) same title - see Battlefront 2)
         data class GroupKey(val title: String, val year: Int?)
 
         fun PluginApiMetadata.groupKey(): GroupKey =
             GroupKey(
-                title = this.title.trim().lowercase(),
+                title = this.title.normalizeGameTitle(),
                 year = this.release?.atZone(ZoneId.systemDefault())?.year
             )
 
@@ -283,9 +277,25 @@ class GameService(
                 }
                 .toMap()
 
+            // Merge and deduplicate coverUrls and headerUrls
+            val coverUrls = group.flatMap {
+                it.second.coverUrls?.mapNotNull { url ->
+                    val pluginId = providerToManagementEntry[it.first]?.pluginId ?: return@mapNotNull null
+                    UrlWithSourceDto(url = url.toString(), pluginId = pluginId)
+                } ?: emptyList()
+            }.distinct()
+
+            val headerUrls = group.flatMap {
+                it.second.headerUrls?.mapNotNull { url ->
+                    val pluginId = providerToManagementEntry[it.first]?.pluginId ?: return@mapNotNull null
+                    UrlWithSourceDto(url = url.toString(), pluginId = pluginId)
+                } ?: emptyList()
+            }.distinct()
+
             return GameSearchResultDto(
                 title = pick { it.title }!!,
-                coverUrl = pick { it.coverUrl.toString() },
+                coverUrls = coverUrls.ifEmpty { null },
+                headerUrls = headerUrls.ifEmpty { null },
                 release = pick { it.release },
                 publishers = pickList { it.publishedBy?.toList() },
                 developers = pickList { it.developedBy?.toList() },
@@ -293,16 +303,31 @@ class GameService(
             )
         }
 
-        // 4. Sort & return merged results
+        // 4. Merge the results
         val mergedResults = grouped.values.map { mergeGroup(it) }
 
-        return mergedResults
+        // 5. Sort the results by fuzzy match ratio and then by release year (newer first)
+        val sortedResults = mergedResults
             .map { result ->
-                val ratio = FuzzySearch.ratio(searchTerm, result.title)
+                val ratio = FuzzySearch.ratio(searchTerm.normalizeGameTitle(), result.title.normalizeGameTitle())
                 result to ratio
             }
-            .sortedByDescending { it.second }
+            .sortedWith(
+                compareByDescending<Pair<GameSearchResultDto, Int>> { it.second }
+                    .thenComparator { a, b ->
+                        val yearA = a.first.release?.atZone(ZoneId.systemDefault())?.year
+                        val yearB = b.first.release?.atZone(ZoneId.systemDefault())?.year
+                        when {
+                            yearA == yearB -> 0
+                            yearA == null -> 1 // nulls last
+                            yearB == null -> -1
+                            else -> yearB.compareTo(yearA) // newer first
+                        }
+                    }
+            )
             .map { it.first }
+
+        return sortedResults
     }
 
     fun matchManually(
@@ -474,10 +499,17 @@ class GameService(
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
                 }
-                metadata.coverUrl?.let { coverUrl ->
+                metadata.coverUrls?.firstOrNull()?.let { coverUrl ->
                     if (!metadataMap.containsKey("coverImage")) {
                         mergedGame.coverImage = Image(originalUrl = coverUrl.toURL(), type = ImageType.COVER)
                         metadataMap["coverImage"] =
+                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
+                    }
+                }
+                metadata.headerUrls?.firstOrNull()?.let { headerUrl ->
+                    if (!metadataMap.containsKey("headerImage")) {
+                        mergedGame.headerImage = Image(originalUrl = headerUrl.toURL(), type = ImageType.HEADER)
+                        metadataMap["headerImage"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
                 }
@@ -634,6 +666,7 @@ fun Game.toDto(): GameDto {
         libraryId = this.library.id!!,
         title = title!!,
         coverId = this.coverImage?.id,
+        headerId = this.headerImage?.id,
         comment = this.comment,
         summary = this.summary,
         release = this.release?.atZone(ZoneOffset.UTC)?.toLocalDate(),

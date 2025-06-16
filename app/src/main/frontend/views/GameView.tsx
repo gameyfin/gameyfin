@@ -79,13 +79,21 @@ export default function GameView() {
     return game && (
         <div className="flex flex-col gap-4">
             <div className="overflow-hidden relative rounded-t-lg">
-                {(game.imageIds && game.imageIds.length > 0) ?
-                    <img className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
-                         alt="Game screenshot"
-                         src={`/images/screenshot/${game.imageIds[0]}`}
-                    /> :
+                {game.headerId ? (
+                    <img
+                        className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
+                        alt="Game header"
+                        src={`/images/header/${game.headerId}`}
+                    />
+                ) : game.imageIds && game.imageIds.length > 0 ? (
+                    <img
+                        className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
+                        alt="Game screenshot"
+                        src={`/images/screenshot/${game.imageIds[0]}`}
+                    />
+                ) : (
                     <div className="w-full h-96 bg-secondary relative"/>
-                }
+                )}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"/>
             </div>
             <div className="flex flex-col gap-4 mx-24">

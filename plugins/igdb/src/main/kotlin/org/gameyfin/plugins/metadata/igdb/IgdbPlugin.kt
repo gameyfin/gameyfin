@@ -190,7 +190,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
                 originalId = game.slug,
                 title = game.name,
                 description = game.summary,
-                coverUrl = Mapper.cover(game.cover),
+                coverUrls = Mapper.cover(game.cover)?.let { listOf(it) },
                 release = if (game.firstReleaseDate.seconds > 0) Instant.ofEpochSecond(game.firstReleaseDate.seconds) else null,
                 userRating = game.rating.toInt(),
                 criticRating = game.aggregatedRating.toInt(),

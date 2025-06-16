@@ -11,6 +11,7 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGameResult
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGridResult
+import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbHeroResult
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbSearchResult
 
 
@@ -48,6 +49,12 @@ class SteamGridDbApiClient(private val apiKey: String) {
             url {
                 parameters.append("dimensions", COVER_SIZES)
             }
+            block()
+        }.body()
+    }
+
+    suspend fun heroes(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbHeroResult {
+        return get("heroes/game/$gameId") {
             block()
         }.body()
     }

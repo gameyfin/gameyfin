@@ -1,21 +1,27 @@
 import {Image, Tooltip} from "@heroui/react";
 import {Plug} from "@phosphor-icons/react";
-import {pluginState} from "Frontend/state/PluginState";
-import {useSnapshot} from "valtio/react";
+import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
-interface PluginLogoProps {
-    pluginId: string;
+interface PluginIconProps {
+    plugin: PluginDto;
+    size?: number;
+    blurred?: boolean;
+    showTooltip?: boolean;
 }
 
-export default function PluginIcon({pluginId}: PluginLogoProps) {
-    const state = useSnapshot(pluginState);
+export default function PluginIcon({
+                                       plugin,
+                                       size = 16,
+                                       blurred = false,
+                                       showTooltip = true
+                                   }: PluginIconProps) {
 
-    return state.isLoaded && (
-        <Tooltip content={state.state[pluginId].name}>
-            {state.state[pluginId].hasLogo ?
-                <Image src={`/images/plugins/${state.state[pluginId].id}/logo`} width={16} height={16} radius="none"/> :
-                <Plug size={16} weight="fill"/>
-            }
-        </Tooltip>
-    )
+    const icon = plugin.hasLogo
+        ?
+        <Image isBlurred={blurred} src={`/images/plugins/${plugin.id}/logo`} width={size} height={size} radius="none"/>
+        : <Plug size={size} weight="fill"/>;
+
+    return showTooltip
+        ? <Tooltip content={plugin.name}>{icon}</Tooltip>
+        : icon;
 }

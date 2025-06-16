@@ -31,6 +31,7 @@ class Image(
 
 enum class ImageType {
     COVER,
+    HEADER,
     SCREENSHOT,
     AVATAR
 }

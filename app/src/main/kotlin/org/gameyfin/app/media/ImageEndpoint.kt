@@ -36,6 +36,10 @@ class ImageEndpoint(
     fun getCover(@PathVariable("id") id: Long): ResponseEntity<InputStreamResource>? {
         return getImageContent(id)
     }
+    @GetMapping("/header/{id}")
+    fun getHeader(@PathVariable("id") id: Long): ResponseEntity<InputStreamResource>? {
+        return getImageContent(id)
+    }
 
     @GetMapping("/plugins/{id}/logo")
     fun getPluginLogo(@PathVariable("id") pluginId: String): ResponseEntity<ByteArrayResource>? {

@@ -11,7 +11,7 @@ interface PluginManagementSectionProps {
     plugins: PluginDto[];
 }
 
-export function PluginManagementSection({type, plugins}: PluginManagementSectionProps) {
+export function PluginManagementSection({type, plugins = []}: PluginManagementSectionProps) {
     const pluginPrioritiesModal = useDisclosure();
 
     return (
@@ -20,17 +20,24 @@ export function PluginManagementSection({type, plugins}: PluginManagementSection
                 <h2 className="text-xl font-bold">{camelCaseToTitle(type)}</h2>
 
                 <Tooltip color="foreground" placement="left" content="Change plugin order">
-                    <Button isIconOnly variant="flat" onPress={pluginPrioritiesModal.onOpen}>
+                    <Button isIconOnly
+                            variant="flat"
+                            onPress={pluginPrioritiesModal.onOpen}
+                            isDisabled={plugins.length === 0}>
                         <ListNumbers/>
                     </Button>
                 </Tooltip>
             </div>
 
-            <div className="grid grid-cols-300px gap-4">
+            {plugins.length === 0 && <div className="flex flex-row justify-center">
+                <p className="text-gray-500">No plugins of this type installed.</p>
+            </div>}
+
+            {plugins.length > 0 && <div className="grid grid-cols-300px gap-4">
                 {plugins.map((plugin) =>
                     <PluginManagementCard plugin={plugin} key={plugin.id}/>
                 )}
-            </div>
+            </div>}
 
             <PluginPrioritiesModal
                 key={plugins.map(p => p.id + p.priority).join(',')} // force re-mount if plugin order changes

@@ -12,6 +12,7 @@ class GameDto(
     val libraryId: Long,
     val title: String,
     val coverId: Long?,
+    val headerId: Long?,
     val comment: String?,
     val summary: String?,
     val release: LocalDate?,

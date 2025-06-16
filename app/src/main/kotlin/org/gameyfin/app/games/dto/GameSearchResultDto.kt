@@ -6,7 +6,8 @@ import java.util.*
 class GameSearchResultDto(
     val id: UUID = UUID.randomUUID(),
     val title: String,
-    val coverUrl: String?,
+    val coverUrls: List<UrlWithSourceDto>?,
+    val headerUrls: List<UrlWithSourceDto>?,
     val release: Instant?,
     val publishers: Collection<String>?,
     val developers: Collection<String>?,
@@ -21,3 +22,8 @@ class OriginalIdDto(
         return "$pluginId:$originalId"
     }
 }
+
+class UrlWithSourceDto(
+    val url: String,
+    val pluginId: String
+)

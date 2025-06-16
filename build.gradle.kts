@@ -1,13 +1,12 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-import org.gradle.internal.impldep.com.fasterxml.jackson.core.JsonGenerator
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 
 group = "org.gameyfin"
-version = "2.0.0.beta1"
+version = "2.0.0.beta2"
 
 allprojects {
     repositories {

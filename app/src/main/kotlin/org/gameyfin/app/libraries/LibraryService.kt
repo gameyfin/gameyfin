@@ -1,17 +1,10 @@
 package org.gameyfin.app.libraries
 
-import org.gameyfin.app.games.entities.Game
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.games.GameService
-import org.gameyfin.app.libraries.dto.DirectoryMappingDto
-import org.gameyfin.app.libraries.dto.LibraryDto
-import org.gameyfin.app.libraries.dto.LibraryEvent
-import org.gameyfin.app.libraries.dto.LibraryScanProgress
-import org.gameyfin.app.libraries.dto.LibraryScanStatus
-import org.gameyfin.app.libraries.dto.LibraryScanStep
-import org.gameyfin.app.libraries.dto.LibraryStatsDto
-import org.gameyfin.app.libraries.dto.LibraryUpdateDto
+import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.media.ImageService
 import org.springframework.data.repository.findByIdOrNull
@@ -251,7 +244,9 @@ class LibraryService(
         library.games.removeAll(removedGames)
 
         // 2. Download all images
-        val totalImages = matchedGames.count { it.coverImage != null } + matchedGames.sumOf { it.images.size }
+        val totalImages = matchedGames.count { it.coverImage != null } +
+                matchedGames.count { it.headerImage !== null } +
+                matchedGames.sumOf { it.images.size }
 
         progress.currentStep = LibraryScanStep(
             description = "Downloading images",
@@ -264,6 +259,11 @@ class LibraryService(
             Callable<Game?> {
                 try {
                     game.coverImage?.let {
+                        imageService.downloadIfNew(it)
+                        completedImageDownload.andIncrement
+                    }
+
+                    game.headerImage?.let {
                         imageService.downloadIfNew(it)
                         completedImageDownload.andIncrement
                     }
@@ -378,7 +378,7 @@ class LibraryService(
     private fun toEntity(library: LibraryDto): Library {
         return libraryRepository.findByIdOrNull(library.id) ?: Library(
             name = library.name,
-            directories = library.directories.map {
+            directories = library.directories.distinctBy { it.internalPath }.map {
                 DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
             }.toMutableList(),
         )

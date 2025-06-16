@@ -20,6 +20,7 @@ import * as Yup from "yup";
 import GameCoverPicker from "Frontend/components/general/input/GameCoverPicker";
 import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
 import ArrayInput from "Frontend/components/general/input/ArrayInput";
+import GameHeaderPicker from "Frontend/components/general/input/GameHeaderPicker";
 
 interface EditGameMetadataModalProps {
     game: GameDto;
@@ -57,15 +58,16 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                         Update game metadata
                                     </ModalHeader>
                                     <ModalBody>
-                                        <div className="flex flex-row gap-8">
-                                            {/*@ts-ignore*/}
+                                        <Input key="metadata.path" name="metadata.path" label="Path"
+                                               isDisabled className="mb-0"/>
+                                        <div className="flex flex-row gap-4 h-44">
                                             <GameCoverPicker key="coverUrl" name="coverUrl" game={game}/>
-                                            <div className="flex flex-col flex-1">
-                                                <Input key="metadata.path" name="metadata.path" label="Path"
-                                                       isDisabled/>
-                                                <Input key="title" name="title" label="Title" isRequired/>
-                                                <DatePickerInput key="release" name="release" label="Release"/>
-                                            </div>
+                                            <GameHeaderPicker key="headerUrl" name="headerUrl" game={game}/>
+                                        </div>
+                                        <div className="flex flex-row gap-4">
+                                            <Input key="title" name="title" label="Title" isRequired/>
+                                            <DatePickerInput key="release" name="release" label="Release"
+                                                             className="w-fit"/>
                                         </div>
                                         <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
                                         <TextAreaInput key="comment" name="comment" label="Comment (Markdown)"/>

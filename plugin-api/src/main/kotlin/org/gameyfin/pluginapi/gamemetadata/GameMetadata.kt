@@ -9,7 +9,8 @@ import java.time.Instant
  * @property originalId The unique identifier for the game from the original source.
  * @property title The title of the game.
  * @property description A description of the game, or null if not available.
- * @property coverUrl The URI to the game's cover image, or null if not available.
+ * @property coverUrls List of URIs to the game's cover images, or null if not available.
+ * @property headerUrls List of URIs to the game's header images, or null if not available.
  * @property release The release date and time of the game, or null if not available.
  * @property userRating The user rating for the game, or null if not available.
  * @property criticRating The critic rating for the game, or null if not available.
@@ -27,7 +28,8 @@ data class GameMetadata(
     val originalId: String,
     val title: String,
     val description: String? = null,
-    val coverUrl: URI? = null,
+    val coverUrls: List<URI>? = null,
+    val headerUrls: List<URI>? = null,
     val release: Instant? = null,
     val userRating: Int? = null,
     val criticRating: Int? = null,

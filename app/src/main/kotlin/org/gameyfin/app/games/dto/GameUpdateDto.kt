@@ -7,6 +7,7 @@ data class GameUpdateDto(
     val title: String?,
     val release: LocalDate?,
     val coverUrl: String?,
+    val headerUrl: String?,
     val comment: String?,
     val summary: String?,
     val developers: List<String>?,

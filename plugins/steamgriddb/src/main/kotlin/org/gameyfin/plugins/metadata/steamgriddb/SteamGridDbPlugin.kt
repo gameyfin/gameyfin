@@ -8,6 +8,7 @@ import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.gameyfin.plugins.metadata.steamgriddb.api.SteamGridDbApiClient
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGame
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGrid
+import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbHero
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import java.net.URI
@@ -74,25 +75,18 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
 
         override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
             return runBlocking {
-                val covers = mutableListOf<GameMetadata>()
-                val games = searchSteamGridDb(gameTitle)
+                val results = searchSteamGridDb(gameTitle)
 
-                for (game in games) {
-                    val gameDetails = client?.grids(game.id)
-                    val grids = gameDetails?.data.orEmpty()
-                    for (grid in grids) {
-                        covers.add(
-                            GameMetadata(
-                                originalId = game.id.toString(),
-                                title = game.name,
-                                coverUrl = URI(grid.url)
-                            )
-                        )
-                        if (covers.size >= maxResults) break
-                    }
-                    if (covers.size >= maxResults) break
-                }
-                covers
+                results.map { game ->
+                    val grids = getGridsForGame(game.id)
+                    val heroes = getHeroesForGame(game.id)
+                    GameMetadata(
+                        originalId = game.id.toString(),
+                        title = game.name,
+                        coverUrls = grids?.map { URI(it.url) },
+                        headerUrls = heroes?.map { URI(it.url) }
+                    )
+                }.take(maxResults)
             }
         }
 
@@ -101,10 +95,14 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                 val gameId = id.toIntOrNull() ?: return@runBlocking null
                 val game = getGameById(gameId) ?: return@runBlocking null
 
+                val grids = getGridsForGame(game.id)
+                val heroes = getHeroesForGame(game.id)
+
                 return@runBlocking GameMetadata(
                     originalId = game.id.toString(),
                     title = game.name,
-                    coverUrl = getGridForGame(game.id)?.let { grid -> URI(grid.url) }
+                    coverUrls = grids?.map { URI(it.url) },
+                    headerUrls = heroes?.map { URI(it.url) }
                 )
             }
         }
@@ -121,12 +119,20 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
             }
         }
 
-        private suspend fun getGridForGame(gameId: Int): SteamGridDbGrid? {
+        private suspend fun getGridsForGame(gameId: Int): List<SteamGridDbGrid>? {
             val client = client ?: throw PluginConfigError("SteamGridDB API client not initialized")
 
             val gameDetails = client.grids(gameId)
 
-            return gameDetails.data?.firstOrNull()
+            return gameDetails.data
+        }
+
+        private suspend fun getHeroesForGame(gameId: Int): List<SteamGridDbHero>? {
+            val client = client ?: throw PluginConfigError("SteamGridDB API client not initialized")
+
+            val gameDetails = client.heroes(gameId)
+
+            return gameDetails.data
         }
 
         private suspend fun getGameById(gameId: Int): SteamGridDbGame? {

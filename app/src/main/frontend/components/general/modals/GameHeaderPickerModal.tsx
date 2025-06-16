@@ -9,15 +9,15 @@ import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
-interface GameCoverPickerModalProps {
+interface GameHeaderPickerModalProps {
     game: GameDto;
     isOpen: boolean;
     onOpenChange: () => void;
-    setCoverUrl: (url: string) => void;
+    setHeaderUrl: (url: string) => void;
 }
 
-export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: GameCoverPickerModalProps) {
-    const [coverUrl, setCoverUrlState] = useState("");
+export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}: GameHeaderPickerModalProps) {
+    const [headerUrl, setHeaderUrlState] = useState("");
 
     const [searchTerm, setSearchTerm] = useState(game.title);
     const [searchResults, setSearchResults] = useState<GameSearchResultDto[]>([]);
@@ -34,7 +34,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
     async function search() {
         setIsSearching(true);
         const results = await GameEndpoint.getPotentialMatches(searchTerm);
-        let validResults = results.filter(result => result.coverUrls && result.coverUrls.length > 0);
+        let validResults = results.filter(result => result.headerUrls && result.headerUrls.length > 0);
         setSearchResults(validResults);
         setIsSearching(false);
     }
@@ -45,18 +45,18 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                 {(onClose) => {
                     return (<>
                         <ModalHeader>
-                            Enter a URL or search for a cover
+                            Enter a URL or search for a header
                         </ModalHeader>
                         <ModalBody className="flex flex-col gap-4">
                             <div className="flex flex-row gap-2 mb-4">
                                 <Input isClearable
                                        placeholder="Enter a URL"
-                                       value={coverUrl}
-                                       onValueChange={setCoverUrlState}
-                                       onClear={() => setCoverUrlState("")}
+                                       value={headerUrl}
+                                       onValueChange={setHeaderUrlState}
+                                       onClear={() => setHeaderUrlState("")}
                                 />
                                 <Button isIconOnly onPress={() => {
-                                    setCoverUrl(coverUrl);
+                                    setHeaderUrl(headerUrl);
                                     onClose();
                                 }}>
                                     <ArrowRight/>
@@ -84,35 +84,34 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                                 <p className="text-center text-foreground/70">Searching...</p>
                             }
                             <ScrollShadow
-                                className="grid grid-cols-auto-fill gap-4 h-96 overflow-y-scroll justify-evenly">
+                                className="flex flex-col items-center gap-4 h-96 overflow-y-scroll">
                                 {searchResults.flatMap(result => {
-                                    if (!result.coverUrls) return [];
-                                    return result.coverUrls.map((url, idx) => ({
+                                    if (!result.headerUrls) return [];
+                                    return result.headerUrls.map((url, idx) => ({
                                         id: `${result.id}-${idx}`,
                                         title: result.title,
                                         url: url.url,
                                         source: url.pluginId
                                     }))
-                                }).map(cover => (
-                                    <div key={cover.id}
+                                }).map(header => (
+                                    <div key={header.id}
                                          className="relative group w-fit h-fit cursor-pointer"
                                          onClick={() => {
-                                             setCoverUrl(cover.url);
+                                             setHeaderUrl(header.url);
                                              onOpenChange();
                                          }}
                                     >
                                         <Image
-                                            alt={cover.title}
-                                            className="z-0 object-cover aspect-[12/17] group-hover:brightness-[25%]"
-                                            src={cover.url}
+                                            alt={header.title}
+                                            className="z-0 object-cover group-hover:brightness-[25%]"
+                                            src={header.url}
                                             radius="none"
-                                            height={216}
                                         />
                                         <div
                                             className="absolute inset-0 flex flex-col gap-4 items-center justify-center opacity-0 group-hover:opacity-100">
-                                            <PluginIcon plugin={state[cover.source] as PluginDto} size={32}
+                                            <PluginIcon plugin={state[header.source] as PluginDto} size={32}
                                                         blurred={false} showTooltip={false}/>
-                                            <p className="text-s text-center">{cover.title}</p>
+                                            <p className="text-s text-center">{header.title}</p>
                                             <ArrowRight/>
                                         </div>
                                     </div>

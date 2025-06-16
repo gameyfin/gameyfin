@@ -115,14 +115,14 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 originalId = id.toString(),
                 title = sanitizeTitle(game.name),
                 description = game.detailedDescription,
-                coverUrl = game.headerImage?.let { URI(it) },
+                coverUrls = game.headerImage?.let { URI(it) }?.let { listOf(it) },
                 release = game.releaseDate?.date,
                 developedBy = game.developers?.toSet(),
                 publishedBy = game.publishers?.toSet(),
-                genres = game.genres?.let { it.map { Mapper.genre(it) }.toSet() },
-                keywords = game.categories?.let { it.mapNotNull { it.description }.toSet() },
-                screenshotUrls = game.screenshots?.let { it.map { URI(it.pathFull) }.toSet() },
-                videoUrls = game.movies?.let { it.mapNotNull { it.webm?.let { URI(it.max) } }.toSet() }
+                genres = game.genres?.let { genre -> genre.map { Mapper.genre(it) }.toSet() },
+                keywords = game.categories?.mapNotNull { it.description }?.toSet(),
+                screenshotUrls = game.screenshots?.map { URI(it.pathFull) }?.toSet(),
+                videoUrls = game.movies?.mapNotNull { video -> video.webm?.let { URI(it.max) } }?.toSet()
             )
 
             return metadata

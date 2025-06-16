@@ -17,6 +17,9 @@ import {ArrowRight, MagnifyingGlass} from "@phosphor-icons/react";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import PluginIcon from "../plugin/PluginIcon";
+import {useSnapshot} from "valtio/react";
+import {pluginState} from "Frontend/state/PluginState";
+import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
 interface EditGameMetadataModalProps {
     path: string;
@@ -40,6 +43,8 @@ export default function MatchGameModal({
     const [isSearching, setIsSearching] = useState(false);
     const [isMatching, setIsMatching] = useState<string | null>(null);
 
+    const state = useSnapshot(pluginState).state;
+
     useEffect(() => {
         setSearchTerm(initialSearchTerm);
         setSearchResults([]);
@@ -51,7 +56,7 @@ export default function MatchGameModal({
 
     async function search() {
         setIsSearching(true);
-        const results = await GameEndpoint.getPotentialMatches(searchTerm, true);
+        const results = await GameEndpoint.getPotentialMatches(searchTerm);
         setSearchResults(results);
         setIsSearching(false);
     }
@@ -86,7 +91,7 @@ export default function MatchGameModal({
                         <div>
                             <Table removeWrapper isStriped isHeaderSticky
                                    classNames={{
-                                       base: "h-80 overflow-scroll",
+                                       base: "h-80 overflow-y-auto",
                                    }}
                             >
                                 <TableHeader>
@@ -120,7 +125,8 @@ export default function MatchGameModal({
                                             <TableCell>
                                                 <div className="flex flex-row gap-2">
                                                     {Object.values(item.originalIds).map(
-                                                        originalId => <PluginIcon pluginId={originalId.pluginId}/>
+                                                        originalId => <PluginIcon
+                                                            plugin={state[originalId.pluginId] as PluginDto}/>
                                                     )}
                                                 </div>
                                             </TableCell>
