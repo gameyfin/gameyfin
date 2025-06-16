@@ -17,7 +17,7 @@ mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
 
-    coordinates(project.group.toString(), project.name, project.version.toString())
+    coordinates(project.group.toString(), project.name, rootProject.version.toString())
 
     pom {
         name = "Gameyfin Plugin API"
