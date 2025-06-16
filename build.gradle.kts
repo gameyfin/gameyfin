@@ -1,6 +1,13 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import org.gradle.internal.impldep.com.fasterxml.jackson.core.JsonGenerator
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import java.nio.file.Files
+
+group = "org.gameyfin"
+version = "2.0.0.beta1"
 
 allprojects {
     repositories {
@@ -19,8 +26,6 @@ plugins {
 subprojects {
     apply(plugin = "java")
 
-    version = "2.0.0.beta1"
-
     java.sourceCompatibility = JavaVersion.VERSION_21
     java.targetCompatibility = JavaVersion.VERSION_21
 
@@ -36,3 +41,34 @@ subprojects {
 }
 
 extra.set("pluginDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))
+
+@Suppress("UNCHECKED_CAST")
+val updatePackageJsonVersion by tasks.registering {
+    group = "build"
+    description = "Syncs package.json version with Gradle project version"
+
+    doLast {
+        // Read the package.json file
+        val packageJson = file("app/package.json")
+        val parsedJson = JsonSlurper().parse(packageJson) as MutableMap<String, Any>
+
+        // Update the version field with the Gradle project version
+        parsedJson["version"] = project.version.toString()
+
+        // Convert the updated map back to a JSON string
+        var stringifiedJson = JsonOutput.toJson(parsedJson)
+        stringifiedJson = JsonOutput.prettyPrint(stringifiedJson)
+
+        // Re-adjust indentation to 2 spaces (npm default)
+        stringifiedJson = stringifiedJson.replace(Regex("^((?: {4})+)", RegexOption.MULTILINE)) {
+            "  ".repeat(it.value.length / 4)
+        }
+
+        // Write the updated JSON back to package.json
+        Files.write(packageJson.toPath(), stringifiedJson.toByteArray())
+    }
+}
+
+tasks.named("build") {
+    dependsOn(updatePackageJsonVersion)
+}
