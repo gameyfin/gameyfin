@@ -4,12 +4,18 @@ plugins {
     kotlin("jvm")
 }
 
+tasks.named<Jar>("jar") {
+    enabled = false
+}
+
+val keystorePasswordEnvironmentVariable = "GAMEYFIN_KEYSTORE_PASSWORD"
+val keystorePasswordProperty = "gameyfin.keystorePassword"
+
 val keystorePath: String = rootProject.file("certs/gameyfin.jks").absolutePath
 val keystoreAlias = "gameyfin-plugins"
-val keystorePassword: String = (findProperty("keystorePassword") as String?)
-    ?: System.getenv("GAMEYFIN_KEYSTORE_PASSWORD")
+val keystorePassword: String = (findProperty(keystorePasswordProperty) as String?)
+    ?: System.getenv(keystorePasswordEnvironmentVariable)
     ?: ""
-
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
@@ -67,6 +73,11 @@ subprojects {
 
     tasks.register<Exec>("signJar") {
         dependsOn(tasks.jar)
+
+        if ((findProperty("vaadin.productionMode") as String?) == "true" && keystorePassword.isEmpty()) {
+            throw GradleException("Keystore password must be provided when vaadin.productionMode is true. Use -P$keystorePasswordProperty=your_password or set the $keystorePasswordEnvironmentVariable environment variable.")
+        }
+
         val jarFile = tasks.jar.get().archiveFile.get().asFile
 
         // Only enable if password is present

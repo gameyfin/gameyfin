@@ -1,8 +1,8 @@
 package org.gameyfin.app.core.security
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity
-import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
@@ -19,7 +19,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler
-import org.springframework.web.cors.CorsConfiguration
 
 
 @Configuration
@@ -53,13 +52,8 @@ class SecurityConfig(
                 .sessionRegistry(sessionRegistry)
         }
 
-        http.cors { cors ->
-            cors.configurationSource { request ->
-                val configuration = CorsConfiguration()
-                configuration.allowedOrigins = allowedOrigins
-                configuration
-            }
-        }
+        // Not needed since the frontend is served by the backend
+        http.cors { cors -> cors.disable() }
 
         super.configure(http)
 

@@ -1,8 +1,8 @@
 package org.gameyfin.app.core
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.setup.SetupService
 import org.gameyfin.app.users.UserService
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.users.entities.User
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -32,8 +32,15 @@ class SetupDataLoader(
         }
 
         val protocol = if (env.getProperty("server.ssl.key-store") != null) "https" else "http"
-
-        log.info { "Visit $protocol://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup to complete the setup" }
+        val rawAppUrl = env.getProperty("app.url")
+        val appUrl = when {
+            rawAppUrl.isNullOrBlank() -> null
+            rawAppUrl.startsWith("http://") || rawAppUrl.startsWith("https://") -> rawAppUrl
+            else -> "$protocol://$rawAppUrl"
+        }
+        val setupUrl =
+            appUrl ?: "${protocol}://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup"
+        log.info { "Visit $setupUrl to complete the setup" }
     }
 
     fun setupUsers() {

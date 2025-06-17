@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 
 group = "org.gameyfin"
-version = "2.0.0.beta2"
+version = "2.0.0.beta3"
 
 allprojects {
     repositories {
@@ -20,6 +20,10 @@ allprojects {
 
 plugins {
     kotlin("jvm")
+}
+
+tasks.named<Jar>("jar") {
+    enabled = false
 }
 
 subprojects {

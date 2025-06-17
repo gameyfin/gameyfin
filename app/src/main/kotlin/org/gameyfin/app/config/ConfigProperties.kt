@@ -263,7 +263,7 @@ sealed class ConfigProperties<T : Serializable>(
             data object AllowedOrigins : ConfigProperties<Array<String>>(
                 Array<String>::class,
                 "system.cors.allowed-origins",
-                "List of allowed CORS origins",
+                "List of allowed CORS origins (currently unused)",
                 emptyArray()
             )
         }
