@@ -8,7 +8,7 @@
 </div>
 
 > [!IMPORTANT]
-> Gameyfin v2 currently in beta stage.  
+> Gameyfin v2 is currently in beta stage.  
 > Expect bugs and breaking changes until the `2.0.0` release.
 
 ## Overview
@@ -21,10 +21,11 @@ Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 ⬇️ Access your library via your web browser & download games directly from there  
 👥 Share your library with friends & family  
 ⚛️ LAN-friendly (everything is cached locally)  
-🐋 Runs in a container or any system with a JVM
+🐋 Runs in a container or any system with a JVM  
 🌈 Themes (including colorblind support)  
 🔌 Easily expandable with plugins  
-🔒 Integrates into your SSO solution via OAuth2 / OpenID Connect
+🔒 Integrates into your SSO solution via OAuth2 / OpenID Connect  
+🆓 **100% open source and free to use without any paywall.**
 
 ### Documentation
 
