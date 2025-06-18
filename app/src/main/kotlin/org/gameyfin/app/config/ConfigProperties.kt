@@ -256,18 +256,6 @@ sealed class ConfigProperties<T : Serializable>(
             )
         }
     }
-
-    /** System */
-    sealed class System {
-        sealed class Cors {
-            data object AllowedOrigins : ConfigProperties<Array<String>>(
-                Array<String>::class,
-                "system.cors.allowed-origins",
-                "List of allowed CORS origins (currently unused)",
-                emptyArray()
-            )
-        }
-    }
 }
 
 enum class MatchUsersBy {
