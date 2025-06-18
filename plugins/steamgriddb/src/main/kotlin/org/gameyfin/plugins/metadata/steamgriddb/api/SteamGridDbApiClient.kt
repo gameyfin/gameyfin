@@ -44,6 +44,10 @@ class SteamGridDbApiClient(private val apiKey: String) {
         return get("search/autocomplete/${term.encodeURLPath(encodeSlash = true, encodeEncoded = false)}", block).body()
     }
 
+    suspend fun game(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbGameResult {
+        return get("games/id/$gameId", block).body()
+    }
+
     suspend fun grids(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbGridResult {
         return get("grids/game/$gameId") {
             url {
@@ -59,8 +63,8 @@ class SteamGridDbApiClient(private val apiKey: String) {
         }.body()
     }
 
-    suspend fun game(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbGameResult {
-        return get("games/id/$gameId", block).body()
+    fun close() {
+        client.close()
     }
 
     private suspend fun get(endpoint: String, block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {

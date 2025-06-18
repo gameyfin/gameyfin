@@ -56,6 +56,11 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         }
     }
 
+    override fun stop() {
+        client?.close()
+        client = null
+    }
+
     private suspend fun authenticate(apiKey: String? = null) {
         log.debug("Authenticating on SteamGridDB API...")
 
@@ -83,6 +88,7 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                     GameMetadata(
                         originalId = game.id.toString(),
                         title = game.name,
+                        release = game.releaseDate,
                         coverUrls = grids?.map { URI(it.url) },
                         headerUrls = heroes?.map { URI(it.url) }
                     )
@@ -101,6 +107,7 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                 return@runBlocking GameMetadata(
                     originalId = game.id.toString(),
                     title = game.name,
+                    release = game.releaseDate,
                     coverUrls = grids?.map { URI(it.url) },
                     headerUrls = heroes?.map { URI(it.url) }
                 )

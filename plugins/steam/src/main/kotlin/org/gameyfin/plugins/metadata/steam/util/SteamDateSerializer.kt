@@ -27,9 +27,26 @@ class SteamDateSerializer : KSerializer<Instant?> {
         val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, yyyy", Locale.ENGLISH)
     }
 
-    override fun deserialize(decoder: Decoder): Instant? = fromString(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: Instant?) {
+        if (value == null) {
+            encoder.encodeNull()
+        } else {
+            encoder.encodeString(value.toString())
+        }
+    }
 
-    override fun serialize(encoder: Encoder, value: Instant?) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): Instant? {
+        return if (decoder.decodeNotNullMark()) {
+            fromString(decoder.decodeString())
+        } else {
+            decoder.decodeNull()
+            null
+        }
+    }
+
+    fun deserialize(dateString: String): Instant? {
+        return fromString(dateString)
+    }
 
     private fun fromString(dateString: String): Instant? {
         return try {
