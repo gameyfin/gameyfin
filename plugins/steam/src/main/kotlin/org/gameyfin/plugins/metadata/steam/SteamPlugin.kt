@@ -19,10 +19,13 @@ import org.gameyfin.plugins.metadata.steam.dto.SteamDetailsResultWrapper
 import org.gameyfin.plugins.metadata.steam.dto.SteamGame
 import org.gameyfin.plugins.metadata.steam.dto.SteamSearchResult
 import org.gameyfin.plugins.metadata.steam.mapper.Mapper
+import org.gameyfin.plugins.metadata.steam.util.SteamDateSerializer
+import org.jsoup.Jsoup
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import java.net.URI
+import java.time.Instant
 
 class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
@@ -31,6 +34,8 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             isLenient = true
             ignoreUnknownKeys = true
         }
+
+        val dateSerializer = SteamDateSerializer()
     }
 
     @Extension(ordinal = 3)
@@ -114,9 +119,9 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             val metadata = GameMetadata(
                 originalId = id.toString(),
                 title = sanitizeTitle(game.name),
-                description = game.detailedDescription,
+                description = game.shortDescription, // Using short description since the detailed description often contains just some ads for the Battle Pass etc.
                 coverUrls = game.headerImage?.let { URI(it) }?.let { listOf(it) },
-                release = game.releaseDate?.date,
+                release = parseOriginalReleaseDateFromStorePage(id) ?: game.releaseDate?.date,
                 developedBy = game.developers?.toSet(),
                 publishedBy = game.publishers?.toSet(),
                 genres = game.genres?.let { genre -> genre.map { Mapper.genre(it) }.toSet() },
@@ -126,6 +131,28 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             )
 
             return metadata
+        }
+
+        /**
+         * The API only provides the release date on Steam, not the original release date.
+         * However, it is possible to get the original release date from the Steam store page.
+         */
+        private suspend fun parseOriginalReleaseDateFromStorePage(appId: Int): Instant? {
+            val response = client.get("https://store.steampowered.com/app/$appId") {
+                // Set language to English to avoid issues with different languages
+                cookie("Steam_Language", "english")
+                // Skip Steam age check
+                cookie("birthtime", "-2208989360")
+                cookie("lastagecheckage", "1-January-1900")
+            }
+
+            if (response.status != HttpStatusCode.OK) return null
+
+            val html: String = response.bodyAsText(Charsets.UTF_8)
+            val document = Jsoup.parse(html)
+            val releaseDateText = document.selectFirst("div.release_date div.date") ?: return null
+
+            return dateSerializer.deserialize(releaseDateText.text())
         }
 
 

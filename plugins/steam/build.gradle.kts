@@ -22,4 +22,5 @@ dependencies {
     }
 
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
+    implementation("org.jsoup:jsoup:1.20.1")
 }
