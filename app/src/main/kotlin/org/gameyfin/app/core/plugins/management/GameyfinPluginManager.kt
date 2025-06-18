@@ -67,6 +67,10 @@ class GameyfinPluginManager(
         return GameyfinManifestPluginDescriptorFinder()
     }
 
+    override fun createExtensionFactory(): ExtensionFactory {
+        return SingletonExtensionFactory(this)
+    }
+
     override fun createExtensionFinder(): ExtensionFinder? {
         val extensionFinder = GameyfinExtensionFinder(this)
         addPluginStateListener(extensionFinder)
