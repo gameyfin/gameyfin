@@ -31,7 +31,6 @@ class SecurityConfig(
 ) : VaadinWebSecurity() {
 
     private val ssoProviderKey: String = "oidc"
-    private val allowedOrigins: List<String>? = config.get(ConfigProperties.System.Cors.AllowedOrigins)?.toList()
 
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
