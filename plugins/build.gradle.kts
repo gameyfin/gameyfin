@@ -21,6 +21,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
 
     dependencies {
+        compileOnly(kotlin("stdlib"))
         compileOnly(project(":plugin-api"))
     }
 

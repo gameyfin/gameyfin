@@ -33,6 +33,8 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         private lateinit var communicationManager: CommunicationManager
 
         private lateinit var plugin: TorrentDownloadPlugin
+
+        private lateinit var state: TorrentDownloadPluginState
     }
 
     init {
@@ -70,14 +72,8 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         )
     )
 
-    @OptIn(ExperimentalPathApi::class)
     override fun start() {
-        // Currently Gameyfin does not support storing plugin state
-        // and since we can't associate the torrent files with a game path after a restart
-        // we just delete the directory on startup.
-        if (Files.exists(TORRENT_FILE_DIRECTORY)) {
-            TORRENT_FILE_DIRECTORY.deleteRecursively()
-        }
+
         Files.createDirectories(TORRENT_FILE_DIRECTORY)
 
         tracker = Tracker(config("trackerPort"), getTrackerUri().toString())
@@ -95,6 +91,27 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             SelectorFactoryImpl(),
             FirstAvailableChannel(clientPort, clientPort)
         )
+
+        state = loadState<TorrentDownloadPluginState>() ?: TorrentDownloadPluginState()
+
+        state.torrentFilesMetadata.forEach {
+            // Check if the torrent and game files exist and
+            // that the game files have not been modified since the torrent file was created
+            if (Files.exists(it.torrentFile) && Files.exists(it.gameFile) &&
+                it.gameFile.getLastModifiedTime().toInstant().isBefore(it.torrentFile.getLastModifiedTime().toInstant())
+            ) {
+                tracker.announce(TrackedTorrent.load(it.torrentFile.toFile()))
+                communicationManager.addTorrent(
+                    it.torrentFile.toString(),
+                    getRootPath(it.gameFile).toString(),
+                    FullyPieceStorageFactory.INSTANCE
+                )
+            } else {
+                state.torrentFilesMetadata.remove(it)
+            }
+        }
+
+        saveState(state)
     }
 
     override fun stop() {
@@ -146,6 +163,14 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         )
     }
 
+    private fun getRootPath(gameFilesPath: Path): Path {
+        return if (gameFilesPath.isDirectory()) {
+            gameFilesPath
+        } else {
+            gameFilesPath.parent
+        }
+    }
+
     @Extension(ordinal = 2)
     class TorrentDownloadProvider : DownloadProvider {
         private val log = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
@@ -180,9 +205,18 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             tracker.announce(TrackedTorrent.load(torrentFile.toFile()))
             communicationManager.addTorrent(
                 torrentFile.toString(),
-                getRootPath(gameFilesPath).toString(),
+                plugin.getRootPath(gameFilesPath).toString(),
                 FullyPieceStorageFactory.INSTANCE
             )
+
+            state.torrentFilesMetadata.add(
+                TorrentFileMetadata(
+                    torrentFile = torrentFile,
+                    gameFile = gameFilesPath
+                )
+            )
+
+            plugin.saveState(state)
 
             return torrentFile
         }
@@ -192,18 +226,10 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
                 .numHashingThreads(Runtime.getRuntime().availableProcessors() * 2)
                 .createdBy(plugin.javaClass.name)
                 .addFile(gameFilesPath)
-                .rootPath(getRootPath(gameFilesPath))
+                .rootPath(plugin.getRootPath(gameFilesPath))
                 .announce(plugin.getTrackerUri().toString())
                 .privateFlag(plugin.config("privateMode"))
                 .build()
-        }
-
-        private fun getRootPath(gameFilesPath: Path): Path {
-            return if (gameFilesPath.isDirectory()) {
-                gameFilesPath
-            } else {
-                gameFilesPath.parent
-            }
         }
     }
 }

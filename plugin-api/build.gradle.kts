@@ -1,5 +1,7 @@
 import com.vanniktech.maven.publish.SonatypeHost
 
+val jacksonVersion = "2.19.1"
+
 plugins {
     kotlin("jvm")
     `java-library`
@@ -11,6 +13,10 @@ group = "org.gameyfin"
 dependencies {
     // PF4J (shared)
     api("org.pf4j:pf4j:${rootProject.extra["pf4jVersion"]}")
+
+    // JSON serialization
+    compileOnly("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 }
 
 mavenPublishing {
