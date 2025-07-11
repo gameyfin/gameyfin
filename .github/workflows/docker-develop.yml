@@ -25,6 +25,8 @@ jobs:
           java-version: '21'
 
       - name: Run production build
+        env:
+          GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
         run: ./gradlew clean build -Pvaadin.productionMode=true
 
       - name: Set up Docker Buildx
