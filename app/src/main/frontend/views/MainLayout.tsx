@@ -13,7 +13,6 @@ import {UserPreferenceService} from "Frontend/util/user-preference-service";
 import SearchBar from "Frontend/components/general/SearchBar";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
-import {scanState} from "Frontend/state/ScanState";
 import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
 import {isAdmin} from "Frontend/util/utils";
 
@@ -27,7 +26,6 @@ export default function MainLayout() {
     const isHomePage = location.pathname === "/";
     const [isExploding, setIsExploding] = useState(false);
     const games = useSnapshot(gameState).games;
-    const scans = useSnapshot(scanState);
 
     useEffect(() => {
         let newTitle = `Gameyfin - ${routeMetadata?.title}`;

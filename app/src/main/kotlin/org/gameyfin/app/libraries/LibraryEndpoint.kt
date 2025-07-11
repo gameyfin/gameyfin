@@ -1,23 +1,23 @@
 package org.gameyfin.app.libraries
 
 import com.vaadin.hilla.Endpoint
-import org.gameyfin.app.libraries.dto.LibraryDto
-import org.gameyfin.app.libraries.dto.LibraryEvent
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
+import org.gameyfin.app.libraries.dto.LibraryDto
+import org.gameyfin.app.libraries.dto.LibraryEvent
 import org.gameyfin.app.libraries.dto.LibraryScanProgress
 import org.gameyfin.app.libraries.dto.LibraryUpdateDto
 import org.gameyfin.app.libraries.enums.ScanType
+import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.util.isAdmin
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.core.userdetails.UserDetails
 import reactor.core.publisher.Flux
 
 @Endpoint
 @PermitAll
 class LibraryEndpoint(
-    private val libraryService: LibraryService
+    private val libraryService: LibraryService,
+    private val userService: UserService,
 ) {
     fun subscribeToLibraryEvents(): Flux<List<LibraryEvent>> {
         return LibraryService.subscribeToLibraryEvents()
@@ -27,7 +27,7 @@ class LibraryEndpoint(
 
 
     fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
-        val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
+        val user = userService.getCurrentUser()
         return if (user.isAdmin()) LibraryService.subscribeToScanProgressEvents()
         else Flux.empty()
     }

@@ -5,21 +5,21 @@ import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.plugins.dto.PluginUpdateDto
+import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.util.isAdmin
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.core.userdetails.UserDetails
 import reactor.core.publisher.Flux
 
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
 class PluginEndpoint(
-    private val pluginService: PluginService
+    private val pluginService: PluginService,
+    private val userService: UserService,
 ) {
 
     @PermitAll
     fun subscribe(): Flux<List<PluginUpdateDto>> {
-        val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
+        val user = userService.getCurrentUser()
         return if (user.isAdmin()) PluginService.subscribe()
         else Flux.empty()
     }

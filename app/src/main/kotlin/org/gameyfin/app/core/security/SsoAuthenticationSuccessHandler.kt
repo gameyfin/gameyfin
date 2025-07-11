@@ -1,12 +1,12 @@
 package org.gameyfin.app.core.security
 
-import org.gameyfin.app.config.ConfigService
-import org.gameyfin.app.users.UserService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.config.MatchUsersBy
 import org.gameyfin.app.users.RoleService
+import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.entities.User
 import org.springframework.security.core.Authentication
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
@@ -42,11 +42,13 @@ class SsoAuthenticationSuccessHandler(
 
         // User could not be found in the database
         if (matchedUser == null) {
+            // TODO: User registration is currently forced, but this should be configurable.
+            //  However, this causes conflict with user preferences and game entities (since both reference the user entity)
             // Check if new user registration is enabled
-            if (config.get(ConfigProperties.SSO.OIDC.AutoRegisterNewUsers) == false) {
-                response.sendRedirect("/")
-                return
-            }
+            //if (config.get(ConfigProperties.SSO.OIDC.AutoRegisterNewUsers) == false) {
+            //    response.sendRedirect("/")
+            //    return
+            //
 
             // Register as new user
             matchedUser = User(oidcUser)

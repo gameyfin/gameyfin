@@ -3,8 +3,8 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {addToast, Button} from "@heroui/react";
-import {MagicWand} from "@phosphor-icons/react";
+import {addToast, Button, Checkbox, CheckboxGroup, Tooltip} from "@heroui/react";
+import {MagicWand, Warning} from "@phosphor-icons/react";
 
 function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
@@ -50,8 +50,21 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
                     <Section title="SSO user handling"/>
                     <div className="flex flex-row items-baseline">
-                        <ConfigFormField configElement={getConfig("sso.oidc.auto-register-new-users")}
-                                         isDisabled={!formik.values.sso.oidc.enabled}/>
+                        <CheckboxGroup className="flex flex-col flex-1 items-baseline gap-2"
+                                       value={["auto-register-new-users"]}>
+                            <div className="flex flex-row gap-2">
+                                <Checkbox className="items-baseline" value="auto-register-new-users" isDisabled>
+                                    Automatically create new users after registration
+                                </Checkbox>
+                                <Tooltip content={"Currently not configurable (always enabled)"} placement="right">
+                                    <Warning weight="fill"/>
+                                </Tooltip>
+                            </div>
+                        </CheckboxGroup>
+                        {/*TODO: enable when the issues with unregistered SSO users are sorted
+
+                            <ConfigFormField configElement={getConfig("sso.oidc.auto-register-new-users")} isDisabled={!formik.values.sso.oidc.enabled}/>
+                        */}
                         <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
                                          isDisabled={!formik.values.sso.oidc.enabled ||
                                              !formik.values.sso.oidc["auto-register-new-users"]}/>

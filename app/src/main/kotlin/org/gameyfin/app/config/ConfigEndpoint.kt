@@ -7,15 +7,15 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.config.dto.ConfigEntryDto
 import org.gameyfin.app.config.dto.ConfigUpdateDto
 import org.gameyfin.app.core.Role
+import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.util.isAdmin
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.core.userdetails.UserDetails
 import reactor.core.publisher.Flux
 
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
 class ConfigEndpoint(
-    private val configService: ConfigService
+    private val configService: ConfigService,
+    private val userService: UserService,
 ) {
     companion object {
         val log = KotlinLogging.logger { }
@@ -25,7 +25,7 @@ class ConfigEndpoint(
 
     @PermitAll
     fun subscribe(): Flux<List<ConfigUpdateDto>> {
-        val user = SecurityContextHolder.getContext().authentication.principal as UserDetails
+        val user = userService.getCurrentUser()
         return if (user.isAdmin()) ConfigService.subscribe()
         else Flux.empty()
     }

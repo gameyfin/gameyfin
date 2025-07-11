@@ -26,6 +26,7 @@ import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
@@ -125,8 +126,12 @@ class GameService(
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
 
-        val userDetails = SecurityContextHolder.getContext().authentication.principal as UserDetails
-        val user = userService.getByUsernameNonNull(userDetails.username)
+        val userDetails = SecurityContextHolder.getContext().authentication.principal
+        val user = when (userDetails) {
+            is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
+            is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername)
+            else -> throw IllegalStateException("Unkown user type: ${userDetails::class.java.name}")
+        }
 
         // Update only non-null fields
         gameUpdateDto.title?.let {
