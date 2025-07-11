@@ -47,6 +47,19 @@ class UserService(
     override fun loadUserByUsername(username: String): UserDetails {
         val user = getByUsernameNonNull(username)
 
+        if (user.oidcProviderId != null && user.password == null) {
+            // If the user is an OIDC user, we return a UserDetails with no password
+            return User(
+                user.username,
+                "", // OIDC users do not have a password
+                user.enabled,
+                true,
+                true,
+                true,
+                toAuthorities(user.roles)
+            )
+        }
+
         return User(
             user.username,
             user.password,
@@ -132,7 +145,11 @@ class UserService(
     }
 
     fun registerOrUpdateUser(user: org.gameyfin.app.users.entities.User): org.gameyfin.app.users.entities.User {
-        user.password = passwordEncoder.encode(user.password)
+        // OIDC users can have null passwords, so we only encode if a password is provided
+        if (user.password != null) {
+            user.password = passwordEncoder.encode(user.password)
+        }
+
         return userRepository.save(user)
     }
 

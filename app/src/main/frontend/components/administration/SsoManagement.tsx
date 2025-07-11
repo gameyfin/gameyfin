@@ -56,7 +56,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                                 <Checkbox className="items-baseline" value="auto-register-new-users" isDisabled>
                                     Automatically create new users after registration
                                 </Checkbox>
-                                <Tooltip content={"Currently not configurable due to a bug"} placement="right">
+                                <Tooltip content={"Currently not configurable (always enabled)"} placement="right">
                                     <Warning weight="fill"/>
                                 </Tooltip>
                             </div>

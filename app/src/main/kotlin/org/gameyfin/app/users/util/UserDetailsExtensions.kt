@@ -15,3 +15,7 @@ fun UserDetails.hasRole(role: Role): Boolean {
 fun UserDetails.isAdmin(): Boolean {
     return hasRole(Role.SUPERADMIN) || hasRole(Role.ADMIN)
 }
+
+fun User.isAdmin(): Boolean {
+    return hasRole(Role.SUPERADMIN) || hasRole(Role.ADMIN)
+}
