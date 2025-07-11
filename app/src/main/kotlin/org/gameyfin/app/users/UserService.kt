@@ -1,25 +1,20 @@
 package org.gameyfin.app.users
 
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.Role
+import org.gameyfin.app.core.Utils
+import org.gameyfin.app.core.events.*
 import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.media.ImageService
+import org.gameyfin.app.users.dto.UserInfoDto
+import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.emailconfirmation.EmailConfirmationService
 import org.gameyfin.app.users.enums.RoleAssignmentResult
 import org.gameyfin.app.users.persistence.UserRepository
-import io.github.oshai.kotlinlogging.KotlinLogging
-import org.gameyfin.app.config.ConfigProperties
-import org.gameyfin.app.core.Role
-import org.gameyfin.app.core.Utils
-import org.gameyfin.app.core.events.AccountDeletedEvent
-import org.gameyfin.app.core.events.AccountStatusChangedEvent
-import org.gameyfin.app.core.events.EmailNeedsConfirmationEvent
-import org.gameyfin.app.core.events.RegistrationAttemptWithExistingEmailEvent
-import org.gameyfin.app.core.events.UserRegistrationWaitingForApprovalEvent
-import org.gameyfin.app.media.ImageService
-import org.gameyfin.app.users.dto.UserInfoDto
-import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
@@ -66,7 +61,8 @@ class UserService(
     fun existsByUsername(username: String): Boolean = userRepository.existsByUsername(username)
     fun existsByEmail(email: String): Boolean = userRepository.existsByEmail(email)
 
-    fun findByOidcProviderId(oidcProviderId: String): org.gameyfin.app.users.entities.User? = userRepository.findByOidcProviderId(oidcProviderId)
+    fun findByOidcProviderId(oidcProviderId: String): org.gameyfin.app.users.entities.User? =
+        userRepository.findByOidcProviderId(oidcProviderId)
 
     fun getAllUsers(): List<UserInfoDto> {
         return userRepository.findAll().map { u -> toUserInfo(u) }
@@ -84,7 +80,8 @@ class UserService(
         return userRepository.findByUsername(username) ?: throw UsernameNotFoundException("Unknown user '$username'")
     }
 
-    fun getUserInfo(auth: Authentication): UserInfoDto {
+    fun getUserInfo(): UserInfoDto {
+        val auth = SecurityContextHolder.getContext().authentication
         val principal = auth.principal
 
         if (principal is OidcUser) {
@@ -97,6 +94,15 @@ class UserService(
 
         val user = getByUsernameNonNull(auth.name)
         return toUserInfo(user)
+    }
+
+    fun getCurrentUser(): org.gameyfin.app.users.entities.User {
+        val auth = SecurityContextHolder.getContext().authentication
+        if (auth.principal is OidcUser) {
+            return userRepository.findByOidcProviderId((auth.principal as OidcUser).subject)
+                ?: throw UsernameNotFoundException("OIDC user not found")
+        }
+        return getByUsernameNonNull(auth.name)
     }
 
     fun getAvatar(username: String): Image? {
@@ -174,7 +180,10 @@ class UserService(
         }
     }
 
-    fun registerUserFromInvitation(registration: UserRegistrationDto, email: String): org.gameyfin.app.users.entities.User {
+    fun registerUserFromInvitation(
+        registration: UserRegistrationDto,
+        email: String
+    ): org.gameyfin.app.users.entities.User {
         val user = org.gameyfin.app.users.entities.User(
             username = registration.username,
             password = passwordEncoder.encode(registration.password),

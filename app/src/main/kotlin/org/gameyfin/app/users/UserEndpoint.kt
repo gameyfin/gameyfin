@@ -1,12 +1,12 @@
 package org.gameyfin.app.users
 
 import com.vaadin.hilla.Endpoint
-import org.gameyfin.app.users.dto.UserUpdateDto
-import org.gameyfin.app.users.enums.RoleAssignmentResult
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.users.dto.UserInfoDto
+import org.gameyfin.app.users.dto.UserUpdateDto
+import org.gameyfin.app.users.enums.RoleAssignmentResult
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 
@@ -23,8 +23,7 @@ class UserEndpoint(
 
     @PermitAll
     fun getUserInfo(): UserInfoDto {
-        val auth: Authentication = SecurityContextHolder.getContext().authentication
-        return userService.getUserInfo(auth)
+        return userService.getUserInfo()
     }
 
     @PermitAll
