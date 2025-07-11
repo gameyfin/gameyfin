@@ -52,3 +52,4 @@ out/
 /app/src/main/frontend/**/*.js.map
 /app/src/main/frontend/generated/
 /torrent_dotfiles/
+*.state.json
