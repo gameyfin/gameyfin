@@ -1,0 +1,34 @@
+name: Delete Docker Tag on Merge
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  delete-docker-tag:
+    if: |
+      contains(github.event.head_commit.message, 'Merge pull request') &&
+      startsWith(github.event.head_commit.message, 'Merge pull request')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract merged branch name
+        id: extract_branch
+        run: |
+          # Extract branch name from merge commit message
+          BRANCH=$(echo "${{ github.event.head_commit.message }}" | grep -oE 'fix/[^ ]+')
+          TAG=${BRANCH#fix/}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Delete Docker tag from Docker Hub
+        if: steps.extract_branch.outputs.tag != ''
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          TAG: ${{ steps.extract_branch.outputs.tag }}
+        run: |
+          echo "Deleting Docker tag: $TAG"
+          curl -X DELETE -u "$DOCKERHUB_USERNAME:$DOCKERHUB_TOKEN" \
+            "https://hub.docker.com/v2/repositories/grimsi/gameyfin/tags/$TAG/"
+
