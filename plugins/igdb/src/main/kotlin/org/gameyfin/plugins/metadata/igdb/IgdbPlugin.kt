@@ -1,10 +1,14 @@
 package org.gameyfin.plugins.metadata.igdb
 
 import com.api.igdb.apicalypse.APICalypse
-import com.api.igdb.exceptions.RequestException
 import com.api.igdb.request.IGDBWrapper
 import com.api.igdb.request.TwitchAuthenticator
 import com.api.igdb.request.games
+import io.github.resilience4j.bulkhead.Bulkhead
+import io.github.resilience4j.bulkhead.BulkheadConfig
+import io.github.resilience4j.decorators.Decorators
+import io.github.resilience4j.ratelimiter.RateLimiter
+import io.github.resilience4j.ratelimiter.RateLimiterConfig
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigError
@@ -15,10 +19,9 @@ import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
-import org.slf4j.LoggerFactory
 import proto.Game
+import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
@@ -89,7 +92,21 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
     class IgdbMetadataProvider : GameMetadataProvider {
 
         companion object {
-            private val log = LoggerFactory.getLogger(this::class.java)
+            private val rateLimiter: RateLimiter = RateLimiter.of(
+                "igdb-api",
+                RateLimiterConfig.custom()
+                    .limitForPeriod(4)
+                    .limitRefreshPeriod(Duration.ofSeconds(1))
+                    .timeoutDuration(Duration.ofMinutes(10))
+                    .build()
+            )
+            private val bulkhead: Bulkhead = Bulkhead.of(
+                "igdb-api",
+                BulkheadConfig.custom()
+                    .maxConcurrentCalls(8)
+                    .maxWaitDuration(Duration.ofMinutes(10)) // Wait up to 10s for a slot
+                    .build()
+            )
 
             private val QUERY_FIELDS = listOf(
                 "slug",
@@ -168,21 +185,12 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
         }
 
         private fun queryIgdbGames(query: APICalypse): List<Game> {
-            return try {
-                IGDBWrapper.games(query)
-            } catch (e: RequestException) {
-                // FIXME: Handle rate limit errors with exponential backoff
-                if (e.statusCode == 429) {
-                    val randomInterval = (1..5).random().toLong()
-                    log.warn("IGDB rate limit exceeded, retrying in $randomInterval seconds...")
-                    TimeUnit.SECONDS.sleep(randomInterval)
-
-                    return queryIgdbGames(query)
-                }
-
-                log.error("Request to IGDB API failed with HTTP ${e.statusCode}")
-                emptyList()
-            }
+            val supplier = { IGDBWrapper.games(query) }
+            val decorated = Decorators.ofSupplier(supplier)
+                .withBulkhead(bulkhead)
+                .withRateLimiter(rateLimiter)
+                .decorate()
+            return decorated.get()
         }
 
         private fun toGameMetadata(game: Game): GameMetadata {
