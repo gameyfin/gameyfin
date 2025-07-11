@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug
+labels: ''
 assignees: ''
 
 ---
@@ -24,10 +24,9 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **General info (please complete the following information):**
- - Installation method: [e.g. bare metal, Docker]
- - Java version (if installation method is "bare metal"): [e.g. Java 18]
  - Browser (if bug is in the Web UI) [e.g. chrome, safari]
- - Gameyfin version [e.g. v1.3.1]
+ - Gameyfin version [e.g. v2.0.0.beta3]
 
 **Additional context**
 Add any other context about the problem here.
+Screenshots can also be attached here.
