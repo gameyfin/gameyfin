@@ -337,7 +337,7 @@ class LibraryService(
         progress.result = LibraryScanResult(
             new = persistedGames.size,
             removed = removedGames.size,
-            unmatched = removedUnmatchedPaths.size
+            unmatched = newUnmatchedPaths.size
         )
         emit(progress)
     }
