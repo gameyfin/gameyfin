@@ -30,7 +30,9 @@ class SecurityConfig(
     private val sessionRegistry: SessionRegistry
 ) : VaadinWebSecurity() {
 
-    private val ssoProviderKey: String = "oidc"
+    companion object {
+        const val SSO_PROVIDER_KEY = "oidc"
+    }
 
     @Throws(Exception::class)
     override fun configure(http: HttpSecurity) {
@@ -56,14 +58,18 @@ class SecurityConfig(
 
         super.configure(http)
 
+        setLoginView(http, "/login", "/")
+
         if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
-            setOAuth2LoginPage(http, "/oauth2/authorization/$ssoProviderKey")
             // Use custom success handler to handle user registration
             http.oauth2Login { oauth2Login -> oauth2Login.successHandler(ssoAuthenticationSuccessHandler) }
             // Prevent unnecessary redirects
             http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
-        } else {
-            setLoginView(http, "/login", "/")
+
+            // Custom authentication entry point to support SSO and direct login
+            http.exceptionHandling { exceptionHandling ->
+                exceptionHandling.authenticationEntryPoint(CustomAuthenticationEntryPoint())
+            }
         }
     }
 
@@ -79,7 +85,7 @@ class SecurityConfig(
     @Bean
     @Conditional(SsoEnabledCondition::class)
     fun clientRegistrationRepository(): ClientRegistrationRepository? {
-        val clientRegistration = ClientRegistration.withRegistrationId(ssoProviderKey)
+        val clientRegistration = ClientRegistration.withRegistrationId(SSO_PROVIDER_KEY)
             .clientId(config.get(ConfigProperties.SSO.OIDC.ClientId))
             .clientSecret(config.get(ConfigProperties.SSO.OIDC.ClientSecret))
             .scope("openid", "profile", "email")
