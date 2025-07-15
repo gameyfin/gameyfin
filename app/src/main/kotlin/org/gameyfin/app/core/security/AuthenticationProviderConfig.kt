@@ -16,8 +16,7 @@ class AuthenticationProviderConfig {
         roleHierarchy: RoleHierarchy,
         passwordEncoder: PasswordEncoder
     ): DaoAuthenticationProvider {
-        val provider = DaoAuthenticationProvider()
-        provider.setUserDetailsService(userService)
+        val provider = DaoAuthenticationProvider(userService)
         provider.setPasswordEncoder(passwordEncoder)
         provider.setAuthoritiesMapper(RoleHierarchyAuthoritiesMapper(roleHierarchy))
         return provider
