@@ -1,6 +1,7 @@
 node_modules
 HELP.md
 .gradle
+.secrets
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

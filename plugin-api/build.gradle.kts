@@ -1,11 +1,9 @@
-import com.vanniktech.maven.publish.SonatypeHost
-
 val jacksonVersion = "2.19.1"
 
 plugins {
     kotlin("jvm")
     `java-library`
-    id("com.vanniktech.maven.publish") version "0.32.0"
+    id("com.vanniktech.maven.publish") version "0.34.0"
 }
 
 group = "org.gameyfin"
@@ -20,7 +18,7 @@ dependencies {
 }
 
 mavenPublishing {
-    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    publishToMavenCentral()
     signAllPublications()
 
     coordinates(project.group.toString(), project.name, rootProject.version.toString())
