@@ -72,7 +72,7 @@ jobs:
           file: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
           push: true
-          tags: grimsi/gameyfin:$RELEASE_VERSION
+          tags: grimsi/gameyfin:${{ env.RELEASE_VERSION }}
 
       - name: Commit version bump
         if: ${{ github.event.inputs.update_version }}
