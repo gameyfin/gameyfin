@@ -18,6 +18,7 @@ export default function SearchView() {
     const knownThemes = useSnapshot(gameState).knownThemes;
     const knownFeatures = useSnapshot(gameState).knownFeatures;
     const knownPerspectives = useSnapshot(gameState).knownPerspectives;
+    const knownKeywords = useSnapshot(gameState).knownKeywords;
     const libraries = useSnapshot(libraryState).libraries as LibraryDto[];
 
     const [searchParams, setSearchParams] = useSearchParams();
@@ -31,6 +32,7 @@ export default function SearchView() {
     const [selectedThemes, setSelectedThemes] = useState<Set<string>>(new Set());
     const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(new Set());
     const [selectedPerspectives, setSelectedPerspectives] = useState<Set<string>>(new Set());
+    const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
 
     // Load initial filter values from URL parameters on component mount
     useEffect(() => {
@@ -42,6 +44,7 @@ export default function SearchView() {
         const themes = searchParams.getAll("theme");
         const features = searchParams.getAll("feature");
         const perspectives = searchParams.getAll("perspective");
+        const keywords = searchParams.getAll("keyword");
 
         setSearchTerm(term);
         setSelectedLibraries(new Set(libs));
@@ -50,6 +53,7 @@ export default function SearchView() {
         setSelectedThemes(new Set(themes));
         setSelectedFeatures(new Set(features));
         setSelectedPerspectives(new Set(perspectives));
+        setSelectedKeywords(new Set(keywords));
 
         setInitialLoadComplete(true);
     }, []);
@@ -102,15 +106,21 @@ export default function SearchView() {
             });
         }
 
+        if (selectedKeywords.size > 0) {
+            selectedKeywords.forEach(keyword => {
+                newParams.append("keyword", keyword);
+            });
+        }
+
         setSearchParams(newParams, {replace: true});
     }, [searchTerm, selectedLibraries, selectedDevelopers, selectedGenres,
-        selectedThemes, selectedFeatures, selectedPerspectives]);
+        selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords]);
 
     const filteredGames = useMemo(() => filterGames(), [
         games, searchTerm,
         selectedLibraries, selectedDevelopers,
         selectedGenres, selectedThemes,
-        selectedFeatures, selectedPerspectives
+        selectedFeatures, selectedPerspectives, selectedKeywords
     ]);
 
     function filterGames(): GameDto[] {
@@ -164,6 +174,13 @@ export default function SearchView() {
             );
         }
 
+        // Apply keyword filter
+        if (selectedKeywords.size > 0) {
+            filtered = filtered.filter(game =>
+                game.keywords?.some(keyword => selectedKeywords.has(keyword))
+            );
+        }
+
         return filtered;
     }
 
@@ -183,10 +200,17 @@ export default function SearchView() {
             onChange={(event) => setSearchTerm(event.target.value)}
             onClear={() => setSearchTerm("")}
         />
-        <div className="flex flex-row flex-wrap gap-2 justify-center">
+        <div
+            className="w-full justify-center"
+            style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "0.5rem",
+                margin: "0 auto"
+            }}
+        >
             <Select
                 size="sm"
-                className="max-w-xs"
                 selectionMode="multiple"
                 label="Libraries"
                 placeholder="Filter by library"
@@ -200,7 +224,6 @@ export default function SearchView() {
             </Select>
             <Select
                 size="sm"
-                className="max-w-xs"
                 selectionMode="multiple"
                 label="Developers"
                 placeholder="Filter by developer"
@@ -214,7 +237,6 @@ export default function SearchView() {
             </Select>
             <Select
                 size="sm"
-                className="max-w-xs"
                 selectionMode="multiple"
                 label="Genres"
                 placeholder="Filter by genre"
@@ -228,7 +250,6 @@ export default function SearchView() {
             </Select>
             <Select
                 size="sm"
-                className="max-w-xs"
                 selectionMode="multiple"
                 label="Themes"
                 placeholder="Filter by theme"
@@ -242,7 +263,6 @@ export default function SearchView() {
             </Select>
             <Select
                 size="sm"
-                className="max-w-xs"
                 selectionMode="multiple"
                 label="Features"
                 placeholder="Filter by feature"
@@ -256,7 +276,6 @@ export default function SearchView() {
             </Select>
             <Select
                 size="sm"
-                className="max-w-xs"
                 selectionMode="multiple"
                 label="Perspectives"
                 placeholder="Filter by perspective"
@@ -266,6 +285,19 @@ export default function SearchView() {
             >
                 {Array.from(knownPerspectives).map((perspective) => (
                     <SelectItem key={perspective}>{toTitleCase(perspective)}</SelectItem>
+                ))}
+            </Select>
+            <Select
+                size="sm"
+                selectionMode="multiple"
+                label="Keywords"
+                placeholder="Filter by keyword"
+                selectedKeys={selectedKeywords}
+                //@ts-ignore
+                onSelectionChange={setSelectedKeywords}
+            >
+                {Array.from(knownKeywords).map((keyword) => (
+                    <SelectItem key={keyword}>{keyword}</SelectItem>
                 ))}
             </Select>
         </div>
