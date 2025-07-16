@@ -1,5 +1,6 @@
 package org.gameyfin.app.core.download
 
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.games.GameService
 import org.gameyfin.pluginapi.download.FileDownload
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 @RestController
 @RequestMapping("/download")
 @DynamicPublicAccess
+@AnonymousAllowed
 class DownloadEndpoint(
     private val downloadService: DownloadService,
     private val gameService: GameService

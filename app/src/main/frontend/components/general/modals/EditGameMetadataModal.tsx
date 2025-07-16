@@ -87,6 +87,8 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                 <ArrayInput key="features" name="features" label="Features"/>
                                                 <ArrayInput key="perspectives" name="perspectives"
                                                             label="Perspectives"/>
+                                                <ArrayInput key="keywords" name="keywords"
+                                                            label="Keywords"/>
                                             </AccordionItem>
                                         </Accordion>
                                     </ModalBody>

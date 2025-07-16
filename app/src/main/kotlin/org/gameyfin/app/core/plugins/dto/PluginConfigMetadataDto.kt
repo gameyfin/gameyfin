@@ -10,7 +10,7 @@ class PluginConfigMetadataDto(
     val label: String,
     val description: String,
     val default: Serializable?,
-    val isSecret: Boolean,
-    val isRequired: Boolean,
+    val secret: Boolean,
+    val required: Boolean,
     val allowedValues: List<String>?
 )

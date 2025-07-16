@@ -1,9 +1,10 @@
 package org.gameyfin.app.libraries
 
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
-import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
+import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.libraries.dto.LibraryDto
 import org.gameyfin.app.libraries.dto.LibraryEvent
 import org.gameyfin.app.libraries.dto.LibraryScanProgress
@@ -14,7 +15,8 @@ import org.gameyfin.app.users.util.isAdmin
 import reactor.core.publisher.Flux
 
 @Endpoint
-@PermitAll
+@DynamicPublicAccess
+@AnonymousAllowed
 class LibraryEndpoint(
     private val libraryService: LibraryService,
     private val userService: UserService,

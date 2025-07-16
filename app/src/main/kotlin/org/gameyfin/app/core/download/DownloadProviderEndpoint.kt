@@ -1,10 +1,12 @@
 package org.gameyfin.app.core.download
 
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
-import jakarta.annotation.security.PermitAll
+import org.gameyfin.app.core.annotations.DynamicPublicAccess
 
 @Endpoint
-@PermitAll
+@DynamicPublicAccess
+@AnonymousAllowed
 class DownloadProviderEndpoint(
     private val downloadService: DownloadService
 ) {

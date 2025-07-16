@@ -109,8 +109,8 @@ class PluginService(
                 label = meta.label,
                 description = meta.description,
                 default = meta.default,
-                isSecret = meta.isSecret,
-                isRequired = meta.isRequired,
+                secret = meta.isSecret,
+                required = meta.isRequired,
                 allowedValues = meta.allowedValues?.map { it.toString() }
             )
         }

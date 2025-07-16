@@ -13,7 +13,7 @@ export default function ProfileMenu() {
 
     async function logout() {
         if (auth.state.user?.managedBySso) {
-            window.location.href = (await ConfigEndpoint.getLogoutUrl()) || "/";
+            window.location.href = (await ConfigEndpoint.getSsoLogoutUrl()) || "/";
         } else {
             await auth.logout();
         }

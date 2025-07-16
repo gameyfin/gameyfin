@@ -39,11 +39,18 @@ class SecurityConfig(
 
         // Configure your static resources with public access before calling super.configure(HttpSecurity) as it adds final anyRequest matcher
         http.authorizeHttpRequests { auth: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry ->
-            auth.requestMatchers("/setup").permitAll()
+            auth.requestMatchers("/login").permitAll()
+                .requestMatchers("/setup").permitAll()
                 .requestMatchers("/reset-password").permitAll()
                 .requestMatchers("/accept-invitation").permitAll()
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
+
+            // Dynamic public access for certain endpoints
+            auth.requestMatchers("/game/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/library/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/search/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/download/**").access(DynamicPublicAccessAuthorizationManager(config))
         }
 
         http.sessionManagement { sessionManagement ->

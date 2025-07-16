@@ -17,7 +17,7 @@ sealed class ConfigProperties<T : Serializable>(
         data object AllowPublicAccess : ConfigProperties<Boolean>(
             Boolean::class,
             "library.allow-public-access",
-            "Allow access to game libraries without login (coming soon™)",
+            "Allow access to Gameyfin without login",
             false
         )
 
