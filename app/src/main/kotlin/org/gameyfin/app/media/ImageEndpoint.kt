@@ -1,13 +1,15 @@
 package org.gameyfin.app.media
 
-import org.gameyfin.app.core.plugins.PluginService
-import org.gameyfin.app.games.entities.Image
-import org.gameyfin.app.games.entities.ImageType
-import org.gameyfin.app.users.UserService
+import com.vaadin.flow.server.auth.AnonymousAllowed
+import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.games.entities.ImageType
+import org.gameyfin.app.users.UserService
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.InputStreamResource
 import org.springframework.http.HttpHeaders
@@ -18,9 +20,10 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
-@DynamicPublicAccess
 @RestController
 @RequestMapping("/images")
+@DynamicPublicAccess
+@AnonymousAllowed
 class ImageEndpoint(
     private val imageService: ImageService,
     private val userService: UserService,
@@ -36,6 +39,7 @@ class ImageEndpoint(
     fun getCover(@PathVariable("id") id: Long): ResponseEntity<InputStreamResource>? {
         return getImageContent(id)
     }
+
     @GetMapping("/header/{id}")
     fun getHeader(@PathVariable("id") id: Long): ResponseEntity<InputStreamResource>? {
         return getImageContent(id)
@@ -54,6 +58,7 @@ class ImageEndpoint(
         return getImageContent(avatar.id!!)
     }
 
+    @PermitAll
     @PostMapping("/avatar/upload")
     fun uploadAvatar(@RequestParam("file") file: MultipartFile) {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
@@ -68,6 +73,7 @@ class ImageEndpoint(
         userService.updateAvatar(auth.name, image)
     }
 
+    @PermitAll
     @PostMapping("/avatar/delete")
     fun deleteAvatar() {
         val auth: Authentication = SecurityContextHolder.getContext().authentication

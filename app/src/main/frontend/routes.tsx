@@ -23,6 +23,7 @@ import SearchView from "Frontend/views/SearchView";
 import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
+import {ConfigEndpoint} from "Frontend/generated/endpoints";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -32,7 +33,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
             children: [
                 {
                     element: <MainLayout/>,
-                    handle: {requiresLogin: true},
+                    handle: {requiresLogin: !ConfigEndpoint.isPublicAccessEnabled()},
                     children: [
                         {
                             index: true, element: <HomeView/>
@@ -64,6 +65,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         {
                             path: 'administration',
                             element: <AdministrationView/>,
+                            handle: {requiresLogin: true},
                             children: [
                                 {
                                     path: 'libraries',

@@ -6,7 +6,7 @@ import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
-import {ArrowLeft, DiceSix, Heart, House, ListMagnifyingGlass} from "@phosphor-icons/react";
+import {ArrowLeft, DiceSix, Heart, House, ListMagnifyingGlass, SignIn} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {UserPreferenceService} from "Frontend/util/user-preference-service";
@@ -103,9 +103,24 @@ export default function MainLayout() {
                             <ScanProgressPopover/>
                         </NavbarItem>
                     }
-                    <NavbarItem>
-                        <ProfileMenu/>
-                    </NavbarItem>
+                    {auth.state.user &&
+                        <NavbarItem>
+                            <ProfileMenu/>
+                        </NavbarItem>
+                    }
+                    {!auth.state.user &&
+                        <NavbarItem>
+                            <Tooltip content="Sign in to your account" placement="bottom">
+                                <Button color="primary"
+                                        radius="full"
+                                        isIconOnly
+                                        className="gradient-primary"
+                                        onPress={() => navigate("/login")}>
+                                    <SignIn fill="text-background/80"/>
+                                </Button>
+                            </Tooltip>
+                        </NavbarItem>
+                    }
                 </NavbarContent>
             </Navbar>
 

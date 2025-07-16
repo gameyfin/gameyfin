@@ -1,20 +1,18 @@
 package org.gameyfin.app.games
 
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
-import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
-import org.gameyfin.app.games.dto.GameDto
-import org.gameyfin.app.games.dto.GameEvent
-import org.gameyfin.app.games.dto.GameSearchResultDto
-import org.gameyfin.app.games.dto.GameUpdateDto
-import org.gameyfin.app.games.dto.OriginalIdDto
+import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.libraries.LibraryService
 import reactor.core.publisher.Flux
 import java.nio.file.Path
 
 @Endpoint
-@PermitAll
+@DynamicPublicAccess
+@AnonymousAllowed
 class GameEndpoint(
     private val gameService: GameService,
     private val libraryService: LibraryService

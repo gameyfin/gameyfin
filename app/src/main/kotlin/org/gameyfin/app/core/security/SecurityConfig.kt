@@ -44,6 +44,13 @@ class SecurityConfig(
                 .requestMatchers("/accept-invitation").permitAll()
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
+
+            // Dynamic public access for certain endpoints
+            auth.requestMatchers("/").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/game/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/library/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/search/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/download/**").access(DynamicPublicAccessAuthorizationManager(config))
         }
 
         http.sessionManagement { sessionManagement ->

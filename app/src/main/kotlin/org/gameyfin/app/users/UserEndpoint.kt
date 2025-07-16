@@ -17,11 +17,6 @@ class UserEndpoint(
     private val roleService: RoleService
 ) {
     @PermitAll
-    fun existsByMail(email: String): Boolean {
-        return userService.existsByEmail(email)
-    }
-
-    @PermitAll
     fun getUserInfo(): UserInfoDto {
         return userService.getUserInfo()
     }
@@ -30,6 +25,11 @@ class UserEndpoint(
     fun updateUser(updates: UserUpdateDto) {
         val auth: Authentication = SecurityContextHolder.getContext().authentication
         userService.updateUser(auth.name, updates)
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun existsByMail(email: String): Boolean {
+        return userService.existsByEmail(email)
     }
 
     @RolesAllowed(Role.Names.ADMIN)
