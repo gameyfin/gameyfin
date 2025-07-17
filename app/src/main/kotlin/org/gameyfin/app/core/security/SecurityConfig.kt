@@ -44,6 +44,7 @@ class SecurityConfig(
                 .requestMatchers("/reset-password").permitAll()
                 .requestMatchers("/accept-invitation").permitAll()
                 .requestMatchers("/public/**").permitAll()
+                .requestMatchers("/images/**").permitAll()
 
             // Dynamic public access for certain endpoints
             auth.requestMatchers("/").access(DynamicPublicAccessAuthorizationManager(config))
@@ -51,8 +52,6 @@ class SecurityConfig(
                 .requestMatchers("/library/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/search/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/download/**").access(DynamicPublicAccessAuthorizationManager(config))
-                .requestMatchers("/images/**").access(DynamicPublicAccessAuthorizationManager(config))
-                .requestMatchers("/images/**").access(DynamicPublicAccessAuthorizationManager(config))
         }
 
         http.sessionManagement { sessionManagement ->

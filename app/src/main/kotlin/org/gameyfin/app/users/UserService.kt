@@ -299,7 +299,7 @@ class UserService(
             username = user.username,
             email = user.email,
             emailConfirmed = user.emailConfirmed,
-            isEnabled = user.enabled,
+            enabled = user.enabled,
             hasAvatar = user.avatar != null,
             avatarId = user.avatar?.id,
             managedBySso = user.oidcProviderId != null,

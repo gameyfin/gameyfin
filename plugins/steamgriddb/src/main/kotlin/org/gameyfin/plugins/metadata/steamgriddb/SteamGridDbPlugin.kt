@@ -1,5 +1,8 @@
 package org.gameyfin.plugins.metadata.steamgriddb
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.gameyfin.pluginapi.core.config.*
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
@@ -81,18 +84,21 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
             return runBlocking {
                 val results = searchSteamGridDb(gameTitle)
-
-                results.map { game ->
-                    val grids = getGridsForGame(game.id)
-                    val heroes = getHeroesForGame(game.id)
-                    GameMetadata(
-                        originalId = game.id.toString(),
-                        title = game.name,
-                        release = game.releaseDate,
-                        coverUrls = grids?.map { URI(it.url) },
-                        headerUrls = heroes?.map { URI(it.url) }
-                    )
-                }.take(maxResults)
+                coroutineScope {
+                    results.map { game ->
+                        async {
+                            val grids = getGridsForGame(game.id)
+                            val heroes = getHeroesForGame(game.id)
+                            GameMetadata(
+                                originalId = game.id.toString(),
+                                title = game.name,
+                                release = game.releaseDate,
+                                coverUrls = grids?.map { URI(it.url) },
+                                headerUrls = heroes?.map { URI(it.url) }
+                            )
+                        }
+                    }.awaitAll().take(maxResults)
+                }
             }
         }
 
