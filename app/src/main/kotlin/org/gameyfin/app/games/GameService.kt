@@ -246,7 +246,7 @@ class GameService(
                 try {
                     plugin.fetchByTitle(searchTerm, 10).map { plugin to it }
                 } catch (e: Exception) {
-                    log.error(e) { "Error fetching metadata for game with plugin ${plugin.javaClass.name}" }
+                    log.error(e) { "Error fetching metadata for searchterm '$searchTerm' with plugin ${plugin.javaClass.name}" }
                     emptyList()
                 }
             }
@@ -435,7 +435,7 @@ class GameService(
                 try {
                     plugin.fetchByTitle(gameTitle).firstOrNull()
                 } catch (_: Exception) {
-                    log.error { "Error fetching metadata for game title $gameTitle with plugin ${plugin.javaClass.name}" }
+                    log.error { "Error fetching metadata for game title '$gameTitle' with plugin ${plugin.javaClass.name}" }
                     null
                 }
             }
