@@ -23,20 +23,18 @@ import SearchView from "Frontend/views/SearchView";
 import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
-import {ConfigEndpoint} from "Frontend/generated/endpoints";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
         {
             element: <App/>,
-            handle: {requiresLogin: false},
             children: [
                 {
                     element: <MainLayout/>,
-                    handle: {requiresLogin: !ConfigEndpoint.isPublicAccessEnabled()},
                     children: [
                         {
-                            index: true, element: <HomeView/>
+                            index: true,
+                            element: <HomeView/>
                         },
                         {
                             path: 'search',
@@ -65,7 +63,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         {
                             path: 'administration',
                             element: <AdministrationView/>,
-                            handle: {requiresLogin: true},
                             children: [
                                 {
                                     path: 'libraries',
@@ -86,19 +83,19 @@ export const {router, routes} = new RouterConfigurationBuilder()
                     ]
                 },
                 {
-                    path: 'login', element: <LoginView/>, handle: {requiresLogin: false}
+                    path: 'login', element: <LoginView/>
                 },
                 {
-                    path: 'setup', element: <SetupView/>, handle: {requiresLogin: false}
+                    path: 'setup', element: <SetupView/>
                 },
                 {
-                    path: 'accept-invitation', element: <InvitationRegistrationView/>, handle: {requiresLogin: false}
+                    path: 'accept-invitation', element: <InvitationRegistrationView/>
                 },
                 {
-                    path: 'reset-password', element: <PasswordResetView/>, handle: {requiresLogin: false}
+                    path: 'reset-password', element: <PasswordResetView/>
                 },
                 {
-                    path: 'confirm-email', element: <EmailConfirmationView/>, handle: {requiresLogin: true}
+                    path: 'confirm-email', element: <EmailConfirmationView/>
                 },
             ]
         }
