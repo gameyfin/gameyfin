@@ -115,7 +115,10 @@ export default function MainLayout() {
                                         radius="full"
                                         isIconOnly
                                         className="gradient-primary"
-                                        onPress={() => navigate("/login")}>
+                                    /* This is hacky but works since "/loginredirect" is not configured and returns 401 for not logged-in users.
+                                        This triggers Hilla to redirect to the correct login page (integrated or SSO) automatically.
+                                        Otherwise, SSO login would not be possible if we redirect to "/login" directly */
+                                        onPress={() => window.location.href = "/loginredirect"}>
                                     <SignIn fill="text-background/80"/>
                                 </Button>
                             </Tooltip>
