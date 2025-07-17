@@ -8,6 +8,7 @@ import {PaperPlaneRight, Pencil} from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
 import SendTestNotificationModal from "Frontend/components/administration/messages/SendTestNotificationModal";
 import EditTemplateModal from "Frontend/components/administration/messages/EditTemplateModel";
+import * as Yup from "yup";
 
 function MessageManagementLayout({getConfig, formik}: any) {
 
@@ -126,4 +127,21 @@ function MessageManagementLayout({getConfig, formik}: any) {
     );
 }
 
-export const MessageManagement = withConfigPage(MessageManagementLayout, "Messages", "messages");
+const validationSchema = Yup.object({
+    messages: Yup.object({
+        providers: Yup.object({
+            email: Yup.object({
+                enabled: Yup.boolean().required("Required"),
+                host: Yup.string().required("Host is required"),
+                port: Yup.number().required("Port is required")
+                    .min(0, "Port must be between 0 and 65535")
+                    .max(65535, "Port must be between 0 and 65535"),
+                username: Yup.string()
+                    .email("Invalid email address")
+                    .required("Username is required"),
+            })
+        })
+    })
+});
+
+export const MessageManagement = withConfigPage(MessageManagementLayout, "Messages", validationSchema);
