@@ -35,6 +35,8 @@ import java.net.URI
 import java.nio.file.Path
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
@@ -71,6 +73,8 @@ class GameService(
         fun emit(event: GameEvent) {
             gameEvents.tryEmitNext(event)
         }
+
+        private val executor = Executors.newVirtualThreadPerTaskExecutor()
     }
 
     private val metadataPlugins: List<GameMetadataProvider>
@@ -237,15 +241,18 @@ class GameService(
 
     fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
         // 1. Query all plugins for up to 10 results each
-        val results = metadataPlugins.flatMap { plugin ->
-            try {
-                plugin.fetchByTitle(searchTerm, 10)
-                    .map { plugin to it }
-            } catch (e: Exception) {
-                log.error(e) { "Error fetching metadata for game with plugin ${plugin.javaClass.name}" }
-                emptyList()
+        val futures: List<Future<List<Pair<GameMetadataProvider, PluginApiMetadata>>>> = metadataPlugins.map { plugin ->
+            executor.submit<List<Pair<GameMetadataProvider, PluginApiMetadata>>> {
+                try {
+                    plugin.fetchByTitle(searchTerm, 10).map { plugin to it }
+                } catch (e: Exception) {
+                    log.error(e) { "Error fetching metadata for game with plugin ${plugin.javaClass.name}" }
+                    emptyList()
+                }
             }
         }
+        val results = futures.flatMap { it.get() }
+
         val providerToManagementEntry =
             results.toMap().entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
 
@@ -423,20 +430,17 @@ class GameService(
      * @return A map of metadata plugins and their respective results
      */
     private fun queryPlugins(gameTitle: String): Map<GameMetadataProvider, PluginApiMetadata?> {
-        return runBlocking {
-            coroutineScope {
-                metadataPlugins.associateWith {
-                    async {
-                        try {
-                            it.fetchByTitle(gameTitle).firstOrNull()
-                        } catch (e: Exception) {
-                            log.error(e) { "Error fetching metadata for game with plugin ${it.javaClass.name}" }
-                            null
-                        }
-                    }.await()
+        val futures = metadataPlugins.associateWith { plugin ->
+            executor.submit<PluginApiMetadata?> {
+                try {
+                    plugin.fetchByTitle(gameTitle).firstOrNull()
+                } catch (_: Exception) {
+                    log.error { "Error fetching metadata for game title $gameTitle with plugin ${plugin.javaClass.name}" }
+                    null
                 }
             }
         }
+        return futures.mapValues { it.value.get() }
     }
 
     /**
