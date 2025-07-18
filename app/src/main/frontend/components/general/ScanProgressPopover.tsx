@@ -57,7 +57,7 @@ export default function ScanProgressPopover() {
                         </p> :
                         <ScrollShadow hideScrollBar className="max-h-96">
                             {scans.map((scan, index) =>
-                                <div className="flex flex-col">
+                                <div className="flex flex-col" key={scan.scanId}>
                                     <div
                                         className="flex flex-row justify-between items-center text-default-500 mb-1">
                                         <p>{toTitleCase(scan.type)} scan for library&nbsp;
