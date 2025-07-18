@@ -14,7 +14,7 @@ import {scanState} from "Frontend/state/ScanState";
 import LibraryScanProgress from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanProgress";
 import {libraryState} from "Frontend/state/LibraryState";
 import {Target} from "@phosphor-icons/react";
-import {timeBetween, timeUntil} from "Frontend/util/utils";
+import {timeBetween, timeUntil, toTitleCase} from "Frontend/util/utils";
 import LibraryScanStatus from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanStatus";
 import {useEffect, useState} from "react";
 
@@ -50,7 +50,7 @@ export default function ScanProgressPopover() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent>
-                <div className="flex flex-col gap-2 m-2 w-96">
+                <div className="flex flex-col gap-2 m-2 min-w-96 w-fit">
                     {scans.length === 0 ?
                         <p className="flex h-12 items-center justify-center text-sm text-default-500">
                             No scans in progress or in history.
@@ -60,7 +60,7 @@ export default function ScanProgressPopover() {
                                 <div className="flex flex-col">
                                     <div
                                         className="flex flex-row justify-between items-center text-default-500 mb-1">
-                                        <p>Scan for library&nbsp;
+                                        <p>{toTitleCase(scan.type)} scan for library&nbsp;
                                             <Link underline="always"
                                                   color="foreground"
                                                   size="sm"
@@ -94,6 +94,7 @@ export default function ScanProgressPopover() {
                                         :
                                         <p>
                                             {scan.result?.new} new /&nbsp;
+                                            {(scan as any).result?.updated != null && `${(scan as any).result.updated} updated / `}
                                             {scan.result?.removed} removed /&nbsp;
                                             {scan.result?.unmatched} unmatched&nbsp;
                                             (in {timeBetween(scan.startedAt, scan.finishedAt!)})

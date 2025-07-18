@@ -27,7 +27,13 @@ class Image(
 
     @MimeType
     var mimeType: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Image) return false
+        return originalUrl.toString() == other.originalUrl.toString()
+    }
+}
 
 enum class ImageType {
     COVER,

@@ -20,22 +20,23 @@ import reactor.core.publisher.Flux
 class LibraryEndpoint(
     private val libraryService: LibraryService,
     private val userService: UserService,
+    private val libraryScanService: LibraryScanService,
 ) {
     fun subscribeToLibraryEvents(): Flux<List<LibraryEvent>> {
         return LibraryService.subscribeToLibraryEvents()
     }
 
     fun getAll() = libraryService.getAll()
-    
+
     fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
         val user = userService.getCurrentUser()
-        return if (user.isAdmin()) LibraryService.subscribeToScanProgressEvents()
+        return if (user.isAdmin()) LibraryScanService.subscribeToScanProgressEvents()
         else Flux.empty()
     }
 
     @RolesAllowed(Role.Names.ADMIN)
     fun triggerScan(scanType: ScanType = ScanType.QUICK, libraries: Collection<LibraryDto>?) =
-        libraryService.triggerScan(scanType, libraries)
+        libraryScanService.triggerScan(scanType, libraries)
 
     @RolesAllowed(Role.Names.ADMIN)
     fun createLibrary(library: LibraryDto, scanAfterCreation: Boolean = true) =

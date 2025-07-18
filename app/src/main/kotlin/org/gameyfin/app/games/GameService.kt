@@ -126,7 +126,7 @@ class GameService(
         return gameRepository.saveAll(gamesToBePersisted)
     }
 
-    fun update(gameUpdateDto: GameUpdateDto) {
+    fun edit(gameUpdateDto: GameUpdateDto) {
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
 
@@ -233,6 +233,209 @@ class GameService(
         }
 
         gameRepository.save(existingGame)
+    }
+
+    @Transactional
+    fun update(game: Game): Game? {
+        var wasGameUpdated = false
+
+        val game = getById(game.id!!)
+
+        val originalIds: Map<String, OriginalIdDto> = game.metadata.originalIds
+            .map { (provider, originalId) ->
+                val providerId = pluginManager.getExtensions(provider.pluginId).first()?.javaClass?.name ?: return null
+                val pluginId = provider.pluginId
+                val originalId = originalId
+                providerId to OriginalIdDto(pluginId, originalId)
+            }
+            .toMap()
+
+        val updatedGame = matchManually(
+            originalIds = originalIds,
+            path = Path.of(game.metadata.path),
+            library = game.library,
+            replaceGameId = game.id,
+            persist = false
+        )
+
+        if (updatedGame == null) {
+            log.warn { "Failed to update game with ID ${game.id}" }
+            return null
+        }
+
+
+        fun <T> updateField(
+            fieldName: String,
+            originalValue: T?,
+            updatedValue: T?,
+            setValue: (T?) -> Unit,
+            updatedFieldMetadata: GameFieldMetadata?
+        ) {
+            // Hibernate collections are of type "PersistentBag" which does not implement equals() properly when comparing with ArrayList
+            fun areEqual(a: Any?, b: Any?): Boolean {
+                return when {
+                    a is Collection<*> && b is Collection<*> -> a.toList() == b.toList()
+                    else -> a == b
+                }
+            }
+
+            val fieldSource = game.metadata.fields[fieldName]?.source
+            if (updatedValue != null && fieldSource !is GameFieldUserSource && !areEqual(
+                    originalValue,
+                    updatedValue
+                ) && updatedFieldMetadata != null
+            ) {
+                setValue(updatedValue)
+                game.metadata.fields[fieldName] = updatedFieldMetadata
+                wasGameUpdated = true
+            }
+        }
+
+        // Title
+        updateField(
+            "title",
+            game.title,
+            updatedGame.title,
+            { game.title = it },
+            updatedGame.metadata.fields["title"]
+        )
+
+        // Summary
+        updateField(
+            "summary",
+            game.summary,
+            updatedGame.summary,
+            { game.summary = it },
+            updatedGame.metadata.fields["summary"]
+        )
+
+        // Release
+        updateField(
+            "release",
+            game.release,
+            updatedGame.release,
+            { game.release = it },
+            updatedGame.metadata.fields["release"]
+        )
+
+        // User Rating
+        updateField(
+            "userRating",
+            game.userRating,
+            updatedGame.userRating,
+            { game.userRating = it },
+            updatedGame.metadata.fields["userRating"]
+        )
+
+        // Critic Rating
+        updateField(
+            "criticRating",
+            game.criticRating,
+            updatedGame.criticRating,
+            { game.criticRating = it },
+            updatedGame.metadata.fields["criticRating"]
+        )
+
+        // Cover Image
+        updateField(
+            "coverImage",
+            game.coverImage,
+            updatedGame.coverImage,
+            { game.coverImage = it },
+            updatedGame.metadata.fields["coverImage"]
+        )
+
+        // Header Image
+        updateField(
+            "headerImage",
+            game.headerImage,
+            updatedGame.headerImage,
+            { game.headerImage = it },
+            updatedGame.metadata.fields["headerImage"]
+        )
+
+        // Publishers
+        updateField(
+            "publishers",
+            game.publishers,
+            updatedGame.publishers,
+            { game.publishers = it ?: emptyList() },
+            updatedGame.metadata.fields["publishers"]
+        )
+
+        // Developers
+        updateField(
+            "developers",
+            game.developers,
+            updatedGame.developers,
+            { game.developers = it ?: emptyList() },
+            updatedGame.metadata.fields["developers"]
+        )
+
+        // Genres
+        updateField(
+            "genres",
+            game.genres,
+            updatedGame.genres,
+            { game.genres = it ?: emptyList() },
+            updatedGame.metadata.fields["genres"]
+        )
+
+        // Themes
+        updateField(
+            "themes",
+            game.themes,
+            updatedGame.themes,
+            { game.themes = it ?: emptyList() },
+            updatedGame.metadata.fields["themes"]
+        )
+
+        // Keywords
+        updateField(
+            "keywords",
+            game.keywords,
+            updatedGame.keywords,
+            { game.keywords = it ?: emptyList() },
+            updatedGame.metadata.fields["keywords"]
+        )
+
+        // Features
+        updateField(
+            "features",
+            game.features,
+            updatedGame.features,
+            { game.features = it ?: emptyList() },
+            updatedGame.metadata.fields["features"]
+        )
+
+        // Perspectives
+        updateField(
+            "perspectives",
+            game.perspectives,
+            updatedGame.perspectives,
+            { game.perspectives = it ?: emptyList() },
+            updatedGame.metadata.fields["perspectives"]
+        )
+
+        // Images
+        updateField(
+            "images",
+            game.images,
+            updatedGame.images,
+            { game.images = it ?: emptyList() },
+            updatedGame.metadata.fields["images"]
+        )
+
+        // Video URLs
+        updateField(
+            "videoUrls",
+            game.videoUrls,
+            updatedGame.videoUrls,
+            { game.videoUrls = it ?: emptyList() },
+            updatedGame.metadata.fields["videoUrls"]
+        )
+
+        return if (wasGameUpdated) game else null
     }
 
     fun delete(gameId: Long) {
@@ -346,7 +549,8 @@ class GameService(
         originalIds: Map<String, OriginalIdDto>,
         path: Path,
         library: Library,
-        replaceGameId: Long? = null
+        replaceGameId: Long? = null,
+        persist: Boolean = true
     ): Game? {
         // Step 0: Query all metadata plugins for metadata on the provided originalIds
         val metadataResults = runBlocking {
@@ -389,7 +593,7 @@ class GameService(
         mergedGame.metadata.matchConfirmed = true
 
         // Step 6: Save the game
-        return create(mergedGame)
+        return if (persist) create(mergedGame) else mergedGame
     }
 
     fun matchFromFile(path: Path, library: Library): Game? {

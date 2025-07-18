@@ -4,7 +4,7 @@ import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import React from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import {MagnifyingGlass, SlidersHorizontal} from "@phosphor-icons/react";
+import {MagnifyingGlass, MagnifyingGlassPlus, SlidersHorizontal} from "@phosphor-icons/react";
 import ScanType from "Frontend/generated/org/gameyfin/app/libraries/enums/ScanType";
 import {useNavigate} from "react-router";
 import {useSnapshot} from "valtio/react";
@@ -27,8 +27,8 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
         return games.slice(0, MAX_COVER_COUNT);
     }
 
-    async function triggerScan() {
-        await LibraryEndpoint.triggerScan(ScanType.QUICK, [library]);
+    async function triggerScan(scanType: ScanType) {
+        await LibraryEndpoint.triggerScan(scanType, [library]);
     }
 
     return (
@@ -48,9 +48,14 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                 <p className="absolute text-2xl font-bold">{library.name}</p>
 
                 <div className="absolute right-0 top-0 flex flex-row">
-                    <Tooltip content="Scan library" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light" onPress={triggerScan}>
+                    <Tooltip content="Scan library (quick)" placement="bottom" color="foreground">
+                        <Button isIconOnly variant="light" onPress={() => triggerScan(ScanType.QUICK)}>
                             <MagnifyingGlass/>
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Scan library (full)" placement="bottom" color="foreground">
+                        <Button isIconOnly variant="light" onPress={() => triggerScan(ScanType.FULL)}>
+                            <MagnifyingGlassPlus/>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Configuration" placement="bottom" color="foreground">
