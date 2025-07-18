@@ -1,39 +1,45 @@
 import {UserPreferencesEndpoint} from "Frontend/generated/endpoints";
+import {useAuth} from "Frontend/util/auth";
 
-export class UserPreferenceService {
-    static LOCAL_STORAGE_PREFIX = "gameyfin.";
+export function useUserPreferenceService() {
+    const LOCAL_STORAGE_PREFIX = "gameyfin.";
+    const auth = useAuth();
 
-    static async sync(): Promise<void> {
+    async function sync(): Promise<void> {
+        if (auth.state.user === undefined) return;
+
         let keys = Object.keys(localStorage);
         for (let key of keys) {
-            if (!key.startsWith(`${this.LOCAL_STORAGE_PREFIX}`)) {
+            if (!key.startsWith(LOCAL_STORAGE_PREFIX)) {
                 continue;
             }
-            let value = await UserPreferencesEndpoint.get(key.replace(this.LOCAL_STORAGE_PREFIX, ""));
+            let value = await UserPreferencesEndpoint.get(key.replace(LOCAL_STORAGE_PREFIX, ""));
             if (value) {
                 localStorage.setItem(key, value);
             }
         }
     }
 
-    static async get(key: string): Promise<string | undefined> {
-        let localPreference = localStorage.getItem(`${this.LOCAL_STORAGE_PREFIX}${key}`);
-
+    async function get(key: string): Promise<string | undefined> {
+        let localPreference = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${key}`);
         if (localPreference) {
             return localPreference;
         } else {
+            if (auth.state.user === undefined) return undefined;
             let syncedPreference = await UserPreferencesEndpoint.get(key);
             if (syncedPreference) {
-                localStorage.setItem(`${this.LOCAL_STORAGE_PREFIX}${key}`, syncedPreference);
+                localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, syncedPreference);
                 return syncedPreference;
             }
         }
-
         return undefined;
     }
 
-    static async set(key: string, value: string) {
+    async function set(key: string, value: string): Promise<void> {
+        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${key}`, value);
+        if (auth.state.user === undefined) return;
         await UserPreferencesEndpoint.set(key, value);
-        localStorage.setItem(`${this.LOCAL_STORAGE_PREFIX}${key}`, value);
     }
+
+    return {sync, get, set};
 }

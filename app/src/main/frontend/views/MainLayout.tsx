@@ -9,7 +9,7 @@ import {useAuth} from "Frontend/util/auth";
 import {ArrowLeft, DiceSix, Heart, House, ListMagnifyingGlass, SignIn} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
-import {UserPreferenceService} from "Frontend/util/user-preference-service";
+import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 import SearchBar from "Frontend/components/general/SearchBar";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
@@ -20,6 +20,7 @@ export default function MainLayout() {
     const navigate = useNavigate();
     const location = useLocation();
     const auth = useAuth();
+    const userPreferenceService = useUserPreferenceService();
     const routeMetadata = useRouteMetadata();
     const {setTheme} = useTheme();
     const isSearchPage = location.pathname.startsWith("/search");
@@ -30,11 +31,13 @@ export default function MainLayout() {
     useEffect(() => {
         let newTitle = `Gameyfin - ${routeMetadata?.title}`;
         window.addEventListener('popstate', () => document.title = newTitle);
+    }, []);
 
-        UserPreferenceService.sync()
+    useEffect(() => {
+        userPreferenceService.sync()
             .then(() => loadUserTheme().catch(console.error))
             .catch(console.error);
-    }, []);
+    }, [auth.state.user]);
 
     const confettiProps: ConfettiProps = {
         mode: 'boom',
@@ -47,7 +50,7 @@ export default function MainLayout() {
     }
 
     async function loadUserTheme() {
-        let syncedTheme = await UserPreferenceService.get("preferred-theme")
+        let syncedTheme = await userPreferenceService.get("preferred-theme")
         if (syncedTheme !== undefined) {
             setTheme(syncedTheme);
         }

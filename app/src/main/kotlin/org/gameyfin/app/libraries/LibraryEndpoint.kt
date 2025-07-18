@@ -26,8 +26,7 @@ class LibraryEndpoint(
     }
 
     fun getAll() = libraryService.getAll()
-
-
+    
     fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
         val user = userService.getCurrentUser()
         return if (user.isAdmin()) LibraryService.subscribeToScanProgressEvents()

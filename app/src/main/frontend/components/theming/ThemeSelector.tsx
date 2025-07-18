@@ -5,13 +5,14 @@ import {themes} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
 import {toTitleCase} from "Frontend/util/utils";
-import {UserPreferenceService} from "Frontend/util/user-preference-service";
+import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 
 export function ThemeSelector() {
 
     const {theme, setTheme} = useTheme();
     const [selectedTheme, setSelectedTheme] = useState(theme?.substring(0, theme?.lastIndexOf("-")));
     const [selectedMode, setSelectedMode] = useState<Selection>();
+    const userPreferenceService = useUserPreferenceService();
 
     useEffect(() => {
         if (!selectedMode)
@@ -24,7 +25,7 @@ export function ThemeSelector() {
         if (selectedMode instanceof Set) {
             let theme = `${selectedTheme}-${selectedMode.values().next().value}`;
             setTheme(theme);
-            UserPreferenceService.set("preferred-theme", theme).catch(console.error);
+            userPreferenceService.set("preferred-theme", theme).catch(console.error);
         }
     }
 

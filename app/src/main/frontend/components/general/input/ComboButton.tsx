@@ -9,7 +9,7 @@ import {
     SharedSelection
 } from "@heroui/react";
 import {CaretDown} from "@phosphor-icons/react";
-import {UserPreferenceService} from "Frontend/util/user-preference-service";
+import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 
 export interface ComboButtonOption {
     label: string;
@@ -27,11 +27,12 @@ export interface ComboButtonProps {
 export default function ComboButton({options, preferredOptionKey, description}: ComboButtonProps) {
     const [selectedOption, setSelectedOption] = useState(new Set([Object.keys(options)[0]]));
     const selectedOptionValue = Array.from(selectedOption)[0];
+    const userPreferenceService = useUserPreferenceService();
 
     useEffect(() => {
         if (!preferredOptionKey) return;
 
-        UserPreferenceService.get(preferredOptionKey).then((key) => {
+        userPreferenceService.get(preferredOptionKey).then((key) => {
             if (key && options[key]) {
                 setSelectedOption(new Set([key]));
             } else {
@@ -44,7 +45,7 @@ export default function ComboButton({options, preferredOptionKey, description}: 
         if (!keys.currentKey) return;
 
         if (preferredOptionKey) {
-            await UserPreferenceService.set(preferredOptionKey, keys.currentKey);
+            await userPreferenceService.set(preferredOptionKey, keys.currentKey);
         }
 
         setSelectedOption(new Set([keys.currentKey]));

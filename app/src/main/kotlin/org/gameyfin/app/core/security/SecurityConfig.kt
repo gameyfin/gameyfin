@@ -45,6 +45,7 @@ class SecurityConfig(
                 .requestMatchers("/accept-invitation").permitAll()
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
+                .requestMatchers("/favicon.ico").permitAll()
 
             // Dynamic public access for certain endpoints
             auth.requestMatchers("/").access(DynamicPublicAccessAuthorizationManager(config))

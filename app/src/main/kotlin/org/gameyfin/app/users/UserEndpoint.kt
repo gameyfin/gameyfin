@@ -1,5 +1,6 @@
 package org.gameyfin.app.users
 
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
@@ -16,8 +17,10 @@ class UserEndpoint(
     private val userService: UserService,
     private val roleService: RoleService
 ) {
-    @PermitAll
-    fun getUserInfo(): UserInfoDto {
+    @AnonymousAllowed
+    fun getUserInfo(): UserInfoDto? {
+        val auth = SecurityContextHolder.getContext().authentication
+        if (!auth.isAuthenticated || auth.principal == "anonymousUser") return null
         return userService.getUserInfo()
     }
 
