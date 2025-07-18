@@ -46,6 +46,7 @@ class SecurityConfig(
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/images/**").permitAll()
                 .requestMatchers("/favicon.ico").permitAll()
+                .requestMatchers("/favicon.svg").permitAll()
 
             // Dynamic public access for certain endpoints
             auth.requestMatchers("/").access(DynamicPublicAccessAuthorizationManager(config))
