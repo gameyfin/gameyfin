@@ -117,70 +117,77 @@ class LibraryScanService(
         )
         emit(progress)
 
-        val scanResult = filesystemService.scanLibraryForGamefiles(library)
-        val newPaths = scanResult.newPaths
-        val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
-        val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
+        try {
+            val scanResult = filesystemService.scanLibraryForGamefiles(library)
+            val newPaths = scanResult.newPaths
+            val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
+            val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
 
-        progress.currentStep = LibraryScanStep(
-            description = "Matching new games",
-            current = 0,
-            total = newPaths.size
-        )
-        emit(progress)
+            progress.currentStep = LibraryScanStep(
+                description = "Matching new games",
+                current = 0,
+                total = newPaths.size
+            )
+            emit(progress)
 
-        // 1. Match new games
-        val (newUnmatchedPaths, matchedGames) = matchNewGames(library, newPaths, progress)
+            // 1. Match new games
+            val (newUnmatchedPaths, matchedGames) = matchNewGames(library, newPaths, progress)
 
-        val (removedGames) = updateLibrary(
-            library,
-            removedUnmatchedPaths,
-            newUnmatchedPaths,
-            removedGamePaths
-        )
+            val (removedGames) = updateLibrary(
+                library,
+                removedUnmatchedPaths,
+                newUnmatchedPaths,
+                removedGamePaths
+            )
 
-        // 2. Download all images
-        val totalImages = matchedGames.count { it.coverImage != null } +
-                matchedGames.count { it.headerImage !== null } +
-                matchedGames.sumOf { it.images.size }
+            // 2. Download all images
+            val totalImages = matchedGames.count { it.coverImage != null } +
+                    matchedGames.count { it.headerImage !== null } +
+                    matchedGames.sumOf { it.images.size }
 
-        progress.currentStep = LibraryScanStep(
-            description = "Downloading images",
-            current = 0,
-            total = totalImages
-        )
-        emit(progress)
+            progress.currentStep = LibraryScanStep(
+                description = "Downloading images",
+                current = 0,
+                total = totalImages
+            )
+            emit(progress)
 
-        val (gamesWithImages) = downloadImages(matchedGames, progress)
+            val (gamesWithImages) = downloadImages(matchedGames, progress)
 
-        // 3. Calculate game file sizes
-        progress.currentStep = LibraryScanStep(
-            description = "Calculating file sizes",
-            current = 0,
-            total = gamesWithImages.size
-        )
-        emit(progress)
+            // 3. Calculate game file sizes
+            progress.currentStep = LibraryScanStep(
+                description = "Calculating file sizes",
+                current = 0,
+                total = gamesWithImages.size
+            )
+            emit(progress)
 
-        val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
+            val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
 
-        progress.currentStep = LibraryScanStep(
-            description = "Finishing up",
-            current = 0,
-            total = gamesWithFileSizes.size
-        )
-        emit(progress)
+            progress.currentStep = LibraryScanStep(
+                description = "Finishing up",
+                current = 0,
+                total = gamesWithFileSizes.size
+            )
+            emit(progress)
 
-        val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
+            val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
 
-        progress.currentStep = LibraryScanStep(description = "Finished")
-        progress.finishedAt = Instant.now()
-        progress.status = LibraryScanStatus.COMPLETED
-        progress.result = QuickScanResult(
-            new = persistedGames.size,
-            removed = removedGames.size,
-            unmatched = newUnmatchedPaths.size
-        )
-        emit(progress)
+            progress.currentStep = LibraryScanStep(description = "Finished")
+            progress.finishedAt = Instant.now()
+            progress.status = LibraryScanStatus.COMPLETED
+            progress.result = QuickScanResult(
+                new = persistedGames.size,
+                removed = removedGames.size,
+                unmatched = newUnmatchedPaths.size
+            )
+            emit(progress)
+        } catch (e: Exception) {
+            log.error(e) { "Error during quick scan for library ${library.id}: ${e.message}" }
+            progress.status = LibraryScanStatus.FAILED
+            progress.finishedAt = Instant.now()
+            emit(progress)
+        }
     }
 
     private fun fullScan(library: Library) {
@@ -193,86 +200,94 @@ class LibraryScanService(
         )
         emit(progress)
 
-        val scanResult = filesystemService.scanLibraryForGamefiles(library)
-        val newPaths = scanResult.newPaths
-        val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
-        val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
+        try {
+            val scanResult = filesystemService.scanLibraryForGamefiles(library)
+            val newPaths = scanResult.newPaths
+            val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
+            val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
 
 
-        // 1. Update existing games
-        progress.currentStep = LibraryScanStep(
-            description = "Updating existing games",
-            current = 0,
-            total = library.games.size
-        )
-        emit(progress)
+            // 1. Update existing games
+            progress.currentStep = LibraryScanStep(
+                description = "Updating existing games",
+                current = 0,
+                total = library.games.size
+            )
+            emit(progress)
 
-        val (updatedGames) = updateExistingGames(library.games, progress)
+            val (updatedGames) = updateExistingGames(library.games, progress)
 
-        // 2. Match new games
-        progress.currentStep = LibraryScanStep(
-            description = "Matching new games",
-            current = 0,
-            total = newPaths.size
-        )
-        emit(progress)
+            // 2. Match new games
+            progress.currentStep = LibraryScanStep(
+                description = "Matching new games",
+                current = 0,
+                total = newPaths.size
+            )
+            emit(progress)
 
-        val (newUnmatchedPaths, newMatchedGames) = matchNewGames(library, newPaths, progress)
+            val (newUnmatchedPaths, newMatchedGames) = matchNewGames(library, newPaths, progress)
 
-        val (removedGames) = updateLibrary(
-            library,
-            removedUnmatchedPaths,
-            newUnmatchedPaths,
-            removedGamePaths
-        )
+            val (removedGames) = updateLibrary(
+                library,
+                removedUnmatchedPaths,
+                newUnmatchedPaths,
+                removedGamePaths
+            )
 
-        // 3. Download all images
-        val newAndUpdatedGames = newMatchedGames + updatedGames
+            // 3. Download all images
+            val newAndUpdatedGames = newMatchedGames + updatedGames
 
-        val totalImages = newAndUpdatedGames.count { it.coverImage != null } +
-                newAndUpdatedGames.count { it.headerImage !== null } +
-                newAndUpdatedGames.sumOf { it.images.size }
+            val totalImages = newAndUpdatedGames.count { it.coverImage != null } +
+                    newAndUpdatedGames.count { it.headerImage !== null } +
+                    newAndUpdatedGames.sumOf { it.images.size }
 
-        progress.currentStep = LibraryScanStep(
-            description = "Downloading images",
-            current = 0,
-            total = totalImages
-        )
-        emit(progress)
+            progress.currentStep = LibraryScanStep(
+                description = "Downloading images",
+                current = 0,
+                total = totalImages
+            )
+            emit(progress)
 
-        val (gamesWithImages) = downloadImages(newAndUpdatedGames, progress)
+            val (gamesWithImages) = downloadImages(newAndUpdatedGames, progress)
 
-        // 4. Calculate game file sizes
-        progress.currentStep = LibraryScanStep(
-            description = "Calculating file sizes",
-            current = 0,
-            total = gamesWithImages.size
-        )
-        emit(progress)
+            // 4. Calculate game file sizes
+            progress.currentStep = LibraryScanStep(
+                description = "Calculating file sizes",
+                current = 0,
+                total = gamesWithImages.size
+            )
+            emit(progress)
 
-        val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
+            val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
 
-        // 5. Finish scan
-        progress.currentStep = LibraryScanStep(
-            description = "Finishing up",
-            current = 0,
-            total = gamesWithFileSizes.size
-        )
-        emit(progress)
+            // 5. Finish scan
+            progress.currentStep = LibraryScanStep(
+                description = "Finishing up",
+                current = 0,
+                total = gamesWithFileSizes.size
+            )
+            emit(progress)
 
-        val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
+            val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
 
-        // 6. Send final progress update
-        progress.currentStep = LibraryScanStep(description = "Finished")
-        progress.finishedAt = Instant.now()
-        progress.status = LibraryScanStatus.COMPLETED
-        progress.result = FullScanResult(
-            new = persistedGames.size,
-            removed = removedGames.size,
-            unmatched = newUnmatchedPaths.size,
-            updated = updatedGames.size
-        )
-        emit(progress)
+            // 6. Send final progress update
+            progress.currentStep = LibraryScanStep(description = "Finished")
+            progress.finishedAt = Instant.now()
+            progress.status = LibraryScanStatus.COMPLETED
+            progress.result = FullScanResult(
+                new = persistedGames.size,
+                removed = removedGames.size,
+                unmatched = newUnmatchedPaths.size,
+                updated = updatedGames.size
+            )
+            emit(progress)
+        } catch (e: Exception) {
+            log.error(e) { "Error during full scan for library ${library.id}: ${e.message}" }
+            progress.status = LibraryScanStatus.FAILED
+            progress.finishedAt = Instant.now()
+            emit(progress)
+            return
+        }
     }
 
     private fun matchNewGames(

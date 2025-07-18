@@ -13,7 +13,7 @@ import {useSnapshot} from "valtio/react";
 import {scanState} from "Frontend/state/ScanState";
 import LibraryScanProgress from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanProgress";
 import {libraryState} from "Frontend/state/LibraryState";
-import {Target} from "@phosphor-icons/react";
+import {Target, Warning} from "@phosphor-icons/react";
 import {timeBetween, timeUntil, toTitleCase} from "Frontend/util/utils";
 import LibraryScanStatus from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanStatus";
 import {useEffect, useState} from "react";
@@ -77,27 +77,34 @@ export default function ScanProgressPopover() {
                                             </p>
                                         }
                                     </div>
-                                    {scan.status === LibraryScanStatus.IN_PROGRESS ?
-                                        scan.currentStep.current && scan.currentStep.total ?
-                                            <div className="flex flex-col gap-1">
-                                                <p className="text-default-500">
-                                                    {`${scan.currentStep.description} (${scan.currentStep.current}/${scan.currentStep.total})`}
-                                                </p>
-                                                <Progress
-                                                    value={scan.currentStep.current / scan.currentStep.total * 100}
-                                                    size="sm"/>
-                                            </div> :
-                                            <div className="flex flex-col gap-1">
-                                                <p className="text-default-500">{scan.currentStep.description}</p>
-                                                <Progress isIndeterminate size="sm"/>
-                                            </div>
-                                        :
+                                    {scan.status === LibraryScanStatus.IN_PROGRESS &&
+                                        (scan.currentStep.current && scan.currentStep.total ?
+                                                <div className="flex flex-col gap-1">
+                                                    <p className="text-default-500">
+                                                        {`${scan.currentStep.description} (${scan.currentStep.current}/${scan.currentStep.total})`}
+                                                    </p>
+                                                    <Progress
+                                                        value={scan.currentStep.current / scan.currentStep.total * 100}
+                                                        size="sm"/>
+                                                </div> :
+                                                <div className="flex flex-col gap-1">
+                                                    <p className="text-default-500">{scan.currentStep.description}</p>
+                                                    <Progress isIndeterminate size="sm"/>
+                                                </div>
+                                        )
+                                    }
+                                    {scan.status === LibraryScanStatus.COMPLETED &&
                                         <p>
                                             {scan.result?.new} new /&nbsp;
                                             {(scan as any).result?.updated != null && `${(scan as any).result.updated} updated / `}
                                             {scan.result?.removed} removed /&nbsp;
                                             {scan.result?.unmatched} unmatched&nbsp;
                                             (in {timeBetween(scan.startedAt, scan.finishedAt!)})
+                                        </p>
+                                    }
+                                    {scan.status === LibraryScanStatus.FAILED &&
+                                        <p className="text-danger flex flex-row gap-1"><Warning weight="fill"/>
+                                            Scan failed (check logs for details)
                                         </p>
                                     }
                                     {scans.length > 1 && index < (scans.length - 1) && <Divider className="my-2"/>}
