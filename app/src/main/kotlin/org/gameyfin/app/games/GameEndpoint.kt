@@ -6,6 +6,7 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.games.dto.*
+import org.gameyfin.app.libraries.LibraryCoreService
 import org.gameyfin.app.libraries.LibraryService
 import reactor.core.publisher.Flux
 import java.nio.file.Path
@@ -15,7 +16,8 @@ import java.nio.file.Path
 @AnonymousAllowed
 class GameEndpoint(
     private val gameService: GameService,
-    private val libraryService: LibraryService
+    private val libraryService: LibraryService,
+    private val libraryCoreService: LibraryCoreService
 ) {
     fun subscribe(): Flux<List<GameEvent>> {
         return GameService.subscribe()
@@ -24,11 +26,11 @@ class GameEndpoint(
     fun getAll(): List<GameDto> = gameService.getAll()
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun updateGame(game: GameUpdateDto) = gameService.update(game)
+    fun updateGame(game: GameUpdateDto) = gameService.edit(game)
 
     @RolesAllowed(Role.Names.ADMIN)
     fun deleteGame(gameId: Long) {
-        libraryService.deleteGameFromLibrary(gameId)
+        libraryCoreService.deleteGameFromLibrary(gameId)
         gameService.delete(gameId)
     }
 
@@ -42,7 +44,7 @@ class GameEndpoint(
         val library = libraryService.getById(libraryId)
         val game = gameService.matchManually(originalIds, Path.of(path), library, replaceGameId)
         if (game != null) {
-            libraryService.addGamesToLibrary(listOf(game), library, true)
+            libraryCoreService.addGamesToLibrary(listOf(game), library, true)
         }
     }
 }

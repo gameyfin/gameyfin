@@ -72,7 +72,7 @@ class Game(
     var features: List<GameFeature> = emptyList(),
 
     @ElementCollection(targetClass = PlayerPerspective::class)
-    var perspectives: List<PlayerPerspective>? = null,
+    var perspectives: List<PlayerPerspective> = emptyList(),
 
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     var images: List<Image> = emptyList(),
