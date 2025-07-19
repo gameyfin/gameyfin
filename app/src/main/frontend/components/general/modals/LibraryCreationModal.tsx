@@ -23,22 +23,13 @@ export default function LibraryCreationModal({
     const [scanAfterCreation, setScanAfterCreation] = useState<boolean>(true);
 
     async function createLibrary(library: LibraryDto) {
-        try {
-            await LibraryEndpoint.createLibrary(library as LibraryDto, scanAfterCreation);
+        await LibraryEndpoint.createLibrary(library as LibraryDto, scanAfterCreation);
 
-            addToast({
-                title: "New library created",
-                description: `Library ${library.name} created!`,
-                color: "success"
-            });
-        } catch (e) {
-            addToast({
-                title: "Error creating library",
-                description: `Library ${library.name} could not be created!`,
-                color: "warning"
-            });
-            throw "Error creating library: " + e;
-        }
+        addToast({
+            title: "New library created",
+            description: `Library ${library.name} created!`,
+            color: "success"
+        });
     }
 
     return (

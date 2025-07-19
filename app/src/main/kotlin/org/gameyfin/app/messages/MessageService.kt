@@ -1,18 +1,12 @@
 package org.gameyfin.app.messages
 
-import org.gameyfin.app.messages.templates.MessageTemplates
-import org.gameyfin.app.users.UserService
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.gameyfin.app.core.events.AccountDeletedEvent
-import org.gameyfin.app.core.events.AccountStatusChangedEvent
-import org.gameyfin.app.core.events.EmailNeedsConfirmationEvent
-import org.gameyfin.app.core.events.PasswordResetRequestEvent
-import org.gameyfin.app.core.events.RegistrationAttemptWithExistingEmailEvent
-import org.gameyfin.app.core.events.UserInvitationEvent
-import org.gameyfin.app.core.events.UserRegistrationWaitingForApprovalEvent
+import org.gameyfin.app.core.events.*
 import org.gameyfin.app.messages.providers.AbstractMessageProvider
 import org.gameyfin.app.messages.templates.MessageTemplateService
+import org.gameyfin.app.messages.templates.MessageTemplates
+import org.gameyfin.app.users.UserService
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
@@ -72,7 +66,8 @@ class MessageService(
             val template = templateService.getMessageTemplate(templateKey)
             sendNotification(user.email, "[Gameyfin] Test Notification", template, placeholders)
         } catch (e: Exception) {
-            log.error(e) { "Failed to send test message" }
+            log.error { "Failed to send test message: ${e.message}" }
+            log.debug(e) {}
             return false
         }
 

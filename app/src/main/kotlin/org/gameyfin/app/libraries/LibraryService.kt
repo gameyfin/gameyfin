@@ -1,5 +1,6 @@
 package org.gameyfin.app.libraries
 
+import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.libraries.dto.LibraryDto
@@ -19,7 +20,7 @@ class LibraryService(
     private val libraryRepository: LibraryRepository,
     private val libraryCoreService: LibraryCoreService,
     private val libraryScanService: LibraryScanService,
-    private val gameService: GameService,
+    private val gameService: GameService
 ) {
 
     companion object {
@@ -70,6 +71,9 @@ class LibraryService(
      * @return The created or updated LibraryDto object.
      */
     fun create(library: LibraryDto, scanAfterCreation: Boolean) {
+        // Check for duplicate directories before creating a new library
+        checkForDuplicateDirectories(library.directories.map { it.internalPath })
+
         val newLibrary = libraryRepository.save(libraryCoreService.toEntity(library))
 
         if (scanAfterCreation) {
@@ -88,20 +92,49 @@ class LibraryService(
         val library = libraryRepository.findByIdOrNull(libraryUpdateDto.id)
             ?: throw IllegalArgumentException("Library with ID $libraryUpdateDto.id not found")
 
-        // Update only non-null fields
         libraryUpdateDto.name?.let { library.name = it }
-        libraryUpdateDto.directories?.let {
-            library.directories.clear()
-            library.directories.addAll(
-                it.map { d -> DirectoryMapping(internalPath = d.internalPath, externalPath = d.externalPath) }
+        libraryUpdateDto.directories?.let { updatedDirs ->
+            checkForDuplicateDirectories(
+                updatedDirs.map { it.internalPath },
+                excludeLibraryId = library.id
             )
+
+            val existingMappings = library.directories.associateBy { it.internalPath }
+            val updatedInternalPaths = updatedDirs.map { it.internalPath }.toSet()
+
+            // Remove mappings not present in the update
+            val removedDirs = library.directories.filter { it.internalPath !in updatedInternalPaths }
+            library.directories.removeAll(removedDirs)
+
+            // Remove all games within removed directories
+            val removedDirPaths = removedDirs.map { it.internalPath }
+            library.games.removeIf { game ->
+                removedDirPaths.any { removedPath ->
+                    game.metadata.path.startsWith(removedPath)
+                }
+            }
+
+            // Update existing or add new directory mappings
+            updatedDirs.forEach { dto ->
+                val mapping = existingMappings[dto.internalPath]
+                if (mapping != null) {
+                    mapping.externalPath = dto.externalPath // update fields
+                } else {
+                    library.directories.add(
+                        DirectoryMapping(
+                            internalPath = dto.internalPath,
+                            externalPath = dto.externalPath
+                        )
+                    )
+                }
+            }
         }
         libraryUpdateDto.unmatchedPaths?.let {
             library.unmatchedPaths.clear()
             library.unmatchedPaths.addAll(it)
         }
 
-        library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
+        library.updatedAt = Instant.now()
         libraryRepository.save(library)
     }
 
@@ -112,5 +145,18 @@ class LibraryService(
      */
     fun delete(libraryId: Long) {
         libraryRepository.deleteById(libraryId)
+    }
+
+    private fun checkForDuplicateDirectories(newLibraryFolders: List<String>, excludeLibraryId: Long? = null) {
+        val alreadyConfiguredFolders = libraryRepository.findByPaths(newLibraryFolders)
+            .filter { it.second.id != excludeLibraryId } // Exclude the current library if updating
+            .map { Pair(it.first, it.second) } // Convert to Pair for easier error message formatting
+
+        if (alreadyConfiguredFolders.isNotEmpty()) {
+            throw EndpointException(
+                "The following directories are already mapped to another library: " +
+                        alreadyConfiguredFolders.joinToString(", ") { "${it.first} (${it.second.name})" }
+            )
+        }
     }
 }

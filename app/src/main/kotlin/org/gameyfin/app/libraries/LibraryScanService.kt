@@ -183,7 +183,8 @@ class LibraryScanService(
             )
             emit(progress)
         } catch (e: Exception) {
-            log.error(e) { "Error during quick scan for library ${library.id}: ${e.message}" }
+            log.error { "Error during quick scan for library ${library.id}: ${e.message}" }
+            log.debug(e) {}
             progress.status = LibraryScanStatus.FAILED
             progress.finishedAt = Instant.now()
             emit(progress)
@@ -282,7 +283,8 @@ class LibraryScanService(
             )
             emit(progress)
         } catch (e: Exception) {
-            log.error(e) { "Error during full scan for library ${library.id}: ${e.message}" }
+            log.error { "Error during full scan for library ${library.id}: ${e.message}" }
+            log.debug(e) {}
             progress.status = LibraryScanStatus.FAILED
             progress.finishedAt = Instant.now()
             emit(progress)
@@ -312,7 +314,8 @@ class LibraryScanService(
 
                     return@Callable game
                 } catch (e: Exception) {
-                    log.error(e) { "Error processing game: ${e.message}" }
+                    log.error { "Error processing game: ${e.message}" }
+                    log.debug(e) {}
                     newUnmatchedPaths.add(path.toString())
 
                     return@Callable null
@@ -372,7 +375,8 @@ class LibraryScanService(
 
                     game
                 } catch (e: Exception) {
-                    log.error(e) { "Error downloading images for game: ${e.message}" }
+                    log.error { "Error downloading images for game: ${e.message}" }
+                    log.debug(e) {}
                     null
                 } finally {
                     progress.currentStep.current = completedImageDownload.get()
@@ -437,7 +441,8 @@ class LibraryScanService(
                     val game = gameService.update(game)
                     return@Callable game
                 } catch (e: Exception) {
-                    log.error(e) { "Error updating game with id '${game.id}': ${e.message}" }
+                    log.error { "Error updating game with id '${game.id}': ${e.message}" }
+                    log.debug(e) {}
                     return@Callable null
                 } finally {
                     progress.currentStep.current = completedUpdates.incrementAndGet()

@@ -38,9 +38,11 @@ class GameyfinExtensionFinder(pluginManager: PluginManager) : LegacyExtensionFin
                 result.add(extensionWrapper)
                 log.debug { "Added extension '$className' with ordinal ${extensionWrapper.ordinal}" }
             } catch (e: ClassNotFoundException) {
-                log.error(e) { e.message }
+                log.error { "Error loading plugin: ${e.message}" }
+                log.debug(e) {}
             } catch (e: NoClassDefFoundError) {
-                log.error(e) { e.message }
+                log.error { "Error loading plugin: ${e.message}" }
+                log.debug(e) {}
             }
         }
 

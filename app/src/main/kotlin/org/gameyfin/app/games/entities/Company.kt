@@ -16,6 +16,13 @@ class Company(
         if (other !is Company) return false
         return name == other.name && type == other.type
     }
+
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + name.hashCode()
+        result = 31 * result + type.hashCode()
+        return result
+    }
 }
 
 enum class CompanyType {

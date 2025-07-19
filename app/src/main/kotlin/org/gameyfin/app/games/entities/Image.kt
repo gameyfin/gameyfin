@@ -33,6 +33,12 @@ class Image(
         if (other !is Image) return false
         return originalUrl.toString() == other.originalUrl.toString()
     }
+
+    override fun hashCode(): Int {
+        var result = id?.hashCode() ?: 0
+        result = 31 * result + originalUrl?.toString().hashCode()
+        return result
+    }
 }
 
 enum class ImageType {

@@ -215,7 +215,7 @@ class GameyfinPluginManager(
 
     fun getPluginForExtension(extensionClass: Class<ExtensionPoint>): PluginWrapper? {
         return getPlugins().firstOrNull { pluginWrapper ->
-            getExtensionTypeClasses(pluginWrapper.pluginId).any { it == extensionClass.javaClass }
+            getExtensionClasses(pluginWrapper.pluginId).any { it == extensionClass }
         }
     }
 

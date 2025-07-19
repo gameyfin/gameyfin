@@ -12,6 +12,7 @@ import org.gameyfin.app.core.alphaNumeric
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.filterValuesNotNull
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.replaceRomanNumerals
@@ -104,7 +105,8 @@ class GameService(
                 imageService.downloadIfNew(it)
             }
         } catch (e: Exception) {
-            log.error(e) { "Error downloading images for game: ${e.message}" }
+            log.error { "Error downloading images for game: ${e.message}" }
+            log.debug(e) {}
             null
         }
 
@@ -449,7 +451,9 @@ class GameService(
                 try {
                     plugin.fetchByTitle(searchTerm, 10).map { plugin to it }
                 } catch (e: Exception) {
-                    log.error(e) { "Error fetching metadata for searchterm '$searchTerm' with plugin ${plugin.javaClass.name}" }
+                    val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
+                    log.warn { "Error fetching metadata for searchterm '$searchTerm' with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
+                    log.debug(e) {}
                     emptyList()
                 }
             }
@@ -561,7 +565,9 @@ class GameService(
                         try {
                             return@async plugin.fetchById(originalId)
                         } catch (e: Exception) {
-                            log.error(e) { "Error fetching metadata for game [id: $originalId] with plugin ${plugin.javaClass.name}" }
+                            val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
+                            log.warn { "Error fetching metadata for game [id: $originalId] with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
+                            log.debug(e) {}
                             null
                         }
                     }.await()
@@ -638,8 +644,10 @@ class GameService(
             executor.submit<PluginApiMetadata?> {
                 try {
                     plugin.fetchByTitle(gameTitle).firstOrNull()
-                } catch (_: Exception) {
-                    log.error { "Error fetching metadata for game title '$gameTitle' with plugin ${plugin.javaClass.name}" }
+                } catch (e: Exception) {
+                    val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
+                    log.warn { "Error fetching metadata for game title '$gameTitle' with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
+                    log.debug(e) {}
                     null
                 }
             }
