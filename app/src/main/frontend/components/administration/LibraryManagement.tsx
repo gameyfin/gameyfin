@@ -45,8 +45,11 @@ function LibraryManagementLayout({getConfig, formik}: any) {
                 <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")} isDisabled/>
                 <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
                 <div className="flex flex-row gap-4 items-baseline">
-                    <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
+                    <ConfigFormField configElement={getConfig("library.scan.extract-title-using-regex")}/>
+                    <ConfigFormField configElement={getConfig("library.scan.title-extraction-regex")}
+                                     isDisabled={!formik.values.library.scan["extract-title-using-regex"]}/>
                 </div>
+                <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
                 <ConfigFormField configElement={getConfig("library.scan.game-file-extensions")}/>
             </div>
 

@@ -36,6 +36,20 @@ sealed class ConfigProperties<T : Serializable>(
                 false
             )
 
+            data object ExtractTitleUsingRegex : ConfigProperties<Boolean>(
+                Boolean::class,
+                "library.scan.extract-title-using-regex",
+                "Extract title from file names using regex",
+                false
+            )
+
+            data object TitleExtractionRegex : ConfigProperties<String>(
+                String::class,
+                "library.scan.title-extraction-regex",
+                "Regex to extract title from file names",
+                "^[^\\[]+"
+            )
+
             data object TitleMatchMinRatio : ConfigProperties<Int>(
                 Int::class,
                 "library.scan.title-match-min-ratio",

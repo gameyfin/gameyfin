@@ -603,7 +603,20 @@ class GameService(
     }
 
     fun matchFromFile(path: Path, library: Library): Game? {
-        val query = FilenameUtils.removeExtension(path.fileName.toString())
+        var query = FilenameUtils.removeExtension(path.fileName.toString())
+
+        // (Optional) Step -1: Extract title from filename using regex
+        if (config.get(ConfigProperties.Libraries.Scan.ExtractTitleUsingRegex) == true) {
+            val regexString = config.get(ConfigProperties.Libraries.Scan.TitleExtractionRegex)
+            if (regexString?.isNotEmpty() == true) {
+                val regex = Regex(regexString)
+                query = regex.find(query)?.value?.trim() ?: query.also {
+                    log.warn { "No match found for regex '$regexString' in filename '$query'. Using full filename." }
+                }
+
+                log.debug { "Extracted title '$query' from filename '$path'" }
+            }
+        }
 
         // Step 0: Query all metadata plugins for metadata on the provided game title
         val metadataResults = queryPlugins(query)
