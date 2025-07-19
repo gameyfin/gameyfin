@@ -20,7 +20,7 @@ export const ErrorHandlingMiddleware: Middleware = async function (
 
         let json: any = await response.json();
 
-        if (json.type == "dev.hilla.exception.EndpointException") {
+        if (json.type == "dev.hilla.exception.EndpointException" || json.type == "com.vaadin.hilla.exception.EndpointException") {
             addToast({
                 title: getReasonPhrase(response.status),
                 description: json.message,
