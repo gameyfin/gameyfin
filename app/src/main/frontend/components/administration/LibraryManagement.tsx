@@ -98,6 +98,14 @@ const validationSchema = Yup.object({
                 // @ts-ignore
                 schedule: Yup.string().cron()
             })
+        }),
+        scan: Yup.object({
+            "extract-title-using-regex": Yup.boolean(),
+            "title-extraction-regex": Yup.string().when("extract-title-using-regex", {
+                is: true,
+                then: (schema) => schema.trim().required("Title extraction regex is required when enabled")
+            }),
+            "title-match-min-ratio": Yup.number().min(1, "Must be between 1-100").max(100, "Must be between 1-100")
         })
     })
 });
