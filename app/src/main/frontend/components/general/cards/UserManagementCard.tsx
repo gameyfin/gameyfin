@@ -1,6 +1,5 @@
 import {Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
 import {DotsThreeVertical} from "@phosphor-icons/react";
-import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
 import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
@@ -20,7 +19,6 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
     const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
     const [dropdownItems, setDropdownItems] = useState<any[]>([]);
     const [passwordResetToken, setPasswordResetToken] = useState<TokenDto>();
-    const auth = useAuth();
 
     useEffect(() => {
         setUserEnabled(user.enabled);
