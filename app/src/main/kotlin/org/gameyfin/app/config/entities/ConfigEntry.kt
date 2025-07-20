@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import org.gameyfin.app.core.security.EncryptionConverter
 
 @Entity
+@EntityListeners(ConfigEntryEntityListener::class)
 @Table(name = "app_config")
 class ConfigEntry(
     @Id

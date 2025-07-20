@@ -90,15 +90,15 @@ sealed class ConfigProperties<T : Serializable>(
             data object UpdateEnabled : ConfigProperties<Boolean>(
                 Boolean::class,
                 "library.metadata.update.enabled",
-                "Enable periodic refresh of video game metadata (coming soon™)",
-                false
+                "Enable periodic refresh of video game metadata",
+                true
             )
 
             data object UpdateSchedule : ConfigProperties<String>(
                 String::class,
                 "library.metadata.update.schedule",
-                "Schedule for periodic metadata refresh in cron format",
-                "0 0 * * 0"
+                "Schedule for periodic metadata refresh in Spring cron format",
+                "@daily"
             )
         }
     }

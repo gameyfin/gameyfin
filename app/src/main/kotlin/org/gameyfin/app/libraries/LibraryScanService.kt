@@ -71,7 +71,8 @@ class LibraryScanService(
                     try {
                         when (scanType) {
                             ScanType.QUICK -> quickScan(library)
-                            ScanType.FULL -> fullScan(library)
+                            ScanType.FULL -> fullScan(library, false)
+                            ScanType.SCHEDULED -> fullScan(library, true)
                         }
                     } finally {
                         scansInProgress.remove(libraryId)
@@ -104,7 +105,7 @@ class LibraryScanService(
      */
     fun fullScan(libraryDtos: Collection<LibraryDto>?) {
         val libraries = libraryDtos?.map { libraryCoreService.toEntity(it) } ?: libraryRepository.findAll()
-        libraries.forEach { executor.submit { fullScan(it) } }
+        libraries.forEach { executor.submit { fullScan(it, false) } }
     }
 
     private fun quickScan(library: Library) {
@@ -191,10 +192,10 @@ class LibraryScanService(
         }
     }
 
-    private fun fullScan(library: Library) {
+    private fun fullScan(library: Library, triggeredBySchedule: Boolean) {
         val progress = LibraryScanProgress(
             libraryId = library.id!!,
-            type = ScanType.FULL,
+            type = if (triggeredBySchedule) ScanType.SCHEDULED else ScanType.FULL,
             currentStep = LibraryScanStep(
                 description = "Scanning filesystem"
             )

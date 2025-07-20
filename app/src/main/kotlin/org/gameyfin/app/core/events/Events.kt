@@ -23,6 +23,4 @@ class PasswordResetRequestEvent(source: Any, val token: Token<TokenType.Password
 
 class AccountDeletedEvent(source: Any, val user: User, val baseUrl: String) : ApplicationEvent(source)
 
-class GameRequestEvent(source: Any) : ApplicationEvent(source)
-
-class GameRequestApprovalEvent(source: Any) : ApplicationEvent(source)
+class LibraryScanScheduleUpdatedEvent(source: Any) : ApplicationEvent(source)

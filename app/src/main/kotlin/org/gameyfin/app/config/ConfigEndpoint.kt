@@ -11,6 +11,7 @@ import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.util.isAdmin
+import org.springframework.scheduling.support.CronExpression
 import reactor.core.publisher.Flux
 
 @Endpoint
@@ -36,7 +37,15 @@ class ConfigEndpoint(
 
     fun update(update: ConfigUpdateDto) = configService.update(update)
 
-    /** Specific read-only endpoint for all users **/
+    /**
+     * Validates a cron expression because Spring has a custom syntax for cron expressions.
+     * @see: https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/scheduling/support/CronExpression.html#parse(java.lang.String)
+     */
+    fun validateCronExpression(cronExpression: String): Boolean {
+        return CronExpression.isValidExpression(cronExpression)
+    }
+
+    /** Specific read-only endpoints for all users **/
 
     @DynamicPublicAccess
     @AnonymousAllowed
@@ -49,5 +58,4 @@ class ConfigEndpoint(
     @DynamicPublicAccess
     @AnonymousAllowed
     fun isPublicAccessEnabled(): Boolean = configService.get(ConfigProperties.Libraries.AllowPublicAccess) == true
-
 }
