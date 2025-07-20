@@ -1,6 +1,5 @@
 import {Outlet, useHref, useNavigate} from 'react-router';
 import "./main.css";
-import "Frontend/util/custom-validators";
 import {HeroUIProvider} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";

@@ -1,5 +1,7 @@
 package org.gameyfin.app.libraries.enums
 
 enum class ScanType {
-    QUICK, FULL
+    QUICK,
+    FULL,
+    SCHEDULED,
 }

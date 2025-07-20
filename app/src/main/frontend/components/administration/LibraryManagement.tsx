@@ -3,6 +3,7 @@ import ConfigFormField from "Frontend/components/administration/ConfigFormField"
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import * as Yup from 'yup';
+import "Frontend/util/yup-extensions";
 import {addToast, Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
 import {Plus} from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
@@ -55,7 +56,7 @@ function LibraryManagementLayout({getConfig, formik}: any) {
 
             <Section title="Metadata"/>
             <div className="flex flex-row items-baseline">
-                <ConfigFormField configElement={getConfig("library.metadata.update.enabled")} isDisabled/>
+                <ConfigFormField configElement={getConfig("library.metadata.update.enabled")}/>
                 <ConfigFormField configElement={getConfig("library.metadata.update.schedule")}
                                  isDisabled={!formik.values.library.metadata.update.enabled}/>
             </div>
@@ -95,8 +96,11 @@ const validationSchema = Yup.object({
     library: Yup.object({
         metadata: Yup.object({
             update: Yup.object({
-                // @ts-ignore
-                schedule: Yup.string().cron()
+                enabled: Yup.boolean(),
+                schedule: Yup.string().when("enabled", {
+                    is: true,
+                    then: (schema) => schema.cron()
+                }),
             })
         }),
         scan: Yup.object({

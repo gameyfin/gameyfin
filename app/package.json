@@ -28,7 +28,6 @@
     "@vaadin/vaadin-usage-statistics": "2.1.3",
     "classnames": "^2.5.1",
     "construct-style-sheets-polyfill": "3.1.0",
-    "cron-validator": "^1.3.1",
     "date-fns": "2.29.3",
     "formik": "^2.4.6",
     "framer-motion": "^12.5.0",
@@ -123,7 +122,6 @@
     "@vaadin/hilla-lit-form": "$@vaadin/hilla-lit-form",
     "@vaadin/hilla-react-form": "$@vaadin/hilla-react-form",
     "@vaadin/hilla-react-signals": "$@vaadin/hilla-react-signals",
-    "cron-validator": "$cron-validator",
     "moment": "$moment",
     "moment-timezone": "$moment-timezone",
     "react-confetti-boom": "$react-confetti-boom",
@@ -265,6 +263,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "e964f24aa5152284476d9e99245c9b92f8e6f94274818ee46eec2a3f91e29fc6"
+    "hash": "962eccc3fa0735d5234901be4f9e384096113c45bec22564a53688096d62aef4"
   }
 }
