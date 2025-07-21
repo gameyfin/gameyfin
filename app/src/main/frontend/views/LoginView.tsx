@@ -6,11 +6,9 @@ import Input from "Frontend/components/general/input/Input";
 import PasswordResetModal from "Frontend/components/general/modals/PasswordResetModal";
 import SignUpModal from "Frontend/components/general/modals/SignUpModal";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
-import {useNavigate} from "react-router";
 
 export default function LoginView() {
     const {state, login} = useAuth();
-    const navigate = useNavigate();
 
     const passwordResetModal = useDisclosure();
     const signUpModal = useDisclosure();
@@ -36,8 +34,7 @@ export default function LoginView() {
     }
 
     function redirectAfterLogin(redirectUrl?: string, defaultUrl?: string) {
-        const url = redirectUrl ?? defaultUrl ?? '/';
-        navigate(url, {replace: true});
+        window.location.href = redirectUrl ?? defaultUrl ?? '/';
     }
 
     return (
