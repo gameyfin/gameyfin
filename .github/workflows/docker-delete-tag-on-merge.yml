@@ -1,22 +1,19 @@
 name: Delete Docker Tag on Merge
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types:
+      - closed
 
 jobs:
   delete-docker-tag:
-    if: |
-      contains(github.event.head_commit.message, 'Merge pull request') &&
-      startsWith(github.event.head_commit.message, 'Merge pull request')
+    if: startsWith(github.event.pull_request.head.ref, 'fix/')
     runs-on: ubuntu-latest
     steps:
       - name: Extract merged branch name
         id: extract_branch
         run: |
-          # Extract branch name from merge commit message
-          BRANCH=$(echo "${{ github.event.head_commit.message }}" | grep -oE 'fix/[^ ]+')
+          BRANCH="${{ github.event.pull_request.head.ref }}"
           TAG=${BRANCH#fix/}
           echo "tag=$TAG" >> $GITHUB_OUTPUT
         shell: bash
