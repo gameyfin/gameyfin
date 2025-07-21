@@ -53,6 +53,7 @@ export default function GameView() {
             if (!gameId || !state.state[parseInt(gameId)]) {
                 navigate("/", {replace: true});
             }
+            document.title = game ? game.title : "Gameyfin";
         });
     }, [gameId]);
 

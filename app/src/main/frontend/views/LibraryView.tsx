@@ -17,6 +17,7 @@ export default function LibraryView() {
             if (!libraryId || !state.state[parseInt(libraryId)]) {
                 navigate("/", {replace: true});
             }
+            document.title = state.state[parseInt(libraryId!!)]?.name || "Gameyfin";
         });
     }, [libraryId]);
 

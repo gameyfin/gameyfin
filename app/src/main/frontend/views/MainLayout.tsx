@@ -1,4 +1,3 @@
-import {useRouteMetadata} from 'Frontend/util/routing.js';
 import {useEffect, useState} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
 import {Button, Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, Tooltip} from "@heroui/react";
@@ -21,17 +20,11 @@ export default function MainLayout() {
     const location = useLocation();
     const auth = useAuth();
     const userPreferenceService = useUserPreferenceService();
-    const routeMetadata = useRouteMetadata();
     const {setTheme} = useTheme();
     const isSearchPage = location.pathname.startsWith("/search");
     const isHomePage = location.pathname === "/";
     const [isExploding, setIsExploding] = useState(false);
     const games = useSnapshot(gameState).games;
-
-    useEffect(() => {
-        let newTitle = `Gameyfin - ${routeMetadata?.title}`;
-        window.addEventListener('popstate', () => document.title = newTitle);
-    }, []);
 
     useEffect(() => {
         userPreferenceService.sync()
