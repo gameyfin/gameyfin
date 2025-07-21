@@ -105,7 +105,7 @@ class GameService(
                 imageService.downloadIfNew(it)
             }
         } catch (e: Exception) {
-            log.error { "Error downloading images for game: ${e.message}" }
+            log.error { "Error downloading images for game '${game.title}' (${game.id}): ${e.message}" }
             log.debug(e) {}
             null
         }

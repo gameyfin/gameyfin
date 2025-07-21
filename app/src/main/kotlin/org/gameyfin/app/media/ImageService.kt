@@ -1,10 +1,10 @@
 package org.gameyfin.app.media
 
+import org.apache.tika.Tika
+import org.apache.tika.io.TikaInputStream
 import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.games.entities.ImageType
 import org.gameyfin.app.games.repositories.ImageContentStore
-import org.apache.tika.Tika
-import org.apache.tika.io.TikaInputStream
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -22,8 +22,10 @@ class ImageService(
     fun downloadIfNew(image: Image) {
         if (image.originalUrl == null) throw IllegalArgumentException("Image must have an original URL")
 
-        imageRepository.findByOriginalUrl(image.originalUrl)?.let {
-            imageContentStore.associate(image, it.contentId)
+        val existingImage = imageRepository.findByOriginalUrl(image.originalUrl)
+
+        if (existingImage != null && existingImage.contentId != null) {
+            imageContentStore.associate(image, existingImage.contentId)
             return
         }
 
