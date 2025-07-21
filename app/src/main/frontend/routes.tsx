@@ -38,11 +38,13 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         },
                         {
                             path: 'search',
-                            element: <SearchView/>
+                            element: <SearchView/>,
+                            handle: {title: 'Search'}
                         },
                         {
                             path: 'recently-added',
-                            element: <RecentlyAddedView/>
+                            element: <RecentlyAddedView/>,
+                            handle: {title: 'Recently Added'}
                         },
                         {
                             path: 'library/:libraryId',
@@ -55,47 +57,93 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         {
                             path: 'settings',
                             element: <ProfileView/>,
+                            handle: {title: 'Profile'},
                             children: [
-                                {path: 'profile', element: <ProfileManagement/>},
-                                {path: 'appearance', element: <ThemeSelector/>}
+                                {
+                                    path: 'profile',
+                                    element: <ProfileManagement/>,
+                                    handle: {title: 'Profile Settings'}
+                                },
+                                {
+                                    path: 'appearance',
+                                    element: <ThemeSelector/>,
+                                    handle: {title: 'Appearance'}
+                                }
                             ]
                         },
                         {
                             path: 'administration',
                             element: <AdministrationView/>,
+                            handle: {title: 'Administration'},
                             children: [
                                 {
                                     path: 'libraries',
-                                    element: <LibraryManagement/>
+                                    element: <LibraryManagement/>,
+                                    handle: {title: 'Administration - Libraries'}
                                 },
                                 {
                                     path: 'libraries/library/:libraryId',
-                                    element: <LibraryManagementView/>
+                                    element: <LibraryManagementView/>,
+                                    handle: {title: 'Administration - Library'}
                                 },
-                                {path: 'users', element: <UserManagement/>},
-                                {path: 'sso', element: <SsoManagement/>},
-                                {path: 'messages', element: <MessageManagement/>},
-                                {path: 'plugins', element: <PluginManagement/>},
-                                {path: 'logs', element: <LogManagement/>},
-                                {path: 'system', element: <SystemManagement/>}
+                                {
+                                    path: 'users',
+                                    element: <UserManagement/>,
+                                    handle: {title: 'Administration - Users'}
+                                },
+                                {
+                                    path: 'sso',
+                                    element: <SsoManagement/>,
+                                    handle: {title: 'Administration - SSO'}
+                                },
+                                {
+                                    path: 'messages',
+                                    element: <MessageManagement/>,
+                                    handle: {title: 'Administration - Messages'}
+                                },
+                                {
+                                    path: 'plugins',
+                                    element: <PluginManagement/>,
+                                    handle: {title: 'Administration - Plugins'}
+                                },
+                                {
+                                    path: 'logs',
+                                    element: <LogManagement/>,
+                                    handle: {title: 'Administration - Logs'}
+                                },
+                                {
+                                    path: 'system',
+                                    element: <SystemManagement/>,
+                                    handle: {title: 'Administration - System'}
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    path: 'login', element: <LoginView/>
+                    path: 'login',
+                    element: <LoginView/>,
+                    handle: {title: 'Login'}
                 },
                 {
-                    path: 'setup', element: <SetupView/>
+                    path: 'setup',
+                    element: <SetupView/>,
+                    handle: {title: 'Setup'}
                 },
                 {
-                    path: 'accept-invitation', element: <InvitationRegistrationView/>
+                    path: 'accept-invitation',
+                    element: <InvitationRegistrationView/>,
+                    handle: {title: 'You have been invited to Gameyfin!'}
                 },
                 {
-                    path: 'reset-password', element: <PasswordResetView/>
+                    path: 'reset-password',
+                    element: <PasswordResetView/>,
+                    handle: {title: 'Reset Password'}
                 },
                 {
-                    path: 'confirm-email', element: <EmailConfirmationView/>
+                    path: 'confirm-email',
+                    element: <EmailConfirmationView/>,
+                    handle: {title: 'Confirm Email'}
                 },
             ]
         }

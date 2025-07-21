@@ -13,11 +13,18 @@ import {initializeScanState} from "Frontend/state/ScanState";
 import {ToastProvider} from "@heroui/toast";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
+import {useRouteMetadata} from "Frontend/util/routing";
+import {useEffect} from "react";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
 
     const navigate = useNavigate();
+    const routeMetadata = useRouteMetadata();
+
+    useEffect(() => {
+        document.title = routeMetadata?.title ?? "Gameyfin";
+    }, [routeMetadata, window.location.href]);
 
     return (
         <HeroUIProvider className="size-full" navigate={navigate} useHref={useHref}>
