@@ -20,8 +20,12 @@ class LibraryEndpoint(
     private val libraryService: LibraryService,
     private val libraryScanService: LibraryScanService,
 ) {
-    fun subscribeToLibraryEvents(): Flux<List<LibraryEvent>> {
-        return LibraryService.subscribeToLibraryEvents()
+    fun subscribeToLibraryEvents(): Flux<out List<LibraryEvent>> {
+        return if (isCurrentUserAdmin()) {
+            LibraryService.subscribeAdmin()
+        } else {
+            LibraryService.subscribeUser()
+        }
     }
 
     fun getAll() = libraryService.getAll()

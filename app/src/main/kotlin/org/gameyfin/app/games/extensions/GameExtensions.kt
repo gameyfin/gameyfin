@@ -22,7 +22,7 @@ fun Collection<Game>.toDtos(): List<GameDto> {
     }
 }
 
-private fun Game.toAdminDto(): GameAdminDto {
+fun Game.toAdminDto(): GameAdminDto {
     return GameAdminDto(
         id = id!!,
         createdAt = createdAt!!,

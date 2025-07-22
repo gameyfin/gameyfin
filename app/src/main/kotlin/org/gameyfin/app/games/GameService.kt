@@ -57,22 +57,39 @@ class GameService(
         private val log = KotlinLogging.logger {}
 
         /* Websockets */
-        private val gameEvents = Sinks.many().multicast().onBackpressureBuffer<GameEvent>(1024, false)
+        private val gameUserEvents = Sinks.many().multicast().onBackpressureBuffer<GameUserEvent>(1024, false)
+        private val gameAdminEvents = Sinks.many().multicast().onBackpressureBuffer<GameAdminEvent>(1024, false)
 
-        fun subscribe(): Flux<List<GameEvent>> {
-            log.debug { "New subscription for gameUpdates" }
-            return gameEvents.asFlux()
+        fun subscribeUser(): Flux<List<GameUserEvent>> {
+            log.debug { "New user subscription for gameUpdates" }
+            return gameUserEvents.asFlux()
                 .buffer(100.milliseconds.toJavaDuration())
                 .doOnSubscribe {
-                    log.debug { "Subscriber added to gameEvents [${gameEvents.currentSubscriberCount()}]" }
+                    log.debug { "Subscriber added to gameUserEvents [${gameUserEvents.currentSubscriberCount()}]" }
                 }
                 .doFinally {
-                    log.debug { "Subscriber removed from gameEvents with signal type $it [${gameEvents.currentSubscriberCount()}]" }
+                    log.debug { "Subscriber removed from gameUserEvents with signal type $it [${gameUserEvents.currentSubscriberCount()}]" }
                 }
         }
 
-        fun emit(event: GameEvent) {
-            gameEvents.tryEmitNext(event)
+        fun subscribeAdmin(): Flux<List<GameAdminEvent>> {
+            log.debug { "New admin subscription for gameUpdates" }
+            return gameAdminEvents.asFlux()
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe {
+                    log.debug { "Subscriber added to gameAdminEvents [${gameAdminEvents.currentSubscriberCount()}]" }
+                }
+                .doFinally {
+                    log.debug { "Subscriber removed from gameAdminEvents with signal type $it [${gameAdminEvents.currentSubscriberCount()}]" }
+                }
+        }
+
+        fun emitUser(event: GameUserEvent) {
+            gameUserEvents.tryEmitNext(event)
+        }
+
+        fun emitAdmin(event: GameAdminEvent) {
+            gameAdminEvents.tryEmitNext(event)
         }
 
         private val executor = Executors.newVirtualThreadPerTaskExecutor()

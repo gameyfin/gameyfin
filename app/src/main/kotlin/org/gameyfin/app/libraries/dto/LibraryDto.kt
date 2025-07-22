@@ -1,17 +1,21 @@
 package org.gameyfin.app.libraries.dto
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
 interface LibraryDto {
     val id: Long
     val name: String
     val games: List<Long>?
 }
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class LibraryUserDto(
     override val id: Long,
     override val name: String,
     override val games: List<Long>?
 ) : LibraryDto
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class LibraryAdminDto(
     override val id: Long,
     override val name: String,

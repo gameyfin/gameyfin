@@ -21,7 +21,7 @@ fun Collection<Library>.toDtos(): List<LibraryDto> {
     }
 }
 
-private fun Library.toUserDto(): LibraryUserDto {
+fun Library.toUserDto(): LibraryUserDto {
     return LibraryUserDto(
         id = this.id!!,
         name = this.name,
@@ -29,7 +29,7 @@ private fun Library.toUserDto(): LibraryUserDto {
     )
 }
 
-private fun Library.toAdminDto(): LibraryAdminDto {
+fun Library.toAdminDto(): LibraryAdminDto {
     return LibraryAdminDto(
         id = this.id!!,
         name = this.name,
