@@ -23,6 +23,7 @@ import SearchView from "Frontend/views/SearchView";
 import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
+import ErrorView from "Frontend/views/ErrorView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -145,6 +146,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                     element: <EmailConfirmationView/>,
                     handle: {title: 'Confirm Email'}
                 },
+                {
+                    path: '*',
+                    element: <ErrorView/>,
+                    handle: {title: 'Error'}
+                }
             ]
         }
     ])
