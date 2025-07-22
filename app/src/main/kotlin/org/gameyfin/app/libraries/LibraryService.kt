@@ -2,11 +2,9 @@ package org.gameyfin.app.libraries
 
 import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.gameyfin.app.games.GameService
-import org.gameyfin.app.libraries.dto.LibraryDto
-import org.gameyfin.app.libraries.dto.LibraryEvent
-import org.gameyfin.app.libraries.dto.LibraryUpdateDto
+import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.enums.ScanType
+import org.gameyfin.app.libraries.extensions.toDtos
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -18,31 +16,46 @@ import kotlin.time.toJavaDuration
 @Service
 class LibraryService(
     private val libraryRepository: LibraryRepository,
-    private val libraryCoreService: LibraryCoreService,
     private val libraryScanService: LibraryScanService,
-    private val gameService: GameService
 ) {
 
     companion object {
         private val log = KotlinLogging.logger {}
 
         /* Websockets */
-        private val libraryEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryEvent>(1024, false)
+        private val libraryUserEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryUserEvent>(1024, false)
+        private val libraryAdminEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryAdminEvent>(1024, false)
 
-        fun subscribeToLibraryEvents(): Flux<List<LibraryEvent>> {
-            log.debug { "New subscription for libraryEvents" }
-            return libraryEvents.asFlux()
+        fun subscribeUser(): Flux<List<LibraryUserEvent>> {
+            log.debug { "New user subscription for libraryEvents" }
+            return libraryUserEvents.asFlux()
                 .buffer(100.milliseconds.toJavaDuration())
                 .doOnSubscribe {
-                    log.debug { "Subscriber added to libraryEvents [${libraryEvents.currentSubscriberCount()}]" }
+                    log.debug { "Subscriber added to user libraryUserEvents [${libraryUserEvents.currentSubscriberCount()}]" }
                 }
                 .doFinally {
-                    log.debug { "Subscriber removed from libraryEvents with signal type $it [${libraryEvents.currentSubscriberCount()}]" }
+                    log.debug { "Subscriber removed from user libraryUserEvents with signal type $it [${libraryUserEvents.currentSubscriberCount()}]" }
                 }
         }
 
-        fun emit(event: LibraryEvent) {
-            libraryEvents.tryEmitNext(event)
+        fun subscribeAdmin(): Flux<List<LibraryAdminEvent>> {
+            log.debug { "New admin subscription for libraryEvents" }
+            return libraryAdminEvents.asFlux()
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe {
+                    log.debug { "Subscriber added to admin libraryAdminEvents [${libraryAdminEvents.currentSubscriberCount()}]" }
+                }
+                .doFinally {
+                    log.debug { "Subscriber removed from admin libraryAdminEvents with signal type $it [${libraryAdminEvents.currentSubscriberCount()}]" }
+                }
+        }
+
+        fun emitUser(event: LibraryUserEvent) {
+            libraryUserEvents.tryEmitNext(event)
+        }
+
+        fun emitAdmin(event: LibraryAdminEvent) {
+            libraryAdminEvents.tryEmitNext(event)
         }
     }
 
@@ -52,7 +65,7 @@ class LibraryService(
      */
     fun getAll(): List<LibraryDto> {
         val entities = libraryRepository.findAll()
-        return entities.map { it.toDto() }
+        return entities.toDtos()
     }
 
     /**
@@ -70,14 +83,21 @@ class LibraryService(
      * @param library: The library to create or update.
      * @return The created or updated LibraryDto object.
      */
-    fun create(library: LibraryDto, scanAfterCreation: Boolean) {
+    fun create(library: LibraryAdminDto, scanAfterCreation: Boolean) {
         // Check for duplicate directories before creating a new library
         checkForDuplicateDirectories(library.directories.map { it.internalPath })
 
-        val newLibrary = libraryRepository.save(libraryCoreService.toEntity(library))
+        var newLibrary = Library(
+            name = library.name,
+            directories = library.directories.distinctBy { it.internalPath }.map {
+                DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
+            }.toMutableList(),
+        )
+
+        newLibrary = libraryRepository.save(newLibrary)
 
         if (scanAfterCreation) {
-            libraryScanService.triggerScan(ScanType.QUICK, listOf(newLibrary.toDto()))
+            libraryScanService.triggerScan(ScanType.QUICK, listOf(newLibrary.id!!))
         }
     }
 

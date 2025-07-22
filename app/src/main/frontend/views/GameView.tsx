@@ -7,9 +7,8 @@ import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Accordion, AccordionItem, addToast, Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
 import {humanFileSize, isAdmin, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
-import {gameState, initializeGameState} from "Frontend/state/GameState";
+import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {CheckCircle, Info, MagnifyingGlass, Pencil, Trash, TriangleDashed} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
@@ -17,6 +16,7 @@ import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMe
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
+import {GameAdminDto} from "Frontend/dtos/GameDtos";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -28,7 +28,7 @@ export default function GameView() {
     const matchGameModal = useDisclosure();
 
     const state = useSnapshot(gameState);
-    const game = gameId ? state.state[parseInt(gameId)] as GameDto : undefined;
+    const game = gameId ? state.state[parseInt(gameId)] as GameAdminDto : undefined;
 
     const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
 
@@ -49,13 +49,11 @@ export default function GameView() {
     }, []);
 
     useEffect(() => {
-        initializeGameState().then((state) => {
-            if (!gameId || !state.state[parseInt(gameId)]) {
-                navigate("/", {replace: true});
-            }
-            document.title = game ? game.title : "Gameyfin";
-        });
-    }, [gameId]);
+        if (state.isLoaded && (!gameId || !state.state[parseInt(gameId)])) {
+            navigate("/", {replace: true});
+        }
+        document.title = game ? game.title : "Gameyfin";
+    }, [gameId, state]);
 
     async function toggleMatchConfirmed() {
         if (!game) return;

@@ -9,8 +9,7 @@ import org.gameyfin.app.config.dto.ConfigEntryDto
 import org.gameyfin.app.config.dto.ConfigUpdateDto
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
-import org.gameyfin.app.users.UserService
-import org.gameyfin.app.users.util.isAdmin
+import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.springframework.scheduling.support.CronExpression
 import reactor.core.publisher.Flux
 
@@ -18,7 +17,6 @@ import reactor.core.publisher.Flux
 @RolesAllowed(Role.Names.ADMIN)
 class ConfigEndpoint(
     private val configService: ConfigService,
-    private val userService: UserService,
 ) {
     companion object {
         val log = KotlinLogging.logger { }
@@ -28,8 +26,7 @@ class ConfigEndpoint(
 
     @PermitAll
     fun subscribe(): Flux<List<ConfigUpdateDto>> {
-        val user = userService.getCurrentUser()
-        return if (user.isAdmin()) ConfigService.subscribe()
+        return if (isCurrentUserAdmin()) ConfigService.subscribe()
         else Flux.empty()
     }
 

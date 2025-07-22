@@ -1,10 +1,26 @@
 package org.gameyfin.app.libraries.dto
 
-data class LibraryDto(
-    val id: Long,
-    val name: String,
+import com.fasterxml.jackson.annotation.JsonInclude
+
+interface LibraryDto {
+    val id: Long
+    val name: String
+    val games: List<Long>?
+}
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class LibraryUserDto(
+    override val id: Long,
+    override val name: String,
+    override val games: List<Long>?
+) : LibraryDto
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class LibraryAdminDto(
+    override val id: Long,
+    override val name: String,
     val directories: List<DirectoryMappingDto>,
-    val games: List<Long>?,
+    override val games: List<Long>?,
     val stats: LibraryStatsDto?,
-    val unmatchedPaths: List<String>? = emptyList()
-)
+    val unmatchedPaths: List<String> = emptyList()
+) : LibraryDto

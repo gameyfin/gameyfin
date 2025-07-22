@@ -1,4 +1,3 @@
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {
     Button,
     Input,
@@ -19,9 +18,10 @@ import {useMemo, useState} from "react";
 import LibraryUpdateDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryUpdateDto";
 import {fileNameFromPath, hashCode} from "Frontend/util/utils";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 interface LibraryManagementUnmatchedPathsProps {
-    library: LibraryDto;
+    library: LibraryAdminDto;
 }
 
 export default function LibraryManagementUnmatchedPaths({library}: LibraryManagementUnmatchedPathsProps) {

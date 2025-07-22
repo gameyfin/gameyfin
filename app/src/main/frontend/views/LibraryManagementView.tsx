@@ -6,8 +6,9 @@ import {ArrowLeft} from "@phosphor-icons/react";
 import LibraryManagementDetails from "Frontend/components/general/library/LibraryManagementDetails";
 import LibraryManagementGames from "Frontend/components/general/library/LibraryManagementGames";
 import {useSnapshot} from "valtio/react";
-import {initializeLibraryState, libraryState} from "Frontend/state/LibraryState";
+import {libraryState} from "Frontend/state/LibraryState";
 import LibraryManagementUnmatchedPaths from "Frontend/components/general/library/LibraryManagementUnmatchedPaths";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 
 export default function LibraryManagementView() {
@@ -17,12 +18,10 @@ export default function LibraryManagementView() {
     const state = useSnapshot(libraryState);
 
     useEffect(() => {
-        initializeLibraryState().then((state) => {
-            if (!libraryId || !state.state[parseInt(libraryId)]) {
-                navigate("/administration/libraries");
-            }
-        });
-    }, [libraryId]);
+        if (state.isLoaded && (!libraryId || !state.state[parseInt(libraryId)])) {
+            navigate("/administration/libraries");
+        }
+    }, [state, libraryId]);
 
     return libraryId && state.state[parseInt(libraryId)] && <div className="flex flex-col gap-4">
         <div className="flex flex-row gap-4 items-center">
@@ -31,23 +30,18 @@ export default function LibraryManagementView() {
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>
         </div>
-        {/* @ts-ignore */}
-        <LibraryHeader library={state.state[libraryId]} className="h-32"/>
-        {/* @ts-ignore */}
+        <LibraryHeader library={state.state[parseInt(libraryId)] as LibraryAdminDto} className="h-32"/>
         <Tabs color="primary" fullWidth
               selectedKey={hash.length > 0 ? hash : "#details"}
               onSelectionChange={(newKey) => navigate(newKey.toString(), {replace: true})}>
             <Tab key="#details" title="Details">
-                {/* @ts-ignore */}
-                <LibraryManagementDetails library={state.state[libraryId]}/>
+                <LibraryManagementDetails library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
             </Tab>
             <Tab key="#games" title="Games">
-                {/* @ts-ignore */}
-                <LibraryManagementGames library={state.state[libraryId]}/>
+                <LibraryManagementGames library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
             </Tab>
             <Tab key="#unmatched-paths" title="Unmatched paths">
-                {/* @ts-ignore */}
-                <LibraryManagementUnmatchedPaths library={state.state[libraryId]}/>
+                <LibraryManagementUnmatchedPaths library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
             </Tab>
         </Tabs>
     </div>;

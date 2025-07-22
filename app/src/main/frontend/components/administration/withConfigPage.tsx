@@ -32,8 +32,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         }
 
         function getConfig(key: string): ConfigEntryDto | undefined {
-            // @ts-ignore
-            return state.state[key];
+            return state.state[key] as ConfigEntryDto | undefined;
         }
 
         function getChangedValues(initial: NestedConfig, current: NestedConfig): Record<string, any> {

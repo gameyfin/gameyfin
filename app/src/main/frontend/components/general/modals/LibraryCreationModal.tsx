@@ -6,6 +6,7 @@ import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMappingInput";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 interface LibraryCreationModalProps {
     libraries: LibraryDto[];
@@ -23,7 +24,7 @@ export default function LibraryCreationModal({
     const [scanAfterCreation, setScanAfterCreation] = useState<boolean>(true);
 
     async function createLibrary(library: LibraryDto) {
-        await LibraryEndpoint.createLibrary(library as LibraryDto, scanAfterCreation);
+        await LibraryEndpoint.createLibrary(library as LibraryAdminDto, scanAfterCreation);
 
         addToast({
             title: "New library created",
