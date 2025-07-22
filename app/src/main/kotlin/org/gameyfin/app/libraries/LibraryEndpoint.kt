@@ -5,13 +5,12 @@ import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
-import org.gameyfin.app.libraries.dto.LibraryDto
+import org.gameyfin.app.core.security.isCurrentUserAdmin
+import org.gameyfin.app.libraries.dto.LibraryAdminDto
 import org.gameyfin.app.libraries.dto.LibraryEvent
 import org.gameyfin.app.libraries.dto.LibraryScanProgress
 import org.gameyfin.app.libraries.dto.LibraryUpdateDto
 import org.gameyfin.app.libraries.enums.ScanType
-import org.gameyfin.app.users.UserService
-import org.gameyfin.app.users.util.isAdmin
 import reactor.core.publisher.Flux
 
 @Endpoint
@@ -19,7 +18,6 @@ import reactor.core.publisher.Flux
 @AnonymousAllowed
 class LibraryEndpoint(
     private val libraryService: LibraryService,
-    private val userService: UserService,
     private val libraryScanService: LibraryScanService,
 ) {
     fun subscribeToLibraryEvents(): Flux<List<LibraryEvent>> {
@@ -29,17 +27,16 @@ class LibraryEndpoint(
     fun getAll() = libraryService.getAll()
 
     fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
-        val user = userService.getCurrentUser()
-        return if (user.isAdmin()) LibraryScanService.subscribeToScanProgressEvents()
+        return if (isCurrentUserAdmin()) LibraryScanService.subscribeToScanProgressEvents()
         else Flux.empty()
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun triggerScan(scanType: ScanType = ScanType.QUICK, libraries: Collection<LibraryDto>?) =
-        libraryScanService.triggerScan(scanType, libraries)
+    fun triggerScan(scanType: ScanType = ScanType.QUICK, libraryIds: Collection<Long>?) =
+        libraryScanService.triggerScan(scanType, libraryIds)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun createLibrary(library: LibraryDto, scanAfterCreation: Boolean = true) =
+    fun createLibrary(library: LibraryAdminDto, scanAfterCreation: Boolean = true) =
         libraryService.create(library, scanAfterCreation)
 
     @RolesAllowed(Role.Names.ADMIN)

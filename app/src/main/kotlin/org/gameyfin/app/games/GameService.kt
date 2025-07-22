@@ -18,7 +18,7 @@ import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.replaceRomanNumerals
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
-import org.gameyfin.app.games.entities.GameMetadata
+import org.gameyfin.app.games.extensions.toDtos
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.Library
 import org.gameyfin.app.media.ImageService
@@ -84,7 +84,7 @@ class GameService(
 
     fun getAll(): List<GameDto> {
         val entities = gameRepository.findAll()
-        return entities.map { it.toDto() }
+        return entities.toDtos()
     }
 
     @Transactional
@@ -853,74 +853,4 @@ class GameService(
     }
 
     fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals()
-}
-
-
-fun Game.toDto(): GameDto {
-    // Helper functions
-    fun toDto(fieldMetadata: GameFieldMetadata): GameFieldMetadataDto {
-        val source = fieldMetadata.source
-
-        return when (source) {
-            is GameFieldPluginSource -> {
-                GameFieldMetadataDto(
-                    type = GameFieldMetadataType.PLUGIN,
-                    source = source.plugin.pluginId,
-                    updatedAt = fieldMetadata.updatedAt!!
-                )
-            }
-
-            is GameFieldUserSource -> {
-                GameFieldMetadataDto(
-                    type = GameFieldMetadataType.USER,
-                    source = source.user.username,
-                    updatedAt = fieldMetadata.updatedAt!!
-                )
-            }
-
-            else -> {
-                GameFieldMetadataDto(
-                    type = GameFieldMetadataType.UNKNOWN,
-                    source = "unknown source",
-                    updatedAt = fieldMetadata.updatedAt!!
-                )
-            }
-        }
-    }
-
-    fun toDto(metadata: GameMetadata): GameMetadataDto {
-        return GameMetadataDto(
-            fileSize = metadata.fileSize ?: 0L,
-            downloadCount = metadata.downloadCount,
-            path = metadata.path,
-            fields = metadata.fields.mapValues { toDto(it.value) },
-            originalIds = metadata.originalIds.mapKeys { it.key.pluginId },
-            matchConfirmed = metadata.matchConfirmed
-        )
-    }
-
-    return GameDto(
-        id = id!!,
-        createdAt = createdAt!!,
-        updatedAt = updatedAt!!,
-        libraryId = this.library.id!!,
-        title = title!!,
-        coverId = this.coverImage?.id,
-        headerId = this.headerImage?.id,
-        comment = this.comment,
-        summary = this.summary,
-        release = this.release?.atZone(ZoneOffset.UTC)?.toLocalDate(),
-        userRating = this.userRating,
-        criticRating = this.criticRating,
-        publishers = this.publishers.map { it.name },
-        developers = this.developers.map { it.name },
-        genres = this.genres.map { it.name },
-        themes = this.themes.map { it.name },
-        keywords = this.keywords.toList(),
-        features = this.features.map { it.name },
-        perspectives = this.perspectives?.map { it.name },
-        imageIds = this.images.mapNotNull { it.id },
-        videoUrls = this.videoUrls.map { it.toString() },
-        metadata = toDto(this.metadata)
-    )
 }

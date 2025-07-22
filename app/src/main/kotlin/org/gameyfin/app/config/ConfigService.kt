@@ -46,7 +46,7 @@ class ConfigService(
      */
     fun <T : Serializable> get(configProperty: ConfigProperties<T>): T? {
 
-        log.debug { "Getting config value '${configProperty.key}'" }
+        log.trace { "Getting config value '${configProperty.key}'" }
 
         val appConfig = appConfigRepository.findByIdOrNull(configProperty.key)
         return if (appConfig != null) {
@@ -65,7 +65,7 @@ class ConfigService(
      */
     fun get(key: String): Serializable? {
 
-        log.debug { "Getting config value '$key'" }
+        log.trace { "Getting config value '$key'" }
 
         val configProperty = findConfigProperty(key)
 

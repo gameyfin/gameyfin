@@ -5,7 +5,7 @@ import jakarta.persistence.PostRemove
 import jakarta.persistence.PostUpdate
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.dto.GameEvent
-import org.gameyfin.app.games.toDto
+import org.gameyfin.app.games.extensions.toDto
 
 class GameEntityListener {
     @PostPersist

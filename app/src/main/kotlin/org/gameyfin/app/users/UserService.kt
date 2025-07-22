@@ -109,15 +109,6 @@ class UserService(
         return toUserInfo(user)
     }
 
-    fun getCurrentUser(): org.gameyfin.app.users.entities.User {
-        val auth = SecurityContextHolder.getContext().authentication
-        if (auth.principal is OidcUser) {
-            return userRepository.findByOidcProviderId((auth.principal as OidcUser).subject)
-                ?: throw UsernameNotFoundException("OIDC user not found")
-        }
-        return getByUsernameNonNull(auth.name)
-    }
-
     fun getAvatar(username: String): Image? {
         val user = getByUsernameNonNull(username)
         return user.avatar

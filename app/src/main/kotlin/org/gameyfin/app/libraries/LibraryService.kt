@@ -2,11 +2,12 @@ package org.gameyfin.app.libraries
 
 import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.gameyfin.app.games.GameService
+import org.gameyfin.app.libraries.dto.LibraryAdminDto
 import org.gameyfin.app.libraries.dto.LibraryDto
 import org.gameyfin.app.libraries.dto.LibraryEvent
 import org.gameyfin.app.libraries.dto.LibraryUpdateDto
 import org.gameyfin.app.libraries.enums.ScanType
+import org.gameyfin.app.libraries.extensions.toDtos
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -18,9 +19,7 @@ import kotlin.time.toJavaDuration
 @Service
 class LibraryService(
     private val libraryRepository: LibraryRepository,
-    private val libraryCoreService: LibraryCoreService,
     private val libraryScanService: LibraryScanService,
-    private val gameService: GameService
 ) {
 
     companion object {
@@ -52,7 +51,7 @@ class LibraryService(
      */
     fun getAll(): List<LibraryDto> {
         val entities = libraryRepository.findAll()
-        return entities.map { it.toDto() }
+        return entities.toDtos()
     }
 
     /**
@@ -70,14 +69,21 @@ class LibraryService(
      * @param library: The library to create or update.
      * @return The created or updated LibraryDto object.
      */
-    fun create(library: LibraryDto, scanAfterCreation: Boolean) {
+    fun create(library: LibraryAdminDto, scanAfterCreation: Boolean) {
         // Check for duplicate directories before creating a new library
         checkForDuplicateDirectories(library.directories.map { it.internalPath })
 
-        val newLibrary = libraryRepository.save(libraryCoreService.toEntity(library))
+        var newLibrary = Library(
+            name = library.name,
+            directories = library.directories.distinctBy { it.internalPath }.map {
+                DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
+            }.toMutableList(),
+        )
+
+        newLibrary = libraryRepository.save(newLibrary)
 
         if (scanAfterCreation) {
-            libraryScanService.triggerScan(ScanType.QUICK, listOf(newLibrary.toDto()))
+            libraryScanService.triggerScan(ScanType.QUICK, listOf(newLibrary.id!!))
         }
     }
 

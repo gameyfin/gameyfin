@@ -1,5 +1,5 @@
 import {useSnapshot} from "valtio/react";
-import {initializeLibraryState, libraryState} from "Frontend/state/LibraryState";
+import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
 import React, {useEffect} from "react";
 import {useNavigate, useParams} from "react-router";
@@ -13,13 +13,11 @@ export default function LibraryView() {
     const games = (libraryId ? useSnapshot(gameState).gamesByLibraryId[parseInt(libraryId!!)] || [] : []) as GameDto[];
 
     useEffect(() => {
-        initializeLibraryState().then((state) => {
-            if (!libraryId || !state.state[parseInt(libraryId)]) {
-                navigate("/", {replace: true});
-            }
-            document.title = state.state[parseInt(libraryId!!)]?.name || "Gameyfin";
-        });
-    }, [libraryId]);
+        if (libraries.isLoaded && (!libraryId || !libraries.state[parseInt(libraryId)])) {
+            navigate("/", {replace: true});
+        }
+        document.title = libraries.state[parseInt(libraryId!!)]?.name || "Gameyfin";
+    }, [libraryId, libraries]);
 
     return (
         <div className="flex flex-col gap-6">

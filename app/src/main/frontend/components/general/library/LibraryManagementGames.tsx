@@ -25,6 +25,7 @@ import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpd
 import {useMemo, useState} from "react";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
+import {GameAdminDto} from "Frontend/dtos/GameDtos";
 
 interface LibraryManagementGamesProps {
     library: LibraryDto;
@@ -34,12 +35,12 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const rowsPerPage = 25;
 
     const state = useSnapshot(gameState);
-    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameDto[] : [];
+    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameAdminDto[] : [];
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "title", direction: "ascending"});
 
-    const [selectedGame, setSelectedGame] = useState<GameDto>(games[0]);
+    const [selectedGame, setSelectedGame] = useState<GameAdminDto>(games[0]);
     const editGameModal = useDisclosure();
     const matchGameModal = useDisclosure();
 
@@ -53,7 +54,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     }, [games, filter, searchTerm]);
 
     const sortedItems = useMemo(() => {
-        return filteredItems.slice().sort((a, b) => {
+        return (filteredItems as GameAdminDto[]).slice().sort((a, b) => {
             let cmp: number;
 
             switch (sortDescriptor.column) {
@@ -86,7 +87,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
 
 
     function getFilteredGames() {
-        let filteredGames = games.filter((game) =>
+        let filteredGames = (games as GameAdminDto[]).filter((game) =>
             game.metadata.path!!.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.publishers?.some(publisher => publisher.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -102,7 +103,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         return filteredGames;
     }
 
-    async function toggleMatchConfirmed(game: GameDto) {
+    async function toggleMatchConfirmed(game: GameAdminDto) {
         await GameEndpoint.updateGame(
             {
                 id: game.id,
@@ -163,13 +164,13 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 <TableColumn width={1}>Actions</TableColumn>
             </TableHeader>
             <TableBody emptyContent="Your filter did not match any games." items={pagedItems}>
-                {(item) => (
+                {(item: GameAdminDto) => (
                     <TableRow key={item.id}>
                         <TableCell>
                             <Link href={`/game/${item.id}`}
                                   color="foreground"
                                   className="text-sm"
-                                  underline="hover">{item.title} ({item.release !== undefined ? new Date(item.release).getFullYear() : "unknown"})
+                                  underline="hover">{item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
                             </Link>
                         </TableCell>
                         <TableCell>

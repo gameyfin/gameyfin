@@ -1,5 +1,4 @@
 import {Button, Card, Chip, Tooltip} from "@heroui/react";
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import React from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
@@ -10,9 +9,10 @@ import {useNavigate} from "react-router";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 interface LibraryOverviewCardProps {
-    library: LibraryDto;
+    library: LibraryAdminDto;
 }
 
 export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
@@ -28,7 +28,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     }
 
     async function triggerScan(scanType: ScanType) {
-        await LibraryEndpoint.triggerScan(scanType, [library]);
+        await LibraryEndpoint.triggerScan(scanType, [library.id]);
     }
 
     return (

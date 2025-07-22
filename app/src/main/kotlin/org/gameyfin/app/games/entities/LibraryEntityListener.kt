@@ -1,12 +1,12 @@
 package org.gameyfin.app.games.entities
 
-import org.gameyfin.app.libraries.dto.LibraryEvent
 import jakarta.persistence.PostPersist
 import jakarta.persistence.PostRemove
 import jakarta.persistence.PostUpdate
 import org.gameyfin.app.libraries.Library
 import org.gameyfin.app.libraries.LibraryService
-import org.gameyfin.app.libraries.toDto
+import org.gameyfin.app.libraries.dto.LibraryEvent
+import org.gameyfin.app.libraries.extensions.toDto
 
 class LibraryEntityListener {
     @PostPersist

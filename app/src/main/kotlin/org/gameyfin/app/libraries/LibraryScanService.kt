@@ -4,7 +4,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.libraries.dto.LibraryDto
 import org.gameyfin.app.libraries.dto.LibraryScanProgress
 import org.gameyfin.app.libraries.dto.LibraryScanStatus
 import org.gameyfin.app.libraries.dto.LibraryScanStep
@@ -62,8 +61,8 @@ class LibraryScanService(
     /**
      * Wrapper function to trigger a scan for a list of libraries.
      */
-    fun triggerScan(scanType: ScanType, libraryDtos: Collection<LibraryDto>?) {
-        val libraries = libraryDtos?.map { libraryCoreService.toEntity(it) } ?: libraryRepository.findAll()
+    fun triggerScan(scanType: ScanType, libraryIds: Collection<Long>?) {
+        val libraries = libraryIds?.let { libraryRepository.findAllById(libraryIds) } ?: libraryRepository.findAll()
         libraries.forEach { library ->
             val libraryId = library.id!!
             if (scansInProgress.putIfAbsent(libraryId, true) == null) {
@@ -82,30 +81,6 @@ class LibraryScanService(
                 log.info { "Scan already in progress for library $libraryId, skipping." }
             }
         }
-    }
-
-    /**
-     * Triggers a quick scan for a list of libraries.
-     * A quick scan will only scan for new games and deleted games, but will not touch existing games.
-     * If no list is provided, all libraries will be scanned.
-     *
-     * @param libraryDtos: List of LibraryDto objects to scan.
-     */
-    fun quickScan(libraryDtos: Collection<LibraryDto>?) {
-        val libraries = libraryDtos?.map { libraryCoreService.toEntity(it) } ?: libraryRepository.findAll()
-        libraries.forEach { executor.submit { quickScan(it) } }
-    }
-
-    /**
-     * Triggers a full scan for a list of libraries.
-     * A full scan will rescan all games in the library, including metadata and images.
-     * If no list is provided, all libraries will be scanned.
-     *
-     * @param libraryDtos: List of LibraryDto objects to scan.
-     */
-    fun fullScan(libraryDtos: Collection<LibraryDto>?) {
-        val libraries = libraryDtos?.map { libraryCoreService.toEntity(it) } ?: libraryRepository.findAll()
-        libraries.forEach { executor.submit { fullScan(it, false) } }
     }
 
     private fun quickScan(library: Library) {

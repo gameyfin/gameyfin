@@ -15,7 +15,6 @@ export default function PluginIcon({
                                        blurred = false,
                                        showTooltip = true
                                    }: PluginIconProps) {
-
     const icon = plugin.hasLogo
         ?
         <Image isBlurred={blurred} src={`/images/plugins/${plugin.id}/logo`} width={size} height={size} radius="none"/>

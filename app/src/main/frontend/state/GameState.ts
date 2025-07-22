@@ -1,9 +1,9 @@
 import {Subscription} from "@vaadin/hilla-frontend";
 import {proxy} from "valtio/index";
 import {GameEndpoint} from "Frontend/generated/endpoints";
-import GameEvent from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryEvent";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import Rand from "rand-seed";
+import GameEvent from "Frontend/generated/org/gameyfin/app/games/dto/GameEvent";
 
 type GameState = {
     subscription?: Subscription<GameEvent[]>;
@@ -116,7 +116,7 @@ export const gameState = proxy<GameState>({
 
 /** Subscribe to and process state updates from backend **/
 export async function initializeGameState() {
-    if (gameState.isLoaded) return gameState;
+    if (gameState.isLoaded) return;
 
     // Fetch initial library list
     const initialEntries = await GameEndpoint.getAll();
@@ -140,6 +140,4 @@ export async function initializeGameState() {
             }
         })
     });
-
-    return gameState;
 }

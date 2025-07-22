@@ -40,13 +40,17 @@ export default function App() {
 function ViewWithAuth() {
     const auth = useAuth();
 
-    initializeLibraryState();
-    initializeGameState();
+    useEffect(() => {
+        if (auth.state.initializing || auth.state.loading) return;
 
-    if (isAdmin(auth)) {
-        initializeScanState();
-        initializePluginState();
-    }
+        initializeLibraryState();
+        initializeGameState();
+
+        if (isAdmin(auth)) {
+            initializeScanState();
+            initializePluginState();
+        }
+    }, [auth]);
 
     return <>
         <IconContext.Provider value={{size: 20}}>

@@ -10,7 +10,7 @@ export default function SearchBar() {
 
     const navigate = useNavigate();
     const state = useSnapshot(gameState);
-    const games = state.recentlyUpdated as GameDto[];
+    const games = state.games as GameDto[];
 
     return <Autocomplete
         aria-label="Search for games"

@@ -31,7 +31,7 @@ export const libraryState = proxy<LibraryState>({
 
 /** Subscribe to and process state updates from backend **/
 export async function initializeLibraryState() {
-    if (libraryState.isLoaded) return libraryState;
+    if (libraryState.isLoaded) return;
 
     // Fetch initial library list
     const initialEntries = await LibraryEndpoint.getAll();
@@ -57,6 +57,4 @@ export async function initializeLibraryState() {
             }
         })
     });
-
-    return libraryState;
 }
