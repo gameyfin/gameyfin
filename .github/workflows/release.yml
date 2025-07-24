@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Get version from build.gradle.kts if not provided
         id: get_version
         run: |
@@ -37,14 +38,17 @@ jobs:
             echo "release_version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           fi
+
       - name: Update version in build.gradle.kts
         if: ${{ github.event.inputs.update_version }}
         run: |
           sed -i "s/^version = .*/version = \"$RELEASE_VERSION\"/" build.gradle.kts
+
       - name: Update version in app/package.json
         if: ${{ github.event.inputs.update_version }}
         run: |
           jq ".version = \"$RELEASE_VERSION\"" app/package.json > app/package.json.tmp && mv app/package.json.tmp app/package.json
+
       - name: Upload modified files
         uses: actions/upload-artifact@v4
         with:
@@ -56,15 +60,19 @@ jobs:
   docker:
     needs: setup
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Download modified files
         uses: actions/download-artifact@v4
         with:
           name: modified-files
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -72,25 +80,39 @@ jobs:
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
       - name: Run production build
         env:
           GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
         run: ./gradlew clean build -Pvaadin.productionMode=true
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate container image tags
+        id: docker_tags
+        run: |
+          VERSION="${{ needs.setup.outputs.release_version }}"
+          DOCKERHUB_TAGS="grimsi/gameyfin:$VERSION"
+          GHCR_TAGS="ghcr.io/gameyfin/app:$VERSION"
+          if [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR=${BASH_REMATCH[1]}
+            MINOR=${BASH_REMATCH[2]}
+            PATCH=${BASH_REMATCH[3]}
+            DOCKERHUB_TAGS="grimsi/gameyfin:latest,grimsi/gameyfin:$VERSION,grimsi/gameyfin:$MAJOR.$MINOR,grimsi/gameyfin:$MAJOR"
+            GHCR_TAGS="ghcr.io/gameyfin/app:latest,ghcr.io/gameyfin/app:$VERSION,ghcr.io/gameyfin/app:$MAJOR.$MINOR,ghcr.io/gameyfin/app:$MAJOR"
+          fi
+          TAGS="$DOCKERHUB_TAGS,$GHCR_TAGS"
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: ./.github/actions/docker-build-push
         with:
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          ghcr_username: ${{ github.actor }}
+          ghcr_token: ${{ secrets.GITHUB_TOKEN }}
           context: .
-          file: docker/Dockerfile
+          dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
-          push: true
-          tags: grimsi/gameyfin:${{ needs.setup.outputs.release_version }}
+          tags: ${{ steps.docker_tags.outputs.tags }}
 
   plugin_api:
     needs: setup
@@ -100,17 +122,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Download modified files
         uses: actions/download-artifact@v4
         with:
           name: modified-files
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+
       - name: Build and push Plugin-API
         run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache
         env:
@@ -127,16 +153,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Download modified files
         uses: actions/download-artifact@v4
         with:
           name: modified-files
+
       - name: Commit version bump
         if: ${{ github.event.inputs.update_version }}
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
           commit_message: 'chore: release v${{ github.event.inputs.version }}'
           tagging_message: v${{ github.event.inputs.version }}
+
       - name: Detect prerelease
         id: detect_prerelease
         run: |
@@ -147,6 +176,7 @@ jobs:
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
             echo "MAKE_LATEST=false" >> $GITHUB_ENV
           fi
+
       - name: Create GitHub release
         if: ${{ github.event.inputs.update_version }}
         uses: softprops/action-gh-release@v2

@@ -9,6 +9,8 @@ jobs:
   delete-docker-tag:
     if: startsWith(github.event.pull_request.head.ref, 'fix/')
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - name: Extract merged branch name
         id: extract_branch
@@ -18,14 +20,50 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Delete Docker tag from Docker Hub
+      - name: Delete image tag from Docker Hub
         if: steps.extract_branch.outputs.tag != ''
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           TAG: ${{ steps.extract_branch.outputs.tag }}
         run: |
-          echo "Deleting Docker tag: $TAG"
-          curl -X DELETE -u "$DOCKERHUB_USERNAME:$DOCKERHUB_TOKEN" \
-            "https://hub.docker.com/v2/repositories/grimsi/gameyfin/tags/$TAG/"
+          echo "Deleting Docker tag from Docker Hub: $TAG"
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -u "$DOCKERHUB_USERNAME:$DOCKERHUB_TOKEN" \
+            "https://hub.docker.com/v2/repositories/grimsi/gameyfin/tags/$TAG/")
+          if [ "$RESPONSE" != "204" ]; then
+            echo "Failed to delete Docker Hub tag: $TAG (HTTP $RESPONSE)" >&2
+            exit 1
+          fi
+        shell: bash
 
+      - name: Delete image tag from GHCR
+        if: steps.extract_branch.outputs.tag != ''
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.extract_branch.outputs.tag }}
+          REPO: gameyfin/app
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "Deleting Docker tag from GHCR: $TAG"
+          # Get the package ID
+          PACKAGE_ID=$(curl -s -H "Authorization: Bearer $GHCR_TOKEN" \
+            "https://api.github.com/users/$OWNER/packages/container/$REPO" | jq -r '.id')
+          if [ "$PACKAGE_ID" = "null" ] || [ -z "$PACKAGE_ID" ]; then
+            echo "Failed to get GHCR package ID for $REPO" >&2
+            exit 1
+          fi
+          # Get the version ID for the tag
+          VERSION_ID=$(curl -s -H "Authorization: Bearer $GHCR_TOKEN" \
+            "https://api.github.com/users/$OWNER/packages/container/$REPO/versions" | jq -r ".[] | select(.metadata.container.tags[]? == \"$TAG\") | .id")
+          if [ -z "$VERSION_ID" ]; then
+            echo "Failed to find GHCR version for tag: $TAG" >&2
+            exit 1
+          fi
+          # Delete the version
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: Bearer $GHCR_TOKEN" \
+            "https://api.github.com/users/$OWNER/packages/container/$REPO/versions/$VERSION_ID")
+          if [ "$RESPONSE" != "204" ]; then
+            echo "Failed to delete GHCR tag: $TAG (HTTP $RESPONSE)" >&2
+            exit 1
+          fi
+        shell: bash

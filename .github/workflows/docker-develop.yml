@@ -1,4 +1,4 @@
-name: Build and Push Docker Image (develop)
+name: Build and Push Docker Image
 
 on:
   push:
@@ -14,6 +14,8 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,20 +31,14 @@ jobs:
           GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
         run: ./gradlew clean build -Pvaadin.productionMode=true
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: ./.github/actions/docker-build-push
         with:
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          ghcr_username: ${{ github.actor }}
+          ghcr_token: ${{ secrets.GITHUB_TOKEN }}
           context: .
-          file: docker/Dockerfile
+          dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
-          push: true
-          tags: grimsi/gameyfin:${{ inputs.image_tag || 'develop' }}
+          tags: grimsi/gameyfin:${{ inputs.image_tag || 'develop' }},ghcr.io/gameyfin/app:${{ inputs.image_tag || 'develop' }}
