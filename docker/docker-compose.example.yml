@@ -1,7 +1,7 @@
 version: "3"
 services:
   gameyfin:
-    image: gameyfin/app:2.0.0.beta2
+    image: ghcr.io/gameyfin/gameyfin:2
     container_name: gameyfin
     environment:
       # Generate a new APP_KEY using the command `openssl rand -base64 32` or similar.

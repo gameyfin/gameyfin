@@ -41,7 +41,7 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.extract_branch.outputs.tag }}
-          REPO: gameyfin/app
+          REPO: gameyfin/gameyfin
           OWNER: ${{ github.repository_owner }}
         run: |
           echo "Deleting Docker tag from GHCR: $TAG"

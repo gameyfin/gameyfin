@@ -42,4 +42,4 @@ jobs:
           context: .
           dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
-          tags: grimsi/gameyfin:${{ steps.extract_tag.outputs.tag }},ghcr.io/gameyfin/app:${{ steps.extract_tag.outputs.tag }}
+          tags: grimsi/gameyfin:${{ steps.extract_tag.outputs.tag }},ghcr.io/gameyfin/gameyfin:${{ steps.extract_tag.outputs.tag }}

@@ -1,4 +1,4 @@
-Plugin-Version: 1.0.0.beta2
+Plugin-Version: 1.0.0
 Plugin-Class: org.gameyfin.plugins.download.torrent.TorrentDownloadPlugin
 Plugin-Id: org.gameyfin.plugins.download.torrent
 Plugin-Name: Torrent Download

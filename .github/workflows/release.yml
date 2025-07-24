@@ -91,13 +91,13 @@ jobs:
         run: |
           VERSION="${{ needs.setup.outputs.release_version }}"
           DOCKERHUB_TAGS="grimsi/gameyfin:$VERSION"
-          GHCR_TAGS="ghcr.io/gameyfin/app:$VERSION"
+          GHCR_TAGS="ghcr.io/gameyfin/gameyfin:$VERSION"
           if [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             MAJOR=${BASH_REMATCH[1]}
             MINOR=${BASH_REMATCH[2]}
             PATCH=${BASH_REMATCH[3]}
             DOCKERHUB_TAGS="grimsi/gameyfin:latest,grimsi/gameyfin:develop,grimsi/gameyfin:$VERSION,grimsi/gameyfin:$MAJOR.$MINOR,grimsi/gameyfin:$MAJOR"
-            GHCR_TAGS="ghcr.io/gameyfin/app:latest,ghcr.io/gameyfin/app:develop,ghcr.io/gameyfin/app:$VERSION,ghcr.io/gameyfin/app:$MAJOR.$MINOR,ghcr.io/gameyfin/app:$MAJOR"
+            GHCR_TAGS="ghcr.io/gameyfin/gameyfin:latest,ghcr.io/gameyfin/gameyfin:develop,ghcr.io/gameyfin/gameyfin:$VERSION,ghcr.io/gameyfin/gameyfin:$MAJOR.$MINOR,ghcr.io/gameyfin/gameyfin:$MAJOR"
           fi
           TAGS="$DOCKERHUB_TAGS,$GHCR_TAGS"
           echo "tags=$TAGS" >> $GITHUB_OUTPUT

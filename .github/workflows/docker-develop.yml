@@ -41,4 +41,4 @@ jobs:
           context: .
           dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
-          tags: grimsi/gameyfin:${{ inputs.image_tag || 'develop' }},ghcr.io/gameyfin/app:${{ inputs.image_tag || 'develop' }}
+          tags: grimsi/gameyfin:${{ inputs.image_tag || 'develop' }},ghcr.io/gameyfin/gameyfin:${{ inputs.image_tag || 'develop' }}
