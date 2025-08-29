@@ -12,19 +12,19 @@ import org.gameyfin.app.games.extensions.toUserDto
 class GameEntityListener {
     @PostPersist
     fun created(game: Game) {
-        GameService.Companion.emitUser(GameUserEvent.Created(game.toUserDto()))
-        GameService.Companion.emitAdmin(GameAdminEvent.Created(game.toAdminDto()))
+        GameService.emitUser(GameUserEvent.Created(game.toUserDto()))
+        GameService.emitAdmin(GameAdminEvent.Created(game.toAdminDto()))
     }
 
     @PostUpdate
     fun updated(game: Game) {
-        GameService.Companion.emitUser(GameUserEvent.Updated(game.toUserDto()))
-        GameService.Companion.emitAdmin(GameAdminEvent.Updated(game.toAdminDto()))
+        GameService.emitUser(GameUserEvent.Updated(game.toUserDto()))
+        GameService.emitAdmin(GameAdminEvent.Updated(game.toAdminDto()))
     }
 
     @PostRemove
     fun deleted(game: Game) {
-        GameService.Companion.emitUser(GameUserEvent.Deleted(game.id!!))
-        GameService.Companion.emitAdmin(GameAdminEvent.Deleted(game.id!!))
+        GameService.emitUser(GameUserEvent.Deleted(game.id!!))
+        GameService.emitAdmin(GameAdminEvent.Deleted(game.id!!))
     }
 }
