@@ -147,6 +147,13 @@ sealed class ConfigProperties<T : Serializable>(
                 true
             )
 
+            data object OAuthScopes : ConfigProperties<Array<String>>(
+                Array<String>::class,
+                "sso.oidc.oauth-scopes",
+                "OAuth2 scopes to request",
+                arrayOf("openid", "profile", "email", "roles")
+            )
+
             data object ClientId : ConfigProperties<String>(
                 String::class,
                 "sso.oidc.client-id",
