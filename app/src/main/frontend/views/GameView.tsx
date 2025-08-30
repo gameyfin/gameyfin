@@ -46,7 +46,7 @@ export default function GameView() {
             }, {} as Record<string, ComboButtonOption>);
             setDownloadOptions(options);
         });
-    }, []);
+    }, [gameId]);
 
     useEffect(() => {
         if (state.isLoaded && (!gameId || !state.state[parseInt(gameId)])) {
