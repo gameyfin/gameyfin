@@ -6,9 +6,10 @@ import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.events.*
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.media.ImageService
-import org.gameyfin.app.users.dto.UserInfoDto
+import org.gameyfin.app.users.dto.UserInfoAdminDto
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.emailconfirmation.EmailConfirmationService
@@ -17,7 +18,6 @@ import org.gameyfin.app.users.persistence.UserRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -77,7 +77,7 @@ class UserService(
     fun findByOidcProviderId(oidcProviderId: String): org.gameyfin.app.users.entities.User? =
         userRepository.findByOidcProviderId(oidcProviderId)
 
-    fun getAllUsers(): List<UserInfoDto> {
+    fun getAllUsers(): List<UserInfoAdminDto> {
         return userRepository.findAll().map { u -> toUserInfo(u) }
     }
 
@@ -93,8 +93,8 @@ class UserService(
         return userRepository.findByUsername(username) ?: throw UsernameNotFoundException("Unknown user '$username'")
     }
 
-    fun getUserInfo(): UserInfoDto {
-        val auth = SecurityContextHolder.getContext().authentication
+    fun getUserInfo(): UserInfoAdminDto {
+        val auth = getCurrentAuth()
         val principal = auth.principal
 
         if (principal is OidcUser) {
@@ -238,7 +238,7 @@ class UserService(
             return RoleAssignmentResult.NO_ROLES_PROVIDED
         }
 
-        val currentUser = SecurityContextHolder.getContext().authentication
+        val currentUser = getCurrentAuth()
         val targetUser = getByUsernameNonNull(username)
 
         if (!canManage(targetUser)) {
@@ -266,7 +266,7 @@ class UserService(
     }
 
     fun canManage(targetUser: org.gameyfin.app.users.entities.User): Boolean {
-        val currentUser = SecurityContextHolder.getContext().authentication
+        val currentUser = getCurrentAuth()
         val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
         val targetUserLevel = roleService.getHighestRole(targetUser.roles).powerLevel
         return currentUserLevel > targetUserLevel
@@ -285,8 +285,8 @@ class UserService(
         eventPublisher.publishEvent(AccountDeletedEvent(this, user, Utils.Companion.getBaseUrl()))
     }
 
-    fun toUserInfo(user: org.gameyfin.app.users.entities.User): UserInfoDto {
-        return UserInfoDto(
+    fun toUserInfo(user: org.gameyfin.app.users.entities.User): UserInfoAdminDto {
+        return UserInfoAdminDto(
             username = user.username,
             email = user.email,
             emailConfirmed = user.emailConfirmed,

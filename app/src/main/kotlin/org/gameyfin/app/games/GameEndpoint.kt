@@ -5,8 +5,12 @@ import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.security.isCurrentUserAdmin
-import org.gameyfin.app.games.dto.*
+import org.gameyfin.app.games.dto.GameDto
+import org.gameyfin.app.games.dto.GameEvent
+import org.gameyfin.app.games.dto.GameSearchResultDto
+import org.gameyfin.app.games.dto.GameUpdateDto
 import org.gameyfin.app.libraries.LibraryCoreService
 import org.gameyfin.app.libraries.LibraryService
 import reactor.core.publisher.Flux
@@ -45,7 +49,12 @@ class GameEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun matchManually(originalIds: Map<String, OriginalIdDto>, path: String, libraryId: Long, replaceGameId: Long?) {
+    fun matchManually(
+        originalIds: Map<String, ExternalProviderIdDto>,
+        path: String,
+        libraryId: Long,
+        replaceGameId: Long?
+    ) {
         val library = libraryService.getById(libraryId)
         val game = gameService.matchManually(originalIds, Path.of(path), library, replaceGameId)
         if (game != null) {

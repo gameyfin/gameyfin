@@ -2,7 +2,7 @@ package org.gameyfin.app.users.dto
 
 import org.gameyfin.app.core.Role
 
-data class UserInfoDto(
+data class UserInfoAdminDto(
     val username: String,
     val managedBySso: Boolean,
     val email: String,

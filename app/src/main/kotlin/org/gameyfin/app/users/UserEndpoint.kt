@@ -5,11 +5,11 @@ import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
-import org.gameyfin.app.users.dto.UserInfoDto
+import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.users.dto.UserInfoAdminDto
 import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.enums.RoleAssignmentResult
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContextHolder
 
 
 @Endpoint
@@ -18,15 +18,15 @@ class UserEndpoint(
     private val roleService: RoleService
 ) {
     @AnonymousAllowed
-    fun getUserInfo(): UserInfoDto? {
-        val auth = SecurityContextHolder.getContext().authentication
+    fun getUserInfo(): UserInfoAdminDto? {
+        val auth = getCurrentAuth()
         if (!auth.isAuthenticated || auth.principal == "anonymousUser") return null
         return userService.getUserInfo()
     }
 
     @PermitAll
     fun updateUser(updates: UserUpdateDto) {
-        val auth: Authentication = SecurityContextHolder.getContext().authentication
+        val auth: Authentication = getCurrentAuth()
         userService.updateUser(auth.name, updates)
     }
 
@@ -36,7 +36,7 @@ class UserEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun getAllUsers(): List<UserInfoDto> {
+    fun getAllUsers(): List<UserInfoAdminDto> {
         return userService.getAllUsers()
     }
 
@@ -52,7 +52,7 @@ class UserEndpoint(
 
     @PermitAll
     fun deleteUser() {
-        val auth: Authentication = SecurityContextHolder.getContext().authentication
+        val auth: Authentication = getCurrentAuth()
         userService.deleteUser(auth.name)
     }
 
@@ -68,7 +68,7 @@ class UserEndpoint(
 
     @RolesAllowed(Role.Names.ADMIN)
     fun getRolesBelow(): List<String> {
-        val auth: Authentication = SecurityContextHolder.getContext().authentication
+        val auth: Authentication = getCurrentAuth()
         return roleService.getRolesBelowAuth(auth).map { it.roleName }
     }
 

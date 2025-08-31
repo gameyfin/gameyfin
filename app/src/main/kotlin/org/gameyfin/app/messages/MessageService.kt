@@ -3,6 +3,7 @@ package org.gameyfin.app.messages
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.events.*
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.messages.providers.AbstractMessageProvider
 import org.gameyfin.app.messages.templates.MessageTemplateService
 import org.gameyfin.app.messages.templates.MessageTemplates
@@ -10,8 +11,6 @@ import org.gameyfin.app.users.UserService
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -61,7 +60,7 @@ class MessageService(
         }
 
         try {
-            val auth: Authentication = SecurityContextHolder.getContext().authentication
+            val auth = getCurrentAuth()
             val user = userService.getByUsername(auth.name) ?: throw IllegalStateException("User not found")
             val template = templateService.getMessageTemplate(templateKey)
             sendNotification(user.email, "[Gameyfin] Test Notification", template, placeholders)
