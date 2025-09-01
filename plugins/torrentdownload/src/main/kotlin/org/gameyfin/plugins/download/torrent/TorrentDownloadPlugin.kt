@@ -150,7 +150,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
     private fun getTrackerUri(): URI {
         val protocol = "http" // No SSL support in ttorrent: https://github.com/mpetazzoni/ttorrent/issues/4
-        val host = getHostname().getCanonicalHostName()
+        val host = getHostname().getHostName()
         val port = config<Int>("trackerPort")
         val path = "announce"
 
