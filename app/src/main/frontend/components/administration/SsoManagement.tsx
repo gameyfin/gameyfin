@@ -49,7 +49,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                     <ConfigFormField configElement={getConfig("sso.oidc.enabled")}/>
 
                     <Section title="SSO user handling"/>
-                    <div className="flex flex-row items-baseline">
+                    <div className="flex flex-row items-baseline mb-4">
                         <CheckboxGroup className="flex flex-col flex-1 items-baseline gap-2"
                                        value={["auto-register-new-users"]}>
                             <div className="flex flex-row gap-2">
@@ -68,6 +68,13 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                         <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
                                          isDisabled={!formik.values.sso.oidc.enabled ||
                                              !formik.values.sso.oidc["auto-register-new-users"]}/>
+                    </div>
+
+                    <div className="flex flex-row items-center gap-4">
+                        <ConfigFormField configElement={getConfig("sso.oidc.roles-claim")}
+                                         isDisabled={!formik.values.sso.oidc.enabled}/>
+                        <ConfigFormField configElement={getConfig("sso.oidc.oauth-scopes")}
+                                         isDisabled={!formik.values.sso.oidc.enabled}/>
                     </div>
 
                     <Section title="SSO provider configuration"/>
