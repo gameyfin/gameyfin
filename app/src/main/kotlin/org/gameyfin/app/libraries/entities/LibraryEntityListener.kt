@@ -1,9 +1,8 @@
-package org.gameyfin.app.games.entities
+package org.gameyfin.app.libraries.entities
 
 import jakarta.persistence.PostPersist
 import jakarta.persistence.PostRemove
 import jakarta.persistence.PostUpdate
-import org.gameyfin.app.libraries.Library
 import org.gameyfin.app.libraries.LibraryService
 import org.gameyfin.app.libraries.dto.LibraryAdminEvent
 import org.gameyfin.app.libraries.dto.LibraryUserEvent

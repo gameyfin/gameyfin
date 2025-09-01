@@ -6,7 +6,7 @@ import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.security.getCurrentAuth
-import org.gameyfin.app.users.dto.UserInfoAdminDto
+import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.enums.RoleAssignmentResult
 import org.springframework.security.core.Authentication
@@ -18,7 +18,7 @@ class UserEndpoint(
     private val roleService: RoleService
 ) {
     @AnonymousAllowed
-    fun getUserInfo(): UserInfoAdminDto? {
+    fun getUserInfo(): ExtendedUserInfoDto? {
         val auth = getCurrentAuth()
         if (!auth.isAuthenticated || auth.principal == "anonymousUser") return null
         return userService.getUserInfo()
@@ -36,7 +36,7 @@ class UserEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun getAllUsers(): List<UserInfoAdminDto> {
+    fun getAllUsers(): List<ExtendedUserInfoDto> {
         return userService.getAllUsers()
     }
 

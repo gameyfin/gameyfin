@@ -1,7 +1,7 @@
 package org.gameyfin.app.games.entities
 
 import jakarta.persistence.*
-import org.gameyfin.app.libraries.Library
+import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.pluginapi.gamemetadata.GameFeature
 import org.gameyfin.pluginapi.gamemetadata.Genre
 import org.gameyfin.pluginapi.gamemetadata.PlayerPerspective

@@ -4,9 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.libraries.dto.LibraryScanProgress
-import org.gameyfin.app.libraries.dto.LibraryScanStatus
-import org.gameyfin.app.libraries.dto.LibraryScanStep
+import org.gameyfin.app.libraries.dto.*
+import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.*
 import org.gameyfin.app.media.ImageService
