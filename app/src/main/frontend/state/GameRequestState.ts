@@ -38,13 +38,19 @@ export async function initializeGameRequestState() {
                 case "created":
                 case "updated":
                     //@ts-ignore
-                    gameRequestState.state[gameRequestEvent.id] = gameRequestEvent;
+                    gameRequestState.state[gameRequestEvent.gameRequest.id] = gameRequestEvent.gameRequest;
                     break;
                 case "deleted":
                     //@ts-ignore
-                    delete gameRequestState.state[gameRequestEvent.id];
+                    delete gameRequestState.state[gameRequestEvent.gameRequestId];
                     break;
             }
         })
     });
 }
+
+
+
+
+
+

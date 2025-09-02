@@ -4,12 +4,13 @@ import jakarta.persistence.*
 import org.gameyfin.app.requests.status.GameRequestStatus
 import org.gameyfin.app.users.entities.User
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.UpdateTimestamp
-import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.Instant
 
 @Entity
-@EntityListeners(GameRequestEntityListener::class, AuditingEntityListener::class)
+@EntityListeners(GameRequestEntityListener::class)
 class GameRequest(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -25,11 +26,13 @@ class GameRequest(
     @Enumerated(EnumType.STRING)
     var status: GameRequestStatus,
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
-    var requester: User,
+    @ManyToOne(fetch = FetchType.EAGER)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    var requester: User? = null,
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-    var voters: MutableList<User> = mutableListOf(),
+    @ManyToMany(fetch = FetchType.EAGER)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    var voters: MutableSet<User> = mutableSetOf(),
 
     var linkedGameId: Long? = null,
 

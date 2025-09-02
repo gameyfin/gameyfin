@@ -34,6 +34,10 @@ class GameEndpoint(
 
     fun getAll(): List<GameDto> = gameService.getAll()
 
+    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
+        return gameService.getPotentialMatches(searchTerm)
+    }
+
     @RolesAllowed(Role.Names.ADMIN)
     fun updateGame(game: GameUpdateDto) = gameService.edit(game)
 
@@ -41,11 +45,6 @@ class GameEndpoint(
     fun deleteGame(gameId: Long) {
         libraryCoreService.deleteGameFromLibrary(gameId)
         gameService.delete(gameId)
-    }
-
-    @RolesAllowed(Role.Names.ADMIN)
-    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
-        return gameService.getPotentialMatches(searchTerm)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

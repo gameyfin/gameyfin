@@ -10,10 +10,10 @@ fun GameRequest.toDto(): GameRequestDto {
         title = this.title,
         release = this.release,
         status = this.status,
-        requester = this.requester.toUserInfoDto(),
+        requester = this.requester?.toUserInfoDto(),
         voters = this.voters.map { it.toUserInfoDto() },
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt
+        createdAt = this.createdAt!!,
+        updatedAt = this.updatedAt!!
     )
 }
 

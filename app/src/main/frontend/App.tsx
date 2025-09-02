@@ -47,10 +47,10 @@ function ViewWithAuth() {
         initializeLibraryState();
         initializeGameState();
         initializeGameRequestState();
+        initializePluginState();
 
         if (isAdmin(auth)) {
             initializeScanState();
-            initializePluginState();
         }
     }, [auth]);
 

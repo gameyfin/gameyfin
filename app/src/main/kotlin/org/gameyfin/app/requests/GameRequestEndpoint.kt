@@ -4,6 +4,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.requests.dto.GameRequestCreationDto
@@ -17,7 +18,8 @@ import reactor.core.publisher.Flux
 @DynamicPublicAccess
 @AnonymousAllowed
 class GameRequestEndpoint(
-    private val gameRequestService: GameRequestService
+    private val gameRequestService: GameRequestService,
+    private val config: ConfigService
 ) {
 
     fun subscribe(): Flux<List<GameRequestEvent>> {
@@ -26,7 +28,6 @@ class GameRequestEndpoint(
 
     fun getAll() = gameRequestService.getAll()
 
-    @PermitAll
     fun create(gameRequest: GameRequestCreationDto) {
         gameRequestService.createRequest(gameRequest)
     }
@@ -36,13 +37,13 @@ class GameRequestEndpoint(
         gameRequestService.toggleRequestVote(gameRequestId)
     }
 
-    @RolesAllowed(Role.Names.ADMIN)
-    fun changeStatus(gameRequestId: Long, newStatus: GameRequestStatus) {
-        gameRequestService.changeRequestStatus(gameRequestId, newStatus)
+    @PermitAll
+    fun delete(gameRequestId: Long) {
+        gameRequestService.deleteRequest(gameRequestId)
     }
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun delete(gameRequestId: Long) {
-        gameRequestService.deleteRequest(gameRequestId)
+    fun changeStatus(gameRequestId: Long, newStatus: GameRequestStatus) {
+        gameRequestService.changeRequestStatus(gameRequestId, newStatus)
     }
 }

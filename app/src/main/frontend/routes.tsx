@@ -24,6 +24,7 @@ import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
 import ErrorView from "Frontend/views/ErrorView";
+import GameRequestView from "Frontend/views/GameRequestView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -46,6 +47,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             path: 'recently-added',
                             element: <RecentlyAddedView/>,
                             handle: {title: 'Recently Added'}
+                        },
+                        {
+                            path: '/requests',
+                            element: <GameRequestView/>,
+                            handle: {title: 'Game requests'}
                         },
                         {
                             path: 'library/:libraryId',

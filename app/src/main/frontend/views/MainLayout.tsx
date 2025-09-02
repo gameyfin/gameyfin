@@ -1,21 +1,11 @@
 import {useEffect, useState} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
-import {
-    Button,
-    Divider,
-    Link,
-    Navbar,
-    NavbarBrand,
-    NavbarContent,
-    NavbarItem,
-    Tooltip,
-    useDisclosure
-} from "@heroui/react";
+import {Button, Divider, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, Tooltip} from "@heroui/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
-import {ArrowLeft, DiceSix, Heart, House, ListMagnifyingGlass, PlusCircle, SignIn} from "@phosphor-icons/react";
+import {ArrowLeft, DiceSix, Disc, Heart, House, ListMagnifyingGlass, SignIn} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
@@ -24,7 +14,6 @@ import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
 import {isAdmin} from "Frontend/util/utils";
-import RequestGameModal from "Frontend/components/general/modals/RequestGameModal";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -36,8 +25,6 @@ export default function MainLayout() {
     const isHomePage = location.pathname === "/";
     const [isExploding, setIsExploding] = useState(false);
     const games = useSnapshot(gameState).games;
-
-    const requestGameModal = useDisclosure();
 
     useEffect(() => {
         userPreferenceService.sync()
@@ -110,9 +97,11 @@ export default function MainLayout() {
                     {auth.state.user &&
                         <NavbarItem>
                             <Tooltip content="Request a game" placement="bottom">
-                                <Button isIconOnly color="primary" variant="light"
-                                        onPress={requestGameModal.onOpen}>
-                                    <PlusCircle size={26} weight="fill"/>
+                                <Button color="primary"
+                                        isDisabled={window.location.pathname.startsWith("/requests")}
+                                        onPress={() => navigate("/requests")}
+                                        startContent={<Disc weight="fill"/>}>
+                                    Requests
                                 </Button>
                             </Tooltip>
                         </NavbarItem>
@@ -165,10 +154,6 @@ export default function MainLayout() {
                     </p>
                 </footer>
             </div>
-
-
-            <RequestGameModal isOpen={requestGameModal.isOpen}
-                              onOpenChange={requestGameModal.onOpenChange}/>
         </div>
     );
 }

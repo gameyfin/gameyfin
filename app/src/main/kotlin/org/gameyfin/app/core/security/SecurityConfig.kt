@@ -53,6 +53,7 @@ class SecurityConfig(
                 .requestMatchers("/game/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/library/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/search/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/requests/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/download/**").access(DynamicPublicAccessAuthorizationManager(config))
         }
 

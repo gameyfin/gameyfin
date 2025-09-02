@@ -103,6 +103,32 @@ sealed class ConfigProperties<T : Serializable>(
         }
     }
 
+    /** Requests */
+    sealed class Requests {
+        sealed class Games {
+            data object Enabled : ConfigProperties<Boolean>(
+                Boolean::class,
+                "requests.games.enabled",
+                "Enable game requests",
+                true
+            )
+
+            data object AllowGuestsToRequestGames : ConfigProperties<Boolean>(
+                Boolean::class,
+                "requests.games.allow-guests-to-request-games",
+                "Allow guests (not logged in) to create game requests",
+                false
+            )
+
+            data object MaxOpenRequestsPerUser : ConfigProperties<Int>(
+                Int::class,
+                "requests.games.max-open-requests-per-user",
+                "Maximum number of open (not yet fulfilled or rejected) requests per user. Set to 0 for unlimited.",
+                10
+            )
+        }
+    }
+
     /** User management */
     sealed class Users {
         sealed class SignUps {

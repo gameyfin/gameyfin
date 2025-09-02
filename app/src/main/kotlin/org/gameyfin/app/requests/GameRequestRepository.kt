@@ -17,4 +17,13 @@ interface GameRequestRepository : JpaRepository<GameRequest, Long> {
             GameRequestStatus.REJECTED
         )
     ): List<GameRequest>
+
+    @Query("SELECT g FROM GameRequest g WHERE g.requester.id = :requesterId AND g.status NOT IN (:excludedStatuses)")
+    fun findOpenRequestsByRequesterId(
+        @Param("requesterId") requesterId: Long?,
+        @Param("excludedStatuses") excludedStatuses: List<GameRequestStatus> = listOf(
+            GameRequestStatus.FULFILLED,
+            GameRequestStatus.REJECTED
+        )
+    ): List<GameRequest>
 }

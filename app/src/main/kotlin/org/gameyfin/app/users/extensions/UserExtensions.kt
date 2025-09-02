@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 
 fun User.toUserInfoDto(): UserInfoDto {
     return UserInfoDto(
+        id = this.id!!,
         username = this.username,
         hasAvatar = this.avatar != null,
         avatarId = this.avatar?.id
@@ -17,6 +18,7 @@ fun User.toUserInfoDto(): UserInfoDto {
 
 fun User.toExtendedUserInfoDto(): ExtendedUserInfoDto {
     return ExtendedUserInfoDto(
+        id = this.id!!,
         username = this.username,
         email = this.email,
         emailConfirmed = this.emailConfirmed,

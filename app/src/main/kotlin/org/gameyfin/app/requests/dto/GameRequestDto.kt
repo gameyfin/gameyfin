@@ -11,6 +11,6 @@ class GameRequestDto(
     val status: GameRequestStatus,
     val requester: UserInfoDto?,
     val voters: List<UserInfoDto>,
-    val createdAt: Instant?,
-    val updatedAt: Instant?
+    val createdAt: Instant,
+    val updatedAt: Instant
 )

@@ -9,6 +9,9 @@ fun getCurrentAuth(): Authentication? {
 }
 
 fun isCurrentUserAdmin(): Boolean {
-    return getCurrentAuth()?.authorities?.any { it.authority == Role.Names.ADMIN || it.authority == Role.Names.SUPERADMIN }
-        ?: false
+    return getCurrentAuth()?.isAdmin() ?: false
+}
+
+fun Authentication.isAdmin(): Boolean {
+    return this.authorities?.any { it.authority == Role.Names.ADMIN || it.authority == Role.Names.SUPERADMIN } ?: false
 }
