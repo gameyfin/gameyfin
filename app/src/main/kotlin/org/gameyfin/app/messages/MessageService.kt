@@ -60,7 +60,7 @@ class MessageService(
         }
 
         try {
-            val auth = getCurrentAuth()
+            val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
             val user = userService.getByUsername(auth.name) ?: throw IllegalStateException("User not found")
             val template = templateService.getMessageTemplate(templateKey)
             sendNotification(user.email, "[Gameyfin] Test Notification", template, placeholders)

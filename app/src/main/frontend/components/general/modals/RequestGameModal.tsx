@@ -1,4 +1,5 @@
 import {
+    addToast,
     Button,
     Input,
     Modal,
@@ -14,44 +15,47 @@ import {
 } from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import {ArrowRight, MagnifyingGlass} from "@phosphor-icons/react";
-import {GameEndpoint} from "Frontend/generated/endpoints";
+import {GameEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import PluginIcon from "../plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
+import GameRequestCreationDto from "Frontend/generated/org/gameyfin/app/requests/dto/GameRequestCreationDto";
 
-interface MatchGameModalProps {
-    path: string;
-    libraryId: number;
-    replaceGameId?: number;
-    initialSearchTerm: string;
+interface RequestGameModalProps {
     isOpen: boolean;
     onOpenChange: () => void;
 }
 
-export default function MatchGameModal({
-                                           path,
-                                           libraryId,
-                                           replaceGameId,
-                                           initialSearchTerm,
-                                           isOpen,
-                                           onOpenChange
-                                       }: MatchGameModalProps) {
+export default function RequestGameModal({
+                                             isOpen,
+                                             onOpenChange
+                                         }: RequestGameModalProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [searchResults, setSearchResults] = useState<GameSearchResultDto[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [isMatching, setIsMatching] = useState<string | null>(null);
+    const [isRequesting, setIsRequesting] = useState<string | null>(null);
 
-    const state = useSnapshot(pluginState).state;
+    const plugins = useSnapshot(pluginState).state;
 
     useEffect(() => {
-        setSearchTerm(initialSearchTerm);
+        setSearchTerm("");
         setSearchResults([]);
     }, [isOpen]);
 
-    async function matchGame(result: GameSearchResultDto) {
-        await GameEndpoint.matchManually(result.originalIds, path, libraryId, replaceGameId);
+    async function requestGame(game: GameSearchResultDto) {
+        const request: GameRequestCreationDto = {
+            title: game.title,
+            release: game.release
+        }
+        await GameRequestEndpoint.create(request);
+
+        addToast({
+            title: "Request submitted",
+            description: `Your request for "${game.title}" has been submitted.`,
+            color: "success"
+        })
     }
 
     async function search() {
@@ -64,14 +68,14 @@ export default function MatchGameModal({
     return (
         <Modal isOpen={isOpen} onOpenChange={onOpenChange}
                hideCloseButton
-               isDismissable={!isSearching && !isMatching}
-               isKeyboardDismissDisabled={!isSearching && !isMatching}
+               isDismissable={!isSearching && !isRequesting}
+               isKeyboardDismissDisabled={!isSearching && !isRequesting}
                backdrop="opaque" size="5xl">
             <ModalContent>
                 {(onClose) => (
                     <ModalBody className="my-4">
                         <div className="flex flex-col items-center">
-                            <pre>{path}</pre>
+                            <h2 className="text-xl font-semibold">Request a game</h2>
                         </div>
                         <div className="flex flex-row gap-2 mb-4">
                             <Input value={searchTerm}
@@ -102,7 +106,7 @@ export default function MatchGameModal({
                                     <TableColumn>Sources</TableColumn>
                                     <TableColumn width={1}> </TableColumn>
                                 </TableHeader>
-                                <TableBody emptyContent="Your filter did not match any games." items={searchResults}>
+                                <TableBody emptyContent="Your search did not match any games." items={searchResults}>
                                     {(item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
@@ -126,19 +130,19 @@ export default function MatchGameModal({
                                                 <div className="flex flex-row gap-2">
                                                     {Object.values(item.originalIds).map(
                                                         originalId => <PluginIcon
-                                                            plugin={state[originalId.pluginId] as PluginDto}/>
+                                                            plugin={plugins[originalId.pluginId] as PluginDto}/>
                                                     )}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <Tooltip content="Pick this result">
                                                     <Button isIconOnly size="sm"
-                                                            isDisabled={isMatching !== null}
-                                                            isLoading={isMatching === item.id}
+                                                            isDisabled={isRequesting !== null}
+                                                            isLoading={isRequesting === item.id}
                                                             onPress={async () => {
-                                                                setIsMatching(item.id);
-                                                                await matchGame(item);
-                                                                setIsMatching(null);
+                                                                setIsRequesting(item.id);
+                                                                await requestGame(item);
+                                                                setIsRequesting(null);
                                                                 onClose();
                                                             }}>
                                                         <ArrowRight/>

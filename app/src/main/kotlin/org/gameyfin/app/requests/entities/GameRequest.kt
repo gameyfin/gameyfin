@@ -8,8 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
 import java.time.Instant
 
-typealias ExternalProviderIds = Map<String, String>
-
 @Entity
 @EntityListeners(GameRequestEntityListener::class, AuditingEntityListener::class)
 class GameRequest(
@@ -21,18 +19,16 @@ class GameRequest(
     val title: String,
 
     @Column(nullable = false)
-    val release: Instant,
-
-    @ElementCollection
-    val externalProviderIds: ExternalProviderIds,
+    val release: Instant?,
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     var status: GameRequestStatus,
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    var requester: User? = null,
+    @ManyToOne(fetch = FetchType.EAGER, cascade = [CascadeType.ALL])
+    var requester: User,
 
-    @OneToMany
+    @OneToMany(fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
     var voters: MutableList<User> = mutableListOf(),
 
     var linkedGameId: Long? = null,

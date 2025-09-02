@@ -1,8 +1,8 @@
 package org.gameyfin.app.requests
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.events.GameCreatedEvent
 import org.gameyfin.app.core.security.getCurrentAuth
-import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.requests.dto.GameRequestCreationDto
 import org.gameyfin.app.requests.dto.GameRequestDto
 import org.gameyfin.app.requests.dto.GameRequestEvent
@@ -11,6 +11,8 @@ import org.gameyfin.app.requests.extensions.toDto
 import org.gameyfin.app.requests.extensions.toDtos
 import org.gameyfin.app.requests.status.GameRequestStatus
 import org.gameyfin.app.users.UserService
+import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -52,13 +54,14 @@ class GameRequestService(
     }
 
     fun createRequest(gameRequest: GameRequestCreationDto) {
-        val currentUser = userService.getByUsername(getCurrentAuth().name)
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
+        val currentUser =
+            userService.getByUsername(auth.name) ?: throw IllegalStateException("Current user not found")
 
         val gameRequest = GameRequest(
             title = gameRequest.title,
             release = gameRequest.release,
             status = GameRequestStatus.PENDING,
-            externalProviderIds = gameRequest.externalProviderIds,
             requester = currentUser
         )
 
@@ -79,12 +82,13 @@ class GameRequestService(
     }
 
     fun toggleRequestVote(id: Long) {
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val currentUser =
-            userService.getByUsername(getCurrentAuth().name) ?: throw IllegalStateException("Current user not found")
+            userService.getByUsername(auth.name) ?: throw IllegalStateException("Current user not found")
         val gameRequest = gameRequestRepository.findById(id)
             .orElseThrow { NoSuchElementException("No game request found with id $id") }
 
-        if (gameRequest.requester?.id == currentUser.id) {
+        if (gameRequest.requester.id == currentUser.id) {
             throw IllegalStateException("You cannot vote for your own request")
         }
 
@@ -97,25 +101,24 @@ class GameRequestService(
         gameRequestRepository.save(gameRequest)
     }
 
-    fun completeMatchingRequests(game: Game) {
+    @Async
+    @EventListener(GameCreatedEvent::class)
+    fun completeMatchingRequests(gameCreatedEvent: GameCreatedEvent) {
+        val game = gameCreatedEvent.game
         val gameTitle = game.title
         val gameRelease = game.release
 
-        if (gameTitle == null || gameRelease == null) {
-            log.debug { "Game '${game.id}' is missing title and/or release date, cannot complete matching requests" }
+        if (gameTitle == null) {
+            log.debug { "Game '${game.id}' is missing title, cannot complete matching requests" }
             return
         }
 
-        // First match by exact title and release date, if not result could be found then by title and release year only
-        val matchingRequestsByExactRelease = gameRequestRepository.findByTitleAndRelease(gameTitle, gameRelease)
-        val matchingRequestsByReleaseYear = matchingRequestsByExactRelease.ifEmpty {
-            gameRequestRepository.findByTitleAndReleaseYear(
-                gameTitle,
-                gameRelease
-            )
-        }
+        val matchingRequests = gameRequestRepository.findOpenRequestsByTitleAndReleaseYear(
+            gameTitle,
+            gameRelease
+        )
 
-        matchingRequestsByReleaseYear.forEach { request ->
+        matchingRequests.forEach { request ->
             request.status = GameRequestStatus.FULFILLED
             request.linkedGameId = game.id
             val persistedRequest = gameRequestRepository.save(request)

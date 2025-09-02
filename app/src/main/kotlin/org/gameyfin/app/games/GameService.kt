@@ -150,10 +150,10 @@ class GameService(
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
 
-        val user = when (val userDetails = getCurrentAuth().principal) {
+        val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
             is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername)
-            else -> throw IllegalStateException("Unkown user type: ${userDetails::class.java.name}")
+            else -> throw IllegalStateException("Unkown user type: ${userDetails?.javaClass?.name}")
         }
 
         // Update only non-null fields

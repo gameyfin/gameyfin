@@ -94,7 +94,7 @@ class UserService(
     }
 
     fun getUserInfo(): ExtendedUserInfoDto {
-        val auth = getCurrentAuth()
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val principal = auth.principal
 
         if (principal is OidcUser) {
@@ -238,7 +238,7 @@ class UserService(
             return RoleAssignmentResult.NO_ROLES_PROVIDED
         }
 
-        val currentUser = getCurrentAuth()
+        val currentUser = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val targetUser = getByUsernameNonNull(username)
 
         if (!canManage(targetUser)) {
@@ -266,7 +266,7 @@ class UserService(
     }
 
     fun canManage(targetUser: org.gameyfin.app.users.entities.User): Boolean {
-        val currentUser = getCurrentAuth()
+        val currentUser = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
         val targetUserLevel = roleService.getHighestRole(targetUser.roles).powerLevel
         return currentUserLevel > targetUserLevel

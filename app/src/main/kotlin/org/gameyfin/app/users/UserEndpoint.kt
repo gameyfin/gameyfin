@@ -20,13 +20,13 @@ class UserEndpoint(
     @AnonymousAllowed
     fun getUserInfo(): ExtendedUserInfoDto? {
         val auth = getCurrentAuth()
-        if (!auth.isAuthenticated || auth.principal == "anonymousUser") return null
+        if (auth?.isAuthenticated == false || auth?.principal == "anonymousUser") return null
         return userService.getUserInfo()
     }
 
     @PermitAll
     fun updateUser(updates: UserUpdateDto) {
-        val auth: Authentication = getCurrentAuth()
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         userService.updateUser(auth.name, updates)
     }
 
@@ -52,7 +52,7 @@ class UserEndpoint(
 
     @PermitAll
     fun deleteUser() {
-        val auth: Authentication = getCurrentAuth()
+        val auth: Authentication = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         userService.deleteUser(auth.name)
     }
 
@@ -68,7 +68,7 @@ class UserEndpoint(
 
     @RolesAllowed(Role.Names.ADMIN)
     fun getRolesBelow(): List<String> {
-        val auth: Authentication = getCurrentAuth()
+        val auth: Authentication = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         return roleService.getRolesBelowAuth(auth).map { it.roleName }
     }
 

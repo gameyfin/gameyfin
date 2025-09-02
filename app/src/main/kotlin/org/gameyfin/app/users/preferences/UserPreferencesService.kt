@@ -135,7 +135,7 @@ class UserPreferencesService(
     }
 
     private fun id(key: String): UserPreferenceKey {
-        val auth = getCurrentAuth()
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val user = userService.getByUsernameNonNull(auth.name)
         return UserPreferenceKey(key, user.id!!)
     }

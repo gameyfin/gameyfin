@@ -26,6 +26,7 @@ class GameRequestEndpoint(
 
     fun getAll() = gameRequestService.getAll()
 
+    @PermitAll
     fun create(gameRequest: GameRequestCreationDto) {
         gameRequestService.createRequest(gameRequest)
     }

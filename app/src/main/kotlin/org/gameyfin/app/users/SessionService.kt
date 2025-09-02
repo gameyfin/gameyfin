@@ -12,7 +12,7 @@ class SessionService(private val sessionRegistry: SessionRegistry) {
 
     fun logoutAllSessions() {
         val auth = getCurrentAuth()
-        val sessions: List<SessionInformation> = sessionRegistry.getAllSessions(auth.principal, false)
+        val sessions: List<SessionInformation> = sessionRegistry.getAllSessions(auth?.principal, false)
         for (sessionInfo in sessions) {
             sessionInfo.expireNow()
         }

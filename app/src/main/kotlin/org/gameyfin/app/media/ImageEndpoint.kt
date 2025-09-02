@@ -60,7 +60,7 @@ class ImageEndpoint(
     @PermitAll
     @PostMapping("/avatar/upload")
     fun uploadAvatar(@RequestParam("file") file: MultipartFile) {
-        val auth = getCurrentAuth()
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
 
         val image: Image = if (!userService.hasAvatar(auth.name)) {
             imageService.createFile(ImageType.AVATAR, file.inputStream, file.contentType!!)
@@ -75,7 +75,7 @@ class ImageEndpoint(
     @PermitAll
     @PostMapping("/avatar/delete")
     fun deleteAvatar() {
-        val auth = getCurrentAuth()
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         userService.deleteAvatar(auth.name)
     }
 

@@ -15,6 +15,7 @@ import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
 import {useEffect} from "react";
+import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
@@ -45,6 +46,7 @@ function ViewWithAuth() {
 
         initializeLibraryState();
         initializeGameState();
+        initializeGameRequestState();
 
         if (isAdmin(auth)) {
             initializeScanState();
