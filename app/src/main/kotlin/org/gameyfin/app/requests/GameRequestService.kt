@@ -2,10 +2,12 @@ package org.gameyfin.app.requests
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.requests.dto.GameRequestCreationDto
 import org.gameyfin.app.requests.dto.GameRequestDto
 import org.gameyfin.app.requests.dto.GameRequestEvent
 import org.gameyfin.app.requests.entities.GameRequest
+import org.gameyfin.app.requests.extensions.toDto
 import org.gameyfin.app.requests.extensions.toDtos
 import org.gameyfin.app.requests.status.GameRequestStatus
 import org.gameyfin.app.users.UserService
@@ -93,5 +95,32 @@ class GameRequestService(
         }
 
         gameRequestRepository.save(gameRequest)
+    }
+
+    fun completeMatchingRequests(game: Game) {
+        val gameTitle = game.title
+        val gameRelease = game.release
+
+        if (gameTitle == null || gameRelease == null) {
+            log.debug { "Game '${game.id}' is missing title and/or release date, cannot complete matching requests" }
+            return
+        }
+
+        // First match by exact title and release date, if not result could be found then by title and release year only
+        val matchingRequestsByExactRelease = gameRequestRepository.findByTitleAndRelease(gameTitle, gameRelease)
+        val matchingRequestsByReleaseYear = matchingRequestsByExactRelease.ifEmpty {
+            gameRequestRepository.findByTitleAndReleaseYear(
+                gameTitle,
+                gameRelease
+            )
+        }
+
+        matchingRequestsByReleaseYear.forEach { request ->
+            request.status = GameRequestStatus.FULFILLED
+            request.linkedGameId = game.id
+            val persistedRequest = gameRequestRepository.save(request)
+            emit(GameRequestEvent.Updated(persistedRequest.toDto()))
+            log.info { "Marked game request '${request.title}' (${request.release}) as FULFILLED because game is now available" }
+        }
     }
 }

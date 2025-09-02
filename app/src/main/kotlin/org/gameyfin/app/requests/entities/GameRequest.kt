@@ -35,6 +35,8 @@ class GameRequest(
     @OneToMany
     var voters: MutableList<User> = mutableListOf(),
 
+    var linkedGameId: Long? = null,
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     var createdAt: Instant? = null,
