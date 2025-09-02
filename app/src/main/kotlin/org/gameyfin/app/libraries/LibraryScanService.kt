@@ -4,14 +4,17 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.libraries.dto.*
-import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.libraries.dto.LibraryScanProgress
+import org.gameyfin.app.libraries.dto.LibraryScanStatus
+import org.gameyfin.app.libraries.dto.LibraryScanStep
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.*
 import org.gameyfin.app.media.ImageService
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.net.URL
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.Callable
@@ -330,39 +333,56 @@ class LibraryScanService(
     private fun downloadImages(games: List<Game>, progress: LibraryScanProgress): DownloadImagesResult {
         val completedImageDownload = AtomicInteger(0)
 
-        val imageDownloadTasks = games.map { game ->
-            Callable<Game?> {
+        // Collect all images from all games in the batch
+        val allImages = games.flatMap { game ->
+            val images = mutableListOf<Image>()
+            game.coverImage?.let { images.add(it) }
+            game.headerImage?.let { images.add(it) }
+            images.addAll(game.images)
+            images
+        }
+
+        // Deduplicate by originalUrl
+        val uniqueImages = allImages
+            .filter { it.originalUrl != null }
+            .distinctBy { it.originalUrl }
+
+        // Map to track which Image entity was used for download per originalUrl
+        val downloadedImageMap = ConcurrentHashMap<URL, Image>()
+
+        // Download each unique image in parallel
+        val imageDownloadTasks = uniqueImages.map { image ->
+            Callable {
                 try {
-                    game.coverImage?.let {
-                        imageService.downloadIfNew(it)
-                        completedImageDownload.andIncrement
+                    imageService.downloadIfNew(image)
+                    image.originalUrl?.let { url ->
+                        downloadedImageMap[url] = image
                     }
-
-                    game.headerImage?.let {
-                        imageService.downloadIfNew(it)
-                        completedImageDownload.andIncrement
-                    }
-
-                    game.images.map {
-                        imageService.downloadIfNew(it)
-                        completedImageDownload.andIncrement
-                    }
-
-                    game
                 } catch (e: Exception) {
-                    log.error { "Error downloading images for game '${game.title}' (${game.id}): ${e.message}" }
+                    log.error { "Error downloading image '${image.originalUrl}': ${e.message}" }
                     log.debug(e) {}
-                    null
                 } finally {
-                    progress.currentStep.current = completedImageDownload.get()
+                    progress.currentStep.current = completedImageDownload.incrementAndGet()
                     emit(progress)
                 }
             }
         }
+        executor.invokeAll(imageDownloadTasks)
 
-        val gamesWithImages = executor.invokeAll(imageDownloadTasks).mapNotNull { it.get() }
+        // After downloads, associate the contentId with all other Image entities in the batch with the same originalUrl
+        for ((url, downloadedImage) in downloadedImageMap) {
+            val contentId = downloadedImage.contentId
+            if (contentId != null) {
+                allImages.filter { it.originalUrl.toString() == url.toString() && it !== downloadedImage }
+                    .forEach { image ->
+                        imageService.downloadIfNew(image)
+                        progress.currentStep.current = completedImageDownload.incrementAndGet()
+                        emit(progress)
+                    }
+            }
+        }
 
-        return DownloadImagesResult(gamesWithImages = gamesWithImages)
+        return DownloadImagesResult(gamesWithImages = games)
     }
 
     private fun calculateFileSizes(games: List<Game>, progress: LibraryScanProgress): CalculateFilesizesResult {
