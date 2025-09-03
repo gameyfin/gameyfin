@@ -91,7 +91,7 @@ class GameRequestService(
 
         // Check if guests are allowed to create requests
         if (config.get(ConfigProperties.Requests.Games.AllowGuestsToRequestGames) != true && currentUser == null) {
-            throw EndpointException("Only registered users can create game requests")
+            throw EndpointException("Only registered users can submit game requests")
         }
 
         // Check if user has too many open requests (0 means no limit per user)

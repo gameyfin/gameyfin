@@ -94,18 +94,16 @@ export default function MainLayout() {
                     </Tooltip>
                 </NavbarContent>}
                 <NavbarContent justify="end" className="items-center">
-                    {auth.state.user &&
-                        <NavbarItem>
-                            <Tooltip content="Request a game" placement="bottom">
-                                <Button color="primary"
-                                        isDisabled={window.location.pathname.startsWith("/requests")}
-                                        onPress={() => navigate("/requests")}
-                                        startContent={<Disc weight="fill"/>}>
-                                    Requests
-                                </Button>
-                            </Tooltip>
-                        </NavbarItem>
-                    }
+                    <NavbarItem>
+                        <Tooltip content="Request a game" placement="bottom">
+                            <Button color="primary"
+                                    isDisabled={window.location.pathname.startsWith("/requests")}
+                                    onPress={() => navigate("/requests")}
+                                    startContent={<Disc weight="fill"/>}>
+                                Requests
+                            </Button>
+                        </Tooltip>
+                    </NavbarItem>
                     {isAdmin(auth) &&
                         <NavbarItem>
                             <Tooltip content="View library scan results" placement="bottom">

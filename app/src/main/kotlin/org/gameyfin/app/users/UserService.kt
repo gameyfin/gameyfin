@@ -99,7 +99,9 @@ class UserService(
 
         if (principal is OidcUser) {
             val oidcUser = org.gameyfin.app.users.entities.User(principal)
-            val userInfoDto = oidcUser.toExtendedUserInfoDto()
+            val user = userRepository.findByOidcProviderId(oidcUser.oidcProviderId!!)
+                ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '${oidcUser.oidcProviderId}'")
+            val userInfoDto = user.toExtendedUserInfoDto()
             userInfoDto.roles = roleService.extractGrantedAuthorities(principal.authorities)
                 .mapNotNull { Role.safeValueOf(it.authority) }
             return userInfoDto

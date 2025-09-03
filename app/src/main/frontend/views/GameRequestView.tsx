@@ -35,9 +35,11 @@ export default function GameRequestView() {
     const gameRequests = useSnapshot(gameRequestState).gameRequests;
 
     const [areGameRequestsEnabled, setAreGameRequestsEnabled] = useState(false);
+    const [areGuestsAllowedToRequestGames, setAreGuestsAllowedToRequestGames] = useState(false);
 
     useEffect(() => {
         ConfigEndpoint.areGameRequestsEnabled().then(setAreGameRequestsEnabled);
+        ConfigEndpoint.areGuestsAllowedToRequestGames().then(setAreGuestsAllowedToRequestGames);
     }, []);
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -168,7 +170,7 @@ export default function GameRequestView() {
                         color="primary"
                         startContent={<PlusCircle weight="fill"/>}
                         onPress={requestGameModal.onOpen}
-                        isDisabled={!areGameRequestsEnabled}>
+                        isDisabled={!areGameRequestsEnabled || (!auth.state.user && !areGuestsAllowedToRequestGames)}>
                     Request a Game
                 </Button>
             </div>
