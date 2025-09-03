@@ -1,5 +1,6 @@
 import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
+import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 
 export function isAdmin(auth: any): boolean {
     return auth.state.user?.roles?.some((a: string) => a?.includes("ADMIN"));
@@ -207,4 +208,23 @@ export function fileNameFromPath(path: string, includeExtension: boolean = true)
     }
     const dotIndex = fileName.lastIndexOf('.');
     return dotIndex < 0 ? fileName : fileName.substring(0, dotIndex);
+}
+
+/** Calculate the completeness of a GameDto
+ * @param game
+ * @returns completeness percentage (0-100)
+ */
+export function metadataCompleteness(game: GameDto) {
+    // Total number of fields considered for completeness
+    // Includes all fields except "comment"
+    const totalFields = 21;
+
+    const filledFields = Object.values(game).filter(value => {
+        if (value === null || value === undefined) return false;
+        if (Array.isArray(value)) return value.length > 0;
+        if (typeof value === "string") return value.trim().length > 0;
+        return true;
+    }).length;
+
+    return Math.round((filledFields / totalFields) * 100);
 }
