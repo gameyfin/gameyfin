@@ -1,0 +1,45 @@
+name: Build and Push Docker Image (release/*)
+
+on:
+  push:
+    branches:
+      - 'release/*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Run production build
+        env:
+          GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
+        run: ./gradlew clean build -Pvaadin.productionMode=true
+
+      - name: Extract tag from branch name
+        id: extract_tag
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          TAG="${BRANCH_NAME#release/}-preview"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: ./.github/actions/docker-build-push
+        with:
+          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+          ghcr_username: ${{ github.actor }}
+          ghcr_token: ${{ secrets.GITHUB_TOKEN }}
+          context: .
+          dockerfile: docker/Dockerfile
+          platforms: linux/arm64/v8,linux/amd64
+          tags: grimsi/gameyfin:${{ steps.extract_tag.outputs.tag }},ghcr.io/gameyfin/gameyfin:${{ steps.extract_tag.outputs.tag }}
