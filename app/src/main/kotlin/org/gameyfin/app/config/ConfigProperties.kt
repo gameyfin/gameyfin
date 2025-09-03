@@ -109,7 +109,7 @@ sealed class ConfigProperties<T : Serializable>(
             data object Enabled : ConfigProperties<Boolean>(
                 Boolean::class,
                 "requests.games.enabled",
-                "Enable game requests",
+                "Enable submission of game requests",
                 true
             )
 
@@ -123,7 +123,7 @@ sealed class ConfigProperties<T : Serializable>(
             data object MaxOpenRequestsPerUser : ConfigProperties<Int>(
                 Int::class,
                 "requests.games.max-open-requests-per-user",
-                "Maximum number of open (not yet fulfilled or rejected) requests per user. Set to 0 for unlimited.",
+                "Maximum number of pending requests per user. Set to 0 for unlimited.",
                 10
             )
         }

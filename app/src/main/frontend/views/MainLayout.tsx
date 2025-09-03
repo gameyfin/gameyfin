@@ -108,7 +108,11 @@ export default function MainLayout() {
                     }
                     {isAdmin(auth) &&
                         <NavbarItem>
-                            <ScanProgressPopover/>
+                            <Tooltip content="View library scan results" placement="bottom">
+                                <div>
+                                    <ScanProgressPopover/>
+                                </div>
+                            </Tooltip>
                         </NavbarItem>
                     }
                     {auth.state.user &&

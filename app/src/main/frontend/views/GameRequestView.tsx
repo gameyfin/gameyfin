@@ -16,22 +16,29 @@ import {
     useDisclosure
 } from "@heroui/react";
 import RequestGameModal from "Frontend/components/general/modals/RequestGameModal";
-import {ArrowUp, Check, PlusCircle, X} from "@phosphor-icons/react";
-import React, {useMemo, useState} from "react";
+import {ArrowUp, Check, Info, PlusCircle, Trash, X} from "@phosphor-icons/react";
+import React, {useEffect, useMemo, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
-import {GameRequestEndpoint} from "Frontend/generated/endpoints";
+import {ConfigEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
 import {gameRequestState} from "Frontend/state/GameRequestState";
 import {useSnapshot} from "valtio/react";
 import GameRequestDto from "Frontend/generated/org/gameyfin/app/requests/dto/GameRequestDto";
 import GameRequestStatus from "Frontend/generated/org/gameyfin/app/requests/status/GameRequestStatus";
 import {isAdmin} from "Frontend/util/utils";
+import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 
 export default function GameRequestView() {
     const rowsPerPage = 25;
 
     const auth = useAuth();
     const requestGameModal = useDisclosure();
-    const gameRequests = useSnapshot(gameRequestState).gameRequests
+    const gameRequests = useSnapshot(gameRequestState).gameRequests;
+
+    const [areGameRequestsEnabled, setAreGameRequestsEnabled] = useState(false);
+
+    useEffect(() => {
+        ConfigEndpoint.areGameRequestsEnabled().then(setAreGameRequestsEnabled);
+    }, []);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filters, setFilters] = useState<"all" | GameRequestStatus[]>([GameRequestStatus.PENDING, GameRequestStatus.APPROVED, GameRequestStatus.REJECTED]);
@@ -94,7 +101,6 @@ export default function GameRequestView() {
         return sortedItems.slice(start, end);
     }, [page, sortedItems]);
 
-
     function getFilteredRequests() {
         let filteredRequests = (gameRequests as GameRequestDto[]).filter((gameRequest) => {
             return gameRequest.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -124,6 +130,10 @@ export default function GameRequestView() {
         await GameRequestEndpoint.changeStatus(gameRequest.id, newStatus);
     }
 
+    async function deleteRequest(gameRequestId: number) {
+        await GameRequestEndpoint.delete(gameRequestId);
+    }
+
     function hasUserVotedForRequest(gameRequest: GameRequestDto): boolean {
         if (!auth.state.user) return false;
         return gameRequest.voters.map(v => v.id).includes(auth.state.user.id);
@@ -149,10 +159,16 @@ export default function GameRequestView() {
         <div className="flex flex-row justify-between mb-8">
             <h1 className="text-2xl font-bold">Game Requests</h1>
             <div className="flex flex-row items-center gap-4">
+                {!areGameRequestsEnabled &&
+                    <SmallInfoField icon={Info}
+                                    message="Request submission is disabled"
+                                    className="text-foreground/70"/>
+                }
                 <Button className="w-fit"
                         color="primary"
                         startContent={<PlusCircle weight="fill"/>}
-                        onPress={requestGameModal.onOpen}>
+                        onPress={requestGameModal.onOpen}
+                        isDisabled={!areGameRequestsEnabled}>
                     Request a Game
                 </Button>
             </div>
@@ -176,8 +192,8 @@ export default function GameRequestView() {
             >
                 <SelectItem key={GameRequestStatus.PENDING}>Pending</SelectItem>
                 <SelectItem key={GameRequestStatus.APPROVED}>Approved</SelectItem>
-                <SelectItem key={GameRequestStatus.FULFILLED}>Fulfilled</SelectItem>
                 <SelectItem key={GameRequestStatus.REJECTED}>Rejected</SelectItem>
+                <SelectItem key={GameRequestStatus.FULFILLED}>Fulfilled</SelectItem>
             </Select>
         </div>
 
@@ -263,13 +279,21 @@ export default function GameRequestView() {
                                         </Button>
                                     </Tooltip>
                                 </div>}
+                                {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
+                                    <Tooltip content="Delete this request">
+                                        <Button size="sm" isIconOnly
+                                                color="danger"
+                                                onPress={async () => await deleteRequest(item.id)}>
+                                            <Trash/>
+                                        </Button>
+                                    </Tooltip>
+                                }
                             </div>
                         </TableCell>
                     </TableRow>
                 )}
             </TableBody>
         </Table>
-
 
         <RequestGameModal isOpen={requestGameModal.isOpen}
                           onOpenChange={requestGameModal.onOpenChange}/>

@@ -49,13 +49,19 @@ export default function RequestGameModal({
             title: game.title,
             release: game.release
         }
-        await GameRequestEndpoint.create(request);
 
-        addToast({
-            title: "Request submitted",
-            description: `Your request for "${game.title}" has been submitted.`,
-            color: "success"
-        })
+        try {
+            await GameRequestEndpoint.create(request);
+
+            addToast({
+                title: "Request submitted",
+                description: `Your request for "${game.title}" has been submitted.`,
+                color: "success"
+            });
+        } catch (e) {
+            setIsSearching(false);
+            setIsRequesting(null);
+        }
     }
 
     async function search() {

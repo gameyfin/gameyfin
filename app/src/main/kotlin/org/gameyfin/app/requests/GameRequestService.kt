@@ -1,11 +1,13 @@
 package org.gameyfin.app.requests
 
+import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.events.GameCreatedEvent
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.core.security.isAdmin
+import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.requests.dto.GameRequestCreationDto
 import org.gameyfin.app.requests.dto.GameRequestDto
 import org.gameyfin.app.requests.dto.GameRequestEvent
@@ -26,9 +28,10 @@ import kotlin.time.toJavaDuration
 
 @Service
 class GameRequestService(
-    private val gameRequestRepository: GameRequestRepository,
+    private val config: ConfigService,
     private val userService: UserService,
-    private val config: ConfigService
+    private val gameRequestRepository: GameRequestRepository,
+    private val gameRepository: GameRepository
 ) {
 
     companion object {
@@ -63,17 +66,24 @@ class GameRequestService(
 
         // Check if requests are enabled
         if (config.get(ConfigProperties.Requests.Games.Enabled) != true) {
-            throw IllegalStateException("Game requests are disabled")
+            throw EndpointException("Game requests are disabled")
+        }
+
+        // Check if game is already available
+        val existingGames = gameRepository.findByTitleAndReleaseYear(gameRequest.title, gameRequest.release)
+        if (existingGames.isNotEmpty()) {
+            throw EndpointException(
+                "This game is already available (ID: ${existingGames[0].id})"
+            )
         }
 
         // Check if a request with the same title and release year already exists
-        val existingRequests = gameRequestRepository.findOpenRequestsByTitleAndReleaseYear(
+        val existingRequests = gameRequestRepository.findByTitleAndReleaseYear(
             gameRequest.title,
-            gameRequest.release,
-            emptyList()
+            gameRequest.release
         )
         if (existingRequests.isNotEmpty()) {
-            throw IllegalStateException("A request for this game already exists (ID: ${existingRequests[0].id})")
+            throw EndpointException("A request for this game already exists (ID: ${existingRequests[0].id})")
         }
 
         val auth = getCurrentAuth()
@@ -81,16 +91,19 @@ class GameRequestService(
 
         // Check if guests are allowed to create requests
         if (config.get(ConfigProperties.Requests.Games.AllowGuestsToRequestGames) != true && currentUser == null) {
-            throw IllegalStateException("Only registered users can create game requests")
+            throw EndpointException("Only registered users can create game requests")
         }
 
         // Check if user has too many open requests (0 means no limit per user)
         // Note: All guests are treated as a single user with null ID and thus share their request limit
         // Note: Admins are exempt from this limit
-        val openRequestsForUser = gameRequestRepository.findOpenRequestsByRequesterId(currentUser?.id)
+        val pendingRequestsForUser = gameRequestRepository.findRequestsByRequesterIdAndStatusIn(
+            currentUser?.id,
+            listOf(GameRequestStatus.PENDING)
+        )
         val maxRequestsPerUser = config.get(ConfigProperties.Requests.Games.MaxOpenRequestsPerUser) ?: 0
-        if (maxRequestsPerUser == 0 || (auth?.isAdmin() != true && openRequestsForUser.size >= maxRequestsPerUser)) {
-            throw IllegalStateException("You have reached the maximum number of open requests (${maxRequestsPerUser})")
+        if (maxRequestsPerUser == 0 || (auth?.isAdmin() != true && pendingRequestsForUser.size >= maxRequestsPerUser)) {
+            throw EndpointException("You have reached the maximum number of pending requests (${maxRequestsPerUser})")
         }
 
         val newGameRequest = GameRequest(
@@ -115,8 +128,9 @@ class GameRequestService(
         val requester = gameRequest.requester
 
         // Check if the current user is the requester or an admin
-        if (auth?.isAdmin() != true || requester == null || requester.id != currentUser?.id) {
-            throw IllegalStateException("Only the requester or an admin can delete a game request")
+        // Note: Requests submitted by guests (request is null) can only be deleted by an admin
+        if (auth?.isAdmin() != true && (requester == null || requester.id != currentUser?.id)) {
+            throw EndpointException("Only the requester or an admin can delete a game request")
         }
 
         gameRequestRepository.delete(gameRequest)
@@ -170,9 +184,10 @@ class GameRequestService(
             return
         }
 
-        val matchingRequests = gameRequestRepository.findOpenRequestsByTitleAndReleaseYear(
+        val matchingRequests = gameRequestRepository.findRequestsByTitleAndReleaseYearAndStatusNotIn(
             gameTitle,
-            gameRelease
+            gameRelease,
+            listOf(GameRequestStatus.FULFILLED)
         )
 
         matchingRequests.forEach { request ->
