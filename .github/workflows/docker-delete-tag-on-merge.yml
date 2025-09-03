@@ -7,16 +7,22 @@ on:
 
 jobs:
   delete-docker-tag:
-    if: startsWith(github.event.pull_request.head.ref, 'fix/')
+    if: startsWith(github.event.pull_request.head.ref, 'fix/') || startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     permissions:
       packages: write
     steps:
-      - name: Extract merged branch name
+      - name: Extract merged branch name and tag
         id: extract_branch
         run: |
           BRANCH="${{ github.event.pull_request.head.ref }}"
-          TAG=${BRANCH#fix/}
+          if [[ "$BRANCH" == fix/* ]]; then
+            TAG=${BRANCH#fix/}
+          elif [[ "$BRANCH" == release/* ]]; then
+            TAG="${BRANCH#release/}-preview"
+          else
+            TAG=""
+          fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
         shell: bash
 
