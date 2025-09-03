@@ -15,13 +15,22 @@ const Avatar = ({...props}) => {
     }
 
     // TODO: Check if avatar can be loaded from SSO
-    return (
-        <NextUiAvatar
-            showFallback
-            src={`/images/avatar?username=${username}`}
-            {...props}
-        />
-    );
+    if (auth.state.user?.hasAvatar) {
+        return (
+            <NextUiAvatar
+                showFallback
+                src={`/images/avatar?username=${username}`}
+                {...props}
+            />
+        );
+    } else {
+        return (
+            <NextUiAvatar
+                showFallback
+                {...props}
+            />
+        );
+    }
 }
 
 export default Avatar;

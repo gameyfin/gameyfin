@@ -3,7 +3,7 @@ package org.gameyfin.app.setup
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import com.vaadin.hilla.exception.EndpointException
-import org.gameyfin.app.users.dto.UserInfoDto
+import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserRegistrationDto
 
 @Endpoint
@@ -16,7 +16,7 @@ class SetupEndpoint(
     }
 
     @AnonymousAllowed
-    fun registerSuperAdmin(superAdminRegistration: UserRegistrationDto): UserInfoDto {
+    fun registerSuperAdmin(superAdminRegistration: UserRegistrationDto): ExtendedUserInfoDto {
         if (setupService.isSetupCompleted()) throw EndpointException("Setup already completed")
         return setupService.createInitialAdminUser(superAdminRegistration)
     }

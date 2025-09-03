@@ -21,7 +21,7 @@ import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
-interface EditGameMetadataModalProps {
+interface MatchGameModalProps {
     path: string;
     libraryId: number;
     replaceGameId?: number;
@@ -37,7 +37,7 @@ export default function MatchGameModal({
                                            initialSearchTerm,
                                            isOpen,
                                            onOpenChange
-                                       }: EditGameMetadataModalProps) {
+                                       }: MatchGameModalProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [searchResults, setSearchResults] = useState<GameSearchResultDto[]>([]);
     const [isSearching, setIsSearching] = useState(false);

@@ -103,6 +103,32 @@ sealed class ConfigProperties<T : Serializable>(
         }
     }
 
+    /** Requests */
+    sealed class Requests {
+        sealed class Games {
+            data object Enabled : ConfigProperties<Boolean>(
+                Boolean::class,
+                "requests.games.enabled",
+                "Enable submission of game requests",
+                true
+            )
+
+            data object AllowGuestsToRequestGames : ConfigProperties<Boolean>(
+                Boolean::class,
+                "requests.games.allow-guests-to-request-games",
+                "Allow guests (not logged in) to create game requests",
+                false
+            )
+
+            data object MaxOpenRequestsPerUser : ConfigProperties<Int>(
+                Int::class,
+                "requests.games.max-open-requests-per-user",
+                "Maximum number of pending requests per user. Set to 0 for unlimited.",
+                10
+            )
+        }
+    }
+
     /** User management */
     sealed class Users {
         sealed class SignUps {
@@ -145,6 +171,20 @@ sealed class ConfigProperties<T : Serializable>(
                 "sso.oidc.auto-register-new-users",
                 "Automatically create new users after registration",
                 true
+            )
+
+            data object RolesClaim : ConfigProperties<String>(
+                String::class,
+                "sso.oidc.roles-claim",
+                "JWT claim to extract roles from",
+                "roles"
+            )
+
+            data object OAuthScopes : ConfigProperties<Array<String>>(
+                Array<String>::class,
+                "sso.oidc.oauth-scopes",
+                "OAuth2 scopes to request",
+                arrayOf("openid", "profile", "email", "roles")
             )
 
             data object ClientId : ConfigProperties<String>(

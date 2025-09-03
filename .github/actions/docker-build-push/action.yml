@@ -19,7 +19,15 @@ runs:
         username: ${{ inputs.ghcr_username }}
         password: ${{ inputs.ghcr_token }}
 
-    - name: Build and push Docker image
+    - name: Prepare Ubuntu tags
+      id: ubuntu_tags
+      shell: bash
+      run: |
+        TAGS="${{ inputs.tags }}"
+        UBUNTU_TAGS=$(echo "$TAGS" | awk -F, '{for(i=1;i<=NF;i++){split($i,a,":"); printf "%s:%s-ubuntu", a[1], a[2]; if(i<NF) printf ","}}')
+        echo "ubuntu_tags=$UBUNTU_TAGS" >> $GITHUB_OUTPUT
+
+    - name: Build and push Docker image (Alpine)
       uses: docker/build-push-action@v5
       with:
         context: ${{ inputs.context }}
@@ -27,6 +35,17 @@ runs:
         platforms: ${{ inputs.platforms }}
         push: true
         tags: ${{ inputs.tags }}
+        cache-from: type=gha
+        cache-to: type=gha
+
+    - name: Build and push Docker image (Ubuntu)
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ inputs.context }}
+        file: docker/Dockerfile.ubuntu
+        platforms: ${{ inputs.platforms }}
+        push: true
+        tags: ${{ steps.ubuntu_tags.outputs.ubuntu_tags }}
         cache-from: type=gha
         cache-to: type=gha
 

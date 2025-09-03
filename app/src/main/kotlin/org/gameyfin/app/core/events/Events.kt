@@ -1,5 +1,6 @@
 package org.gameyfin.app.core.events
 
+import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.shared.token.Token
 import org.gameyfin.app.shared.token.TokenType
 import org.gameyfin.app.users.entities.User
@@ -24,3 +25,5 @@ class PasswordResetRequestEvent(source: Any, val token: Token<TokenType.Password
 class AccountDeletedEvent(source: Any, val user: User, val baseUrl: String) : ApplicationEvent(source)
 
 class LibraryScanScheduleUpdatedEvent(source: Any) : ApplicationEvent(source)
+
+class GameCreatedEvent(source: Any, val game: Game) : ApplicationEvent(source)

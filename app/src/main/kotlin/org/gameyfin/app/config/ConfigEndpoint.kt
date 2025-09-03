@@ -55,4 +55,8 @@ class ConfigEndpoint(
     @DynamicPublicAccess
     @AnonymousAllowed
     fun isPublicAccessEnabled(): Boolean = configService.get(ConfigProperties.Libraries.AllowPublicAccess) == true
+
+    @DynamicPublicAccess
+    @AnonymousAllowed
+    fun areGameRequestsEnabled(): Boolean = configService.get(ConfigProperties.Requests.Games.Enabled) == true
 }

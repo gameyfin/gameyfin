@@ -12,14 +12,14 @@ import {
     SelectItem
 } from "@heroui/react";
 import {UserEndpoint} from "Frontend/generated/endpoints";
-import UserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/UserInfoDto";
 import RoleChip from "Frontend/components/general/RoleChip";
 import RoleAssignmentResult from "Frontend/generated/org/gameyfin/app/users/enums/RoleAssignmentResult";
+import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
 
 interface AssignRolesModalProps {
     isOpen: boolean;
     onOpenChange: () => void;
-    user: UserInfoDto;
+    user: ExtendedUserInfoDto;
 }
 
 interface Role {

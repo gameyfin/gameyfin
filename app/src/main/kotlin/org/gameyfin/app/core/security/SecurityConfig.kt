@@ -53,6 +53,7 @@ class SecurityConfig(
                 .requestMatchers("/game/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/library/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/search/**").access(DynamicPublicAccessAuthorizationManager(config))
+                .requestMatchers("/requests/**").access(DynamicPublicAccessAuthorizationManager(config))
                 .requestMatchers("/download/**").access(DynamicPublicAccessAuthorizationManager(config))
         }
 
@@ -98,7 +99,7 @@ class SecurityConfig(
         val clientRegistration = ClientRegistration.withRegistrationId(SSO_PROVIDER_KEY)
             .clientId(config.get(ConfigProperties.SSO.OIDC.ClientId))
             .clientSecret(config.get(ConfigProperties.SSO.OIDC.ClientSecret))
-            .scope("openid", "profile", "email")
+            .scope(config.get(ConfigProperties.SSO.OIDC.OAuthScopes)?.toList())
             .userNameAttributeName("preferred_username")
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .issuerUri(config.get(ConfigProperties.SSO.OIDC.IssuerUrl))

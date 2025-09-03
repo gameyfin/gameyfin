@@ -5,7 +5,7 @@ import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
-import {ArrowLeft, DiceSix, Heart, House, ListMagnifyingGlass, SignIn} from "@phosphor-icons/react";
+import {ArrowLeft, DiceSix, Disc, Heart, House, ListMagnifyingGlass, SignIn} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
@@ -93,10 +93,26 @@ export default function MainLayout() {
                         </Button>
                     </Tooltip>
                 </NavbarContent>}
-                <NavbarContent justify="end">
+                <NavbarContent justify="end" className="items-center">
+                    {auth.state.user &&
+                        <NavbarItem>
+                            <Tooltip content="Request a game" placement="bottom">
+                                <Button color="primary"
+                                        isDisabled={window.location.pathname.startsWith("/requests")}
+                                        onPress={() => navigate("/requests")}
+                                        startContent={<Disc weight="fill"/>}>
+                                    Requests
+                                </Button>
+                            </Tooltip>
+                        </NavbarItem>
+                    }
                     {isAdmin(auth) &&
                         <NavbarItem>
-                            <ScanProgressPopover/>
+                            <Tooltip content="View library scan results" placement="bottom">
+                                <div>
+                                    <ScanProgressPopover/>
+                                </div>
+                            </Tooltip>
                         </NavbarItem>
                     }
                     {auth.state.user &&

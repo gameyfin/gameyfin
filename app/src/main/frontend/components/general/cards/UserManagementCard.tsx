@@ -1,17 +1,17 @@
-import {Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
+import {Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
 import {DotsThreeVertical} from "@phosphor-icons/react";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
 import ConfirmUserDeletionModal from "Frontend/components/general/modals/ConfirmUserDeletionModal";
 import PasswordResetTokenModal from "Frontend/components/general/modals/PasswortResetTokenModal";
 import TokenDto from "Frontend/generated/org/gameyfin/app/shared/token/TokenDto";
-import UserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/UserInfoDto";
 import RoleChip from "Frontend/components/general/RoleChip";
 import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModal";
+import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
 
-export function UserManagementCard({user}: { user: UserInfoDto }) {
+export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
     const userDeletionConfirmationModal = useDisclosure();
     const passwordResetTokenModal = useDisclosure();
     const roleAssignmentModal = useDisclosure();
@@ -108,6 +108,27 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
         <>
             <Card
                 className={`flex flex-row justify-between p-2 ${userEnabled ? "" : "bg-warning/25"} ${user.managedBySso ? "text-foreground/50" : ""}`}>
+                <div className="absolute right-0 top-0">
+                    <Dropdown placement="bottom-end" size="sm" backdrop="opaque">
+                        <DropdownTrigger>
+                            <Button isIconOnly variant="light">
+                                <DotsThreeVertical/>
+                            </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label="Static Actions" items={dropdownItems} disabledKeys={disabledKeys}>
+                            {(item) => (
+                                <DropdownItem
+                                    key={item.key}
+                                    onPress={item.onPress}
+                                    color={item.key === "delete" ? "danger" : "default"}
+                                    className={item.key === "delete" ? "text-danger" : ""}
+                                >
+                                    {item.label}
+                                </DropdownItem>
+                            )}
+                        </DropdownMenu>
+                    </Dropdown>
+                </div>
                 <div className="flex flex-row items-center gap-4">
                     <Avatar username={user.username}
                             name={user.username?.charAt(0)}
@@ -118,30 +139,12 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
                             }}/>
                     <div className="flex flex-col gap-1">
                         <p className="font-semibold">{user.username}</p>
-                        <p className="text-sm">{user.email}</p>
+                        <p className="text-sm max-w-44 truncate" title={user.email}>{user.email}</p>
                         {user.roles?.map((role) => (
-                            <RoleChip role={role as string}/>
+                            <RoleChip key={role} role={role as string}/>
                         ))}
                     </div>
                 </div>
-
-                <Dropdown placement="bottom-end" size="sm" backdrop="opaque">
-                    <DropdownTrigger>
-                        <DotsThreeVertical cursor="pointer"/>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="Static Actions" items={dropdownItems} disabledKeys={disabledKeys}>
-                        {(item) => (
-                            <DropdownItem
-                                key={item.key}
-                                onPress={item.onPress}
-                                color={item.key === "delete" ? "danger" : "default"}
-                                className={item.key === "delete" ? "text-danger" : ""}
-                            >
-                                {item.label}
-                            </DropdownItem>
-                        )}
-                    </DropdownMenu>
-                </Dropdown>
             </Card>
             <ConfirmUserDeletionModal isOpen={userDeletionConfirmationModal.isOpen}
                                       onOpenChange={userDeletionConfirmationModal.onOpenChange}

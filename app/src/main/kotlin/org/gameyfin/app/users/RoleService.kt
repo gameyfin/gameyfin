@@ -1,5 +1,7 @@
 package org.gameyfin.app.users
 
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository
@@ -11,7 +13,8 @@ import org.springframework.stereotype.Service
 
 @Service
 class RoleService(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val configService: ConfigService
 ) {
 
     companion object {
@@ -66,7 +69,8 @@ class RoleService(
             .filterIsInstance<OidcUserAuthority>()
             .flatMap { oidcUserAuthority ->
                 val userInfo = oidcUserAuthority.userInfo
-                val roles = userInfo.getClaim<List<String>>("roles") ?: return@flatMap emptySequence()
+                val rolesClaim = configService.get(ConfigProperties.SSO.OIDC.RolesClaim)
+                val roles = userInfo.getClaim<List<String>>(rolesClaim) ?: return@flatMap emptySequence()
                 roles.asSequence().mapNotNull {
                     if (it.startsWith(SSO_ROLE_PREFIX)) SimpleGrantedAuthority(
                         it.replace(SSO_ROLE_PREFIX, INTERNAL_ROLE_PREFIX)
