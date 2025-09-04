@@ -51,6 +51,7 @@ export default function SearchView() {
         const keywords = searchParams.getAll("keyword");
         const sort = searchParams.get("sort") || "title_asc";
         const minRatingParam = parseInt(searchParams.get("minRating") || "1", 10);
+        const filtersParam = searchParams.get("filters");
 
         setSearchTerm(term);
         setSelectedLibraries(new Set(libs));
@@ -62,6 +63,7 @@ export default function SearchView() {
         setSelectedKeywords(new Set(keywords));
         setSortBy(sort);
         setMinRating(isNaN(minRatingParam) ? 1 : minRatingParam);
+        setShowFilters(filtersParam === "1");
 
         setInitialLoadComplete(true);
     }, []);
@@ -121,10 +123,14 @@ export default function SearchView() {
         if (sortBy && sortBy !== "title_asc") {
             newParams.set("sort", sortBy);
         }
+        // Add showFilters param
+        if (showFilters) {
+            newParams.set("filters", "1");
+        }
 
         setSearchParams(newParams, {replace: true});
     }, [searchTerm, selectedLibraries, selectedDevelopers, selectedGenres,
-        selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating]);
+        selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating, showFilters]);
 
     // Sorting function (refactored to use sortKey and sortDirection)
     function sortGames(games: GameDto[]): GameDto[] {
@@ -232,6 +238,9 @@ export default function SearchView() {
                 const ratingStr = gameRatingInStars(game);
                 if (ratingStr === "N/A") return false;
                 const ratingNum = parseFloat(ratingStr);
+                if (minRating === 5) {
+                    return ratingNum > 4.5;
+                }
                 return ratingNum >= minRating;
             });
         }
@@ -343,6 +352,7 @@ export default function SearchView() {
                 selectionMode="single"
                 label="Minimum Rating"
                 placeholder="Minimum rating"
+                disallowEmptySelection
                 selectedKeys={[minRating.toString()]}
                 onSelectionChange={keys => setMinRating(parseInt(Array.from(keys)[0] as string, 10))}
                 renderValue={(items: SelectedItems<any>) => {
