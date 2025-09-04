@@ -242,6 +242,30 @@ function convertRange(value: number, originalRange: number[], targetRange: numbe
 }
 
 /**
+ * Calculate a compound rating for a GameDto based on its criticRating and userRating.
+ * If both ratings are present, a weighted average is calculated (40% critic, 60% user).
+ * If only one rating is present, that rating is returned.
+ * If neither rating is present, 0 is returned.
+ * @param game The GameDto object containing the ratings.
+ * @returns The compound rating as a number between 0 and 100.
+ */
+export function compoundRating(game: GameDto): number {
+    const weights = {
+        critic: 0.4,
+        user: 0.6
+    };
+
+    const criticRating = game.criticRating ?? 0;
+    const userRating = game.userRating ?? 0;
+
+    if (criticRating === 0 && userRating === 0) return 0;
+    if (criticRating === 0) return userRating;
+    if (userRating === 0) return criticRating;
+
+    return Math.round((criticRating * weights.critic + userRating * weights.user) * 10) / 10;
+}
+
+/**
  * Convert a GameDto's ratings to a star rating out of 5.
  * If both criticRating and userRating are present, their average is taken.
  * If neither is present, "N/A" is returned.
@@ -249,15 +273,11 @@ function convertRange(value: number, originalRange: number[], targetRange: numbe
  * @returns A string representing the star rating out of 5, or "N/A" if no ratings are available.
  */
 export function gameRatingInStars(game: GameDto) {
-    if (!game.criticRating && !game.userRating) return "N/A";
-
     const originalRange = [0, 100];
     const starRange = [1, 5];
-    const ratings = [];
 
-    if (game.criticRating) ratings.push(game.criticRating);
-    if (game.userRating) ratings.push(game.userRating);
-    const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+    const rating = compoundRating(game);
+    if (rating === 0) return "N/A";
 
-    return convertRange(avgRating, originalRange, starRange).toFixed(1);
+    return convertRange(rating, originalRange, starRange).toFixed(1);
 }

@@ -9,7 +9,7 @@ import {Fzf} from "fzf";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
-import {gameRatingInStars, toTitleCase} from "Frontend/util/utils";
+import {compoundRating, toTitleCase} from "Frontend/util/utils";
 
 export default function SearchView() {
     const games = useSnapshot(gameState).sortedAlphabetically as GameDto[];
@@ -138,7 +138,7 @@ export default function SearchView() {
 
         const [sortKey, sortDirection] = sortBy.split("_");
 
-        return [...games].sort((a, b) => {
+        return games.slice().sort((a, b) => {
             let cmp: number;
 
             switch (sortKey) {
@@ -149,7 +149,7 @@ export default function SearchView() {
                     cmp = (a.release || "").localeCompare(b.release || "");
                     break;
                 case "rating":
-                    cmp = (a.criticRating ?? 0) - (b.criticRating ?? 0);
+                    cmp = compoundRating(a) - compoundRating(b);
                     break;
                 case "added":
                     cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -235,13 +235,11 @@ export default function SearchView() {
         // Apply minimum rating filter
         if (minRating > 1) {
             filtered = filtered.filter(game => {
-                const ratingStr = gameRatingInStars(game);
-                if (ratingStr === "N/A") return false;
-                const ratingNum = parseFloat(ratingStr);
+                const rating = compoundRating(game);
                 if (minRating === 5) {
-                    return ratingNum > 4.5;
+                    return rating > 4.5;
                 }
-                return ratingNum >= minRating;
+                return rating >= minRating;
             });
         }
         return filtered;
