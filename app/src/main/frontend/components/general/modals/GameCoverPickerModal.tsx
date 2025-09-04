@@ -81,7 +81,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                                 <p className="text-center">No results found.</p>
                             }
                             {searchResults.length === 0 && isSearching &&
-                                <p className="text-center text-foreground/70">Searching...</p>
+                                <p className="text-center text-default-500">Searching...</p>
                             }
                             <ScrollShadow
                                 className="grid grid-cols-auto-fill gap-4 h-96 overflow-y-scroll justify-evenly">

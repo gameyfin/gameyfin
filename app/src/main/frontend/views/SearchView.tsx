@@ -1,5 +1,5 @@
-import {Button, Input, Select, SelectItem, Tooltip} from "@heroui/react";
-import {FunnelSimple, FunnelSimpleX, MagnifyingGlass, SortAscending} from "@phosphor-icons/react";
+import {Button, Input, Select, SelectedItems, SelectItem, Tooltip} from "@heroui/react";
+import {FunnelSimple, FunnelSimpleX, MagnifyingGlass, SortAscending, Star} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";
@@ -9,7 +9,7 @@ import {Fzf} from "fzf";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
-import {toTitleCase} from "Frontend/util/utils";
+import {gameRatingInStars, toTitleCase} from "Frontend/util/utils";
 
 export default function SearchView() {
     const games = useSnapshot(gameState).sortedAlphabetically as GameDto[];
@@ -36,6 +36,7 @@ export default function SearchView() {
     const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(new Set());
     const [selectedPerspectives, setSelectedPerspectives] = useState<Set<string>>(new Set());
     const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
+    const [minRating, setMinRating] = useState<number>(1); // Minimum rating filter
 
     // Load initial filter values from URL parameters on component mount
     useEffect(() => {
@@ -49,6 +50,8 @@ export default function SearchView() {
         const perspectives = searchParams.getAll("perspective");
         const keywords = searchParams.getAll("keyword");
         const sort = searchParams.get("sort") || "title_asc";
+        const minRatingParam = parseInt(searchParams.get("minRating") || "1", 10);
+        const filtersParam = searchParams.get("filters");
 
         setSearchTerm(term);
         setSelectedLibraries(new Set(libs));
@@ -59,6 +62,8 @@ export default function SearchView() {
         setSelectedPerspectives(new Set(perspectives));
         setSelectedKeywords(new Set(keywords));
         setSortBy(sort);
+        setMinRating(isNaN(minRatingParam) ? 1 : minRatingParam);
+        setShowFilters(filtersParam === "1");
 
         setInitialLoadComplete(true);
     }, []);
@@ -80,51 +85,52 @@ export default function SearchView() {
                 newParams.append("lib", lib.toString());
             });
         }
-
         if (selectedDevelopers.size > 0) {
             selectedDevelopers.forEach(dev => {
                 newParams.append("dev", dev);
             });
         }
-
         if (selectedGenres.size > 0) {
             selectedGenres.forEach(genre => {
                 newParams.append("genre", genre);
             });
         }
-
         if (selectedThemes.size > 0) {
             selectedThemes.forEach(theme => {
                 newParams.append("theme", theme);
             });
         }
-
         if (selectedFeatures.size > 0) {
             selectedFeatures.forEach(feature => {
                 newParams.append("feature", feature);
             });
         }
-
         if (selectedPerspectives.size > 0) {
             selectedPerspectives.forEach(perspective => {
                 newParams.append("perspective", perspective);
             });
         }
-
         if (selectedKeywords.size > 0) {
             selectedKeywords.forEach(keyword => {
                 newParams.append("keyword", keyword);
             });
         }
-
+        // Add minRating param if not default
+        if (minRating > 1) {
+            newParams.set("minRating", minRating.toString());
+        }
         // Add sort param
         if (sortBy && sortBy !== "title_asc") {
             newParams.set("sort", sortBy);
         }
+        // Add showFilters param
+        if (showFilters) {
+            newParams.set("filters", "1");
+        }
 
         setSearchParams(newParams, {replace: true});
     }, [searchTerm, selectedLibraries, selectedDevelopers, selectedGenres,
-        selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords, sortBy]);
+        selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating, showFilters]);
 
     // Sorting function (refactored to use sortKey and sortDirection)
     function sortGames(games: GameDto[]): GameDto[] {
@@ -165,7 +171,7 @@ export default function SearchView() {
         games, searchTerm,
         selectedLibraries, selectedDevelopers,
         selectedGenres, selectedThemes,
-        selectedFeatures, selectedPerspectives, selectedKeywords, sortBy
+        selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating
     ]);
 
     function filterGames(): GameDto[] {
@@ -226,7 +232,31 @@ export default function SearchView() {
             );
         }
 
+        // Apply minimum rating filter
+        if (minRating > 1) {
+            filtered = filtered.filter(game => {
+                const ratingStr = gameRatingInStars(game);
+                if (ratingStr === "N/A") return false;
+                const ratingNum = parseFloat(ratingStr);
+                if (minRating === 5) {
+                    return ratingNum > 4.5;
+                }
+                return ratingNum >= minRating;
+            });
+        }
         return filtered;
+    }
+
+    function stars(filled: number, total: number = 5) {
+        const stars = [];
+        for (let i = 0; i < total; i++) {
+            stars.push(
+                <Star key={i} weight={i < filled ? "fill" : "regular"} className="inline-block"/>
+            );
+        }
+        return <div className="flex flex-row">
+            {stars}
+        </div>;
     }
 
     return <div className="flex flex-col gap-4 items-center w-full">
@@ -286,6 +316,7 @@ export default function SearchView() {
                                 setSelectedFeatures(new Set());
                                 setSelectedPerspectives(new Set());
                                 setSelectedKeywords(new Set());
+                                setMinRating(1);
                             }}
                             aria-label="Clear All Filters"
                     >
@@ -295,7 +326,7 @@ export default function SearchView() {
             </div>
         </div>
         {showFilters && <div
-            className="w-full justify-center"
+            className="w-full justify-center px-12"
             style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
@@ -315,6 +346,24 @@ export default function SearchView() {
                 {libraries.map((library) => (
                     <SelectItem key={library.id}>{library.name}</SelectItem>
                 ))}
+            </Select>
+            <Select
+                size="sm"
+                selectionMode="single"
+                label="Minimum Rating"
+                placeholder="Minimum rating"
+                disallowEmptySelection
+                selectedKeys={[minRating.toString()]}
+                onSelectionChange={keys => setMinRating(parseInt(Array.from(keys)[0] as string, 10))}
+                renderValue={(items: SelectedItems<any>) => {
+                    return items.map((item) => stars(parseInt(item.key as string)));
+                }}
+            >
+                <SelectItem key="1">{stars(1)}</SelectItem>
+                <SelectItem key="2">{stars(2)}</SelectItem>
+                <SelectItem key="3">{stars(3)}</SelectItem>
+                <SelectItem key="4">{stars(4)}</SelectItem>
+                <SelectItem key="5">{stars(5)}</SelectItem>
             </Select>
             <Select
                 size="sm"

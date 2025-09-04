@@ -164,7 +164,7 @@ export default function GameRequestView() {
                 {!areGameRequestsEnabled &&
                     <SmallInfoField icon={Info}
                                     message="Request submission is disabled"
-                                    className="text-foreground/70"/>
+                                    className="text-default-500"/>
                 }
                 <Button className="w-fit"
                         color="primary"
@@ -233,7 +233,7 @@ export default function GameRequestView() {
                             {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
                         </TableCell>
                         <TableCell>
-                            <p className="text-foreground/70">
+                            <p className="text-default-500">
                                 {item.requester ?
                                     item.requester.username :
                                     "Guest"
