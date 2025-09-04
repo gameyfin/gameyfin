@@ -1,5 +1,6 @@
 import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
+import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 
 export function isAdmin(auth: any): boolean {
     return auth.state.user?.roles?.some((a: string) => a?.includes("ADMIN"));
@@ -207,4 +208,79 @@ export function fileNameFromPath(path: string, includeExtension: boolean = true)
     }
     const dotIndex = fileName.lastIndexOf('.');
     return dotIndex < 0 ? fileName : fileName.substring(0, dotIndex);
+}
+
+/**
+ * Calculate the completeness of a GameDto
+ * @param game
+ * @returns completeness percentage (0-100)
+ */
+export function metadataCompleteness(game: GameDto) {
+    // Total number of fields considered for completeness
+    // Includes all fields except "comment"
+    const totalFields = 21;
+
+    const filledFields = Object.values(game).filter(value => {
+        if (value === null || value === undefined) return false;
+        if (Array.isArray(value)) return value.length > 0;
+        if (typeof value === "string") return value.trim().length > 0;
+        return true;
+    }).length;
+
+    return Math.round((filledFields / totalFields) * 100);
+}
+
+/**
+ * Scale a number from one range to another
+ * @param value The number to scale
+ * @param originalRange The original range [min, max]
+ * @param targetRange The target range [min, max]
+ * @returns The scaled number
+ */
+function convertRange(value: number, originalRange: number[], targetRange: number[]): number {
+    if (originalRange[0] === targetRange[0] && originalRange[1] === targetRange[1]) return value;
+    return (value - originalRange[0]) * (targetRange[1] - targetRange[0]) / (originalRange[1] - originalRange[0]) + targetRange[0];
+}
+
+/**
+ * Calculate a compound rating for a GameDto based on its criticRating and userRating.
+ * If both ratings are present, a weighted average is calculated (40% critic, 60% user).
+ * If only one rating is present, that rating is returned.
+ * If neither rating is present, 0 is returned.
+ * @param game The GameDto object containing the ratings.
+ * @param scale The scale to convert the rating to (default is [0, 100]).
+ * @returns The compound rating.
+ */
+export function compoundRating(game: GameDto, scale = [0, 100]): number {
+    const weights = {
+        critic: 0.4,
+        user: 0.6
+    };
+    const originalRange = [0, 100];
+
+    const criticRating = game.criticRating ?? 0;
+    const userRating = game.userRating ?? 0;
+
+    if (criticRating === 0 && userRating === 0) return 0;
+    if (criticRating === 0) return convertRange(userRating, originalRange, scale);
+    if (userRating === 0) return convertRange(criticRating, originalRange, scale);
+
+    const avgRating = Math.round((criticRating * weights.critic + userRating * weights.user) * 10) / 10;
+    return convertRange(avgRating, originalRange, scale);
+}
+
+/**
+ * Convert a GameDto's ratings to a star rating out of 5.
+ * If both criticRating and userRating are present, their average is taken.
+ * If neither is present, "N/A" is returned.
+ * @param game The GameDto object containing the ratings.
+ * @returns A string representing the star rating out of 5, or "N/A" if no ratings are available.
+ */
+export function starRatingAsString(game: GameDto) {
+    const starRange = [1, 5];
+
+    const rating = compoundRating(game, starRange);
+    if (rating === 0) return "N/A";
+
+    return rating.toFixed(1);
 }

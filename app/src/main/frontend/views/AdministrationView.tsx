@@ -1,4 +1,4 @@
-import {Envelope, GameController, LockKey, Log, Plug, Users, Wrench} from "@phosphor-icons/react";
+import {Disc, Envelope, GameController, LockKey, Log, Plug, Users, Wrench} from "@phosphor-icons/react";
 import withSideMenu, {MenuItem} from "Frontend/components/general/withSideMenu";
 
 const menuItems: MenuItem[] = [
@@ -6,6 +6,11 @@ const menuItems: MenuItem[] = [
         title: "Libraries",
         url: "libraries",
         icon: <GameController/>
+    },
+    {
+        title: "Game Requests",
+        url: "requests",
+        icon: <Disc/>
     },
     {
         title: "Users",

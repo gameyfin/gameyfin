@@ -1,11 +1,10 @@
 package org.gameyfin.app.users.emailconfirmation
 
 import com.vaadin.hilla.Endpoint
-import org.gameyfin.app.users.UserService
 import jakarta.annotation.security.PermitAll
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.shared.token.TokenValidationResult
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContextHolder
+import org.gameyfin.app.users.UserService
 
 @Endpoint
 class EmailConfirmationEndpoint(
@@ -20,7 +19,7 @@ class EmailConfirmationEndpoint(
 
     @PermitAll
     fun resendEmailConfirmation() {
-        val auth: Authentication = SecurityContextHolder.getContext().authentication
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         userService.getByUsername(auth.name)?.let {
             emailConfirmationService.resendEmailConfirmation(it)
         }

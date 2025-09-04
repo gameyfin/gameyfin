@@ -5,11 +5,11 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Accordion, AccordionItem, addToast, Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
-import {humanFileSize, isAdmin, toTitleCase} from "Frontend/util/utils";
+import {humanFileSize, isAdmin, starRatingAsString, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
-import {CheckCircle, Info, MagnifyingGlass, Pencil, Trash, TriangleDashed} from "@phosphor-icons/react";
+import {CheckCircle, Info, MagnifyingGlass, Pencil, Star, Trash, TriangleDashed} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
@@ -102,14 +102,23 @@ export default function GameView() {
                             <GameCover game={game} size={320} radius="none"/>
                         </div>
                         <div className="flex flex-col gap-1">
-                            <p className="font-semibold text-3xl">{game.title}</p>
+                            <div className="flex flex-row gap-4 items-end">
+                                <p className="font-semibold text-3xl">
+                                    {game.title}
+                                </p>
+                                <div className="flex flex-row gap-1 mb-0.5 text-default-500">
+                                    <Star weight="fill"/>
+                                    {starRatingAsString(game)}
+                                </div>
+                            </div>
                             <div className="flex flex-row items-center gap-2">
                                 <p className="text-default-500">
                                     {game.release !== undefined ? new Date(game.release).getFullYear() :
                                         <p className="text-default-500">no data</p>}
                                 </p>
-                                <Tooltip content={`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
-                                         placement="right">
+                                <Tooltip
+                                    content={`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
+                                    placement="right">
                                     <Info/>
                                 </Tooltip>
                             </div>

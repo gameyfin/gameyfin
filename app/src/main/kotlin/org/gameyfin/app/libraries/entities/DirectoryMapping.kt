@@ -1,4 +1,4 @@
-package org.gameyfin.app.libraries
+package org.gameyfin.app.libraries.entities
 
 import jakarta.persistence.*
 

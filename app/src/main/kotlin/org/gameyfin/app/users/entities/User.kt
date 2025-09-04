@@ -1,14 +1,15 @@
 package org.gameyfin.app.users.entities
 
-import org.gameyfin.app.games.entities.Image
 import jakarta.persistence.*
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.security.EncryptionConverter
+import org.gameyfin.app.games.entities.Image
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 
 
 @Entity
 @Table(name = "users")
+@EntityListeners(UserEntityListener::class)
 class User(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

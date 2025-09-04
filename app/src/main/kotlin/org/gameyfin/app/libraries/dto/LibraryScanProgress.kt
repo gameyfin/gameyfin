@@ -1,6 +1,5 @@
 package org.gameyfin.app.libraries.dto
 
-import org.gameyfin.app.libraries.LibraryScanResult
 import org.gameyfin.app.libraries.enums.ScanType
 import java.time.Instant
 import java.util.*

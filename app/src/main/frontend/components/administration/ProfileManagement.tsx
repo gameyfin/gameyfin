@@ -91,7 +91,7 @@ export default function ProfileManagement() {
                                 {formik.values.newPassword.length > 0 &&
                                     <SmallInfoField icon={Info}
                                                     message="You will be logged out of all current sessions"
-                                                    className="text-foreground/70"
+                                                    className="text-default-500"
                                     />
                                 }
                                 <Button

@@ -29,7 +29,7 @@ sealed interface GameDto {
     val metadata: GameMetadataDto
 }
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.ALWAYS)
 data class GameUserDto(
     override val id: Long,
     override val createdAt: Instant,
@@ -55,7 +55,7 @@ data class GameUserDto(
     override val metadata: GameMetadataUserDto
 ) : GameDto
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.ALWAYS)
 data class GameAdminDto(
     override val id: Long,
     override val createdAt: Instant,

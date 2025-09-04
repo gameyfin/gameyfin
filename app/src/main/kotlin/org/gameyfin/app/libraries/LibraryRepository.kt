@@ -1,5 +1,6 @@
 package org.gameyfin.app.libraries
 
+import org.gameyfin.app.libraries.entities.Library
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 

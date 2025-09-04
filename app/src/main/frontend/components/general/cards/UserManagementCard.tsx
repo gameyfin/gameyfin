@@ -7,11 +7,11 @@ import Avatar from "Frontend/components/general/Avatar";
 import ConfirmUserDeletionModal from "Frontend/components/general/modals/ConfirmUserDeletionModal";
 import PasswordResetTokenModal from "Frontend/components/general/modals/PasswortResetTokenModal";
 import TokenDto from "Frontend/generated/org/gameyfin/app/shared/token/TokenDto";
-import UserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/UserInfoDto";
 import RoleChip from "Frontend/components/general/RoleChip";
 import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModal";
+import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
 
-export function UserManagementCard({user}: { user: UserInfoDto }) {
+export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
     const userDeletionConfirmationModal = useDisclosure();
     const passwordResetTokenModal = useDisclosure();
     const roleAssignmentModal = useDisclosure();
@@ -141,7 +141,7 @@ export function UserManagementCard({user}: { user: UserInfoDto }) {
                         <p className="font-semibold">{user.username}</p>
                         <p className="text-sm max-w-44 truncate" title={user.email}>{user.email}</p>
                         {user.roles?.map((role) => (
-                            <RoleChip role={role as string}/>
+                            <RoleChip key={role} role={role as string}/>
                         ))}
                     </div>
                 </div>

@@ -26,6 +26,8 @@ import {useMemo, useState} from "react";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
+import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
+import {metadataCompleteness} from "Frontend/util/utils";
 
 interface LibraryManagementGamesProps {
     library: LibraryDto;
@@ -66,6 +68,9 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                     break;
                 case "downloadCount":
                     cmp = a.metadata.downloadCount - b.metadata.downloadCount;
+                    break;
+                case "completeness":
+                    cmp = metadataCompleteness(a) - metadataCompleteness(b);
                     break;
                 default:
                     return 0; // No sorting if the column is not recognized
@@ -160,6 +165,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 <TableColumn key="addedToLibrary" allowsSorting>Added to library</TableColumn>
                 <TableColumn key="downloadCount" allowsSorting>Download count</TableColumn>
                 <TableColumn>Path</TableColumn>
+                <TableColumn key="completeness" allowsSorting>Completeness</TableColumn>
                 {/* width={1} keeps the column as far to the right as possible*/}
                 <TableColumn width={1}>Actions</TableColumn>
             </TableHeader>
@@ -181,6 +187,9 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                         </TableCell>
                         <TableCell>
                             {item.metadata.path}
+                        </TableCell>
+                        <TableCell>
+                            <MetadataCompletenessIndicator game={item}/>
                         </TableCell>
                         <TableCell>
                             <div className="flex flex-row gap-2">

@@ -3,6 +3,8 @@ package org.gameyfin.app.libraries
 import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.libraries.dto.*
+import org.gameyfin.app.libraries.entities.DirectoryMapping
+import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.extensions.toDtos
 import org.springframework.data.repository.findByIdOrNull

@@ -1,8 +1,8 @@
 package org.gameyfin.app.libraries.extensions
 
 import org.gameyfin.app.core.security.isCurrentUserAdmin
-import org.gameyfin.app.libraries.Library
 import org.gameyfin.app.libraries.dto.*
+import org.gameyfin.app.libraries.entities.Library
 
 
 fun Library.toDto(): LibraryDto {

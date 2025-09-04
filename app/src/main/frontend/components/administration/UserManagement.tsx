@@ -3,16 +3,16 @@ import ConfigFormField from "Frontend/components/administration/ConfigFormField"
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import {UserEndpoint} from "Frontend/generated/endpoints";
-import UserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/UserInfoDto";
 import {UserManagementCard} from "Frontend/components/general/cards/UserManagementCard";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {Info, UserPlus} from "@phosphor-icons/react";
 import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
 import InviteUserModal from "Frontend/components/general/modals/InviteUserModal";
+import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
 
 function UserManagementLayout({getConfig, formik}: any) {
     const inviteUserModal = useDisclosure();
-    const [users, setUsers] = useState<UserInfoDto[]>([]);
+    const [users, setUsers] = useState<ExtendedUserInfoDto[]>([]);
 
     useEffect(() => {
         UserEndpoint.getAllUsers().then(

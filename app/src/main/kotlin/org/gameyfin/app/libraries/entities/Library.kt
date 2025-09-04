@@ -1,8 +1,7 @@
-package org.gameyfin.app.libraries
+package org.gameyfin.app.libraries.entities
 
-import org.gameyfin.app.games.entities.Game
 import jakarta.persistence.*
-import org.gameyfin.app.games.entities.LibraryEntityListener
+import org.gameyfin.app.games.entities.Game
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant

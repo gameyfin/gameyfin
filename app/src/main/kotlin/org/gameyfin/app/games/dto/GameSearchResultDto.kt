@@ -1,5 +1,6 @@
 package org.gameyfin.app.games.dto
 
+import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import java.time.Instant
 import java.util.*
 
@@ -11,17 +12,8 @@ class GameSearchResultDto(
     val release: Instant?,
     val publishers: Collection<String>?,
     val developers: Collection<String>?,
-    val originalIds: Map<String, OriginalIdDto>
+    val originalIds: Map<String, ExternalProviderIdDto>
 )
-
-class OriginalIdDto(
-    val pluginId: String,
-    val originalId: String,
-) {
-    override fun toString(): String {
-        return "$pluginId:$originalId"
-    }
-}
 
 class UrlWithSourceDto(
     val url: String,

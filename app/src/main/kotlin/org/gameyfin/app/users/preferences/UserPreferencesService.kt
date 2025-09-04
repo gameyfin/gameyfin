@@ -1,8 +1,8 @@
 package org.gameyfin.app.users.preferences
 
-import org.gameyfin.app.users.UserService
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.security.core.context.SecurityContextHolder
+import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.users.UserService
 import org.springframework.stereotype.Service
 import java.io.Serializable
 
@@ -135,7 +135,7 @@ class UserPreferencesService(
     }
 
     private fun id(key: String): UserPreferenceKey {
-        val auth = SecurityContextHolder.getContext().authentication
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val user = userService.getByUsernameNonNull(auth.name)
         return UserPreferenceKey(key, user.id!!)
     }
