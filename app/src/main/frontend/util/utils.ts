@@ -238,6 +238,7 @@ export function metadataCompleteness(game: GameDto) {
  * @returns The scaled number
  */
 function convertRange(value: number, originalRange: number[], targetRange: number[]): number {
+    if (originalRange[0] === targetRange[0] && originalRange[1] === targetRange[1]) return value;
     return (value - originalRange[0]) * (targetRange[1] - targetRange[0]) / (originalRange[1] - originalRange[0]) + targetRange[0];
 }
 
@@ -247,22 +248,25 @@ function convertRange(value: number, originalRange: number[], targetRange: numbe
  * If only one rating is present, that rating is returned.
  * If neither rating is present, 0 is returned.
  * @param game The GameDto object containing the ratings.
- * @returns The compound rating as a number between 0 and 100.
+ * @param scale The scale to convert the rating to (default is [0, 100]).
+ * @returns The compound rating.
  */
-export function compoundRating(game: GameDto): number {
+export function compoundRating(game: GameDto, scale = [0, 100]): number {
     const weights = {
         critic: 0.4,
         user: 0.6
     };
+    const originalRange = [0, 100];
 
     const criticRating = game.criticRating ?? 0;
     const userRating = game.userRating ?? 0;
 
     if (criticRating === 0 && userRating === 0) return 0;
-    if (criticRating === 0) return userRating;
-    if (userRating === 0) return criticRating;
+    if (criticRating === 0) return convertRange(userRating, originalRange, scale);
+    if (userRating === 0) return convertRange(criticRating, originalRange, scale);
 
-    return Math.round((criticRating * weights.critic + userRating * weights.user) * 10) / 10;
+    const avgRating = Math.round((criticRating * weights.critic + userRating * weights.user) * 10) / 10;
+    return convertRange(avgRating, originalRange, scale);
 }
 
 /**
@@ -272,12 +276,11 @@ export function compoundRating(game: GameDto): number {
  * @param game The GameDto object containing the ratings.
  * @returns A string representing the star rating out of 5, or "N/A" if no ratings are available.
  */
-export function gameRatingInStars(game: GameDto) {
-    const originalRange = [0, 100];
+export function starRatingAsString(game: GameDto) {
     const starRange = [1, 5];
 
-    const rating = compoundRating(game);
+    const rating = compoundRating(game, starRange);
     if (rating === 0) return "N/A";
 
-    return convertRange(rating, originalRange, starRange).toFixed(1);
+    return rating.toFixed(1);
 }

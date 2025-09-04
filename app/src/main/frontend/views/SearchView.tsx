@@ -235,11 +235,11 @@ export default function SearchView() {
         // Apply minimum rating filter
         if (minRating > 1) {
             filtered = filtered.filter(game => {
-                const rating = compoundRating(game);
+                const starRating = compoundRating(game, [1, 5]);
                 if (minRating === 5) {
-                    return rating > 4.5;
+                    return starRating > 4.5;
                 }
-                return rating >= minRating;
+                return starRating >= minRating;
             });
         }
         return filtered;

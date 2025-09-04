@@ -5,7 +5,7 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Accordion, AccordionItem, addToast, Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
-import {gameRatingInStars, humanFileSize, isAdmin, toTitleCase} from "Frontend/util/utils";
+import {humanFileSize, isAdmin, starRatingAsString, toTitleCase} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
@@ -108,7 +108,7 @@ export default function GameView() {
                                 </p>
                                 <div className="flex flex-row gap-1 mb-0.5 text-default-500">
                                     <Star weight="fill"/>
-                                    {gameRatingInStars(game)}
+                                    {starRatingAsString(game)}
                                 </div>
                             </div>
                             <div className="flex flex-row items-center gap-2">
