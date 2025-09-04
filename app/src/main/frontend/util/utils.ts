@@ -210,7 +210,8 @@ export function fileNameFromPath(path: string, includeExtension: boolean = true)
     return dotIndex < 0 ? fileName : fileName.substring(0, dotIndex);
 }
 
-/** Calculate the completeness of a GameDto
+/**
+ * Calculate the completeness of a GameDto
  * @param game
  * @returns completeness percentage (0-100)
  */
@@ -227,4 +228,36 @@ export function metadataCompleteness(game: GameDto) {
     }).length;
 
     return Math.round((filledFields / totalFields) * 100);
+}
+
+/**
+ * Scale a number from one range to another
+ * @param value The number to scale
+ * @param originalRange The original range [min, max]
+ * @param targetRange The target range [min, max]
+ * @returns The scaled number
+ */
+function convertRange(value: number, originalRange: number[], targetRange: number[]): number {
+    return (value - originalRange[0]) * (targetRange[1] - targetRange[0]) / (originalRange[1] - originalRange[0]) + targetRange[0];
+}
+
+/**
+ * Convert a GameDto's ratings to a star rating out of 5.
+ * If both criticRating and userRating are present, their average is taken.
+ * If neither is present, "N/A" is returned.
+ * @param game The GameDto object containing the ratings.
+ * @returns A string representing the star rating out of 5, or "N/A" if no ratings are available.
+ */
+export function gameRatingInStars(game: GameDto) {
+    if (!game.criticRating && !game.userRating) return "N/A";
+
+    const originalRange = [0, 100];
+    const starRange = [1, 5];
+    const ratings = [];
+
+    if (game.criticRating) ratings.push(game.criticRating);
+    if (game.userRating) ratings.push(game.userRating);
+    const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+
+    return convertRange(avgRating, originalRange, starRange).toFixed(1);
 }
