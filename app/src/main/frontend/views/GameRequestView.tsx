@@ -251,15 +251,19 @@ export default function GameRequestView() {
                         </TableCell>
                         <TableCell>
                             <div className="flex flex-row gap-2">
-                                <Tooltip content="Vote for this request">
-                                    <Button size="sm"
-                                            variant={hasUserVotedForRequest(item as GameRequestDto) ? "solid" : "bordered"}
-                                            color={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "default"}
-                                            isDisabled={!auth.state.user || item.status === GameRequestStatus.FULFILLED}
-                                            startContent={<ArrowUp/>}
-                                            onPress={async () => await toggleVote(item.id)}>
-                                        {item.voters.length}
-                                    </Button>
+                                <Tooltip
+                                    content={auth.state.user ? (item.status === GameRequestStatus.FULFILLED ? "You cannot vote on closed requests" : "Vote for this request") : "You must be logged in to vote"}
+                                    placement="left">
+                                    <div>
+                                        <Button size="sm"
+                                                variant={hasUserVotedForRequest(item as GameRequestDto) ? "solid" : "bordered"}
+                                                color={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "default"}
+                                                isDisabled={!auth.state.user || item.status === GameRequestStatus.FULFILLED}
+                                                startContent={<ArrowUp/>}
+                                                onPress={async () => await toggleVote(item.id)}>
+                                            {item.voters.length}
+                                        </Button>
+                                    </div>
                                 </Tooltip>
                                 {isAdmin(auth) && <div className="flex flex-row gap-2">
                                     <Tooltip content="Approve this request">
