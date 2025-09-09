@@ -5,7 +5,10 @@ import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.Utils
-import org.gameyfin.app.core.events.*
+import org.gameyfin.app.core.events.AccountStatusChangedEvent
+import org.gameyfin.app.core.events.EmailNeedsConfirmationEvent
+import org.gameyfin.app.core.events.RegistrationAttemptWithExistingEmailEvent
+import org.gameyfin.app.core.events.UserRegistrationWaitingForApprovalEvent
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.media.ImageService
@@ -126,7 +129,7 @@ class UserService(
         val user = getByUsernameNonNull(username)
 
         if (user.avatar == null) return
-        imageService.deleteFile(user.avatar!!)
+        imageService.deleteImageIfUnused(user.avatar!!)
         user.avatar = null
 
         userRepository.save(user)
@@ -284,6 +287,5 @@ class UserService(
     fun deleteUser(username: String) {
         val user = getByUsernameNonNull(username)
         userRepository.delete(user)
-        eventPublisher.publishEvent(AccountDeletedEvent(this, user, Utils.getBaseUrl()))
     }
 }

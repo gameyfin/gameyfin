@@ -33,7 +33,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import java.net.URI
 import java.nio.file.Path
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -107,8 +106,8 @@ class GameService(
 
     @Transactional
     fun create(game: Game): Game? {
-        game.publishers = game.publishers.map { companyService.createOrGet(it) }
-        game.developers = game.developers.map { companyService.createOrGet(it) }
+        game.publishers = game.publishers.map { companyService.createOrGet(it) }.toMutableList()
+        game.developers = game.developers.map { companyService.createOrGet(it) }.toMutableList()
 
         try {
             game.coverImage?.let {
@@ -138,9 +137,11 @@ class GameService(
         val gamesToBePersisted = games.filter { it.id == null }
 
         gamesToBePersisted.forEach { game ->
-            game.publishers = game.publishers.map { companyService.createOrGet(it) }
-            game.developers = game.developers.map { companyService.createOrGet(it) }
-            game
+            game.publishers = game.publishers.map { companyService.createOrGet(it) }.toMutableList()
+            game.developers = game.developers.map { companyService.createOrGet(it) }.toMutableList()
+            game.coverImage?.let { game.coverImage = imageService.createOrGet(it) }
+            game.headerImage?.let { game.headerImage = imageService.createOrGet(it) }
+            game.images = game.images.map { imageService.createOrGet(it) }.toMutableList()
         }
 
         return gameRepository.saveAll(gamesToBePersisted)
@@ -166,14 +167,18 @@ class GameService(
             existingGame.metadata.fields["release"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.coverUrl?.let {
-            val newCoverImage = Image(originalUrl = URI.create(it).toURL(), type = ImageType.COVER)
+            val newCoverImage = imageService.createOrGet(
+                Image(originalUrl = it, type = ImageType.COVER)
+            )
             imageService.downloadIfNew(newCoverImage)
 
             existingGame.coverImage = newCoverImage
             existingGame.metadata.fields["coverImage"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.headerUrl?.let {
-            val newHeaderImage = Image(originalUrl = URI.create(it).toURL(), type = ImageType.HEADER)
+            val newHeaderImage = imageService.createOrGet(
+                Image(originalUrl = it, type = ImageType.HEADER)
+            )
             imageService.downloadIfNew(newHeaderImage)
 
             existingGame.headerImage = newHeaderImage
@@ -190,11 +195,13 @@ class GameService(
         gameUpdateDto.developers?.let {
             existingGame.developers =
                 it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.DEVELOPER)) }
+                    .toMutableList()
             existingGame.metadata.fields["developers"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.publishers?.let {
             existingGame.publishers =
                 it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.PUBLISHER)) }
+                    .toMutableList()
             existingGame.metadata.fields["publishers"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.genres?.let {
@@ -378,7 +385,7 @@ class GameService(
             "publishers",
             game.publishers,
             updatedGame.publishers,
-            { game.publishers = it ?: emptyList() },
+            { game.publishers = it ?: mutableListOf() },
             updatedGame.metadata.fields["publishers"]
         )
 
@@ -387,7 +394,7 @@ class GameService(
             "developers",
             game.developers,
             updatedGame.developers,
-            { game.developers = it ?: emptyList() },
+            { game.developers = it ?: mutableListOf() },
             updatedGame.metadata.fields["developers"]
         )
 
@@ -441,7 +448,7 @@ class GameService(
             "images",
             game.images,
             updatedGame.images,
-            { game.images = it ?: emptyList() },
+            { game.images = it ?: mutableListOf() },
             updatedGame.metadata.fields["images"]
         )
 
@@ -758,14 +765,18 @@ class GameService(
                 }
                 metadata.coverUrls?.firstOrNull()?.let { coverUrl ->
                     if (!metadataMap.containsKey("coverImage")) {
-                        mergedGame.coverImage = Image(originalUrl = coverUrl.toURL(), type = ImageType.COVER)
+                        mergedGame.coverImage = imageService.createOrGet(
+                            Image(originalUrl = coverUrl.toString(), type = ImageType.COVER)
+                        )
                         metadataMap["coverImage"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
                 }
                 metadata.headerUrls?.firstOrNull()?.let { headerUrl ->
                     if (!metadataMap.containsKey("headerImage")) {
-                        mergedGame.headerImage = Image(originalUrl = headerUrl.toURL(), type = ImageType.HEADER)
+                        mergedGame.headerImage = imageService.createOrGet(
+                            Image(originalUrl = headerUrl.toString(), type = ImageType.HEADER)
+                        )
                         metadataMap["headerImage"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
@@ -794,7 +805,7 @@ class GameService(
                 metadata.publishedBy?.takeIf { it.isNotEmpty() }?.let { publishedBy ->
                     if (!metadataMap.containsKey("publishers")) {
                         mergedGame.publishers =
-                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }
+                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }.toMutableList()
                         metadataMap["publishers"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
@@ -802,7 +813,7 @@ class GameService(
                 metadata.developedBy?.takeIf { it.isNotEmpty() }?.let { developedBy ->
                     if (!metadataMap.containsKey("developers")) {
                         mergedGame.developers =
-                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }
+                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }.toMutableList()
                         metadataMap["developers"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
@@ -843,7 +854,11 @@ class GameService(
                 metadata.screenshotUrls?.takeIf { it.isNotEmpty() }?.let { screenshotUrls ->
                     if (!metadataMap.containsKey("images")) {
                         mergedGame.images = runBlocking {
-                            screenshotUrls.map { Image(originalUrl = it.toURL(), type = ImageType.SCREENSHOT) }
+                            screenshotUrls.map {
+                                imageService.createOrGet(
+                                    Image(originalUrl = it.toString(), type = ImageType.SCREENSHOT)
+                                )
+                            }.toMutableList()
                         }
                         metadataMap["images"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }

@@ -63,7 +63,7 @@ class ImageEndpoint(
         val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
 
         val image: Image = if (!userService.hasAvatar(auth.name)) {
-            imageService.createFile(ImageType.AVATAR, file.inputStream, file.contentType!!)
+            imageService.createFromInputStream(ImageType.AVATAR, file.inputStream, file.contentType!!)
         } else {
             val existingAvatar = userService.getAvatar(auth.name)!!
             imageService.updateFileContent(existingAvatar, file.inputStream, file.contentType!!)

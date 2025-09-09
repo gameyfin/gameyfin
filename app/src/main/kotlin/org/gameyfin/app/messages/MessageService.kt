@@ -206,8 +206,8 @@ class MessageService(
     }
 
     @Async
-    @EventListener(AccountDeletedEvent::class)
-    fun onAccountDeletion(event: AccountDeletedEvent) {
+    @EventListener(UserDeletedEvent::class)
+    fun onAccountDeletion(event: UserDeletedEvent) {
 
         if (!enabled) {
             log.error { "No message provider available, can't send account deletion message" }

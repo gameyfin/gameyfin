@@ -1,9 +1,13 @@
 package org.gameyfin.app.users.entities
 
 import jakarta.persistence.EntityManager
+import jakarta.persistence.PostRemove
 import jakarta.persistence.PreRemove
+import org.gameyfin.app.core.Utils
+import org.gameyfin.app.core.events.UserDeletedEvent
 import org.gameyfin.app.requests.entities.GameRequest
 import org.gameyfin.app.util.EntityManagerHolder
+import org.gameyfin.app.util.EventPublisherHolder
 
 class UserEntityListener {
 
@@ -21,5 +25,12 @@ class UserEntityListener {
             if (gr.requester == user) gr.requester = null
             entityManager.merge(gr)
         }
+    }
+
+    // UserUpdateEvent triggered via {@link org.gameyfin.app.core.interceptors.EntityUpdateInterceptor#onFlushDirty}
+
+    @PostRemove
+    fun postRemove(user: User) {
+        EventPublisherHolder.publish(UserDeletedEvent(this, user, Utils.getBaseUrl()))
     }
 }
