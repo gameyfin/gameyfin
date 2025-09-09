@@ -12,4 +12,7 @@ interface GameRepository : JpaRepository<Game, Long> {
         @Param("title") title: String,
         @Param("release") release: Instant?
     ): List<Game>
+
+    @Query("SELECT CASE WHEN COUNT(g) > 0 THEN true ELSE false END FROM Game g WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR :imageId IN (SELECT i.id FROM g.images i)")
+    fun existsByImage(@Param("imageId") imageId: Long): Boolean
 }
