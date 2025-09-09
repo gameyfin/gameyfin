@@ -94,14 +94,4 @@ class EntityUpdateInterceptor() : Interceptor {
 
         return reconstructed
     }
-
-    private fun extractGameImages(game: Game): List<Image> {
-        val images = mutableListOf<Image>()
-
-        game.coverImage?.let { images.add(it) }
-        game.headerImage?.let { images.add(it) }
-        images.addAll(game.images)
-
-        return images
-    }
 }

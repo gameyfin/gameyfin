@@ -47,7 +47,7 @@ class ImageEndpoint(
     @GetMapping("/plugins/{id}/logo")
     fun getPluginLogo(@PathVariable("id") pluginId: String): ResponseEntity<ByteArrayResource>? {
         val logo = pluginService.getLogo(pluginId)
-        return Utils.Companion.inputStreamToResponseEntity(logo)
+        return Utils.inputStreamToResponseEntity(logo)
     }
 
     @GetMapping("/avatar")
@@ -85,7 +85,7 @@ class ImageEndpoint(
         userService.deleteAvatar(name)
     }
 
-    private fun getImageContent(id: Long): ResponseEntity<InputStreamResource>? {
+    private fun getImageContent(id: Long): ResponseEntity<InputStreamResource> {
         val image = imageService.getImage(id) ?: return ResponseEntity.notFound().build()
 
         val file = image.let { imageService.getFileContent(it) }

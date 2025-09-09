@@ -1,6 +1,5 @@
 package org.gameyfin.app.media
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
 import org.gameyfin.app.core.events.GameDeletedEvent
@@ -29,7 +28,6 @@ class ImageService(
 ) {
     companion object {
         private val tika = Tika()
-        private val log = KotlinLogging.logger {}
     }
 
     @TransactionalEventListener(

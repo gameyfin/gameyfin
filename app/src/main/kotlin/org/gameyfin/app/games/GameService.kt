@@ -104,8 +104,7 @@ class GameService(
         return entities.toDtos()
     }
 
-    @Transactional
-    fun create(game: Game): Game? {
+    private fun create(game: Game): Game {
         game.publishers = game.publishers.map { companyService.createOrGet(it) }.toMutableList()
         game.developers = game.developers.map { companyService.createOrGet(it) }.toMutableList()
 
@@ -124,7 +123,6 @@ class GameService(
         } catch (e: Exception) {
             log.error { "Error downloading images for game '${game.title}' (${game.id}): ${e.message}" }
             log.debug(e) {}
-            null
         }
 
         game.metadata.fileSize = filesystemService.calculateFileSize(game.metadata.path)
