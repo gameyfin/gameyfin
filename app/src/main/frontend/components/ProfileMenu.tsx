@@ -2,7 +2,6 @@ import {useAuth} from "Frontend/util/auth";
 import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
 import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/react";
 import {useNavigate} from "react-router";
-import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
 import {CollectionElement} from "@react-types/shared";
 import {isAdmin} from "Frontend/util/utils";
@@ -10,14 +9,6 @@ import {isAdmin} from "Frontend/util/utils";
 export default function ProfileMenu() {
     const auth = useAuth();
     const navigate = useNavigate();
-
-    async function logout() {
-        if (auth.state.user?.managedBySso) {
-            window.location.href = (await ConfigEndpoint.getSsoLogoutUrl()) || "/";
-        } else {
-            await auth.logout();
-        }
-    }
 
     const profileMenuItems = [
         {
@@ -39,7 +30,7 @@ export default function ProfileMenu() {
         {
             label: "Sign Out",
             icon: <SignOut/>,
-            onClick: logout,
+            onClick: auth.logout,
             color: "primary"
         },
     ];

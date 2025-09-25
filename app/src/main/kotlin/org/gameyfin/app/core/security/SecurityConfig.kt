@@ -76,12 +76,14 @@ class SecurityConfig(
         // Not needed since the frontend is served by the backend
         http.cors { cors -> cors.disable() }
 
-        http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
-            // use a custom login view and redirect to root on logout
-            configurer.loginView("/login", "/")
-        }
 
         if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
+
+            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
+                // Redirect to SSO provider on logout
+                configurer.loginView("/login", config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
+            }
+
             // Use custom success handler to handle user registration
             http.oauth2Login { oauth2Login -> oauth2Login.successHandler(ssoAuthenticationSuccessHandler) }
             // Prevent unnecessary redirects
@@ -90,6 +92,11 @@ class SecurityConfig(
             // Custom authentication entry point to support SSO and direct login
             http.exceptionHandling { exceptionHandling ->
                 exceptionHandling.authenticationEntryPoint(CustomAuthenticationEntryPoint())
+            }
+        } else {
+            // Use default Vaadin login URLs
+            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
+                configurer.loginView("/login")
             }
         }
 
