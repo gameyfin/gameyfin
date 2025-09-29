@@ -9,24 +9,10 @@
 
 /******************************************************************************************
  * Helper: Idempotent constraint rename for H2
- * H2 does not support RENAME CONSTRAINT IF EXISTS, so we create a Java alias that
- * executes a rename and suppresses error 90057 (constraint not found).
- * NOTE: Do not declare method as public static; H2 wraps it and adds modifiers itself.
+ * (Updated) Use precompiled Java class instead of inline Java to avoid needing 'javac' at runtime.
+ * Class: org.gameyfin.db.h2.H2Aliases.renameConstraintIfExists(Connection,String,String,String)
  ******************************************************************************************/
-CREATE ALIAS IF NOT EXISTS RENAME_CONSTRAINT_IF_EXISTS AS
-$$
-import java.sql.*;
-@CODE
-void run(Connection conn, String table, String oldName, String newName) throws SQLException {
-    try (Statement st = conn.createStatement()) {
-        st.execute("ALTER TABLE " + table + " RENAME CONSTRAINT " + oldName + " TO " + newName);
-    } catch (SQLException e) {
-        if (e.getErrorCode() != 90057) { // ignore only 'constraint not found'
-            throw e;
-        }
-    }
-}
-$$;
+CREATE ALIAS IF NOT EXISTS RENAME_CONSTRAINT_IF_EXISTS FOR "org.gameyfin.db.h2.H2Aliases.renameConstraintIfExists";
 
 /******************************************************************************************
  * 1. Drop the two unwanted unique constraints on GAME
