@@ -31,7 +31,7 @@ spring:
   jpa:
     # defer-datasource-initialization: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: true
   mustache:
     check-template-location: false
@@ -50,6 +50,9 @@ spring:
     virtual.enabled: true
   mvc:
     async.request-timeout: 0
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 2.0.0
 
 vaadin:
   # To improve the performance during development.

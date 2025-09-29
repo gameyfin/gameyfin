@@ -54,6 +54,7 @@ dependencies {
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.17")
+    implementation("org.flywaydb:flyway-core")
     implementation("commons-io:commons-io:2.18.0")
 
     // SSO
