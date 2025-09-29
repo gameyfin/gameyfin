@@ -7,9 +7,9 @@
  * 1. Drop the two unwanted unique constraints on GAME
  ******************************************************************************************/
 ALTER TABLE GAME
-    DROP CONSTRAINT UK52RQ62FLPBNTI77BYKM7UAHKQ; -- COVER_IMAGE_ID unique
+    DROP CONSTRAINT IF EXISTS UK52RQ62FLPBNTI77BYKM7UAHKQ; -- COVER_IMAGE_ID unique
 ALTER TABLE GAME
-    DROP CONSTRAINT UK30B16LLQV54H40XIOGP7T9P35;
+    DROP CONSTRAINT IF EXISTS UK30B16LLQV54H40XIOGP7T9P35;
 -- HEADER_IMAGE_ID unique
 
 /******************************************************************************************
@@ -119,4 +119,3 @@ ALTER TABLE USER_ROLES
     RENAME CONSTRAINT FKHFH9DX7W3UBF1CO1VDEV94G3F TO FK_USER_ROLES_USER;
 
 -- End of migration
-
