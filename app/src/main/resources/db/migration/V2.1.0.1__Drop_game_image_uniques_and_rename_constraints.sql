@@ -1,4 +1,4 @@
--- Flyway Migration: V2.1.0
+-- Flyway Migration: V2.1.0 (Part 1)
 -- Purpose:
 -- 1. Drop unique constraints on GAME.COVER_IMAGE_ID and GAME.HEADER_IMAGE_ID
 -- 2. Rename all remaining UK*/FK* constraints to human-readable names
