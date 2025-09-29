@@ -5,16 +5,14 @@ import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.Image
-import org.gameyfin.app.libraries.dto.LibraryScanProgress
-import org.gameyfin.app.libraries.dto.LibraryScanStatus
-import org.gameyfin.app.libraries.dto.LibraryScanStep
+import org.gameyfin.app.libraries.dto.*
+import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.*
 import org.gameyfin.app.media.ImageService
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import java.net.URL
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.Callable
@@ -345,19 +343,13 @@ class LibraryScanService(
         // Deduplicate by originalUrl
         val uniqueImages = allImages
             .filter { it.originalUrl != null }
-            .distinctBy { it.originalUrl }
-
-        // Map to track which Image entity was used for download per originalUrl
-        val downloadedImageMap = ConcurrentHashMap<URL, Image>()
+            .distinctBy { it.originalUrl.toString() }
 
         // Download each unique image in parallel
         val imageDownloadTasks = uniqueImages.map { image ->
             Callable {
                 try {
                     imageService.downloadIfNew(image)
-                    image.originalUrl?.let { url ->
-                        downloadedImageMap[url] = image
-                    }
                 } catch (e: Exception) {
                     log.error { "Error downloading image '${image.originalUrl}': ${e.message}" }
                     log.debug(e) {}
@@ -369,18 +361,20 @@ class LibraryScanService(
         }
         executor.invokeAll(imageDownloadTasks)
 
-        // After downloads, associate the contentId with all other Image entities in the batch with the same originalUrl
-        for ((url, downloadedImage) in downloadedImageMap) {
-            val contentId = downloadedImage.contentId
-            if (contentId != null) {
-                allImages.filter { it.originalUrl.toString() == url.toString() && it !== downloadedImage }
-                    .forEach { image ->
-                        imageService.downloadIfNew(image)
-                        progress.currentStep.current = completedImageDownload.incrementAndGet()
-                        emit(progress)
-                    }
+        // For remaining duplicate images, just copy the content metadata from the downloaded unique image
+        val uniqueImagesByUrl = uniqueImages.associateBy { it.originalUrl.toString() }
+
+        allImages.filter { it.originalUrl != null && it !in uniqueImages }
+            .forEach { duplicateImage ->
+                val downloadedImage = uniqueImagesByUrl[duplicateImage.originalUrl.toString()]
+                if (downloadedImage != null && downloadedImage.contentId != null) {
+                    duplicateImage.contentId = downloadedImage.contentId
+                    duplicateImage.contentLength = downloadedImage.contentLength
+                    duplicateImage.mimeType = downloadedImage.mimeType
+                }
+                progress.currentStep.current = completedImageDownload.incrementAndGet()
+                emit(progress)
             }
-        }
 
         return DownloadImagesResult(gamesWithImages = games)
     }

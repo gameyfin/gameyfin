@@ -1,7 +1,8 @@
 package org.gameyfin.app.games.entities
 
 import jakarta.persistence.*
-import org.gameyfin.app.libraries.Library
+import jakarta.persistence.CascadeType.*
+import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.pluginapi.gamemetadata.GameFeature
 import org.gameyfin.pluginapi.gamemetadata.Genre
 import org.gameyfin.pluginapi.gamemetadata.PlayerPerspective
@@ -28,15 +29,14 @@ class Game(
     var updatedAt: Instant? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "library_id")
     val library: Library,
 
     var title: String? = null,
 
-    @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @ManyToOne(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
     var coverImage: Image? = null,
 
-    @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @ManyToOne(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
     var headerImage: Image? = null,
 
     @Lob
@@ -53,11 +53,11 @@ class Game(
 
     var criticRating: Int? = null,
 
-    @ManyToMany(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH])
-    var publishers: List<Company> = emptyList(),
+    @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    var publishers: MutableList<Company> = mutableListOf(),
 
-    @ManyToMany(cascade = [CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH])
-    var developers: List<Company> = emptyList(),
+    @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    var developers: MutableList<Company> = mutableListOf(),
 
     @ElementCollection(targetClass = Genre::class)
     var genres: List<Genre> = emptyList(),
@@ -74,16 +74,14 @@ class Game(
     @ElementCollection(targetClass = PlayerPerspective::class)
     var perspectives: List<PlayerPerspective> = emptyList(),
 
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    var images: List<Image> = emptyList(),
+    @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    var images: MutableList<Image> = mutableListOf(),
 
     @ElementCollection
     var videoUrls: List<URI> = emptyList(),
 
     @Embedded
     var metadata: GameMetadata
-
-
 ) {
     constructor(path: Path, library: Library) : this(library = library, metadata = GameMetadata(path = path.toString()))
 }

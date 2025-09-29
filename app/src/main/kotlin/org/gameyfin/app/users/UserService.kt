@@ -5,19 +5,22 @@ import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.Utils
-import org.gameyfin.app.core.events.*
+import org.gameyfin.app.core.events.AccountStatusChangedEvent
+import org.gameyfin.app.core.events.EmailNeedsConfirmationEvent
+import org.gameyfin.app.core.events.RegistrationAttemptWithExistingEmailEvent
+import org.gameyfin.app.core.events.UserRegistrationWaitingForApprovalEvent
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.media.ImageService
-import org.gameyfin.app.users.dto.UserInfoDto
+import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.emailconfirmation.EmailConfirmationService
 import org.gameyfin.app.users.enums.RoleAssignmentResult
+import org.gameyfin.app.users.extensions.toAuthorities
+import org.gameyfin.app.users.extensions.toExtendedUserInfoDto
 import org.gameyfin.app.users.persistence.UserRepository
 import org.springframework.context.ApplicationEventPublisher
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -56,7 +59,7 @@ class UserService(
                 true,
                 true,
                 true,
-                toAuthorities(user.roles)
+                user.roles.toAuthorities()
             )
         }
 
@@ -67,7 +70,7 @@ class UserService(
             true,
             true,
             true,
-            toAuthorities(user.roles)
+            user.roles.toAuthorities()
         )
     }
 
@@ -77,8 +80,8 @@ class UserService(
     fun findByOidcProviderId(oidcProviderId: String): org.gameyfin.app.users.entities.User? =
         userRepository.findByOidcProviderId(oidcProviderId)
 
-    fun getAllUsers(): List<UserInfoDto> {
-        return userRepository.findAll().map { u -> toUserInfo(u) }
+    fun getAllUsers(): List<ExtendedUserInfoDto> {
+        return userRepository.findAll().map { it.toExtendedUserInfoDto() }
     }
 
     fun getByEmail(email: String): org.gameyfin.app.users.entities.User? {
@@ -93,20 +96,22 @@ class UserService(
         return userRepository.findByUsername(username) ?: throw UsernameNotFoundException("Unknown user '$username'")
     }
 
-    fun getUserInfo(): UserInfoDto {
-        val auth = SecurityContextHolder.getContext().authentication
+    fun getUserInfo(): ExtendedUserInfoDto {
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val principal = auth.principal
 
         if (principal is OidcUser) {
             val oidcUser = org.gameyfin.app.users.entities.User(principal)
-            val userInfoDto = toUserInfo(oidcUser)
+            val user = userRepository.findByOidcProviderId(oidcUser.oidcProviderId!!)
+                ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '${oidcUser.oidcProviderId}'")
+            val userInfoDto = user.toExtendedUserInfoDto()
             userInfoDto.roles = roleService.extractGrantedAuthorities(principal.authorities)
-                .mapNotNull { Role.Companion.safeValueOf(it.authority) }
+                .mapNotNull { Role.safeValueOf(it.authority) }
             return userInfoDto
         }
 
         val user = getByUsernameNonNull(auth.name)
-        return toUserInfo(user)
+        return user.toExtendedUserInfoDto()
     }
 
     fun getAvatar(username: String): Image? {
@@ -124,7 +129,7 @@ class UserService(
         val user = getByUsernameNonNull(username)
 
         if (user.avatar == null) return
-        imageService.deleteFile(user.avatar!!)
+        imageService.deleteImageIfUnused(user.avatar!!)
         user.avatar = null
 
         userRepository.save(user)
@@ -158,7 +163,7 @@ class UserService(
                 RegistrationAttemptWithExistingEmailEvent(
                     this,
                     it,
-                    Utils.Companion.getBaseUrl()
+                    Utils.getBaseUrl()
                 )
             )
             return
@@ -179,12 +184,12 @@ class UserService(
         if (adminNeedsToApprove) {
             eventPublisher.publishEvent(UserRegistrationWaitingForApprovalEvent(this, user))
         } else {
-            eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.Companion.getBaseUrl()))
+            eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
         }
 
         if (!user.emailConfirmed) {
             val token = emailConfirmationService.generate(user)
-            eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.Companion.getBaseUrl()))
+            eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
         }
     }
 
@@ -222,7 +227,7 @@ class UserService(
             user.email = it
             user.emailConfirmed = false
             val token = emailConfirmationService.generate(user)
-            eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.Companion.getBaseUrl()))
+            eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
         }
 
         userRepository.save(user)
@@ -238,7 +243,7 @@ class UserService(
             return RoleAssignmentResult.NO_ROLES_PROVIDED
         }
 
-        val currentUser = SecurityContextHolder.getContext().authentication
+        val currentUser = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val targetUser = getByUsernameNonNull(username)
 
         if (!canManage(targetUser)) {
@@ -246,7 +251,7 @@ class UserService(
             return RoleAssignmentResult.TARGET_POWER_LEVEL_TOO_HIGH
         }
 
-        val newAssignedRoles = roleNames.mapNotNull { r -> Role.Companion.safeValueOf(r) }
+        val newAssignedRoles = roleNames.mapNotNull { r -> Role.safeValueOf(r) }
         val newAssignedRolesLevel = roleService.getHighestRole(newAssignedRoles).powerLevel
         val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
 
@@ -266,7 +271,7 @@ class UserService(
     }
 
     fun canManage(targetUser: org.gameyfin.app.users.entities.User): Boolean {
-        val currentUser = SecurityContextHolder.getContext().authentication
+        val currentUser = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
         val targetUserLevel = roleService.getHighestRole(targetUser.roles).powerLevel
         return currentUserLevel > targetUserLevel
@@ -276,29 +281,11 @@ class UserService(
         val user = getByUsernameNonNull(username)
         user.enabled = enabled
         userRepository.save(user)
-        eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.Companion.getBaseUrl()))
+        eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
     }
 
     fun deleteUser(username: String) {
         val user = getByUsernameNonNull(username)
         userRepository.delete(user)
-        eventPublisher.publishEvent(AccountDeletedEvent(this, user, Utils.Companion.getBaseUrl()))
-    }
-
-    fun toUserInfo(user: org.gameyfin.app.users.entities.User): UserInfoDto {
-        return UserInfoDto(
-            username = user.username,
-            email = user.email,
-            emailConfirmed = user.emailConfirmed,
-            enabled = user.enabled,
-            hasAvatar = user.avatar != null,
-            avatarId = user.avatar?.id,
-            managedBySso = user.oidcProviderId != null,
-            roles = user.roles
-        )
-    }
-
-    private fun toAuthorities(roles: Collection<Role>): List<GrantedAuthority> {
-        return roles.map { r -> SimpleGrantedAuthority(r.roleName) }
     }
 }

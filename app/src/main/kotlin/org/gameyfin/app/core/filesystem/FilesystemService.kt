@@ -1,10 +1,10 @@
 package org.gameyfin.app.core.filesystem
 
-import org.gameyfin.app.config.ConfigService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.io.FilenameUtils
 import org.gameyfin.app.config.ConfigProperties
-import org.gameyfin.app.libraries.Library
+import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.libraries.entities.Library
 import org.springframework.stereotype.Service
 import java.io.File
 import java.nio.file.FileSystems

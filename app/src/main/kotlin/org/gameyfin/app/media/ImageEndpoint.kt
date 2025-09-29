@@ -7,6 +7,7 @@ import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.games.entities.ImageType
 import org.gameyfin.app.users.UserService
@@ -15,8 +16,6 @@ import org.springframework.core.io.InputStreamResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -48,7 +47,7 @@ class ImageEndpoint(
     @GetMapping("/plugins/{id}/logo")
     fun getPluginLogo(@PathVariable("id") pluginId: String): ResponseEntity<ByteArrayResource>? {
         val logo = pluginService.getLogo(pluginId)
-        return Utils.Companion.inputStreamToResponseEntity(logo)
+        return Utils.inputStreamToResponseEntity(logo)
     }
 
     @GetMapping("/avatar")
@@ -61,10 +60,10 @@ class ImageEndpoint(
     @PermitAll
     @PostMapping("/avatar/upload")
     fun uploadAvatar(@RequestParam("file") file: MultipartFile) {
-        val auth: Authentication = SecurityContextHolder.getContext().authentication
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
 
         val image: Image = if (!userService.hasAvatar(auth.name)) {
-            imageService.createFile(ImageType.AVATAR, file.inputStream, file.contentType!!)
+            imageService.createFromInputStream(ImageType.AVATAR, file.inputStream, file.contentType!!)
         } else {
             val existingAvatar = userService.getAvatar(auth.name)!!
             imageService.updateFileContent(existingAvatar, file.inputStream, file.contentType!!)
@@ -76,7 +75,7 @@ class ImageEndpoint(
     @PermitAll
     @PostMapping("/avatar/delete")
     fun deleteAvatar() {
-        val auth: Authentication = SecurityContextHolder.getContext().authentication
+        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         userService.deleteAvatar(auth.name)
     }
 
@@ -86,7 +85,7 @@ class ImageEndpoint(
         userService.deleteAvatar(name)
     }
 
-    private fun getImageContent(id: Long): ResponseEntity<InputStreamResource>? {
+    private fun getImageContent(id: Long): ResponseEntity<InputStreamResource> {
         val image = imageService.getImage(id) ?: return ResponseEntity.notFound().build()
 
         val file = image.let { imageService.getFileContent(it) }

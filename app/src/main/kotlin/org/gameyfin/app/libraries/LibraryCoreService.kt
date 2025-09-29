@@ -2,6 +2,7 @@ package org.gameyfin.app.libraries
 
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.libraries.entities.Library
 import org.springframework.stereotype.Service
 import java.time.Instant
 

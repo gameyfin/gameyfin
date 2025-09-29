@@ -1,59 +1,69 @@
 package org.gameyfin.app.core.security
 
-import com.vaadin.flow.spring.security.VaadinWebSecurity
+import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration
+import com.vaadin.flow.spring.security.VaadinSecurityConfigurer
+import com.vaadin.hilla.route.RouteUtil
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
 import org.springframework.security.oauth2.core.AuthorizationGrantType
+import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler
 
 
 @Configuration
 @EnableWebSecurity
+@Import(
+    VaadinAwareSecurityContextHolderStrategyConfiguration::class
+)
 class SecurityConfig(
     private val environment: Environment,
     private val config: ConfigService,
     private val ssoAuthenticationSuccessHandler: SsoAuthenticationSuccessHandler,
     private val sessionRegistry: SessionRegistry
-) : VaadinWebSecurity() {
+) {
 
     companion object {
         const val SSO_PROVIDER_KEY = "oidc"
     }
 
-    @Throws(Exception::class)
-    override fun configure(http: HttpSecurity) {
-
-        // Configure your static resources with public access before calling super.configure(HttpSecurity) as it adds final anyRequest matcher
-        http.authorizeHttpRequests { auth: AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry ->
-            auth.requestMatchers("/login").permitAll()
-                .requestMatchers("/setup").permitAll()
-                .requestMatchers("/reset-password").permitAll()
-                .requestMatchers("/accept-invitation").permitAll()
-                .requestMatchers("/public/**").permitAll()
-                .requestMatchers("/images/**").permitAll()
-                .requestMatchers("/favicon.ico").permitAll()
-                .requestMatchers("/favicon.svg").permitAll()
-
-            // Dynamic public access for certain endpoints
-            auth.requestMatchers("/").access(DynamicPublicAccessAuthorizationManager(config))
-                .requestMatchers("/game/**").access(DynamicPublicAccessAuthorizationManager(config))
-                .requestMatchers("/library/**").access(DynamicPublicAccessAuthorizationManager(config))
-                .requestMatchers("/search/**").access(DynamicPublicAccessAuthorizationManager(config))
-                .requestMatchers("/download/**").access(DynamicPublicAccessAuthorizationManager(config))
+    @Bean
+    fun filterChain(http: HttpSecurity, routeUtil: RouteUtil): SecurityFilterChain {
+        http.authorizeHttpRequests { auth ->
+            // Set default security policy that permits Hilla internal requests and denies all other
+            auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
+                // Gameyfin static resources and public endpoints
+                .requestMatchers(
+                    "/login",
+                    "/setup",
+                    "/reset-password",
+                    "/accept-invitation",
+                    "/public/**",
+                    "/images/**",
+                    "/favicon.ico",
+                    "/favicon.svg"
+                ).permitAll()
+                // Dynamic public access for certain endpoints
+                .requestMatchers(
+                    "/",
+                    "/game/**",
+                    "/library/**",
+                    "/search/**",
+                    "/requests/**",
+                    "/download/**"
+                ).access(DynamicPublicAccessAuthorizationManager(config))
         }
 
         http.sessionManagement { sessionManagement ->
@@ -66,11 +76,14 @@ class SecurityConfig(
         // Not needed since the frontend is served by the backend
         http.cors { cors -> cors.disable() }
 
-        super.configure(http)
-
-        setLoginView(http, "/login", "/")
 
         if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
+
+            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
+                // Redirect to SSO provider on logout
+                configurer.loginView("/login", config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
+            }
+
             // Use custom success handler to handle user registration
             http.oauth2Login { oauth2Login -> oauth2Login.successHandler(ssoAuthenticationSuccessHandler) }
             // Prevent unnecessary redirects
@@ -80,16 +93,18 @@ class SecurityConfig(
             http.exceptionHandling { exceptionHandling ->
                 exceptionHandling.authenticationEntryPoint(CustomAuthenticationEntryPoint())
             }
+        } else {
+            // Use default Vaadin login URLs
+            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
+                configurer.loginView("/login")
+            }
         }
-    }
-
-    @Throws(Exception::class)
-    public override fun configure(web: WebSecurity) {
-        super.configure(web)
 
         if ("dev" in environment.activeProfiles) {
-            web.ignoring().requestMatchers("/h2-console/**")
+            http.authorizeHttpRequests { auth -> auth.requestMatchers("/h2-console/**").permitAll() }
         }
+
+        return http.build()
     }
 
     @Bean

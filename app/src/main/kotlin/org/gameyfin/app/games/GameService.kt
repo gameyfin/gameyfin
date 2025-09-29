@@ -12,27 +12,27 @@ import org.gameyfin.app.core.alphaNumeric
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.filterValuesNotNull
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.replaceRomanNumerals
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDtos
 import org.gameyfin.app.games.repositories.GameRepository
-import org.gameyfin.app.libraries.Library
+import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.ImageService
 import org.gameyfin.app.users.UserService
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import java.net.URI
 import java.nio.file.Path
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -104,10 +104,9 @@ class GameService(
         return entities.toDtos()
     }
 
-    @Transactional
-    fun create(game: Game): Game? {
-        game.publishers = game.publishers.map { companyService.createOrGet(it) }
-        game.developers = game.developers.map { companyService.createOrGet(it) }
+    private fun create(game: Game): Game {
+        game.publishers = game.publishers.map { companyService.createOrGet(it) }.toMutableList()
+        game.developers = game.developers.map { companyService.createOrGet(it) }.toMutableList()
 
         try {
             game.coverImage?.let {
@@ -124,7 +123,6 @@ class GameService(
         } catch (e: Exception) {
             log.error { "Error downloading images for game '${game.title}' (${game.id}): ${e.message}" }
             log.debug(e) {}
-            null
         }
 
         game.metadata.fileSize = filesystemService.calculateFileSize(game.metadata.path)
@@ -137,9 +135,11 @@ class GameService(
         val gamesToBePersisted = games.filter { it.id == null }
 
         gamesToBePersisted.forEach { game ->
-            game.publishers = game.publishers.map { companyService.createOrGet(it) }
-            game.developers = game.developers.map { companyService.createOrGet(it) }
-            game
+            game.publishers = game.publishers.map { companyService.createOrGet(it) }.toMutableList()
+            game.developers = game.developers.map { companyService.createOrGet(it) }.toMutableList()
+            game.coverImage?.let { game.coverImage = imageService.createOrGet(it) }
+            game.headerImage?.let { game.headerImage = imageService.createOrGet(it) }
+            game.images = game.images.map { imageService.createOrGet(it) }.toMutableList()
         }
 
         return gameRepository.saveAll(gamesToBePersisted)
@@ -149,11 +149,10 @@ class GameService(
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
 
-        val userDetails = SecurityContextHolder.getContext().authentication.principal
-        val user = when (userDetails) {
+        val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
             is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername)
-            else -> throw IllegalStateException("Unkown user type: ${userDetails::class.java.name}")
+            else -> throw IllegalStateException("Unkown user type: ${userDetails?.javaClass?.name}")
         }
 
         // Update only non-null fields
@@ -166,14 +165,18 @@ class GameService(
             existingGame.metadata.fields["release"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.coverUrl?.let {
-            val newCoverImage = Image(originalUrl = URI.create(it).toURL(), type = ImageType.COVER)
+            val newCoverImage = imageService.createOrGet(
+                Image(originalUrl = it, type = ImageType.COVER)
+            )
             imageService.downloadIfNew(newCoverImage)
 
             existingGame.coverImage = newCoverImage
             existingGame.metadata.fields["coverImage"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.headerUrl?.let {
-            val newHeaderImage = Image(originalUrl = URI.create(it).toURL(), type = ImageType.HEADER)
+            val newHeaderImage = imageService.createOrGet(
+                Image(originalUrl = it, type = ImageType.HEADER)
+            )
             imageService.downloadIfNew(newHeaderImage)
 
             existingGame.headerImage = newHeaderImage
@@ -190,11 +193,13 @@ class GameService(
         gameUpdateDto.developers?.let {
             existingGame.developers =
                 it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.DEVELOPER)) }
+                    .toMutableList()
             existingGame.metadata.fields["developers"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.publishers?.let {
             existingGame.publishers =
                 it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.PUBLISHER)) }
+                    .toMutableList()
             existingGame.metadata.fields["publishers"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.genres?.let {
@@ -260,12 +265,12 @@ class GameService(
 
         val game = getById(game.id!!)
 
-        val originalIds: Map<String, OriginalIdDto> = game.metadata.originalIds
+        val originalIds: Map<String, ExternalProviderIdDto> = game.metadata.originalIds
             .map { (provider, originalId) ->
                 val providerId = pluginManager.getExtensions(provider.pluginId).first()?.javaClass?.name ?: return null
                 val pluginId = provider.pluginId
                 val originalId = originalId
-                providerId to OriginalIdDto(pluginId, originalId)
+                providerId to ExternalProviderIdDto(pluginId, originalId)
             }
             .toMap()
 
@@ -378,7 +383,7 @@ class GameService(
             "publishers",
             game.publishers,
             updatedGame.publishers,
-            { game.publishers = it ?: emptyList() },
+            { game.publishers = it ?: mutableListOf() },
             updatedGame.metadata.fields["publishers"]
         )
 
@@ -387,7 +392,7 @@ class GameService(
             "developers",
             game.developers,
             updatedGame.developers,
-            { game.developers = it ?: emptyList() },
+            { game.developers = it ?: mutableListOf() },
             updatedGame.metadata.fields["developers"]
         )
 
@@ -441,7 +446,7 @@ class GameService(
             "images",
             game.images,
             updatedGame.images,
-            { game.images = it ?: emptyList() },
+            { game.images = it ?: mutableListOf() },
             updatedGame.metadata.fields["images"]
         )
 
@@ -504,12 +509,12 @@ class GameService(
                 sorted.mapNotNull { selector(it.second) }.firstOrNull { it.isNotEmpty() }
 
             // Collect originalIds for this group
-            val originalIds: Map<String, OriginalIdDto> = group
+            val originalIds: Map<String, ExternalProviderIdDto> = group
                 .mapNotNull { (provider, metadata) ->
                     val providerId = provider.javaClass.name
                     val pluginId = providerToManagementEntry[provider]?.pluginId ?: return@mapNotNull null
                     val originalId = metadata.originalId
-                    if (providerId != null) providerId to OriginalIdDto(pluginId, originalId) else null
+                    if (providerId != null) providerId to ExternalProviderIdDto(pluginId, originalId) else null
                 }
                 .toMap()
 
@@ -567,7 +572,7 @@ class GameService(
     }
 
     fun matchManually(
-        originalIds: Map<String, OriginalIdDto>,
+        originalIds: Map<String, ExternalProviderIdDto>,
         path: Path,
         library: Library,
         replaceGameId: Long? = null,
@@ -578,7 +583,7 @@ class GameService(
             coroutineScope {
                 metadataPlugins.associateWith { plugin ->
                     async {
-                        val originalId = originalIds[plugin.javaClass.name]?.originalId ?: return@async null
+                        val originalId = originalIds[plugin.javaClass.name]?.externalProviderId ?: return@async null
                         try {
                             return@async plugin.fetchById(originalId)
                         } catch (e: Exception) {
@@ -758,14 +763,18 @@ class GameService(
                 }
                 metadata.coverUrls?.firstOrNull()?.let { coverUrl ->
                     if (!metadataMap.containsKey("coverImage")) {
-                        mergedGame.coverImage = Image(originalUrl = coverUrl.toURL(), type = ImageType.COVER)
+                        mergedGame.coverImage = imageService.createOrGet(
+                            Image(originalUrl = coverUrl.toString(), type = ImageType.COVER)
+                        )
                         metadataMap["coverImage"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
                 }
                 metadata.headerUrls?.firstOrNull()?.let { headerUrl ->
                     if (!metadataMap.containsKey("headerImage")) {
-                        mergedGame.headerImage = Image(originalUrl = headerUrl.toURL(), type = ImageType.HEADER)
+                        mergedGame.headerImage = imageService.createOrGet(
+                            Image(originalUrl = headerUrl.toString(), type = ImageType.HEADER)
+                        )
                         metadataMap["headerImage"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
@@ -794,7 +803,7 @@ class GameService(
                 metadata.publishedBy?.takeIf { it.isNotEmpty() }?.let { publishedBy ->
                     if (!metadataMap.containsKey("publishers")) {
                         mergedGame.publishers =
-                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }
+                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }.toMutableList()
                         metadataMap["publishers"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
@@ -802,7 +811,7 @@ class GameService(
                 metadata.developedBy?.takeIf { it.isNotEmpty() }?.let { developedBy ->
                     if (!metadataMap.containsKey("developers")) {
                         mergedGame.developers =
-                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }
+                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }.toMutableList()
                         metadataMap["developers"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
@@ -843,7 +852,11 @@ class GameService(
                 metadata.screenshotUrls?.takeIf { it.isNotEmpty() }?.let { screenshotUrls ->
                     if (!metadataMap.containsKey("images")) {
                         mergedGame.images = runBlocking {
-                            screenshotUrls.map { Image(originalUrl = it.toURL(), type = ImageType.SCREENSHOT) }
+                            screenshotUrls.map {
+                                imageService.createOrGet(
+                                    Image(originalUrl = it.toString(), type = ImageType.SCREENSHOT)
+                                )
+                            }.toMutableList()
                         }
                         metadataMap["images"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
