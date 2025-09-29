@@ -82,6 +82,8 @@ const themeOptions = {
 };
 
 const hasExportedWebComponents = existsSync(path.resolve(frontendFolder, 'web-component.html'));
+const commercialBannerComponent = path.resolve(frontendFolder, settings.generatedFolder, 'commercial-banner.js');
+const hasCommercialBanner = existsSync(commercialBannerComponent);
 
 const target = ['safari15', 'es2022'];
 
@@ -258,6 +260,10 @@ function statsExtracterPlugin(): PluginOption {
           '\n'
         );
         frontendFiles[`index.ts`] = createHash('sha256').update(fileBuffer, 'utf8').digest('hex');
+      }
+      if (hasCommercialBanner) {
+        const fileBuffer = readFileSync(commercialBannerComponent, { encoding: 'utf-8' }).replace(/\r\n/g, '\n');
+        frontendFiles[settings.generatedFolder + '/commercial-banner.js'] = createHash('sha256').update(fileBuffer, 'utf8').digest('hex');
       }
 
       const themeJsonContents: Record<string, string> = {};
@@ -576,6 +582,7 @@ function preserveUsageStats() {
 export const vaadinConfig: UserConfigFn = (env) => {
   const devMode = env.mode === 'development';
   const productionMode = !devMode && !devBundle
+  const commercialBanner = productionMode && hasCommercialBanner;
 
   if (devMode && process.env.watchDogPort) {
     // Open a connection with the Java dev-mode handler in order to finish
@@ -734,14 +741,21 @@ export const vaadinConfig: UserConfigFn = (env) => {
             if (path !== '/web-component.html') {
               return;
             }
-
-            return [
+            const scripts = [
               {
                 tag: 'script',
                 attrs: { type: 'module', src: `/generated/vaadin-web-component.ts` },
                 injectTo: 'head'
               }
             ];
+            if (commercialBanner) {
+              scripts.push({
+                tag: 'script',
+                attrs: { type: 'module', src: '/generated/commercial-banner.js' },
+                injectTo: 'head'
+              });
+            }
+            return scripts;
           }
         }
       },
@@ -768,6 +782,13 @@ export const vaadinConfig: UserConfigFn = (env) => {
               attrs: { type: 'module', src: '/generated/vaadin.ts' },
               injectTo: 'head'
             });
+            if (commercialBanner) {
+              scripts.push({
+                tag: 'script',
+                attrs: { type: 'module', src: '/generated/commercial-banner.js' },
+                injectTo: 'head'
+              });
+            }
             return scripts;
           }
         }
