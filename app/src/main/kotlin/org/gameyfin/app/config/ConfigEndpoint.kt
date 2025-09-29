@@ -43,19 +43,6 @@ class ConfigEndpoint(
     }
 
     /** Specific read-only endpoints for all users **/
-
-    @DynamicPublicAccess
-    @AnonymousAllowed
-    fun isSsoEnabled(): Boolean = configService.get(ConfigProperties.SSO.OIDC.Enabled) == true
-
-    @DynamicPublicAccess
-    @AnonymousAllowed
-    fun getSsoLogoutUrl(): String? = configService.get(ConfigProperties.SSO.OIDC.LogoutUrl)
-
-    @DynamicPublicAccess
-    @AnonymousAllowed
-    fun isPublicAccessEnabled(): Boolean = configService.get(ConfigProperties.Libraries.AllowPublicAccess) == true
-
     @DynamicPublicAccess
     @AnonymousAllowed
     fun areGameRequestsEnabled(): Boolean = configService.get(ConfigProperties.Requests.Games.Enabled) == true
