@@ -102,7 +102,7 @@ class GameRequestService(
             listOf(GameRequestStatus.PENDING)
         )
         val maxRequestsPerUser = config.get(ConfigProperties.Requests.Games.MaxOpenRequestsPerUser) ?: 0
-        if (maxRequestsPerUser == 0 || (auth?.isAdmin() != true && pendingRequestsForUser.size >= maxRequestsPerUser)) {
+        if (maxRequestsPerUser != 0 && auth?.isAdmin() != true && pendingRequestsForUser.size >= maxRequestsPerUser) {
             throw EndpointException("You have reached the maximum number of pending requests (${maxRequestsPerUser})")
         }
 
