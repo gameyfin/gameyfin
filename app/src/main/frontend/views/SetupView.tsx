@@ -85,17 +85,26 @@ function SetupView() {
                     initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}
                     onSubmit={
                         async (values: any) => {
-                            await SetupEndpoint.registerSuperAdmin({
-                                username: values.username,
-                                password: values.password,
-                                email: values.email
-                            });
-                            addToast({
-                                title: "Setup finished",
-                                description: "Have fun with Gameyfin!",
-                                color: "success"
-                            })
-                            navigate('/login');
+                            try {
+                                await SetupEndpoint.registerSuperAdmin({
+                                    username: values.username,
+                                    password: values.password,
+                                    email: values.email
+                                });
+                                addToast({
+                                    title: "Setup finished",
+                                    description: "Have fun with Gameyfin!",
+                                    color: "success"
+                                });
+                            } catch (e) {
+                                addToast({
+                                    title: "Could not register super admin user",
+                                    description: "Maybe Gameyfin is already set up?",
+                                    color: "warning"
+                                });
+                            } finally {
+                                navigate('/login');
+                            }
                         }
                     }
                 >
