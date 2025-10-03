@@ -14,6 +14,7 @@ import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
 import {isAdmin} from "Frontend/util/utils";
+import DockerHubDeprecationPopover from "Frontend/components/temp/DockerHubDeprecationPopover";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -105,13 +106,22 @@ export default function MainLayout() {
                         </Tooltip>
                     </NavbarItem>
                     {isAdmin(auth) &&
-                        <NavbarItem>
-                            <Tooltip content="View library scan results" placement="bottom">
-                                <div>
-                                    <ScanProgressPopover/>
-                                </div>
-                            </Tooltip>
-                        </NavbarItem>
+                        <div className="flex flex-row">
+                            <NavbarItem>
+                                <Tooltip content="Important information" placement="bottom">
+                                    <div>
+                                        <DockerHubDeprecationPopover/>
+                                    </div>
+                                </Tooltip>
+                            </NavbarItem>
+                            <NavbarItem>
+                                <Tooltip content="View library scan results" placement="bottom">
+                                    <div>
+                                        <ScanProgressPopover/>
+                                    </div>
+                                </Tooltip>
+                            </NavbarItem>
+                        </div>
                     }
                     {auth.state.user &&
                         <NavbarItem>
