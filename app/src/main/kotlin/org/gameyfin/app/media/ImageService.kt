@@ -94,7 +94,11 @@ class ImageService(
         // Always try to get existing image first to avoid detached entity issues
         val existingImage = imageRepository.findByOriginalUrl(image.originalUrl)
 
-        if (existingImage != null && existingImage.contentId != null) {
+        // Check if the existing image has valid content
+        val existingImageHasValidContent = (existingImage != null && imageHasValidContent(existingImage))
+
+        // If the existing image has valid content we can just associate it instead of downloading again
+        if (existingImageHasValidContent && existingImage.contentId != null) {
             // If we have an existing image with content, associate it with the current image
             imageContentStore.associate(image, existingImage.contentId)
             // Update the current image's content metadata
@@ -104,7 +108,7 @@ class ImageService(
             return
         }
 
-        // If no existing image or existing image has no content, download it
+        // If no existing image or existing image has no valid content, download it
         TikaInputStream.get { URI.create(image.originalUrl).toURL().openStream() }.use { input ->
             image.mimeType = tika.detect(input)
             imageContentStore.setContent(image, input)
@@ -144,5 +148,10 @@ class ImageService(
         mimeType?.let { image.mimeType = it }
         imageRepository.save(image)
         return imageContentStore.setContent(image, content)
+    }
+
+    private fun imageHasValidContent(image: Image): Boolean {
+        val imageContent = imageContentStore.getContent(image)
+        return imageContent != null && image.contentLength != null && image.contentLength!! > 0
     }
 }
