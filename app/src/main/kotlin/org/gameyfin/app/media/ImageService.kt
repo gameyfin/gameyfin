@@ -135,8 +135,8 @@ class ImageService(
         val isImageStillInUse = gameRepository.existsByImage(imageId) || userRepository.existsByAvatar(imageId)
 
         if (!isImageStillInUse) {
-            imageContentStore.unsetContent(image)
             imageRepository.delete(image)
+            imageContentStore.unsetContent(image)
         }
     }
 
