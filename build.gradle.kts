@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 
 group = "org.gameyfin"
-version = "2.1.2"
+version = "2.1.2-preview"
 
 allprojects {
     repositories {
