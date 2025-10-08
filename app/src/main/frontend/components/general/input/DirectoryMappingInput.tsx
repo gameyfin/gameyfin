@@ -43,7 +43,7 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
                     />
                     {directory.externalPath && (
                         <>
-                            <div className="flex-shrink-0 flex items-center justify-center mx-2">
+                            <div className="shrink-0 flex items-center justify-center mx-2">
                                 <ArrowRight size={20}/>
                             </div>
                             <input

@@ -34,7 +34,7 @@ export default function EmailConfirmationView() {
     }
 
     return (
-        <div className="flex flex-row flex-grow items-center justify-center size-full gradient-primary">
+        <div className="flex flex-row grow items-center justify-center size-full gradient-primary">
             <Card className="p-4 min-w-[468px]">
                 <CardHeader className="mb-4">
                     <img

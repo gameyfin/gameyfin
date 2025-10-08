@@ -14,13 +14,13 @@ export default function GameCoverPicker({game, showErrorUntouched = false, ...pr
     const gameCoverPickerModal = useDisclosure();
 
     return (<>
-        <div className="relative group aspect-[12/17] cursor-pointer bg-background/50"
+        <div className="relative group aspect-12/17 cursor-pointer bg-background/50"
              onClick={gameCoverPickerModal.onOpenChange}>
             {field.value || game.coverId ?
                 <div className="size-full overflow-hidden">
                     <Image
                         alt={game.title}
-                        className="z-0 object-cover group-hover:brightness-[25%]"
+                        className="z-0 object-cover group-hover:brightness-25"
                         src={field.value ? field.value : `images/cover/${game.coverId}`}
                         {...props}
                         {...field}

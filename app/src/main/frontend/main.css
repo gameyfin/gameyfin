@@ -1,27 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer utilities {
-    .gradient-primary {
-        @apply bg-gradient-to-br from-primary-400 to-primary-700;
-    }
-
-    .button-secondary {
-        @apply bg-primary-300 text-background/80;
-    }
-}
-
-/* List box drag & drop */
-.react-aria-ListBoxItem {
-    &[data-dragging] {
-        opacity: 0.6;
-    }
-}
-
-.react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid theme(colors.primary);
-}
+@import 'tailwindcss';
 
 .shine {
     position: relative;

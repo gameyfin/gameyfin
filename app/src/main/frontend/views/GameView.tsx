@@ -93,12 +93,12 @@ export default function GameView() {
                 ) : (
                     <div className="w-full h-96 bg-secondary relative"/>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"/>
+                <div className="absolute inset-0 bg-linear-to-b from-transparent to-background"/>
             </div>
             <div className="flex flex-col gap-4 mx-24">
                 <div className="flex flex-row justify-between">
                     <div className="flex flex-row gap-4">
-                        <div className="mt-[-16.25rem]">
+                        <div className="-mt-65">
                             <GameCover game={game} size={320} radius="none"/>
                         </div>
                         <div className="flex flex-col gap-1">

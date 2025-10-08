@@ -21,7 +21,7 @@ function UserManagementLayout({getConfig, formik}: any) {
     }, []);
 
     return (
-        <div className="flex flex-col flex-grow">
+        <div className="flex flex-col grow">
 
             <Section title="Sign-Ups"/>
             <div className="flex flex-row">

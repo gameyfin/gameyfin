@@ -16,7 +16,7 @@ export function PluginManagementSection({type, plugins = []}: PluginManagementSe
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex flex-row flex-grow justify-between">
+            <div className="flex flex-row grow justify-between">
                 <h2 className="text-xl font-bold">{camelCaseToTitle(type)}</h2>
 
                 <Tooltip color="foreground" placement="left" content="Change plugin order">

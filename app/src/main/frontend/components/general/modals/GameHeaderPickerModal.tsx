@@ -103,7 +103,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
                                     >
                                         <Image
                                             alt={header.title}
-                                            className="z-0 object-cover group-hover:brightness-[25%]"
+                                            className="z-0 object-cover group-hover:brightness-25"
                                             src={header.url}
                                             radius="none"
                                         />

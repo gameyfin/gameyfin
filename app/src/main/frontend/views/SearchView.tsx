@@ -261,7 +261,7 @@ export default function SearchView() {
         <div className="flex w-full justify-between px-12 gap-4 flex-col lg:flex-row">
             <Input
                 classNames={{
-                    base: "w-full lg:w-96 flex-shrink-0",
+                    base: "w-full lg:w-96 shrink-0",
                     mainWrapper: "h-full",
                     inputWrapper:
                         "h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",

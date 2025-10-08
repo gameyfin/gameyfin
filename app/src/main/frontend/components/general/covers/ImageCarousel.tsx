@@ -90,14 +90,14 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                                     <Image
                                                         src={e.url}
                                                         alt={`Game screenshot slide ${index}`}
-                                                        className={`w-full h-full object-cover aspect-[16/9] cursor-zoom-in ${!isActive ? "scale-90" : ""}`}
+                                                        className={`w-full h-full object-cover aspect-video cursor-zoom-in ${!isActive ? "scale-90" : ""}`}
                                                         onClick={() => showImagePopup(e.url)}
                                                     />
                                                 )
                                             }
                                             return (
                                                 <Card
-                                                    className={`w-full h-full aspect-[16/9] ${!isActive ? "scale-90" : ""}`}>
+                                                    className={`w-full h-full aspect-video ${!isActive ? "scale-90" : ""}`}>
                                                     <ReactPlayer
                                                         url={e.url}
                                                         width="100%"
@@ -137,7 +137,7 @@ function ImagePopup({imageUrl, isOpen, onOpenChange}: {
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} hideCloseButton size="full" backdrop="blur">
             <ModalContent className="bg-transparent">
                 {(onClose) => (
-                    <div className="flex flex-grow items-center justify-center cursor-zoom-out"
+                    <div className="flex grow items-center justify-center cursor-zoom-out"
                          onClick={onClose}>
                         <Image
                             src={imageUrl}

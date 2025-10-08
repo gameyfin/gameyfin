@@ -66,7 +66,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
     >
         {(formik) => (
             <Form>
-                <div className="flex flex-row flex-grow justify-between mb-4">
+                <div className="flex flex-row grow justify-between mb-4">
                     <h1 className="text-2xl font-bold">Edit library details</h1>
                     <Button
                         color="primary"

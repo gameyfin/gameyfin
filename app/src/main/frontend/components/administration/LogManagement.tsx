@@ -51,7 +51,7 @@ function LogManagementLayout({getConfig, formik}: any) {
             </div>
 
             <div className="flex flex-col">
-                <div className="flex flex-row flex-grow justify-between items-baseline">
+                <div className="flex flex-row grow justify-between items-baseline">
                     <h2 className={"text-xl font-bold mt-8 mb-1"}>Application logs</h2>
                     <div className="flex flex-row gap-1">
                         <Tooltip content="Soft-wrap" placement="bottom">

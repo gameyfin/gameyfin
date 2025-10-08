@@ -103,7 +103,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                                     >
                                         <Image
                                             alt={cover.title}
-                                            className="z-0 object-cover aspect-[12/17] group-hover:brightness-[25%]"
+                                            className="z-0 object-cover aspect-12/17 group-hover:brightness-25"
                                             src={cover.url}
                                             radius="none"
                                             height={216}
