@@ -101,7 +101,7 @@ export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: P
                             <Button variant="light" onPress={onClose}>
                                 Cancel
                             </Button>
-                            <Button color="success" onPress={() => setPluginPriorities(onClose)}>
+                            <Button color="primary" onPress={() => setPluginPriorities(onClose)}>
                                 Save
                             </Button>
                         </ModalFooter>
