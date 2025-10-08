@@ -4,7 +4,6 @@
   "type": "module",
   "dependencies": {
     "@heroui/react": "2.7.9",
-    "@material-tailwind/react": "^2.1.10",
     "@phosphor-icons/react": "^2.1.7",
     "@polymer/polymer": "3.5.2",
     "@react-stately/data": "^3.12.2",
@@ -108,7 +107,6 @@
     "next-themes": "$next-themes",
     "@heroui/react": "$@heroui/react",
     "framer-motion": "$framer-motion",
-    "@material-tailwind/react": "$@material-tailwind/react",
     "http-status-codes": "$http-status-codes",
     "@vaadin/polymer-legacy-adapter": "$@vaadin/polymer-legacy-adapter",
     "@vaadin/vaadin-development-mode-detector": "$@vaadin/vaadin-development-mode-detector",
