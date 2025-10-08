@@ -1,9 +1,7 @@
-import {Config} from "tailwindcss/types/config";
 import {heroui} from "@heroui/react";
 import {HeroUIConfig} from "./heroui";
-import withMT from "@material-tailwind/react/utils/withMT";
 
-export default withMT({
+export default {
     darkMode: "class",
     content: [
         './src/main/frontend/index.html',
@@ -25,4 +23,4 @@ export default withMT({
     plugins: [
         heroui(HeroUIConfig)
     ],
-} satisfies Config);
+}
