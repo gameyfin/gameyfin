@@ -1,35 +1,91 @@
 @import 'tailwindcss';
 
-.shine {
-    position: relative;
-    overflow: hidden;
+@plugin './util/heroui.ts';
+
+@source "./index.html";
+@source "./**/*.{js,ts,jsx,tsx}";
+@source "../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --color-gf-primary: #2332c8;
+    --color-gf-secondary: #6441a5;
 }
 
-.shine::before {
-    background: linear-gradient(
-            to right,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.7) 100%
-    );
-    content: "";
-    display: block;
-    height: 100%;
-    left: -100%;
-    position: absolute;
-    top: 0;
-    transform: skewX(-25deg);
-    width: 50%;
-    z-index: 2;
-    pointer-events: none;
+/* Custom gridTemplateColumns */
+@utility grid-cols-300px {
+    grid-template-columns: repeat(auto-fit, 300px);
+}
+@utility grid-cols-auto-fill {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
-.shine:hover::before,
-.shine:focus::before {
-    animation: shine 0.85s;
+/* Re-added custom utilities (Tailwind v4 style) */
+@utility gradient-primary {
+    @apply bg-gradient-to-br from-primary-400 to-primary-700;
+}
+@utility button-secondary {
+    @apply bg-primary-300 text-background/80;
 }
 
-@keyframes shine {
-    100% {
-        left: 125%;
+@layer base {
+    /* Shine animation for game covers */
+    .shine {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .shine::before {
+        background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.7) 100%
+        );
+        content: "";
+        display: block;
+        height: 100%;
+        left: -100%;
+        position: absolute;
+        top: 0;
+        transform: skewX(-25deg);
+        width: 50%;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .shine:hover::before,
+    .shine:focus::before {
+        animation: shine 0.85s;
+    }
+
+    @keyframes shine {
+        100% {
+            left: 125%;
+        }
+    }
+
+    /* List box drag & drop */
+    .react-aria-ListBoxItem[data-dragging] {
+        opacity: 0.6;
+    }
+
+    .react-aria-DropIndicator[data-drop-target] {
+        outline: 1px solid theme(colors.primary);
+    }
+
+    /* Root variable overrides */
+    :root {
+        /* Overwrite default Hilla styles (e.g. loading indicator) */
+        --lumo-primary-color: theme(colors.primary);
+
+        /* Overwrite SwiperJS styles */
+        --swiper-navigation-color: theme(colors.primary);
+        --swiper-pagination-color: theme(colors.primary);
+    }
+
+    /* Overwrite SwiperJS styles */
+    .swiper-pagination-bullet {
+        background-color: theme(colors.primary);
     }
 }
