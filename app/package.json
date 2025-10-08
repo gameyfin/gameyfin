@@ -197,7 +197,8 @@
     "@vaadin/upload": "24.9.0",
     "@vaadin/router": "2.0.0",
     "@vaadin/vertical-layout": "24.9.0",
-    "@vaadin/virtual-list": "24.9.0"
+    "@vaadin/virtual-list": "24.9.0",
+    "@tailwindcss/vite": "$@tailwindcss/vite"
   },
   "vaadin": {
     "dependencies": {
@@ -260,6 +261,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "dba97848bdace60924f9cee496353baae70cfa4fccc7bacaf827807c51908866"
+    "hash": "1bb63e8f17b09b52f987da09ca390cf1fe655162dfe9d183cdb7b8c6ba6b09fa"
   }
 }
