@@ -1,6 +1,3 @@
-import {heroui} from "@heroui/react";
-import {HeroUIConfig} from "./heroui";
-
 export default {
     darkMode: "class",
     content: [
@@ -19,8 +16,5 @@ export default {
                 'auto-fill': 'repeat(auto-fill, minmax(150px, 1fr))',
             }
         }
-    },
-    plugins: [
-        heroui(HeroUIConfig)
-    ],
+    }
 }
