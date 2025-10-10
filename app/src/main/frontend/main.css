@@ -5,6 +5,7 @@
 @source "./index.html";
 @source "./**/*.{js,ts,jsx,tsx}";
 @source "../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+
 /* Prevent TailwindCSS from purging the custom themes (since they are not referenced at compile-time) */
 @source inline("{gameyfin-blue,gameyfin-violet,gameyfin-classic,neutral,slate,red,rose,orange,pink,blue,yellow,violet,colorblind}-{light,dark}");
 
