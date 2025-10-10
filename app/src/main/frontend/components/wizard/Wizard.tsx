@@ -2,18 +2,21 @@ import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
 import {ArrowLeftIcon, ArrowRightIcon, CheckIcon} from "@phosphor-icons/react";
 import {Button} from "@heroui/react";
+import Stepper from "./Stepper";
 
-const Wizard = ({children, initialValues, onSubmit}: {
-    children: ReactNode,
-    initialValues: any,
-    onSubmit: (values: any, bag: FormikHelpers<any> | FormikBag<any, any>) => Promise<any>
-}) => {
+type WizardProps = {
+    children: ReactNode;
+    initialValues: any;
+    onSubmit: (values: any, bag: FormikHelpers<any> | FormikBag<any, any>) => Promise<any>;
+};
+
+const Wizard = ({children, initialValues, onSubmit}: WizardProps) => {
+    const allSteps = React.Children.toArray(children);
     const [stepNumber, setStepNumber] = useState(0);
-    const steps = React.Children.toArray(children);
     const [snapshot, setSnapshot] = useState(initialValues);
 
-    const step = steps[stepNumber];
-    const totalSteps = steps.length;
+    const step = allSteps[stepNumber];
+    const totalSteps = allSteps.length;
     const isFirstStep = stepNumber === 0;
     const isLastStep = stepNumber === totalSteps - 1;
 
@@ -27,10 +30,11 @@ const Wizard = ({children, initialValues, onSubmit}: {
         setStepNumber(Math.max(stepNumber - 1, 0));
     };
 
-    const handleSubmit = async (values: any, bag: FormikBag<any, any> | FormikHelpers<any>) => {
-        /*// @ts-ignore*/
+    const handleSubmit = async (values: any, bag: FormikHelpers<any> | FormikBag<any, any>) => {
+        // per-step custom submit if provided
+        // @ts-ignore
         if (step.props.onSubmit) {
-            /*// @ts-ignore*/
+            // @ts-ignore
             await step.props.onSubmit(values, bag);
         }
         if (isLastStep) {
@@ -41,53 +45,43 @@ const Wizard = ({children, initialValues, onSubmit}: {
         }
     };
 
+    const stepsMeta = allSteps.map((child: any) => ({
+        title: child.props?.title ?? child.props?.label,
+        icon: child.props?.icon
+    }));
+
     return (
         <Formik
             initialValues={snapshot}
             onSubmit={handleSubmit}
-            /*// @ts-ignore*/
-            validationSchema={step.props.validationSchema}
+            // @ts-ignore
+            validationSchema={step.props?.validationSchema}
+            enableReinitialize={false}
         >
             {(formik) => (
                 <Form className="flex flex-col h-full">
                     <div className="w-full mb-8">
-                        {/*
-                        <Stepper activeStep={stepNumber} activeLineClassName="bg-primary"
-                                 lineClassName="bg-foreground"
-                                 placeholder={undefined}
-                                 onPointerEnterCapture={undefined}
-                                 onPointerLeaveCapture={undefined}
-                                 onResize={undefined}
-                                 onResizeCapture={undefined}>
-                            {steps.map((child, index) => (
-                                <Step key={index}
-                                      className="bg-foreground text-background"
-                                      activeClassName="bg-primary"
-                                      completedClassName="bg-primary"
-                                      placeholder={undefined}
-                                      onPointerEnterCapture={undefined}
-                                      onPointerLeaveCapture={undefined}
-                                      onResize={undefined}
-                                      onResizeCapture={undefined}>
-                                    {child.props.icon}
-                                </Step>
-                            ))}
-                        </Stepper>
-                        */}
+                        <Stepper
+                            steps={stepsMeta}
+                            currentStep={stepNumber}
+                            onStepChange={(idx) => {
+                                // only allow backwards navigation to keep validation flow
+                                if (idx <= stepNumber) setStepNumber(idx);
+                            }}
+                            hideProgressBars={false}
+                        />
                     </div>
-                    <div className="flex grow">
-                        {step}
-                    </div>
-                    <div className="left-8 right-8 absolute bottom-8 -z-1">
+                    <div className="flex grow">{step}</div>
+                    <div className="left-8 right-8 absolute bottom-8">
                         <div className="flex justify-between">
-                            <Button color="primary" onPress={() => previous(formik.values)} isDisabled={isFirstStep}>
-                                <ArrowLeftIcon/>
-                            </Button>
                             <Button
                                 color="primary"
-                                isLoading={formik.isSubmitting}
-                                type="submit"
+                                onPress={() => previous(formik.values)}
+                                isDisabled={isFirstStep || formik.isSubmitting}
                             >
+                                <ArrowLeftIcon/>
+                            </Button>
+                            <Button color="primary" isLoading={formik.isSubmitting} type="submit">
                                 {formik.isSubmitting ? "" : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
                             </Button>
                         </div>
