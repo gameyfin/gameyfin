@@ -1,7 +1,7 @@
 import {Theme} from "../theme";
 
-export const Purple: Theme = {
-    name: 'purple',
+export const Pink: Theme = {
+    name: 'pink',
     colors: {
         primary: {
             DEFAULT: '#DD62ED',

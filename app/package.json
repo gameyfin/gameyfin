@@ -8,7 +8,7 @@
     "@polymer/polymer": "3.5.2",
     "@react-stately/data": "^3.12.2",
     "@react-types/shared": "^3.28.0",
-    "@tailwindcss/vite": "^4.1.14",
+    "@tailwindcss/vite": "4.1.13",
     "@vaadin/bundles": "24.9.0",
     "@vaadin/common-frontend": "0.0.19",
     "@vaadin/hilla-file-router": "24.9.0",
@@ -37,6 +37,8 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.47",
     "next-themes": "^0.4.6",
+    "postcss": "^8.5.6",
+    "postcss-import": "^16.1.1",
     "rand-seed": "^2.1.7",
     "react": "18.3.1",
     "react-accessible-treeview": "^2.11.1",
@@ -75,13 +77,12 @@
     "@vitejs/plugin-react": "4.5.0",
     "@vitejs/plugin-react-swc": "^3.7.0",
     "async": "3.2.6",
-    "autoprefixer": "^10.4.20",
     "glob": "11.0.2",
     "magic-string": "0.30.17",
     "rollup-plugin-brotli": "3.1.0",
     "rollup-plugin-visualizer": "5.14.0",
     "strip-css-comments": "5.0.0",
-    "tailwindcss": "^4.1.14",
+    "tailwindcss": "4.1.13",
     "transform-ast": "2.4.4",
     "typescript": "5.8.3",
     "vite": "6.3.6",
@@ -103,7 +104,6 @@
     "@phosphor-icons/react": "$@phosphor-icons/react",
     "formik": "$formik",
     "yup": "$yup",
-    "next-themes": "$next-themes",
     "@heroui/react": "$@heroui/react",
     "framer-motion": "$framer-motion",
     "http-status-codes": "$http-status-codes",
@@ -198,7 +198,10 @@
     "@vaadin/router": "2.0.0",
     "@vaadin/vertical-layout": "24.9.0",
     "@vaadin/virtual-list": "24.9.0",
-    "@tailwindcss/vite": "$@tailwindcss/vite"
+    "@tailwindcss/vite": "$@tailwindcss/vite",
+    "postcss": "$postcss",
+    "postcss-import": "$postcss-import",
+    "next-themes": "$next-themes"
   },
   "vaadin": {
     "dependencies": {
@@ -261,6 +264,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "1bb63e8f17b09b52f987da09ca390cf1fe655162dfe9d183cdb7b8c6ba6b09fa"
+    "hash": "836bf738bcfd32525c0bf7775f5da7a6720a5e06d412d794fb0fa5b060e32328"
   }
 }

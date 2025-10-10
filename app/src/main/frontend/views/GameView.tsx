@@ -9,7 +9,16 @@ import {humanFileSize, isAdmin, starRatingAsString, toTitleCase} from "Frontend/
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
-import {CheckCircle, Info, MagnifyingGlass, Pencil, Star, Trash, TriangleDashed} from "@phosphor-icons/react";
+import {
+    CheckCircle,
+    Info,
+    InfoIcon,
+    MagnifyingGlassIcon,
+    Pencil,
+    Star,
+    Trash,
+    TriangleDashed
+} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
@@ -142,7 +151,7 @@ export default function GameView() {
                             </Tooltip>
                             <Tooltip content="Search for metadata">
                                 <Button isIconOnly onPress={matchGameModal.onOpenChange}>
-                                    <MagnifyingGlass/>
+                                    <MagnifyingGlassIcon/>
                                 </Button>
                             </Tooltip>
                             <Tooltip content="Remove from library">
@@ -168,7 +177,7 @@ export default function GameView() {
                             <AccordionItem key="information"
                                            aria-label="Information"
                                            title="Information"
-                                           startContent={<Info weight="fill"/>}>
+                                           startContent={<InfoIcon weight="fill"/>}>
                                 <Markdown
                                     remarkPlugins={[remarkBreaks]}
                                     components={{

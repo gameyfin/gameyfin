@@ -1,8 +1,7 @@
 import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
-import {ArrowLeft, ArrowRight, Check} from "@phosphor-icons/react";
+import {ArrowLeftIcon, ArrowRightIcon, CheckIcon} from "@phosphor-icons/react";
 import {Button} from "@heroui/react";
-import {Step, Stepper} from "@material-tailwind/react";
 
 const Wizard = ({children, initialValues, onSubmit}: {
     children: ReactNode,
@@ -52,6 +51,7 @@ const Wizard = ({children, initialValues, onSubmit}: {
             {(formik) => (
                 <Form className="flex flex-col h-full">
                     <div className="w-full mb-8">
+                        {/*
                         <Stepper activeStep={stepNumber} activeLineClassName="bg-primary"
                                  lineClassName="bg-foreground"
                                  placeholder={undefined}
@@ -69,26 +69,26 @@ const Wizard = ({children, initialValues, onSubmit}: {
                                       onPointerLeaveCapture={undefined}
                                       onResize={undefined}
                                       onResizeCapture={undefined}>
-                                    {/*@ts-ignore*/}
                                     {child.props.icon}
                                 </Step>
                             ))}
                         </Stepper>
+                        */}
                     </div>
                     <div className="flex grow">
                         {step}
                     </div>
                     <div className="left-8 right-8 absolute bottom-8 -z-1">
                         <div className="flex justify-between">
-                            <Button color="primary" onClick={() => previous(formik.values)} isDisabled={isFirstStep}>
-                                <ArrowLeft/>
+                            <Button color="primary" onPress={() => previous(formik.values)} isDisabled={isFirstStep}>
+                                <ArrowLeftIcon/>
                             </Button>
                             <Button
                                 color="primary"
                                 isLoading={formik.isSubmitting}
                                 type="submit"
                             >
-                                {formik.isSubmitting ? "" : isLastStep ? <Check/> : <ArrowRight/>}
+                                {formik.isSubmitting ? "" : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
                             </Button>
                         </div>
                     </div>
