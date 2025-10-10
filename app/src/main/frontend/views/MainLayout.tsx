@@ -5,7 +5,7 @@ import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
-import {ArrowLeft, DiceSix, Disc, Heart, House, ListMagnifyingGlass, SignIn} from "@phosphor-icons/react";
+import { ArrowLeftIcon, DiceSixIcon, DiscIcon, HeartIcon, HouseIcon, ListMagnifyingGlassIcon, SignInIcon } from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
@@ -71,10 +71,10 @@ export default function MainLayout() {
                     {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
                         <div className="flex flex-row gap-2">
                             <Button isIconOnly onPress={() => history.back()} variant="light">
-                                <ArrowLeft size={26} weight="bold"/>
+                                <ArrowLeftIcon size={26} weight="bold"/>
                             </Button>
                             <Button isIconOnly onPress={() => navigate("/")} variant="light">
-                                <House size={26} weight="fill"/>
+                                <HouseIcon size={26} weight="fill"/>
                             </Button>
                         </div>
                     }
@@ -84,13 +84,13 @@ export default function MainLayout() {
                         <Button isIconOnly variant="light"
                                 onPress={() => navigate("/game/" + getRandomGameId())}
                                 isDisabled={gameState.games.length === 0}>
-                            <DiceSix/>
+                            <DiceSixIcon/>
                         </Button>
                     </Tooltip>
                     <SearchBar/>
                     <Tooltip content="Advanced search" placement="bottom">
                         <Button isIconOnly variant="light" onPress={() => navigate("/search")}>
-                            <ListMagnifyingGlass/>
+                            <ListMagnifyingGlassIcon/>
                         </Button>
                     </Tooltip>
                 </NavbarContent>}
@@ -100,7 +100,7 @@ export default function MainLayout() {
                             <Button color="primary"
                                     isDisabled={window.location.pathname.startsWith("/requests")}
                                     onPress={() => navigate("/requests")}
-                                    startContent={<Disc weight="fill"/>}>
+                                    startContent={<DiscIcon weight="fill"/>}>
                                 Requests
                             </Button>
                         </Tooltip>
@@ -139,7 +139,7 @@ export default function MainLayout() {
                                         This triggers Hilla to redirect to the correct login page (integrated or SSO) automatically.
                                         Otherwise, SSO login would not be possible if we redirect to "/login" directly */
                                         onPress={() => window.location.href = "/loginredirect"}>
-                                    <SignIn fill="text-background/80"/>
+                                    <SignInIcon fill="text-background/80"/>
                                 </Button>
                             </Tooltip>
                         </NavbarItem>
@@ -157,7 +157,7 @@ export default function MainLayout() {
                     <p>Gameyfin {PackageJson.version}</p>
                     <p className="flex flex-row gap-1 items-baseline">
                         Made with
-                        <Heart size={16} weight="fill" className="text-primary" onClick={easterEgg}/>
+                        <HeartIcon size={16} weight="fill" className="text-primary" onClick={easterEgg}/>
                         by
                         <Link href="https://github.com/grimsi" target="_blank">grimsi</Link> and
                         <Link href="https://github.com/gameyfin/gameyfin/graphs/contributors" target="_blank">

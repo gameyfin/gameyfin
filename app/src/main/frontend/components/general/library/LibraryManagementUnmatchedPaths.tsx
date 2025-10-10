@@ -12,7 +12,7 @@ import {
     Tooltip,
     useDisclosure
 } from "@heroui/react";
-import {MagnifyingGlass, Trash} from "@phosphor-icons/react";
+import { MagnifyingGlassIcon, TrashIcon } from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {useMemo, useState} from "react";
 import LibraryUpdateDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryUpdateDto";
@@ -124,12 +124,12 @@ export default function LibraryManagementUnmatchedPaths({library}: LibraryManage
                                         setSelectedPath(item.path);
                                         matchGameModal.onOpenChange();
                                     }}>
-                                        <MagnifyingGlass/>
+                                        <MagnifyingGlassIcon/>
                                     </Button>
                                 </Tooltip>
                                 <Tooltip content="Remove entry from list">
                                     <Button isIconOnly size="sm" color="danger"
-                                            onPress={() => deleteUnmatchedPath(item.path)}><Trash/>
+                                            onPress={() => deleteUnmatchedPath(item.path)}><TrashIcon/>
                                     </Button>
                                 </Tooltip>
                             </div>

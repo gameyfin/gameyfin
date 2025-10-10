@@ -1,5 +1,10 @@
 import TreeView, {flattenTree, INode, NodeId} from "react-accessible-treeview";
-import {File, Folder, FolderOpen, IconContext} from "@phosphor-icons/react";
+import {
+    FileIcon as PhFileIcon,
+    FolderIcon as PhFolderIcon,
+    FolderOpenIcon as PhFolderOpenIcon,
+    IconContext
+} from "@phosphor-icons/react";
 import {useEffect, useState} from "react";
 import {FilesystemEndpoint} from "Frontend/generated/endpoints";
 import FileDto from "Frontend/generated/org/gameyfin/app/core/filesystem/FileDto";
@@ -146,9 +151,9 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
 }
 
 function FolderIcon({isOpen}: { isOpen: boolean }) {
-    return isOpen ? <FolderOpen/> : <Folder/>;
+    return isOpen ? <PhFolderOpenIcon/> : <PhFolderIcon/>;
 }
 
 function FileIcon({fileName}: { fileName: string }) {
-    return <File/>;
+    return <PhFileIcon/>;
 }

@@ -8,7 +8,7 @@ import {
     DropdownTrigger,
     SharedSelection
 } from "@heroui/react";
-import {CaretDown} from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 
 export interface ComboButtonOption {
@@ -63,7 +63,7 @@ export default function ComboButton({options, preferredOptionKey, description}: 
             <Dropdown placement="bottom-end">
                 <DropdownTrigger>
                     <Button isIconOnly color="primary">
-                        <CaretDown/>
+                        <CaretDownIcon/>
                     </Button>
                 </DropdownTrigger>
                 <DropdownMenu

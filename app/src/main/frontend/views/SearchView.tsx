@@ -1,5 +1,5 @@
 import {Button, Input, Select, SelectedItems, SelectItem, Tooltip} from "@heroui/react";
-import {FunnelSimple, FunnelSimpleX, MagnifyingGlass, SortAscending, Star} from "@phosphor-icons/react";
+import { FunnelSimpleIcon, FunnelSimpleXIcon, MagnifyingGlassIcon, SortAscendingIcon, StarIcon } from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";
@@ -249,7 +249,7 @@ export default function SearchView() {
         const stars = [];
         for (let i = 0; i < total; i++) {
             stars.push(
-                <Star key={i} weight={i < filled ? "fill" : "regular"} className="inline-block"/>
+                <StarIcon key={i} weight={i < filled ? "fill" : "regular"} className="inline-block"/>
             );
         }
         return <div className="flex flex-row">
@@ -267,7 +267,7 @@ export default function SearchView() {
                         "h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
                 }}
                 placeholder="Type to search..."
-                startContent={<MagnifyingGlass/>}
+                startContent={<MagnifyingGlassIcon/>}
                 type="search"
                 value={searchTerm}
                 isClearable
@@ -276,7 +276,7 @@ export default function SearchView() {
             />
             <div className="flex flex-row gap-2">
                 <Select
-                    startContent={<SortAscending/>}
+                    startContent={<SortAscendingIcon/>}
                     selectedKeys={[sortBy]}
                     disallowEmptySelection
                     selectionMode="single"
@@ -301,7 +301,7 @@ export default function SearchView() {
                             onPress={() => setShowFilters(!showFilters)}
                             aria-label="Toggle Filters"
                     >
-                        <FunnelSimple/>
+                        <FunnelSimpleIcon/>
                     </Button>
                 </Tooltip>
                 <Tooltip content="Clear All Filters">
@@ -318,7 +318,7 @@ export default function SearchView() {
                             }}
                             aria-label="Clear All Filters"
                     >
-                        <FunnelSimpleX/>
+                        <FunnelSimpleXIcon/>
                     </Button>
                 </Tooltip>
             </div>

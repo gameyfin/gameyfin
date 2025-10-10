@@ -2,7 +2,7 @@ import {useLocation, useNavigate, useParams} from "react-router";
 import React, {useEffect} from "react";
 import LibraryHeader from "Frontend/components/general/covers/LibraryHeader";
 import {Button, Tab, Tabs} from "@heroui/react";
-import {ArrowLeft} from "@phosphor-icons/react";
+import { ArrowLeftIcon } from "@phosphor-icons/react";
 import LibraryManagementDetails from "Frontend/components/general/library/LibraryManagementDetails";
 import LibraryManagementGames from "Frontend/components/general/library/LibraryManagementGames";
 import {useSnapshot} from "valtio/react";
@@ -26,7 +26,7 @@ export default function LibraryManagementView() {
     return libraryId && state.state[parseInt(libraryId)] && <div className="flex flex-col gap-4">
         <div className="flex flex-row gap-4 items-center">
             <Button isIconOnly variant="light" onPress={() => navigate("/administration/libraries")}>
-                <ArrowLeft/>
+                <ArrowLeftIcon/>
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>
         </div>

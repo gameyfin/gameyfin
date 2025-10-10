@@ -5,7 +5,7 @@ import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
-import {Warning} from "@phosphor-icons/react";
+import { WarningIcon } from "@phosphor-icons/react";
 import UserInvitationAcceptanceResult
     from "Frontend/generated/org/gameyfin/app/users/enums/UserInvitationAcceptanceResult";
 
@@ -115,7 +115,7 @@ export default function InvitationRegistrationView() {
                         </Formik>
                         :
                         <p className="flex flex-row grow justify-center items-center gap-2 text-danger text-2xl font-bold">
-                            <Warning weight="fill"/>
+                            <WarningIcon weight="fill"/>
                             Invalid token
                         </p>
                     }

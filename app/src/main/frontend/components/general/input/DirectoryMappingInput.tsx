@@ -1,6 +1,6 @@
 import React from "react";
 import {Button, Code, useDisclosure} from "@heroui/react";
-import {ArrowRight, Minus, Plus, XCircle} from "@phosphor-icons/react";
+import { ArrowRightIcon, MinusIcon, PlusIcon, XCircleIcon } from "@phosphor-icons/react";
 import PathPickerModal from "Frontend/components/general/modals/PathPickerModal";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import DirectoryMappingDto from "Frontend/generated/org/gameyfin/app/libraries/dto/DirectoryMappingDto";
@@ -28,7 +28,7 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
                 <p className="font-bold">Directories</p>
                 <Button isIconOnly variant="light" size="sm" color="default"
                         onPress={pathPickerModal.onOpen}>
-                    <Plus/>
+                    <PlusIcon/>
                 </Button>
             </div>
             {(field.value || []).map((directory) => (
@@ -44,7 +44,7 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
                     {directory.externalPath && (
                         <>
                             <div className="shrink-0 flex items-center justify-center mx-2">
-                                <ArrowRight size={20}/>
+                                <ArrowRightIcon size={20}/>
                             </div>
                             <input
                                 type="text"
@@ -62,13 +62,13 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
                         onPress={() => removeDirectoryMapping(directory)}
                         className="ml-2"
                     >
-                        <Minus/>
+                        <MinusIcon/>
                     </Button>
                 </Code>
             ))}
             <div className="min-h-6 text-danger">
                 {meta.touched && meta.error && (
-                    <SmallInfoField icon={XCircle} message={meta.error}/>
+                    <SmallInfoField icon={XCircleIcon} message={meta.error}/>
                 )}
             </div>
             <PathPickerModal returnSelectedPath={addDirectoryMapping}

@@ -3,7 +3,7 @@ import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/general/input/Input";
-import {HandWaving, Palette, User} from "@phosphor-icons/react";
+import { HandWavingIcon, PaletteIcon, UserIcon } from "@phosphor-icons/react";
 import {addToast, Card} from "@heroui/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
@@ -108,10 +108,10 @@ function SetupView() {
                         }
                     }
                 >
-                    <WizardStep icon={<HandWaving/>}>
+                    <WizardStep icon={<HandWavingIcon/>}>
                         <WelcomeStep/>
                     </WizardStep>
-                    <WizardStep icon={<Palette/>}>
+                    <WizardStep icon={<PaletteIcon/>}>
                         <ThemeStep/>
                     </WizardStep>
                     <WizardStep
@@ -128,7 +128,7 @@ function SetupView() {
                                 .equals([Yup.ref('password')], 'Passwords do not match')
                                 .required('Required')
                         })}
-                        icon={<User/>}
+                        icon={<UserIcon/>}
                     >
                         <UserStep/>
                     </WizardStep>

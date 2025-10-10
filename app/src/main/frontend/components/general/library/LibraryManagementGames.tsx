@@ -17,7 +17,7 @@ import {
     Tooltip,
     useDisclosure
 } from "@heroui/react";
-import {CheckCircle, MagnifyingGlass, Pencil, Trash} from "@phosphor-icons/react";
+import { CheckCircleIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {GameEndpoint} from "Frontend/generated/endpoints";
@@ -196,10 +196,10 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                 <Button isIconOnly size="sm" onPress={() => toggleMatchConfirmed(item)}>
                                     {item.metadata.matchConfirmed ?
                                         <Tooltip content="Unconfirm match">
-                                            <CheckCircle weight="fill" className="fill-success"/>
+                                            <CheckCircleIcon weight="fill" className="fill-success"/>
                                         </Tooltip> :
                                         <Tooltip content="Confirm match">
-                                            <CheckCircle/>
+                                            <CheckCircleIcon/>
                                         </Tooltip>}
                                 </Button>
                                 <Button isIconOnly size="sm" onPress={() => {
@@ -207,7 +207,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                     editGameModal.onOpenChange();
                                 }}>
                                     <Tooltip content="Edit metadata">
-                                        <Pencil/>
+                                        <PencilIcon/>
                                     </Tooltip>
                                 </Button>
                                 <Button isIconOnly size="sm" onPress={() => {
@@ -215,13 +215,13 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                     matchGameModal.onOpenChange();
                                 }}>
                                     <Tooltip content="Match game">
-                                        <MagnifyingGlass/>
+                                        <MagnifyingGlassIcon/>
                                     </Tooltip>
                                 </Button>
                                 <Button isIconOnly size="sm" color="danger"
                                         onPress={() => deleteGame(item)}>
                                     <Tooltip content="Remove from library">
-                                        <Trash/>
+                                        <TrashIcon/>
                                     </Tooltip>
                                 </Button>
                             </div>
