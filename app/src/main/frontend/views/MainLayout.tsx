@@ -147,7 +147,7 @@ export default function MainLayout() {
                 </NavbarContent>
             </Navbar>
 
-            <div className="flex flex-col flex-grow 2xl:px-[12.5%] overflow-x-hidden mt-4">
+            <div className="flex flex-col grow 2xl:px-[12.5%] overflow-x-hidden mt-4">
                 <Outlet/>
             </div>
 

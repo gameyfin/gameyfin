@@ -8,7 +8,7 @@ export default function TextAreaInput({label, showErrorUntouched = false, ...pro
 
     return (
         <Textarea
-            className={`flex-grow ${meta.initialError || meta.error ? "" : "mb-6"}`}
+            className={`grow ${meta.initialError || meta.error ? "" : "mb-6"}`}
             fullWidth={false}
             {...props}
             {...field}

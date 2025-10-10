@@ -82,7 +82,7 @@ export default function ProfileManagement() {
             >
                 {(formik: { values: any; isSubmitting: any; dirty: boolean; }) => (
                     <Form>
-                        <div className="flex flex-row flex-grow justify-between mb-8">
+                        <div className="flex flex-row grow justify-between mb-8">
                             <h2 className="text-2xl font-bold">My Profile</h2>
                             {auth.state.user?.managedBySso &&
                                 <p className="text-warning">Your account is managed externally.</p>}
@@ -122,7 +122,7 @@ export default function ProfileManagement() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col flex-grow">
+                            <div className="flex flex-col grow">
                                 <Section title="Personal information"/>
                                 <Input name="username" label="Username" type="text" autocomplete="username"
                                        isDisabled={auth.state.user?.managedBySso}/>

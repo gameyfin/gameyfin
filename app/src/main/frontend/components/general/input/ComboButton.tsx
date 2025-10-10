@@ -52,7 +52,7 @@ export default function ComboButton({options, preferredOptionKey, description}: 
     }
 
     return options[selectedOptionValue] && (
-        <ButtonGroup className="gap-[1px]">
+        <ButtonGroup className="gap-px">
             <Button color="primary" className="w-52"
                     onPress={options[selectedOptionValue].action}>
                 <div className="flex flex-col items-center">

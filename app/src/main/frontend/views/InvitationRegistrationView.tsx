@@ -63,7 +63,7 @@ export default function InvitationRegistrationView() {
     }
 
     return (
-        <div className="flex flex-row flex-grow items-center justify-center size-full gradient-primary">
+        <div className="flex flex-row grow items-center justify-center size-full gradient-primary">
             <Card className="p-4 min-w-[468px]">
                 <CardHeader className="mb-4">
                     <img
@@ -114,7 +114,7 @@ export default function InvitationRegistrationView() {
                             )}
                         </Formik>
                         :
-                        <p className="flex flex-row flex-grow justify-center items-center gap-2 text-danger text-2xl font-bold">
+                        <p className="flex flex-row grow justify-center items-center gap-2 text-danger text-2xl font-bold">
                             <Warning weight="fill"/>
                             Invalid token
                         </p>

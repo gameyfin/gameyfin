@@ -1,44 +1,38 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer utilities {
-    .gradient-primary {
-        @apply bg-gradient-to-br from-primary-400 to-primary-700;
-    }
+@plugin './heroui.ts';
 
-    .button-secondary {
-        @apply bg-primary-300 text-background/80;
-    }
+@source "./index.html";
+@source "./**/*.{js,ts,jsx,tsx}";
+@source "../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+
+/* Prevent TailwindCSS from purging the custom themes (since they are not referenced at compile-time) */
+@source inline("{gameyfin-blue,gameyfin-violet,gameyfin-classic,neutral,slate,red,rose,orange,pink,blue,yellow,violet,colorblind}-{light,dark}");
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --color-gf-primary: #2332c8;
+    --color-gf-secondary: #6441a5;
 }
 
-/* Custom CSS */
-
-:root {
-    /* Overwrite default Hilla styles (e.g. loading indicator) */
-    --lumo-primary-color: theme(colors.primary);
-
-    /* Overwrite SwiperJS styles */
-    --swiper-navigation-color: theme(colors.primary);
-    --swiper-pagination-color: theme(colors.primary);
-
-    .swiper-pagination-bullet {
-        background-color: theme(colors.primary);
-    }
-
+/* Custom gridTemplateColumns */
+@utility grid-cols-300px {
+    grid-template-columns: repeat(auto-fit, 300px);
+}
+@utility grid-cols-auto-fill {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
-/* List box drag & drop */
-.react-aria-ListBoxItem {
-    &[data-dragging] {
-        opacity: 0.6;
-    }
+/* Re-added custom utilities (Tailwind v4 style) */
+@utility gradient-primary {
+    @apply bg-gradient-to-br from-primary-400 to-primary-700;
+}
+@utility button-secondary {
+    @apply bg-primary-300 text-background/80;
 }
 
-.react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid theme(colors.primary);
-}
-
+/* Shine animation for game covers */
 .shine {
     position: relative;
     overflow: hidden;
@@ -70,5 +64,31 @@
 @keyframes shine {
     100% {
         left: 125%;
+    }
+}
+
+/* List box drag & drop */
+.react-aria-ListBoxItem[data-dragging] {
+    opacity: 0.6;
+}
+
+.react-aria-DropIndicator[data-drop-target] {
+    outline: 1px solid hsl(var(--heroui-primary));
+}
+
+/* Root variable overrides */
+:root {
+    /* Overwrite default Hilla styles (e.g. loading indicator) */
+    --lumo-primary-color: hsl(var(--heroui-primary));
+
+    /* Overwrite SwiperJS styles */
+    --swiper-theme-color: hsl(var(--heroui-primary));
+    --swiper-navigation-color: hsl(var(--heroui-primary));
+    --swiper-pagination-color: hsl(var(--heroui-primary));
+
+    /* Overwrite SwiperJS styles */
+
+    .swiper-pagination-bullet {
+        background-color: hsl(var(--heroui-primary));
     }
 }

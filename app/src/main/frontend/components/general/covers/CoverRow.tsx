@@ -55,7 +55,7 @@ export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
                     <div className="flex flex-row items-center justify-end cursor-pointer"
                          onClick={onPressShowMore}>
                         <div className="absolute h-full w-1/4 right-0 bottom-0
-                        bg-gradient-to-r from-transparent to-background
+                        bg-linear-to-r from-transparent to-background
                         transition-all duration-300 ease-in-out hover:opacity-80"/>
                         <div
                             className="absolute h-full right-0 bottom-0 flex flex-row items-center gap-2 pointer-events-none">

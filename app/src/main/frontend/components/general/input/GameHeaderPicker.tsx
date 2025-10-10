@@ -20,7 +20,7 @@ export default function GameHeaderPicker({game, showErrorUntouched = false, ...p
                 <div className="size-full overflow-hidden">
                     <Image
                         alt={game.title}
-                        className="z-0 object-cover group-hover:brightness-[25%]"
+                        className="z-0 object-cover group-hover:brightness-25"
                         src={field.value ? field.value : `images/cover/${game.headerId}`}
                         {...props}
                         {...field}

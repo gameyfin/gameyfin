@@ -35,7 +35,7 @@ function WelcomeStep() {
 
 function ThemeStep() {
     return (
-        <div className="flex flex-col flex-grow gap-6 items-center">
+        <div className="flex flex-col grow gap-6 items-center">
             <p className="text-2xl font-bold">Choose your style</p>
             <ThemeSelector/>
         </div>
@@ -44,7 +44,7 @@ function ThemeStep() {
 
 function UserStep() {
     return (
-        <div className="flex flex-row flex-grow justify-center">
+        <div className="flex flex-row grow justify-center">
             <div className="flex flex-col w-1/3 min-w-96 gap-6 items-center">
                 <p className="text-2xl font-bold">Create your account</p>
                 <p>This will set up the initial admin user account.</p>

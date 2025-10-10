@@ -92,7 +92,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                     >
                         {(formik) => (
                             <Form>
-                                <div className="flex flex-row flex-grow justify-between">
+                                <div className="flex flex-row grow justify-between">
                                     <h1 className="text-2xl font-bold">{title}</h1>
 
                                     <div className="flex flex-row items-center gap-4">
@@ -119,7 +119,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                         )}
                     </Formik> :
                     [...Array(4)].map((_e, i) =>
-                        <div className="flex flex-col flex-grow gap-8 mb-12" key={i}>
+                        <div className="flex flex-col grow gap-8 mb-12" key={i}>
                             <Skeleton className="h-10 w-full rounded-md"/>
                             <Skeleton className="h-12 flex w-1/3 rounded-md"/>
                             <div className="flex flex-row gap-8">
