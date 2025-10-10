@@ -8,7 +8,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useEffect, useState} from "react";
-import {CaretLeft, CaretRight, IconContext, Play} from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon } from "@phosphor-icons/react";
 
 
 interface ImageCarouselProps {
@@ -61,7 +61,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                 <div className="w-full flex flex-col gap-2 items-center">
                     <div className="w-full flex flex-row items-center">
                         <IconContext.Provider value={{size: 50}}>
-                            <CaretLeft className="swiper-custom-button-prev cursor-pointer fill-primary"/>
+                            <CaretLeftIcon className="swiper-custom-button-prev cursor-pointer fill-primary"/>
                             <Swiper
                                 modules={[Pagination, Navigation, Autoplay]}
                                 slidesPerView={DEFAULT_SLIDES_PER_VIEW > elements.length ? elements.length : DEFAULT_SLIDES_PER_VIEW}
@@ -105,7 +105,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                                         light={true}
                                                         controls={true}
                                                         playing={isActive}
-                                                        playIcon={<Play weight="fill"/>}
+                                                        playIcon={<PlayIcon weight="fill"/>}
                                                     />
                                                 </Card>
                                             )
@@ -115,7 +115,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                 <ImagePopup imageUrl={selectedImageUrl} isOpen={imagePopup.isOpen}
                                             onOpenChange={imagePopup.onOpenChange}/>
                             </Swiper>
-                            <CaretRight className="swiper-custom-button-next cursor-pointer fill-primary"/>
+                            <CaretRightIcon className="swiper-custom-button-next cursor-pointer fill-primary"/>
                         </IconContext.Provider>
                     </div>
                     <div>

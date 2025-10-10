@@ -1,46 +1,46 @@
-import {Disc, Envelope, GameController, LockKey, Log, Plug, Users, Wrench} from "@phosphor-icons/react";
+import { DiscIcon, EnvelopeIcon, GameControllerIcon, LockKeyIcon, LogIcon, PlugIcon, UsersIcon, WrenchIcon } from "@phosphor-icons/react";
 import withSideMenu, {MenuItem} from "Frontend/components/general/withSideMenu";
 
 const menuItems: MenuItem[] = [
     {
         title: "Libraries",
         url: "libraries",
-        icon: <GameController/>
+        icon: <GameControllerIcon/>
     },
     {
         title: "Game Requests",
         url: "requests",
-        icon: <Disc/>
+        icon: <DiscIcon/>
     },
     {
-        title: "Users",
+        title: "UsersIcon",
         url: "users",
-        icon: <Users/>
+        icon: <UsersIcon/>
     },
     {
         title: "SSO",
         url: "sso",
-        icon: <LockKey/>
+        icon: <LockKeyIcon/>
     },
     {
         title: "Messages",
         url: "messages",
-        icon: <Envelope/>
+        icon: <EnvelopeIcon/>
     },
     {
         title: "Plugins",
         url: "plugins",
-        icon: <Plug/>
+        icon: <PlugIcon/>
     },
     {
         title: "Logs",
         url: "logs",
-        icon: <Log/>
+        icon: <LogIcon/>
     },
     {
         title: "System",
         url: "system",
-        icon: <Wrench/>
+        icon: <WrenchIcon/>
     }
 ]
 

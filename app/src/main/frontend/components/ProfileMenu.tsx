@@ -1,5 +1,5 @@
 import {useAuth} from "Frontend/util/auth";
-import {GearFine, Question, SignOut, User} from "@phosphor-icons/react";
+import { GearFineIcon, QuestionIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/react";
 import {useNavigate} from "react-router";
 import Avatar from "Frontend/components/general/Avatar";
@@ -13,23 +13,23 @@ export default function ProfileMenu() {
     const profileMenuItems = [
         {
             label: "My Profile",
-            icon: <User/>,
+            icon: <UserIcon/>,
             onClick: () => navigate("/settings/profile")
         },
         {
             label: "Administration",
-            icon: <GearFine/>,
+            icon: <GearFineIcon/>,
             onClick: () => navigate("/administration/libraries"),
             showIf: isAdmin(auth)
         },
         {
             label: "Help",
-            icon: <Question/>,
+            icon: <QuestionIcon/>,
             onClick: () => window.open("https://gameyfin.org", "_blank")
         },
         {
             label: "Sign Out",
-            icon: <SignOut/>,
+            icon: <SignOutIcon/>,
             onClick: auth.logout,
             color: "primary"
         },

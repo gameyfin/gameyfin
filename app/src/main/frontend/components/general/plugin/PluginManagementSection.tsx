@@ -1,5 +1,5 @@
 import {Button, Tooltip, useDisclosure} from "@heroui/react";
-import {ListNumbers} from "@phosphor-icons/react";
+import { ListNumbersIcon } from "@phosphor-icons/react";
 import {PluginManagementCard} from "Frontend/components/general/cards/PluginManagementCard";
 import React from "react";
 import PluginPrioritiesModal from "Frontend/components/general/modals/PluginPrioritiesModal";
@@ -24,7 +24,7 @@ export function PluginManagementSection({type, plugins = []}: PluginManagementSe
                             variant="flat"
                             onPress={pluginPrioritiesModal.onOpen}
                             isDisabled={plugins.length === 0}>
-                        <ListNumbers/>
+                        <ListNumbersIcon/>
                     </Button>
                 </Tooltip>
             </div>

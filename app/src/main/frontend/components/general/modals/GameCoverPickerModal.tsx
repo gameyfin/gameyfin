@@ -3,7 +3,7 @@ import {Button, Image, Input, Modal, ModalBody, ModalContent, ModalHeader, Scrol
 import React, {useEffect, useState} from "react";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import {GameEndpoint} from "Frontend/generated/endpoints";
-import {ArrowRight, MagnifyingGlass} from "@phosphor-icons/react";
+import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
@@ -59,7 +59,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                                     setCoverUrl(coverUrl);
                                     onClose();
                                 }}>
-                                    <ArrowRight/>
+                                    <ArrowRightIcon/>
                                 </Button>
                             </div>
                             <div className="flex flex-row gap-2 mb-4">
@@ -74,7 +74,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                                        }}
                                 />
                                 <Button isIconOnly onPress={search} color="primary" isLoading={isSearching}>
-                                    <MagnifyingGlass/>
+                                    <MagnifyingGlassIcon/>
                                 </Button>
                             </div>
                             {searchResults.length === 0 && !isSearching &&
@@ -113,7 +113,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                                             <PluginIcon plugin={state[cover.source] as PluginDto} size={32}
                                                         blurred={false} showTooltip={false}/>
                                             <p className="text-s text-center">{cover.title}</p>
-                                            <ArrowRight/>
+                                            <ArrowRightIcon/>
                                         </div>
                                     </div>
                                 ))}

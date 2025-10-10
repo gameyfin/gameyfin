@@ -1,7 +1,7 @@
 import {FieldArray, useField} from "formik";
 import {Button, Chip, Input, Popover, PopoverContent, PopoverTrigger} from "@heroui/react";
 import {KeyboardEvent, useState} from "react";
-import {Plus} from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react";
 
 // @ts-ignore
 const ArrayInput = ({label, ...props}) => {
@@ -41,7 +41,7 @@ const ArrayInput = ({label, ...props}) => {
                                     ))}
                                     <Popover placement="bottom" showArrow={true}>
                                         <PopoverTrigger>
-                                            <Button isIconOnly size="sm" variant="light" radius="full"><Plus/></Button>
+                                            <Button isIconOnly size="sm" variant="light" radius="full"><PlusIcon/></Button>
                                         </PopoverTrigger>
                                         <PopoverContent>
                                             <Input

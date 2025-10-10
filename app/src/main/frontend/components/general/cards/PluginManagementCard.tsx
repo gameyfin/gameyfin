@@ -1,20 +1,5 @@
 import {Button, Card, Chip, Tooltip, useDisclosure} from "@heroui/react";
-import {
-    CheckCircle,
-    IconContext,
-    PauseCircle,
-    PlayCircle,
-    Power,
-    Question,
-    QuestionMark,
-    SealCheck,
-    SealQuestion,
-    SealWarning,
-    SlidersHorizontal,
-    StopCircle,
-    WarningCircle,
-    XCircle
-} from "@phosphor-icons/react";
+import { CheckCircleIcon, IconContext, PauseCircleIcon, PlayCircleIcon, PowerIcon, QuestionIcon, QuestionMarkIcon, SealCheckIcon, SealQuestionIcon, SealWarningIcon, SlidersHorizontalIcon, StopCircleIcon, WarningCircleIcon, XCircleIcon } from "@phosphor-icons/react";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
 import React, {ReactNode} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
@@ -54,17 +39,17 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     function stateToIcon(state: PluginState | undefined): ReactNode {
         switch (state) {
             case PluginState.STARTED:
-                return <PlayCircle/>;
+                return <PlayCircleIcon/>;
             case PluginState.DISABLED:
-                return <PauseCircle/>;
+                return <PauseCircleIcon/>;
             case PluginState.STOPPED:
             case PluginState.FAILED:
-                return <StopCircle/>;
+                return <StopCircleIcon/>;
             case PluginState.UNLOADED:
             case PluginState.RESOLVED:
-                return <XCircle/>;
+                return <XCircleIcon/>;
             default:
-                return <QuestionMark/>;
+                return <QuestionMarkIcon/>;
         }
     }
 
@@ -73,19 +58,19 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
             case PluginConfigValidationResultType.VALID:
                 return <Tooltip content="Config valid" placement="bottom" color="foreground">
                     <Chip size="sm" radius="sm" className="text-xs" color="success">
-                        <CheckCircle/>
+                        <CheckCircleIcon/>
                     </Chip>
                 </Tooltip>
             case PluginConfigValidationResultType.INVALID:
                 return <Tooltip content="Config invalid" placement="bottom" color="foreground">
                     <Chip size="sm" radius="sm" className="text-xs" color="danger">
-                        <WarningCircle/>
+                        <WarningCircleIcon/>
                     </Chip>
                 </Tooltip>;
             default:
                 return <Tooltip content="Config could not be validated" placement="bottom" color="foreground">
                     <Chip size="sm" radius="sm" className="text-xs">
-                        <Question/>
+                        <QuestionIcon/>
                     </Chip>
                 </Tooltip>
         }
@@ -95,23 +80,23 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
         switch (trustLevel) {
             case PluginTrustLevel.OFFICIAL:
                 return <Tooltip color="foreground" placement="bottom" content="Official plugin">
-                    <SealCheck className="fill-success"/>
+                    <SealCheckIcon className="fill-success"/>
                 </Tooltip>;
             case PluginTrustLevel.BUNDLED:
                 return <Tooltip color="foreground" placement="bottom" content="Bundled plugin">
-                    <SealCheck/>
+                    <SealCheckIcon/>
                 </Tooltip>;
             case PluginTrustLevel.THIRD_PARTY:
                 return <Tooltip color="foreground" placement="bottom" content="3rd party plugin">
-                    <SealWarning/>
+                    <SealWarningIcon/>
                 </Tooltip>;
             case PluginTrustLevel.UNTRUSTED:
                 return <Tooltip color="foreground" placement="bottom" content="Invalid plugin signature">
-                    <SealWarning className="fill-danger"/>
+                    <SealWarningIcon className="fill-danger"/>
                 </Tooltip>;
             default:
                 return <Tooltip color="foreground" placement="bottom" content="Unkown verification status">
-                    <SealQuestion/>
+                    <SealQuestionIcon/>
                 </Tooltip>;
         }
     }
@@ -141,12 +126,12 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                                 onPress={() => togglePluginEnabled()}
                                 isDisabled={plugin.state == PluginState.UNLOADED || plugin.state == PluginState.RESOLVED}
                         >
-                            <Power/>
+                            <PowerIcon/>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Configuration" placement="bottom" color="foreground">
                         <Button isIconOnly variant="light" onPress={pluginDetailsModal.onOpen}>
-                            <SlidersHorizontal/>
+                            <SlidersHorizontalIcon/>
                         </Button>
                     </Tooltip>
                 </div>

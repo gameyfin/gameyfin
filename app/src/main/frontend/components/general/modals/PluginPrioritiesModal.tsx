@@ -1,7 +1,7 @@
 import React from "react";
 import {addToast, Button, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {ListBox, ListBoxItem, useDragAndDrop} from "react-aria-components";
-import {CaretUpDown} from "@phosphor-icons/react";
+import { CaretUpDownIcon } from "@phosphor-icons/react";
 import {useListData} from "@react-stately/data";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
@@ -91,7 +91,7 @@ export default function PluginPrioritiesModal({plugins, isOpen, onOpenChange}: P
                                             </Chip>
                                             <p className="font-normal text-small">{plugin.name}</p>
                                         </div>
-                                        <CaretUpDown/>
+                                        <CaretUpDownIcon/>
                                     </ListBoxItem>
                                 )}
                             </ListBox>

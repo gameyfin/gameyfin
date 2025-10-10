@@ -10,14 +10,13 @@ import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
 import {
-    CheckCircle,
-    Info,
+    CheckCircleIcon,
     InfoIcon,
     MagnifyingGlassIcon,
-    Pencil,
-    Star,
-    Trash,
-    TriangleDashed
+    PencilIcon,
+    StarIcon,
+    TrashIcon,
+    TriangleDashedIcon
 } from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
@@ -116,7 +115,7 @@ export default function GameView() {
                                     {game.title}
                                 </p>
                                 <div className="flex flex-row gap-1 mb-0.5 text-default-500">
-                                    <Star weight="fill"/>
+                                    <StarIcon weight="fill"/>
                                     {starRatingAsString(game)}
                                 </div>
                             </div>
@@ -128,7 +127,7 @@ export default function GameView() {
                                 <Tooltip
                                     content={`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
                                     placement="right">
-                                    <Info/>
+                                    <InfoIcon/>
                                 </Tooltip>
                             </div>
                         </div>
@@ -138,15 +137,15 @@ export default function GameView() {
                             <Button isIconOnly onPress={toggleMatchConfirmed}>
                                 {game.metadata.matchConfirmed ?
                                     <Tooltip content="Unconfirm match">
-                                        <CheckCircle weight="fill" className="fill-success"/>
+                                        <CheckCircleIcon weight="fill" className="fill-success"/>
                                     </Tooltip> :
                                     <Tooltip content="Confirm match">
-                                        <CheckCircle/>
+                                        <CheckCircleIcon/>
                                     </Tooltip>}
                             </Button>
                             <Tooltip content="Edit metadata">
                                 <Button isIconOnly onPress={editGameModal.onOpenChange}>
-                                    <Pencil/>
+                                    <PencilIcon/>
                                 </Button>
                             </Tooltip>
                             <Tooltip content="Search for metadata">
@@ -160,7 +159,7 @@ export default function GameView() {
                                             await deleteGame();
                                             navigate("/");
                                         }}>
-                                    <Trash/>
+                                    <TrashIcon/>
                                 </Button>
                             </Tooltip>
                         </div>}
@@ -222,7 +221,7 @@ export default function GameView() {
                                                 </>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
@@ -233,7 +232,7 @@ export default function GameView() {
                                         {game.publishers && game.publishers.length > 0
                                             ? [...game.publishers].sort().join(" / ")
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
@@ -248,7 +247,7 @@ export default function GameView() {
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
@@ -263,7 +262,7 @@ export default function GameView() {
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
@@ -279,7 +278,7 @@ export default function GameView() {
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>

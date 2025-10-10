@@ -1,7 +1,7 @@
 import {Image, useDisclosure} from "@heroui/react";
 import React from "react";
 import {useField} from "formik";
-import {ImageBroken, Pencil} from "@phosphor-icons/react";
+import { ImageBrokenIcon, PencilIcon } from "@phosphor-icons/react";
 import {GameHeaderPickerModal} from "Frontend/components/general/modals/GameHeaderPickerModal";
 
 
@@ -30,13 +30,13 @@ export default function GameHeaderPicker({game, showErrorUntouched = false, ...p
                 <div
                     className="absolute inset-0 flex flex-col text-center items-center justify-center group-hover:opacity-0"
                 >
-                    <ImageBroken size={46}/>
+                    <ImageBrokenIcon size={46}/>
                     <p>No header image available</p>
                 </div>}
             <div
                 className="absolute inset-0 flex flex-col gap-2 text-center items-center justify-center opacity-0 group-hover:opacity-100"
             >
-                <Pencil size={46}/>
+                <PencilIcon size={46}/>
                 <p>Edit header image</p>
             </div>
         </div>

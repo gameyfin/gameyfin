@@ -1,5 +1,5 @@
 import {Button, Link, Popover, PopoverContent, PopoverTrigger} from "@heroui/react";
-import {Warning} from "@phosphor-icons/react";
+import { WarningIcon } from "@phosphor-icons/react";
 
 // TODO: Remove this component before the release of version 2.2.0
 export default function DockerHubDeprecationPopover() {
@@ -7,7 +7,7 @@ export default function DockerHubDeprecationPopover() {
         <Popover placement="bottom-end" showArrow={true} color="warning">
             <PopoverTrigger>
                 <Button isIconOnly color="warning" variant="flat">
-                    <Warning/>
+                    <WarningIcon/>
                 </Button>
             </PopoverTrigger>
             <PopoverContent>

@@ -4,7 +4,7 @@ import ConfigFormField from "Frontend/components/administration/ConfigFormField"
 import Section from "Frontend/components/general/Section";
 import {addToast, Button, Card, Tooltip, useDisclosure} from "@heroui/react";
 import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
-import {PaperPlaneRight, Pencil} from "@phosphor-icons/react";
+import { PaperPlaneRightIcon, PencilIcon } from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
 import SendTestNotificationModal from "Frontend/components/administration/messages/SendTestNotificationModal";
 import EditTemplateModal from "Frontend/components/administration/messages/EditTemplateModel";
@@ -91,7 +91,7 @@ function MessageManagementLayout({getConfig, formik}: any) {
                                                     size="sm"
                                                     onPress={() => openEditor(template)}
                                             >
-                                                <Pencil/>
+                                                <PencilIcon/>
                                             </Button>
                                         </Tooltip>
                                         <Tooltip content="Send test notification">
@@ -100,7 +100,7 @@ function MessageManagementLayout({getConfig, formik}: any) {
                                                     onPress={() => openTestNotification(template)}
                                                     isDisabled={!formik.values.messages.providers.email.enabled}
                                             >
-                                                <PaperPlaneRight/>
+                                                <PaperPlaneRightIcon/>
                                             </Button>
                                         </Tooltip>
                                         <p className="text-lg">{template.description}</p>

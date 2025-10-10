@@ -5,11 +5,11 @@ import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import {PasswordResetEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
-import {Warning} from "@phosphor-icons/react";
+import {WarningIcon} from "@phosphor-icons/react";
 import TokenValidationResult from "Frontend/generated/org/gameyfin/app/shared/token/TokenValidationResult";
 
 export default function PasswordResetView() {
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const [token, setToken] = useState<string>();
     const navigate = useNavigate();
 
@@ -92,7 +92,7 @@ export default function PasswordResetView() {
                         </Formik>
                         :
                         <p className="flex flex-row grow justify-center items-center gap-2 text-danger text-2xl font-bold">
-                            <Warning weight="fill"/>
+                            <WarningIcon weight="fill"/>
                             Invalid token
                         </p>
                     }
