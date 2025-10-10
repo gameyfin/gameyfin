@@ -1,4 +1,13 @@
-import { DiscIcon, EnvelopeIcon, GameControllerIcon, LockKeyIcon, LogIcon, PlugIcon, UsersIcon, WrenchIcon } from "@phosphor-icons/react";
+import {
+    DiscIcon,
+    EnvelopeIcon,
+    GameControllerIcon,
+    LockKeyIcon,
+    LogIcon,
+    PlugIcon,
+    UsersIcon,
+    WrenchIcon
+} from "@phosphor-icons/react";
 import withSideMenu, {MenuItem} from "Frontend/components/general/withSideMenu";
 
 const menuItems: MenuItem[] = [
@@ -13,7 +22,7 @@ const menuItems: MenuItem[] = [
         icon: <DiscIcon/>
     },
     {
-        title: "UsersIcon",
+        title: "Users",
         url: "users",
         icon: <UsersIcon/>
     },
