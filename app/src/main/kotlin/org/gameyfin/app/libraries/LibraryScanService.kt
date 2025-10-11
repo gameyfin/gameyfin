@@ -30,6 +30,7 @@ class LibraryScanService(
     private val libraryCoreService: LibraryCoreService,
     private val gameService: GameService,
     private val imageService: ImageService,
+    private val libraryGameProcessor: LibraryGameProcessor,
 ) {
 
     companion object {
@@ -54,7 +55,7 @@ class LibraryScanService(
             scanProgressEvents.tryEmitNext(scanProgressDto)
         }
 
-        private val executor = Executors.newVirtualThreadPerTaskExecutor()
+        private val executor = Executors.newFixedThreadPool(16)
         private val scansInProgress = ConcurrentHashMap<Long, Boolean>()
     }
 
@@ -100,15 +101,16 @@ class LibraryScanService(
             val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
 
             progress.currentStep = LibraryScanStep(
-                description = "Matching new games",
+                description = "Processing new games",
                 current = 0,
                 total = newPaths.size
             )
             emit(progress)
 
-            // 1. Match new games
-            val (newUnmatchedPaths, matchedGames) = matchNewGames(library, newPaths, progress)
+            // 1. Process each new game independently
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, newPaths, progress)
 
+            // 2. Update library (removed games/unmatched, and add persisted new ones)
             val (removedGames) = updateLibrary(
                 library,
                 removedUnmatchedPaths,
@@ -116,44 +118,21 @@ class LibraryScanService(
                 removedGamePaths
             )
 
-            // 2. Download all images
-            val totalImages = matchedGames.count { it.coverImage != null } +
-                    matchedGames.count { it.headerImage !== null } +
-                    matchedGames.sumOf { it.images.size }
-
-            progress.currentStep = LibraryScanStep(
-                description = "Downloading images",
-                current = 0,
-                total = totalImages
-            )
-            emit(progress)
-
-            val (gamesWithImages) = downloadImages(matchedGames, progress)
-
-            // 3. Calculate game file sizes
-            progress.currentStep = LibraryScanStep(
-                description = "Calculating file sizes",
-                current = 0,
-                total = gamesWithImages.size
-            )
-            emit(progress)
-
-            val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
-
+            // 3. Finish scan: persist library changes and report
             progress.currentStep = LibraryScanStep(
                 description = "Finishing up",
                 current = 0,
-                total = gamesWithFileSizes.size
+                total = persistedNewGames.size
             )
             emit(progress)
 
-            val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
+            finishScanPersisted(persistedNewGames, library, progress)
 
             progress.currentStep = LibraryScanStep(description = "Finished")
             progress.finishedAt = Instant.now()
             progress.status = LibraryScanStatus.COMPLETED
             progress.result = QuickScanResult(
-                new = persistedGames.size,
+                new = persistedNewGames.size,
                 removed = removedGames.size,
                 unmatched = newUnmatchedPaths.size
             )
@@ -184,7 +163,7 @@ class LibraryScanService(
             val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
 
 
-            // 1. Update existing games
+            // 1. Update existing games (individually)
             progress.currentStep = LibraryScanStep(
                 description = "Updating existing games",
                 current = 0,
@@ -194,15 +173,15 @@ class LibraryScanService(
 
             val (updatedGames) = updateExistingGames(library.games, progress)
 
-            // 2. Match new games
+            // 2. Process new games (individually)
             progress.currentStep = LibraryScanStep(
-                description = "Matching new games",
+                description = "Processing new games",
                 current = 0,
                 total = newPaths.size
             )
             emit(progress)
 
-            val (newUnmatchedPaths, newMatchedGames) = matchNewGames(library, newPaths, progress)
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, newPaths, progress)
 
             val (removedGames) = updateLibrary(
                 library,
@@ -211,48 +190,22 @@ class LibraryScanService(
                 removedGamePaths
             )
 
-            // 3. Download all images
-            val newAndUpdatedGames = newMatchedGames + updatedGames
-
-            val totalImages = newAndUpdatedGames.count { it.coverImage != null } +
-                    newAndUpdatedGames.count { it.headerImage !== null } +
-                    newAndUpdatedGames.sumOf { it.images.size }
-
-            progress.currentStep = LibraryScanStep(
-                description = "Downloading images",
-                current = 0,
-                total = totalImages
-            )
-            emit(progress)
-
-            val (gamesWithImages) = downloadImages(newAndUpdatedGames, progress)
-
-            // 4. Calculate game file sizes
-            progress.currentStep = LibraryScanStep(
-                description = "Calculating file sizes",
-                current = 0,
-                total = gamesWithImages.size
-            )
-            emit(progress)
-
-            val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
-
-            // 5. Finish scan
+            // 3. Finish scan
             progress.currentStep = LibraryScanStep(
                 description = "Finishing up",
                 current = 0,
-                total = gamesWithFileSizes.size
+                total = persistedNewGames.size
             )
             emit(progress)
 
-            val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
+            finishScanPersisted(persistedNewGames, library, progress)
 
-            // 6. Send final progress update
+            // 4. Send final progress update
             progress.currentStep = LibraryScanStep(description = "Finished")
             progress.finishedAt = Instant.now()
             progress.status = LibraryScanStatus.COMPLETED
             progress.result = FullScanResult(
-                new = persistedGames.size,
+                new = persistedNewGames.size,
                 removed = removedGames.size,
                 unmatched = newUnmatchedPaths.size,
                 updated = updatedGames.size
@@ -268,46 +221,37 @@ class LibraryScanService(
         }
     }
 
-    private fun matchNewGames(
+    private fun processNewGames(
         library: Library,
         gamePaths: List<Path>,
         progress: LibraryScanProgress
     ): MatchNewGamesResult {
-        val completedMetadata = AtomicInteger(0)
-
-        // 1. Fetch metadata for each game
+        val completed = AtomicInteger(0)
         val newUnmatchedPaths = ConcurrentHashMap.newKeySet<String>()
 
-        val metadataTasks = gamePaths.map { path ->
+        val tasks = gamePaths.map { path ->
             Callable<Game?> {
                 try {
-                    val game = gameService.matchFromFile(path, library)
-
-                    if (game == null) {
-                        newUnmatchedPaths.add(path.toString())
-                        return@Callable null
-                    }
-
-                    return@Callable game
+                    val persisted = libraryGameProcessor.processNewGame(path, library)
+                    return@Callable persisted
                 } catch (e: Exception) {
-                    log.error { "Error processing game: ${e.message}" }
-                    log.debug(e) {}
+                    // If not identified or any error, mark as unmatched
                     newUnmatchedPaths.add(path.toString())
-
+                    log.warn { "Processing of new game at '$path' failed: ${e.message}" }
+                    log.debug(e) {}
                     return@Callable null
                 } finally {
-                    progress.currentStep.current = completedMetadata.incrementAndGet()
+                    progress.currentStep.current = completed.incrementAndGet()
                     emit(progress)
                 }
             }
         }
 
-        // 1.1 Wait for all metadata tasks to complete
-        val matchedGames = executor.invokeAll(metadataTasks).mapNotNull { it.get() }
+        val persistedGames = executor.invokeAll(tasks).mapNotNull { it.get() }
 
         return MatchNewGamesResult(
             unmatchedPaths = newUnmatchedPaths.toList(),
-            matchedGames = matchedGames
+            matchedGames = persistedGames // now these are already persisted
         )
     }
 
@@ -328,6 +272,7 @@ class LibraryScanService(
         return UpdateLibraryResult(removedGames = removedGames)
     }
 
+    // Keeping downloadImages and calculateFileSizes for compatibility, but no longer used in per-game processing
     private fun downloadImages(games: List<Game>, progress: LibraryScanProgress): DownloadImagesResult {
         val completedImageDownload = AtomicInteger(0)
 
@@ -401,21 +346,16 @@ class LibraryScanService(
         return CalculateFilesizesResult(gamesWithFilesizes = gamesWithFileSizes)
     }
 
-    private fun finishScan(games: List<Game>, library: Library, progress: LibraryScanProgress): FinishScanResult {
-        // 4. Persist new games
-        val persistedGames = gameService.create(games)
+    private fun finishScanPersisted(games: List<Game>, library: Library, progress: LibraryScanProgress) {
+        // Add new games to library (already persisted games)
+        libraryCoreService.addGamesToLibrary(games, library, persist = true)
 
-        progress.currentStep.current = persistedGames.size
+        progress.currentStep.current = games.size
         emit(progress)
 
-        // 5. Add new games to library
-        libraryCoreService.addGamesToLibrary(persistedGames, library)
-
-        // 6. Persist library
+        // Persist library
         library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
         libraryRepository.save(library)
-
-        return FinishScanResult(persistedGames = persistedGames)
     }
 
     private fun updateExistingGames(
@@ -424,11 +364,11 @@ class LibraryScanService(
     ): UpdateExistingGamesResult {
         val completedUpdates = AtomicInteger(0)
 
-        val metadataTasks = games.map { game ->
+        val updateTasks = games.map { game ->
             Callable<Game?> {
                 try {
-                    val game = gameService.update(game)
-                    return@Callable game
+                    val updated = libraryGameProcessor.processExistingGame(game)
+                    return@Callable updated
                 } catch (e: Exception) {
                     log.error { "Error updating game with id '${game.id}': ${e.message}" }
                     log.debug(e) {}
@@ -440,7 +380,7 @@ class LibraryScanService(
             }
         }
 
-        val updatedGames = executor.invokeAll(metadataTasks).mapNotNull { it.get() }
+        val updatedGames = executor.invokeAll(updateTasks).mapNotNull { it.get() }
         return UpdateExistingGamesResult(updatedGames = updatedGames)
     }
 }
