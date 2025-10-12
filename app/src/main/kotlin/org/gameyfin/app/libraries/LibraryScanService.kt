@@ -2,14 +2,15 @@ package org.gameyfin.app.libraries
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.filesystem.FilesystemService
-import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
-import org.gameyfin.app.libraries.scan.*
-import org.gameyfin.app.media.ImageService
+import org.gameyfin.app.libraries.scan.LibraryGameProcessor
+import org.gameyfin.app.libraries.scan.MatchNewGamesResult
+import org.gameyfin.app.libraries.scan.UpdateExistingGamesResult
+import org.gameyfin.app.libraries.scan.UpdateLibraryResult
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -28,9 +29,8 @@ class LibraryScanService(
     private val libraryRepository: LibraryRepository,
     private val filesystemService: FilesystemService,
     private val libraryCoreService: LibraryCoreService,
-    private val gameService: GameService,
-    private val imageService: ImageService,
     private val libraryGameProcessor: LibraryGameProcessor,
+    private val gameRepository: GameRepository,
 ) {
 
     companion object {
@@ -272,90 +272,24 @@ class LibraryScanService(
         return UpdateLibraryResult(removedGames = removedGames)
     }
 
-    // Keeping downloadImages and calculateFileSizes for compatibility, but no longer used in per-game processing
-    private fun downloadImages(games: List<Game>, progress: LibraryScanProgress): DownloadImagesResult {
-        val completedImageDownload = AtomicInteger(0)
-
-        // Collect all images from all games in the batch
-        val allImages = games.flatMap { game ->
-            val images = mutableListOf<Image>()
-            game.coverImage?.let { images.add(it) }
-            game.headerImage?.let { images.add(it) }
-            images.addAll(game.images)
-            images
-        }
-
-        // Deduplicate by originalUrl
-        val uniqueImages = allImages
-            .filter { it.originalUrl != null }
-            .distinctBy { it.originalUrl.toString() }
-
-        // Download each unique image in parallel
-        val imageDownloadTasks = uniqueImages.map { image ->
-            Callable {
-                try {
-                    imageService.downloadIfNew(image)
-                } catch (e: Exception) {
-                    log.error { "Error downloading image '${image.originalUrl}': ${e.message}" }
-                    log.debug(e) {}
-                } finally {
-                    progress.currentStep.current = completedImageDownload.incrementAndGet()
-                    emit(progress)
-                }
-            }
-        }
-        executor.invokeAll(imageDownloadTasks)
-
-        // For remaining duplicate images, just copy the content metadata from the downloaded unique image
-        val uniqueImagesByUrl = uniqueImages.associateBy { it.originalUrl.toString() }
-
-        allImages.filter { it.originalUrl != null && it !in uniqueImages }
-            .forEach { duplicateImage ->
-                val downloadedImage = uniqueImagesByUrl[duplicateImage.originalUrl.toString()]
-                if (downloadedImage != null && downloadedImage.contentId != null) {
-                    duplicateImage.contentId = downloadedImage.contentId
-                    duplicateImage.contentLength = downloadedImage.contentLength
-                    duplicateImage.mimeType = downloadedImage.mimeType
-                }
-                progress.currentStep.current = completedImageDownload.incrementAndGet()
-                emit(progress)
-            }
-
-        return DownloadImagesResult(gamesWithImages = games)
-    }
-
-    private fun calculateFileSizes(games: List<Game>, progress: LibraryScanProgress): CalculateFilesizesResult {
-        val calculatedFileSize = AtomicInteger(0)
-
-        val calculateFileSizeTask = games.map { game ->
-            Callable {
-                game.metadata.path.let { path ->
-                    val fileSize = filesystemService.calculateFileSize(path)
-                    game.metadata.fileSize = fileSize
-
-                    progress.currentStep.current = calculatedFileSize.incrementAndGet()
-                    emit(progress)
-
-                    game
-                }
-            }
-        }
-
-        val gamesWithFileSizes = executor.invokeAll(calculateFileSizeTask).map { it.get() }
-
-        return CalculateFilesizesResult(gamesWithFilesizes = gamesWithFileSizes)
-    }
-
     private fun finishScanPersisted(games: List<Game>, library: Library, progress: LibraryScanProgress) {
-        // Add new games to library (already persisted games)
-        libraryCoreService.addGamesToLibrary(games, library, persist = true)
+        // Reload managed instances within a single persistence context to avoid merging multiple detached
+        // representations of the same entity (e.g., Company) coming from parallel transactions.
+        val libraryId = library.id ?: throw IllegalStateException("Library must have an ID")
+        val managedLibrary = libraryRepository.findById(libraryId).orElseThrow()
+
+        val gameIds = games.mapNotNull { it.id }
+        val managedGames = if (gameIds.isNotEmpty()) gameRepository.findAllById(gameIds) else emptyList()
+
+        // Add new games to library using managed entities, but do not persist yet
+        libraryCoreService.addGamesToLibrary(managedGames, managedLibrary, persist = false)
 
         progress.currentStep.current = games.size
         emit(progress)
 
-        // Persist library
-        library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
-        libraryRepository.save(library)
+        // Persist library updates
+        managedLibrary.updatedAt = Instant.now() // Force the EntityListener to update the timestamp
+        libraryRepository.save(managedLibrary)
     }
 
     private fun updateExistingGames(
