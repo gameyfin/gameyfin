@@ -24,14 +24,12 @@ class DownloadEndpoint(
     ): ResponseEntity<StreamingResponseBody> {
         val game = gameService.getById(gameId)
         gameService.incrementDownloadCount(game)
-        val download = downloadService.getDownload(game.metadata.path, provider)
-
-        return when (download) {
+        return when (val download = downloadService.getDownload(game.metadata.path, provider)) {
             is FileDownload -> {
                 ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"${game.title}.${download.fileExtension}\"")
                     .body(StreamingResponseBody { outputStream ->
-                        download.data.copyTo(outputStream)
+                        downloadService.processDownload(outputStream, download.data)
                     })
             }
 
