@@ -2,6 +2,7 @@ package org.gameyfin.app.core.download
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.GameService
 import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.LinkDownload
@@ -29,7 +30,7 @@ class DownloadEndpoint(
                 ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"${game.title}.${download.fileExtension}\"")
                     .body(StreamingResponseBody { outputStream ->
-                        downloadService.processDownload(outputStream, download.data)
+                        downloadService.processDownload(download.data, outputStream, game, getCurrentAuth()?.name)
                     })
             }
 
