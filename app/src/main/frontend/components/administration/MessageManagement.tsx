@@ -4,7 +4,7 @@ import ConfigFormField from "Frontend/components/administration/ConfigFormField"
 import Section from "Frontend/components/general/Section";
 import {addToast, Button, Card, Tooltip, useDisclosure} from "@heroui/react";
 import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
-import { PaperPlaneRightIcon, PencilIcon } from "@phosphor-icons/react";
+import {PaperPlaneRightIcon, PencilIcon} from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
 import SendTestNotificationModal from "Frontend/components/administration/messages/SendTestNotificationModal";
 import EditTemplateModal from "Frontend/components/administration/messages/EditTemplateModel";
@@ -31,7 +31,13 @@ function MessageManagementLayout({getConfig, formik}: any) {
             password: formik.values.messages.providers.email.password
         }
 
-        const areCredentialsValid = await MessageEndpoint.verifyCredentials(provider, credentials);
+        let areCredentialsValid: boolean;
+
+        try {
+            areCredentialsValid = await MessageEndpoint.verifyCredentials(provider, credentials);
+        } catch (error) {
+            areCredentialsValid = false;
+        }
 
         if (areCredentialsValid) {
             addToast({
@@ -137,7 +143,6 @@ const validationSchema = Yup.object({
                     .min(0, "Port must be between 0 and 65535")
                     .max(65535, "Port must be between 0 and 65535"),
                 username: Yup.string()
-                    .email("Invalid email address")
                     .required("Username is required"),
             })
         })
