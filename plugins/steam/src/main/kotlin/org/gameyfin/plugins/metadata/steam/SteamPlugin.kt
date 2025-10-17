@@ -1,5 +1,11 @@
 package org.gameyfin.plugins.metadata.steam
 
+// Resilience4j
+import io.github.resilience4j.bulkhead.Bulkhead
+import io.github.resilience4j.bulkhead.BulkheadConfig
+import io.github.resilience4j.decorators.Decorators
+import io.github.resilience4j.ratelimiter.RateLimiter
+import io.github.resilience4j.ratelimiter.RateLimiterConfig
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
@@ -25,6 +31,7 @@ import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import java.net.URI
+import java.time.Duration
 import java.time.Instant
 
 class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
@@ -42,7 +49,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
     class SteamMetadataProvider : GameMetadataProvider {
         private val log = LoggerFactory.getLogger(javaClass)
 
-        val client = HttpClient(CIO) {
+        private val client = HttpClient(CIO) {
             // Use a fake browser user agent to avoid being blocked by Steam
             BrowserUserAgent()
 
@@ -51,12 +58,45 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             }
         }
 
+        companion object {
+            private val rateLimiter: RateLimiter = RateLimiter.of(
+                "steam-api",
+                RateLimiterConfig.custom()
+                    .limitForPeriod(4)
+                    .limitRefreshPeriod(Duration.ofSeconds(1))
+                    .timeoutDuration(Duration.ofMinutes(10))
+                    .build()
+            )
+            private val bulkhead: Bulkhead = Bulkhead.of(
+                "steam-api",
+                BulkheadConfig.custom()
+                    .maxConcurrentCalls(8)
+                    .maxWaitDuration(Duration.ofMinutes(10))
+                    .build()
+            )
+        }
+
+        // Helper to enforce rate limit + bulkhead around suspend HTTP operations
+        private fun <T> steamApiCall(block: suspend () -> T): T {
+            val supplier = { runBlocking { block() } }
+            val decorated = Decorators.ofSupplier(supplier)
+                .withBulkhead(bulkhead)
+                .withRateLimiter(rateLimiter)
+                .decorate()
+            return decorated.get()
+        }
+
         /**
          * The Steam Store API I am using provides far less info than IGDB for example
          * See it more as a proof of concept than a fully functional plugin
          **/
         override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
-            val searchResult: List<SteamGame> = runBlocking { searchStore(gameTitle) }
+            val searchResult: List<SteamGame> = try {
+                steamApiCall { searchStore(gameTitle) }
+            } catch (e: Exception) {
+                log.error("Failed to search Steam store: ${e.message}")
+                emptyList()
+            }
             if (searchResult.isEmpty()) return emptyList()
 
             // Use fuzzy search to find the best matching game name
@@ -71,29 +111,46 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             bestMatches = bestMatches.filter { it.name in bestMatchesMap.keys }
                 .sortedByDescending { bestMatchesMap[it.name] }
 
-            return runBlocking { bestMatches.map { getGameDetails(it.id) } }
-                .filterNotNull()
+            return bestMatches.mapNotNull { steamGame ->
+                try {
+                    steamApiCall { getGameDetails(steamGame.id) }
+                } catch (e: Exception) {
+                    log.warn("Failed to fetch details for app ${steamGame.id}: ${e.message}")
+                    null
+                }
+            }
                 .take(maxResults)
         }
 
         override fun fetchById(id: String): GameMetadata? {
-            val id = id.toIntOrNull() ?: return null
-            return runBlocking { getGameDetails(id) }
+            val intId = id.toIntOrNull() ?: return null
+            return try {
+                steamApiCall { getGameDetails(intId) }
+            } catch (e: Exception) {
+                log.warn("Failed to fetch details for app $intId: ${e.message}")
+                null
+            }
         }
 
         private suspend fun searchStore(title: String): List<SteamGame> {
-            return try {
-                val response = client.get("https://store.steampowered.com/api/storesearch") {
-                    parameter("term", title)
-                    parameter("cc", "en")
-                    parameter("l", "en")
-                }
-                val searchResult: SteamSearchResult = response.body()
-                searchResult.items
-            } catch (e: Exception) {
-                log.error("Failed to search Steam store: ${e.message}")
-                emptyList()
+            val response = client.get("https://store.steampowered.com/api/storesearch") {
+                parameter("term", title)
+                parameter("cc", "en")
+                parameter("l", "en")
             }
+
+            if (response.status == HttpStatusCode.Forbidden) {
+                log.warn("Steam API rate limit hit; backing off and returning empty result")
+                return emptyList()
+            }
+
+            if (response.status != HttpStatusCode.OK) {
+                log.warn($$"Steam search returned HTTP ${response.status}")
+                return emptyList()
+            }
+
+            val searchResult: SteamSearchResult = response.body()
+            return searchResult.items
         }
 
         private suspend fun getGameDetails(id: Int): GameMetadata? {
@@ -101,6 +158,11 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 parameter("appids", id)
                 parameter("cc", "en")
                 parameter("l", "en")
+            }
+
+            if (response.status == HttpStatusCode.Forbidden) {
+                log.warn("Steam API rate limit hit; backing off and returning empty result")
+                return null
             }
 
             if (response.status != HttpStatusCode.OK) return null
@@ -138,12 +200,17 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
          * However, it is possible to get the original release date from the Steam store page.
          */
         private suspend fun parseOriginalReleaseDateFromStorePage(appId: Int): Instant? {
-            val response = client.get("https://store.steampowered.com/app/$appId") {
+            val response = client.get("https://store.steampowered.com/app/${'$'}appId") {
                 // Set language to English to avoid issues with different languages
                 cookie("Steam_Language", "english")
                 // Skip Steam age check
                 cookie("birthtime", "-2208989360")
                 cookie("lastagecheckage", "1-January-1900")
+            }
+
+            if (response.status == HttpStatusCode.Forbidden) {
+                log.warn("Steam web page responded 403 Forbidden for app ${'$'}appId; can't parse original release date")
+                return null
             }
 
             if (response.status != HttpStatusCode.OK) return null
@@ -155,7 +222,6 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             return dateSerializer.deserialize(releaseDateText.text())
         }
 
-
         /**
          * Often titles on Steam contain copyright symbols which makes matching between different providers harder
          * This method removes those symbols
@@ -166,3 +232,4 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         }
     }
 }
+
