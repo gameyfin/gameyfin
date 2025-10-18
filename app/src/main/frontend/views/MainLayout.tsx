@@ -5,7 +5,15 @@ import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import * as PackageJson from "../../../../package.json";
 import {Outlet, useLocation, useNavigate} from "react-router";
 import {useAuth} from "Frontend/util/auth";
-import { ArrowLeftIcon, DiceSixIcon, DiscIcon, HeartIcon, HouseIcon, ListMagnifyingGlassIcon, SignInIcon } from "@phosphor-icons/react";
+import {
+    ArrowLeftIcon,
+    DiceSixIcon,
+    DiscIcon,
+    HeartIcon,
+    HouseIcon,
+    ListMagnifyingGlassIcon,
+    SignInIcon
+} from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
 import {useTheme} from "next-themes";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
@@ -14,7 +22,6 @@ import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
 import {isAdmin} from "Frontend/util/utils";
-import DockerHubDeprecationPopover from "Frontend/components/temp/DockerHubDeprecationPopover";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -107,13 +114,6 @@ export default function MainLayout() {
                     </NavbarItem>
                     {isAdmin(auth) &&
                         <div className="flex flex-row">
-                            <NavbarItem>
-                                <Tooltip content="Important information" placement="bottom">
-                                    <div>
-                                        <DockerHubDeprecationPopover/>
-                                    </div>
-                                </Tooltip>
-                            </NavbarItem>
                             <NavbarItem>
                                 <Tooltip content="View library scan results" placement="bottom">
                                     <div>
