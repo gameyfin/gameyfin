@@ -56,7 +56,7 @@ val updatePackageJsonVersion by tasks.registering {
         val parsedJson = JsonSlurper().parse(packageJson) as MutableMap<String, Any>
 
         // Update the version field with the Gradle project version
-        parsedJson["version"] = project.version.toString()
+        parsedJson["version"] = version
 
         // Convert the updated map back to a JSON string
         var stringifiedJson = JsonOutput.toJson(parsedJson)
