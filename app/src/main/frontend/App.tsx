@@ -4,7 +4,7 @@ import {HeroUIProvider} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
 import {AuthProvider, useAuth} from "Frontend/util/auth";
-import {IconContext, X} from "@phosphor-icons/react";
+import { IconContext, XIcon } from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
@@ -63,7 +63,7 @@ function ViewWithAuth() {
                     radius: "sm",
                     variant: "flat",
                     hideIcon: true,
-                    closeIcon: <X/>,
+                    closeIcon: <XIcon/>,
                     classNames: {
                         closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
                         progressTrack: "h-1",

@@ -11,7 +11,7 @@ export default function DatePickerInput({label, showErrorUntouched = false, ...p
 
     return (
         <DatePicker
-            className="min-h-20 flex-grow"
+            className="min-h-20 grow"
             showMonthAndYearPickers
             fullWidth={false}
             {...props}

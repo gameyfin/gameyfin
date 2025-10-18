@@ -38,7 +38,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
 
@@ -63,7 +63,7 @@ class GameService(
         fun subscribeUser(): Flux<List<GameUserEvent>> {
             log.debug { "New user subscription for gameUpdates" }
             return gameUserEvents.asFlux()
-                .buffer(100.milliseconds.toJavaDuration())
+                .buffer(1.seconds.toJavaDuration())
                 .doOnSubscribe {
                     log.debug { "Subscriber added to gameUserEvents [${gameUserEvents.currentSubscriberCount()}]" }
                 }
@@ -75,7 +75,7 @@ class GameService(
         fun subscribeAdmin(): Flux<List<GameAdminEvent>> {
             log.debug { "New admin subscription for gameUpdates" }
             return gameAdminEvents.asFlux()
-                .buffer(100.milliseconds.toJavaDuration())
+                .buffer(1.seconds.toJavaDuration())
                 .doOnSubscribe {
                     log.debug { "Subscriber added to gameAdminEvents [${gameAdminEvents.currentSubscriberCount()}]" }
                 }

@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Input as NextInput} from "@heroui/input";
-import {WarningCircle} from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import {MessageEndpoint, PasswordResetEndpoint} from "Frontend/generated/endpoints";
 
 interface PasswordResetModalProps {
@@ -47,7 +47,7 @@ export default function PasswordResetModal({
                                     placeholder="Email"
                                 /> :
                                 <div className="flex flex-row items-center gap-4 text-warning">
-                                    <WarningCircle size={40}/>
+                                    <WarningCircleIcon size={40}/>
                                     <p>
                                         Password self-service is disabled.<br/>
                                         To reset your password please contact your administrator.

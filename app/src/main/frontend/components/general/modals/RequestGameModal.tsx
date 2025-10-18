@@ -14,7 +14,7 @@ import {
     Tooltip
 } from "@heroui/react";
 import React, {useEffect, useState} from "react";
-import {ArrowRight, MagnifyingGlass} from "@phosphor-icons/react";
+import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {GameEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import PluginIcon from "../plugin/PluginIcon";
@@ -94,7 +94,7 @@ export default function RequestGameModal({
                                    }}
                             />
                             <Button isIconOnly onPress={search} color="primary" isLoading={isSearching}>
-                                <MagnifyingGlass/>
+                                <MagnifyingGlassIcon/>
                             </Button>
                         </div>
 
@@ -151,7 +151,7 @@ export default function RequestGameModal({
                                                                 setIsRequesting(null);
                                                                 onClose();
                                                             }}>
-                                                        <ArrowRight/>
+                                                        <ArrowRightIcon/>
                                                     </Button>
                                                 </Tooltip>
                                             </TableCell>

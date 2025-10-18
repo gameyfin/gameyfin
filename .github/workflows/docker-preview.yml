@@ -6,13 +6,18 @@ on:
       - 'release/*'
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     permissions:
+      contents: write
       packages: write
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -20,26 +25,73 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Extract version from branch name
+        id: extract_version
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          VERSION="${BRANCH_NAME#release/}-preview"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version in build.gradle.kts
+        run: |
+          sed -i "s/^version = .*/version = \"${{ steps.extract_version.outputs.version }}\"/" build.gradle.kts
+
+      - name: Update version in app/package.json
+        run: |
+          jq ".version = \"${{ steps.extract_version.outputs.version }}\"" app/package.json > app/package.json.tmp && mv app/package.json.tmp app/package.json
+
+      - name: Commit version bump (only if changes)
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: 'chore: bump version to v${{ steps.extract_version.outputs.version }}'
+          file_pattern: |
+            build.gradle.kts
+            app/package.json
+
       - name: Run production build
         env:
           GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
         run: ./gradlew clean build -Pvaadin.productionMode=true
 
-      - name: Extract tag from branch name
-        id: extract_tag
-        run: |
-          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
-          TAG="${BRANCH_NAME#release/}-preview"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          path: |
+            app/build/libs/**
+            plugins/**/build/libs/**/*.jar
 
-      - name: Build and push Docker image
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [ alpine, ubuntu ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download build outputs
+        uses: actions/download-artifact@v5
+        with:
+          name: build-outputs
+          path: .
+
+      - name: Build and push Docker image (${{ matrix.variant }})
         uses: ./.github/actions/docker-build-push
         with:
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           ghcr_username: ${{ github.actor }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
           context: .
           dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
-          tags: grimsi/gameyfin:${{ steps.extract_tag.outputs.tag }},ghcr.io/gameyfin/gameyfin:${{ steps.extract_tag.outputs.tag }}
+          tags: ghcr.io/gameyfin/gameyfin:${{ needs.build.outputs.version }}
+          variant: ${{ matrix.variant }}

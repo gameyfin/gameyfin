@@ -26,7 +26,7 @@ class Library(
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
     var directories: MutableList<DirectoryMapping> = ArrayList(),
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "library", fetch = FetchType.EAGER, orphanRemoval = true)
     var games: MutableList<Game> = ArrayList(),
 
     @ElementCollection(fetch = FetchType.EAGER)

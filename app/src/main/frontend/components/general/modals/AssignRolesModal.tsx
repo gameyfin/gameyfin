@@ -83,7 +83,7 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
                                 placeholder="Select roles"
                                 renderValue={(items: SelectedItems<Role>) => {
                                     return (
-                                        <div className="flex flex-grow flex-wrap gap-2">
+                                        <div className="flex grow flex-wrap gap-2">
                                             {items.map((item) => (
                                                 <RoleChip key={item.key} role={item.textValue as string}/>
                                             ))}

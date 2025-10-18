@@ -4,7 +4,7 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import {addToast, Button, Code, Divider, Tooltip} from "@heroui/react";
-import {ArrowUDownLeft, SortAscending} from "@phosphor-icons/react";
+import { ArrowUDownLeftIcon, SortAscendingIcon } from "@phosphor-icons/react";
 
 function LogManagementLayout({getConfig, formik}: any) {
     const [logEntries, setLogEntries] = useState<string[]>([]);
@@ -51,7 +51,7 @@ function LogManagementLayout({getConfig, formik}: any) {
             </div>
 
             <div className="flex flex-col">
-                <div className="flex flex-row flex-grow justify-between items-baseline">
+                <div className="flex flex-row grow justify-between items-baseline">
                     <h2 className={"text-xl font-bold mt-8 mb-1"}>Application logs</h2>
                     <div className="flex flex-row gap-1">
                         <Tooltip content="Soft-wrap" placement="bottom">
@@ -59,7 +59,7 @@ function LogManagementLayout({getConfig, formik}: any) {
                                     onPress={() => setSoftWrap(!softWrap)}
                                     variant={softWrap ? "solid" : "ghost"}
                             >
-                                <ArrowUDownLeft/>
+                                <ArrowUDownLeftIcon/>
                             </Button>
                         </Tooltip>
                         <Tooltip content="Auto-scroll" placement="bottom">
@@ -67,7 +67,7 @@ function LogManagementLayout({getConfig, formik}: any) {
                                     onPress={() => setAutoScroll(!autoScroll)}
                                     variant={autoScroll ? "solid" : "ghost"}
                             >
-                                <SortAscending/>
+                                <SortAscendingIcon/>
                             </Button>
                         </Tooltip>
                     </div>

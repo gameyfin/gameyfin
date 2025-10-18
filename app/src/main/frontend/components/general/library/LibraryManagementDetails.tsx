@@ -1,5 +1,5 @@
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
-import {Check} from "@phosphor-icons/react";
+import { CheckIcon } from "@phosphor-icons/react";
 import {addToast, Button} from "@heroui/react";
 import React from "react";
 import {Form, Formik} from "formik";
@@ -66,7 +66,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
     >
         {(formik) => (
             <Form>
-                <div className="flex flex-row flex-grow justify-between mb-4">
+                <div className="flex flex-row grow justify-between mb-4">
                     <h1 className="text-2xl font-bold">Edit library details</h1>
                     <Button
                         color="primary"
@@ -74,7 +74,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                         isDisabled={formik.isSubmitting || librarySaved || !formik.dirty}
                         type="submit"
                     >
-                        {formik.isSubmitting ? "" : librarySaved ? <Check/> : "Save"}
+                        {formik.isSubmitting ? "" : librarySaved ? <CheckIcon/> : "Save"}
                     </Button>
                 </div>
 

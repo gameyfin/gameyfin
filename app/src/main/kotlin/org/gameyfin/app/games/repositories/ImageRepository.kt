@@ -4,5 +4,5 @@ import org.gameyfin.app.games.entities.Image
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface ImageRepository : JpaRepository<Image, Long> {
-    fun findByOriginalUrl(originalUrl: String): Image?
+    fun findAllByOriginalUrl(originalUrl: String): List<Image>
 }

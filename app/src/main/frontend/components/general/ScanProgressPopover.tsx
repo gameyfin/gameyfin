@@ -13,7 +13,7 @@ import {useSnapshot} from "valtio/react";
 import {scanState} from "Frontend/state/ScanState";
 import LibraryScanProgress from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanProgress";
 import {libraryState} from "Frontend/state/LibraryState";
-import {Target, Warning} from "@phosphor-icons/react";
+import { TargetIcon, WarningIcon } from "@phosphor-icons/react";
 import {timeBetween, timeUntil, toTitleCase} from "Frontend/util/utils";
 import LibraryScanStatus from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanStatus";
 import {useEffect, useState} from "react";
@@ -45,7 +45,7 @@ export default function ScanProgressPopover() {
                                  classNames={{
                                      spinnerBars: "bg-foreground-500",
                                  }}/> :
-                        <Target className="fill-foreground-500"/>
+                        <TargetIcon className="fill-foreground-500"/>
                     }
                 </Button>
             </PopoverTrigger>
@@ -103,7 +103,7 @@ export default function ScanProgressPopover() {
                                         </p>
                                     }
                                     {scan.status === LibraryScanStatus.FAILED &&
-                                        <p className="text-danger flex flex-row gap-1"><Warning weight="fill"/>
+                                        <p className="text-danger flex flex-row gap-1"><WarningIcon weight="fill"/>
                                             Scan failed (check logs for details)
                                         </p>
                                     }

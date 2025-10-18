@@ -3,7 +3,7 @@ import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/org/gameyfin/app/config/dto/ConfigEntryDto";
 import {Form, Formik} from "formik";
 import {Button, Skeleton} from "@heroui/react";
-import {Check, Info} from "@phosphor-icons/react";
+import { CheckIcon, InfoIcon } from "@phosphor-icons/react";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {configState, initializeConfigState, NestedConfig} from "Frontend/state/ConfigState";
 import {useSnapshot} from "valtio/react";
@@ -92,11 +92,11 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                     >
                         {(formik) => (
                             <Form>
-                                <div className="flex flex-row flex-grow justify-between">
+                                <div className="flex flex-row grow justify-between">
                                     <h1 className="text-2xl font-bold">{title}</h1>
 
                                     <div className="flex flex-row items-center gap-4">
-                                        {saveMessage && <SmallInfoField icon={Info}
+                                        {saveMessage && <SmallInfoField icon={InfoIcon}
                                                                         message={saveMessage}
                                                                         className="text-warning"/>}
 
@@ -106,7 +106,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                                             isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
                                             type="submit"
                                         >
-                                            {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
+                                            {formik.isSubmitting ? "" : configSaved ? <CheckIcon/> : "Save"}
                                         </Button>
                                     </div>
                                 </div>
@@ -119,7 +119,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                         )}
                     </Formik> :
                     [...Array(4)].map((_e, i) =>
-                        <div className="flex flex-col flex-grow gap-8 mb-12" key={i}>
+                        <div className="flex flex-col grow gap-8 mb-12" key={i}>
                             <Skeleton className="h-10 w-full rounded-md"/>
                             <Skeleton className="h-12 flex w-1/3 rounded-md"/>
                             <div className="flex flex-row gap-8">

@@ -14,7 +14,7 @@ export function GameCover({game, size = 300, radius = "sm", interactive = false}
         <div className={`${interactive ? "rounded-md scale-95 hover:scale-100 shine transition-all" : ""}`}>
             <Image
                 alt={game.title}
-                className="z-0 object-cover aspect-[12/17]"
+                className="z-0 object-cover aspect-12/17"
                 src={`images/cover/${game.coverId}`}
                 radius={radius}
                 height={size}

@@ -12,7 +12,7 @@ export default function PluginManagement() {
 
     return state.isLoaded && (
         <div className="flex flex-col">
-            <div className="flex flex-row flex-grow justify-between mb-8">
+            <div className="flex flex-row grow justify-between mb-8">
                 <h2 className="text-2xl font-bold">Plugins</h2>
             </div>
 

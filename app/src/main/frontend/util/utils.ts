@@ -37,13 +37,13 @@ export function hashCode(string: string) {
 export function roleToColor(role: string) {
     switch (role) {
         case "ROLE_SUPERADMIN":
-            return "red";
+            return "bg-red-500";
         case "ROLE_ADMIN":
-            return "orange";
+            return "bg-orange-500";
         case "ROLE_USER":
-            return "blue";
+            return "bg-blue-500";
         default:
-            return "gray";
+            return "bg-gray-500";
     }
 }
 

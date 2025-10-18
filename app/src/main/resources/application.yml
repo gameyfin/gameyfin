@@ -2,6 +2,7 @@ logging.level:
   root: warn
   org.atmosphere: warn
   org.gameyfin: info
+  org.flywaydb.core.internal.command: info
   org.gameyfin.GameyfinApplicationKt: warn
   org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 

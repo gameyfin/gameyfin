@@ -1,7 +1,7 @@
 import {GameyfinClassic} from "./themes/gameyfin-classic";
 import {GameyfinBlue} from "./themes/gameyfin-blue";
 import {GameyfinViolet} from "./themes/gameyfin-violet";
-import {Purple} from "./themes/purple";
+import {Pink} from "./themes/pink";
 import {Neutral} from "./themes/neutral";
 import {Slate} from "./themes/slate";
 import {Red} from "./themes/red";
@@ -41,7 +41,9 @@ export function compileThemes(themes: Theme[]): ConfigThemes {
 }
 
 export function themeNames(): string[] {
-    return Object.keys(compileThemes(themes));
+    const themeNames = Object.keys(compileThemes(themes));
+    console.debug("Available themes:", themeNames);
+    return themeNames;
 }
 
-export const themes: Theme[] = [GameyfinBlue, GameyfinViolet, GameyfinClassic, Neutral, Slate, Red, Rose, Orange, Purple, Blue, Yellow, Violet, Colorblind];
+export const themes: Theme[] = [GameyfinBlue, GameyfinViolet, GameyfinClassic, Neutral, Slate, Red, Rose, Orange, Pink, Blue, Yellow, Violet, Colorblind];

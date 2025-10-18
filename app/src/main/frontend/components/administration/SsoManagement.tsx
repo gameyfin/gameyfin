@@ -4,7 +4,7 @@ import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
 import {addToast, Button, Checkbox, CheckboxGroup, Tooltip} from "@heroui/react";
-import {MagicWand, Warning} from "@phosphor-icons/react";
+import { MagicWandIcon, WarningIcon } from "@phosphor-icons/react";
 
 function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
@@ -57,7 +57,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                                     Automatically create new users after registration
                                 </Checkbox>
                                 <Tooltip content={"Currently not configurable (always enabled)"} placement="right">
-                                    <Warning weight="fill"/>
+                                    <WarningIcon weight="fill"/>
                                 </Tooltip>
                             </div>
                         </CheckboxGroup>
@@ -89,7 +89,7 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
                         <Button
                             isDisabled={isAutoPopulateDisabled()}
                             onPress={autoPopulate}
-                            className="h-14"><MagicWand className="min-w-5"/>Auto-populate</Button>
+                            className="h-14"><MagicWandIcon className="min-w-5"/>Auto-populate</Button>
                     </div>
                     <ConfigFormField configElement={getConfig("sso.oidc.authorize-url")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>

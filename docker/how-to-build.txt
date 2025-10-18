@@ -1,3 +1,3 @@
 1. Run production build
-2. Run docker build in root dir: docker buildx build --platform linux/arm64/v8,linux/amd64 -f docker/Dockerfile --tag grimsi/gameyfin:<TAG> .
+2. Run docker build in root dir: docker buildx build --platform linux/arm64/v8,linux/amd64 -f docker/Dockerfile --tag gameyfin/gameyfin:<TAG> .
 2.1 If you want to push the image to a registry, add --push to the command above.

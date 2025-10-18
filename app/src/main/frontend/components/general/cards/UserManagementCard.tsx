@@ -1,5 +1,5 @@
 import {Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
-import {DotsThreeVertical} from "@phosphor-icons/react";
+import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
@@ -112,7 +112,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                     <Dropdown placement="bottom-end" size="sm" backdrop="opaque">
                         <DropdownTrigger>
                             <Button isIconOnly variant="light">
-                                <DotsThreeVertical/>
+                                <DotsThreeVerticalIcon/>
                             </Button>
                         </DropdownTrigger>
                         <DropdownMenu aria-label="Static Actions" items={dropdownItems} disabledKeys={disabledKeys}>

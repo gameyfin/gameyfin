@@ -8,7 +8,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useEffect, useState} from "react";
-import {CaretLeft, CaretRight, IconContext, Play} from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon } from "@phosphor-icons/react";
 
 
 interface ImageCarouselProps {
@@ -61,7 +61,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                 <div className="w-full flex flex-col gap-2 items-center">
                     <div className="w-full flex flex-row items-center">
                         <IconContext.Provider value={{size: 50}}>
-                            <CaretLeft className="swiper-custom-button-prev cursor-pointer fill-primary"/>
+                            <CaretLeftIcon className="swiper-custom-button-prev cursor-pointer fill-primary"/>
                             <Swiper
                                 modules={[Pagination, Navigation, Autoplay]}
                                 slidesPerView={DEFAULT_SLIDES_PER_VIEW > elements.length ? elements.length : DEFAULT_SLIDES_PER_VIEW}
@@ -90,14 +90,14 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                                     <Image
                                                         src={e.url}
                                                         alt={`Game screenshot slide ${index}`}
-                                                        className={`w-full h-full object-cover aspect-[16/9] cursor-zoom-in ${!isActive ? "scale-90" : ""}`}
+                                                        className={`w-full h-full object-cover aspect-video cursor-zoom-in ${!isActive ? "scale-90" : ""}`}
                                                         onClick={() => showImagePopup(e.url)}
                                                     />
                                                 )
                                             }
                                             return (
                                                 <Card
-                                                    className={`w-full h-full aspect-[16/9] ${!isActive ? "scale-90" : ""}`}>
+                                                    className={`w-full h-full aspect-video ${!isActive ? "scale-90" : ""}`}>
                                                     <ReactPlayer
                                                         url={e.url}
                                                         width="100%"
@@ -105,7 +105,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                                         light={true}
                                                         controls={true}
                                                         playing={isActive}
-                                                        playIcon={<Play weight="fill"/>}
+                                                        playIcon={<PlayIcon weight="fill"/>}
                                                     />
                                                 </Card>
                                             )
@@ -115,7 +115,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                 <ImagePopup imageUrl={selectedImageUrl} isOpen={imagePopup.isOpen}
                                             onOpenChange={imagePopup.onOpenChange}/>
                             </Swiper>
-                            <CaretRight className="swiper-custom-button-next cursor-pointer fill-primary"/>
+                            <CaretRightIcon className="swiper-custom-button-next cursor-pointer fill-primary"/>
                         </IconContext.Provider>
                     </div>
                     <div>
@@ -137,7 +137,7 @@ function ImagePopup({imageUrl, isOpen, onOpenChange}: {
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} hideCloseButton size="full" backdrop="blur">
             <ModalContent className="bg-transparent">
                 {(onClose) => (
-                    <div className="flex flex-grow items-center justify-center cursor-zoom-out"
+                    <div className="flex grow items-center justify-center cursor-zoom-out"
                          onClick={onClose}>
                         <Image
                             src={imageUrl}

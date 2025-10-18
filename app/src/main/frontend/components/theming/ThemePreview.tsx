@@ -7,7 +7,7 @@ export default function ThemePreview({theme, isSelected}: {
 }) {
     return (
         <Tooltip content={<p className="capitalize">{theme.name?.replace("-", " ")}</p>} placement="bottom">
-            <div className={`flex flex-col flex-grow aspect-square border-2 rounded-large overflow-hidden
+            <div className={`flex flex-col grow aspect-square border-2 rounded-large overflow-hidden
                 ${theme.name}-dark
                 ${isSelected ? "border-foreground" : "border-foreground-200 hover:border-focus"}`}>
                 <div className="flex-1 bg-primary"/>

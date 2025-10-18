@@ -11,6 +11,7 @@ class ConfigEntry(
     @Column(name = "`key`", unique = true)
     val key: String,
 
+    @Lob
     @Column(name = "`value`")
     @Convert(converter = EncryptionConverter::class)
     var value: String

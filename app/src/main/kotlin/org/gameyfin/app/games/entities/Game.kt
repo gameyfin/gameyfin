@@ -40,11 +40,9 @@ class Game(
     var headerImage: Image? = null,
 
     @Lob
-    @Column(columnDefinition = "CLOB")
     var comment: String? = null,
 
     @Lob
-    @Column(columnDefinition = "CLOB")
     var summary: String? = null,
 
     var release: Instant? = null,

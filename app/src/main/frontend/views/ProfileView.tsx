@@ -1,16 +1,16 @@
-import {Palette, User} from "@phosphor-icons/react";
+import { PaletteIcon, UserIcon } from "@phosphor-icons/react";
 import withSideMenu from "Frontend/components/general/withSideMenu";
 
 const menuItems = [
     {
         title: "My Profile",
         url: "profile",
-        icon: <User/>
+        icon: <UserIcon/>
     },
     {
         title: "Appearance",
         url: "appearance",
-        icon: <Palette/>
+        icon: <PaletteIcon/>
     },
     /* TODO: Implement account self management
     {

@@ -47,7 +47,7 @@ export default function LoginView() {
                         alt="Gameyfin Logo"
                     />
                 </CardHeader>
-                <CardBody className="mt-8 mb-2 w-80 max-w-screen-lg sm:w-96">
+                <CardBody className="mt-8 mb-2 w-80 max-w-(--breakpoint-lg) sm:w-96">
                     <Formik
                         initialValues={{}}
                         onSubmit={tryLogin}>
