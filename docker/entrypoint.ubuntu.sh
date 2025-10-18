@@ -1,12 +1,25 @@
 #!/bin/bash
 set -e
 
-if [ -n "$PUID" ] && [ -n "$PGID" ]; then
+# Optional UID/GID remapping for mounted volumes
+PUID=${PUID:-}
+PGID=${PGID:-}
+
+if [ -n "$PGID" ]; then
   groupmod -o -g "$PGID" gameyfin
+fi
+if [ -n "$PUID" ]; then
   usermod -o -u "$PUID" gameyfin
-  chown -R gameyfin:gameyfin /opt/gameyfin
-  exec gosu gameyfin:gameyfin java -jar gameyfin.jar
-else
-  exec gosu gameyfin:gameyfin java -jar gameyfin.jar
 fi
 
+# Only fix ownership on writable dirs when remapping is requested
+if [ -n "$PUID$PGID" ]; then
+  for d in plugins db data logs; do
+    [ -d "/opt/gameyfin/$d" ] || mkdir -p "/opt/gameyfin/$d"
+    chown -R gameyfin:gameyfin "/opt/gameyfin/$d"
+  done
+fi
+
+export JAVA_TOOL_OPTIONS="${JAVA_OPTS:-}"
+
+exec gosu gameyfin:gameyfin java org.springframework.boot.loader.launch.JarLauncher

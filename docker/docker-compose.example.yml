@@ -1,4 +1,3 @@
-version: "3"
 services:
   gameyfin:
     image: ghcr.io/gameyfin/gameyfin:2
