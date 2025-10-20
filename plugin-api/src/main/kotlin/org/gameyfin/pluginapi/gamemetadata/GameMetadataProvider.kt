@@ -9,6 +9,14 @@ import org.pf4j.ExtensionPoint
  * This is typically used to allow plugins to provide metadata for games from various sources.
  */
 interface GameMetadataProvider : ExtensionPoint {
+
+    /**
+     * Returns the set of platforms supported by this metadata provider.
+     *
+     * @return A set of [Platform] enums indicating supported platforms.
+     */
+    fun getSupportedPlatforms(): Set<Platform>
+
     /**
      * Fetches a list of game metadata entries matching the given game title.
      *
