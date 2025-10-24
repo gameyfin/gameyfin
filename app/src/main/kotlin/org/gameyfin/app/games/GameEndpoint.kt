@@ -13,6 +13,7 @@ import org.gameyfin.app.games.dto.GameSearchResultDto
 import org.gameyfin.app.games.dto.GameUpdateDto
 import org.gameyfin.app.libraries.LibraryCoreService
 import org.gameyfin.app.libraries.LibraryService
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import reactor.core.publisher.Flux
 import java.nio.file.Path
 
@@ -34,8 +35,8 @@ class GameEndpoint(
 
     fun getAll(): List<GameDto> = gameService.getAll()
 
-    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
-        return gameService.getPotentialMatches(searchTerm)
+    fun getPotentialMatches(searchTerm: String, platformFilter: Set<Platform>): List<GameSearchResultDto> {
+        return gameService.getPotentialMatches(searchTerm, platformFilter)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

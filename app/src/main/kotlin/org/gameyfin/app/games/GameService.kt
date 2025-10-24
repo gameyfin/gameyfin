@@ -466,12 +466,12 @@ class GameService(
         gameRepository.deleteById(gameId)
     }
 
-    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
+    fun getPotentialMatches(searchTerm: String, platformFilter: Set<Platform>): List<GameSearchResultDto> {
         // 1. Query all plugins for up to 10 results each
         val futures: List<Future<List<Pair<GameMetadataProvider, PluginApiMetadata>>>> = metadataPlugins.map { plugin ->
             executor.submit<List<Pair<GameMetadataProvider, PluginApiMetadata>>> {
                 try {
-                    plugin.fetchByTitle(searchTerm, 10).map { plugin to it }
+                    plugin.fetchByTitle(searchTerm, platformFilter, 10).map { plugin to it }
                 } catch (e: Exception) {
                     val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
                     log.warn { "Error fetching metadata for searchterm '$searchTerm' with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
@@ -647,7 +647,7 @@ class GameService(
         }
 
         // Step 0: Query all metadata plugins for metadata on the provided game title
-        val metadataResults = queryPlugins(query, library.platforms)
+        val metadataResults = queryPlugins(query, library.platforms.toSet())
 
         // Step 1: Filter out invalid (empty) results
         val validResults = metadataResults.filterValuesNotNull()
@@ -682,7 +682,7 @@ class GameService(
      */
     private fun queryPlugins(
         gameTitle: String,
-        platforms: Collection<Platform>
+        platforms: Set<Platform>
     ): Map<GameMetadataProvider, PluginApiMetadata?> {
         /*
             * Filter plugins by platform support
@@ -702,7 +702,7 @@ class GameService(
         val futures = pluginsWithPlatformSupport.associateWith { plugin ->
             executor.submit<PluginApiMetadata?> {
                 try {
-                    plugin.fetchByTitle(gameTitle).firstOrNull()
+                    plugin.fetchByTitle(gameTitle, platforms).firstOrNull()
                 } catch (e: Exception) {
                     val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
                     log.warn { "Error fetching metadata for game title '$gameTitle' with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
