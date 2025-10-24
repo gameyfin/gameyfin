@@ -21,8 +21,10 @@ import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.gameyfin.plugins.metadata.steam.dto.SteamDetailsResultWrapper
 import org.gameyfin.plugins.metadata.steam.dto.SteamGame
+import org.gameyfin.plugins.metadata.steam.dto.SteamPlatforms
 import org.gameyfin.plugins.metadata.steam.dto.SteamSearchResult
 import org.gameyfin.plugins.metadata.steam.mapper.Mapper
 import org.gameyfin.plugins.metadata.steam.util.SteamDateSerializer
@@ -76,23 +78,21 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             )
         }
 
-        // Helper to enforce rate limit + bulkhead around suspend HTTP operations
-        private fun <T> steamApiCall(block: suspend () -> T): T {
-            val supplier = { runBlocking { block() } }
-            val decorated = Decorators.ofSupplier(supplier)
-                .withBulkhead(bulkhead)
-                .withRateLimiter(rateLimiter)
-                .decorate()
-            return decorated.get()
-        }
+        // SteamVR support is not properly reflected in the store API, so we cannot reliably detect VR games
+        override val supportedPlatforms: Set<Platform> =
+            setOf(Platform.PC_MICROSOFT_WINDOWS, Platform.LINUX, Platform.MAC)
 
         /**
          * The Steam Store API I am using provides far less info than IGDB for example
          * See it more as a proof of concept than a fully functional plugin
          **/
-        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
+        override fun fetchByTitle(
+            gameTitle: String,
+            platformFilter: Set<Platform>,
+            maxResults: Int
+        ): List<GameMetadata> {
             val searchResult: List<SteamGame> = try {
-                steamApiCall { searchStore(gameTitle) }
+                steamApiCall { searchStore(gameTitle, platformFilter) }
             } catch (e: Exception) {
                 log.error("Failed to search Steam store: ${e.message}")
                 emptyList()
@@ -113,13 +113,22 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
             return bestMatches.mapNotNull { steamGame ->
                 try {
-                    steamApiCall { getGameDetails(steamGame.id) }
+                    steamApiCall { getGameDetails(steamGame.id, platformFilter) }
                 } catch (e: Exception) {
                     log.warn("Failed to fetch details for app ${steamGame.id}: ${e.message}")
                     null
                 }
-            }
-                .take(maxResults)
+            }.take(maxResults)
+        }
+
+        // Helper to enforce rate limit + bulkhead around suspend HTTP operations
+        private fun <T> steamApiCall(block: suspend () -> T): T {
+            val supplier = { runBlocking { block() } }
+            val decorated = Decorators.ofSupplier(supplier)
+                .withBulkhead(bulkhead)
+                .withRateLimiter(rateLimiter)
+                .decorate()
+            return decorated.get()
         }
 
         override fun fetchById(id: String): GameMetadata? {
@@ -132,7 +141,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             }
         }
 
-        private suspend fun searchStore(title: String): List<SteamGame> {
+        private suspend fun searchStore(title: String, platformFilter: Set<Platform>): List<SteamGame> {
             val response = client.get("https://store.steampowered.com/api/storesearch") {
                 parameter("term", title)
                 parameter("cc", "en")
@@ -145,15 +154,24 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             }
 
             if (response.status != HttpStatusCode.OK) {
-                log.warn($$"Steam search returned HTTP ${response.status}")
+                log.warn("Steam search returned HTTP ${response.status}")
                 return emptyList()
             }
 
             val searchResult: SteamSearchResult = response.body()
-            return searchResult.items
+
+            val filteredByPlatform = if (platformFilter.isNotEmpty()) {
+                searchResult.items.filter { game ->
+                    supportedPlatforms.any { it in toGameyfinPlatforms(game.platforms) }
+                }
+            } else {
+                searchResult.items
+            }
+
+            return filteredByPlatform
         }
 
-        private suspend fun getGameDetails(id: Int): GameMetadata? {
+        private suspend fun getGameDetails(id: Int, platformFilter: Set<Platform> = emptySet()): GameMetadata? {
             val response = client.get("https://store.steampowered.com/api/appdetails") {
                 parameter("appids", id)
                 parameter("cc", "en")
@@ -177,10 +195,18 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
             if (game.type != "game") return null
 
+            // The returned game should only contain the platforms we are interested in (if any filter is set)
+            val gamePlatforms = if (platformFilter.isNotEmpty()) {
+                toGameyfinPlatforms(game.platforms).intersect(platformFilter)
+            } else {
+                toGameyfinPlatforms(game.platforms)
+            }
+
             // This is as much as I can get from the Steam Store API
             val metadata = GameMetadata(
                 originalId = id.toString(),
                 title = sanitizeTitle(game.name),
+                platforms = gamePlatforms,
                 description = game.shortDescription, // Using short description since the detailed description often contains just some ads for the Battle Pass etc.
                 coverUrls = game.headerImage?.let { URI(it) }?.let { listOf(it) },
                 release = parseOriginalReleaseDateFromStorePage(id) ?: game.releaseDate?.date,
@@ -200,7 +226,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
          * However, it is possible to get the original release date from the Steam store page.
          */
         private suspend fun parseOriginalReleaseDateFromStorePage(appId: Int): Instant? {
-            val response = client.get("https://store.steampowered.com/app/${'$'}appId") {
+            val response = client.get("https://store.steampowered.com/app/$appId") {
                 // Set language to English to avoid issues with different languages
                 cookie("Steam_Language", "english")
                 // Skip Steam age check
@@ -209,7 +235,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
             }
 
             if (response.status == HttpStatusCode.Forbidden) {
-                log.warn("Steam web page responded 403 Forbidden for app ${'$'}appId; can't parse original release date")
+                log.warn("Steam web page responded 403 Forbidden for app $appId; can't parse original release date")
                 return null
             }
 
@@ -229,6 +255,17 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         private fun sanitizeTitle(originalTitle: String): String {
             val unwantedChars = setOf('™', '©', '®')
             return originalTitle.filter { it !in unwantedChars }.trim()
+        }
+
+        /**
+         * Determine supported Gameyfin platforms for a Steam game based on its platform flags
+         */
+        private fun toGameyfinPlatforms(steamPlatforms: SteamPlatforms): Set<Platform> {
+            val gameyfinPlatforms = mutableSetOf<Platform>()
+            if (steamPlatforms.windows) gameyfinPlatforms.add(Platform.PC_MICROSOFT_WINDOWS)
+            if (steamPlatforms.linux) gameyfinPlatforms.add(Platform.LINUX)
+            if (steamPlatforms.mac) gameyfinPlatforms.add(Platform.MAC)
+            return gameyfinPlatforms
         }
     }
 }

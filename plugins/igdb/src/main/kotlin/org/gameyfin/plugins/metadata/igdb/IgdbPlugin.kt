@@ -17,6 +17,7 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import proto.Game
@@ -143,14 +144,26 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
             ).joinToString(",")
         }
 
-        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
-            // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
+        override val supportedPlatforms: Set<Platform>
+            get() = Platform.entries.toSet()
+
+        override fun fetchByTitle(
+            gameTitle: String,
+            platformFilter: Set<Platform>,
+            maxResults: Int
+        ): List<GameMetadata> {
             val searchByNameQuery = APICalypse()
                 .fields(QUERY_FIELDS)
-                // TODO: Change for multi-platform support
-                .where("platforms.slug = \"win\"")
+                // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
                 .limit(100)
                 .search(gameTitle)
+
+            if (platformFilter.isNotEmpty()) {
+                // TODO: Map to platform IDs
+                val platformFilterQuery =
+                    platformFilter.joinToString(separator = "\", \"", prefix = "platforms.name = [\"", postfix = "\"]")
+                searchByNameQuery.where(platformFilterQuery)
+            }
 
             // Use IGDBs search function to get a list of games that match the search query
             var games = queryIgdbGames(searchByNameQuery)
@@ -197,6 +210,17 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
             return GameMetadata(
                 originalId = game.slug,
                 title = game.name,
+                // TODO: Map from ID to Platform enum
+                platforms = game.platformsList.map { it.name }
+                    .mapNotNull {
+                        Platform.entries.find { platform ->
+                            platform.displayName.equals(
+                                it,
+                                ignoreCase = true
+                            )
+                        }
+                    }
+                    .toSet(),
                 description = game.summary,
                 coverUrls = Mapper.cover(game.cover)?.let { listOf(it) },
                 release = if (game.firstReleaseDate.seconds > 0) Instant.ofEpochSecond(game.firstReleaseDate.seconds) else null,

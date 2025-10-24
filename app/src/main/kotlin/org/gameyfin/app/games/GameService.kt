@@ -647,7 +647,7 @@ class GameService(
         }
 
         // Step 0: Query all metadata plugins for metadata on the provided game title
-        val metadataResults = queryPlugins(query)
+        val metadataResults = queryPlugins(query, library.platforms)
 
         // Step 1: Filter out invalid (empty) results
         val validResults = metadataResults.filterValuesNotNull()
@@ -676,12 +676,30 @@ class GameService(
     }
 
     /**
-     * Queries all metadata plugins for metadata on the provided game title
+     * Queries all (matching) metadata plugins for metadata on the provided game title
      * Runs the queries concurrently and asynchronously
      * @return A map of metadata plugins and their respective results
      */
-    private fun queryPlugins(gameTitle: String): Map<GameMetadataProvider, PluginApiMetadata?> {
-        val futures = metadataPlugins.associateWith { plugin ->
+    private fun queryPlugins(
+        gameTitle: String,
+        platforms: Collection<Platform>
+    ): Map<GameMetadataProvider, PluginApiMetadata?> {
+        /*
+            * Filter plugins by platform support
+            * If no platforms are specified, use all plugins
+            * If platforms are specified, only use plugins that support at least one of the specified platforms
+            * Plugins that do not specify any supported platforms are considered to support all platforms
+         */
+        val pluginsWithPlatformSupport: List<GameMetadataProvider> = if (platforms.isEmpty()) {
+            metadataPlugins
+        } else {
+            metadataPlugins.filter { plugin ->
+                val supportedPlatforms = plugin.supportedPlatforms
+                supportedPlatforms.isEmpty() || platforms.any { it in supportedPlatforms }
+            }
+        }
+
+        val futures = pluginsWithPlatformSupport.associateWith { plugin ->
             executor.submit<PluginApiMetadata?> {
                 try {
                     plugin.fetchByTitle(gameTitle).firstOrNull()

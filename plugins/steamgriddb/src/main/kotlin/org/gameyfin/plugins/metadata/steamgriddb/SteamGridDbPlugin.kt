@@ -8,6 +8,7 @@ import org.gameyfin.pluginapi.core.config.*
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.gameyfin.plugins.metadata.steamgriddb.api.SteamGridDbApiClient
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGame
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGrid
@@ -81,7 +82,14 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
     @Extension(ordinal = 1)
     class SteamGridDBGameCoverProvider : GameMetadataProvider {
 
-        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
+        // Supports all platforms since SteamGridDB has covers for a wide range of platforms
+        override val supportedPlatforms: Set<Platform> = emptySet()
+
+        override fun fetchByTitle(
+            gameTitle: String,
+            platformFilter: Set<Platform>,
+            maxResults: Int
+        ): List<GameMetadata> {
             return runBlocking {
                 val results = searchSteamGridDb(gameTitle)
                 coroutineScope {

@@ -28,7 +28,6 @@ import kotlin.time.measureTimedValue
 class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
     companion object {
-        private val TORRENT_FILE_DIRECTORY = Path.of("torrent_dotfiles")
         private lateinit var tracker: Tracker
         private lateinit var communicationManager: CommunicationManager
 
@@ -74,7 +73,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
     override fun start() {
 
-        Files.createDirectories(TORRENT_FILE_DIRECTORY)
+        Files.createDirectories(dataDirectory)
 
         tracker = Tracker(config("trackerPort"), getTrackerUri().toString())
         tracker.setAcceptForeignTorrents(false)
@@ -192,8 +191,8 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         }
 
         private fun createTorrent(gameFilesPath: Path): Path {
-            val torrentFile =
-                TORRENT_FILE_DIRECTORY.resolve("${gameFilesPath.nameWithoutExtension}-${gameFilesPath.hashCode()}.torrent")
+            val torrentFile = plugin.dataDirectory
+                .resolve("${gameFilesPath.nameWithoutExtension}-${gameFilesPath.hashCode()}.torrent")
 
             if (Files.exists(torrentFile)) {
                 return torrentFile

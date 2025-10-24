@@ -27,7 +27,7 @@ import java.time.Instant
 data class GameMetadata(
     val originalId: String,
     val title: String,
-    val platforms: Set<Platform>,
+    val platforms: Set<Platform>? = null,
     val description: String? = null,
     val coverUrls: List<URI>? = null,
     val headerUrls: List<URI>? = null,

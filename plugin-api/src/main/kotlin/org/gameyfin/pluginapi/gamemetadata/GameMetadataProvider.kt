@@ -15,16 +15,17 @@ interface GameMetadataProvider : ExtensionPoint {
      *
      * @return A set of [Platform] enums indicating supported platforms.
      */
-    fun getSupportedPlatforms(): Set<Platform>
+    val supportedPlatforms: Set<Platform>
 
     /**
      * Fetches a list of game metadata entries matching the given game title.
      *
      * @param gameTitle The title of the game to search for.
+     * @param platformFilter A set of [Platform] enums to filter the search results. Only games available on these platforms should be returned.
      * @param maxResults The maximum number of results to return. Defaults to 1.
      * @return A list of [GameMetadata] objects matching the title, or an empty list if none found.
      */
-    fun fetchByTitle(gameTitle: String, maxResults: Int = 1): List<GameMetadata>
+    fun fetchByTitle(gameTitle: String, platformFilter: Set<Platform>, maxResults: Int = 1): List<GameMetadata>
 
     /**
      * Fetches game metadata by its unique identifier.
