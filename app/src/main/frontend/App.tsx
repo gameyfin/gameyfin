@@ -4,7 +4,7 @@ import {HeroUIProvider} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
 import {AuthProvider, useAuth} from "Frontend/util/auth";
-import { IconContext, XIcon } from "@phosphor-icons/react";
+import {IconContext, XIcon} from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
@@ -16,6 +16,7 @@ import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
 import {useEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
+import {initializePlatformState} from "Frontend/state/PlatformState";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
@@ -46,6 +47,7 @@ function ViewWithAuth() {
 
         initializeLibraryState();
         initializeGameState();
+        initializePlatformState();
         initializeGameRequestState();
         initializePluginState();
 

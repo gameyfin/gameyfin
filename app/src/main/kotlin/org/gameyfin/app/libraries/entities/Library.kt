@@ -27,7 +27,7 @@ class Library(
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
     var directories: MutableList<DirectoryMapping> = ArrayList(),
 
-    @ElementCollection(targetClass = Platform::class)
+    @ElementCollection(targetClass = Platform::class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     var platforms: MutableList<Platform> = ArrayList(),
 

@@ -1,12 +1,14 @@
 package org.gameyfin.app.games.dto
 
 import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import java.time.Instant
 import java.util.*
 
 class GameSearchResultDto(
     val id: UUID = UUID.randomUUID(),
     val title: String,
+    val platforms: Set<Platform>?,
     val coverUrls: List<UrlWithSourceDto>?,
     val headerUrls: List<UrlWithSourceDto>?,
     val release: Instant?,

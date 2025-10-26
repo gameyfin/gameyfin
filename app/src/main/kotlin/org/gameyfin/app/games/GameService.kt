@@ -535,6 +535,7 @@ class GameService(
 
             return GameSearchResultDto(
                 title = pick { it.title }!!,
+                platforms = pickList { it.platforms?.toList() }?.toSet(),
                 coverUrls = coverUrls.ifEmpty { null },
                 headerUrls = headerUrls.ifEmpty { null },
                 release = pick { it.release },

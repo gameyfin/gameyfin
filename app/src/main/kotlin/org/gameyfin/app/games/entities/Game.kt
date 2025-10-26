@@ -28,7 +28,7 @@ class Game(
     @ManyToOne(fetch = FetchType.LAZY)
     val library: Library,
 
-    @ElementCollection(targetClass = Platform::class)
+    @ElementCollection(targetClass = Platform::class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     var platforms: List<Platform> = emptyList(),
 

@@ -7,21 +7,22 @@ import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMappingInput";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
+import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import {useSnapshot} from "valtio/react";
+import {platformState} from "Frontend/state/PlatformState";
 
 interface LibraryCreationModalProps {
-    libraries: LibraryDto[];
-    setLibraries: (libraries: LibraryDto[]) => void;
     isOpen: boolean;
     onOpenChange: () => void;
 }
 
 export default function LibraryCreationModal({
-                                                 libraries,
                                                  isOpen,
                                                  onOpenChange
                                              }: LibraryCreationModalProps) {
 
     const [scanAfterCreation, setScanAfterCreation] = useState<boolean>(true);
+    const availablePlatforms = useSnapshot(platformState).available;
 
     async function createLibrary(library: LibraryDto) {
         await LibraryEndpoint.createLibrary(library as LibraryAdminDto, scanAfterCreation);
@@ -33,12 +34,12 @@ export default function LibraryCreationModal({
         });
     }
 
-    return (
+    return (availablePlatforms &&
         <>
             <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="xl">
                 <ModalContent>
                     {(onClose) => (
-                        <Formik initialValues={{name: "", directories: []}}
+                        <Formik initialValues={{name: "", directories: [], platforms: []}}
                                 validationSchema={Yup.object({
                                     name: Yup.string()
                                         .required("Library name is required")
@@ -65,6 +66,9 @@ export default function LibraryCreationModal({
                                                 value={formik.values.name}
                                                 required
                                             />
+                                            <ArrayInputAutocomplete options={Array.from(availablePlatforms)}
+                                                                    name="platforms"
+                                                                    label="Platforms"/>
                                             <DirectoryMappingInput name="directories"/>
                                         </div>
                                     </ModalBody>

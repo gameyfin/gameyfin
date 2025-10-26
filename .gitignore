@@ -54,3 +54,5 @@ out/
 /app/src/main/frontend/generated/
 **/torrent_dotfiles/
 *.state.json
+/plugins/data/
+/plugins/state/

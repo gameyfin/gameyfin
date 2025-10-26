@@ -96,7 +96,7 @@ class LibraryService(
         var newLibrary = Library(
             name = library.name,
             directories = directories,
-            platforms = library.platforms.toMutableList(),
+            platforms = library.platforms.toMutableList()
         )
 
         newLibrary = libraryRepository.save(newLibrary)
@@ -118,7 +118,7 @@ class LibraryService(
             ?: throw IllegalArgumentException("Library with ID $libraryUpdateDto.id not found")
 
         libraryUpdateDto.name?.let { library.name = it }
-        
+
         libraryUpdateDto.directories?.let { updatedDirs ->
             checkForDuplicateDirectories(
                 updatedDirs.map { it.internalPath },

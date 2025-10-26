@@ -91,6 +91,7 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     }
 
     inline fun <reified T> saveState(state: T) {
+        if (!Files.exists(stateFile.parent)) Files.createDirectories(stateFile.parent)
         if (!stateFile.exists()) stateFile.createFile()
         Files.newBufferedWriter(stateFile).use {
             it.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(state))

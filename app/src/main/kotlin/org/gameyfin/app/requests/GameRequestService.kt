@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 
@@ -109,6 +110,7 @@ class GameRequestService(
         val newGameRequest = GameRequest(
             title = gameRequest.title,
             release = gameRequest.release,
+            platform = gameRequest.platform,
             status = GameRequestStatus.PENDING,
             requester = currentUser,
             voters = mutableSetOf<User>().apply {
@@ -172,6 +174,7 @@ class GameRequestService(
         gameRequestRepository.save(gameRequest)
     }
 
+    // TODO: Make platform aware -> only fulfill requests if the platform matches
     @Async
     @EventListener(GameCreatedEvent::class)
     fun completeMatchingRequests(gameCreatedEvent: GameCreatedEvent) {
@@ -195,7 +198,7 @@ class GameRequestService(
             request.linkedGameId = game.id
             val persistedRequest = gameRequestRepository.save(request)
             emit(GameRequestEvent.Updated(persistedRequest.toDto()))
-            log.info { "Marked game request '${request.title}' (${request.release}) as FULFILLED because game is now available" }
+            log.info { "Marked game request '${request.title}' (${request.release?.atZone(ZoneId.systemDefault())?.year}) as FULFILLED because game is now available" }
         }
     }
 }

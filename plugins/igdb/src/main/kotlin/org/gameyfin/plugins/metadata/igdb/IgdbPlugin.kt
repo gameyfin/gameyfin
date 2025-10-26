@@ -161,7 +161,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
             if (platformFilter.isNotEmpty()) {
                 // TODO: Map to platform IDs
                 val platformFilterQuery =
-                    platformFilter.joinToString(separator = "\", \"", prefix = "platforms.name = [\"", postfix = "\"]")
+                    platformFilter.joinToString(separator = "\", \"", prefix = "platforms.name = (\"", postfix = "\")")
                 searchByNameQuery.where(platformFilterQuery)
             }
 
