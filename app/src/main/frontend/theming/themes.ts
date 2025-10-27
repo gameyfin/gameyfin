@@ -41,9 +41,7 @@ export function compileThemes(themes: Theme[]): ConfigThemes {
 }
 
 export function themeNames(): string[] {
-    const themeNames = Object.keys(compileThemes(themes));
-    console.debug("Available themes:", themeNames);
-    return themeNames;
+    return Object.keys(compileThemes(themes));
 }
 
 export const themes: Theme[] = [GameyfinBlue, GameyfinViolet, GameyfinClassic, Neutral, Slate, Red, Rose, Orange, Pink, Blue, Yellow, Violet, Colorblind];

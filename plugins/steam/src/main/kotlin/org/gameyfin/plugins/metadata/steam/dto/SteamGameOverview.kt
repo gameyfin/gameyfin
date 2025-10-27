@@ -12,5 +12,6 @@ data class SteamSearchResult(
 data class SteamGame(
     val type: String,
     val name: String,
-    val id: Int
+    val id: Int,
+    val platforms: SteamPlatforms
 )

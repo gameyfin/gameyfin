@@ -8,6 +8,7 @@ import org.gameyfin.pluginapi.core.config.*
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.gameyfin.plugins.metadata.steamgriddb.api.SteamGridDbApiClient
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGame
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGrid
@@ -78,10 +79,18 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         log.debug("Authentication successful")
     }
 
+    @Suppress("Unused")
     @Extension(ordinal = 1)
     class SteamGridDBGameCoverProvider : GameMetadataProvider {
 
-        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
+        // Supports all platforms since SteamGridDB has covers for a wide range of platforms
+        override val supportedPlatforms: Set<Platform> = emptySet()
+
+        override fun fetchByTitle(
+            gameTitle: String,
+            platformFilter: Set<Platform>,
+            maxResults: Int
+        ): List<GameMetadata> {
             return runBlocking {
                 val results = searchSteamGridDb(gameTitle)
                 coroutineScope {
@@ -93,8 +102,8 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                                 originalId = game.id.toString(),
                                 title = game.name,
                                 release = game.releaseDate,
-                                coverUrls = grids?.map { URI(it.url) },
-                                headerUrls = heroes?.map { URI(it.url) }
+                                coverUrls = grids?.map { URI(it.url) }?.toSet(),
+                                headerUrls = heroes?.map { URI(it.url) }?.toSet()
                             )
                         }
                     }.awaitAll().take(maxResults)
@@ -114,8 +123,8 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                     originalId = game.id.toString(),
                     title = game.name,
                     release = game.releaseDate,
-                    coverUrls = grids?.map { URI(it.url) },
-                    headerUrls = heroes?.map { URI(it.url) }
+                    coverUrls = grids?.map { URI(it.url) }?.toSet(),
+                    headerUrls = heroes?.map { URI(it.url) }?.toSet()
                 )
             }
         }

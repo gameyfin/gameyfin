@@ -82,8 +82,7 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
      */
     override fun <T : Serializable> optionalConfig(key: String): T? {
         val meta = resolveMetadata(key)
-        val value = resolveValue(key)
-        if (value == null) return null
+        val value = resolveValue(key) ?: return null
 
         return try {
             castConfigValue(meta, value) as T
@@ -101,9 +100,7 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
      */
     override fun <T : Serializable> config(key: String): T {
         val value = optionalConfig<T>(key)
-        if (value == null) {
-            throw PluginConfigError("Required configuration key '$key' is missing or has no value")
-        }
+            ?: throw PluginConfigError("Required configuration key '$key' is missing or has no value")
         return value
     }
 

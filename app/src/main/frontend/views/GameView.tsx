@@ -25,6 +25,7 @@ import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpd
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
+import ChipList from "Frontend/components/general/ChipList";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -124,6 +125,7 @@ export default function GameView() {
                                     {game.release !== undefined ? new Date(game.release).getFullYear() :
                                         <p className="text-default-500">no data</p>}
                                 </p>
+                                <ChipList items={game.platforms} maxVisible={1}/>
                                 <Tooltip
                                     content={`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
                                     placement="right">
@@ -203,11 +205,12 @@ export default function GameView() {
                                 <p>No summary available</p>
                             }
                         </div>
-                        <div className="flex flex-col flex-1 gap-2">
+                        <div className="flex flex-col flex-1">
                             <p className="text-default-500">Details</p>
-                            <table className="text-left w-full table-auto">
+                            <table
+                                className="text-left w-full table-auto border-separate border-spacing-y-1">
                                 <tbody>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Developed by</td>
                                     <td className="flex flex-row gap-1">
                                         {game.developers && game.developers.length > 0
@@ -226,7 +229,7 @@ export default function GameView() {
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Published by</td>
                                     <td className="flex flex-row gap-1">
                                         {game.publishers && game.publishers.length > 0
@@ -237,13 +240,16 @@ export default function GameView() {
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Genres</td>
                                     <td className="flex flex-row gap-1">
                                         {game.genres && game.genres.length > 0
                                             ? [...game.genres].sort().map(genre =>
                                                 <Link key={genre} href={`/search?genre=${encodeURIComponent(genre)}`}>
-                                                    <Chip radius="sm">{toTitleCase(genre)}</Chip>
+                                                    <Chip radius="sm" size="sm"
+                                                          className="text-sm">
+                                                        {toTitleCase(genre)}
+                                                    </Chip>
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
@@ -252,13 +258,16 @@ export default function GameView() {
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Themes</td>
                                     <td className="flex flex-row gap-1">
                                         {game.themes && game.themes.length > 0
                                             ? [...game.themes].sort().map(theme =>
                                                 <Link key={theme} href={`/search?theme=${encodeURIComponent(theme)}`}>
-                                                    <Chip radius="sm">{toTitleCase(theme)}</Chip>
+                                                    <Chip radius="sm" size="sm"
+                                                          className="text-sm">
+                                                        {toTitleCase(theme)}
+                                                    </Chip>
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
@@ -267,14 +276,17 @@ export default function GameView() {
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Features</td>
                                     <td className="flex flex-row gap-1">
                                         {game.features && game.features.length > 0
                                             ? [...game.features].sort().map(feature =>
                                                 <Link key={feature}
                                                       href={`/search?feature=${encodeURIComponent(feature)}`}>
-                                                    <Chip radius="sm">{toTitleCase(feature)}</Chip>
+                                                    <Chip radius="sm" size="sm"
+                                                          className="text-sm">
+                                                        {toTitleCase(feature)}
+                                                    </Chip>
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">

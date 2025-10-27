@@ -15,6 +15,7 @@ data class SteamDetailsResultWrapper(
 data class SteamGameDetails(
     val type: String,
     val name: String,
+    val platforms: SteamPlatforms,
     @SerialName("short_description") val shortDescription: String? = null,
     @SerialName("detailed_description") val detailedDescription: String? = null,
     @SerialName("header_image") val headerImage: String? = null,

@@ -17,7 +17,7 @@ import {
     Tooltip,
     useDisclosure
 } from "@heroui/react";
-import { CheckCircleIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from "@phosphor-icons/react";
+import {CheckCircleIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {GameEndpoint} from "Frontend/generated/endpoints";
@@ -28,6 +28,7 @@ import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
 import {metadataCompleteness} from "Frontend/util/utils";
+import ChipList from "Frontend/components/general/ChipList";
 
 interface LibraryManagementGamesProps {
     library: LibraryDto;
@@ -162,6 +163,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                }>
             <TableHeader>
                 <TableColumn key="title" allowsSorting>Game</TableColumn>
+                <TableColumn key="platforms">Platforms</TableColumn>
                 <TableColumn key="addedToLibrary" allowsSorting>Added to library</TableColumn>
                 <TableColumn key="downloadCount" allowsSorting>Download count</TableColumn>
                 <TableColumn>Path</TableColumn>
@@ -178,6 +180,9 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                   className="text-sm"
                                   underline="hover">{item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
                             </Link>
+                        </TableCell>
+                        <TableCell>
+                            <ChipList items={item.platforms} maxVisible={1} defaultContent="Unspecified"/>
                         </TableCell>
                         <TableCell>
                             {new Date(item.createdAt).toLocaleString()}

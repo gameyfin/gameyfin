@@ -5,8 +5,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.events.GameCreatedEvent
+import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.core.security.isAdmin
+import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.requests.dto.GameRequestCreationDto
 import org.gameyfin.app.requests.dto.GameRequestDto
@@ -21,8 +23,11 @@ import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.event.TransactionalEventListener
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 
@@ -57,6 +62,21 @@ class GameRequestService(
         }
     }
 
+    @Async
+    @EventListener(GameCreatedEvent::class)
+    fun onGameCreated(gameCreatedEvent: GameCreatedEvent) {
+        completeMatchingRequests(gameCreatedEvent.game)
+    }
+
+    @Async
+    @TransactionalEventListener(
+        classes = [GameUpdatedEvent::class],
+        phase = TransactionPhase.AFTER_COMPLETION
+    )
+    fun onGameUpdated(gameUpdatedEvent: GameUpdatedEvent) {
+        completeMatchingRequests(gameUpdatedEvent.currentState)
+    }
+
     fun getAll(): List<GameRequestDto> {
         val entities = gameRequestRepository.findAll()
         return entities.toDtos()
@@ -70,20 +90,25 @@ class GameRequestService(
         }
 
         // Check if game is already available
-        val existingGames = gameRepository.findByTitleAndReleaseYear(gameRequest.title, gameRequest.release)
+        val existingGames = gameRepository.findByTitleAndReleaseYearAndPlatform(
+            gameRequest.title,
+            gameRequest.release,
+            gameRequest.platform
+        )
         if (existingGames.isNotEmpty()) {
             throw EndpointException(
-                "This game is already available (ID: ${existingGames[0].id})"
+                "This game is already available for ${gameRequest.platform} (ID: ${existingGames[0].id})"
             )
         }
 
-        // Check if a request with the same title and release year already exists
-        val existingRequests = gameRequestRepository.findByTitleAndReleaseYear(
+        // Check if a request with the same title, release year, and platform already exists
+        val existingRequests = gameRequestRepository.findByTitleAndReleaseYearAndPlatform(
             gameRequest.title,
-            gameRequest.release
+            gameRequest.release,
+            gameRequest.platform
         )
         if (existingRequests.isNotEmpty()) {
-            throw EndpointException("A request for this game already exists (ID: ${existingRequests[0].id})")
+            throw EndpointException("A request for this game on ${gameRequest.platform} already exists (ID: ${existingRequests[0].id})")
         }
 
         val auth = getCurrentAuth()
@@ -109,6 +134,7 @@ class GameRequestService(
         val newGameRequest = GameRequest(
             title = gameRequest.title,
             release = gameRequest.release,
+            platform = gameRequest.platform,
             status = GameRequestStatus.PENDING,
             requester = currentUser,
             voters = mutableSetOf<User>().apply {
@@ -172,30 +198,33 @@ class GameRequestService(
         gameRequestRepository.save(gameRequest)
     }
 
-    @Async
-    @EventListener(GameCreatedEvent::class)
-    fun completeMatchingRequests(gameCreatedEvent: GameCreatedEvent) {
-        val game = gameCreatedEvent.game
+    private fun completeMatchingRequests(game: Game) {
         val gameTitle = game.title
         val gameRelease = game.release
+        val gamePlatforms = game.platforms
 
         if (gameTitle == null) {
             log.warn { "Game '${game.id}' is missing title, cannot complete matching requests" }
             return
         }
 
-        val matchingRequests = gameRequestRepository.findRequestsByTitleAndReleaseYearAndStatusNotIn(
-            gameTitle,
-            gameRelease,
-            listOf(GameRequestStatus.FULFILLED)
-        )
+        // Check each platform of the game for matching requests
+        gamePlatforms.forEach { platform ->
+            val matchingRequests = gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
+                gameTitle,
+                gameRelease,
+                platform,
+                listOf(GameRequestStatus.FULFILLED)
+            )
 
-        matchingRequests.forEach { request ->
-            request.status = GameRequestStatus.FULFILLED
-            request.linkedGameId = game.id
-            val persistedRequest = gameRequestRepository.save(request)
-            emit(GameRequestEvent.Updated(persistedRequest.toDto()))
-            log.info { "Marked game request '${request.title}' (${request.release}) as FULFILLED because game is now available" }
+            matchingRequests.forEach { request ->
+                request.status = GameRequestStatus.FULFILLED
+                request.linkedGameId = game.id
+                val persistedRequest = gameRequestRepository.save(request)
+                emit(GameRequestEvent.Updated(persistedRequest.toDto()))
+                log.info { "Marked game request '${request.title}' (${request.release?.atZone(ZoneId.systemDefault())?.year}) for ${request.platform} as FULFILLED because game is now available" }
+            }
         }
     }
+
 }

@@ -23,6 +23,13 @@ subprojects {
     dependencies {
         compileOnly(kotlin("stdlib"))
         compileOnly(project(":plugin-api"))
+
+        // Test dependencies
+        testImplementation(project(":plugin-api"))
+        testImplementation(kotlin("test"))
+        testImplementation(platform("org.junit:junit-bom:${rootProject.extra["junitVersion"]}"))
+        testImplementation("org.junit.jupiter:junit-jupiter")
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
     // Read the version from the MANIFEST.MF file in resources
@@ -100,5 +107,10 @@ subprojects {
 
     tasks.build {
         dependsOn("signJar")
+    }
+
+    tasks.test {
+        useJUnitPlatform()
+        dependsOn("copyDependencyClasses")
     }
 }

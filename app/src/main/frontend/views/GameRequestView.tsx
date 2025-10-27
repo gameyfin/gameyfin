@@ -16,7 +16,7 @@ import {
     useDisclosure
 } from "@heroui/react";
 import RequestGameModal from "Frontend/components/general/modals/RequestGameModal";
-import { ArrowUpIcon, CheckIcon, InfoIcon, PlusCircleIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+import {ArrowUpIcon, CheckIcon, InfoIcon, PlusCircleIcon, TrashIcon, XIcon} from "@phosphor-icons/react";
 import React, {useEffect, useMemo, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import {ConfigEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
@@ -145,9 +145,10 @@ export default function GameRequestView() {
         switch (status) {
             case GameRequestStatus.APPROVED:
                 return <Chip size="sm" radius="sm"
-                             className="text-xs bg-success-300 text-success-foreground">Approved</Chip>;
+                             className="text-xs bg-success text-success-foreground">Approved</Chip>;
             case GameRequestStatus.FULFILLED:
-                return <Chip size="sm" radius="sm" className="text-xs bg-success">Fulfilled</Chip>;
+                return <Chip size="sm" radius="sm"
+                             className="text-xs bg-success-100 text-success-foreground">Fulfilled</Chip>;
             case GameRequestStatus.REJECTED:
                 return <Chip size="sm" radius="sm"
                              className="text-xs bg-danger-300 text-danger-foreground">Rejected</Chip>;
@@ -219,6 +220,7 @@ export default function GameRequestView() {
         >
             <TableHeader>
                 <TableColumn key="title" allowsSorting>Title & Release</TableColumn>
+                <TableColumn key="platform">Platform</TableColumn>
                 <TableColumn>Submitted by</TableColumn>
                 <TableColumn key="createdAt" allowsSorting>Submitted</TableColumn>
                 <TableColumn key="updatedAt" allowsSorting>Updated</TableColumn>
@@ -231,6 +233,9 @@ export default function GameRequestView() {
                     <TableRow key={item.id}>
                         <TableCell>
                             {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                        </TableCell>
+                        <TableCell>
+                            <Chip size="sm" radius="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
                         </TableCell>
                         <TableCell>
                             <p className="text-default-500">

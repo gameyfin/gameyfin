@@ -1,5 +1,6 @@
 package org.gameyfin.app.core.plugins.management
 
+import org.pf4j.ClassLoadingStrategy
 import org.pf4j.PluginClassLoader
 import org.pf4j.PluginDescriptor
 import org.pf4j.PluginManager
@@ -11,7 +12,8 @@ class GameyfinPluginClassLoader(
     pluginManager: PluginManager,
     pluginDescriptor: PluginDescriptor,
     parentClassLoader: ClassLoader,
-) : PluginClassLoader(pluginManager, pluginDescriptor, parentClassLoader) {
+    classLoadingStrategy: ClassLoadingStrategy,
+) : PluginClassLoader(pluginManager, pluginDescriptor, parentClassLoader, classLoadingStrategy) {
 
     override fun loadClass(className: String?): Class<*>? {
         try {

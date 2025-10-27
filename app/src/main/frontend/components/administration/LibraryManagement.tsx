@@ -5,7 +5,7 @@ import Section from "Frontend/components/general/Section";
 import * as Yup from 'yup';
 import "Frontend/util/yup-extensions";
 import {addToast, Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
-import { PlusIcon } from "@phosphor-icons/react";
+import {PlusIcon} from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {LibraryOverviewCard} from "Frontend/components/general/cards/LibraryOverviewCard";
 import LibraryCreationModal from "Frontend/components/general/modals/LibraryCreationModal";
@@ -83,8 +83,6 @@ function LibraryManagementLayout({getConfig, formik}: any) {
             }
 
             <LibraryCreationModal
-                // @ts-ignore
-                libraries={state.sorted}
                 isOpen={libraryCreationModal.isOpen}
                 onOpenChange={libraryCreationModal.onOpenChange}
             />

@@ -89,11 +89,14 @@ class LibraryService(
         // Check for duplicate directories before creating a new library
         checkForDuplicateDirectories(library.directories.map { it.internalPath })
 
+        val directories = library.directories.distinctBy { it.internalPath }.map {
+            DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
+        }.toMutableList()
+
         var newLibrary = Library(
             name = library.name,
-            directories = library.directories.distinctBy { it.internalPath }.map {
-                DirectoryMapping(internalPath = it.internalPath, externalPath = it.externalPath)
-            }.toMutableList(),
+            directories = directories,
+            platforms = library.platforms.toMutableList()
         )
 
         newLibrary = libraryRepository.save(newLibrary)
@@ -115,6 +118,7 @@ class LibraryService(
             ?: throw IllegalArgumentException("Library with ID $libraryUpdateDto.id not found")
 
         libraryUpdateDto.name?.let { library.name = it }
+
         libraryUpdateDto.directories?.let { updatedDirs ->
             checkForDuplicateDirectories(
                 updatedDirs.map { it.internalPath },
@@ -151,6 +155,12 @@ class LibraryService(
                 }
             }
         }
+
+        libraryUpdateDto.platforms?.let {
+            library.platforms.clear()
+            library.platforms.addAll(it)
+        }
+
         libraryUpdateDto.unmatchedPaths?.let {
             library.unmatchedPaths.clear()
             library.unmatchedPaths.addAll(it)
