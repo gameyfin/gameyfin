@@ -21,6 +21,9 @@ import GameCoverPicker from "Frontend/components/general/input/GameCoverPicker";
 import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
 import ArrayInput from "Frontend/components/general/input/ArrayInput";
 import GameHeaderPicker from "Frontend/components/general/input/GameHeaderPicker";
+import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import {useSnapshot} from "valtio/react";
+import {platformState} from "Frontend/state/PlatformState";
 
 interface EditGameMetadataModalProps {
     game: GameDto;
@@ -29,6 +32,8 @@ interface EditGameMetadataModalProps {
 }
 
 export default function EditGameMetadataModal({game, isOpen, onOpenChange}: EditGameMetadataModalProps) {
+    const availablePlatforms = useSnapshot(platformState).available;
+
     return (
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="3xl">
             <ModalContent>
@@ -69,6 +74,8 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                             <DatePickerInput key="release" name="release" label="Release"
                                                              className="w-fit"/>
                                         </div>
+                                        <ArrayInputAutocomplete options={Array.from(availablePlatforms)}
+                                                                name="platforms" label="Platforms"/>
                                         <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
                                         <TextAreaInput key="comment" name="comment" label="Comment (Markdown)"/>
                                         <Accordion variant="splitted"

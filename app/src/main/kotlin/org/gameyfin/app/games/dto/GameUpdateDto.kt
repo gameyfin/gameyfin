@@ -1,10 +1,12 @@
 package org.gameyfin.app.games.dto
 
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import java.time.LocalDate
 
 data class GameUpdateDto(
     val id: Long,
     val title: String?,
+    val platforms: Set<Platform>?,
     val release: LocalDate?,
     val coverUrl: String?,
     val headerUrl: String?,

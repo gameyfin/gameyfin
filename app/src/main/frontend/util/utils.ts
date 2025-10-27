@@ -217,7 +217,7 @@ export function fileNameFromPath(path: string, includeExtension: boolean = true)
  */
 export function metadataCompleteness(game: GameDto) {
     // Total number of fields considered for completeness
-    // Includes all fields except "comment"
+    // Includes all fields except "comment" and "platforms"
     const totalFields = 21;
 
     const filledFields = Object.values(game).filter(value => {
@@ -227,7 +227,8 @@ export function metadataCompleteness(game: GameDto) {
         return true;
     }).length;
 
-    return Math.round((filledFields / totalFields) * 100);
+    const completeness = Math.round((filledFields / totalFields) * 100);
+    return Math.min(100, completeness); // Never exceed 100%
 }
 
 /**

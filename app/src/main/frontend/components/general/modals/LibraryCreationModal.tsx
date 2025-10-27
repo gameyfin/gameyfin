@@ -68,7 +68,9 @@ export default function LibraryCreationModal({
                                             />
                                             <ArrayInputAutocomplete options={Array.from(availablePlatforms)}
                                                                     name="platforms"
-                                                                    label="Platforms"/>
+                                                                    label="Platforms"
+                                                                    placeholder="Platform(s) of the games in this library (leave empty for all platforms)"
+                                            />
                                             <DirectoryMappingInput name="directories"/>
                                         </div>
                                     </ModalBody>

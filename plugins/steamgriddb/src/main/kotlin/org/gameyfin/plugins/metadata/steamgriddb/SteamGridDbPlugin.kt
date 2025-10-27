@@ -79,6 +79,7 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         log.debug("Authentication successful")
     }
 
+    @Suppress("Unused")
     @Extension(ordinal = 1)
     class SteamGridDBGameCoverProvider : GameMetadataProvider {
 
@@ -101,8 +102,8 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                                 originalId = game.id.toString(),
                                 title = game.name,
                                 release = game.releaseDate,
-                                coverUrls = grids?.map { URI(it.url) },
-                                headerUrls = heroes?.map { URI(it.url) }
+                                coverUrls = grids?.map { URI(it.url) }?.toSet(),
+                                headerUrls = heroes?.map { URI(it.url) }?.toSet()
                             )
                         }
                     }.awaitAll().take(maxResults)
@@ -122,8 +123,8 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
                     originalId = game.id.toString(),
                     title = game.name,
                     release = game.releaseDate,
-                    coverUrls = grids?.map { URI(it.url) },
-                    headerUrls = heroes?.map { URI(it.url) }
+                    coverUrls = grids?.map { URI(it.url) }?.toSet(),
+                    headerUrls = heroes?.map { URI(it.url) }?.toSet()
                 )
             }
         }

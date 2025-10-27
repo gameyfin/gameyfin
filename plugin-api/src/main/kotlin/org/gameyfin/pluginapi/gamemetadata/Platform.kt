@@ -66,6 +66,7 @@ enum class Platform(val displayName: String) {
     COMMODORE_CDTV("Commodore CDTV"),
     COMMODORE_PET("Commodore PET"),
     COMMODORE_PLUS_4("Commodore Plus/4"),
+    COMMODORE_VIC_20("Commodore VIC-20"),
 
     // D
     DAYDREAM("Daydream"),
@@ -182,6 +183,7 @@ enum class Platform(val displayName: String) {
     PDP_7("PDP-7"),
     PDP_8("PDP-8"),
     PDP_10("PDP-10"),
+    PDP_11("PDP-11"),
     PHILIPS_CD_I("Philips CD-i"),
     PLATO("PLATO"),
     PLAYDATE("Playdate"),
@@ -235,6 +237,8 @@ enum class Platform(val displayName: String) {
     TEREBIKKO_SEE_N_SAY_VIDEO_PHONE("Terebikko / See 'n Say Video Phone"),
     THOMSON_MO5("Thomson MO5"),
     TOMY_TUTOR_PYUTA_GRANDSTAND_TUTOR("Tomy Tutor / Pyuta / Grandstand Tutor"),
+    TRS_80("TRS-80"),
+    TRS_80_COLOR_COMPUTER("TRS-80 Color Computer"),
     TURBOGRAFX_16_PC_ENGINE_CD("Turbografx-16/PC Engine CD"),
     TURBOGRAFX_16_PC_ENGINE("TurboGrafx-16/PC Engine"),
 

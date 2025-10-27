@@ -47,6 +47,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         val dateSerializer = SteamDateSerializer()
     }
 
+    @Suppress("Unused")
     @Extension(ordinal = 3)
     class SteamMetadataProvider : GameMetadataProvider {
         private val log = LoggerFactory.getLogger(javaClass)
@@ -162,7 +163,8 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
 
             val filteredByPlatform = if (platformFilter.isNotEmpty()) {
                 searchResult.items.filter { game ->
-                    supportedPlatforms.any { it in toGameyfinPlatforms(game.platforms) }
+                    val platformsSupportedByGame = toGameyfinPlatforms(game.platforms)
+                    platformFilter.any { it in platformsSupportedByGame }
                 }
             } else {
                 searchResult.items
@@ -202,13 +204,16 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
                 toGameyfinPlatforms(game.platforms)
             }
 
+            // If the game does not support any of the requested platforms, skip it
+            if (gamePlatforms.isEmpty()) return null
+
             // This is as much as I can get from the Steam Store API
             val metadata = GameMetadata(
                 originalId = id.toString(),
                 title = sanitizeTitle(game.name),
                 platforms = gamePlatforms,
                 description = game.shortDescription, // Using short description since the detailed description often contains just some ads for the Battle Pass etc.
-                coverUrls = game.headerImage?.let { URI(it) }?.let { listOf(it) },
+                coverUrls = game.headerImage?.let { URI(it) }?.let { listOf(it) }?.toSet(),
                 release = parseOriginalReleaseDateFromStorePage(id) ?: game.releaseDate?.date,
                 developedBy = game.developers?.toSet(),
                 publishedBy = game.publishers?.toSet(),

@@ -160,6 +160,10 @@ class GameService(
             existingGame.title = it
             existingGame.metadata.fields["title"]?.source = GameFieldUserSource(user = user)
         }
+        gameUpdateDto.platforms?.let {
+            existingGame.platforms = it.toMutableList()
+            existingGame.metadata.fields["platforms"]?.source = GameFieldUserSource(user = user)
+        }
         gameUpdateDto.release?.let {
             existingGame.release = it.atStartOfDay(ZoneOffset.UTC).toInstant()
             existingGame.metadata.fields["release"]?.source = GameFieldUserSource(user = user)
@@ -314,6 +318,15 @@ class GameService(
                 wasGameUpdated = true
             }
         }
+
+        // Platforms
+        updateField(
+            "platforms",
+            game.platforms,
+            updatedGame.platforms,
+            { game.platforms = it ?: mutableListOf() },
+            updatedGame.metadata.fields["platforms"]
+        )
 
         // Title
         updateField(
@@ -482,8 +495,28 @@ class GameService(
         }
         val results = futures.flatMap { it.get() }
 
+        // Filter by platforms (in case some plugins did not respect the platform filter)
+        val filteredResults = results
+            .mapNotNull { (provider, metadata) ->
+                // If no platform filter is provided, keep all games
+                if (platformFilter.isEmpty()) return@mapNotNull provider to metadata
+
+                // If metadata has no platforms, keep it (plugins that don't specify platforms)
+                val metadataPlatforms = metadata.platforms ?: return@mapNotNull provider to metadata
+
+                // Keep only platforms that match the filter
+                val matchingPlatforms = metadataPlatforms.intersect(platformFilter)
+
+                // If no platforms match, exclude this game
+                if (matchingPlatforms.isEmpty()) return@mapNotNull null
+
+                // Return game with filtered platforms
+                provider to metadata.copy(platforms = matchingPlatforms)
+            }
+
         val providerToManagementEntry =
-            results.toMap().entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
+            filteredResults.toMap().entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
+
 
         // 2. Group by title and release year (if available)
         // (NOTE: This _could_ lead to problems if multiple games have the (almost) same title - see Battlefront 2)
@@ -495,7 +528,7 @@ class GameService(
                 year = this.release?.atZone(ZoneId.systemDefault())?.year
             )
 
-        val grouped = results.groupBy { (_, metadata) -> metadata.groupKey() }
+        val grouped = filteredResults.groupBy { (_, metadata) -> metadata.groupKey() }
 
         // 3. Merge each group into one GameSearchResultDto using plugin priorities
 
@@ -628,7 +661,7 @@ class GameService(
     fun matchFromFile(path: Path, library: Library): Game? {
         var query = FilenameUtils.removeExtension(path.fileName.toString())
 
-        // (Optional) Step -1: Extract title from filename using regex
+        // (Optional) Step 0: Extract title from filename using regex
         if (config.get(ConfigProperties.Libraries.Scan.ExtractTitleUsingRegex) == true) {
             val regexString = config.get(ConfigProperties.Libraries.Scan.TitleExtractionRegex)
             if (regexString != null && regexString.isNotEmpty()) {
@@ -647,18 +680,37 @@ class GameService(
             }
         }
 
-        // Step 0: Query all metadata plugins for metadata on the provided game title
+        // Step 1: Query all metadata plugins for metadata on the provided game title and filter the results
+        //         so that only valid results (non-empty) and valid platforms remain
         val metadataResults = queryPlugins(query, library.platforms.toSet())
+            .filterValuesNotNull()
+            .mapNotNull { (provider, metadata) ->
+                val platformFilter = library.platforms.toSet()
 
-        // Step 1: Filter out invalid (empty) results
-        val validResults = metadataResults.filterValuesNotNull()
-        if (validResults.isEmpty()) {
+                // If the library is not platform specific, keep all games
+                if (platformFilter.isEmpty()) return@mapNotNull provider to metadata
+
+                // If metadata has no platforms, keep it (plugins that don't specify platforms)
+                val metadataPlatforms = metadata.platforms ?: return@mapNotNull provider to metadata
+
+                // Keep only platforms that match the filter
+                val matchingPlatforms = metadataPlatforms.intersect(platformFilter.toSet())
+
+                // If no platforms match, exclude this game
+                if (matchingPlatforms.isEmpty()) return@mapNotNull null
+
+                // Return game with filtered platforms
+                provider to metadata.copy(platforms = matchingPlatforms)
+            }
+            .toMap()
+
+        if (metadataResults.isEmpty()) {
             log.error { "Could not identify game at path '$path'" }
             return null
         }
 
         // Step 2: Filter results to find the best matching title
-        val filteredResults = filterResults(query, validResults)
+        val filteredResults = filterResults(query, metadataResults)
 
         // Step 3: Merge results into a single Game entity
         val mergedGame = mergeResults(filteredResults, path, library)
@@ -767,6 +819,13 @@ class GameService(
             metadata?.let { metadata ->
                 originalIdsMap[sourcePlugin] = metadata.originalId
 
+                metadata.platforms?.takeIf { it.isNotEmpty() }?.let { platforms ->
+                    if (!metadataMap.containsKey("platforms")) {
+                        mergedGame.platforms = platforms.toList()
+                        metadataMap["platforms"] =
+                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
+                    }
+                }
                 metadata.title.takeIf { it.isNotBlank() }?.let { title ->
                     if (!metadataMap.containsKey("title")) {
                         mergedGame.title = title
