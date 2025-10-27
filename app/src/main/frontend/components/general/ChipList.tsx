@@ -36,7 +36,7 @@ export default function ChipList({items, maxVisible = 1, size = "sm", radius = "
                     }
                     placement="right">
                     <Chip radius={radius} size={size}>
-                        +{remainingItems.length}
+                        {maxVisible > 0 && "+"}{remainingItems.length}
                     </Chip>
                 </Tooltip>
             )}
