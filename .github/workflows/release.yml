@@ -69,7 +69,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: modified-files
 
@@ -124,7 +124,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: modified-files
 
@@ -155,7 +155,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: modified-files
 
