@@ -38,12 +38,12 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     /**
      * State file for the plugin, used to persist plugin-specific state.
      */
-    val stateFile: Path = Path.of("plugins/state/${wrapper.pluginId}.state.json")
+    val stateFile: Path = Path.of("plugindata/${wrapper.pluginId}/state.json")
 
     /**
      * Plugin data directory for storing plugin-specific files.
      */
-    val dataDirectory: Path = Path.of("plugins/data/${wrapper.pluginId}")
+    val dataDirectory: Path = Path.of("plugindata/${wrapper.pluginId}")
 
     /**
      * JSON serializer for serializing and deserializing plugin state.

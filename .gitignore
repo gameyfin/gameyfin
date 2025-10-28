@@ -56,3 +56,4 @@ out/
 *.state.json
 /plugins/data/
 /plugins/state/
+/plugindata/
