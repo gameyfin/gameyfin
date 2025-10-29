@@ -3,7 +3,7 @@ import {Button, Image, Input, Modal, ModalBody, ModalContent, ModalHeader, Scrol
 import React, {useEffect, useState} from "react";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import {GameEndpoint} from "Frontend/generated/endpoints";
-import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
@@ -33,7 +33,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
 
     async function search() {
         setIsSearching(true);
-        const results = await GameEndpoint.getPotentialMatches(searchTerm);
+        const results = await GameEndpoint.getPotentialMatches(searchTerm, game.platforms);
         let validResults = results.filter(result => result.coverUrls && result.coverUrls.length > 0);
         setSearchResults(validResults);
         setIsSearching(false);

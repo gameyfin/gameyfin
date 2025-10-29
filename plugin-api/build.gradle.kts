@@ -12,6 +12,9 @@ dependencies {
     // PF4J (shared)
     api("org.pf4j:pf4j:${rootProject.extra["pf4jVersion"]}")
 
+    // Logging
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
+
     // JSON serialization
     compileOnly("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")

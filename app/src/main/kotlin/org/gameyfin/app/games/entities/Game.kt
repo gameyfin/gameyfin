@@ -3,10 +3,7 @@ package org.gameyfin.app.games.entities
 import jakarta.persistence.*
 import jakarta.persistence.CascadeType.*
 import org.gameyfin.app.libraries.entities.Library
-import org.gameyfin.pluginapi.gamemetadata.GameFeature
-import org.gameyfin.pluginapi.gamemetadata.Genre
-import org.gameyfin.pluginapi.gamemetadata.PlayerPerspective
-import org.gameyfin.pluginapi.gamemetadata.Theme
+import org.gameyfin.pluginapi.gamemetadata.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import java.net.URI
@@ -31,6 +28,10 @@ class Game(
     @ManyToOne(fetch = FetchType.LAZY)
     val library: Library,
 
+    @ElementCollection(targetClass = Platform::class, fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    var platforms: List<Platform> = emptyList(),
+
     var title: String? = null,
 
     @ManyToOne(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
@@ -40,11 +41,9 @@ class Game(
     var headerImage: Image? = null,
 
     @Lob
-    @Column(columnDefinition = "CLOB")
     var comment: String? = null,
 
     @Lob
-    @Column(columnDefinition = "CLOB")
     var summary: String? = null,
 
     var release: Instant? = null,

@@ -1,0 +1,38 @@
+# Exclude VCS and IDE files
+.git
+.gitignore
+.idea/
+*.iml
+
+# Gradle caches
+.gradle/
+**/.gradle/
+
+# Node modules and app build cache
+app/node_modules/
+app/.pnpm-store/
+app/.npm/
+app/.yarn/
+app/.vite/
+app/dist/
+
+# General build outputs (keep only the jars we actually need)
+**/build/
+!app/build/
+!app/build/libs/
+!app/build/libs/app.jar
+
+# Only keep plugin jars in build/libs
+plugins/**
+!plugins/*/build/
+!plugins/*/build/libs/
+!plugins/*/build/libs/*.jar
+
+# Large local/runtime data not needed in image context
+data/
+db/
+logs/
+
+# Docker intermediate artifacts
+**/.DS_Store
+

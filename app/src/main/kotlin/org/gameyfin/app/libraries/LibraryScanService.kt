@@ -284,6 +284,11 @@ class LibraryScanService(
         // Add new games to library using managed entities, but do not persist yet
         libraryCoreService.addGamesToLibrary(managedGames, managedLibrary, persist = false)
 
+        // Add new unmatched paths to library using managed entity, but do not persist yet
+        managedLibrary.unmatchedPaths.addAll(
+            library.unmatchedPaths.filter { it !in managedLibrary.unmatchedPaths }
+        )
+
         progress.currentStep.current = games.size
         emit(progress)
 

@@ -1,4 +1,4 @@
-group = "de.grimsi"
+group = "org.gameyfin"
 val appMainClass = "org.gameyfin.app.GameyfinApplicationKt"
 
 plugins {

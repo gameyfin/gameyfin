@@ -34,6 +34,7 @@ fun Library.toAdminDto(): LibraryAdminDto {
         id = this.id!!,
         name = this.name,
         directories = this.directories.map { DirectoryMappingDto(it.internalPath, it.externalPath) },
+        platforms = this.platforms,
         games = this.games.mapNotNull { it.id },
         stats = LibraryStatsDto(
             gamesCount = this.games.size,

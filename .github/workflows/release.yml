@@ -50,18 +50,18 @@ jobs:
           jq ".version = \"$RELEASE_VERSION\"" app/package.json > app/package.json.tmp && mv app/package.json.tmp app/package.json
 
       - name: Upload modified files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: modified-files
           path: |
             build.gradle.kts
             app/package.json
 
-  docker:
+  build:
     needs: setup
     runs-on: ubuntu-latest
     permissions:
-      packages: write
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -69,7 +69,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: modified-files
 
@@ -86,33 +86,64 @@ jobs:
           GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
         run: ./gradlew clean build -Pvaadin.productionMode=true
 
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          path: |
+            app/build/libs/**
+            plugins/**/build/libs/**/*.jar
+
+  docker:
+    needs: [ setup, build ]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [ alpine, ubuntu ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download modified files
+        uses: actions/download-artifact@v5
+        with:
+          name: modified-files
+
+      - name: Download build outputs
+        uses: actions/download-artifact@v5
+        with:
+          name: build-outputs
+          path: .
+
       - name: Generate container image tags
         id: docker_tags
         run: |
-          VERSION="${{ needs.setup.outputs.release_version }}"
-          DOCKERHUB_TAGS="grimsi/gameyfin:$VERSION"
+          VERSION='${{ needs.setup.outputs.release_version }}'
           GHCR_TAGS="ghcr.io/gameyfin/gameyfin:$VERSION"
           if [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             MAJOR=${BASH_REMATCH[1]}
             MINOR=${BASH_REMATCH[2]}
             PATCH=${BASH_REMATCH[3]}
-            DOCKERHUB_TAGS="grimsi/gameyfin:latest,grimsi/gameyfin:develop,grimsi/gameyfin:$VERSION,grimsi/gameyfin:$MAJOR.$MINOR,grimsi/gameyfin:$MAJOR"
             GHCR_TAGS="ghcr.io/gameyfin/gameyfin:latest,ghcr.io/gameyfin/gameyfin:develop,ghcr.io/gameyfin/gameyfin:$VERSION,ghcr.io/gameyfin/gameyfin:$MAJOR.$MINOR,ghcr.io/gameyfin/gameyfin:$MAJOR"
           fi
-          TAGS="$DOCKERHUB_TAGS,$GHCR_TAGS"
+          TAGS="$GHCR_TAGS"
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (${{ matrix.variant }})
         uses: ./.github/actions/docker-build-push
         with:
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           ghcr_username: ${{ github.actor }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
           context: .
           dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
           tags: ${{ steps.docker_tags.outputs.tags }}
+          variant: ${{ matrix.variant }}
 
   plugin_api:
     needs: setup
@@ -124,7 +155,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: modified-files
 
@@ -155,7 +186,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: modified-files
 

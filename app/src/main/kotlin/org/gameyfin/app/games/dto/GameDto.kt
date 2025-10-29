@@ -1,6 +1,7 @@
 package org.gameyfin.app.games.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import java.time.Instant
 import java.time.LocalDate
 
@@ -10,6 +11,7 @@ sealed interface GameDto {
     val updatedAt: Instant
     val libraryId: Long
     val title: String
+    val platforms: List<Platform>
     val coverId: Long?
     val headerId: Long?
     val comment: String?
@@ -36,6 +38,7 @@ data class GameUserDto(
     override val updatedAt: Instant,
     override val libraryId: Long,
     override val title: String,
+    override val platforms: List<Platform>,
     override val coverId: Long?,
     override val headerId: Long?,
     override val comment: String?,
@@ -62,6 +65,7 @@ data class GameAdminDto(
     override val updatedAt: Instant,
     override val libraryId: Long,
     override val title: String,
+    override val platforms: List<Platform>,
     override val coverId: Long?,
     override val headerId: Long?,
     override val comment: String?,

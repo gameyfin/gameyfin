@@ -13,13 +13,15 @@ import {
     Tooltip
 } from "@heroui/react";
 import React, {useEffect, useState} from "react";
-import { ArrowRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
+import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import PluginIcon from "../plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
+import {libraryState} from "Frontend/state/LibraryState";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 interface MatchGameModalProps {
     path: string;
@@ -44,6 +46,7 @@ export default function MatchGameModal({
     const [isMatching, setIsMatching] = useState<string | null>(null);
 
     const state = useSnapshot(pluginState).state;
+    const librariesState = useSnapshot(libraryState).state;
 
     useEffect(() => {
         setSearchTerm(initialSearchTerm);
@@ -56,7 +59,7 @@ export default function MatchGameModal({
 
     async function search() {
         setIsSearching(true);
-        const results = await GameEndpoint.getPotentialMatches(searchTerm);
+        const results = await GameEndpoint.getPotentialMatches(searchTerm, (librariesState[libraryId] as LibraryAdminDto).platforms);
         setSearchResults(results);
         setIsSearching(false);
     }

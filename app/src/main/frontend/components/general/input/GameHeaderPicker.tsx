@@ -1,7 +1,7 @@
 import {Image, useDisclosure} from "@heroui/react";
 import React from "react";
 import {useField} from "formik";
-import { ImageBrokenIcon, PencilIcon } from "@phosphor-icons/react";
+import {ImageBrokenIcon, PencilIcon} from "@phosphor-icons/react";
 import {GameHeaderPickerModal} from "Frontend/components/general/modals/GameHeaderPickerModal";
 
 

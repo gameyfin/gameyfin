@@ -1,35 +1,55 @@
 # syntax=docker/dockerfile:1.4
+
+FROM eclipse-temurin:21-jre-alpine as builder
+WORKDIR /opt/gameyfin
+ARG JAR_FILE=./app/build/libs/app.jar
+COPY ${JAR_FILE} application.jar
+RUN java -Djarmode=layertools -jar application.jar extract
+
+# Pre-collect plugin JARs so final stage can copy them in a single layer
+COPY --link ./plugins/ /tmp/plugins/
+RUN mkdir -p /opt/gameyfin/plugins \
+    && find /tmp/plugins -type f -path "*/build/libs/*.jar" -exec cp {} /opt/gameyfin/plugins/ \; \
+    && rm -rf /tmp/plugins
+
+
 FROM eclipse-temurin:21-jre-alpine
 
-MAINTAINER grimsi
+# OCI labels
+LABEL maintainer="grimsi" \
+      org.opencontainers.image.title="Gameyfin" \
+      org.opencontainers.image.description="Manage your video games. simple/fast/FOSS" \
+      org.opencontainers.image.url="https://gameyfin.org" \
+      org.opencontainers.image.source="https://github.com/gameyfin/gameyfin" \
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      org.opencontainers.image.vendor="Gameyfin" \
+      org.opencontainers.image.authors="Gameyfin maintainers"
 
 # Install necessary packages
 RUN apk add --no-cache su-exec tini shadow
 
+# Fixed runtime user/group
 ENV USER=gameyfin
-
-RUN addgroup gameyfin && \
-    adduser --disabled-password --gecos "" --ingroup "$USER" --no-create-home "$USER"
+ARG UID=1337
+ARG GID=1337
 
 WORKDIR /opt/gameyfin
 
-# Create necessary directories with appropriate permissions
-RUN mkdir -p plugins db data logs && \
-    chown -R gameyfin:gameyfin .
+# Create user and required directories
+RUN groupadd -g "$GID" "$USER" && \
+    useradd -u "$UID" -g "$GID" -M -s /sbin/nologin "$USER" && \
+    mkdir -p plugins db data logs && \
+    chown -R "$UID:$GID" .
 
-# Copy entrypoint script and set permissions
-COPY --chown=gameyfin:gameyfin ./docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Copy entrypoint script with proper perms and ownership
+COPY --link --chown=${UID}:${GID} --chmod=0755 ./docker/entrypoint.sh /entrypoint.sh
 
-# Copy application jar (not ending with -plain.jar)
-COPY --chown=gameyfin:gameyfin ./app/build/libs/ /tmp/app-libs/
-RUN find /tmp/app-libs -type f -name "*.jar" ! -name "*-plain.jar" -exec cp {} gameyfin.jar \; && \
-    rm -rf /tmp/app-libs
-
-# Copy all plugin jars
-COPY --chown=gameyfin:gameyfin ./plugins/ /tmp/plugins/
-RUN find /tmp/plugins -type f -path "*/build/libs/*.jar" -exec cp {} plugins/ \; && \
-    rm -rf /tmp/plugins
+# Copy application layers and plugin jars from builder stage
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/dependencies/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/spring-boot-loader/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/snapshot-dependencies/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/application/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/plugins ./plugins
 
 EXPOSE 8080
 

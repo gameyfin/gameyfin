@@ -9,6 +9,7 @@ fun GameRequest.toDto(): GameRequestDto {
         id = this.id!!,
         title = this.title,
         release = this.release,
+        platform = this.platform,
         status = this.status,
         requester = this.requester?.toUserInfoDto(),
         voters = this.voters.map { it.toUserInfoDto() },

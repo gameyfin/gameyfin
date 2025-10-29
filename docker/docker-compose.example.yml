@@ -1,4 +1,3 @@
-version: "3"
 services:
   gameyfin:
     image: ghcr.io/gameyfin/gameyfin:2
@@ -10,6 +9,7 @@ services:
       - "./db:/opt/gameyfin/db"
       - "./data:/opt/gameyfin/data"
       - "./logs:/opt/gameyfin/logs"
+      - "./plugindata:/opt/gameyfin/plugindata"
       - <mount your library folder(s) here>
     ports:
       - "8080:8080"

@@ -1,5 +1,11 @@
 import {Button, Input, Select, SelectedItems, SelectItem, Tooltip} from "@heroui/react";
-import { FunnelSimpleIcon, FunnelSimpleXIcon, MagnifyingGlassIcon, SortAscendingIcon, StarIcon } from "@phosphor-icons/react";
+import {
+    FunnelSimpleIcon,
+    FunnelSimpleXIcon,
+    MagnifyingGlassIcon,
+    SortAscendingIcon,
+    StarIcon
+} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";

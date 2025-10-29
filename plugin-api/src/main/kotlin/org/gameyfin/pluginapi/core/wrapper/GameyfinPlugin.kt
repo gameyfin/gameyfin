@@ -4,9 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.createFile
+import java.nio.file.StandardOpenOption
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 
@@ -37,7 +38,12 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     /**
      * State file for the plugin, used to persist plugin-specific state.
      */
-    val stateFile: Path = Path.of("${wrapper.pluginId}.state.json")
+    val stateFile: Path = Path.of("plugindata/${wrapper.pluginId}/state.json")
+
+    /**
+     * Plugin data directory for storing plugin-specific files.
+     */
+    val dataDirectory: Path = Path.of("plugindata/${wrapper.pluginId}")
 
     /**
      * JSON serializer for serializing and deserializing plugin state.
@@ -53,11 +59,8 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
         for (format in SUPPORTED_LOGO_FORMATS) {
             val resourcePath = "$LOGO_FILE_NAME.$format"
             val inputStream = wrapper.pluginClassLoader.getResourceAsStream(resourcePath)
-            if (inputStream != null) {
-                return true
-            }
+            if (inputStream != null) return true
         }
-
         return false
     }
 
@@ -70,25 +73,37 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
         for (format in SUPPORTED_LOGO_FORMATS) {
             val resourcePath = "$LOGO_FILE_NAME.$format"
             val inputStream = wrapper.pluginClassLoader.getResourceAsStream(resourcePath)
-            if (inputStream != null) {
-                return inputStream.readAllBytes()
-            }
+            if (inputStream != null) return inputStream.readAllBytes()
         }
-
         return null
     }
 
     inline fun <reified T> loadState(): T? {
         if (!stateFile.exists() || stateFile.fileSize() == 0L) return null
-        return Files.newBufferedReader(stateFile).use {
-            objectMapper.readValue(it.readText(), T::class.java)
+        return try {
+            Files.newBufferedReader(stateFile).use {
+                objectMapper.readValue(it.readText(), T::class.java)
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 
     inline fun <reified T> saveState(state: T) {
-        if (!stateFile.exists()) stateFile.createFile()
-        Files.newBufferedWriter(stateFile).use {
-            it.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(state))
+        try {
+            // Ensure parent directories always exist
+            Files.createDirectories(stateFile.parent)
+            // Write JSON, creating or truncating the file atomically
+            Files.newBufferedWriter(
+                stateFile,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE
+            ).use {
+                it.write(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(state))
+            }
+        } catch (e: IOException) {
+            throw IllegalStateException("Failed to persist plugin state to $stateFile", e)
         }
     }
 }

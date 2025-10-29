@@ -6,6 +6,7 @@ import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.util.EventPublisherHolder
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.hibernate.Interceptor
 import org.hibernate.type.Type
 import org.springframework.stereotype.Component
@@ -54,6 +55,11 @@ class EntityUpdateInterceptor() : Interceptor {
                 "createdAt" -> reconstructed.createdAt = state[i] as? java.time.Instant
                 "updatedAt" -> reconstructed.updatedAt = state[i] as? java.time.Instant
                 "title" -> reconstructed.title = state[i] as? String
+                "platforms" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    (state[i] as? MutableList<Platform>)?.let { reconstructed.platforms = it }
+                }
+
                 "coverImage" -> reconstructed.coverImage = state[i] as? Image
                 "headerImage" -> reconstructed.headerImage = state[i] as? Image
                 "comment" -> reconstructed.comment = state[i] as? String
