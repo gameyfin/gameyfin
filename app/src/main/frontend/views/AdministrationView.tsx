@@ -1,5 +1,6 @@
 import {
     DiscIcon,
+    DownloadSimpleIcon,
     EnvelopeIcon,
     GameControllerIcon,
     LockKeyIcon,
@@ -20,6 +21,11 @@ const menuItems: MenuItem[] = [
         title: "Game Requests",
         url: "requests",
         icon: <DiscIcon/>
+    },
+    {
+        title: "Downloads",
+        url: "downloads",
+        icon: <DownloadSimpleIcon/>
     },
     {
         title: "Users",

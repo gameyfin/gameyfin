@@ -1,12 +1,13 @@
 package org.gameyfin.app.core.download
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.io.InputStream
 import java.io.OutputStream
@@ -17,6 +18,8 @@ import kotlin.time.measureTime
 @Service
 class DownloadService(
     private val pluginManager: GameyfinPluginManager,
+    private val configService: ConfigService,
+    private val sessionBandwidthManager: SessionBandwidthManager,
 ) {
 
     companion object {
@@ -49,17 +52,56 @@ class DownloadService(
         return provider.download(Path(path))
     }
 
-    @Async("virtualThreadPoolTaskExecutor")
-    fun processDownload(data: InputStream, outputStream: OutputStream, game: Game, username: String?) {
-        log.debug { "User '${username ?: "unknown user"}' started download for game '${game.title}' [ID ${game.id}]" }
+    fun processDownload(
+        data: InputStream,
+        outputStream: OutputStream,
+        game: Game,
+        username: String?,
+        sessionId: String
+    ) {
+        log.debug { "User '${username ?: "unknown user"}' (session: $sessionId) started download for game '${game.title}' [ID ${game.id}]" }
 
-        val timeTaken = measureTime {
-            data.copyTo(outputStream)
+        val bandwidthLimitEnabled = configService.get(ConfigProperties.Downloads.BandwidthLimitEnabled) ?: false
+        val bandwidthLimitMbps = configService.get(ConfigProperties.Downloads.BandwidthLimitMbps) ?: 0
+
+        // Convert Mbps to bytes per second (1 Mbps = 125,000 bytes/second)
+        val maxBytesPerSecond = if (bandwidthLimitEnabled && bandwidthLimitMbps > 0) {
+            (bandwidthLimitMbps * 125_000).toLong()
+        } else {
+            0L // 0 means unlimited
         }
 
-        log.debug {
-            "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "unknown user"}' " +
-                    "completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
+        val finalOutputStream = if (maxBytesPerSecond > 0) {
+            val tracker = sessionBandwidthManager.getTracker(sessionId, maxBytesPerSecond)
+            log.debug {
+                "Applying session-based bandwidth limit of $bandwidthLimitMbps Mbps ($maxBytesPerSecond bytes/sec) " +
+                        "for download of '${game.title}' (active downloads for this session: ${tracker.activeDownloads.get()})"
+            }
+            SessionThrottledOutputStream(outputStream, tracker)
+        } else {
+            outputStream
+        }
+
+        try {
+            finalOutputStream.use {
+                val timeTaken = measureTime {
+                    data.copyTo(finalOutputStream)
+                    finalOutputStream.flush()
+                }
+
+                log.debug {
+                    "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
+                            "(session: $sessionId) completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
+                }
+            }
+        } catch (e: java.io.IOException) {
+            // Client disconnected (cancelled download, network error, etc.)
+            // This is expected behavior, log at debug level instead of error
+            log.debug {
+                "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
+                        "(session: $sessionId) was interrupted: ${e.message}"
+            }
+            // Don't re-throw - this is expected when clients cancel downloads
         }
     }
 }

@@ -11,5 +11,8 @@ data class ConfigEntryDto(
     val defaultValue: Serializable?,
     val type: String,
     val elementType: String?,
-    val allowedValues: List<String>?
+    val allowedValues: List<String>?,
+    val min: Number?,
+    val max: Number?,
+    val step: Number?
 )
