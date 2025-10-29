@@ -14,7 +14,7 @@ fi
 
 # Only fix ownership on writable dirs when remapping is requested
 if [ -n "$PUID$PGID" ]; then
-  for d in plugins db data logs; do
+  for d in plugins plugindata db data logs; do
     [ -d "/opt/gameyfin/$d" ] || mkdir -p "/opt/gameyfin/$d"
     chown -R gameyfin:gameyfin "/opt/gameyfin/$d"
   done
