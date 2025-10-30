@@ -2,14 +2,23 @@ services:
   gameyfin:
     image: ghcr.io/gameyfin/gameyfin:2
     container_name: gameyfin
+    restart: unless-stopped
     environment:
-      # Generate a new APP_KEY using the command `openssl rand -base64 32` or similar.
-      APP_KEY: <you app key here>
+      # Generate a new APP_KEY using the command "openssl rand -base64 32" or similar.
+      APP_KEY: <your app key here>
+
+      # (optional) Set the URL of your Gameyfin instance if you are using a reverse proxy.
+      # Currently, this is only used for generating links in notification emails and the log line at first run.
+      #  APP_URL: https://gameyfin.example.com
+
+      # (optional) Set the user and group ID to run Gameyfin with a specific user.
+      # PUID: 1000 # Change this to your user ID if needed
+      # PGID: 1000 # Change this to your group ID if needed
     volumes:
       - "./db:/opt/gameyfin/db"
       - "./data:/opt/gameyfin/data"
-      - "./logs:/opt/gameyfin/logs"
       - "./plugindata:/opt/gameyfin/plugindata"
+      - "./logs:/opt/gameyfin/logs"
       - <mount your library folder(s) here>
     ports:
       - "8080:8080"
