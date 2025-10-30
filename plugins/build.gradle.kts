@@ -44,6 +44,9 @@ subprojects {
         isZip64 = true
         archiveBaseName.set(project.name)
 
+        // Ensure KSP runs before JAR is created
+        dependsOn("kspKotlin")
+
         manifest {
             from("./src/main/resources/MANIFEST.MF")
         }
@@ -55,6 +58,9 @@ subprojects {
         }
         from(sourceSets["main"].output.classesDirs)
         from(sourceSets["main"].resources)
+
+        // Include KSP-generated resources (extensions.idx)
+        from(layout.buildDirectory.get().asFile.resolve("generated/ksp/main/resources"))
 
         // Include logo file under META-INF/resources
         from("src/main/resources") {

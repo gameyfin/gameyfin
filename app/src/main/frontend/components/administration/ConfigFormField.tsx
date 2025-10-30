@@ -4,6 +4,8 @@ import Input from "Frontend/components/general/input/Input";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
 import SelectInput from "Frontend/components/general/input/SelectInput";
 import ArrayInput from "Frontend/components/general/input/ArrayInput";
+import NumberInput from "Frontend/components/general/input/NumberInput";
+import SliderInput from "Frontend/components/general/input/SliderInput";
 
 export default function ConfigFormField({configElement, ...props}: any) {
     function inputElement(configElement: ConfigEntryDto) {
@@ -27,13 +29,22 @@ export default function ConfigFormField({configElement, ...props}: any) {
                 );
             case "float":
                 return (
-                    <Input label={configElement.description} name={configElement.key} type="number"
-                           step="0.1" {...props}/>
+                    <NumberInput label={configElement.description} name={configElement.key}
+                                 step={0.1} {...props}/>
                 );
             case "int":
+                if (configElement.min != null && configElement.max != null) {
+                    return (
+                        <SliderInput label={configElement.description} name={configElement.key}
+                                     min={configElement.min}
+                                     max={configElement.max}
+                                     step={configElement.step ?? 1}
+                                     {...props}/>
+                    );
+                }
                 return (
-                    <Input label={configElement.description} name={configElement.key} type="number"
-                           step="1" {...props}/>
+                    <NumberInput label={configElement.description} name={configElement.key}
+                                 step={1} {...props}/>
                 );
             case "array":
                 return (

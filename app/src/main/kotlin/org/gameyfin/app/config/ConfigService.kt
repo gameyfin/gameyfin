@@ -91,9 +91,12 @@ class ConfigService(
                 value = get(configProperty),
                 defaultValue = configProperty.default,
                 type = configProperty.type.simpleName ?: "Unknown",
+                description = configProperty.description,
                 elementType = configProperty.type.java.componentType?.simpleName,
                 allowedValues = configProperty.allowedValues?.map { it.toString() },
-                description = configProperty.description
+                min = configProperty.min,
+                max = configProperty.max,
+                step = configProperty.step
             )
         }
     }

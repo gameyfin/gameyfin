@@ -1,8 +1,9 @@
-package org.gameyfin.app.core.download
+package org.gameyfin.app.core.download.provider
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.core.download.files.DownloadService
 
 @Endpoint
 @DynamicPublicAccess

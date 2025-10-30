@@ -273,28 +273,18 @@ class LibraryScanService(
     }
 
     private fun finishScanPersisted(games: List<Game>, library: Library, progress: LibraryScanProgress) {
-        // Reload managed instances within a single persistence context to avoid merging multiple detached
-        // representations of the same entity (e.g., Company) coming from parallel transactions.
-        val libraryId = library.id ?: throw IllegalStateException("Library must have an ID")
-        val managedLibrary = libraryRepository.findById(libraryId).orElseThrow()
-
         val gameIds = games.mapNotNull { it.id }
         val managedGames = if (gameIds.isNotEmpty()) gameRepository.findAllById(gameIds) else emptyList()
 
         // Add new games to library using managed entities, but do not persist yet
-        libraryCoreService.addGamesToLibrary(managedGames, managedLibrary, persist = false)
-
-        // Add new unmatched paths to library using managed entity, but do not persist yet
-        managedLibrary.unmatchedPaths.addAll(
-            library.unmatchedPaths.filter { it !in managedLibrary.unmatchedPaths }
-        )
+        libraryCoreService.addGamesToLibrary(managedGames, library, persist = false)
 
         progress.currentStep.current = games.size
         emit(progress)
 
         // Persist library updates
-        managedLibrary.updatedAt = Instant.now() // Force the EntityListener to update the timestamp
-        libraryRepository.save(managedLibrary)
+        library.updatedAt = Instant.now() // Force the EntityListener to update the timestamp
+        libraryRepository.save(library)
     }
 
     private fun updateExistingGames(
