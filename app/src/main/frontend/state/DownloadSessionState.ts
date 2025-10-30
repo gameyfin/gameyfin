@@ -2,6 +2,7 @@ import {proxy} from 'valtio';
 import {BandwidthMonitoringEndpoint} from "Frontend/generated/endpoints";
 import SessionStatsDto from "Frontend/generated/org/gameyfin/app/core/download/bandwidth/SessionStatsDto";
 import {Subscription} from "@vaadin/hilla-frontend";
+import {convertBpsToMbps} from "Frontend/util/utils";
 
 type DownloadSessionState = {
     subscription?: Subscription<SessionStatsDto[][]>;
@@ -22,7 +23,7 @@ export const downloadSessionState = proxy<DownloadSessionState>({
         return this.all.filter((session: SessionStatsDto) => session.activeDownloads > 0).length;
     },
     get bandwidthInUse() {
-        return this.all.reduce((total: number, session: SessionStatsDto) => total + session.currentMbps);
+        return this.all.reduce((total: number, session: SessionStatsDto) => total + session.currentBytesPerSecond, 0);
     }
 });
 
@@ -48,15 +49,33 @@ export async function initializeDownloadSessionState() {
     });
 }
 
-/** Sort sessions by current bandwidth (highest first), then by start time **/
+/** Sort sessions: active sessions (by bandwidth, then oldest first), inactive sessions (newest first) **/
 function sortSessions(sessions: SessionStatsDto[]): SessionStatsDto[] {
     return [...sessions].sort((a, b) => {
-        // Sort by current bandwidth (highest first), using integer comparison to avoid resorting for small fluctuations
-        const bandwidthDiff = Math.trunc(b.currentMbps) - Math.trunc(a.currentMbps);
-        if (bandwidthDiff !== 0) {
-            return bandwidthDiff;
+        const aIsActive = a.activeDownloads > 0;
+        const bIsActive = b.activeDownloads > 0;
+
+        // Active sessions come first
+        if (aIsActive !== bIsActive) {
+            return bIsActive ? 1 : -1;
         }
-        // Tie breaker: sort by start time (earliest first)
-        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+
+        // For active sessions: sort by bandwidth (highest first), then by age (oldest first)
+        if (aIsActive) {
+            const bandwidthDiff = convertBpsToMbps(b.currentBytesPerSecond, 0) - convertBpsToMbps(a.currentBytesPerSecond, 0);
+            if (bandwidthDiff !== 0) {
+                return bandwidthDiff;
+            }
+
+            // Tie breaker: oldest first
+            const aTime = new Date(a.startTime).getTime();
+            const bTime = new Date(b.startTime).getTime();
+            return aTime - bTime;
+        }
+
+        // For inactive sessions: sort by age (newest first)
+        const aTime = new Date(a.startTime).getTime();
+        const bTime = new Date(b.startTime).getTime();
+        return bTime - aTime;
     });
 }

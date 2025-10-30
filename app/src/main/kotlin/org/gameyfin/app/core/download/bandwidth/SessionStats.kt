@@ -14,7 +14,8 @@ data class SessionStats(
     val activeDownloads: Int,
     val activeGameIds: Set<Long>,
     val totalBytesTransferred: Long,
-    val currentBytesPerSecond: Long
+    val currentBytesPerSecond: Long,
+    val bandwidthHistory: List<Long> = emptyList()
 )
 
 fun SessionStats.toDto(): SessionStatsDto {
@@ -27,7 +28,7 @@ fun SessionStats.toDto(): SessionStatsDto {
         activeGameIds = this.activeGameIds.toList(),
         totalBytesTransferred = this.totalBytesTransferred,
         currentBytesPerSecond = this.currentBytesPerSecond,
-        currentMbps = (this.currentBytesPerSecond / 125_000.0)
+        bandwidthHistory = this.bandwidthHistory
     )
 }
 

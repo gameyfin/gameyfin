@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.download.bandwidth
 
 import org.springframework.stereotype.Component
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.LockSupport
@@ -47,9 +48,20 @@ class SessionBandwidthManager {
                 remoteIp = tracker.remoteIp,
                 activeDownloads = tracker.activeDownloads.get(),
                 activeGameIds = tracker.getActiveGameIds(),
-                totalBytesTransferred = tracker.bytesWritten,
-                currentBytesPerSecond = tracker.getCurrentBytesPerSecond()
+                totalBytesTransferred = tracker.totalBytesTransferred,
+                currentBytesPerSecond = tracker.getCurrentBytesPerSecond(),
+                bandwidthHistory = tracker.getBandwidthHistory()
             )
+        }
+    }
+
+    /**
+     * Record bandwidth snapshots for all active trackers.
+     * This should be called periodically (e.g., every second) before collecting stats.
+     */
+    fun recordAllBandwidthSnapshots() {
+        sessionTrackers.values.forEach { tracker ->
+            tracker.recordBandwidthSnapshot()
         }
     }
 
@@ -75,9 +87,14 @@ class SessionBandwidthTracker(
     val sessionId: String,
     @Volatile private var maxBytesPerSecond: Long
 ) {
+    // Total bytes transferred for the lifetime of this session (for UI display)
     @Volatile
-    var bytesWritten: Long = 0
+    var totalBytesTransferred: Long = 0
         private set
+
+    // Bytes used for throttling calculation (resets when all downloads complete)
+    @Volatile
+    private var bytesWritten: Long = 0
 
     @Volatile
     var startTime: Long = System.nanoTime()
@@ -100,27 +117,18 @@ class SessionBandwidthTracker(
     // Thread-safe set of currently downloading game IDs
     private val activeGameIds = ConcurrentHashMap.newKeySet<Long>()
 
+    // Bandwidth history: last 30 measurements in bytes per second
+    // First element is the newest, last element is the oldest
+    private val bandwidthHistory = LinkedList<Long>()
+    private val maxHistorySize = 30
+
     /**
      * Update the bandwidth limit (in case configuration changes)
      */
     fun updateLimit(newLimit: Long) {
         maxBytesPerSecond = newLimit
     }
-
-    /**
-     * Set the username for this session
-     */
-    fun setUsername(username: String?) {
-        this.username = username
-    }
-
-    /**
-     * Set the remote IP for this session
-     */
-    fun setRemoteIp(remoteIp: String) {
-        this.remoteIp = remoteIp
-    }
-
+    
     /**
      * Register a new download starting
      */
@@ -167,6 +175,32 @@ class SessionBandwidthTracker(
     }
 
     /**
+     * Get a snapshot of the bandwidth history.
+     * Returns a list where the first element is the newest measurement.
+     */
+    @Synchronized
+    fun getBandwidthHistory(): List<Long> {
+        return bandwidthHistory.toList()
+    }
+
+    /**
+     * Record the current bandwidth measurement to the history.
+     * This should be called periodically (e.g., every second) by the monitoring service.
+     */
+    @Synchronized
+    fun recordBandwidthSnapshot() {
+        val currentRate = getCurrentBytesPerSecond()
+
+        // Add new measurement at the front
+        bandwidthHistory.addLast(currentRate)
+
+        // Remove oldest measurement if we exceed the max size
+        if (bandwidthHistory.size > maxHistorySize) {
+            bandwidthHistory.removeFirst()
+        }
+    }
+
+    /**
      * Record bytes written without throttling (used for monitoring-only mode)
      */
     @Synchronized
@@ -177,6 +211,7 @@ class SessionBandwidthTracker(
         }
 
         bytesWritten += bytes
+        totalBytesTransferred += bytes
         lastActivityTime = System.nanoTime()
     }
 
@@ -192,6 +227,7 @@ class SessionBandwidthTracker(
         }
 
         bytesWritten += bytes
+        totalBytesTransferred += bytes
         lastActivityTime = System.nanoTime()
 
         val elapsedNanos = lastActivityTime - startTime
@@ -232,11 +268,13 @@ class SessionBandwidthTracker(
 
     /**
      * Reset the tracker (useful if we want to restart bandwidth calculation)
+     * Note: This only resets the throttling calculation, not the total bytes transferred
      */
     fun reset() {
         bytesWritten = 0
         startTime = System.nanoTime()
         lastActivityTime = System.nanoTime()
+        // totalBytesTransferred is intentionally NOT reset - we want to keep this for UI display
     }
 }
 

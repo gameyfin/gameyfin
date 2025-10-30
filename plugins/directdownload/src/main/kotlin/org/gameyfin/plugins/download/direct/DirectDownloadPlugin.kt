@@ -42,6 +42,7 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
         )
     )
 
+    @Suppress("Unused")
     @Extension(ordinal = 1)
     class DirectDownloadProvider : DownloadProvider {
         override fun download(path: Path): Download {

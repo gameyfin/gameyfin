@@ -42,6 +42,9 @@ class BandwidthMonitoringService(
      */
     @Scheduled(fixedRate = 1000)
     fun calculateAndEmitBandwidthUpdates() {
+        // First, record bandwidth snapshots for all active sessions
+        sessionBandwidthManager.recordAllBandwidthSnapshots()
+
         val stats = sessionBandwidthManager.getStats().values.toDtos()
 
         // Only emit if stats have changed

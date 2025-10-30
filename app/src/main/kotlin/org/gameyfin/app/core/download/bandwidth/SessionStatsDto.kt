@@ -14,5 +14,10 @@ data class SessionStatsDto(
     val activeGameIds: List<Long>,
     val totalBytesTransferred: Long,
     val currentBytesPerSecond: Long,
-    val currentMbps: Double
+    /**
+     * History of bandwidth usage over the last 10 seconds.
+     * First element is the most recent, last element is the oldest.
+     * Each element represents bytes per second at that point in time.
+     */
+    val bandwidthHistory: List<Long> = emptyList()
 )

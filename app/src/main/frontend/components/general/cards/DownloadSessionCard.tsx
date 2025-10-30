@@ -1,34 +1,83 @@
-import {useEffect, useState} from "react";
 import {useSnapshot} from "valtio/react";
 import {downloadSessionState} from "Frontend/state/DownloadSessionState";
 import {Card, Chip, Tooltip} from "@heroui/react";
 import {InfoIcon} from "@phosphor-icons/react";
-import {timeUntil} from "Frontend/util/utils";
+import {convertBpsToMbps, hslToHex, timeUntil} from "Frontend/util/utils";
 import {gameState} from "Frontend/state/GameState";
+import RealtimeChart, {RealtimeChartData, RealtimeChartOptions} from "react-realtime-chart";
+import {useEffect, useState} from "react";
 
-export default function DownloadSessionCard({sessionId}: { sessionId: string }) {
+export function DownloadSessionCard({sessionId}: { sessionId: string }) {
     const session = useSnapshot(downloadSessionState).byId[sessionId];
     const games = useSnapshot(gameState).state;
 
-    // Add state to force continuous re-renders
-    const [currentTime, setCurrentTime] = useState(Date.now());
+    const [currentTime, setCurrentTime] = useState<Date>(new Date());
+    const [chartData, setChartData] = useState<RealtimeChartData[][]>([]);
+    const [foregroundColor, setForegroundColor] = useState<string>("#00F");
 
-    // Set up an interval to update the time every second
+    // Get theme colors from CSS variables
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            setCurrentTime(Date.now());
-        }, 1000);
-
-        // Clean up the interval when component unmounts
-        return () => clearInterval(intervalId);
+        const chartColor = window.getComputedStyle(document.body).getPropertyValue('--heroui-foreground');
+        if (chartColor) {
+            setForegroundColor(hslToHex(chartColor.trim()));
+        }
     }, []);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
+        if (session) {
+            const dataPoints: RealtimeChartData[] = session.bandwidthHistory.map((bps, idx) => {
+                let date = new Date();
+                date.setSeconds(currentTime.getSeconds() - session.bandwidthHistory.length + idx + 1);
+                return {
+                    date: date,
+                    value: convertBpsToMbps(bps)
+                };
+            });
+            setChartData([dataPoints]);
+        }
+    }, [currentTime]);
+
+    const chartOptions: RealtimeChartOptions = {
+        fps: 24,
+        timeSlots: 30,
+        colors: [foregroundColor],
+        margin: {left: 60},
+        lines: [
+            {
+                area: true,
+                areaColor: foregroundColor,
+                areaOpacity: 0.05,
+                lineWidth: 1,
+                curve: "basis",
+            },
+        ],
+        yGrid: {
+            min: 0,
+            opacity: 0,
+            size: 1,
+            tickNumber: 5,
+            tickFormat: (v) => `${v}MB/s`
+        },
+        xGrid: {
+            opacity: 0,
+            size: 1,
+            tickNumber: 5
+        },
+    };
 
     return (session &&
         <Card
-            className={`flex flex-col gap-2 m-0.5 p-2 border-2
-            ${(session.currentMbps > 0) ? "border-primary bg-primary/10" : "border-default"}`}>
-            <div className="flex flex-row justify-between items-center">
-                <p className="flex flex-row items-center">
+            className={`flex flex-col gap-2 m-0.5 p-4 border-2
+            ${(session.currentBytesPerSecond > 0) ? "border-primary bg-primary/10" : "border-default"}`}>
+            <div className="flex flex-row items-center">
+                <p className="flex flex-row items-center flex-1">
                     <b>User:</b>&nbsp;
                     {session.username ?? "Anonymous User"}&nbsp;
                     <Tooltip
@@ -38,25 +87,33 @@ export default function DownloadSessionCard({sessionId}: { sessionId: string }) 
                         <InfoIcon size={18}/>
                     </Tooltip>
                 </p>
-                <p>Remote IP:&nbsp;
+                <div className="flex-1 flex justify-center">Remote IP:&nbsp;
                     {<Chip size="sm" radius="sm">
                         <pre>{session.remoteIp}</pre>
                     </Chip>}
-                </p>
-                <p>{session.activeGameIds.length > 0 ? "Session active since" : "Session inactive since"}&nbsp;
+                </div>
+                <div
+                    className="flex-1 flex justify-end">{session.activeGameIds.length > 0 ? "Session active since" : "Session inactive since"}&nbsp;
                     {<Chip size="sm" radius="sm">
                         {timeUntil(session.startTime, undefined, true)}
                     </Chip>}
-                </p>
+                </div>
             </div>
-            <div className="flex flex-row gap-2">
-                Active downloads:
-                {session.activeGameIds.length === 0 && <p>No active downloads</p>}
-                {session.activeGameIds.map(gameId =>
-                    games[gameId] && <Chip size="sm" radius="sm" key={gameId}>{games[gameId].title}</Chip>
-                )}
-            </div>
-            <p>Current bandwidth: {session.currentMbps.toFixed(1)} Mb/s</p>
+            {/* Only render chart when downloads are active or have been active within the last minute */}
+            {(session.activeGameIds.length > 0 || (currentTime.getTime() - new Date(session.startTime).getTime() < 60000)) &&
+                <div className="flex flex-col items-center">
+                    <div className="flex flex-row gap-2">
+                        Active downloads:
+                        {session.activeGameIds.length === 0 && <p>No active downloads</p>}
+                        {session.activeGameIds.map(gameId =>
+                            games[gameId] && <Chip size="sm" radius="sm" key={gameId}>{games[gameId].title}</Chip>
+                        )}
+                    </div>
+                    <div className="w-full h-48">
+                        <RealtimeChart options={chartOptions} data={chartData}/>
+                    </div>
+                </div>
+            }
         </Card>
     )
 }

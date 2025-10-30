@@ -47,6 +47,7 @@
     "react-dom": "19.1.1",
     "react-markdown": "^10.1.0",
     "react-player": "^2.16.0",
+    "react-realtime-chart": "^0.8.1",
     "react-router": "7.6.3",
     "remark-breaks": "^4.0.0",
     "swiper": "^11.2.6",
@@ -200,7 +201,8 @@
     "@vaadin/tooltip": "24.9.4",
     "@vaadin/upload": "24.9.4",
     "@vaadin/vertical-layout": "24.9.4",
-    "@vaadin/virtual-list": "24.9.4"
+    "@vaadin/virtual-list": "24.9.4",
+    "react-realtime-chart": "$react-realtime-chart"
   },
   "vaadin": {
     "dependencies": {
@@ -262,6 +264,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "e072c33a2cc7215ef2cb4cd598e57acf1ea9e5b096910db66ab588a4c1ed2bbe"
+    "hash": "45fe1cd9320d2da603b811b433279d79b37370c9732e877490fc304807ef6163"
   }
 }

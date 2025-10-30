@@ -281,11 +281,65 @@ export function compoundRating(game: GameDto, scale = [0, 100]): number {
  * @param game The GameDto object containing the ratings.
  * @returns A string representing the star rating out of 5, or "N/A" if no ratings are available.
  */
-export function starRatingAsString(game: GameDto) {
+export function starRatingAsString(game: GameDto): string {
     const starRange = [1, 5];
 
     const rating = compoundRating(game, starRange);
     if (rating === 0) return "N/A";
 
     return rating.toFixed(1);
+}
+
+/**
+ * Convert bytes per second to megabits per second.
+ * @param bps
+ * @param fractionDigits
+ */
+export function convertBpsToMbps(bps: number, fractionDigits: number = 0): number {
+    // Formula: (bytes per second * 8) / 1,000,000 = megabits per second
+    const mbps = bps / 125000;
+    const multiplier = 10 ** fractionDigits;
+    return Math.round(mbps * multiplier) / multiplier;
+}
+
+/**
+ * Convert an HSL string to a hex RGB string.
+ * @param hslString HSL string in the format "H S% L%" (e.g., "339.2 90.36% 51.18%")
+ * @returns Hex RGB string in the format "#RRGGBB" (e.g., "#ff0080")
+ */
+export function hslToHex(hslString: string): string {
+    // Parse the HSL string
+    const parts = hslString.trim().split(/\s+/);
+    const h = parseFloat(parts[0]) / 360;
+    const s = parseFloat(parts[1]) / 100;
+    const l = parseFloat(parts[2]) / 100;
+
+    let r, g, b;
+
+    if (s === 0) {
+        r = g = b = l; // achromatic
+    } else {
+        const hue2rgb = (p: number, q: number, t: number) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1 / 3);
+    }
+
+    // Convert to hex
+    const toHex = (x: number) => {
+        const hex = Math.round(x * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    };
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
