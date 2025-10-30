@@ -62,9 +62,10 @@ export async function fetchWithAuth(url: string, body: any = null, method = "POS
  * Calculate the time difference between a given Instant and the current time in the user's timezone.
  * @param {string} instantString - The Instant string returned by the backend.
  * @param {string} timeZone - The user's timezone.
+ * @param {boolean} timeOnly - Whether to exclude "ago" or "in" prefix/suffix.
  * @returns {string} - The time difference in a human-readable format.
  */
-export function timeUntil(instantString: string, timeZone: string = moment.tz.guess()): string {
+export function timeUntil(instantString: string, timeZone: string = moment.tz.guess(), timeOnly: boolean = false): string {
     const givenDate = moment.tz(instantString, timeZone);
     const now = moment.tz(timeZone);
     const diffInSeconds = givenDate.diff(now, 'seconds');
@@ -84,7 +85,10 @@ export function timeUntil(instantString: string, timeZone: string = moment.tz.gu
     for (const unit of units) {
         const value = Math.floor(absDiffInSeconds / unit.seconds);
         if (value >= 1) {
-            return `${isPast ? '' : 'in'} ${value} ${unit.name}${value > 1 ? 's' : ''} ${isPast ? 'ago' : ''}`;
+            if (timeOnly) {
+                return `${value} ${unit.name}${value > 1 ? 's' : ''}`;
+            }
+            return `${isPast ? '' : 'in '}${value} ${unit.name}${value > 1 ? 's' : ''} ${isPast ? 'ago' : ''}`;
         }
     }
 

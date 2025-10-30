@@ -1,5 +1,6 @@
 package org.gameyfin.app.core
 
+import jakarta.servlet.http.HttpServletRequest
 import org.apache.tika.Tika
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.HttpHeaders
@@ -7,12 +8,16 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
-import kotlin.text.iterator
+import java.time.Instant
+import kotlin.time.Duration.Companion.nanoseconds
 
 
 class Utils {
+
     companion object {
         private val tika = Tika()
+
+        val jvmNanoTimeDiff: Long = System.currentTimeMillis() * 1_000_000 - System.nanoTime()
 
         fun maskEmail(email: String): String {
             val regex = """(?:\G(?!^)|(?<=^[^@]{2}|@))[^@](?!\.[^.]+$)""".toRegex()
@@ -106,4 +111,90 @@ fun String.replaceRomanNumerals(): String {
         val number = romanToInt(roman)
         if (number in 1..3999) number.toString() else match.value
     }
+}
+
+
+/**
+ * Get the remote IP address, preferring IPv4 over IPv6.
+ * Checks X-Forwarded-For header first (for proxied requests), then falls back to remoteAddr.
+ *
+ * @param lookupPolicy The policy to use when selecting the IP address
+ * @return The remote IP address as a string, or "unknown" if none found
+ */
+fun HttpServletRequest.getRemoteIp(lookupPolicy: LookupPolicy = LookupPolicy.ANY): String {
+    val candidateIps = mutableSetOf<String>()
+
+    // Check X-Forwarded-For header (for requests behind proxies/load balancers)
+    this.getHeader("X-Forwarded-For")?.let { forwardedFor ->
+        // X-Forwarded-For can contain multiple IPs: "client, proxy1, proxy2"
+        candidateIps.addAll(forwardedFor.split(",").map { it.trim() })
+    }
+
+    // Add the direct remote address
+    this.remoteAddr?.let { candidateIps.add(it) }
+
+    when (lookupPolicy) {
+        LookupPolicy.IPV4_ONLY -> {
+            val ipv4Address = candidateIps.firstOrNull { isIpv4(it) }
+            return ipv4Address ?: "unknown"
+        }
+
+        LookupPolicy.IPV6_ONLY -> {
+            val ipv6Address = candidateIps.firstOrNull { isIpv6(it) }
+            return ipv6Address ?: "unknown"
+        }
+
+        LookupPolicy.IPV4_PREFERRED -> {
+            val ipv4Address = candidateIps.firstOrNull { isIpv4(it) }
+            return ipv4Address ?: run {
+                val ipv6Address = candidateIps.firstOrNull { isIpv6(it) }
+                ipv6Address ?: "unknown"
+            }
+        }
+
+        LookupPolicy.IPV6_PREFERRED -> {
+            val ipv6Address = candidateIps.firstOrNull { isIpv6(it) }
+            return ipv6Address ?: run {
+                val ipv4Address = candidateIps.firstOrNull { isIpv4(it) }
+                ipv4Address ?: "unknown"
+            }
+        }
+
+        LookupPolicy.ANY -> {
+            return candidateIps.firstOrNull() ?: "unknown"
+        }
+    }
+}
+
+/**
+ * Policy for looking up IP addresses
+ */
+enum class LookupPolicy {
+    IPV4_PREFERRED,
+    IPV6_PREFERRED,
+    IPV4_ONLY,
+    IPV6_ONLY,
+    ANY
+}
+
+/**
+ * Check if an IP address is IPv4 format
+ */
+fun isIpv4(ip: String): Boolean {
+    return ip.matches(Regex("""^(\d{1,3}\.){3}\d{1,3}$"""))
+}
+
+/**
+ * Check if an IP address is IPv6 format
+ */
+fun isIpv6(ip: String): Boolean {
+    return ip.contains(":")
+}
+
+/**
+ * Convert a nanoTime value to an Instant, adjusting for JVM start time
+ */
+fun nanoTimeToInstant(nanoTime: Long): Instant {
+    val nanoNow = nanoTime + Utils.jvmNanoTimeDiff
+    return Instant.ofEpochSecond(nanoNow.nanoseconds.inWholeSeconds)
 }

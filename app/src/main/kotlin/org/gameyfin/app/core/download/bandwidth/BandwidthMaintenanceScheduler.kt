@@ -3,6 +3,7 @@ package org.gameyfin.app.core.download.bandwidth
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import kotlin.time.Duration.Companion.hours
 
 /**
  * Scheduled tasks for bandwidth management maintenance
@@ -13,16 +14,18 @@ class BandwidthMaintenanceScheduler(
 ) {
     companion object {
         private val log = KotlinLogging.logger { }
+
+        private val INACTIVE_THRESHOLD = 24.hours
     }
 
     /**
-     * Clean up inactive bandwidth trackers every 10 minutes
+     * Clean up inactive bandwidth trackers every hour
      */
-    @Scheduled(fixedRate = 600_000) // 10 minutes
+    @Scheduled(cron = "@hourly")
     fun cleanupInactiveTrackers() {
         log.debug { "Running bandwidth tracker cleanup..." }
         val statsBefore = sessionBandwidthManager.getStats()
-        sessionBandwidthManager.cleanupInactiveTrackers()
+        sessionBandwidthManager.cleanupInactiveTrackers(INACTIVE_THRESHOLD)
         val statsAfter = sessionBandwidthManager.getStats()
 
         val removed = statsBefore.size - statsAfter.size

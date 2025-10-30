@@ -42,18 +42,7 @@ class BandwidthMonitoringService(
      */
     @Scheduled(fixedRate = 1000)
     fun calculateAndEmitBandwidthUpdates() {
-        val stats = sessionBandwidthManager.getStats().values.map { stats ->
-            SessionStatsDto(
-                sessionId = stats.sessionId,
-                username = stats.username,
-                remoteIp = stats.remoteIp,
-                activeDownloads = stats.activeDownloads,
-                activeGameIds = stats.activeGameIds.toList(),
-                totalBytesTransferred = stats.totalBytesTransferred,
-                currentBytesPerSecond = stats.currentBytesPerSecond,
-                currentMbps = (stats.currentBytesPerSecond / 125_000.0)
-            )
-        }
+        val stats = sessionBandwidthManager.getStats().values.toDtos()
 
         // Only emit if stats have changed
         if (stats != previousStats) {
@@ -71,18 +60,7 @@ class BandwidthMonitoringService(
      * Get bandwidth statistics for all active sessions
      */
     fun getActiveSessions(): List<SessionStatsDto> {
-        return sessionBandwidthManager.getStats().values.map { stats ->
-            SessionStatsDto(
-                sessionId = stats.sessionId,
-                username = stats.username,
-                remoteIp = stats.remoteIp,
-                activeDownloads = stats.activeDownloads,
-                activeGameIds = stats.activeGameIds.toList(),
-                totalBytesTransferred = stats.totalBytesTransferred,
-                currentBytesPerSecond = stats.currentBytesPerSecond,
-                currentMbps = (stats.currentBytesPerSecond / 125_000.0)
-            )
-        }.sortedByDescending { it.currentBytesPerSecond }
+        return sessionBandwidthManager.getStats().values.toDtos()
     }
 
     /**

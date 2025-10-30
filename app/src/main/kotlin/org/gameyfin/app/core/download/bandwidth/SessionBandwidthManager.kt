@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.LockSupport
+import kotlin.time.Duration
 
 /**
  * Manages bandwidth limiting across all downloads for a specific session.
@@ -41,6 +42,7 @@ class SessionBandwidthManager {
         return sessionTrackers.mapValues { (_, tracker) ->
             SessionStats(
                 sessionId = tracker.sessionId,
+                startTime = tracker.startTime,
                 username = tracker.username,
                 remoteIp = tracker.remoteIp,
                 activeDownloads = tracker.activeDownloads.get(),
@@ -52,11 +54,11 @@ class SessionBandwidthManager {
     }
 
     /**
-     * Clean up inactive trackers (no active downloads for >5 minutes)
+     * Clean up inactive trackers that have had no active downloads for the specified threshold duration
      */
-    fun cleanupInactiveTrackers() {
+    fun cleanupInactiveTrackers(inactiveThreshold: Duration) {
         val now = System.nanoTime()
-        val inactiveThresholdNanos = 5 * 60 * 1_000_000_000L // 5 minutes
+        val inactiveThresholdNanos = inactiveThreshold.inWholeNanoseconds
 
         sessionTrackers.entries.removeIf { (_, tracker) ->
             tracker.activeDownloads.get() == 0 &&
@@ -237,17 +239,4 @@ class SessionBandwidthTracker(
         lastActivityTime = System.nanoTime()
     }
 }
-
-/**
- * Statistics for a session's bandwidth usage
- */
-data class SessionStats(
-    val sessionId: String,
-    val username: String?,
-    val remoteIp: String,
-    val activeDownloads: Int,
-    val activeGameIds: Set<Long>,
-    val totalBytesTransferred: Long,
-    val currentBytesPerSecond: Long
-)
 
