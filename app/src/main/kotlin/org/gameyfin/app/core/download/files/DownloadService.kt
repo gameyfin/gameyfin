@@ -1,14 +1,19 @@
-package org.gameyfin.app.core.download
+package org.gameyfin.app.core.download.files
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.download.bandwidth.SessionBandwidthManager
+import org.gameyfin.app.core.download.bandwidth.SessionMonitoredOutputStream
+import org.gameyfin.app.core.download.bandwidth.SessionThrottledOutputStream
+import org.gameyfin.app.core.download.provider.DownloadProviderDto
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.springframework.stereotype.Service
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import kotlin.io.path.Path
@@ -57,7 +62,8 @@ class DownloadService(
         outputStream: OutputStream,
         game: Game,
         username: String?,
-        sessionId: String
+        sessionId: String,
+        remoteIp: String
     ) {
         log.debug { "User '${username ?: "unknown user"}' (session: $sessionId) started download for game '${game.title}' [ID ${game.id}]" }
 
@@ -71,15 +77,21 @@ class DownloadService(
             0L // 0 means unlimited
         }
 
+        // Always get a tracker to enable stats monitoring, even without throttling
+        val tracker = sessionBandwidthManager.getTracker(sessionId, maxBytesPerSecond)
+
         val finalOutputStream = if (maxBytesPerSecond > 0) {
-            val tracker = sessionBandwidthManager.getTracker(sessionId, maxBytesPerSecond)
             log.debug {
                 "Applying session-based bandwidth limit of $bandwidthLimitMbps Mbps ($maxBytesPerSecond bytes/sec) " +
                         "for download of '${game.title}' (active downloads for this session: ${tracker.activeDownloads.get()})"
             }
-            SessionThrottledOutputStream(outputStream, tracker)
+            SessionThrottledOutputStream(outputStream, tracker, game.id, username, remoteIp)
         } else {
-            outputStream
+            log.debug {
+                "Monitoring download of '${game.title}' without bandwidth limit " +
+                        "(active downloads for this session: ${tracker.activeDownloads.get()})"
+            }
+            SessionMonitoredOutputStream(outputStream, tracker, game.id, username, remoteIp)
         }
 
         try {
@@ -94,7 +106,7 @@ class DownloadService(
                             "(session: $sessionId) completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
                 }
             }
-        } catch (e: java.io.IOException) {
+        } catch (e: IOException) {
             // Client disconnected (cancelled download, network error, etc.)
             // This is expected behavior, log at debug level instead of error
             log.debug {

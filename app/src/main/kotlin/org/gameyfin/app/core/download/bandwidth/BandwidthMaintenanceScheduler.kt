@@ -1,4 +1,4 @@
-package org.gameyfin.app.core.download
+package org.gameyfin.app.core.download.bandwidth
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled

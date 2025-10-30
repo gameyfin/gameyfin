@@ -1,7 +1,8 @@
-package org.gameyfin.app.core.download
+package org.gameyfin.app.core.download.bandwidth
 
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.LockSupport
 
 /**
@@ -40,7 +41,10 @@ class SessionBandwidthManager {
         return sessionTrackers.mapValues { (_, tracker) ->
             SessionStats(
                 sessionId = tracker.sessionId,
+                username = tracker.username,
+                remoteIp = tracker.remoteIp,
                 activeDownloads = tracker.activeDownloads.get(),
+                activeGameIds = tracker.getActiveGameIds(),
                 totalBytesTransferred = tracker.bytesWritten,
                 currentBytesPerSecond = tracker.getCurrentBytesPerSecond()
             )
@@ -81,7 +85,18 @@ class SessionBandwidthTracker(
     var lastActivityTime: Long = System.nanoTime()
         private set
 
-    val activeDownloads = java.util.concurrent.atomic.AtomicInteger(0)
+    val activeDownloads = AtomicInteger(0)
+
+    @Volatile
+    var username: String? = null
+        private set
+
+    @Volatile
+    var remoteIp: String = "unknown"
+        private set
+
+    // Thread-safe set of currently downloading game IDs
+    private val activeGameIds = ConcurrentHashMap.newKeySet<Long>()
 
     /**
      * Update the bandwidth limit (in case configuration changes)
@@ -91,25 +106,76 @@ class SessionBandwidthTracker(
     }
 
     /**
+     * Set the username for this session
+     */
+    fun setUsername(username: String?) {
+        this.username = username
+    }
+
+    /**
+     * Set the remote IP for this session
+     */
+    fun setRemoteIp(remoteIp: String) {
+        this.remoteIp = remoteIp
+    }
+
+    /**
      * Register a new download starting
      */
-    fun downloadStarted() {
+    fun downloadStarted(gameId: Long? = null, username: String? = null, remoteIp: String? = null) {
         activeDownloads.incrementAndGet()
         lastActivityTime = System.nanoTime()
+
+        if (username != null && username != "anonymousUser") {
+            this.username = username
+        }
+
+        if (remoteIp != null) {
+            this.remoteIp = remoteIp
+        }
+
+        if (gameId != null) {
+            activeGameIds.add(gameId)
+        }
     }
 
     /**
      * Register a download completing
      */
-    fun downloadCompleted() {
+    fun downloadCompleted(gameId: Long? = null) {
         val remaining = activeDownloads.decrementAndGet()
         lastActivityTime = System.nanoTime()
+
+        if (gameId != null) {
+            activeGameIds.remove(gameId)
+        }
 
         // Reset the tracker when all downloads complete to prevent
         // unlimited burst speed when downloads restart after a pause
         if (remaining == 0) {
             reset()
         }
+    }
+
+    /**
+     * Get a snapshot of currently downloading game IDs
+     */
+    fun getActiveGameIds(): Set<Long> {
+        return activeGameIds.toSet()
+    }
+
+    /**
+     * Record bytes written without throttling (used for monitoring-only mode)
+     */
+    @Synchronized
+    fun recordBytes(bytes: Long) {
+        // If this is the first write after being idle, reset the timer
+        if (bytesWritten == 0L) {
+            startTime = System.nanoTime()
+        }
+
+        bytesWritten += bytes
+        lastActivityTime = System.nanoTime()
     }
 
     /**
@@ -177,7 +243,10 @@ class SessionBandwidthTracker(
  */
 data class SessionStats(
     val sessionId: String,
+    val username: String?,
+    val remoteIp: String,
     val activeDownloads: Int,
+    val activeGameIds: Set<Long>,
     val totalBytesTransferred: Long,
     val currentBytesPerSecond: Long
 )

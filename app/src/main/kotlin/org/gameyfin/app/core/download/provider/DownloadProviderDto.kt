@@ -1,4 +1,4 @@
-package org.gameyfin.app.core.download
+package org.gameyfin.app.core.download.provider
 
 import com.fasterxml.jackson.annotation.JsonInclude
 

@@ -22,4 +22,4 @@ fi
 
 export JAVA_TOOL_OPTIONS="${JAVA_OPTS:-}"
 
-exec gosu gameyfin:gameyfin java org.springframework.boot.loader.launch.JarLauncher
+exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true org.springframework.boot.loader.launch.JarLauncher

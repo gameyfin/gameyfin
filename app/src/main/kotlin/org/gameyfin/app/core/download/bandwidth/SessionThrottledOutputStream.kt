@@ -1,4 +1,4 @@
-package org.gameyfin.app.core.download
+package org.gameyfin.app.core.download.bandwidth
 
 import java.io.OutputStream
 
@@ -8,17 +8,23 @@ import java.io.OutputStream
  *
  * @param outputStream The underlying output stream to write to
  * @param sessionTracker The session-wide bandwidth tracker
+ * @param gameId The ID of the game being downloaded (optional)
+ * @param username The username of the person downloading (optional)
+ * @param remoteIp The remote IP address of the client (optional)
  */
 class SessionThrottledOutputStream(
     private val outputStream: OutputStream,
-    private val sessionTracker: SessionBandwidthTracker
+    private val sessionTracker: SessionBandwidthTracker,
+    private val gameId: Long? = null,
+    private val username: String? = null,
+    private val remoteIp: String? = null
 ) : OutputStream() {
 
     // Buffer size for optimal I/O performance
     private val optimalBufferSize = 64 * 1024
 
     init {
-        sessionTracker.downloadStarted()
+        sessionTracker.downloadStarted(gameId, username, remoteIp)
     }
 
     override fun write(b: Int) {
@@ -52,7 +58,7 @@ class SessionThrottledOutputStream(
         try {
             outputStream.close()
         } finally {
-            sessionTracker.downloadCompleted()
+            sessionTracker.downloadCompleted(gameId)
         }
     }
 }

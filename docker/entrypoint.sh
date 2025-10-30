@@ -22,4 +22,4 @@ fi
 
 export JAVA_TOOL_OPTIONS="${JAVA_OPTS:-}"
 
-exec su-exec gameyfin:gameyfin java org.springframework.boot.loader.launch.JarLauncher
+exec su-exec gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true org.springframework.boot.loader.launch.JarLauncher

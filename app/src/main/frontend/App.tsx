@@ -17,6 +17,7 @@ import {useRouteMetadata} from "Frontend/util/routing";
 import {useEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
+import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
@@ -53,6 +54,7 @@ function ViewWithAuth() {
 
         if (isAdmin(auth)) {
             initializeScanState();
+            initializeDownloadSessionState();
         }
     }, [auth]);
 
