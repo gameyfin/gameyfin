@@ -23,3 +23,23 @@ dependencies {
     implementation("com.frostwire:jlibtorrent-linux-x86_64:${jlibtorrentVersion}")
     implementation("com.frostwire:jlibtorrent-linux-arm64:${jlibtorrentVersion}")
 }
+
+// Extract native libraries from jlibtorrent JARs for local debugging
+tasks.register<Copy>("extractNativeLibraries") {
+    dependsOn(tasks.named("compileKotlin"))
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(configurations.runtimeClasspath.get().map { project.zipTree(it) }) {
+        include("lib/**")
+    }
+    into(layout.buildDirectory.get().asFile.resolve("classes/kotlin/main"))
+}
+
+tasks.named("classes") {
+    dependsOn("extractNativeLibraries")
+}
+
+tasks.named("test") {
+    dependsOn("extractNativeLibraries")
+}

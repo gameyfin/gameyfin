@@ -3,7 +3,6 @@ package org.gameyfin.plugins.download.torrent
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.slf4j.LoggerFactory
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.URLDecoder
 import java.nio.ByteBuffer
@@ -61,24 +60,30 @@ class TorrentTracker(
         log.info("Tracker stopped")
     }
 
-    fun getAnnounceUrl(): String {
-        val hostname = try {
-            InetAddress.getLocalHost().hostAddress
-        } catch (e: Exception) {
-            "localhost"
+    private fun bytesToHex(bytes: String): String {
+        return bytes.toByteArray(Charsets.ISO_8859_1).joinToString("") {
+            "%02x".format(it.toInt() and 0xFF)
         }
-        return "http://$hostname:$port/announce"
     }
 
     private fun handleAnnounce(exchange: HttpExchange) {
         try {
-            val params = parseQueryString(exchange.requestURI.query ?: "")
+            // Get raw query string from URI - we need to parse it ourselves to handle binary data
+            // Using .query would give us a UTF-8 decoded string which corrupts binary info_hash
+            val rawQuery = exchange.requestURI.rawQuery ?: ""
+            log.debug("Raw announce query (first 100 chars): ${rawQuery.take(100)}")
+
+            val params = parseQueryString(rawQuery)
 
             // Required parameters
             val infoHash = params["info_hash"] ?: run {
                 respondBencodedError(exchange, "Missing info_hash")
                 return
             }
+
+            // Debug: log the decoded info hash
+            log.debug("Decoded info_hash (hex): ${bytesToHex(infoHash)}")
+
             val peerId = params["peer_id"] ?: run {
                 respondBencodedError(exchange, "Missing peer_id")
                 return
@@ -98,7 +103,10 @@ class TorrentTracker(
             val ip = params["ip"] ?: exchange.remoteAddress.address.hostAddress
 
             // Get or create torrent peer list
-            val peers = torrents.computeIfAbsent(infoHash) { ConcurrentHashMap.newKeySet() }
+            val peers = torrents.computeIfAbsent(infoHash) {
+                log.debug("New torrent tracked: ${bytesToHex(infoHash)}")
+                ConcurrentHashMap.newKeySet()
+            }
 
             // Handle event
             when (event) {
@@ -133,7 +141,7 @@ class TorrentTracker(
 
     private fun handleScrape(exchange: HttpExchange) {
         try {
-            val params = parseQueryString(exchange.requestURI.query ?: "")
+            val params = parseQueryString(exchange.requestURI.rawQuery ?: "")
             val infoHashes = params.entries
                 .filter { it.key == "info_hash" }
                 .map { it.value }
@@ -232,13 +240,52 @@ class TorrentTracker(
                 val parts = param.split("=", limit = 2)
                 if (parts.size == 2) {
                     val key = URLDecoder.decode(parts[0], "UTF-8")
-                    val value = URLDecoder.decode(parts[1], "UTF-8")
+                    // Use ISO-8859-1 for binary parameters (info_hash, peer_id)
+                    // to preserve binary data without UTF-8 corruption
+                    val value = if (key == "info_hash" || key == "peer_id") {
+                        urlDecodeToBytes(parts[1])
+                    } else {
+                        URLDecoder.decode(parts[1], "UTF-8")
+                    }
                     key to value
                 } else {
                     null
                 }
             }
             .toMap()
+    }
+
+    /**
+     * Decode a URL-encoded string to raw bytes, preserving binary data.
+     * Unlike URLDecoder.decode(), this uses ISO-8859-1 to preserve binary data.
+     */
+    private fun urlDecodeToBytes(encoded: String): String {
+        val bytes = mutableListOf<Byte>()
+        var i = 0
+        while (i < encoded.length) {
+            when {
+                encoded[i] == '%' && i + 2 < encoded.length -> {
+                    // Decode %XX to a byte
+                    val hex = encoded.substring(i + 1, i + 3)
+                    bytes.add(hex.toInt(16).toByte())
+                    i += 3
+                }
+
+                encoded[i] == '+' -> {
+                    // Plus sign represents space in URL encoding
+                    bytes.add(' '.code.toByte())
+                    i++
+                }
+
+                else -> {
+                    // Regular character
+                    bytes.add(encoded[i].code.toByte())
+                    i++
+                }
+            }
+        }
+        // Convert bytes to String using ISO-8859-1 (preserves binary data)
+        return String(bytes.toByteArray(), Charsets.ISO_8859_1)
     }
 
     private fun startCleanupTask() {
