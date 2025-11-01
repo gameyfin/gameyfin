@@ -16,7 +16,9 @@ import java.util.concurrent.TimeUnit
  */
 class TorrentTracker(
     private val port: Int,
-    private val announceInterval: Int = 1800 // 30 minutes
+    private val announceInterval: Int = 1800, // 30 minutes
+    private val internalPeerIdPrefix: String, // Peer ID prefix to identify internal client
+    private val externalHost: String? = null, // External host/IP to announce for peers
 ) {
     private val log = LoggerFactory.getLogger(TorrentTracker::class.java)
     private var server: HttpServer? = null
@@ -71,7 +73,6 @@ class TorrentTracker(
             // Get raw query string from URI - we need to parse it ourselves to handle binary data
             // Using .query would give us a UTF-8 decoded string which corrupts binary info_hash
             val rawQuery = exchange.requestURI.rawQuery ?: ""
-            log.debug("Raw announce query (first 100 chars): ${rawQuery.take(100)}")
 
             val params = parseQueryString(rawQuery)
 
@@ -80,9 +81,6 @@ class TorrentTracker(
                 respondBencodedError(exchange, "Missing info_hash")
                 return
             }
-
-            // Debug: log the decoded info hash
-            log.debug("Decoded info_hash (hex): ${bytesToHex(infoHash)}")
 
             val peerId = params["peer_id"] ?: run {
                 respondBencodedError(exchange, "Missing peer_id")
@@ -99,8 +97,16 @@ class TorrentTracker(
             val left = params["left"]?.toLongOrNull() ?: 0
             val event = params["event"] // started, completed, stopped
 
-            // Get client IP
-            val ip = params["ip"] ?: exchange.remoteAddress.address.hostAddress
+            // Get client IP - use externalHost ONLY for the internal client (identified by peer ID)
+            val clientIp = params["ip"] ?: exchange.remoteAddress.address.hostAddress
+            val ip = if (externalHost !== null && externalHost.isNotBlank() && isInternalClient(peerId)) {
+                // This is our internal seeder - use the configured external host
+                log.debug("Internal client detected (peer ID: ${bytesToHex(peerId)}), using external host: $externalHost")
+                externalHost
+            } else {
+                // This is an external peer - use their actual IP
+                clientIp
+            }
 
             // Get or create torrent peer list
             val peers = torrents.computeIfAbsent(infoHash) {
@@ -324,6 +330,14 @@ class TorrentTracker(
                 torrents.remove(infoHash)
             }
         }
+    }
+
+    /**
+     * Check if a peer ID matches the internal client prefix.
+     * The peer ID is a 20-byte string where clients typically use the first 8 bytes for identification.
+     */
+    private fun isInternalClient(peerId: String): Boolean {
+        return peerId.startsWith(internalPeerIdPrefix)
     }
 }
 

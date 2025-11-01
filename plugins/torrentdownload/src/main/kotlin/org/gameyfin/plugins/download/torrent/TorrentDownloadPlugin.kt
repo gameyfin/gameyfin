@@ -4,9 +4,12 @@ import com.frostwire.jlibtorrent.*
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
 import com.frostwire.jlibtorrent.alerts.Alert
-import com.frostwire.jlibtorrent.swig.*
+import com.frostwire.jlibtorrent.swig.create_torrent
+import com.frostwire.jlibtorrent.swig.error_code
+import com.frostwire.jlibtorrent.swig.file_storage
 import com.frostwire.jlibtorrent.swig.libtorrent.add_files
 import com.frostwire.jlibtorrent.swig.libtorrent.set_piece_hashes_ex
+import com.frostwire.jlibtorrent.swig.set_piece_hashes_listener
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -30,6 +33,8 @@ import kotlin.time.measureTimedValue
 class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
     companion object {
+        private const val INTERNAL_PEER_ID_PREFIX = "-GF0001-"
+
         private lateinit var plugin: TorrentDownloadPlugin
         private lateinit var state: TorrentDownloadPluginState
 
@@ -44,32 +49,11 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
     override val configMetadata: PluginConfigMetadata = listOf(
         ConfigMetadata(
-            key = "listenPort",
-            label = "Listen Port",
-            description = "Which port the built-in torrent client should listen on",
-            type = Int::class.java,
-            default = 6881
-        ),
-        ConfigMetadata(
-            key = "trackerPort",
-            label = "Tracker Port",
-            description = "Which port the built-in tracker should listen on",
-            type = Int::class.java,
-            default = 6969
-        ),
-        ConfigMetadata(
-            key = "externalHost",
-            label = "Hostname/IP override",
-            description = "Overrides the external host for the built-in tracker (e.g., if behind NAT)",
-            type = String::class.java,
-            isRequired = false
-        ),
-        ConfigMetadata(
-            key = "announceInterval",
-            label = "Tracker Announce Interval",
-            description = "Interval (in seconds) for clients to re-announce to the tracker",
-            type = Int::class.java,
-            default = 1800
+            key = "stopSeedingWhenComplete",
+            label = "Stop Seeding When Complete",
+            description = "Automatically stop seeding torrents once there are other peers with all pieces (torrent is healthy)",
+            type = Boolean::class.java,
+            default = false
         ),
         ConfigMetadata(
             key = "privateMode",
@@ -86,48 +70,48 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             default = false
         ),
         ConfigMetadata(
-            key = "stopSeedingWhenComplete",
-            label = "Stop Seeding When Complete",
-            description = "Automatically stop seeding torrents once there are other peers with all pieces (torrent is healthy)",
+            key = "lsdEnabled",
+            label = "Enable LSD",
+            description = "Enable Local Service Discovery for finding peers on the local network",
             type = Boolean::class.java,
-            default = false
+            default = true
+        ),
+        ConfigMetadata(
+            key = "externalHost",
+            label = "Hostname/IP override",
+            description = "Overrides the external host for the built-in tracker (e.g., if behind NAT)",
+            type = String::class.java,
+            isRequired = false
+        ),
+        ConfigMetadata(
+            key = "listenPort",
+            label = "Listen Port",
+            description = "Which port the built-in torrent client should listen on",
+            type = Int::class.java,
+            default = 6881
+        ),
+        ConfigMetadata(
+            key = "trackerPort",
+            label = "Tracker Port",
+            description = "Which port the built-in tracker should listen on",
+            type = Int::class.java,
+            default = 6969
+        ),
+        ConfigMetadata(
+            key = "announceInterval",
+            label = "Tracker Announce Interval (in seconds)",
+            description = "Interval for clients to re-announce to the tracker",
+            type = Int::class.java,
+            default = 1800
         )
     )
 
     override fun start() {
         Files.createDirectories(dataDirectory)
 
-        // Start built-in tracker
-        val trackerPort = config<Int>("trackerPort")
-        val announceInterval = config<Int>("announceInterval")
-        tracker = TorrentTracker(port = trackerPort, announceInterval = announceInterval)
-        tracker?.start()
+        session = initSession()
 
-        // Initialize jlibtorrent session
-        session = SessionManager()
-
-        // Configure session settings
-        val settingsPack = SettingsPack()
-        val listenPort = config<Int>("listenPort")
-        settingsPack.listenInterfaces("0.0.0.0:$listenPort")
-
-        // Configure DHT
-        val dhtEnabled = config<Boolean>("dhtEnabled")
-        settingsPack.swig().set_bool(settings_pack.bool_types.enable_dht.swigValue(), dhtEnabled)
-
-        session?.applySettings(settingsPack)
-        session?.start()
-
-        // Add alert listener to log errors
-        session?.addListener(object : AlertListener {
-            override fun types() = null // Listen to all alert types
-
-            override fun alert(alert: Alert<*>) {
-                if (alert.category() == Alert.ERROR_NOTIFICATION) {
-                    log.error("${alert.type()}: ${alert.message()}")
-                }
-            }
-        })
+        tracker = initTracker()
 
         state = loadState<TorrentDownloadPluginState>() ?: TorrentDownloadPluginState()
 
@@ -157,6 +141,63 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         if (config("stopSeedingWhenComplete")) {
             startMonitoringTask()
         }
+    }
+
+    private fun initSession(): SessionManager {
+        // Initialize jlibtorrent session
+        val sessionManager = SessionManager()
+
+        // Configure session settings with custom peer ID
+        val settingsPack = sessionManager.settings() ?: SettingsPack()
+
+        // Configure listen interfaces
+        val listenPort = config<Int>("listenPort")
+        settingsPack.listenInterfaces("0.0.0.0:$listenPort")
+
+        // Set custom peer ID prefix for our internal client
+        // This allows the tracker to identify this specific client
+        settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
+
+        // Configure DHT
+        val dhtEnabled = config<Boolean>("dhtEnabled")
+        settingsPack.isEnableDht = dhtEnabled
+
+        // Configure Local Peer Discovery
+        val lpdEnabled = config<Boolean>("lsdEnabled")
+        settingsPack.isEnableLsd = lpdEnabled
+
+        // Add alert listener to log errors
+        sessionManager.addListener(object : AlertListener {
+            override fun types() = null // Listen to all alert types
+
+            override fun alert(alert: Alert<*>) {
+                if (alert.category() == Alert.ERROR_NOTIFICATION) {
+                    log.error("${alert.type()}: ${alert.message()}")
+                }
+            }
+        })
+
+        sessionManager.start(SessionParams(settingsPack))
+
+        return sessionManager
+    }
+
+    private fun initTracker(): TorrentTracker {
+        // Start built-in tracker with the peer ID prefix to identify internal client
+        val trackerPort = config<Int>("trackerPort")
+        val announceInterval = config<Int>("announceInterval")
+        val externalHost = optionalConfig<String>("externalHost")
+
+        val tracker = TorrentTracker(
+            port = trackerPort,
+            announceInterval = announceInterval,
+            externalHost = externalHost,
+            internalPeerIdPrefix = INTERNAL_PEER_ID_PREFIX
+        )
+
+        tracker.start()
+
+        return tracker
     }
 
     private fun startMonitoringTask() {
