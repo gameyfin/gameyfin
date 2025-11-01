@@ -10,6 +10,7 @@ import com.frostwire.jlibtorrent.swig.file_storage
 import com.frostwire.jlibtorrent.swig.libtorrent.add_files
 import com.frostwire.jlibtorrent.swig.libtorrent.set_piece_hashes_ex
 import com.frostwire.jlibtorrent.swig.set_piece_hashes_listener
+import com.frostwire.jlibtorrent.swig.settings_pack.string_types
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -150,13 +151,34 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         // Configure session settings with custom peer ID
         val settingsPack = sessionManager.settings() ?: SettingsPack()
 
-        // Configure listen interfaces
-        val listenPort = config<Int>("listenPort")
-        settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
 
         // Set custom peer ID prefix for our internal client
         // This allows the tracker to identify this specific client
         settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
+
+        // Configure interfaces and external IPs
+        val listenPort = config<Int>("listenPort")
+        val externalHost = optionalConfig<String>("externalHost")
+        if (externalHost != null && externalHost.isNotBlank()) {
+            try {
+                val resolvedIp = InetAddress.getByName(externalHost).hostAddress
+                val resolvedInterface = "$resolvedIp:$listenPort"
+
+                settingsPack
+                    .setString(string_types.announce_ip.swigValue(), resolvedIp)
+                    .listenInterfaces(resolvedInterface)
+                    .setString(string_types.outgoing_interfaces.swigValue(), resolvedInterface)
+
+                log.info("Configured client IP to: $resolvedIp (from external host: $externalHost)")
+            } catch (e: Exception) {
+                log.error("Failed to resolve external host '$externalHost' for client IP", e)
+            }
+        } else {
+            val defaultBindInterfaces = "0.0.0.0:$listenPort,[::]:$listenPort"
+            settingsPack
+                .listenInterfaces(defaultBindInterfaces)
+                .setString(string_types.outgoing_interfaces.swigValue(), defaultBindInterfaces)
+        }
 
         // Configure DHT
         val dhtEnabled = config<Boolean>("dhtEnabled")
