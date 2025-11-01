@@ -1,11 +1,9 @@
 package org.gameyfin.plugins.download.torrent
 
-import com.frostwire.jlibtorrent.SessionManager
-import com.frostwire.jlibtorrent.SettingsPack
+import com.frostwire.jlibtorrent.*
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
-import com.frostwire.jlibtorrent.TorrentInfo
-import com.frostwire.jlibtorrent.Vectors
+import com.frostwire.jlibtorrent.alerts.Alert
 import com.frostwire.jlibtorrent.swig.*
 import com.frostwire.jlibtorrent.swig.libtorrent.add_files
 import com.frostwire.jlibtorrent.swig.libtorrent.set_piece_hashes_ex
@@ -120,6 +118,17 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         session?.applySettings(settingsPack)
         session?.start()
 
+        // Add alert listener to log errors
+        session?.addListener(object : AlertListener {
+            override fun types() = null // Listen to all alert types
+
+            override fun alert(alert: Alert<*>) {
+                if (alert.category() == Alert.ERROR_NOTIFICATION) {
+                    log.error("${alert.type()}: ${alert.message()}")
+                }
+            }
+        })
+
         state = loadState<TorrentDownloadPluginState>() ?: TorrentDownloadPluginState()
 
         // Restore existing torrents and remove invalid ones
@@ -212,9 +221,20 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             return
         }
 
-        // Use SessionManager's download method - it will seed the files in the save directory
-        session?.download(ti, savePath)
-        log.info("Added torrent to session for seeding: ${ti.name()} from $savePath")
+        // Verify file access before adding to session
+        if (!Files.isReadable(gameFile)) {
+            log.error("Cannot read game file for seeding: $gameFile - check file permissions")
+            throw IllegalStateException("Game file is not readable: $gameFile")
+        }
+
+        try {
+            // Use SessionManager's download method - it will seed the files in the save directory
+            session?.download(ti, savePath)
+            log.info("Added torrent to session for seeding: ${ti.name()} from $savePath")
+        } catch (e: Exception) {
+            log.error("Failed to add torrent to session for seeding: ${ti.name()}", e)
+            throw e
+        }
     }
 
     override fun stop() {
@@ -259,6 +279,11 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             } catch (_: Exception) {
                 errors["externalHost"] = "Must be a valid hostname or IP address."
             }
+        }
+
+        val announceInterval = config["announceInterval"]?.toIntOrNull()
+        if (announceInterval != null && announceInterval <= 0) {
+            errors["announceInterval"] = "Must be a positive integer."
         }
 
         return if (errors.isEmpty()) {
@@ -324,9 +349,14 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
                 plugin.saveState(state)
             }
 
-            // Always add the torrent to the session for seeding (even if file already exists)
-            // This ensures it starts seeding again if it was previously stopped
-            plugin.addTorrentToSession(torrentFile, gameFilesPath)
+            // Add the torrent to the session for seeding asynchronously to avoid blocking the download
+            // This prevents crashes if there are permission issues or other errors
+            try {
+                plugin.addTorrentToSession(torrentFile, gameFilesPath)
+            } catch (e: Exception) {
+                log.error("Failed to add torrent to seeding session - torrent file created but won't be seeded", e)
+                // Don't rethrow - the torrent file was created successfully, seeding is optional
+            }
 
             return torrentFile
         }

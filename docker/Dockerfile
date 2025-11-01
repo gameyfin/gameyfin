@@ -38,7 +38,7 @@ WORKDIR /opt/gameyfin
 # Create user and required directories
 RUN groupadd -g "$GID" "$USER" && \
     useradd -u "$UID" -g "$GID" -M -s /sbin/nologin "$USER" && \
-    mkdir -p plugins db data logs && \
+    mkdir -p plugins plugindata db data logs && \
     chown -R "$UID:$GID" .
 
 # Copy entrypoint script with proper perms and ownership
