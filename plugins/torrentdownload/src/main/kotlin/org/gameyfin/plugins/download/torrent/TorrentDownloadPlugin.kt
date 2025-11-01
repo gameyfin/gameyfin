@@ -79,7 +79,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         ConfigMetadata(
             key = "externalHost",
             label = "Hostname/IP override",
-            description = "Overrides the external host for the built-in tracker (e.g., if behind NAT)",
+            description = "Overrides the external host for the built-in tracker (e.g., if behind NAT/Docker)",
             type = String::class.java,
             isRequired = false
         ),
@@ -152,7 +152,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
         // Configure listen interfaces
         val listenPort = config<Int>("listenPort")
-        settingsPack.listenInterfaces("0.0.0.0:$listenPort")
+        settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
 
         // Set custom peer ID prefix for our internal client
         // This allows the tracker to identify this specific client
@@ -166,18 +166,28 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         val lpdEnabled = config<Boolean>("lsdEnabled")
         settingsPack.isEnableLsd = lpdEnabled
 
-        // Add alert listener to log errors
+        // Add alert listener to log errors and connection attempts
         sessionManager.addListener(object : AlertListener {
             override fun types() = null // Listen to all alert types
 
             override fun alert(alert: Alert<*>) {
-                if (alert.category() == Alert.ERROR_NOTIFICATION) {
-                    log.error("${alert.type()}: ${alert.message()}")
+                when {
+                    alert.category() == Alert.ERROR_NOTIFICATION -> {
+                        log.error("{}: {}", alert.type(), alert.message())
+                    }
+
+                    else -> {
+                        log.debug("{}: {}", alert.type(), alert.message())
+                    }
                 }
             }
         })
 
         sessionManager.start(SessionParams(settingsPack))
+
+        // Log the listening status
+        log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
+        log.info("Configured to listen on port: $listenPort")
 
         return sessionManager
     }
@@ -336,7 +346,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
     private fun getTrackerUri(): URI {
         val protocol = "http"
-        val host = getHostname().getHostName()
+        val host = getHostname().hostName
         val port = config<Int>("trackerPort")
         val path = "announce"
 

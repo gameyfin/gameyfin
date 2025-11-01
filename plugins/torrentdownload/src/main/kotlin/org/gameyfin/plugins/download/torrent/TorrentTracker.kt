@@ -3,6 +3,7 @@ package org.gameyfin.plugins.download.torrent
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.slf4j.LoggerFactory
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.URLDecoder
 import java.nio.ByteBuffer
@@ -18,7 +19,7 @@ class TorrentTracker(
     private val port: Int,
     private val announceInterval: Int = 1800, // 30 minutes
     private val internalPeerIdPrefix: String, // Peer ID prefix to identify internal client
-    private val externalHost: String? = null, // External host/IP to announce for peers
+    private val externalHost: String? = null // External host/IP to announce for peers
 ) {
     private val log = LoggerFactory.getLogger(TorrentTracker::class.java)
     private var server: HttpServer? = null
@@ -99,10 +100,18 @@ class TorrentTracker(
 
             // Get client IP - use externalHost ONLY for the internal client (identified by peer ID)
             val clientIp = params["ip"] ?: exchange.remoteAddress.address.hostAddress
+
             val ip = if (externalHost !== null && externalHost.isNotBlank() && isInternalClient(peerId)) {
                 // This is our internal seeder - use the configured external host
-                log.debug("Internal client detected (peer ID: ${bytesToHex(peerId)}), using external host: $externalHost")
-                externalHost
+                // Resolve hostname to IP address if needed for compact peer list compatibility
+                try {
+                    val resolvedIp = InetAddress.getByName(externalHost).hostAddress
+                    log.debug("Internal client detected (peer ID: ${bytesToHex(peerId)}), using external host: $externalHost (resolved to $resolvedIp)")
+                    resolvedIp
+                } catch (e: Exception) {
+                    log.error("Failed to resolve external host '$externalHost', falling back to client IP", e)
+                    clientIp
+                }
             } else {
                 // This is an external peer - use their actual IP
                 clientIp
