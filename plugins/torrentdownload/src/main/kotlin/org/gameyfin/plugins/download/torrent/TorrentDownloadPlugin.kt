@@ -156,28 +156,25 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         // This allows the tracker to identify this specific client
         settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
 
-        // Configure interfaces and external IPs
+        // Configure interfaces
         val listenPort = config<Int>("listenPort")
+        val defaultBindInterfaces = "0.0.0.0:$listenPort,[::]:$listenPort"
+        settingsPack
+            .listenInterfaces(defaultBindInterfaces)
+            .setString(string_types.outgoing_interfaces.swigValue(), defaultBindInterfaces)
+
+        // Configure interfaces and external IPs
         val externalHost = optionalConfig<String>("externalHost")
         if (externalHost != null && externalHost.isNotBlank()) {
             try {
                 val resolvedIp = InetAddress.getByName(externalHost).hostAddress
-                val resolvedInterface = "$resolvedIp:$listenPort"
 
-                settingsPack
-                    .setString(string_types.announce_ip.swigValue(), resolvedIp)
-                    .listenInterfaces(resolvedInterface)
-                    .setString(string_types.outgoing_interfaces.swigValue(), resolvedInterface)
+                settingsPack.setString(string_types.announce_ip.swigValue(), resolvedIp)
 
                 log.info("Configured client IP to: $resolvedIp (from external host: $externalHost)")
             } catch (e: Exception) {
                 log.error("Failed to resolve external host '$externalHost' for client IP", e)
             }
-        } else {
-            val defaultBindInterfaces = "0.0.0.0:$listenPort,[::]:$listenPort"
-            settingsPack
-                .listenInterfaces(defaultBindInterfaces)
-                .setString(string_types.outgoing_interfaces.swigValue(), defaultBindInterfaces)
         }
 
         // Configure DHT
