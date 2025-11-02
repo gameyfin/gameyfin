@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.event.EventListener
+import org.springframework.scheduling.annotation.Async
 
 @Configuration
 class PluginManagerConfig(
@@ -11,6 +12,7 @@ class PluginManagerConfig(
 ) {
     private val log = KotlinLogging.logger {}
 
+    @Async
     @EventListener(ApplicationReadyEvent::class)
     fun loadPlugins() {
         pluginManager.loadPlugins()

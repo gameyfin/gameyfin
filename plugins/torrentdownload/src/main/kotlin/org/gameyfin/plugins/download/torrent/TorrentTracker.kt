@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit
 /**
  * A simple BitTorrent tracker implementation using HTTP protocol.
  * Implements the basic announce/scrape protocol as defined in BEP 3.
+ * Supports hybrid torrents (BEP-52) by grouping v1 and v2 swarms using the key parameter (BEP-7).
+ *
+ * The key parameter remains constant for a peer across the same torrent's v1/v2 variants,
+ * allowing the tracker to link related swarms and provide better peer discovery.
  */
 class TorrentTracker(
     private val port: Int,
@@ -24,6 +28,11 @@ class TorrentTracker(
     // Map of info_hash -> peers
     private val torrents = ConcurrentHashMap<String, MutableSet<Peer>>()
 
+    // Map of key -> set of info_hashes (for linking hybrid torrent swarms)
+    // The key parameter is per-torrent and stays the same across v1/v2 variants,
+    // allowing us to group related swarms of the same hybrid torrent
+    private val hybridTorrentGroups = ConcurrentHashMap<String, MutableSet<String>>()
+
     data class Peer(
         val peerId: String,
         val ip: String,
@@ -31,7 +40,8 @@ class TorrentTracker(
         var uploaded: Long = 0,
         var downloaded: Long = 0,
         var left: Long = 0,
-        var lastSeen: Long = System.currentTimeMillis()
+        var lastSeen: Long = System.currentTimeMillis(),
+        val key: String? = null  // BEP-7 key parameter - per-torrent identifier for grouping hybrid variants
     )
 
     fun start() {
@@ -44,7 +54,7 @@ class TorrentTracker(
                 handleScrape(exchange)
             }
 
-            executor = Executors.newFixedThreadPool(4)
+            executor = Executors.newFixedThreadPool(1)
             start()
         }
 
@@ -94,9 +104,20 @@ class TorrentTracker(
             val downloaded = params["downloaded"]?.toLongOrNull() ?: 0
             val left = params["left"]?.toLongOrNull() ?: 0
             val event = params["event"] // started, completed, stopped
+            val key = params["key"] // BEP-7 key parameter - per-torrent identifier (same for v1/v2 variants)
 
             // Get client IP from params or use remote address
             val ip = params["ip"] ?: exchange.remoteAddress.address.hostAddress
+
+            // Track hybrid torrent grouping if key is provided
+            if (!key.isNullOrBlank()) {
+                val relatedHashes = hybridTorrentGroups.computeIfAbsent(key) {
+                    ConcurrentHashMap.newKeySet()
+                }
+                relatedHashes.add(infoHash)
+
+                log.debug("Linked info_hash ${bytesToHex(infoHash)} with key $key (group has ${relatedHashes.size} hashes)")
+            }
 
             // Get or create torrent peer list
             val peers = torrents.computeIfAbsent(infoHash) {
@@ -109,6 +130,15 @@ class TorrentTracker(
                 "stopped" -> {
                     peers.removeIf { it.peerId == peerId }
                     log.debug("Removed peer $peerId from torrent ${bytesToHex(infoHash)}")
+
+                    // Also remove from related hybrid torrent swarms if key is provided
+                    if (!key.isNullOrBlank()) {
+                        hybridTorrentGroups[key]?.forEach { relatedHash ->
+                            if (relatedHash != infoHash) {
+                                torrents[relatedHash]?.removeIf { it.peerId == peerId && it.key == key }
+                            }
+                        }
+                    }
                 }
 
                 else -> {
@@ -116,24 +146,54 @@ class TorrentTracker(
 
                     if (existingPeer != null) {
                         peers.remove(existingPeer)
-                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left))
+                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
                         log.debug("Updated peer $peerId for torrent ${bytesToHex(infoHash)}")
                     } else {
-                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left))
+                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
                         log.debug("Added peer $peerId to torrent ${bytesToHex(infoHash)}")
+                    }
+
+                    // Sync peer to related hybrid torrent swarms if key is provided
+                    if (!key.isNullOrBlank()) {
+                        hybridTorrentGroups[key]?.forEach { relatedHash ->
+                            if (relatedHash != infoHash) {
+                                val relatedPeers = torrents.computeIfAbsent(relatedHash) {
+                                    ConcurrentHashMap.newKeySet()
+                                }
+                                relatedPeers.removeIf { it.peerId == peerId && it.key == key }
+                                relatedPeers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
+                            }
+                        }
                     }
                 }
             }
 
-            // Build peer list (exclude the requesting peer)
-            val peerList = peers.filter { it.peerId != peerId }.take(50)
+            // Build peer list from this swarm and related hybrid swarms
+            val allPeers = mutableSetOf<Peer>()
+            allPeers.addAll(peers)
+
+            // Include peers from related hybrid torrent swarms
+            if (!key.isNullOrBlank()) {
+                hybridTorrentGroups[key]?.forEach { relatedHash ->
+                    torrents[relatedHash]?.let { allPeers.addAll(it) }
+                }
+            }
+
+            // Deduplicate by peerId and exclude the requesting peer
+            val peerList = allPeers
+                .distinctBy { it.peerId }
+                .filter { it.peerId != peerId }
+                .take(50)
+
+            // Calculate stats across all related swarms
+            val uniquePeers = allPeers.distinctBy { it.peerId }
 
             // Send response
             respondBencodedAnnounce(
                 exchange,
                 interval = announceInterval,
-                complete = peers.count { it.left == 0L },
-                incomplete = peers.count { it.left > 0L },
+                complete = uniquePeers.count { it.left == 0L },
+                incomplete = uniquePeers.count { it.left > 0L },
                 peers = peerList
             )
 

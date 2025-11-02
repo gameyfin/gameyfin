@@ -1,16 +1,8 @@
 package org.gameyfin.plugins.download.torrent
 
-import com.frostwire.jlibtorrent.*
-import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
-import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
-import com.frostwire.jlibtorrent.alerts.Alert
-import com.frostwire.jlibtorrent.swig.create_torrent
-import com.frostwire.jlibtorrent.swig.error_code
-import com.frostwire.jlibtorrent.swig.file_storage
-import com.frostwire.jlibtorrent.swig.libtorrent.add_files
-import com.frostwire.jlibtorrent.swig.libtorrent.set_piece_hashes_ex
-import com.frostwire.jlibtorrent.swig.set_piece_hashes_listener
-import com.frostwire.jlibtorrent.swig.settings_pack.string_types
+import com.frostwire.jlibtorrent.TorrentBuilder
+import com.frostwire.jlibtorrent.swig.create_torrent.v1_only
+import com.frostwire.jlibtorrent.swig.create_torrent.v2_only
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -25,23 +17,17 @@ import java.net.InetAddress
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 import kotlin.time.measureTimedValue
 
 class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
     companion object {
-        private const val INTERNAL_PEER_ID_PREFIX = "-GF0001-"
-
         private lateinit var plugin: TorrentDownloadPlugin
         private lateinit var state: TorrentDownloadPluginState
 
-        private var session: SessionManager? = null
+        private var client: TorrentClient? = null
         private var tracker: TorrentTracker? = null
-        private var monitorExecutor: ScheduledExecutorService? = null
     }
 
     init {
@@ -78,6 +64,13 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             default = false
         ),
         ConfigMetadata(
+            key = "torrentVersions",
+            label = "Torrent Protocol Versions",
+            description = "Which torrent protocol versions to support (some clients don't support v2)",
+            type = TorrentVersion::class.java,
+            default = TorrentVersion.`V1 and V2`
+        ),
+        ConfigMetadata(
             key = "externalHost",
             label = "Hostname/IP override",
             description = "Overrides the external host for the built-in tracker (e.g., if behind NAT/Docker)",
@@ -110,9 +103,9 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
     override fun start() {
         Files.createDirectories(dataDirectory)
 
-        session = initSession()
-
         tracker = initTracker()
+
+        client = initClient()
 
         state = loadState<TorrentDownloadPluginState>() ?: TorrentDownloadPluginState()
 
@@ -127,7 +120,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
                 true
             } else {
                 try {
-                    addTorrentToSession(metadata.torrentFile, metadata.gameFile)
+                    client?.addTorrent(metadata.torrentFile, metadata.gameFile)
                     false
                 } catch (e: Exception) {
                     log.error("Failed to add torrent ${metadata.torrentFile} to session", e)
@@ -137,85 +130,26 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         }
 
         saveState(state)
-
-        // Start monitoring task if stopSeedingWhenComplete is enabled
-        if (config("stopSeedingWhenComplete")) {
-            startMonitoringTask()
-        }
     }
 
-    private fun initSession(): SessionManager {
-        // Initialize jlibtorrent session
-        val sessionManager = SessionManager()
+    private fun initClient(): TorrentClient {
+        val client = TorrentClient(
+            listenPort = config("listenPort"),
+            externalHost = optionalConfig("externalHost"),
+            dhtEnabled = config("dhtEnabled"),
+            lsdEnabled = config("lsdEnabled"),
+            stopSeedingWhenComplete = config("stopSeedingWhenComplete")
+        )
 
-        // Configure session settings with custom peer ID
-        val settingsPack = sessionManager.settings() ?: SettingsPack()
+        client.start()
 
-
-        // Set custom peer ID prefix for our internal client
-        // This allows us to identify this specific client if needed
-        settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
-
-        // Configure interfaces
-        val listenPort = config<Int>("listenPort")
-        settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
-
-        // Configure announce IP if externalHost is set
-        val externalHost = optionalConfig<String>("externalHost")
-        if (externalHost != null && externalHost.isNotBlank()) {
-            try {
-                val resolvedIp = InetAddress.getByName(externalHost).hostAddress
-                settingsPack.setString(string_types.announce_ip.swigValue(), resolvedIp)
-                log.info("Configured client announce IP to: $resolvedIp (from external host: $externalHost)")
-            } catch (e: Exception) {
-                log.error("Failed to resolve external host '$externalHost' for client IP", e)
-            }
-        } else {
-            log.info("No external host override set; using default announce IP behavior")
-        }
-
-        // Configure DHT
-        val dhtEnabled = config<Boolean>("dhtEnabled")
-        settingsPack.isEnableDht = dhtEnabled
-
-        // Configure Local Peer Discovery
-        val lpdEnabled = config<Boolean>("lsdEnabled")
-        settingsPack.isEnableLsd = lpdEnabled
-
-        // Add alert listener to log errors and connection attempts
-        sessionManager.addListener(object : AlertListener {
-            override fun types() = null // Listen to all alert types
-
-            override fun alert(alert: Alert<*>) {
-                when {
-                    alert.category().eq(Alert.ERROR_NOTIFICATION) ||
-                            alert.type().name.contains("error", ignoreCase = true) -> {
-                        log.debug("[libtorrent] {}: {}", alert.type(), alert.message())
-                    }
-
-                    else -> {
-                        log.trace("[libtorrent] {}: {}", alert.type(), alert.message())
-                    }
-                }
-            }
-        })
-
-        sessionManager.start(SessionParams(settingsPack))
-
-        // Log the listening status
-        log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
-
-        return sessionManager
+        return client
     }
 
     private fun initTracker(): TorrentTracker {
-        // Start built-in tracker with the peer ID prefix to identify internal client
-        val trackerPort = config<Int>("trackerPort")
-        val announceInterval = config<Int>("announceInterval")
-
         val tracker = TorrentTracker(
-            port = trackerPort,
-            announceInterval = announceInterval
+            port = config("trackerPort"),
+            announceInterval = config("announceInterval")
         )
 
         tracker.start()
@@ -223,96 +157,9 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         return tracker
     }
 
-    private fun startMonitoringTask() {
-        monitorExecutor = Executors.newSingleThreadScheduledExecutor()
-        monitorExecutor?.scheduleWithFixedDelay({
-            try {
-                checkAndStopCompletedTorrents()
-            } catch (e: Exception) {
-                log.error("Error checking torrent completion status", e)
-            }
-        }, 60, 60, TimeUnit.SECONDS) // Check every 60 seconds
-    }
-
-    private fun checkAndStopCompletedTorrents() {
-        val handles = session?.torrentHandles?.toList() ?: return
-
-        handles.forEach { handle ->
-            if (!handle.isValid) {
-                return@forEach
-            }
-
-            val status = handle.status(QUERY_DISTRIBUTED_COPIES.or_(QUERY_NAME))
-
-            // Only check torrents that we are seeding
-            if (status.isFinished) {
-                val knownSeeders = status.listSeeds()
-                val completePeersFromTracker = status.numComplete()
-                val distributedFullCopies = status.distributedFullCopies()
-
-                // If there are other seeders or complete peers, stop seeding
-                if (distributedFullCopies > 0) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $distributedFullCopies distributed full copies.")
-                    session?.remove(handle)
-                } else if (completePeersFromTracker > 1) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $completePeersFromTracker complete peers from tracker.")
-                    session?.remove(handle)
-                } else if (knownSeeders > 0) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $knownSeeders known seeders.")
-                    session?.remove(handle)
-                } else {
-                    log.debug("Continuing to seed torrent '${status.name()}' - no other complete peers found.")
-                }
-            }
-        }
-    }
-
-    private fun addTorrentToSession(torrentFile: Path, gameFile: Path) {
-        val ti = TorrentInfo(torrentFile.toFile())
-
-        // For seeding, we need to use the parent directory as the save path
-        // This matches how we created the torrent with hashBasePath = parent directory
-        val savePath = if (gameFile.isDirectory()) {
-            gameFile.parent.toFile()
-        } else {
-            gameFile.parent.toFile()
-        }
-
-        // Check if torrent is already in session
-        val existingHandle = session?.find(ti)
-        if (existingHandle != null && existingHandle.isValid) {
-            log.debug("Torrent ${ti.name()} is already in session, skipping")
-            return
-        }
-
-        // Verify file access before adding to session
-        if (!Files.isReadable(gameFile)) {
-            log.error("Cannot read game file for seeding: $gameFile - check file permissions")
-            throw IllegalStateException("Game file is not readable: $gameFile")
-        }
-
-        try {
-            // Use SessionManager's download method - it will seed the files in the save directory
-            session?.download(ti, savePath)
-            log.info("Added torrent to session for seeding: ${ti.name()} from $savePath")
-        } catch (e: Exception) {
-            log.error("Failed to add torrent to session for seeding: ${ti.name()}", e)
-            throw e
-        }
-    }
-
     override fun stop() {
-
-        monitorExecutor?.shutdown()
-        try {
-            monitorExecutor?.awaitTermination(5, TimeUnit.SECONDS)
-        } catch (_: InterruptedException) {
-            monitorExecutor?.shutdownNow()
-        }
-        monitorExecutor = null
-
-        session?.stop()
-        session = null
+        client?.stop()
+        client = null
 
         tracker?.stop()
         tracker = null
@@ -377,7 +224,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             log.info("Creating torrent for '${path.name}'...")
 
             val (torrentFile, timeTaken) = measureTimedValue {
-                createTorrent(path)
+                initNewTorrent(path)
             }
 
             log.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
@@ -389,7 +236,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             )
         }
 
-        private fun createTorrent(gameFilesPath: Path): Path {
+        private fun initNewTorrent(gameFilesPath: Path): Path {
             val torrentFile = plugin.dataDirectory
                 .resolve("${gameFilesPath.nameWithoutExtension}-${gameFilesPath.hashCode()}.torrent")
 
@@ -412,7 +259,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             // Add the torrent to the session for seeding asynchronously to avoid blocking the download
             // This prevents crashes if there are permission issues or other errors
             try {
-                plugin.addTorrentToSession(torrentFile, gameFilesPath)
+                client?.addTorrent(torrentFile, gameFilesPath)
             } catch (e: Exception) {
                 log.error("Failed to add torrent to seeding session - torrent file created but won't be seeded", e)
                 // Don't rethrow - the torrent file was created successfully, seeding is optional
@@ -421,58 +268,34 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             return torrentFile
         }
 
+        @Suppress("DEPRECATION")
         private fun torrentFileContent(gameFilesPath: Path): ByteArray {
-            val isDirectory = gameFilesPath.isDirectory()
+            val torrentBuilder = TorrentBuilder()
 
-            // Create file storage
-            val fs = file_storage()
+            val trackerUrl = plugin.getTrackerUri().toString()
+            val isPrivate = plugin.config<Boolean>("privateMode")
+            val torrentVersions = plugin.config<TorrentVersion>("torrentVersions")
 
-            // For directories, we need to add files from the directory and set the name
-            // For single files, we add just the file
-            val hashBasePath: String
-            if (isDirectory) {
-                // Add all files from the directory
-                add_files(fs, gameFilesPath.toString())
-                // Set the name to just the directory name (not full path)
-                fs.set_name(gameFilesPath.fileName.toString())
-                // For hashing, use parent directory (because torrent name is set to directory name)
-                hashBasePath = gameFilesPath.parent.toString()
-            } else {
-                // For single files, add just that file
-                add_files(fs, gameFilesPath.toString())
-                // For hashing, use the parent directory
-                hashBasePath = gameFilesPath.parent.toString()
+            log.info("Creating ${if (isPrivate) "private" else "public"} ${if (torrentVersions !== TorrentVersion.`V1 and V2`) torrentVersions else ""} torrent with announce URL '$trackerUrl'")
+
+            val flags = when (torrentVersions) {
+                TorrentVersion.`V1 only` -> v1_only
+                TorrentVersion.`V2 only` -> v2_only
+                TorrentVersion.`V1 and V2` -> null
             }
 
-            // Create torrent
-            val ct = create_torrent(fs)
+            val builder = torrentBuilder.path(gameFilesPath.toFile())
+                .creator("Gameyfin Torrent plugin v${plugin.wrapper.descriptor.version}")
+                .addTracker(trackerUrl)
+                .setPrivate(isPrivate)
 
-            // Add tracker announce URL (use built-in tracker if not overridden)
-            val announceUrl = plugin.getTrackerUri().toString()
-            ct.add_tracker(announceUrl)
-
-            log.info("Creating torrent with announce URL: $announceUrl")
-
-            // Set private flag if configured
-            if (plugin.config("privateMode")) {
-                ct.set_priv(true)
+            if (flags != null) {
+                builder.flags(flags)
             }
 
-            // Set creator
-            ct.set_creator("gameyfin-torrent-plugin")
+            val builderResult = builder.generate()
 
-            // Generate piece hashes
-            val ec = error_code()
-            val listener = set_piece_hashes_listener()
-            set_piece_hashes_ex(ct, hashBasePath, listener, ec)
-
-            if (ec.value() != 0) {
-                throw RuntimeException("Failed to set piece hashes: ${ec.message()}")
-            }
-
-            // Generate the torrent bencode
-            val entry = ct.generate()
-            return Vectors.byte_vector2bytes(entry.bencode())
+            return builderResult.entry().bencode()
         }
     }
 }
