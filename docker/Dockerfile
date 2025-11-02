@@ -29,7 +29,7 @@ LABEL maintainer="grimsi" \
 ENV RUNTIME_ENV=docker
 
 # Install necessary packages
-RUN apk add --no-cache su-exec tini shadow libtorrent
+RUN apk add --no-cache su-exec tini shadow gcompat
 
 # Fixed runtime user/group
 ENV USER=gameyfin
