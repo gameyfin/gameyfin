@@ -107,7 +107,11 @@ class TorrentTracker(
             val key = params["key"] // BEP-7 key parameter - per-torrent identifier (same for v1/v2 variants)
 
             // Get client IP from params or use remote address
-            val ip = params["ip"] ?: exchange.remoteAddress.address.hostAddress
+            val ip = params["ip"] ?: run {
+                val remoteAddress = exchange.remoteAddress.address.hostAddress
+                log.debug("Param 'ip' not provided, falling back to remote host address ($remoteAddress) for peer $peerId")
+                remoteAddress
+            }
 
             // Track hybrid torrent grouping if key is provided
             if (!key.isNullOrBlank()) {
