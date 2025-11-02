@@ -1,0 +1,6 @@
+spring:
+  main:
+    # In Docker, we don't want keep-alive because tini manages process lifecycle
+    # and keep-alive can interfere with proper SIGTERM handling
+    keep-alive: false
+
