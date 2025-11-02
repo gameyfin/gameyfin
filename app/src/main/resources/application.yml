@@ -34,11 +34,6 @@ management:
 spring:
   # Workaround for https://github.com/vaadin/hilla/issues/842
   devtools.restart.additional-exclude: dev/hilla/openapi.json
-  main:
-    # Keep the JVM running even with daemon threads from native libraries (like jlibtorrent)
-    # Note: This is overridden to 'false' in Docker (see application-docker.yml)
-    register-shutdown-hook: true
-    keep-alive: true
   jpa:
     # defer-datasource-initialization: true
     hibernate:

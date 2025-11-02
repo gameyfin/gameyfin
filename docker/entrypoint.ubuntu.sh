@@ -22,14 +22,4 @@ fi
 
 export JAVA_TOOL_OPTIONS="${JAVA_OPTS:-}"
 
-# Activate Docker profile for Docker-specific Spring Boot configuration
-SPRING_PROFILES_ACTIVE="${SPRING_PROFILES_ACTIVE:-docker}"
-export SPRING_PROFILES_ACTIVE
-
-# JVM flags for proper signal handling in Docker with native libraries (jlibtorrent)
-JVM_OPTS="-Djava.net.preferIPv4Stack=true"
-JVM_OPTS="$JVM_OPTS -XX:+UseContainerSupport"
-JVM_OPTS="$JVM_OPTS -XX:+ExitOnOutOfMemoryError"
-JVM_OPTS="$JVM_OPTS -Djdk.lang.Process.launchMechanism=vfork"
-
-exec gosu gameyfin:gameyfin java "$JVM_OPTS" -Djava.net.preferIPv4Stack=true org.springframework.boot.loader.launch.JarLauncher
+exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true org.springframework.boot.loader.launch.JarLauncher

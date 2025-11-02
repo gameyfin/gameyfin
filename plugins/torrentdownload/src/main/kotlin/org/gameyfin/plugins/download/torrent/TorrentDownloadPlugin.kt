@@ -42,7 +42,6 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         private var session: SessionManager? = null
         private var tracker: TorrentTracker? = null
         private var monitorExecutor: ScheduledExecutorService? = null
-        private var shutdownHook: Thread? = null
     }
 
     init {
@@ -116,20 +115,6 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         tracker = initTracker()
 
         state = loadState<TorrentDownloadPluginState>() ?: TorrentDownloadPluginState()
-
-        // Register shutdown hook to ensure proper cleanup of native threads
-        shutdownHook = Thread {
-            log.info("Shutdown hook triggered - cleaning up torrent plugin native resources...")
-            try {
-                // Only stop session and tracker, don't call stop() to avoid recursion
-                session?.stop()
-                tracker?.stop()
-            } catch (e: Exception) {
-                log.error("Error in shutdown hook", e)
-            }
-        }.also {
-            Runtime.getRuntime().addShutdownHook(it)
-        }
 
         // Restore existing torrents and remove invalid ones
         state.torrentFilesMetadata.removeIf { metadata ->
@@ -317,57 +302,20 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
     }
 
     override fun stop() {
-        log.info("Stopping TorrentDownloadPlugin...")
 
-        // Remove shutdown hook since we're stopping properly
-        shutdownHook?.let { hook ->
-            try {
-                Runtime.getRuntime().removeShutdownHook(hook)
-                shutdownHook = null
-            } catch (_: IllegalStateException) {
-                // Shutdown already in progress, hook will run
-                log.debug("Could not remove shutdown hook - JVM shutdown in progress")
-            }
-        }
-
-        // Stop monitoring task first
         monitorExecutor?.shutdown()
         try {
-            if (!monitorExecutor?.awaitTermination(5, TimeUnit.SECONDS)!!) {
-                log.warn("Monitor executor did not terminate in time, forcing shutdown")
-                monitorExecutor?.shutdownNow()
-            }
+            monitorExecutor?.awaitTermination(5, TimeUnit.SECONDS)
         } catch (_: InterruptedException) {
-            log.warn("Interrupted while waiting for monitor executor to terminate")
             monitorExecutor?.shutdownNow()
-            Thread.currentThread().interrupt()
         }
         monitorExecutor = null
 
-        // Stop session and wait for it to fully stop
-        try {
-            session?.let { sm ->
-                log.info("Stopping BitTorrent session...")
-                sm.stop()
-                // Give the session time to clean up native threads
-                Thread.sleep(1000)
-            }
-        } catch (e: Exception) {
-            log.error("Error stopping session", e)
-        } finally {
-            session = null
-        }
+        session?.stop()
+        session = null
 
-        // Stop tracker
-        try {
-            tracker?.stop()
-        } catch (e: Exception) {
-            log.error("Error stopping tracker", e)
-        } finally {
-            tracker = null
-        }
-
-        log.info("TorrentDownloadPlugin stopped successfully")
+        tracker?.stop()
+        tracker = null
     }
 
     override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
