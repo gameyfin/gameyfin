@@ -188,12 +188,13 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
             override fun alert(alert: Alert<*>) {
                 when {
-                    alert.category() == Alert.ERROR_NOTIFICATION -> {
-                        log.error("{}: {}", alert.type(), alert.message())
+                    alert.category().eq(Alert.ERROR_NOTIFICATION) ||
+                            alert.type().name.contains("error", ignoreCase = true) -> {
+                        log.debug("[libtorrent] {}: {}", alert.type(), alert.message())
                     }
 
                     else -> {
-                        log.debug("{}: {}", alert.type(), alert.message())
+                        log.trace("[libtorrent] {}: {}", alert.type(), alert.message())
                     }
                 }
             }
@@ -203,7 +204,6 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
         // Log the listening status
         log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
-        log.info("Configured to listen on port: $listenPort")
 
         return sessionManager
     }
