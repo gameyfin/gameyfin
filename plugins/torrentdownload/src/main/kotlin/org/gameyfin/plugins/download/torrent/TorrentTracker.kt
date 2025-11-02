@@ -133,7 +133,7 @@ class TorrentTracker(
             when (event) {
                 "stopped" -> {
                     peers.removeIf { it.peerId == peerId }
-                    log.debug("Removed peer $peerId from torrent ${bytesToHex(infoHash)}")
+                    log.debug("Removed peer $peerId ($ip) from torrent ${bytesToHex(infoHash)}")
 
                     // Also remove from related hybrid torrent swarms if key is provided
                     if (!key.isNullOrBlank()) {
@@ -151,10 +151,10 @@ class TorrentTracker(
                     if (existingPeer != null) {
                         peers.remove(existingPeer)
                         peers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
-                        log.debug("Updated peer $peerId for torrent ${bytesToHex(infoHash)}")
+                        log.debug("Updated peer $peerId ($ip) for torrent ${bytesToHex(infoHash)}")
                     } else {
                         peers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
-                        log.debug("Added peer $peerId to torrent ${bytesToHex(infoHash)}")
+                        log.debug("Added peer $peerId ($ip) to torrent ${bytesToHex(infoHash)}")
                     }
 
                     // Sync peer to related hybrid torrent swarms if key is provided
