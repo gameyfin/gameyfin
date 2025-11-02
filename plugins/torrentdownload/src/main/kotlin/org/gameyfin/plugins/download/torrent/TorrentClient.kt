@@ -29,6 +29,10 @@ class TorrentClient(
     private var session: SessionManager? = null
     private var monitorExecutor: ScheduledExecutorService? = null
 
+    // Lock for synchronizing access to the native SessionManager
+    // This prevents concurrent access issues that can cause JVM crashes in Linux/Docker
+    private object SessionLock
+
     companion object {
         private const val INTERNAL_PEER_ID_PREFIX = "-GF0001-"
     }
@@ -52,8 +56,10 @@ class TorrentClient(
         }
         monitorExecutor = null
 
-        session?.stop()
-        session = null
+        synchronized(SessionLock) {
+            session?.stop()
+            session = null
+        }
 
         log.info("TorrentClient stopped")
     }
@@ -64,89 +70,99 @@ class TorrentClient(
         // For seeding, we need to use the parent directory as the save path
         val savePath = gameFile.parent.toFile()
 
-        // Check if torrent is already in session
-        val existingHandle = session?.find(ti)
-        if (existingHandle != null && existingHandle.isValid) {
-            log.debug("Torrent ${ti.name()} is already in session, skipping")
-            return
-        }
+        synchronized(SessionLock) {
+            // Check if torrent is already in session
+            val existingHandle = session?.find(ti)
+            if (existingHandle != null && existingHandle.isValid) {
+                log.debug("Torrent ${ti.name()} is already in session, skipping")
+                return
+            }
 
-        // Verify file access before adding to session
-        if (!Files.isReadable(gameFile)) {
-            log.error("Cannot read game file for seeding: $gameFile - check file permissions")
-            throw IllegalStateException("Game file is not readable: $gameFile")
-        }
+            // Verify file access before adding to session
+            if (!Files.isReadable(gameFile)) {
+                log.error("Cannot read game file for seeding: $gameFile - check file permissions")
+                throw IllegalStateException("Game file is not readable: $gameFile")
+            }
 
-        try {
-            // Use SessionManager's download method - it will seed the files in the save directory
-            session?.download(ti, savePath)
-            log.info("Added torrent to session for seeding: ${ti.name()} from $savePath")
-        } catch (e: Exception) {
-            log.error("Failed to add torrent to session for seeding: ${ti.name()}", e)
-            throw e
+            try {
+                // Use SessionManager's download method - it will seed the files in the save directory
+                session?.download(ti, savePath)
+                log.info("Added torrent to session for seeding: ${ti.name()} from $savePath")
+            } catch (e: Exception) {
+                log.error("Failed to add torrent to session for seeding: ${ti.name()}", e)
+                throw e
+            }
         }
     }
 
     private fun initSession(): SessionManager {
-        // Return existing session if already initialized
-        session?.let { return it }
+        synchronized(SessionLock) {
+            // Return existing session if already initialized
+            session?.let { return it }
 
-        // Initialize jlibtorrent session
-        val sessionManager = SessionManager()
+            // Initialize jlibtorrent session
+            val sessionManager = SessionManager()
 
-        // Configure session settings with custom peer ID
-        val settingsPack = sessionManager.settings() ?: SettingsPack()
+            // Configure session settings with custom peer ID
+            val settingsPack = sessionManager.settings() ?: SettingsPack()
 
-        // Set custom peer ID prefix for our internal client
-        // This allows us to identify this specific client if needed
-        settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
+            // Set custom peer ID prefix for our internal client
+            // This allows us to identify this specific client if needed
+            settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
 
-        // Configure interfaces
-        settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
+            // Configure interfaces
+            settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
 
-        // Configure announce IP if externalHost is set
-        if (externalHost != null && externalHost.isNotBlank()) {
-            try {
-                val resolvedIp = InetAddress.getByName(externalHost).hostAddress
-                settingsPack.setString(string_types.announce_ip.swigValue(), resolvedIp)
-                log.info("Configured client announce IP to: $resolvedIp (from external host: $externalHost)")
-            } catch (e: Exception) {
-                log.error("Failed to resolve external host '$externalHost' for client IP", e)
+            // Configure announce IP if externalHost is set
+            if (externalHost != null && externalHost.isNotBlank()) {
+                try {
+                    val resolvedIp = InetAddress.getByName(externalHost).hostAddress
+                    settingsPack.setString(string_types.announce_ip.swigValue(), resolvedIp)
+                    log.info("Configured client announce IP to: $resolvedIp (from external host: $externalHost)")
+                } catch (e: Exception) {
+                    log.error("Failed to resolve external host '$externalHost' for client IP", e)
+                }
+            } else {
+                log.info("No external host override set; using default announce IP behavior")
             }
-        } else {
-            log.info("No external host override set; using default announce IP behavior")
-        }
 
-        // Configure DHT
-        settingsPack.isEnableDht = dhtEnabled
+            // Configure DHT
+            settingsPack.isEnableDht = dhtEnabled
 
-        // Configure Local Peer Discovery
-        settingsPack.isEnableLsd = lsdEnabled
+            // Configure Local Peer Discovery
+            settingsPack.isEnableLsd = lsdEnabled
 
-        // Add alert listener to log errors and connection attempts
-        sessionManager.addListener(object : AlertListener {
-            override fun types() = null // Listen to all alert types
+            // Add alert listener to log errors and connection attempts
+            // Wrap in try-catch to prevent native callback crashes
+            sessionManager.addListener(object : AlertListener {
+                override fun types() = null // Listen to all alert types
 
-            override fun alert(alert: Alert<*>) {
-                when {
-                    alert.category().eq(Alert.ERROR_NOTIFICATION) ||
-                            alert.type().name.contains("error", ignoreCase = true) -> {
-                        log.debug("[libtorrent] {}: {}", alert.type(), alert.message())
-                    }
+                override fun alert(alert: Alert<*>) {
+                    try {
+                        when {
+                            alert.category().eq(Alert.ERROR_NOTIFICATION) ||
+                                    alert.type().name.contains("error", ignoreCase = true) -> {
+                                log.debug("[libtorrent] {}: {}", alert.type(), alert.message())
+                            }
 
-                    else -> {
-                        log.trace("[libtorrent] {}: {}", alert.type(), alert.message())
+                            else -> {
+                                log.trace("[libtorrent] {}: {}", alert.type(), alert.message())
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Prevent exceptions in alert handler from crashing the JVM
+                        log.error("Error processing libtorrent alert", e)
                     }
                 }
-            }
-        })
+            })
 
-        sessionManager.start(SessionParams(settingsPack))
+            sessionManager.start(SessionParams(settingsPack))
 
-        // Log the listening status
-        log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
+            // Log the listening status
+            log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
 
-        return sessionManager
+            return sessionManager
+        }
     }
 
     private fun startMonitoringTask() {
@@ -161,33 +177,35 @@ class TorrentClient(
     }
 
     private fun checkAndStopCompletedTorrents() {
-        val handles = session?.torrentHandles ?: return
+        synchronized(SessionLock) {
+            val handles = session?.torrentHandles ?: return
 
-        handles.forEach { handle ->
-            if (!handle.isValid) {
-                return@forEach
-            }
+            handles.forEach { handle ->
+                if (!handle.isValid) {
+                    return@forEach
+                }
 
-            val status = handle.status(QUERY_DISTRIBUTED_COPIES.or_(QUERY_NAME))
+                val status = handle.status(QUERY_DISTRIBUTED_COPIES.or_(QUERY_NAME))
 
-            // Only check torrents that we are seeding
-            if (status.isFinished) {
-                val knownSeeders = status.listSeeds()
-                val completePeersFromTracker = status.numComplete()
-                val distributedFullCopies = status.distributedFullCopies()
+                // Only check torrents that we are seeding
+                if (status.isFinished) {
+                    val knownSeeders = status.listSeeds()
+                    val completePeersFromTracker = status.numComplete()
+                    val distributedFullCopies = status.distributedFullCopies()
 
-                // If there are other seeders or complete peers, stop seeding
-                if (distributedFullCopies > 0) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $distributedFullCopies distributed full copies.")
-                    session?.remove(handle)
-                } else if (completePeersFromTracker > 1) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $completePeersFromTracker complete peers from tracker.")
-                    session?.remove(handle)
-                } else if (knownSeeders > 0) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $knownSeeders known seeders.")
-                    session?.remove(handle)
-                } else {
-                    log.debug("Continuing to seed torrent '${status.name()}' - no other complete peers found.")
+                    // If there are other seeders or complete peers, stop seeding
+                    if (distributedFullCopies > 0) {
+                        log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $distributedFullCopies distributed full copies.")
+                        session?.remove(handle)
+                    } else if (completePeersFromTracker > 1) {
+                        log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $completePeersFromTracker complete peers from tracker.")
+                        session?.remove(handle)
+                    } else if (knownSeeders > 0) {
+                        log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $knownSeeders known seeders.")
+                        session?.remove(handle)
+                    } else {
+                        log.debug("Continuing to seed torrent '${status.name()}' - no other complete peers found.")
+                    }
                 }
             }
         }

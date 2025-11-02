@@ -47,14 +47,36 @@ class TorrentTracker(
     fun start() {
         server = HttpServer.create(InetSocketAddress(port), 0).apply {
             createContext("/announce") { exchange ->
-                handleAnnounce(exchange)
+                try {
+                    handleAnnounce(exchange)
+                } catch (e: Exception) {
+                    log.error("Unhandled error in announce handler", e)
+                    try {
+                        respondBencodedError(exchange, "Internal server error")
+                    } catch (_: Exception) {
+                        // Ignore errors when trying to send error response
+                    }
+                } finally {
+                    exchange.close()
+                }
             }
 
             createContext("/scrape") { exchange ->
-                handleScrape(exchange)
+                try {
+                    handleScrape(exchange)
+                } catch (e: Exception) {
+                    log.error("Unhandled error in scrape handler", e)
+                    try {
+                        respondBencodedError(exchange, "Internal server error")
+                    } catch (_: Exception) {
+                        // Ignore errors when trying to send error response
+                    }
+                } finally {
+                    exchange.close()
+                }
             }
 
-            executor = Executors.newFixedThreadPool(1)
+            executor = Executors.newSingleThreadExecutor()
             start()
         }
 
@@ -65,8 +87,25 @@ class TorrentTracker(
     }
 
     fun stop() {
-        server?.stop(2)
+        val currentServer = server
         server = null
+
+        currentServer?.stop(2)
+
+        // Shutdown the executor service
+        currentServer?.executor?.let { executor ->
+            (executor as? java.util.concurrent.ExecutorService)?.let {
+                it.shutdown()
+                try {
+                    if (!it.awaitTermination(5, TimeUnit.SECONDS)) {
+                        it.shutdownNow()
+                    }
+                } catch (_: InterruptedException) {
+                    it.shutdownNow()
+                }
+            }
+        }
+
         log.info("Tracker stopped")
     }
 
@@ -297,7 +336,8 @@ class TorrentTracker(
     private fun respondBytes(exchange: HttpExchange, bytes: ByteArray) {
         exchange.responseHeaders.set("Content-Type", "text/plain")
         exchange.sendResponseHeaders(200, bytes.size.toLong())
-        exchange.responseBody.use { it.write(bytes) }
+        exchange.responseBody.write(bytes)
+        exchange.responseBody.flush()
     }
 
     private fun parseQueryString(query: String): Map<String, String> {
