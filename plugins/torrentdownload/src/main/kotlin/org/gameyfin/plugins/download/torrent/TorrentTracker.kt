@@ -3,7 +3,6 @@ package org.gameyfin.plugins.download.torrent
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.slf4j.LoggerFactory
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.URLDecoder
 import java.nio.ByteBuffer
@@ -17,9 +16,7 @@ import java.util.concurrent.TimeUnit
  */
 class TorrentTracker(
     private val port: Int,
-    private val announceInterval: Int = 1800, // 30 minutes
-    private val internalPeerIdPrefix: String, // Peer ID prefix to identify internal client
-    private val externalHost: String? = null // External host/IP to announce for peers
+    private val announceInterval: Int
 ) {
     private val log = LoggerFactory.getLogger(TorrentTracker::class.java)
     private var server: HttpServer? = null
@@ -98,24 +95,8 @@ class TorrentTracker(
             val left = params["left"]?.toLongOrNull() ?: 0
             val event = params["event"] // started, completed, stopped
 
-            // Get client IP - use externalHost ONLY for the internal client (identified by peer ID)
-            val clientIp = params["ip"] ?: exchange.remoteAddress.address.hostAddress
-
-            val ip = if (externalHost !== null && externalHost.isNotBlank() && isInternalClient(peerId)) {
-                // This is our internal seeder - use the configured external host
-                // Resolve hostname to IP address if needed for compact peer list compatibility
-                try {
-                    val resolvedIp = InetAddress.getByName(externalHost).hostAddress
-                    log.debug("Internal client detected (peer ID: ${bytesToHex(peerId)}), using external host: $externalHost (resolved to $resolvedIp)")
-                    resolvedIp
-                } catch (e: Exception) {
-                    log.error("Failed to resolve external host '$externalHost', falling back to client IP", e)
-                    clientIp
-                }
-            } else {
-                // This is an external peer - use their actual IP
-                clientIp
-            }
+            // Get client IP from params or use remote address
+            val ip = params["ip"] ?: exchange.remoteAddress.address.hostAddress
 
             // Get or create torrent peer list
             val peers = torrents.computeIfAbsent(infoHash) {
@@ -127,12 +108,20 @@ class TorrentTracker(
             when (event) {
                 "stopped" -> {
                     peers.removeIf { it.peerId == peerId }
+                    log.debug("Removed peer $peerId from torrent ${bytesToHex(infoHash)}")
                 }
 
                 else -> {
-                    // Add or update peer
-                    peers.removeIf { it.peerId == peerId }
-                    peers.add(Peer(peerId, ip, port, uploaded, downloaded, left))
+                    val existingPeer = peers.find { it.peerId == peerId }
+
+                    if (existingPeer != null) {
+                        peers.remove(existingPeer)
+                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left))
+                        log.debug("Updated peer $peerId for torrent ${bytesToHex(infoHash)}")
+                    } else {
+                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left))
+                        log.debug("Added peer $peerId to torrent ${bytesToHex(infoHash)}")
+                    }
                 }
             }
 
@@ -339,14 +328,6 @@ class TorrentTracker(
                 torrents.remove(infoHash)
             }
         }
-    }
-
-    /**
-     * Check if a peer ID matches the internal client prefix.
-     * The peer ID is a 20-byte string where clients typically use the first 8 bytes for identification.
-     */
-    private fun isInternalClient(peerId: String): Boolean {
-        return peerId.startsWith(internalPeerIdPrefix)
     }
 }
 

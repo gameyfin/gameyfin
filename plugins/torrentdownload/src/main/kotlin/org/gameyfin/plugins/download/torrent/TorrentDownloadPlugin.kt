@@ -75,7 +75,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             label = "Enable LSD",
             description = "Enable Local Service Discovery for finding peers on the local network",
             type = Boolean::class.java,
-            default = true
+            default = false
         ),
         ConfigMetadata(
             key = "externalHost",
@@ -153,25 +153,20 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
 
         // Set custom peer ID prefix for our internal client
-        // This allows the tracker to identify this specific client
+        // This allows us to identify this specific client if needed
         settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
 
         // Configure interfaces
         val listenPort = config<Int>("listenPort")
-        val defaultBindInterfaces = "0.0.0.0:$listenPort,[::]:$listenPort"
-        settingsPack
-            .listenInterfaces(defaultBindInterfaces)
-            .setString(string_types.outgoing_interfaces.swigValue(), defaultBindInterfaces)
+        settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
 
-        // Configure interfaces and external IPs
+        // Configure announce IP if externalHost is set
         val externalHost = optionalConfig<String>("externalHost")
         if (externalHost != null && externalHost.isNotBlank()) {
             try {
                 val resolvedIp = InetAddress.getByName(externalHost).hostAddress
-
                 settingsPack.setString(string_types.announce_ip.swigValue(), resolvedIp)
-
-                log.info("Configured client IP to: $resolvedIp (from external host: $externalHost)")
+                log.info("Configured client announce IP to: $resolvedIp (from external host: $externalHost)")
             } catch (e: Exception) {
                 log.error("Failed to resolve external host '$externalHost' for client IP", e)
             }
@@ -215,13 +210,10 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         // Start built-in tracker with the peer ID prefix to identify internal client
         val trackerPort = config<Int>("trackerPort")
         val announceInterval = config<Int>("announceInterval")
-        val externalHost = optionalConfig<String>("externalHost")
 
         val tracker = TorrentTracker(
             port = trackerPort,
-            announceInterval = announceInterval,
-            externalHost = externalHost,
-            internalPeerIdPrefix = INTERNAL_PEER_ID_PREFIX
+            announceInterval = announceInterval
         )
 
         tracker.start()
@@ -365,17 +357,11 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
     private fun getTrackerUri(): URI {
         val protocol = "http"
-        val host = getHostname().hostName
+        val host = optionalConfig("externalHost") ?: InetAddress.getLocalHost().hostAddress
         val port = config<Int>("trackerPort")
         val path = "announce"
 
         return URI.create("$protocol://$host:$port/$path")
-    }
-
-    private fun getHostname(): InetAddress {
-        return InetAddress.getByName(
-            optionalConfig("externalHost") ?: InetAddress.getLocalHost().hostAddress
-        )
     }
 
 
