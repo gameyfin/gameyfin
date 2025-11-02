@@ -25,8 +25,11 @@ LABEL maintainer="grimsi" \
       org.opencontainers.image.vendor="Gameyfin" \
       org.opencontainers.image.authors="Gameyfin maintainers"
 
+# Indicate docker runtime environment
+ENV RUNTIME_ENV=docker
+
 # Install necessary packages
-RUN apk add --no-cache su-exec tini shadow
+RUN apk add --no-cache su-exec tini shadow libtorrent
 
 # Fixed runtime user/group
 ENV USER=gameyfin

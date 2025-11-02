@@ -170,6 +170,8 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             } catch (e: Exception) {
                 log.error("Failed to resolve external host '$externalHost' for client IP", e)
             }
+        } else {
+            log.info("No external host override set; using default announce IP behavior")
         }
 
         // Configure DHT
@@ -335,12 +337,14 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         }
 
         val externalHost = config["externalHost"]
-        if (externalHost != null && externalHost.isNotBlank()) {
+        if (!externalHost.isNullOrBlank()) {
             try {
                 InetAddress.getByName(externalHost)
             } catch (_: Exception) {
                 errors["externalHost"] = "Must be a valid hostname or IP address."
             }
+        } else if (System.getenv("RUNTIME_ENV") == "docker") {
+            errors["externalHost"] = "Must be set when running in Docker."
         }
 
         val announceInterval = config["announceInterval"]?.toIntOrNull()

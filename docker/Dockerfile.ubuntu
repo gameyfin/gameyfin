@@ -25,6 +25,9 @@ LABEL maintainer="grimsi" \
       org.opencontainers.image.vendor="Gameyfin" \
       org.opencontainers.image.authors="Gameyfin maintainers"
 
+# Indicate docker runtime environment
+ENV RUNTIME_ENV=docker
+
 # Install necessary packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends tini gosu && \
