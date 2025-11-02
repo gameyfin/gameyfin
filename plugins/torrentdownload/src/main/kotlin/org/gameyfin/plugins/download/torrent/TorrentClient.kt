@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -28,10 +29,14 @@ class TorrentClient(
 
     private var session: SessionManager? = null
     private var monitorExecutor: ScheduledExecutorService? = null
+    private var alertProcessorExecutor: ScheduledExecutorService? = null
 
     // Lock for synchronizing access to the native SessionManager
     // This prevents concurrent access issues that can cause JVM crashes in Linux/Docker
     private object SessionLock
+
+    // Queue for alerts from native callback - processed on Java thread to avoid native thread crashes
+    private val alertQueue = ConcurrentLinkedQueue<Alert<*>>()
 
     companion object {
         private const val INTERNAL_PEER_ID_PREFIX = "-GF0001-"
@@ -39,6 +44,9 @@ class TorrentClient(
 
     fun start() {
         session = initSession()
+
+        // Start alert processor before monitoring task to handle alerts from session start
+        startAlertProcessor()
 
         if (stopSeedingWhenComplete) {
             startMonitoringTask()
@@ -56,10 +64,21 @@ class TorrentClient(
         }
         monitorExecutor = null
 
+        alertProcessorExecutor?.shutdown()
+        try {
+            alertProcessorExecutor?.awaitTermination(5, TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+            alertProcessorExecutor?.shutdownNow()
+        }
+        alertProcessorExecutor = null
+
         synchronized(SessionLock) {
             session?.stop()
             session = null
         }
+
+        // Clear any remaining alerts
+        alertQueue.clear()
 
         log.info("TorrentClient stopped")
     }
@@ -133,26 +152,18 @@ class TorrentClient(
             settingsPack.isEnableLsd = lsdEnabled
 
             // Add alert listener to log errors and connection attempts
-            // Wrap in try-catch to prevent native callback crashes
+            // IMPORTANT: This callback is invoked from native libtorrent threads!
+            // We must NOT perform any complex operations here or access the JVM directly,
+            // as this can cause crashes in Linux/Docker environments where native threads
+            // may not be properly attached to the JVM.
+            // Instead, we queue alerts for processing on a Java-managed thread.
             sessionManager.addListener(object : AlertListener {
                 override fun types() = null // Listen to all alert types
 
                 override fun alert(alert: Alert<*>) {
-                    try {
-                        when {
-                            alert.category().eq(Alert.ERROR_NOTIFICATION) ||
-                                    alert.type().name.contains("error", ignoreCase = true) -> {
-                                log.debug("[libtorrent] {}: {}", alert.type(), alert.message())
-                            }
-
-                            else -> {
-                                log.trace("[libtorrent] {}: {}", alert.type(), alert.message())
-                            }
-                        }
-                    } catch (e: Exception) {
-                        // Prevent exceptions in alert handler from crashing the JVM
-                        log.error("Error processing libtorrent alert", e)
-                    }
+                    // Simply queue the alert - don't process it here
+                    // This prevents native thread crashes when accessing Java objects
+                    alertQueue.offer(alert)
                 }
             })
 
@@ -162,6 +173,40 @@ class TorrentClient(
             log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
 
             return sessionManager
+        }
+    }
+
+    private fun startAlertProcessor() {
+        alertProcessorExecutor = Executors.newSingleThreadScheduledExecutor()
+        alertProcessorExecutor?.scheduleWithFixedDelay({
+            try {
+                processQueuedAlerts()
+            } catch (e: Exception) {
+                log.error("Error processing queued alerts", e)
+            }
+        }, 0, 100, TimeUnit.MILLISECONDS) // Process alerts every 100ms
+    }
+
+    private fun processQueuedAlerts() {
+        // Process all queued alerts on this Java-managed thread
+        while (true) {
+            val alert = alertQueue.poll() ?: break
+
+            try {
+                when {
+                    alert.category().eq(Alert.ERROR_NOTIFICATION) ||
+                            alert.type().name.contains("error", ignoreCase = true) -> {
+                        log.debug("[libtorrent] {}: {}", alert.type(), alert.message())
+                    }
+
+                    else -> {
+                        log.trace("[libtorrent] {}: {}", alert.type(), alert.message())
+                    }
+                }
+            } catch (e: Exception) {
+                // Log but don't rethrow - we don't want to stop processing other alerts
+                log.error("Error processing libtorrent alert", e)
+            }
         }
     }
 
