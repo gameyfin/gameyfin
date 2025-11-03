@@ -74,7 +74,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         settingsPack.listenInterfaces(listenInterfaces)
         
         // Enable DHT for peer discovery
-        settingsPack.setBoolean(org.libtorrent4j.swig.settings_pack.bool_types.enable_dht.swigValue(), true)
+        settingsPack.setEnableDht(true)
         
         // Set announce IP to external host if specified
         val externalHost = optionalConfig<String>("externalHost")
@@ -226,11 +226,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             builder.addTracker(plugin.getTrackerUrl())
             
             // Set the path to create torrent from
-            if (gameFilesPath.isDirectory()) {
-                builder.path(gameFilesPath.toFile())
-            } else {
-                builder.path(gameFilesPath.toFile())
-            }
+            builder.path(gameFilesPath.toFile())
             
             // Build the torrent synchronously
             val result = builder.generate()

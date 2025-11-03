@@ -8,9 +8,8 @@ import java.net.InetSocketAddress
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
+import java.util.concurrent.ExecutorService
 
 /**
  * A simple HTTP BitTorrent tracker implementation using libtorrent4j.
@@ -22,6 +21,7 @@ class LibtorrentTracker(
 ) {
     private val log = LoggerFactory.getLogger(LibtorrentTracker::class.java)
     private lateinit var server: HttpServer
+    private lateinit var executor: ExecutorService
     private val torrents = ConcurrentHashMap<String, TorrentTrackerInfo>()
     
     data class TorrentTrackerInfo(
@@ -40,7 +40,8 @@ class LibtorrentTracker(
     
     fun start() {
         server = HttpServer.create(InetSocketAddress(port), 0)
-        server.executor = java.util.concurrent.Executors.newCachedThreadPool()
+        executor = java.util.concurrent.Executors.newCachedThreadPool()
+        server.executor = executor
         
         server.createContext("/announce") { exchange ->
             try {
@@ -149,6 +150,9 @@ class LibtorrentTracker(
             server.stop(0)
             log.info("Tracker server stopped")
         }
+        if (::executor.isInitialized) {
+            executor.shutdown()
+        }
     }
     
     fun addTorrent(torrentFile: Path) {
@@ -216,7 +220,7 @@ class LibtorrentTracker(
     
     private fun bencode(value: Any?): ByteArray {
         return when (value) {
-            is String -> "d${value.length}:$value".toByteArray(StandardCharsets.UTF_8)
+            is String -> "${value.length}:$value".toByteArray(StandardCharsets.UTF_8)
             is Int -> "i${value}e".toByteArray(StandardCharsets.UTF_8)
             is Long -> "i${value}e".toByteArray(StandardCharsets.UTF_8)
             is List<*> -> {
