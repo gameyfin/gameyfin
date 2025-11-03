@@ -9,10 +9,7 @@ import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 /**
  * A BitTorrent client implementation using jlibtorrent.
@@ -30,10 +27,10 @@ class TorrentClient(
     private var session: SessionManager? = null
     private var monitorExecutor: ScheduledExecutorService? = null
     private var alertProcessorExecutor: ScheduledExecutorService? = null
-
-    // Lock for synchronizing access to the native SessionManager
-    // This prevents concurrent access issues that can cause JVM crashes in Linux/Docker
-    private object SessionLock
+    
+    // Single-threaded executor for all SessionManager operations
+    // ALL interactions with SessionManager MUST go through this executor to avoid JNI thread issues
+    private var sessionExecutor: ExecutorService? = null
 
     // Queue for alerts from native callback - processed on Java thread to avoid native thread crashes
     private val alertQueue = ConcurrentLinkedQueue<Alert<*>>()
@@ -43,7 +40,24 @@ class TorrentClient(
     }
 
     fun start() {
-        session = initSession()
+        // Start session executor first - all session operations must go through this thread
+        sessionExecutor = Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "torrent-session-thread").apply {
+                isDaemon = false
+            }
+        }
+        
+        // Initialize session on the dedicated thread
+        val initFuture = sessionExecutor!!.submit<SessionManager> {
+            initSession()
+        }
+        
+        session = try {
+            initFuture.get(30, TimeUnit.SECONDS)
+        } catch (e: Exception) {
+            log.error("Failed to initialize torrent session", e)
+            throw e
+        }
 
         // Start alert processor before monitoring task to handle alerts from session start
         startAlertProcessor()
@@ -72,10 +86,19 @@ class TorrentClient(
         }
         alertProcessorExecutor = null
 
-        synchronized(SessionLock) {
+        // Stop session on the dedicated thread before shutting down the executor
+        sessionExecutor?.submit {
             session?.stop()
             session = null
+        }?.get(10, TimeUnit.SECONDS)
+
+        sessionExecutor?.shutdown()
+        try {
+            sessionExecutor?.awaitTermination(5, TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+            sessionExecutor?.shutdownNow()
         }
+        sessionExecutor = null
 
         // Clear any remaining alerts
         alertQueue.clear()
@@ -84,17 +107,19 @@ class TorrentClient(
     }
 
     fun addTorrent(torrentFile: Path, gameFile: Path) {
-        val ti = TorrentInfo(torrentFile.toFile())
+        // Submit to session executor to avoid JNI threading issues
+        // All SessionManager operations MUST run on the dedicated session thread
+        val future = sessionExecutor?.submit {
+            val ti = TorrentInfo(torrentFile.toFile())
 
-        // For seeding, we need to use the parent directory as the save path
-        val savePath = gameFile.parent.toFile()
+            // For seeding, we need to use the parent directory as the save path
+            val savePath = gameFile.parent.toFile()
 
-        synchronized(SessionLock) {
             // Check if torrent is already in session
             val existingHandle = session?.find(ti)
             if (existingHandle != null && existingHandle.isValid) {
                 log.debug("Torrent ${ti.name()} is already in session, skipping")
-                return
+                return@submit
             }
 
             // Verify file access before adding to session
@@ -112,68 +137,70 @@ class TorrentClient(
                 throw e
             }
         }
+        
+        // Wait for the operation to complete to propagate any errors
+        future?.get(30, TimeUnit.SECONDS)
     }
 
     private fun initSession(): SessionManager {
-        synchronized(SessionLock) {
-            // Return existing session if already initialized
-            session?.let { return it }
+        // This method is always called from the session executor thread
+        // Return existing session if already initialized
+        session?.let { return it }
 
-            // Initialize jlibtorrent session
-            val sessionManager = SessionManager()
+        // Initialize jlibtorrent session
+        val sessionManager = SessionManager()
 
-            // Configure session settings with custom peer ID
-            val settingsPack = sessionManager.settings() ?: SettingsPack()
+        // Configure session settings with custom peer ID
+        val settingsPack = sessionManager.settings() ?: SettingsPack()
 
-            // Set custom peer ID prefix for our internal client
-            // This allows us to identify this specific client if needed
-            settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
+        // Set custom peer ID prefix for our internal client
+        // This allows us to identify this specific client if needed
+        settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
 
-            // Configure interfaces
-            settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
+        // Configure interfaces
+        settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
 
-            // Configure announce IP if externalHost is set
-            if (externalHost != null && externalHost.isNotBlank()) {
-                try {
-                    val resolvedIp = InetAddress.getByName(externalHost).hostAddress
-                    settingsPack.setString(string_types.announce_ip.swigValue(), resolvedIp)
-                    log.info("Configured client announce IP to: $resolvedIp (from external host: $externalHost)")
-                } catch (e: Exception) {
-                    log.error("Failed to resolve external host '$externalHost' for client IP", e)
-                }
-            } else {
-                log.info("No external host override set; using default announce IP behavior")
+        // Configure announce IP if externalHost is set
+        if (externalHost != null && externalHost.isNotBlank()) {
+            try {
+                val resolvedIp = InetAddress.getByName(externalHost).hostAddress
+                settingsPack.setString(string_types.announce_ip.swigValue(), resolvedIp)
+                log.info("Configured client announce IP to: $resolvedIp (from external host: $externalHost)")
+            } catch (e: Exception) {
+                log.error("Failed to resolve external host '$externalHost' for client IP", e)
             }
-
-            // Configure DHT
-            settingsPack.isEnableDht = dhtEnabled
-
-            // Configure Local Peer Discovery
-            settingsPack.isEnableLsd = lsdEnabled
-
-            // Add alert listener to log errors and connection attempts
-            // IMPORTANT: This callback is invoked from native libtorrent threads!
-            // We must NOT perform any complex operations here or access the JVM directly,
-            // as this can cause crashes in Linux/Docker environments where native threads
-            // may not be properly attached to the JVM.
-            // Instead, we queue alerts for processing on a Java-managed thread.
-            sessionManager.addListener(object : AlertListener {
-                override fun types() = null // Listen to all alert types
-
-                override fun alert(alert: Alert<*>) {
-                    // Simply queue the alert - don't process it here
-                    // This prevents native thread crashes when accessing Java objects
-                    alertQueue.offer(alert)
-                }
-            })
-
-            sessionManager.start(SessionParams(settingsPack))
-
-            // Log the listening status
-            log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
-
-            return sessionManager
+        } else {
+            log.info("No external host override set; using default announce IP behavior")
         }
+
+        // Configure DHT
+        settingsPack.isEnableDht = dhtEnabled
+
+        // Configure Local Peer Discovery
+        settingsPack.isEnableLsd = lsdEnabled
+
+        // Add alert listener to log errors and connection attempts
+        // IMPORTANT: This callback is invoked from native libtorrent threads!
+        // We must NOT perform any complex operations here or access the JVM directly,
+        // as this can cause crashes in Linux/Docker environments where native threads
+        // may not be properly attached to the JVM.
+        // Instead, we queue alerts for processing on a Java-managed thread.
+        sessionManager.addListener(object : AlertListener {
+            override fun types() = null // Listen to all alert types
+
+            override fun alert(alert: Alert<*>) {
+                // Simply queue the alert - don't process it here
+                // This prevents native thread crashes when accessing Java objects
+                alertQueue.offer(alert)
+            }
+        })
+
+        sessionManager.start(SessionParams(settingsPack))
+
+        // Log the listening status
+        log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
+
+        return sessionManager
     }
 
     private fun startAlertProcessor() {
@@ -222,8 +249,9 @@ class TorrentClient(
     }
 
     private fun checkAndStopCompletedTorrents() {
-        synchronized(SessionLock) {
-            val handles = session?.torrentHandles ?: return
+        // Submit to session executor to avoid JNI threading issues
+        sessionExecutor?.submit {
+            val handles = session?.torrentHandles ?: return@submit
 
             handles.forEach { handle ->
                 if (!handle.isValid) {
