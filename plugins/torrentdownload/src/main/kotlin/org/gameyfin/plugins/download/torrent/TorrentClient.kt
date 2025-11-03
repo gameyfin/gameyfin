@@ -4,6 +4,7 @@ import com.frostwire.jlibtorrent.*
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
 import com.frostwire.jlibtorrent.alerts.Alert
+import com.frostwire.jlibtorrent.swig.alert_category_t
 import com.frostwire.jlibtorrent.swig.settings_pack.string_types
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
@@ -27,13 +28,16 @@ class TorrentClient(
     private var session: SessionManager? = null
     private var monitorExecutor: ScheduledExecutorService? = null
     private var alertProcessorExecutor: ScheduledExecutorService? = null
-    
+
     // Single-threaded executor for all SessionManager operations
     // ALL interactions with SessionManager MUST go through this executor to avoid JNI thread issues
     private var sessionExecutor: ExecutorService? = null
 
-    // Queue for alerts from native callback - processed on Java thread to avoid native thread crashes
-    private val alertQueue = ConcurrentLinkedQueue<Alert<*>>()
+    // Queue for alert data (not alert objects) - alerts become invalid after processing
+    // We extract the data immediately in the callback while the alert is still valid
+    private data class AlertData(val type: String, val message: String, val category: alert_category_t)
+
+    private val alertQueue = ConcurrentLinkedQueue<AlertData>()
 
     companion object {
         private const val INTERNAL_PEER_ID_PREFIX = "-GF0001-"
@@ -46,12 +50,12 @@ class TorrentClient(
                 isDaemon = false
             }
         }
-        
+
         // Initialize session on the dedicated thread
         val initFuture = sessionExecutor!!.submit<SessionManager> {
             initSession()
         }
-        
+
         session = try {
             initFuture.get(30, TimeUnit.SECONDS)
         } catch (e: Exception) {
@@ -137,7 +141,7 @@ class TorrentClient(
                 throw e
             }
         }
-        
+
         // Wait for the operation to complete to propagate any errors
         future?.get(30, TimeUnit.SECONDS)
     }
@@ -181,17 +185,25 @@ class TorrentClient(
 
         // Add alert listener to log errors and connection attempts
         // IMPORTANT: This callback is invoked from native libtorrent threads!
-        // We must NOT perform any complex operations here or access the JVM directly,
-        // as this can cause crashes in Linux/Docker environments where native threads
-        // may not be properly attached to the JVM.
-        // Instead, we queue alerts for processing on a Java-managed thread.
+        // Alert objects become invalid after this callback returns, so we must
+        // extract all needed data immediately while the alert is still valid.
         sessionManager.addListener(object : AlertListener {
             override fun types() = null // Listen to all alert types
 
             override fun alert(alert: Alert<*>) {
-                // Simply queue the alert - don't process it here
-                // This prevents native thread crashes when accessing Java objects
-                alertQueue.offer(alert)
+                try {
+                    // Extract data from alert immediately while it's still valid
+                    // Alert objects become invalid after the callback returns
+                    val alertData = AlertData(
+                        type = alert.type()?.name ?: "unknown",
+                        message = alert.message() ?: "no message",
+                        category = alert.category()
+                    )
+                    alertQueue.offer(alertData)
+                } catch (e: Exception) {
+                    // If we can't extract alert data, log to stderr (avoid complex logging on native thread)
+                    System.err.println("Failed to extract alert data: ${e.message}")
+                }
             }
         })
 
@@ -215,19 +227,19 @@ class TorrentClient(
     }
 
     private fun processQueuedAlerts() {
-        // Process all queued alerts on this Java-managed thread
+        // Process all queued alert data on this Java-managed thread
         while (true) {
-            val alert = alertQueue.poll() ?: break
+            val alertData = alertQueue.poll() ?: break
 
             try {
                 when {
-                    alert.category().eq(Alert.ERROR_NOTIFICATION) ||
-                            alert.type().name.contains("error", ignoreCase = true) -> {
-                        log.debug("[libtorrent] {}: {}", alert.type(), alert.message())
+                    alertData.category == Alert.ERROR_NOTIFICATION ||
+                            alertData.type.contains("error", ignoreCase = true) -> {
+                        log.debug("[libtorrent] {}: {}", alertData.type, alertData.message)
                     }
 
                     else -> {
-                        log.trace("[libtorrent] {}: {}", alert.type(), alert.message())
+                        log.trace("[libtorrent] {}: {}", alertData.type, alertData.message)
                     }
                 }
             } catch (e: Exception) {
