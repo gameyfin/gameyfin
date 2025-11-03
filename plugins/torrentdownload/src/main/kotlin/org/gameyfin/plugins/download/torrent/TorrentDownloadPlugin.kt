@@ -1,12 +1,5 @@
 package org.gameyfin.plugins.download.torrent
 
-import bt.torrent.maker.TorrentBuilder
-import com.turn.ttorrent.client.CommunicationManager
-import com.turn.ttorrent.client.SelectorFactoryImpl
-import com.turn.ttorrent.client.storage.FullyPieceStorageFactory
-import com.turn.ttorrent.network.FirstAvailableChannel
-import com.turn.ttorrent.tracker.TrackedTorrent
-import com.turn.ttorrent.tracker.Tracker
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -14,26 +7,27 @@ import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.FileDownload
+import org.libtorrent4j.*
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.net.InetAddress
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.Executors
 import kotlin.io.path.*
 import kotlin.time.measureTimedValue
 
 class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
 
     companion object {
-        private lateinit var tracker: Tracker
-        private lateinit var communicationManager: CommunicationManager
-
+        private lateinit var sessionManager: SessionManager
+        private lateinit var trackerServer: LibtorrentTracker
+        
         private lateinit var plugin: TorrentDownloadPlugin
-
         private lateinit var state: TorrentDownloadPluginState
+        
+        private val logger = LoggerFactory.getLogger(TorrentDownloadPlugin::class.java)
     }
 
     init {
@@ -72,25 +66,39 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
     )
 
     override fun start() {
-
         Files.createDirectories(dataDirectory)
 
-        tracker = Tracker(config("trackerPort"), getTrackerUri().toString())
-        tracker.setAcceptForeignTorrents(false)
-        tracker.start(true)
+        // Initialize libtorrent session
+        val settingsPack = SettingsPack()
+        val listenInterfaces = "0.0.0.0:${config<Int>("clientPort")}"
+        settingsPack.listenInterfaces(listenInterfaces)
+        
+        // Enable DHT for peer discovery
+        settingsPack.setBoolean(org.libtorrent4j.swig.settings_pack.bool_types.enable_dht.swigValue(), true)
+        
+        // Set announce IP to external host if specified
+        val externalHost = optionalConfig<String>("externalHost")
+        if (externalHost != null) {
+            settingsPack.setString(org.libtorrent4j.swig.settings_pack.string_types.announce_ip.swigValue(), externalHost)
+        }
+        
+        // Optimize for seeding
+        settingsPack.uploadRateLimit(0) // Unlimited
+        settingsPack.connectionsLimit(200)
+        settingsPack.activeSeeds(-1) // Unlimited active seeds
 
-        val workingExecutor = Executors.newVirtualThreadPerTaskExecutor()
-        val validationExecutor = Executors.newVirtualThreadPerTaskExecutor()
-        val clientPort = config<Int>("clientPort")
-        communicationManager = CommunicationManager(workingExecutor, validationExecutor)
-        communicationManager.start(
-            arrayOf(getHostname()),
-            15,
-            getTrackerUri(),
-            SelectorFactoryImpl(),
-            FirstAvailableChannel(clientPort, clientPort)
+        val sessionParams = SessionParams(settingsPack)
+        sessionManager = SessionManager(true)
+        sessionManager.start(sessionParams)
+        
+        // Start the tracker
+        trackerServer = LibtorrentTracker(
+            port = config("trackerPort"),
+            externalHost = getExternalHost()
         )
+        trackerServer.start()
 
+        // Load state and resume torrents
         state = loadState<TorrentDownloadPluginState>() ?: TorrentDownloadPluginState()
 
         state.torrentFilesMetadata.forEach {
@@ -99,12 +107,13 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             if (Files.exists(it.torrentFile) && Files.exists(it.gameFile) &&
                 it.gameFile.getLastModifiedTime().toInstant().isBefore(it.torrentFile.getLastModifiedTime().toInstant())
             ) {
-                tracker.announce(TrackedTorrent.load(it.torrentFile.toFile()))
-                communicationManager.addTorrent(
-                    it.torrentFile.toString(),
-                    getRootPath(it.gameFile).toString(),
-                    FullyPieceStorageFactory.INSTANCE
-                )
+                try {
+                    addTorrentToSession(it.torrentFile, it.gameFile)
+                    trackerServer.addTorrent(it.torrentFile)
+                } catch (e: Exception) {
+                    logger.error("Failed to resume torrent for ${it.gameFile}", e)
+                    state.torrentFilesMetadata.remove(it)
+                }
             } else {
                 state.torrentFilesMetadata.remove(it)
             }
@@ -114,8 +123,8 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
     }
 
     override fun stop() {
-        tracker.stop()
-        communicationManager.stop()
+        trackerServer.stop()
+        sessionManager.stop()
     }
 
     override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
@@ -129,6 +138,11 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         val trackerPort = config["trackerPort"]?.toIntOrNull()
         if (trackerPort != null && trackerPort !in 1024..49151) {
             errors["trackerPort"] = "Must be a valid port number between 1024 and 49151."
+        }
+
+        val clientPort = config["clientPort"]?.toIntOrNull()
+        if (clientPort != null && clientPort !in 1024..49151) {
+            errors["clientPort"] = "Must be a valid port number between 1024 and 49151."
         }
 
         val externalHost = config["externalHost"]
@@ -147,19 +161,15 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         }
     }
 
-    private fun getTrackerUri(): URI {
-        val protocol = "http" // No SSL support in ttorrent: https://github.com/mpetazzoni/ttorrent/issues/4
-        val host = getHostname().getHostName()
+    private fun getTrackerUrl(): String {
+        val protocol = "http"
+        val host = getExternalHost()
         val port = config<Int>("trackerPort")
-        val path = "announce"
-
-        return URI.create("$protocol://$host:$port/$path")
+        return "$protocol://$host:$port/announce"
     }
 
-    private fun getHostname(): InetAddress {
-        return InetAddress.getByName(
-            optionalConfig("externalHost") ?: InetAddress.getLocalHost().hostAddress
-        )
+    private fun getExternalHost(): String {
+        return optionalConfig("externalHost") ?: InetAddress.getLocalHost().hostAddress
     }
 
     private fun getRootPath(gameFilesPath: Path): Path {
@@ -170,18 +180,26 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         }
     }
 
+    private fun addTorrentToSession(torrentFile: Path, gameFilePath: Path) {
+        val ti = TorrentInfo(torrentFile.toFile())
+        val savePath = getRootPath(gameFilePath).toFile()
+        
+        sessionManager.download(ti, savePath)
+        logger.info("Added torrent to session: ${torrentFile.name}")
+    }
+
     @Extension(ordinal = 2)
     class TorrentDownloadProvider : DownloadProvider {
-        private val log = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
+        private val logger = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
 
         override fun download(path: Path): Download {
-            log.info("Creating torrent for '${path.name}'...")
+            logger.info("Creating torrent for '${path.name}'...")
 
             val (torrentFile, timeTaken) = measureTimedValue {
                 createTorrent(path)
             }
 
-            log.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
+            logger.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
 
             return FileDownload(
                 data = torrentFile.inputStream(),
@@ -198,15 +216,33 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
                 return torrentFile
             }
 
-            Files.createFile(torrentFile)
-            Files.write(torrentFile, torrentFileContent(gameFilesPath))
+            // Create torrent file using TorrentBuilder
+            val builder = TorrentBuilder()
+            
+            // Configure the builder
+            builder.comment("Generated by Gameyfin TorrentDownloadPlugin")
+            builder.creator("Gameyfin/${plugin.javaClass.`package`.implementationVersion ?: "dev"}")
+            builder.setPrivate(plugin.config("privateMode"))
+            builder.addTracker(plugin.getTrackerUrl())
+            
+            // Set the path to create torrent from
+            if (gameFilesPath.isDirectory()) {
+                builder.path(gameFilesPath.toFile())
+            } else {
+                builder.path(gameFilesPath.toFile())
+            }
+            
+            // Build the torrent synchronously
+            val result = builder.generate()
+            
+            // Save the torrent file
+            val entry = result.entry()
+            val torrentData = entry.bencode()
+            Files.write(torrentFile, torrentData)
 
-            tracker.announce(TrackedTorrent.load(torrentFile.toFile()))
-            communicationManager.addTorrent(
-                torrentFile.toString(),
-                plugin.getRootPath(gameFilesPath).toString(),
-                FullyPieceStorageFactory.INSTANCE
-            )
+            // Add to tracker and session
+            plugin.addTorrentToSession(torrentFile, gameFilesPath)
+            trackerServer.addTorrent(torrentFile)
 
             state.torrentFilesMetadata.add(
                 TorrentFileMetadata(
@@ -218,17 +254,6 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             plugin.saveState(state)
 
             return torrentFile
-        }
-
-        private fun torrentFileContent(gameFilesPath: Path): ByteArray {
-            return TorrentBuilder()
-                .numHashingThreads(Runtime.getRuntime().availableProcessors() * 2)
-                .createdBy(plugin.javaClass.name)
-                .addFile(gameFilesPath)
-                .rootPath(plugin.getRootPath(gameFilesPath))
-                .announce(plugin.getTrackerUri().toString())
-                .privateFlag(plugin.config("privateMode"))
-                .build()
         }
     }
 }

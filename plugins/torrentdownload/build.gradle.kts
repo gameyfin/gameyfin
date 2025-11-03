@@ -11,13 +11,6 @@ dependencies {
 
     ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
 
-    // Torrent tracker & seeder
-    implementation("com.github.mpetazzoni:ttorrent:ttorrent-2.0") {
-        exclude(group = "org.slf4j")
-    }
-
-    // Torrent file builder
-    implementation("com.github.atomashpolskiy:bt-core:1.10") {
-        exclude(group = "org.slf4j")
-    }
+    // libtorrent4j - Complete BitTorrent implementation (creation, tracking, seeding)
+    implementation("org.libtorrent4j:libtorrent4j:2.1.0-29")
 }
