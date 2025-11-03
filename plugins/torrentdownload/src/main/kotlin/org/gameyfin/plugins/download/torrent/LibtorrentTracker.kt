@@ -220,23 +220,26 @@ class LibtorrentTracker(
     
     private fun bencode(value: Any?): ByteArray {
         return when (value) {
-            is String -> "${value.length}:$value".toByteArray(StandardCharsets.UTF_8)
-            is Int -> "i${value}e".toByteArray(StandardCharsets.UTF_8)
-            is Long -> "i${value}e".toByteArray(StandardCharsets.UTF_8)
+            is String -> {
+                val bytes = value.toByteArray(StandardCharsets.ISO_8859_1)
+                "${bytes.size}:".toByteArray(StandardCharsets.ISO_8859_1) + bytes
+            }
+            is Int -> "i${value}e".toByteArray(StandardCharsets.ISO_8859_1)
+            is Long -> "i${value}e".toByteArray(StandardCharsets.ISO_8859_1)
             is List<*> -> {
                 val result = StringBuilder("l")
-                value.forEach { result.append(String(bencode(it), StandardCharsets.UTF_8)) }
+                value.forEach { result.append(String(bencode(it), StandardCharsets.ISO_8859_1)) }
                 result.append("e")
-                result.toString().toByteArray(StandardCharsets.UTF_8)
+                result.toString().toByteArray(StandardCharsets.ISO_8859_1)
             }
             is Map<*, *> -> {
                 val result = StringBuilder("d")
                 value.entries.sortedBy { it.key.toString() }.forEach { (k, v) ->
-                    result.append(String(bencode(k.toString()), StandardCharsets.UTF_8))
-                    result.append(String(bencode(v), StandardCharsets.UTF_8))
+                    result.append(String(bencode(k.toString()), StandardCharsets.ISO_8859_1))
+                    result.append(String(bencode(v), StandardCharsets.ISO_8859_1))
                 }
                 result.append("e")
-                result.toString().toByteArray(StandardCharsets.UTF_8)
+                result.toString().toByteArray(StandardCharsets.ISO_8859_1)
             }
             else -> throw IllegalArgumentException("Unsupported type for bencoding: ${value?.javaClass}")
         }
