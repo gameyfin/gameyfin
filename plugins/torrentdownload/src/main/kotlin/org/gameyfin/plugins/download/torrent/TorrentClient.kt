@@ -5,6 +5,7 @@ import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
 import com.frostwire.jlibtorrent.alerts.Alert
 import com.frostwire.jlibtorrent.swig.alert_category_t
+import com.frostwire.jlibtorrent.swig.settings_pack
 import com.frostwire.jlibtorrent.swig.settings_pack.string_types
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
@@ -41,6 +42,8 @@ class TorrentClient(
 
     companion object {
         private const val INTERNAL_PEER_ID_PREFIX = "-GF0001-"
+
+        private val isRunningInDocker = System.getenv("RUNTIME_ENV") == "docker"
     }
 
     fun start() {
@@ -160,6 +163,24 @@ class TorrentClient(
         // Set custom peer ID prefix for our internal client
         // This allows us to identify this specific client if needed
         settingsPack.peerFingerprint = INTERNAL_PEER_ID_PREFIX.toByteArray()
+
+        // Disable memory-mapped I/O for better Docker compatibility
+        // Memory-mapped I/O can cause issues in containerized environments
+        if (isRunningInDocker) {
+            settingsPack.setInteger(
+                settings_pack.int_types.disk_write_mode.swigValue(),
+                settings_pack.mmap_write_mode_t.always_pwrite.swigValue()
+            )
+            settingsPack.setInteger(
+                settings_pack.int_types.disk_io_write_mode.swigValue(),
+                settings_pack.io_buffer_mode_t.disable_os_cache.swigValue()
+            )
+            settingsPack.setInteger(
+                settings_pack.int_types.disk_io_read_mode.swigValue(),
+                settings_pack.io_buffer_mode_t.disable_os_cache.swigValue()
+            )
+            log.info("Configured libtorrent with Docker-friendly disk I/O settings (disabled mmap)")
+        }
 
         // Configure interfaces
         settingsPack.listenInterfaces("0.0.0.0:$listenPort,[::]:$listenPort")
