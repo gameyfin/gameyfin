@@ -2,14 +2,19 @@ import {useSnapshot} from "valtio/react";
 import {downloadSessionState} from "Frontend/state/DownloadSessionState";
 import {Card, Chip, Tooltip} from "@heroui/react";
 import {InfoIcon} from "@phosphor-icons/react";
-import {convertBpsToMbps, hslToHex, timeUntil} from "Frontend/util/utils";
+import {convertBpsToMbps, hslToHex, humanFileSize, timeUntil} from "Frontend/util/utils";
 import {gameState} from "Frontend/state/GameState";
 import RealtimeChart, {RealtimeChartData, RealtimeChartOptions} from "react-realtime-chart";
 import {useEffect, useState} from "react";
+import {useNavigate} from "react-router";
+import {libraryState} from "Frontend/state/LibraryState";
 
 export function DownloadSessionCard({sessionId}: { sessionId: string }) {
+    const navigate = useNavigate();
+
     const session = useSnapshot(downloadSessionState).byId[sessionId];
     const games = useSnapshot(gameState).state;
+    const libraries = useSnapshot(libraryState).state;
 
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
     const [chartData, setChartData] = useState<RealtimeChartData[][]>([]);
@@ -45,7 +50,7 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
     }, [currentTime]);
 
     const chartOptions: RealtimeChartOptions = {
-        fps: 24,
+        fps: 60,
         timeSlots: 30,
         colors: [foregroundColor],
         margin: {left: 60},
@@ -53,20 +58,22 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
             {
                 area: true,
                 areaColor: foregroundColor,
-                areaOpacity: 0.05,
-                lineWidth: 1,
+                areaOpacity: 0.03,
+                lineWidth: 2,
                 curve: "basis",
             },
         ],
         yGrid: {
             min: 0,
-            opacity: 0,
+            color: foregroundColor,
+            opacity: 0.25,
             size: 1,
-            tickNumber: 5,
-            tickFormat: (v) => `${v}MB/s`
+            tickNumber: 7,
+            tickFormat: (v) => `${v}Mb/s`
         },
         xGrid: {
-            opacity: 0,
+            color: foregroundColor,
+            opacity: 0.25,
             size: 1,
             tickNumber: 5
         },
@@ -106,7 +113,17 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
                         Active downloads:
                         {session.activeGameIds.length === 0 && <p>No active downloads</p>}
                         {session.activeGameIds.map(gameId =>
-                            games[gameId] && <Chip size="sm" radius="sm" key={gameId}>{games[gameId].title}</Chip>
+                            games[gameId] &&
+                            <Tooltip key={gameId}
+                                     size="sm"
+                                     content={`Size: ${humanFileSize(games[gameId].metadata.fileSize)} / Library: ${libraries[games[gameId].libraryId]?.name || "Unknown"}`}
+                                     placement="bottom">
+                                <Chip size="sm" radius="sm"
+                                      onClick={() => navigate(`/game/${gameId}`)}
+                                      className="cursor-pointer"
+                                >{games[gameId].title}
+                                </Chip>
+                            </Tooltip>
                         )}
                     </div>
                     <div className="w-full h-48">
