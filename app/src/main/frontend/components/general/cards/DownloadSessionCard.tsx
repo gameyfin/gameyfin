@@ -63,7 +63,7 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
             opacity: 0,
             size: 1,
             tickNumber: 5,
-            tickFormat: (v) => `${v}MB/s`
+            tickFormat: (v) => `${v}Mb/s`
         },
         xGrid: {
             opacity: 0,
