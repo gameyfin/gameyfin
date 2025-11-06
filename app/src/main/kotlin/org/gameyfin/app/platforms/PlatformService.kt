@@ -1,7 +1,6 @@
 package org.gameyfin.app.platforms
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.annotation.PostConstruct
 import org.gameyfin.app.core.events.*
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.repositories.GameRepository
@@ -10,6 +9,7 @@ import org.gameyfin.app.platforms.dto.PlatformStatsDto
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.pf4j.PluginStateEvent
+import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
@@ -61,7 +61,7 @@ class PlatformService(
     val platformsInUseByLibraries: Set<Platform>
         get() = _platformsInUseByLibraries
 
-    @PostConstruct
+    @EventListener(ApplicationReadyEvent::class)
     fun initialize() {
         log.info { "Initializing platform caches at startup" }
         calculateAvailablePlatforms()
