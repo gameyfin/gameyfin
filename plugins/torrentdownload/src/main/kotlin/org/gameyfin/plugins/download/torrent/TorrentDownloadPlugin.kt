@@ -34,6 +34,8 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         plugin = this
     }
 
+    private val isRunningInDocker = System.getenv("RUNTIME_ENV") == "docker"
+
     override val configMetadata: PluginConfigMetadata = listOf(
         ConfigMetadata(
             key = "stopSeedingWhenComplete",
@@ -69,6 +71,13 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
             description = "Which torrent protocol versions to support (some clients don't support v2)",
             type = TorrentVersion::class.java,
             default = TorrentVersion.`V1 and V2`
+        ),
+        ConfigMetadata(
+            key = "performanceMode",
+            label = "Torrent Client Performance Mode",
+            description = "Optimizes the torrent client for either low resource usage or high performance",
+            type = TorrentClientPerformanceMode::class.java,
+            default = TorrentClientPerformanceMode.Balanced
         ),
         ConfigMetadata(
             key = "externalHost",
@@ -136,6 +145,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         val client = TorrentClient(
             listenPort = config("listenPort"),
             externalHost = optionalConfig("externalHost"),
+            performanceMode = config("performanceMode"),
             dhtEnabled = config("dhtEnabled"),
             lsdEnabled = config("lsdEnabled"),
             stopSeedingWhenComplete = config("stopSeedingWhenComplete")
@@ -166,12 +176,27 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
     }
 
     override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
+
+        val errors = mutableMapOf<String, String>()
+
+        if (isRunningInDocker) {
+            errors["stopSeedingWhenComplete"] = " "
+            errors["privateMode"] = " "
+            errors["dhtEnabled"] = " "
+            errors["lsdEnabled"] = " "
+            errors["torrentVersions"] = " "
+            errors["performanceMode"] = " "
+            errors["externalHost"] = " "
+            errors["listenPort"] = " "
+            errors["trackerPort"] = " "
+            errors["announceInterval"] = "Plugin is currently not compatible with Docker."
+            return PluginConfigValidationResult.INVALID(errors)
+        }
+
         val configValidationResult = super.validateConfig(config)
         if (!configValidationResult.isValid()) {
             return configValidationResult
         }
-
-        val errors = mutableMapOf<String, String>()
 
         val listenPort = config["listenPort"]?.toIntOrNull()
         if (listenPort != null && listenPort !in 1024..65535) {

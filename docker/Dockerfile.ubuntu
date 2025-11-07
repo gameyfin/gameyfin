@@ -13,7 +13,7 @@ RUN mkdir -p /opt/gameyfin/plugins \
     && rm -rf /tmp/plugins
 
 
-FROM sapmachine:21-jre-headless
+FROM eclipse-temurin:21-jre
 
 # OCI labels
 LABEL maintainer="grimsi" \

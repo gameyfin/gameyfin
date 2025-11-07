@@ -58,3 +58,4 @@ out/
 /plugins/data/
 /plugins/state/
 /plugindata/
+/docker-debug/

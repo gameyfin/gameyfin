@@ -6,7 +6,7 @@ import com.frostwire.jlibtorrent.SettingsPack
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
 import com.frostwire.jlibtorrent.TorrentInfo
-import com.frostwire.jlibtorrent.swig.settings_pack
+import com.frostwire.jlibtorrent.swig.libtorrent.*
 import com.frostwire.jlibtorrent.swig.settings_pack.string_types
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit
 class TorrentClient(
     private val listenPort: Int,
     private val externalHost: String?,
+    private val performanceMode: TorrentClientPerformanceMode,
     private val dhtEnabled: Boolean,
     private val lsdEnabled: Boolean,
     private val stopSeedingWhenComplete: Boolean
@@ -34,8 +35,6 @@ class TorrentClient(
 
     companion object {
         private const val INTERNAL_PEER_ID_PREFIX = "-GF0001-"
-
-        private val isRunningInDocker = System.getenv("RUNTIME_ENV") == "docker"
     }
 
     fun start() {
@@ -101,8 +100,14 @@ class TorrentClient(
         // Initialize jlibtorrent session
         val sessionManager = SessionManager()
 
-        // Configure session settings with custom peer ID
-        val settingsPack = sessionManager.settings() ?: SettingsPack()
+        // Configure session settings based on performance mode
+        val settingsPack = when (performanceMode) {
+            TorrentClientPerformanceMode.Balanced -> SettingsPack(default_settings())
+            TorrentClientPerformanceMode.`High Performance` -> SettingsPack(high_performance_seed())
+            TorrentClientPerformanceMode.`Minimal Memory Usage` -> SettingsPack(min_memory_usage())
+        }
+        log.info("Configured TorrentClient with performance mode: $performanceMode")
+
 
         // Set custom peer ID prefix for our internal client
         // This allows us to identify this specific client if needed
@@ -129,16 +134,6 @@ class TorrentClient(
 
         // Configure Local Peer Discovery
         settingsPack.isEnableLsd = lsdEnabled
-
-        // Disable memory-mapped I/O for better Docker compatibility
-        // Memory-mapped I/O can cause issues in containerized environments
-        if (isRunningInDocker) {
-            settingsPack.setInteger(
-                settings_pack.int_types.disk_write_mode.swigValue(),
-                settings_pack.mmap_write_mode_t.always_pwrite.swigValue()
-            )
-            log.info("Configured libtorrent with Docker-friendly disk I/O settings (disabled mmap)")
-        }
 
         sessionManager.start(SessionParams(settingsPack))
 
