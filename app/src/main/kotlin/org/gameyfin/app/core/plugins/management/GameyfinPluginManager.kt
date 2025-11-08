@@ -16,6 +16,7 @@ import java.security.cert.X509Certificate
 import java.util.jar.JarFile
 import kotlin.io.path.Path
 import kotlin.io.path.extension
+import kotlin.reflect.KClass
 
 
 /**
@@ -209,6 +210,10 @@ class GameyfinPluginManager(
         }
 
         return plugin.validateConfig(configToValidate)
+    }
+
+    fun supportsExtensionType(pluginId: String, extensionType: KClass<out ExtensionPoint>): Boolean {
+        return getExtensionTypeClasses(pluginId).any { it == extensionType.java }
     }
 
     fun getExtensionTypeClasses(pluginId: String): List<Class<ExtensionPoint>> {

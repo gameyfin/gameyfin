@@ -38,7 +38,7 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
             type = CompressionMode::class.java,
             label = "Compression mode",
             description = "Higher compression modes are more resource intensive, but save bandwidth",
-            default = CompressionMode.NONE
+            default = CompressionMode.None
         )
     )
 

@@ -48,6 +48,7 @@ out/
 /packaged_plugins
 /logs
 /templates
+/docker/docker-compose.yml
 /app/src/main/bundles/
 /app/src/main/frontend/**/*.js
 /app/src/main/frontend/**/*.js.map
@@ -57,3 +58,4 @@ out/
 /plugins/data/
 /plugins/state/
 /plugindata/
+/docker-debug/

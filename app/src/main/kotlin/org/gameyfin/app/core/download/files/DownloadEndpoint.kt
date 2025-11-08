@@ -12,8 +12,6 @@ import org.gameyfin.pluginapi.download.LinkDownload
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
-import java.nio.file.Path
-import kotlin.io.path.isDirectory
 
 @RestController
 @RequestMapping("/download")
@@ -39,12 +37,6 @@ class DownloadEndpoint(
             is FileDownload -> {
                 val responseBuilder = ResponseEntity.ok()
                     .header("Content-Disposition", "attachment; filename=\"${game.title}.${download.fileExtension}\"")
-
-                // Add Content-Length header if file size is available and file is not a directory
-                val fileSize = game.metadata.fileSize
-                if (fileSize != null && fileSize > 0 && !Path.of(game.metadata.path).isDirectory()) {
-                    responseBuilder.header("Content-Length", fileSize.toString())
-                }
 
                 responseBuilder.body(StreamingResponseBody { outputStream ->
                     downloadService.processDownload(

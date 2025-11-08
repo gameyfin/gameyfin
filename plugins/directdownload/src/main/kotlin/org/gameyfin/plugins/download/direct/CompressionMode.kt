@@ -4,15 +4,15 @@ import org.gameyfin.plugins.download.direct.CompressionMode.*
 import java.util.zip.Deflater
 
 enum class CompressionMode {
-    NONE,
-    FAST,
-    BEST;
+    None,
+    Fast,
+    Best;
 }
 
 fun CompressionMode.deflaterLevel(): Int {
     return when (this) {
-        NONE -> Deflater.NO_COMPRESSION
-        FAST -> Deflater.BEST_SPEED
-        BEST -> Deflater.BEST_COMPRESSION
+        None -> Deflater.NO_COMPRESSION
+        Fast -> Deflater.BEST_SPEED
+        Best -> Deflater.BEST_COMPRESSION
     }
 }
