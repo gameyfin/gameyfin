@@ -78,8 +78,12 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+        exclude(group = "org.mockito", module = "mockito-core")
+    }
+    testImplementation("io.mockk:mockk:${rootProject.extra["mockkVersion"]}")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("io.projectreactor:reactor-test")
 }
 
 dependencyManagement {
