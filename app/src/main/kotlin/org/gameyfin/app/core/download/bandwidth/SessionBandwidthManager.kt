@@ -128,7 +128,7 @@ class SessionBandwidthTracker(
     fun updateLimit(newLimit: Long) {
         maxBytesPerSecond = newLimit
     }
-    
+
     /**
      * Register a new download starting
      */
@@ -229,6 +229,11 @@ class SessionBandwidthTracker(
         bytesWritten += bytes
         totalBytesTransferred += bytes
         lastActivityTime = System.nanoTime()
+
+        // Skip throttling if no limit is set (0 or negative means unlimited)
+        if (maxBytesPerSecond <= 0) {
+            return
+        }
 
         val elapsedNanos = lastActivityTime - startTime
         val elapsedSeconds = elapsedNanos / 1_000_000_000.0
