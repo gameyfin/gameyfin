@@ -34,8 +34,6 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         plugin = this
     }
 
-    private val isRunningInDocker = System.getenv("RUNTIME_ENV") == "docker"
-
     override val configMetadata: PluginConfigMetadata = listOf(
         ConfigMetadata(
             key = "stopSeedingWhenComplete",
@@ -177,26 +175,12 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
     override fun validateConfig(config: Map<String, String?>): PluginConfigValidationResult {
 
-        val errors = mutableMapOf<String, String>()
-
-        if (isRunningInDocker) {
-            errors["stopSeedingWhenComplete"] = " "
-            errors["privateMode"] = " "
-            errors["dhtEnabled"] = " "
-            errors["lsdEnabled"] = " "
-            errors["torrentVersions"] = " "
-            errors["performanceMode"] = " "
-            errors["externalHost"] = " "
-            errors["listenPort"] = " "
-            errors["trackerPort"] = " "
-            errors["announceInterval"] = "Plugin is currently not compatible with Docker."
-            return PluginConfigValidationResult.INVALID(errors)
-        }
-
         val configValidationResult = super.validateConfig(config)
         if (!configValidationResult.isValid()) {
             return configValidationResult
         }
+
+        val errors = mutableMapOf<String, String>()
 
         val listenPort = config["listenPort"]?.toIntOrNull()
         if (listenPort != null && listenPort !in 1024..65535) {
