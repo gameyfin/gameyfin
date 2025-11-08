@@ -135,7 +135,29 @@ class TorrentClient(
         // Configure Local Peer Discovery
         settingsPack.isEnableLsd = lsdEnabled
 
-        sessionManager.start(SessionParams(settingsPack))
+        val sessionParams = SessionParams(settingsPack)
+
+        // Configure disk I/O based on operating system
+        // This must be done because libtorrent 2.0 uses memory mapped files which conflict with java runtime handlers
+        // resulting in SIGSEGV crashes
+        val os = System.getProperty("os.name").lowercase()
+        when {
+            os.contains("win") -> {
+                sessionParams.setDefaultDiskIO()
+                log.info("Configured disk I/O for Windows (default disk I/O)")
+            }
+
+            os.contains("nix") || os.contains("nux") || os.contains("mac") || os.contains("darwin") -> {
+                sessionParams.setPosixDiskIO()
+                log.info("Configured disk I/O for Unix-like system (POSIX disk I/O)")
+            }
+
+            else -> {
+                log.info("Unknown OS '$os', using default disk I/O settings")
+            }
+        }
+
+        sessionManager.start(sessionParams)
 
         // Log the listening status
         log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
