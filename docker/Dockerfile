@@ -25,8 +25,11 @@ LABEL maintainer="grimsi" \
       org.opencontainers.image.vendor="Gameyfin" \
       org.opencontainers.image.authors="Gameyfin maintainers"
 
+# Indicate docker runtime environment
+ENV RUNTIME_ENV=docker
+
 # Install necessary packages
-RUN apk add --no-cache su-exec tini shadow
+RUN apk add --no-cache su-exec tini shadow gcompat
 
 # Fixed runtime user/group
 ENV USER=gameyfin
@@ -38,7 +41,7 @@ WORKDIR /opt/gameyfin
 # Create user and required directories
 RUN groupadd -g "$GID" "$USER" && \
     useradd -u "$UID" -g "$GID" -M -s /sbin/nologin "$USER" && \
-    mkdir -p plugins db data logs && \
+    mkdir -p plugins plugindata db data logs && \
     chown -R "$UID:$GID" .
 
 # Copy entrypoint script with proper perms and ownership

@@ -25,6 +25,9 @@ LABEL maintainer="grimsi" \
       org.opencontainers.image.vendor="Gameyfin" \
       org.opencontainers.image.authors="Gameyfin maintainers"
 
+# Indicate docker runtime environment
+ENV RUNTIME_ENV=docker
+
 # Install necessary packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends tini gosu && \
@@ -40,7 +43,7 @@ WORKDIR /opt/gameyfin
 # Create user and required directories with fixed IDs
 RUN groupadd -g "$GID" "$USER" && \
     useradd -u "$UID" -g "$GID" -M -s /usr/sbin/nologin "$USER" && \
-    mkdir -p plugins db data logs && \
+    mkdir -p plugins plugindata db data logs && \
     chown -R "$UID:$GID" .
 
 # Copy entrypoint script with proper perms and ownership
