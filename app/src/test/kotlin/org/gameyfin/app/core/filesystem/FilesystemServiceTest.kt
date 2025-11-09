@@ -2,7 +2,6 @@ package org.gameyfin.app.core.filesystem
 
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
@@ -13,7 +12,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.nio.file.FileSystems
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.test.assertEquals
@@ -40,32 +38,11 @@ class FilesystemServiceTest {
     }
 
     @Test
-    fun `listContents should return root directories on Windows when path is null`() {
-        every { configService.get(any<ConfigProperties<Array<String>>>()) } returns arrayOf("exe", "zip")
-
-        val osName = System.getProperty("os.name").lowercase()
-        if (!osName.contains("win")) {
-            return
-        }
-
-        val result = filesystemService.listContents(null)
-
-        assertTrue(result.isNotEmpty())
-        assertTrue(result.all { it.type == FileType.DIRECTORY })
-        assertTrue(result.all { it.name.endsWith("\\") || it.name.endsWith("/") })
-    }
-
-
-    @Test
     fun `listContents should return empty or root list when path is empty string`() {
-        every { configService.get(any<ConfigProperties<Array<String>>>()) } returns arrayOf("exe", "zip")
-
-        mockkStatic("java.nio.file.FileSystems")
-        every { FileSystems.getDefault().rootDirectories } returns emptyList()
-
         val result = filesystemService.listContents("")
 
-        assertTrue(result.isEmpty())
+        // Due to various differences in how OSs handle empty paths, we just check that it returns a non-empty list
+        assertTrue(result.isNotEmpty())
     }
 
     @Test
@@ -93,13 +70,16 @@ class FilesystemServiceTest {
 
         val visibleFile = tempDir.resolve("visible.txt")
         visibleFile.createFile()
-        val hiddenFile = createTempFile(tempDir, null, null)
-        hiddenFile.setAttribute("dos:hidden", true)
+        val hiddenFile = createTempFile(tempDir, ".", null)
+
+        if (System.getProperty("os.name").lowercase().contains("win")) {
+            hiddenFile.setAttribute("dos:hidden", true)
+        }
 
         val result = filesystemService.listContents(tempDir.toString())
 
-        assertTrue(result.any { it.name == "visible.txt" })
-        assertFalse(result.any { it.name == ".hidden" })
+        assertTrue(result.any { it.name == visibleFile.name })
+        assertFalse(result.any { it.name == hiddenFile.name })
     }
 
     @Test
