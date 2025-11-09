@@ -13,14 +13,12 @@ import org.gameyfin.pluginapi.download.DownloadProvider
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertThrows
-
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.pf4j.PluginWrapper
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -99,7 +97,7 @@ class DownloadServiceTest {
         val result = service.getProviders()
 
         assertEquals(1, result.size)
-        assertEquals("TestProvider", result[0].key)
+        assertEquals(TestProvider::class.java.name, result[0].key)
         assertEquals("Test Provider", result[0].name)
         assertEquals(15, result[0].priority)
         assertEquals("This is a test provider", result[0].description)
@@ -115,7 +113,7 @@ class DownloadServiceTest {
         every { pluginManager.getExtensions(DownloadProvider::class.java) } returns listOf(provider)
         every { provider.download(Path(path)) } returns expectedDownload
 
-        val result = service.getDownload(path, "TestProvider")
+        val result = service.getDownload(path, TestProvider::class.java.name)
 
         assertEquals(expectedDownload, result)
         verify(exactly = 1) { provider.download(Path(path)) }
@@ -141,7 +139,7 @@ class DownloadServiceTest {
         every { pluginManager.getExtensions(DownloadProvider::class.java) } returns listOf(provider1, provider2)
         every { provider2.download(any()) } returns expectedDownload
 
-        val result = service.getDownload("/test/path", "Provider2")
+        val result = service.getDownload("/test/path", Provider2::class.java.name)
 
         assertEquals(expectedDownload, result)
         verify(exactly = 0) { provider1.download(any()) }
@@ -378,16 +376,28 @@ class DownloadServiceTest {
         assertEquals(0, outputStream.size())
     }
 
+    // Test provider classes with known names
+    class Provider1 : DownloadProvider {
+        override fun download(path: java.nio.file.Path): Download = mockk(relaxed = true)
+    }
+
+    class Provider2 : DownloadProvider {
+        override fun download(path: java.nio.file.Path): Download = mockk(relaxed = true)
+    }
+
+    class TestProvider : DownloadProvider {
+        override fun download(path: java.nio.file.Path): Download = mockk(relaxed = true)
+    }
+
     private fun createMockProvider(className: String): DownloadProvider {
-        return object : DownloadProvider {
-            override fun download(path: Path): Download {
-                return mockk()
+        return when (className) {
+            "Provider1" -> spyk(Provider1())
+            "Provider2" -> spyk(Provider2())
+            "TestProvider" -> spyk(TestProvider())
+            else -> {
+                // For other cases, create a mock and use reflection to set the expected behavior
+                spyk(TestProvider())
             }
-        }.also {
-            // Mock the class name
-            mockkStatic(it::class.java.name)
-            every { it.javaClass.name } returns className
-            every { it.javaClass.enclosingClass } returns mockk()
         }
     }
 
@@ -409,6 +419,7 @@ class DownloadServiceTest {
         }
     }
 
+    @Suppress("SameParameterValue")
     private fun createMockGame(id: Long, title: String): Game {
         return mockk {
             every { this@mockk.id } returns id
@@ -416,4 +427,3 @@ class DownloadServiceTest {
         }
     }
 }
-
