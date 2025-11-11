@@ -7,13 +7,16 @@ import javax.crypto.spec.SecretKeySpec
 class EncryptionUtils {
     companion object {
         private const val ALGORITHM = "AES"
-        private val SECRET_KEY: SecretKeySpec
-
-        init {
-            val base64Key = System.getenv("APP_KEY")
-                ?: throw IllegalStateException("APP_KEY environment variable is not set or empty")
+        private val SECRET_KEY: SecretKeySpec by lazy {
+            val base64Key = getAppKey()
             val decodedKey = Base64.getDecoder().decode(base64Key)
-            SECRET_KEY = SecretKeySpec(decodedKey, ALGORITHM)
+            SecretKeySpec(decodedKey, ALGORITHM)
+        }
+
+        // Extracted for testability
+        internal fun getAppKey(): String {
+            return System.getenv("APP_KEY")
+                ?: throw IllegalStateException("APP_KEY environment variable is not set or empty")
         }
 
         fun encrypt(value: String): String {
