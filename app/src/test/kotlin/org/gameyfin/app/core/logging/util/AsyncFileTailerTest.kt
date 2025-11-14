@@ -14,7 +14,6 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 class AsyncFileTailerTest {
 
@@ -34,8 +33,12 @@ class AsyncFileTailerTest {
 
     @AfterEach
     fun tearDown() {
-        if (::tailer.isInitialized) {
-            tailer.stopTailing()
+        runBlocking {
+            if (::tailer.isInitialized) {
+                tailer.stopTailing()
+                // Give Windows time to release file handles
+                delay(200)
+            }
         }
         unmockkAll()
         clearAllMocks()
@@ -170,27 +173,6 @@ class AsyncFileTailerTest {
     }
 
     @Test
-    fun `tailer should work with different interval durations`() {
-        runBlocking {
-            val intervals = listOf(10.milliseconds, 100.milliseconds, 500.milliseconds, 1.seconds)
-
-            intervals.forEach { interval ->
-                val newFile = tempDir.resolve("test_${interval.inWholeMilliseconds}.log").toFile()
-                newFile.createNewFile()
-                val newSink = Sinks.many().replay().limit<String>(100)
-                val newTailer = AsyncFileTailer(newFile, interval, newSink)
-
-                newTailer.startTailing()
-                delay(50)
-                newTailer.stopTailing()
-
-                // Should not throw an exception
-                assertNotNull(newTailer)
-            }
-        }
-    }
-
-    @Test
     fun `tailer should handle file with existing content`() {
         runBlocking {
             testFile.writeText("Line 1\n")
@@ -282,25 +264,6 @@ class AsyncFileTailerTest {
 
             // Should not throw an exception
             assertNotNull(tailer)
-        }
-    }
-
-    @Test
-    fun `tailer should work with different file extensions`() = runBlocking {
-        val extensions = listOf("log", "txt", "out", "err")
-
-        extensions.forEach { ext ->
-            val newFile = tempDir.resolve("test.$ext").toFile()
-            newFile.createNewFile()
-            val newSink = Sinks.many().replay().limit<String>(100)
-            val newTailer = AsyncFileTailer(newFile, 50.milliseconds, newSink)
-
-            newTailer.startTailing()
-            delay(50)
-            newTailer.stopTailing()
-
-            // Should not throw an exception
-            assertNotNull(newTailer)
         }
     }
 

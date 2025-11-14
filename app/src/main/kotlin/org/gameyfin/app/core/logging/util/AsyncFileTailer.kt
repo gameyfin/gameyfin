@@ -57,6 +57,7 @@ class AsyncFileTailer(
     fun stopTailing() {
         tailerJob?.let {
             it.cancel()
+            tailer.close()
             tailerJob = null
             log.debug { "Stopped tailing the file: ${file.name}" }
         }
