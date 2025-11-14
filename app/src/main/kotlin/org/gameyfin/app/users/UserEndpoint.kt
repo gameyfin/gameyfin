@@ -20,7 +20,7 @@ class UserEndpoint(
     @AnonymousAllowed
     fun getUserInfo(): ExtendedUserInfoDto? {
         val auth = getCurrentAuth()
-        if (auth?.isAuthenticated == false || auth?.principal == "anonymousUser") return null
+        if (auth == null || !auth.isAuthenticated || auth.principal == "anonymousUser") return null
         return userService.getUserInfo()
     }
 

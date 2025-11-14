@@ -132,7 +132,7 @@ class ImageService(
         // Save or update the image to ensure it's persisted
         try {
             imageRepository.save(image)
-        } catch (e: DataIntegrityViolationException) {
+        } catch (_: DataIntegrityViolationException) {
             // If another thread saved the same URL meanwhile, just ignore and proceed
         }
     }

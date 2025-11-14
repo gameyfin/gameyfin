@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonValue
 import org.gameyfin.app.users.RoleService
 import java.lang.Enum
+import kotlin.IllegalArgumentException
 import kotlin.Int
 import kotlin.String
 
@@ -29,7 +30,11 @@ enum class Role(val roleName: String, val powerLevel: Int) {
 
         fun safeValueOf(type: String): Role? {
             val enumString = type.removePrefix(RoleService.INTERNAL_ROLE_PREFIX)
-            return Enum.valueOf(Role::class.java, enumString)
+            return try {
+                Enum.valueOf(Role::class.java, enumString)
+            } catch (_: IllegalArgumentException) {
+                null
+            }
         }
     }
 

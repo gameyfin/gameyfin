@@ -12,7 +12,7 @@ class GameyfinManifestPluginDescriptorFinder() : ManifestPluginDescriptorFinder(
         const val PLUGIN_URL: String = "Plugin-Url"
     }
 
-    override fun createPluginDescriptor(manifest: Manifest?): GameyfinPluginDescriptor {
+    public override fun createPluginDescriptor(manifest: Manifest?): GameyfinPluginDescriptor {
         if (manifest == null) throw IllegalArgumentException("Manifest cannot be null")
 
         val pluginDescriptor = super.createPluginDescriptor(manifest)

@@ -14,10 +14,13 @@ class AppKeyValidator : CommandLineRunner {
 
     override fun run(vararg args: String?) {
         val base64Key = System.getenv("APP_KEY")
+        if (!hasValidAppKey(base64Key)) exitProcess(1)
+    }
 
+    fun hasValidAppKey(base64Key: String?): Boolean {
         if (base64Key.isNullOrBlank()) {
             log.error { "APP_KEY environment variable is not set or empty" }
-            exitProcess(1)
+            return false
         }
 
         val decodedKey = Base64.getDecoder().decode(base64Key)
@@ -25,7 +28,9 @@ class AppKeyValidator : CommandLineRunner {
         // Ensure the key length is valid for AES (128, 192, or 256 bits)
         if (decodedKey.size !in listOf(16, 24, 32)) {
             log.error { "Invalid AES key length in APP_KEY. Key must be 128, 192, or 256 bits." }
-            exitProcess(1)
+            return false
         }
+
+        return true
     }
 }

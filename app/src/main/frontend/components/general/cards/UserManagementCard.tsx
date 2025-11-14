@@ -1,12 +1,12 @@
 import {Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
-import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
+import {DotsThreeVerticalIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
 import ConfirmUserDeletionModal from "Frontend/components/general/modals/ConfirmUserDeletionModal";
 import PasswordResetTokenModal from "Frontend/components/general/modals/PasswortResetTokenModal";
-import TokenDto from "Frontend/generated/org/gameyfin/app/shared/token/TokenDto";
+import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import RoleChip from "Frontend/components/general/RoleChip";
 import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModal";
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";

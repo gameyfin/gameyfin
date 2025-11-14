@@ -308,10 +308,10 @@ class GameService(
             }
 
             val fieldSource = game.metadata.fields[fieldName]?.source
-            if (updatedValue != null && fieldSource !is GameFieldUserSource && !areEqual(
-                    originalValue,
-                    updatedValue
-                ) && updatedFieldMetadata != null
+            if (updatedValue != null &&
+                fieldSource !is GameFieldUserSource &&
+                !areEqual(originalValue, updatedValue) &&
+                updatedFieldMetadata != null
             ) {
                 setValue(updatedValue)
                 game.metadata.fields[fieldName] = updatedFieldMetadata

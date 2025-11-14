@@ -3,7 +3,7 @@ package org.gameyfin.app.users.emailconfirmation
 import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.PermitAll
 import org.gameyfin.app.core.security.getCurrentAuth
-import org.gameyfin.app.shared.token.TokenValidationResult
+import org.gameyfin.app.core.token.TokenValidationResult
 import org.gameyfin.app.users.UserService
 
 @Endpoint

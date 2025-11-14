@@ -18,7 +18,7 @@ class BandwidthMonitoringService(
         private val log = KotlinLogging.logger {}
 
         /* Websockets */
-        private val bandwidthUpdates = Sinks.many().multicast().onBackpressureBuffer<List<SessionStatsDto>>(1024, false)
+        private var bandwidthUpdates = Sinks.many().multicast().onBackpressureBuffer<List<SessionStatsDto>>(1024, false)
 
         fun subscribe(): Flux<List<List<SessionStatsDto>>> {
             log.debug { "New subscription for bandwidthUpdates (#${bandwidthUpdates.currentSubscriberCount()})" }
@@ -34,6 +34,13 @@ class BandwidthMonitoringService(
 
         fun emit(stats: List<SessionStatsDto>) {
             bandwidthUpdates.tryEmitNext(stats)
+        }
+
+        /**
+         * Reset the sink - useful for testing to ensure test isolation
+         */
+        internal fun resetSink() {
+            bandwidthUpdates = Sinks.many().multicast().onBackpressureBuffer(1024, false)
         }
     }
 

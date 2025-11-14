@@ -45,18 +45,22 @@ subprojects {
 
 extra.set("pluginDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))
 
-@Suppress("UNCHECKED_CAST")
-val updatePackageJsonVersion by tasks.registering {
-    group = "build"
-    description = "Syncs package.json version with Gradle project version"
+abstract class UpdatePackageJsonVersionTask : DefaultTask() {
+    @get:Input
+    abstract val projectVersion: Property<String>
 
-    doLast {
-        // Read the package.json file
-        val packageJson = file("app/package.json")
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val packageJsonFile: RegularFileProperty
+
+    @TaskAction
+    @Suppress("UNCHECKED_CAST")
+    fun updateVersion() {
+        val packageJson = packageJsonFile.get().asFile
         val parsedJson = JsonSlurper().parse(packageJson) as MutableMap<String, Any>
 
         // Update the version field with the Gradle project version
-        parsedJson["version"] = version
+        parsedJson["version"] = projectVersion.get()
 
         // Convert the updated map back to a JSON string
         var stringifiedJson = JsonOutput.toJson(parsedJson)
@@ -70,6 +74,13 @@ val updatePackageJsonVersion by tasks.registering {
         // Write the updated JSON back to package.json
         Files.write(packageJson.toPath(), stringifiedJson.toByteArray())
     }
+}
+
+val updatePackageJsonVersion by tasks.registering(UpdatePackageJsonVersionTask::class) {
+    group = "build"
+    description = "Syncs package.json version with Gradle project version"
+    projectVersion.set(version.toString())
+    packageJsonFile.set(file("app/package.json"))
 }
 
 tasks.named("build") {

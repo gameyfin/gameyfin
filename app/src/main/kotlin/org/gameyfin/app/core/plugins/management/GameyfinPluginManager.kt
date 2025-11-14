@@ -20,11 +20,11 @@ import kotlin.reflect.KClass
 
 
 /**
- * @see https://stackoverflow.com/questions/73654174/my-application-cant-find-the-extension-with-pf4j
+ * @see "https://stackoverflow.com/questions/73654174/my-application-cant-find-the-extension-with-pf4j"
  */
 @Component
 class GameyfinPluginManager(
-    private val forwardingPluginStateListener: SpringPluginStateListener,
+    forwardingPluginStateListener: SpringPluginStateListener,
     private val dbPluginStatusProvider: DatabasePluginStatusProvider,
     private val pluginConfigRepository: PluginConfigRepository,
     private val pluginManagementRepository: PluginManagementRepository
@@ -81,6 +81,10 @@ class GameyfinPluginManager(
         val extensionFinder = GameyfinExtensionFinder(this)
         addPluginStateListener(extensionFinder)
         return extensionFinder
+    }
+
+    public override fun checkPluginId(pluginId: String) {
+        super.checkPluginId(pluginId)
     }
 
     override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {

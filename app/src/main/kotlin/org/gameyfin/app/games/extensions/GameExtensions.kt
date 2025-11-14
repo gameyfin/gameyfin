@@ -78,7 +78,7 @@ fun Game.toUserDto(): GameUserDto {
     )
 }
 
-private fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
+fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
     return GameMetadataAdminDto(
         fileSize = this.fileSize ?: 0L,
         downloadCount = this.downloadCount,
@@ -89,16 +89,14 @@ private fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
     )
 }
 
-private fun GameMetadata.toUserDto(): GameMetadataUserDto {
+fun GameMetadata.toUserDto(): GameMetadataUserDto {
     return GameMetadataUserDto(
         fileSize = this.fileSize ?: 0L
     )
 }
 
 private fun GameFieldMetadata.toDto(): GameFieldMetadataDto {
-    val source = this.source
-
-    return when (source) {
+    return when (val source = this.source) {
         is GameFieldPluginSource -> {
             GameFieldMetadataDto(
                 type = GameFieldMetadataType.PLUGIN,

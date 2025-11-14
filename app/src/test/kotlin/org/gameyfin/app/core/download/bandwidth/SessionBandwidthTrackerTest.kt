@@ -1,0 +1,418 @@
+package org.gameyfin.app.core.download.bandwidth
+
+import io.mockk.unmockkAll
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class SessionBandwidthTrackerTest {
+
+    private lateinit var tracker: SessionBandwidthTracker
+
+    @BeforeEach
+    fun setup() {
+        tracker = SessionBandwidthTracker("test-session-123", maxBytesPerSecond = 100_000)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
+    }
+
+    @Test
+    fun `should initialize with correct default values`() {
+        assertEquals("test-session-123", tracker.sessionId)
+        assertEquals(0, tracker.totalBytesTransferred)
+        assertEquals(0, tracker.activeDownloads.get())
+        assertNull(tracker.username)
+        assertEquals("unknown", tracker.remoteIp)
+        assertTrue(tracker.getActiveGameIds().isEmpty())
+        assertTrue(tracker.getBandwidthHistory().isEmpty())
+    }
+
+    @Test
+    fun `should update bandwidth limit`() {
+        tracker.updateLimit(200_000)
+        // Verify by recording bytes and checking throttle behavior
+        tracker.recordBytes(100_000)
+        Thread.sleep(100) // Allow some time
+        val rate = tracker.getCurrentBytesPerSecond()
+        assertTrue(rate > 0)
+    }
+
+    @Test
+    fun `downloadStarted should increment active downloads and set metadata`() {
+        tracker.downloadStarted(gameId = 42L, username = "testuser", remoteIp = "192.168.1.1")
+
+        assertEquals(1, tracker.activeDownloads.get())
+        assertEquals("testuser", tracker.username)
+        assertEquals("192.168.1.1", tracker.remoteIp)
+        assertTrue(tracker.getActiveGameIds().contains(42L))
+    }
+
+    @Test
+    fun `downloadStarted should not overwrite username with anonymousUser`() {
+        tracker.downloadStarted(gameId = 1L, username = "testuser", remoteIp = "192.168.1.1")
+        tracker.downloadStarted(gameId = 2L, username = "anonymousUser", remoteIp = "192.168.1.2")
+
+        assertEquals("testuser", tracker.username)
+        assertEquals(2, tracker.activeDownloads.get())
+    }
+
+    @Test
+    fun `downloadStarted should handle null parameters gracefully`() {
+        tracker.downloadStarted(gameId = null, username = null, remoteIp = null)
+
+        assertEquals(1, tracker.activeDownloads.get())
+        assertNull(tracker.username)
+        assertEquals("unknown", tracker.remoteIp)
+        assertTrue(tracker.getActiveGameIds().isEmpty())
+    }
+
+    @Test
+    fun `downloadStarted should handle multiple concurrent downloads`() {
+        tracker.downloadStarted(gameId = 1L, username = "user1", remoteIp = "192.168.1.1")
+        tracker.downloadStarted(gameId = 2L, username = "user2", remoteIp = "192.168.1.2")
+        tracker.downloadStarted(gameId = 3L, username = "user3", remoteIp = "192.168.1.3")
+
+        assertEquals(3, tracker.activeDownloads.get())
+        assertEquals(3, tracker.getActiveGameIds().size)
+    }
+
+    @Test
+    fun `downloadCompleted should decrement active downloads`() {
+        tracker.downloadStarted(gameId = 42L, username = "testuser", remoteIp = "192.168.1.1")
+        tracker.downloadCompleted(gameId = 42L)
+
+        assertEquals(0, tracker.activeDownloads.get())
+        assertFalse(tracker.getActiveGameIds().contains(42L))
+    }
+
+    @Test
+    fun `downloadCompleted should reset tracker when all downloads complete`() {
+        tracker.downloadStarted(gameId = 1L)
+        tracker.recordBytes(1000)
+        val initialTotal = tracker.totalBytesTransferred
+
+        tracker.downloadCompleted(gameId = 1L)
+
+        assertEquals(0, tracker.activeDownloads.get())
+        assertEquals(initialTotal, tracker.totalBytesTransferred) // Total should not reset
+        assertEquals(0, tracker.getCurrentBytesPerSecond()) // Rate should reset
+    }
+
+    @Test
+    fun `downloadCompleted should handle null gameId`() {
+        tracker.downloadStarted()
+        tracker.downloadCompleted(gameId = null)
+
+        assertEquals(0, tracker.activeDownloads.get())
+    }
+
+    @Test
+    fun `downloadCompleted should not reset if downloads still active`() {
+        tracker.downloadStarted(gameId = 1L)
+        tracker.downloadStarted(gameId = 2L)
+        tracker.recordBytes(1000)
+
+        tracker.downloadCompleted(gameId = 1L)
+
+        assertEquals(1, tracker.activeDownloads.get())
+        assertTrue(tracker.getCurrentBytesPerSecond() > 0) // Should not reset
+    }
+
+    @Test
+    fun `recordBytes should update total bytes and current rate`() {
+        tracker.recordBytes(1000)
+        Thread.sleep(100)
+
+        assertEquals(1000, tracker.totalBytesTransferred)
+        assertTrue(tracker.getCurrentBytesPerSecond() > 0)
+    }
+
+    @Test
+    fun `recordBytes should accumulate multiple writes`() {
+        tracker.recordBytes(500)
+        tracker.recordBytes(300)
+        tracker.recordBytes(200)
+
+        assertEquals(1000, tracker.totalBytesTransferred)
+    }
+
+    @Test
+    fun `recordBytes should reset start time if idle`() {
+        tracker.recordBytes(100)
+        Thread.sleep(50)
+        val rate1 = tracker.getCurrentBytesPerSecond()
+
+        // Complete all downloads to trigger reset
+        tracker.downloadStarted()
+        tracker.downloadCompleted()
+
+        // Start new download - should reset timer
+        tracker.recordBytes(100)
+        Thread.sleep(50)
+        val rate2 = tracker.getCurrentBytesPerSecond()
+
+        assertTrue(rate1 > 0)
+        assertTrue(rate2 > 0)
+    }
+
+    @Test
+    fun `throttle should limit bandwidth correctly`() {
+        val maxBytesPerSecond = 10_000L // 10 KB/s
+        tracker = SessionBandwidthTracker("test-session", maxBytesPerSecond)
+
+        val startTime = System.nanoTime()
+        tracker.throttle(10_000) // Write 10 KB
+        tracker.throttle(10_000) // Write another 10 KB
+        val elapsedNanos = System.nanoTime() - startTime
+
+        // Should take at least 1 second to write 20 KB at 10 KB/s
+        val elapsedSeconds = elapsedNanos / 1_000_000_000.0
+        assertTrue(elapsedSeconds >= 0.9, "Expected at least 0.9 seconds but was $elapsedSeconds")
+
+        assertEquals(20_000, tracker.totalBytesTransferred)
+    }
+
+    @Test
+    fun `throttle should handle thread interruption`() {
+        val maxBytesPerSecond = 1_000L
+        tracker = SessionBandwidthTracker("test-session", maxBytesPerSecond)
+
+        val thread = Thread {
+            tracker.throttle(10_000) // This should trigger throttling
+        }
+
+        thread.start()
+        Thread.sleep(50)
+        thread.interrupt()
+        thread.join(1000)
+
+        assertTrue(thread.isInterrupted)
+    }
+
+    @Test
+    fun `throttle should allow burst at start`() {
+        val maxBytesPerSecond = 100_000L
+        tracker = SessionBandwidthTracker("test-session", maxBytesPerSecond)
+
+        val startTime = System.nanoTime()
+        tracker.throttle(50_000) // Write half of limit
+        val elapsedNanos = System.nanoTime() - startTime
+
+        // Should take approximately 0.5 seconds (50KB at 100KB/s)
+        // Allow some margin for timing precision
+        val elapsedSeconds = elapsedNanos / 1_000_000_000.0
+        assertTrue(elapsedSeconds >= 0.4, "Expected at least 0.4 seconds but was $elapsedSeconds")
+        assertTrue(elapsedSeconds < 0.7, "Expected less than 0.7 seconds but was $elapsedSeconds")
+    }
+
+    @Test
+    fun `getCurrentBytesPerSecond should return 0 when no bytes written`() {
+        assertEquals(0, tracker.getCurrentBytesPerSecond())
+    }
+
+    @Test
+    fun `getCurrentBytesPerSecond should calculate rate correctly`() {
+        tracker.recordBytes(1000)
+        Thread.sleep(100)
+
+        val rate = tracker.getCurrentBytesPerSecond()
+        assertTrue(rate > 0)
+        assertTrue(rate < 1_000_000) // Sanity check
+    }
+
+    @Test
+    fun `recordBandwidthSnapshot should add to history`() {
+        tracker.recordBytes(1000)
+        Thread.sleep(10)
+
+        tracker.recordBandwidthSnapshot()
+
+        val history = tracker.getBandwidthHistory()
+        assertEquals(1, history.size)
+        assertTrue(history[0] > 0)
+    }
+
+    @Test
+    fun `recordBandwidthSnapshot should maintain max history size`() {
+        // Add 35 snapshots (max is 30)
+        repeat(35) {
+            tracker.recordBytes(100)
+            tracker.recordBandwidthSnapshot()
+        }
+
+        val history = tracker.getBandwidthHistory()
+        assertEquals(30, history.size)
+    }
+
+    @Test
+    fun `recordBandwidthSnapshot should maintain correct order`() {
+        tracker.recordBytes(1000)
+        Thread.sleep(50)
+        tracker.recordBandwidthSnapshot()
+        val first = tracker.getBandwidthHistory()[0]
+
+        // Reset to start a new measurement period with higher rate
+        tracker.reset()
+        tracker.recordBytes(5000)
+        Thread.sleep(50)
+        tracker.recordBandwidthSnapshot()
+
+        val history = tracker.getBandwidthHistory()
+        assertEquals(2, history.size)
+        assertEquals(first, history[0]) // First measurement should be first
+        assertTrue(
+            history[1] > history[0],
+            "Expected second measurement (${history[1]}) to be higher than first (${history[0]})"
+        ) // Second measurement should be higher
+    }
+
+    @Test
+    fun `getActiveGameIds should return snapshot of current games`() {
+        tracker.downloadStarted(gameId = 1L)
+        tracker.downloadStarted(gameId = 2L)
+        tracker.downloadStarted(gameId = 3L)
+
+        val gameIds = tracker.getActiveGameIds()
+        assertEquals(3, gameIds.size)
+        assertTrue(gameIds.containsAll(listOf(1L, 2L, 3L)))
+
+        // Verify it's a snapshot (modifying it doesn't affect internal state)
+        val mutableGameIds = gameIds.toMutableSet()
+        mutableGameIds.add(4L)
+        assertEquals(3, tracker.getActiveGameIds().size)
+    }
+
+    @Test
+    fun `getBandwidthHistory should return snapshot`() {
+        tracker.recordBandwidthSnapshot()
+        val history1 = tracker.getBandwidthHistory()
+
+        tracker.recordBandwidthSnapshot()
+        val history2 = tracker.getBandwidthHistory()
+
+        assertEquals(1, history1.size)
+        assertEquals(2, history2.size)
+    }
+
+    @Test
+    fun `reset should reset counters but preserve total bytes`() {
+        tracker.downloadStarted()
+        tracker.recordBytes(5000)
+        Thread.sleep(100)
+
+        val totalBefore = tracker.totalBytesTransferred
+        assertTrue(tracker.getCurrentBytesPerSecond() > 0)
+
+        tracker.reset()
+
+        assertEquals(totalBefore, tracker.totalBytesTransferred)
+        assertEquals(0, tracker.getCurrentBytesPerSecond())
+    }
+
+    @Test
+    fun `should handle concurrent downloads thread-safely`() {
+        val threadCount = 10
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val latch = CountDownLatch(threadCount)
+
+        repeat(threadCount) { i ->
+            executor.submit {
+                try {
+                    tracker.downloadStarted(gameId = i.toLong())
+                    tracker.recordBytes(100)
+                    Thread.sleep(10)
+                    tracker.downloadCompleted(gameId = i.toLong())
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS))
+        executor.shutdown()
+        assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
+
+        // All downloads should be completed
+        assertEquals(0, tracker.activeDownloads.get())
+        assertEquals(1000, tracker.totalBytesTransferred)
+    }
+
+    @Test
+    fun `should handle concurrent recordBytes calls`() {
+        val threadCount = 100
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val latch = CountDownLatch(threadCount)
+
+        repeat(threadCount) {
+            executor.submit {
+                try {
+                    tracker.recordBytes(10)
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS))
+        executor.shutdown()
+        assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
+
+        assertEquals(1000, tracker.totalBytesTransferred)
+    }
+
+    @Test
+    fun `should handle edge case of zero maxBytesPerSecond`() {
+        tracker = SessionBandwidthTracker("test-session", 0)
+
+        // Should not throttle
+        val startTime = System.nanoTime()
+        tracker.throttle(1_000_000)
+        val elapsed = (System.nanoTime() - startTime) / 1_000_000_000.0
+
+        assertTrue(elapsed < 0.1) // Should complete quickly
+    }
+
+    @Test
+    fun `should handle large byte transfers`() {
+        tracker.recordBytes(Long.MAX_VALUE / 2)
+        tracker.recordBytes(100)
+
+        assertTrue(tracker.totalBytesTransferred > Long.MAX_VALUE / 2)
+    }
+
+    @Test
+    fun `lastActivityTime should update on download events`() {
+        val initialTime = tracker.lastActivityTime
+        Thread.sleep(10)
+
+        tracker.downloadStarted()
+        val afterStartTime = tracker.lastActivityTime
+        assertTrue(afterStartTime > initialTime)
+
+        Thread.sleep(10)
+        tracker.downloadCompleted()
+        val afterCompleteTime = tracker.lastActivityTime
+        assertTrue(afterCompleteTime > afterStartTime)
+    }
+
+    @Test
+    fun `lastActivityTime should update on recordBytes`() {
+        val initialTime = tracker.lastActivityTime
+        Thread.sleep(10)
+
+        tracker.recordBytes(100)
+        val afterRecordTime = tracker.lastActivityTime
+        assertTrue(afterRecordTime > initialTime)
+    }
+}
+

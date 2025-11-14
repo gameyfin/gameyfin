@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Snippet} from "@heroui/react";
 import {MessageEndpoint, RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
-import TokenDto from "Frontend/generated/org/gameyfin/app/shared/token/TokenDto";
+import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import {Form, Formik, FormikErrors} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";

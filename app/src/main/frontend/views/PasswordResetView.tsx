@@ -6,7 +6,7 @@ import * as Yup from "yup";
 import {PasswordResetEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
 import {WarningIcon} from "@phosphor-icons/react";
-import TokenValidationResult from "Frontend/generated/org/gameyfin/app/shared/token/TokenValidationResult";
+import TokenValidationResult from "Frontend/generated/org/gameyfin/app/core/token/TokenValidationResult";
 
 export default function PasswordResetView() {
     const [searchParams] = useSearchParams();

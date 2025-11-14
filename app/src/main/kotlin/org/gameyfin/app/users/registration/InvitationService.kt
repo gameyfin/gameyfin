@@ -4,10 +4,10 @@ import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.events.AccountStatusChangedEvent
 import org.gameyfin.app.core.events.UserInvitationEvent
 import org.gameyfin.app.core.security.getCurrentAuth
-import org.gameyfin.app.shared.token.TokenDto
-import org.gameyfin.app.shared.token.TokenRepository
-import org.gameyfin.app.shared.token.TokenService
-import org.gameyfin.app.shared.token.TokenType
+import org.gameyfin.app.core.token.TokenDto
+import org.gameyfin.app.core.token.TokenRepository
+import org.gameyfin.app.core.token.TokenService
+import org.gameyfin.app.core.token.TokenType
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.enums.UserInvitationAcceptanceResult
