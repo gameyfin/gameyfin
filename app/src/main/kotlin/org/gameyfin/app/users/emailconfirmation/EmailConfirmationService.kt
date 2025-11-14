@@ -44,7 +44,7 @@ class EmailConfirmationService(
         }
 
         val token = generate(user)
-        eventPublisher.publishEvent(EmailNeedsConfirmationEvent(user, token, Utils.Companion.getBaseUrl()))
+        eventPublisher.publishEvent(EmailNeedsConfirmationEvent(user, token, Utils.getBaseUrl()))
     }
 
     private fun confirmEmail(user: User) {
