@@ -1,0 +1,317 @@
+package org.gameyfin.app.libraries.extensions
+
+import io.mockk.*
+import org.gameyfin.app.core.security.isCurrentUserAdmin
+import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.games.entities.GameMetadata
+import org.gameyfin.app.libraries.dto.LibraryAdminDto
+import org.gameyfin.app.libraries.dto.LibraryUserDto
+import org.gameyfin.app.libraries.entities.DirectoryMapping
+import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.pluginapi.gamemetadata.Platform
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertNotNull
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
+
+class LibraryExtensionsTest {
+
+    @BeforeEach
+    fun setup() {
+        mockkStatic("org.gameyfin.app.core.security.SecurityUtilsKt")
+    }
+
+    @AfterEach
+    fun tearDown() {
+        unmockkAll()
+        clearAllMocks()
+    }
+
+    @Test
+    fun `toDto should return AdminDto when user is admin`() {
+        every { isCurrentUserAdmin() } returns true
+        val library = createTestLibrary(1L)
+
+        val result = library.toDto()
+
+        assertIs<LibraryAdminDto>(result)
+        assertEquals(1L, result.id)
+    }
+
+    @Test
+    fun `toDto should return UserDto when user is not admin`() {
+        every { isCurrentUserAdmin() } returns false
+        val library = createTestLibrary(1L)
+
+        val result = library.toDto()
+
+        assertIs<LibraryUserDto>(result)
+        assertEquals(1L, result.id)
+    }
+
+    @Test
+    fun `toDtos should return list of AdminDto when user is admin`() {
+        every { isCurrentUserAdmin() } returns true
+        val libraries = listOf(createTestLibrary(1L), createTestLibrary(2L))
+
+        val result = libraries.toDtos()
+
+        assertEquals(2, result.size)
+        assertTrue(result.all { it is LibraryAdminDto })
+    }
+
+    @Test
+    fun `toDtos should return list of UserDto when user is not admin`() {
+        every { isCurrentUserAdmin() } returns false
+        val libraries = listOf(createTestLibrary(1L), createTestLibrary(2L))
+
+        val result = libraries.toDtos()
+
+        assertEquals(2, result.size)
+        assertTrue(result.all { it is LibraryUserDto })
+    }
+
+    @Test
+    fun `toDtos should return empty list when no libraries`() {
+        every { isCurrentUserAdmin() } returns true
+        val libraries = emptyList<Library>()
+
+        val result = libraries.toDtos()
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `toUserDto should create UserDto with correct properties`() {
+        val game1 = createTestGame(1L)
+        val game2 = createTestGame(2L)
+        val library = createTestLibrary(
+            id = 1L,
+            name = "Test Library",
+            games = mutableListOf(game1, game2)
+        )
+
+        val result = library.toUserDto()
+
+        assertEquals(1L, result.id)
+        assertEquals("Test Library", result.name)
+        assertEquals(listOf(1L, 2L), result.games)
+    }
+
+    @Test
+    fun `toUserDto should handle library with no games`() {
+        val library = createTestLibrary(id = 1L, games = mutableListOf())
+
+        val result = library.toUserDto()
+
+        assertEquals(1L, result.id)
+        assertTrue(result.games!!.isEmpty())
+    }
+
+    @Test
+    fun `toUserDto should exclude games with null ids`() {
+        val game1 = createTestGame(1L)
+        val game2 = createTestGame(null)
+        val game3 = createTestGame(3L)
+        val library = createTestLibrary(
+            id = 1L,
+            games = mutableListOf(game1, game2, game3)
+        )
+
+        val result = library.toUserDto()
+
+        assertEquals(2, result.games!!.size)
+        assertEquals(listOf(1L, 3L), result.games)
+    }
+
+    @Test
+    fun `toAdminDto should create AdminDto with correct properties`() {
+        val dir1 = createDirectoryMapping("/path1", "/ext1")
+        val dir2 = createDirectoryMapping("/path2", "/ext2")
+        val game1 = createTestGame(1L)
+        val game2 = createTestGame(2L)
+
+        val library = createTestLibrary(
+            id = 1L,
+            name = "Admin Library",
+            directories = mutableListOf(dir1, dir2),
+            platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5),
+            games = mutableListOf(game1, game2),
+            unmatchedPaths = mutableListOf("/unmatched1", "/unmatched2")
+        )
+        game1.metadata.downloadCount = 5
+        game2.metadata.downloadCount = 10
+
+        val result = library.toAdminDto()
+
+        assertEquals(1L, result.id)
+        assertEquals("Admin Library", result.name)
+        assertEquals(2, result.directories.size)
+        assertEquals("/path1", result.directories[0].internalPath)
+        assertEquals("/ext1", result.directories[0].externalPath)
+        assertEquals(2, result.platforms.size)
+        assertTrue(result.platforms.contains(Platform.PC_MICROSOFT_WINDOWS))
+        assertEquals(listOf(1L, 2L), result.games)
+        assertNotNull(result.stats)
+        assertEquals(2, result.stats.gamesCount)
+        assertEquals(15, result.stats.downloadedGamesCount)
+        assertEquals(2, result.unmatchedPaths.size)
+    }
+
+    @Test
+    fun `toAdminDto should handle library with no directories`() {
+        val library = createTestLibrary(
+            id = 1L,
+            directories = mutableListOf()
+        )
+
+        val result = library.toAdminDto()
+
+        assertTrue(result.directories.isEmpty())
+    }
+
+    @Test
+    fun `toAdminDto should handle library with no platforms`() {
+        val library = createTestLibrary(
+            id = 1L,
+            platforms = mutableListOf()
+        )
+
+        val result = library.toAdminDto()
+
+        assertTrue(result.platforms.isEmpty())
+    }
+
+    @Test
+    fun `toAdminDto should handle library with no games`() {
+        val library = createTestLibrary(
+            id = 1L,
+            games = mutableListOf()
+        )
+
+        val result = library.toAdminDto()
+
+        assertTrue(result.games!!.isEmpty())
+        assertNotNull(result.stats)
+        assertEquals(0, result.stats.gamesCount)
+        assertEquals(0, result.stats.downloadedGamesCount)
+    }
+
+    @Test
+    fun `toAdminDto should exclude games with null ids`() {
+        val game1 = createTestGame(1L)
+        val game2 = createTestGame(null)
+        val game3 = createTestGame(3L)
+        val library = createTestLibrary(
+            id = 1L,
+            games = mutableListOf(game1, game2, game3)
+        )
+
+        val result = library.toAdminDto()
+
+        assertEquals(2, result.games!!.size)
+        assertEquals(listOf(1L, 3L), result.games)
+    }
+
+    @Test
+    fun `toAdminDto should calculate stats correctly`() {
+        val game1 = createTestGame(1L)
+        val game2 = createTestGame(2L)
+        val game3 = createTestGame(3L)
+        val library = createTestLibrary(
+            id = 1L,
+            games = mutableListOf(game1, game2, game3)
+        )
+        game1.metadata.downloadCount = 3
+        game2.metadata.downloadCount = 7
+        game3.metadata.downloadCount = 2
+
+        val result = library.toAdminDto()
+
+        assertNotNull(result.stats)
+        assertEquals(3, result.stats.gamesCount)
+        assertEquals(12, result.stats.downloadedGamesCount)
+    }
+
+    @Test
+    fun `toAdminDto should handle empty unmatchedPaths`() {
+        val library = createTestLibrary(
+            id = 1L,
+            unmatchedPaths = mutableListOf()
+        )
+
+        val result = library.toAdminDto()
+
+        assertTrue(result.unmatchedPaths.isEmpty())
+    }
+
+    @Test
+    fun `toAdminDto should include all unmatchedPaths`() {
+        val library = createTestLibrary(
+            id = 1L,
+            unmatchedPaths = mutableListOf("/path1", "/path2", "/path3")
+        )
+
+        val result = library.toAdminDto()
+
+        assertEquals(3, result.unmatchedPaths.size)
+        assertTrue(result.unmatchedPaths.contains("/path1"))
+        assertTrue(result.unmatchedPaths.contains("/path2"))
+        assertTrue(result.unmatchedPaths.contains("/path3"))
+    }
+
+    @Test
+    fun `toAdminDto should map directory with null externalPath`() {
+        val dir = createDirectoryMapping("/internal", null)
+        val library = createTestLibrary(
+            id = 1L,
+            directories = mutableListOf(dir)
+        )
+
+        val result = library.toAdminDto()
+
+        assertEquals(1, result.directories.size)
+        assertEquals("/internal", result.directories[0].internalPath)
+        assertEquals(null, result.directories[0].externalPath)
+    }
+
+    private fun createTestLibrary(
+        id: Long,
+        name: String = "Test Library",
+        directories: MutableList<DirectoryMapping> = mutableListOf(),
+        platforms: MutableList<Platform> = mutableListOf(),
+        games: MutableList<Game> = mutableListOf(),
+        unmatchedPaths: MutableList<String> = mutableListOf()
+    ): Library {
+        return mockk<Library>(relaxed = true) {
+            every { this@mockk.id } returns id
+            every { this@mockk.name } returns name
+            every { this@mockk.directories } returns directories
+            every { this@mockk.platforms } returns platforms
+            every { this@mockk.games } returns games
+            every { this@mockk.unmatchedPaths } returns unmatchedPaths
+        }
+    }
+
+    private fun createDirectoryMapping(
+        internalPath: String,
+        externalPath: String?
+    ): DirectoryMapping {
+        return mockk<DirectoryMapping>(relaxed = true) {
+            every { this@mockk.internalPath } returns internalPath
+            every { this@mockk.externalPath } returns externalPath
+        }
+    }
+
+    private fun createTestGame(id: Long?): Game {
+        val metadata = GameMetadata(path = "/path/game")
+        return mockk<Game>(relaxed = true) {
+            every { this@mockk.id } returns id
+            every { this@mockk.metadata } returns metadata
+        }
+    }
+}
+
