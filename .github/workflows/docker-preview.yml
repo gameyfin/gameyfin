@@ -11,6 +11,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      checks: write
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
     steps:

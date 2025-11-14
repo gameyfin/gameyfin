@@ -62,6 +62,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
+      checks: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
