@@ -1,4 +1,4 @@
-package org.gameyfin.app.shared.token
+package org.gameyfin.app.core.token
 
 import org.hibernate.engine.spi.SharedSessionContractImplementor
 import org.hibernate.usertype.UserType

@@ -1,9 +1,9 @@
 package org.gameyfin.app.core.events
 
+import org.gameyfin.app.core.token.Token
+import org.gameyfin.app.core.token.TokenType
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.libraries.entities.Library
-import org.gameyfin.app.shared.token.Token
-import org.gameyfin.app.shared.token.TokenType
 import org.gameyfin.app.users.entities.User
 import org.springframework.context.ApplicationEvent
 

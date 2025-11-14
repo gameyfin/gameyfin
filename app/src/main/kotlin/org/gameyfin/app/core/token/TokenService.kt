@@ -1,4 +1,4 @@
-package org.gameyfin.app.shared.token
+package org.gameyfin.app.core.token
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.users.entities.User

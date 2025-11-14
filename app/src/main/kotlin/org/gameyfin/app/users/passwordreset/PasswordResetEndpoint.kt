@@ -2,11 +2,11 @@ package org.gameyfin.app.users.passwordreset
 
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
-import org.gameyfin.app.shared.token.TokenDto
-import org.gameyfin.app.users.UserService
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
-import org.gameyfin.app.shared.token.TokenValidationResult
+import org.gameyfin.app.core.token.TokenDto
+import org.gameyfin.app.core.token.TokenValidationResult
+import org.gameyfin.app.users.UserService
 
 @Endpoint
 @AnonymousAllowed

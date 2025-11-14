@@ -1,8 +1,8 @@
-package org.gameyfin.app.shared.token
+package org.gameyfin.app.core.token
 
-import org.gameyfin.app.core.security.EncryptionMapConverter
 import jakarta.persistence.*
 import org.gameyfin.app.core.security.EncryptionConverter
+import org.gameyfin.app.core.security.EncryptionMapConverter
 import org.gameyfin.app.users.entities.User
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.OnDelete

@@ -1,15 +1,15 @@
 package org.gameyfin.app.users.emailconfirmation
 
-import org.gameyfin.app.core.events.EmailNeedsConfirmationEvent
-import org.gameyfin.app.shared.token.TokenRepository
-import org.gameyfin.app.users.persistence.UserRepository
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.Utils
-import org.gameyfin.app.shared.token.TokenService
-import org.gameyfin.app.shared.token.TokenType
-import org.gameyfin.app.shared.token.TokenValidationResult
+import org.gameyfin.app.core.events.EmailNeedsConfirmationEvent
+import org.gameyfin.app.core.token.TokenRepository
+import org.gameyfin.app.core.token.TokenService
+import org.gameyfin.app.core.token.TokenType
+import org.gameyfin.app.core.token.TokenValidationResult
 import org.gameyfin.app.users.entities.User
+import org.gameyfin.app.users.persistence.UserRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 

@@ -1,4 +1,4 @@
-package org.gameyfin.app.shared.token
+package org.gameyfin.app.core.token
 
 enum class TokenValidationResult() {
     VALID, INVALID, EXPIRED

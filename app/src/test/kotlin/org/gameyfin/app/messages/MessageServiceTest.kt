@@ -5,12 +5,12 @@ import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.gameyfin.app.core.events.*
+import org.gameyfin.app.core.token.Token
+import org.gameyfin.app.core.token.TokenType
 import org.gameyfin.app.messages.providers.AbstractMessageProvider
 import org.gameyfin.app.messages.templates.MessageTemplateService
 import org.gameyfin.app.messages.templates.MessageTemplates
 import org.gameyfin.app.messages.templates.TemplateType
-import org.gameyfin.app.shared.token.Token
-import org.gameyfin.app.shared.token.TokenType
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.entities.User
 import org.junit.jupiter.api.AfterEach

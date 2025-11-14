@@ -1,4 +1,4 @@
-package org.gameyfin.app.shared.token
+package org.gameyfin.app.core.token
 
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes

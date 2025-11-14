@@ -1,4 +1,4 @@
-package org.gameyfin.app.shared.token
+package org.gameyfin.app.core.token
 
 import org.gameyfin.app.users.entities.User
 import org.springframework.data.jpa.repository.JpaRepository
