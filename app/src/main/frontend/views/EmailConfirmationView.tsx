@@ -2,7 +2,7 @@ import {Card, CardBody, CardHeader} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router";
 import React, {useEffect, useState} from "react";
 import {CheckCircleIcon, WarningCircleIcon, WarningIcon} from "@phosphor-icons/react";
-import TokenValidationResult from "Frontend/generated/org/gameyfin/app/shared/token/TokenValidationResult";
+import TokenValidationResult from "Frontend/generated/org/gameyfin/app/core/token/TokenValidationResult";
 import {EmailConfirmationEndpoint} from "Frontend/generated/endpoints";
 import {useAuth} from "Frontend/util/auth";
 

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Snippet} from "@heroui/react";
-import TokenDto from "Frontend/generated/org/gameyfin/app/shared/token/TokenDto";
+import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import {timeUntil} from "Frontend/util/utils";
 
 interface PasswordResetTokenModalProps {
