@@ -13,3 +13,18 @@ fun Duration.asHumanReadable(): String {
         }.trim()
     }
 }
+
+fun getContainerOS(): String {
+    try {
+        val process = Runtime.getRuntime().exec(arrayOf("cat", "/etc/os-release"))
+        val output = process.inputStream.bufferedReader().readText()
+        val lines = output.lines()
+        for (line in lines) {
+            if (line.startsWith("ID=")) {
+                return line.substringAfter("=")
+            }
+        }
+    } catch (_: Exception) {
+    }
+    return "unknown"
+}
