@@ -1,13 +1,12 @@
 package org.gameyfin.app.messages.providers
 
-import org.gameyfin.app.config.ConfigService
-import org.gameyfin.app.messages.templates.TemplateType
 import jakarta.mail.Message
-import jakarta.mail.MessagingException
 import jakarta.mail.Session
 import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeMessage
 import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.messages.templates.TemplateType
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -45,7 +44,7 @@ class EmailMessageProvider(
             )
             transport.close()
             return true
-        } catch (_: MessagingException) {
+        } catch (_: Exception) {
             return false
         }
     }
@@ -67,13 +66,17 @@ class EmailMessageProvider(
         mimeMessage.setContent(message, "text/html; charset=utf-8")
 
         val transport = session.getTransport("smtp")
-        transport.connect(
-            credentials["host"] as String,
-            credentials["port"] as Int,
-            credentials["username"] as String,
-            credentials["password"] as String
-        )
-        transport.sendMessage(mimeMessage, mimeMessage.allRecipients)
-        transport.close()
+
+        try {
+            transport.connect(
+                credentials["host"] as String,
+                credentials["port"] as Int,
+                credentials["username"] as String,
+                credentials["password"] as String
+            )
+            transport.sendMessage(mimeMessage, mimeMessage.allRecipients)
+        } finally {
+            transport.close()
+        }
     }
 }
