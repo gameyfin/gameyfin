@@ -25,6 +25,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.pf4j.PluginWrapper
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContext
@@ -592,11 +593,11 @@ class GameServiceTest {
         val path = Path.of("/test/game.exe")
         val replaceGameId = 5L
         val existingGame = createTestGame(replaceGameId)
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
 
         val provider = spyk(TestProvider(metadata))
 
@@ -681,11 +682,12 @@ class GameServiceTest {
         game.metadata.fields["title"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
         game.metadata.fields["platforms"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
 
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game",
+            release = game.release,
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
         val provider = spyk(TestProvider(metadata))
 
         every { gameRepository.findByIdOrNull(1L) } returns game
@@ -711,11 +713,11 @@ class GameServiceTest {
         game.title = "Old Title"
         game.metadata.fields["title"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
 
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "New Title"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "New Title",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
         val provider = spyk(TestProvider(metadata))
 
         every { gameRepository.findByIdOrNull(1L) } returns game
@@ -744,11 +746,12 @@ class GameServiceTest {
         game.metadata.fields["title"] = GameFieldMetadata(source = GameFieldUserSource(user = mockUser))
         game.metadata.fields["platforms"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
 
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "New Title"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "New Title",
+            release = game.release,
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
         val provider = spyk(TestProvider(metadata))
 
         every { gameRepository.findByIdOrNull(1L) } returns game
@@ -780,13 +783,13 @@ class GameServiceTest {
         game.metadata.fields["summary"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
         game.metadata.fields["genres"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
 
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "New Title"
-            every { description } returns "New Summary"
-            every { genres } returns setOf(Genre.ACTION, Genre.ADVENTURE)
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "New Title",
+            description = "New Summary",
+            genres = setOf(Genre.ACTION, Genre.ADVENTURE),
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
         val provider = spyk(TestProvider(metadata))
 
         every { gameRepository.findByIdOrNull(1L) } returns game
@@ -806,27 +809,27 @@ class GameServiceTest {
 
     @Test
     fun `getPotentialMatches should query all plugins and merge results`() {
-        val metadata1 = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { release } returns null
-            every { coverUrls } returns setOf(java.net.URI("https://example.com/cover1.jpg"))
-            every { headerUrls } returns null
-            every { publishedBy } returns setOf("Publisher1")
-            every { developedBy } returns setOf("Developer1")
-        }
+        val metadata1 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = null,
+            coverUrls = setOf(java.net.URI("https://example.com/cover1.jpg")),
+            headerUrls = null,
+            publishedBy = setOf("Publisher1"),
+            developedBy = setOf("Developer1")
+        )
 
-        val metadata2 = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "456"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { release } returns null
-            every { coverUrls } returns setOf(java.net.URI("https://example.com/cover2.jpg"))
-            every { headerUrls } returns setOf(java.net.URI("https://example.com/header2.jpg"))
-            every { publishedBy } returns null
-            every { developedBy } returns null
-        }
+        val metadata2 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "456",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = null,
+            coverUrls = setOf(java.net.URI("https://example.com/cover2.jpg")),
+            headerUrls = setOf(java.net.URI("https://example.com/header2.jpg")),
+            publishedBy = null,
+            developedBy = null
+        )
 
         val provider1 = spyk(TestProvider(metadata1))
         val provider2 = spyk(TestProvider(metadata2))
@@ -857,19 +860,19 @@ class GameServiceTest {
 
     @Test
     fun `getPotentialMatches should filter by platform`() {
-        val metadata1 = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "PC Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { release } returns null
-        }
+        val metadata1 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "PC Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = null
+        )
 
-        val metadata2 = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "456"
-            every { title } returns "Console Game"
-            every { platforms } returns setOf(Platform.PLAYSTATION_5)
-            every { release } returns null
-        }
+        val metadata2 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "456",
+            title = "Console Game",
+            platforms = setOf(Platform.PLAYSTATION_5),
+            release = null
+        )
 
         val provider = mockk<GameMetadataProvider>(relaxed = true) {
             every { fetchByTitle("Test", setOf(Platform.PC_MICROSOFT_WINDOWS), 10) } returns listOf(
@@ -894,12 +897,12 @@ class GameServiceTest {
 
     @Test
     fun `getPotentialMatches should handle plugin exceptions gracefully`() {
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { release } returns null
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = null
+        )
 
         val workingProvider = spyk(TestProvider(metadata))
         val failingProvider = mockk<GameMetadataProvider>(relaxed = true) {
@@ -916,7 +919,7 @@ class GameServiceTest {
             every { priority } returns 1
         }
 
-        val pluginWrapper = mockk<org.pf4j.PluginWrapper>(relaxed = true) {
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true) {
             every { pluginId } returns "failing-plugin"
         }
 
@@ -939,26 +942,26 @@ class GameServiceTest {
         val oldRelease = Instant.parse("2010-01-01T00:00:00Z")
         val newRelease = Instant.parse("2023-01-01T00:00:00Z")
 
-        val metadata1 = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "1"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { release } returns oldRelease
-        }
+        val metadata1 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "1",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = oldRelease
+        )
 
-        val metadata2 = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "2"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { release } returns newRelease
-        }
+        val metadata2 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "2",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = newRelease
+        )
 
-        val metadata3 = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "3"
-            every { title } returns "Completely Different Title"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { release } returns newRelease
-        }
+        val metadata3 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "3",
+            title = "Completely Different Title",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = newRelease
+        )
 
         val provider = mockk<GameMetadataProvider>(relaxed = true) {
             every { fetchByTitle("Test Game", emptySet(), 10) } returns listOf(metadata1, metadata2, metadata3)
@@ -988,11 +991,11 @@ class GameServiceTest {
 
     @Test
     fun `matchFromFile should extract title using regex when configured`() {
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
 
         val provider = spyk(TestProvider(metadata))
         val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
@@ -1000,8 +1003,13 @@ class GameServiceTest {
             every { priority } returns 1
         }
 
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+        }
+
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { pluginManager.whichPlugin(ofType<Class<out GameMetadataProvider>>()) } returns pluginWrapper
         every { config.get(ConfigProperties.Libraries.Scan.ExtractTitleUsingRegex) } returns true
         every { config.get(ConfigProperties.Libraries.Scan.TitleExtractionRegex) } returns "^[^\\(\\[]*"
         every { config.get(ConfigProperties.Libraries.Scan.TitleMatchMinRatio) } returns 85
@@ -1039,17 +1047,17 @@ class GameServiceTest {
 
     @Test
     fun `matchFromFile should filter by library platforms`() {
-        val pcMetadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game PC"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val pcMetadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game PC",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
 
-        val consoleMetadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "456"
-            every { title } returns "Test Game Console"
-            every { platforms } returns setOf(Platform.PLAYSTATION_5)
-        }
+        val consoleMetadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "456",
+            title = "Test Game Console",
+            platforms = setOf(Platform.PLAYSTATION_5)
+        )
 
         val provider = mockk<GameMetadataProvider>(relaxed = true) {
             every { supportedPlatforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
@@ -1064,6 +1072,10 @@ class GameServiceTest {
             every { priority } returns 1
         }
 
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+        }
+
         val pcLibrary = mockk<Library>(relaxed = true) {
             every { id } returns 1L
             every { platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
@@ -1071,6 +1083,7 @@ class GameServiceTest {
 
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { pluginManager.whichPlugin(ofType<Class<out GameMetadataProvider>>()) } returns pluginWrapper
         every { config.get(ConfigProperties.Libraries.Scan.ExtractTitleUsingRegex) } returns false
         every { config.get(ConfigProperties.Libraries.Scan.TitleMatchMinRatio) } returns 85
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
@@ -1085,11 +1098,11 @@ class GameServiceTest {
 
     @Test
     fun `matchFromFile should handle invalid regex gracefully`() {
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
 
         val provider = spyk(TestProvider(metadata))
         val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
@@ -1097,8 +1110,13 @@ class GameServiceTest {
             every { priority } returns 1
         }
 
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+        }
+
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { pluginManager.whichPlugin(ofType<Class<out GameMetadataProvider>>()) } returns pluginWrapper
         every { config.get(ConfigProperties.Libraries.Scan.ExtractTitleUsingRegex) } returns true
         every { config.get(ConfigProperties.Libraries.Scan.TitleExtractionRegex) } returns "["  // Invalid regex
         every { config.get(ConfigProperties.Libraries.Scan.TitleMatchMinRatio) } returns 85
@@ -1130,11 +1148,11 @@ class GameServiceTest {
             "org.gameyfin.app.games.TestProvider" to ExternalProviderIdDto("test-plugin", "123")
         )
         val path = Path.of("/test/game.exe")
-        val metadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "Test Game"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-        }
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Test Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
+        )
 
         val provider = spyk(TestProvider(metadata))
         val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
@@ -1160,23 +1178,23 @@ class GameServiceTest {
 
     @Test
     fun `matchManually should merge results from multiple plugins with priority`() {
-        val highPriorityMetadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "123"
-            every { title } returns "High Priority Title"
-            every { description } returns "High Priority Description"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS)
-            every { coverUrls } returns setOf(java.net.URI("https://high-priority.com/cover.jpg"))
-            every { genres } returns setOf(Genre.ACTION)
-        }
+        val highPriorityMetadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "High Priority Title",
+            description = "High Priority Description",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            coverUrls = setOf(java.net.URI("https://high-priority.com/cover.jpg")),
+            genres = setOf(Genre.ACTION)
+        )
 
-        val lowPriorityMetadata = mockk<org.gameyfin.pluginapi.gamemetadata.GameMetadata>(relaxed = true) {
-            every { originalId } returns "456"
-            every { title } returns "Low Priority Title"
-            every { description } returns "Low Priority Description"
-            every { platforms } returns setOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
-            every { coverUrls } returns setOf(java.net.URI("https://low-priority.com/cover.jpg"))
-            every { genres } returns setOf(Genre.ADVENTURE)
-        }
+        val lowPriorityMetadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "456",
+            title = "Low Priority Title",
+            description = "Low Priority Description",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5),
+            coverUrls = setOf(java.net.URI("https://low-priority.com/cover.jpg")),
+            genres = setOf(Genre.ADVENTURE)
+        )
 
         val highPriorityProvider = spyk(TestProvider(highPriorityMetadata))
         val lowPriorityProvider = spyk(TestProvider(lowPriorityMetadata))
@@ -1223,13 +1241,13 @@ class GameServiceTest {
             library = library,
             title = title,
             platforms = listOf(Platform.PC_MICROSOFT_WINDOWS),
-            coverImage = null,
-            headerImage = null,
-            comment = null,
-            summary = null,
-            release = null,
-            userRating = null,
-            criticRating = null,
+            coverImage = mockk<Image>(),
+            headerImage = mockk<Image>(),
+            comment = "Comment",
+            summary = "Summary",
+            release = Instant.parse("2000-01-01T00:00:00Z"),
+            userRating = 0,
+            criticRating = 0,
             publishers = mutableListOf(),
             developers = mutableListOf(),
             genres = emptyList(),
