@@ -22,12 +22,11 @@ class LibraryGameProcessor(
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun processNewGame(path: Path, library: Library): Game {
+    fun processNewGame(path: Path, library: Library): Game? {
         var game: Game? = null
         try {
             // Match metadata and build a Game entity (not persisted yet)
-            game = gameService.matchFromFile(path, library)
-                ?: throw IllegalStateException("Could not identify game at path '$path'")
+            game = gameService.matchFromFile(path, library) ?: return null
 
             // Download all referenced images (idempotent and deduplicated in ImageService)
             downloadImagesForGame(game)

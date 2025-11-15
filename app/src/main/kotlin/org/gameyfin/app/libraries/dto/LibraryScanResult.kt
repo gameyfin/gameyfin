@@ -12,7 +12,7 @@ interface LibraryScanResult {
     val removed: Int
 
     /**
-     * Number of unmatched games that were not found in the library.
+     * Number of ignored games that were not found in the library.
      */
     val unmatched: Int
 }

@@ -7,6 +7,8 @@ import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.libraries.dto.LibraryAdminDto
 import org.gameyfin.app.libraries.dto.LibraryUserDto
 import org.gameyfin.app.libraries.entities.DirectoryMapping
+import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.AfterEach
@@ -134,13 +136,16 @@ class LibraryExtensionsTest {
         val game1 = createTestGame(1L)
         val game2 = createTestGame(2L)
 
+        val ignoredPath1 = IgnoredPath(id = 0L, path = "/unmatched1", source = IgnoredPathPluginSource(mutableListOf()))
+        val ignoredPath2 = IgnoredPath(id = 1L, path = "/unmatched2", source = IgnoredPathPluginSource(mutableListOf()))
+
         val library = createTestLibrary(
             id = 1L,
             name = "Admin Library",
             directories = mutableListOf(dir1, dir2),
             platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5),
             games = mutableListOf(game1, game2),
-            unmatchedPaths = mutableListOf("/unmatched1", "/unmatched2")
+            ignoredPaths = mutableListOf(ignoredPath1, ignoredPath2)
         )
         game1.metadata.downloadCount = 5
         game2.metadata.downloadCount = 10
@@ -158,7 +163,7 @@ class LibraryExtensionsTest {
         assertNotNull(result.stats)
         assertEquals(2, result.stats.gamesCount)
         assertEquals(15, result.stats.downloadedGamesCount)
-        assertEquals(2, result.unmatchedPaths.size)
+        assertEquals(2, result.ignoredPaths?.size ?: 0)
     }
 
     @Test
@@ -240,27 +245,31 @@ class LibraryExtensionsTest {
     fun `toAdminDto should handle empty unmatchedPaths`() {
         val library = createTestLibrary(
             id = 1L,
-            unmatchedPaths = mutableListOf()
+            ignoredPaths = mutableListOf()
         )
 
         val result = library.toAdminDto()
 
-        assertTrue(result.unmatchedPaths.isEmpty())
+        assertTrue(result.ignoredPaths?.isEmpty() ?: false)
     }
 
     @Test
     fun `toAdminDto should include all unmatchedPaths`() {
         val library = createTestLibrary(
             id = 1L,
-            unmatchedPaths = mutableListOf("/path1", "/path2", "/path3")
+            ignoredPaths = mutableListOf(
+                createTestIgnoredPath("/path1"),
+                createTestIgnoredPath("/path2"),
+                createTestIgnoredPath("/path3")
+            )
         )
 
         val result = library.toAdminDto()
 
-        assertEquals(3, result.unmatchedPaths.size)
-        assertTrue(result.unmatchedPaths.contains("/path1"))
-        assertTrue(result.unmatchedPaths.contains("/path2"))
-        assertTrue(result.unmatchedPaths.contains("/path3"))
+        assertEquals(3, result.ignoredPaths?.size ?: 0)
+        assertTrue(result.ignoredPaths?.map { it.path }?.contains("/path1") ?: false)
+        assertTrue(result.ignoredPaths.map { it.path }.contains("/path2"))
+        assertTrue(result.ignoredPaths.map { it.path }.contains("/path3"))
     }
 
     @Test
@@ -284,7 +293,7 @@ class LibraryExtensionsTest {
         directories: MutableList<DirectoryMapping> = mutableListOf(),
         platforms: MutableList<Platform> = mutableListOf(),
         games: MutableList<Game> = mutableListOf(),
-        unmatchedPaths: MutableList<String> = mutableListOf()
+        ignoredPaths: MutableList<IgnoredPath> = mutableListOf()
     ): Library {
         return mockk<Library>(relaxed = true) {
             every { this@mockk.id } returns id
@@ -292,7 +301,7 @@ class LibraryExtensionsTest {
             every { this@mockk.directories } returns directories
             every { this@mockk.platforms } returns platforms
             every { this@mockk.games } returns games
-            every { this@mockk.unmatchedPaths } returns unmatchedPaths
+            every { this@mockk.ignoredPaths } returns ignoredPaths
         }
     }
 
@@ -304,6 +313,11 @@ class LibraryExtensionsTest {
             every { this@mockk.internalPath } returns internalPath
             every { this@mockk.externalPath } returns externalPath
         }
+    }
+
+    private fun createTestIgnoredPath(path: String): IgnoredPath {
+        val pluginSource = IgnoredPathPluginSource(mutableListOf())
+        return IgnoredPath(id = 0L, path = path, source = pluginSource)
     }
 
     private fun createTestGame(id: Long?): Game {

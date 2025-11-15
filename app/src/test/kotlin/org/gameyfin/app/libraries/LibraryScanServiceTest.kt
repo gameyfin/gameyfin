@@ -3,9 +3,11 @@ package org.gameyfin.app.libraries
 import io.mockk.*
 import org.gameyfin.app.core.filesystem.FilesystemScanResult
 import org.gameyfin.app.core.filesystem.FilesystemService
+import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
+import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.LibraryGameProcessor
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
+import java.time.Instant
 import kotlin.io.path.Path
 
 class LibraryScanServiceTest {
@@ -23,6 +26,8 @@ class LibraryScanServiceTest {
     private lateinit var libraryGameProcessor: LibraryGameProcessor
     private lateinit var gameRepository: GameRepository
     private lateinit var libraryScanService: LibraryScanService
+    private lateinit var ignoredPathRepository: IgnoredPathRepository
+    private lateinit var pluginService: PluginService
 
     @BeforeEach
     fun setup() {
@@ -31,13 +36,17 @@ class LibraryScanServiceTest {
         libraryCoreService = mockk()
         libraryGameProcessor = mockk()
         gameRepository = mockk()
+        ignoredPathRepository = mockk()
+        pluginService = mockk()
 
         libraryScanService = LibraryScanService(
             libraryRepository,
             filesystemService,
             libraryCoreService,
             libraryGameProcessor,
-            gameRepository
+            gameRepository,
+            ignoredPathRepository,
+            pluginService
         )
     }
 
@@ -244,15 +253,15 @@ class LibraryScanServiceTest {
     private fun createTestLibrary(
         id: Long,
         games: MutableList<Game> = mutableListOf(),
-        unmatchedPaths: MutableList<String> = mutableListOf()
+        ignoredPaths: MutableList<IgnoredPath> = mutableListOf()
     ): Library {
-        var updatedAtTime = java.time.Instant.now()
+        var updatedAtTime = Instant.now()
         return mockk<Library>(relaxed = true) {
             every { this@mockk.id } returns id
             every { this@mockk.games } returns games
-            every { this@mockk.unmatchedPaths } returns unmatchedPaths
+            every { this@mockk.ignoredPaths } returns ignoredPaths
             every { this@mockk.updatedAt } answers { updatedAtTime }
-            every { this@mockk.updatedAt = any() } propertyType java.time.Instant::class answers {
+            every { this@mockk.updatedAt = any() } propertyType Instant::class answers {
                 updatedAtTime = value
             }
         }
@@ -270,7 +279,7 @@ class LibraryScanServiceTest {
         every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
             newPaths = emptyList(),
             removedGamePaths = emptyList(),
-            removedUnmatchedPaths = emptyList()
+            removedIgnoredPaths = emptyList()
         )
         every { libraryRepository.save(library) } returns library
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
@@ -283,7 +292,7 @@ class LibraryScanServiceTest {
             FilesystemScanResult(
                 newPaths = emptyList(),
                 removedGamePaths = emptyList(),
-                removedUnmatchedPaths = emptyList()
+                removedIgnoredPaths = emptyList()
             )
         }
         every { libraryRepository.save(library) } returns library
@@ -295,7 +304,7 @@ class LibraryScanServiceTest {
         every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
             newPaths = emptyList(),
             removedGamePaths = emptyList(),
-            removedUnmatchedPaths = emptyList()
+            removedIgnoredPaths = emptyList()
         )
         every { libraryGameProcessor.processExistingGame(any()) } returns null
         every { libraryRepository.save(library) } returns library
@@ -307,7 +316,7 @@ class LibraryScanServiceTest {
         every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
             newPaths = newPaths,
             removedGamePaths = emptyList(),
-            removedUnmatchedPaths = emptyList()
+            removedIgnoredPaths = emptyList()
         )
         every { libraryGameProcessor.processNewGame(any(), library) } returns newGame
         every { gameRepository.findAllById(listOf(newGame.id!!)) } returns listOf(newGame)
@@ -319,7 +328,7 @@ class LibraryScanServiceTest {
         every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
             newPaths = unmatchedPaths,
             removedGamePaths = emptyList(),
-            removedUnmatchedPaths = emptyList()
+            removedIgnoredPaths = emptyList()
         )
         every { libraryGameProcessor.processNewGame(any(), library) } throws IllegalStateException("Could not match")
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
@@ -331,7 +340,7 @@ class LibraryScanServiceTest {
         every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
             newPaths = emptyList(),
             removedGamePaths = emptyList(),
-            removedUnmatchedPaths = emptyList()
+            removedIgnoredPaths = emptyList()
         )
         every { libraryGameProcessor.processExistingGame(existingGame) } returns existingGame
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
@@ -343,7 +352,7 @@ class LibraryScanServiceTest {
         every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
             newPaths = emptyList(),
             removedGamePaths = removedPaths,
-            removedUnmatchedPaths = emptyList()
+            removedIgnoredPaths = emptyList()
         )
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
         every { libraryCoreService.addGamesToLibrary(emptyList(), library, false) } returns library

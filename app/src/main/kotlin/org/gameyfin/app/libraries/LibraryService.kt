@@ -2,11 +2,14 @@ package org.gameyfin.app.libraries
 
 import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.entities.DirectoryMapping
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.extensions.toDtos
+import org.gameyfin.app.libraries.extensions.toEntity
+import org.gameyfin.app.users.UserService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -19,6 +22,8 @@ import kotlin.time.toJavaDuration
 class LibraryService(
     private val libraryRepository: LibraryRepository,
     private val libraryScanService: LibraryScanService,
+    private val userService: UserService,
+    private val ignoredPathRepository: IgnoredPathRepository,
 ) {
 
     companion object {
@@ -161,10 +166,22 @@ class LibraryService(
             library.platforms.addAll(it)
         }
 
-        libraryUpdateDto.unmatchedPaths?.let {
-            library.unmatchedPaths.clear()
-            library.unmatchedPaths.addAll(it)
-        }
+        libraryUpdateDto.ignoredPaths
+            ?.filter { it.sourceType == IgnoredPathSourceTypeDto.USER } // Only USER source type is supported for updates
+            ?.let { dtos ->
+                // Get current user for USER source type paths
+                val currentUser = getCurrentAuth()?.let { auth -> userService.getByUsername(auth.name) }
+
+                library.ignoredPaths.clear()
+
+                // Check for existing paths and reuse them if they exist
+                val pathsToAdd = dtos.map { dto ->
+                    val existingPath = ignoredPathRepository.findByPath(dto.path)
+                    existingPath ?: dto.toEntity(currentUser)
+                }
+
+                library.ignoredPaths.addAll(pathsToAdd)
+            }
 
         library.updatedAt = Instant.now()
         libraryRepository.save(library)

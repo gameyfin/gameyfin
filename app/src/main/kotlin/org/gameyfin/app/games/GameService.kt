@@ -705,7 +705,7 @@ class GameService(
             .toMap()
 
         if (metadataResults.isEmpty()) {
-            log.error { "Could not identify game at path '$path'" }
+            log.info { "Could not identify game at path '$path'" }
             return null
         }
 

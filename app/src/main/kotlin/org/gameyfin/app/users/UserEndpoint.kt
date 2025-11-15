@@ -36,6 +36,11 @@ class UserEndpoint(
     }
 
     @RolesAllowed(Role.Names.ADMIN)
+    fun getUserById(id: Long): ExtendedUserInfoDto? {
+        return userService.getUserById(id)
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
     fun getAllUsers(): List<ExtendedUserInfoDto> {
         return userService.getAllUsers()
     }

@@ -24,7 +24,7 @@ class GameRequestEndpointTest {
     fun setup() {
         gameRequestService = mockk()
         config = mockk()
-        gameRequestEndpoint = GameRequestEndpoint(gameRequestService, config)
+        gameRequestEndpoint = GameRequestEndpoint(gameRequestService)
     }
 
     @AfterEach

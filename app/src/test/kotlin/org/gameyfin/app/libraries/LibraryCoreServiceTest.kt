@@ -1,13 +1,18 @@
 package org.gameyfin.app.libraries
 
 import io.mockk.*
+import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
+import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.users.UserService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -17,12 +22,25 @@ class LibraryCoreServiceTest {
     private lateinit var libraryRepository: LibraryRepository
     private lateinit var gameService: GameService
     private lateinit var libraryCoreService: LibraryCoreService
+    private lateinit var ignoredPathRepository: IgnoredPathRepository
+    private lateinit var userService: UserService
+    private lateinit var pluginService: PluginService
 
     @BeforeEach
     fun setup() {
         libraryRepository = mockk()
         gameService = mockk()
-        libraryCoreService = LibraryCoreService(libraryRepository, gameService)
+        ignoredPathRepository = mockk()
+        userService = mockk()
+        pluginService = mockk()
+
+        libraryCoreService = LibraryCoreService(
+            libraryRepository,
+            gameService,
+            ignoredPathRepository,
+            userService,
+            pluginService
+        )
     }
 
     @AfterEach
@@ -54,23 +72,29 @@ class LibraryCoreServiceTest {
         val game2 = createTestGame(2L, "/path/game2")
 
         val library = createTestLibrary(
-            unmatchedPaths = mutableListOf("/path/game1", "/path/game2", "/path/other")
+            ignoredPaths = mutableListOf(
+                createTestIgnoredPath("/path/game1"),
+                createTestIgnoredPath("/path/game2"),
+                createTestIgnoredPath("/path/other")
+            )
         )
 
         every { libraryRepository.save(library) } returns library
 
         val result = libraryCoreService.addGamesToLibrary(listOf(game1, game2), library, persist = false)
 
-        assertEquals(1, result.unmatchedPaths.size)
-        assertTrue(result.unmatchedPaths.contains("/path/other"))
-        assertFalse(result.unmatchedPaths.contains("/path/game1"))
-        assertFalse(result.unmatchedPaths.contains("/path/game2"))
+        assertEquals(1, result.ignoredPaths.size)
+        assertTrue(result.ignoredPaths.map { it.path }.contains("/path/other"))
+        assertFalse(result.ignoredPaths.map { it.path }.contains("/path/game1"))
+        assertFalse(result.ignoredPaths.map { it.path }.contains("/path/game2"))
     }
 
     @Test
     fun `addGamesToLibrary should save library when unmatchedPaths were removed`() {
         val game = createTestGame(1L, "/path/game1")
-        val library = createTestLibrary(unmatchedPaths = mutableListOf("/path/game1"))
+        val library = createTestLibrary(
+            ignoredPaths = mutableListOf(createTestIgnoredPath("/path/game1"))
+        )
 
         every { libraryRepository.save(library) } returns library
 
@@ -134,6 +158,8 @@ class LibraryCoreServiceTest {
 
         every { gameService.getById(gameId) } returns game
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath("/path/game1") } returns null
+        every { pluginService.getPluginManagementEntries(any()) } returns emptyList()
 
         libraryCoreService.deleteGameFromLibrary(gameId)
 
@@ -142,7 +168,7 @@ class LibraryCoreServiceTest {
     }
 
     @Test
-    fun `deleteGameFromLibrary should add path to unmatchedPaths`() {
+    fun `deleteGameFromLibrary should add path to ignoredPaths`() {
         val gameId = 1L
         val gamePath = "/path/game1"
         val library = createTestLibrary(games = mutableListOf())
@@ -151,10 +177,12 @@ class LibraryCoreServiceTest {
 
         every { gameService.getById(gameId) } returns game
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath("/path/game1") } returns null
+        every { pluginService.getPluginManagementEntries(any()) } returns emptyList()
 
         libraryCoreService.deleteGameFromLibrary(gameId)
 
-        assertTrue(library.unmatchedPaths.contains(gamePath))
+        assertTrue(library.ignoredPaths.map { it.path }.contains(gamePath))
         verify(exactly = 1) { libraryRepository.save(library) }
     }
 
@@ -168,6 +196,8 @@ class LibraryCoreServiceTest {
 
         every { gameService.getById(1L) } returns game1
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath("/path/game1") } returns null
+        every { pluginService.getPluginManagementEntries(any()) } returns emptyList()
 
         libraryCoreService.deleteGameFromLibrary(1L)
 
@@ -184,21 +214,25 @@ class LibraryCoreServiceTest {
         }
     }
 
+    private fun createTestIgnoredPath(path: String): IgnoredPath {
+        val pluginSource = IgnoredPathPluginSource(mutableListOf())
+        return IgnoredPath(path = path, source = pluginSource)
+    }
+
     private fun createTestLibrary(
         id: Long = 1L,
         games: MutableList<Game> = mutableListOf(),
-        unmatchedPaths: MutableList<String> = mutableListOf()
+        ignoredPaths: MutableList<IgnoredPath> = mutableListOf()
     ): Library {
-        var updatedAtTime = java.time.Instant.now()
+        var updatedAtTime = Instant.now()
         return mockk<Library>(relaxed = true) {
             every { this@mockk.id } returns id
             every { this@mockk.games } returns games
-            every { this@mockk.unmatchedPaths } returns unmatchedPaths
+            every { this@mockk.ignoredPaths } returns ignoredPaths
             every { this@mockk.updatedAt } answers { updatedAtTime }
-            every { this@mockk.updatedAt = any() } propertyType java.time.Instant::class answers {
+            every { this@mockk.updatedAt = any() } propertyType Instant::class answers {
                 updatedAtTime = value
             }
         }
     }
 }
-

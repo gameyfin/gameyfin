@@ -208,7 +208,7 @@ class LibraryEndpointTest {
             name = "Updated",
             directories = listOf(DirectoryMappingDto("/path", "/ext")),
             platforms = listOf(Platform.PC_MICROSOFT_WINDOWS),
-            unmatchedPaths = listOf("/unmatched")
+            ignoredPaths = listOf(IgnoredPathDto(0L, "/unmatched", IgnoredPathSourceTypeDto.PLUGIN, "SomePlugin"))
         )
         every { libraryService.update(updateDto) } just Runs
 
@@ -250,7 +250,7 @@ class LibraryEndpointTest {
             platforms = emptyList(),
             games = emptyList(),
             stats = LibraryStatsDto(0, 0),
-            unmatchedPaths = emptyList()
+            ignoredPaths = emptyList()
         )
     }
 }
