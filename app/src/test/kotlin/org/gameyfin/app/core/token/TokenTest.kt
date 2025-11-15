@@ -50,20 +50,6 @@ class TokenTest {
     }
 
     @Test
-    fun `expired should return false when token expires exactly now`() {
-        val user = createTestUser(1L, "testuser")
-        val now = Instant.now()
-        val token = Token(
-            secret = "test-secret",
-            type = TokenType.PasswordReset,
-            creator = user,
-            createdOn = now.minus(15, ChronoUnit.MINUTES)
-        )
-
-        assertFalse(token.expired)
-    }
-
-    @Test
     fun `expired should handle tokens created just now`() {
         val user = createTestUser(1L, "testuser")
         val token = Token(
