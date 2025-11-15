@@ -7,5 +7,5 @@ data class LibraryUpdateDto(
     val name: String? = null,
     val directories: List<DirectoryMappingDto>? = null,
     val platforms: List<Platform>? = null,
-    val unmatchedPaths: List<String>? = null
+    val ignoredPaths: List<IgnoredPathDto>? = null
 )

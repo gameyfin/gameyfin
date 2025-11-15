@@ -2,12 +2,12 @@ import {useLocation, useNavigate, useParams} from "react-router";
 import React, {useEffect} from "react";
 import LibraryHeader from "Frontend/components/general/covers/LibraryHeader";
 import {Button, Tab, Tabs} from "@heroui/react";
-import { ArrowLeftIcon } from "@phosphor-icons/react";
+import {ArrowLeftIcon} from "@phosphor-icons/react";
 import LibraryManagementDetails from "Frontend/components/general/library/LibraryManagementDetails";
 import LibraryManagementGames from "Frontend/components/general/library/LibraryManagementGames";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
-import LibraryManagementUnmatchedPaths from "Frontend/components/general/library/LibraryManagementUnmatchedPaths";
+import LibraryManagementIgnoredPaths from "Frontend/components/general/library/LibraryManagementIgnoredPaths";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 
@@ -40,8 +40,8 @@ export default function LibraryManagementView() {
             <Tab key="#games" title="Games">
                 <LibraryManagementGames library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
             </Tab>
-            <Tab key="#unmatched-paths" title="Unmatched paths">
-                <LibraryManagementUnmatchedPaths library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
+            <Tab key="#ignored-paths" title="Ignored paths">
+                <LibraryManagementIgnoredPaths library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
             </Tab>
         </Tabs>
     </div>;

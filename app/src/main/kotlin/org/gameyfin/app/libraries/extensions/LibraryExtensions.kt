@@ -40,6 +40,6 @@ fun Library.toAdminDto(): LibraryAdminDto {
             gamesCount = this.games.size,
             downloadedGamesCount = this.games.sumOf { it.metadata.downloadCount }
         ),
-        unmatchedPaths = this.unmatchedPaths
+        ignoredPaths = this.ignoredPaths.toDtos()
     )
 }

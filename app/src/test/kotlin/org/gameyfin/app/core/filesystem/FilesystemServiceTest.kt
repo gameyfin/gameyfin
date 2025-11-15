@@ -7,6 +7,8 @@ import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.libraries.entities.DirectoryMapping
+import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.Library
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -201,7 +203,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -209,7 +211,7 @@ class FilesystemServiceTest {
         assertTrue(result.newPaths.any { it.name == "game1.exe" })
         assertTrue(result.newPaths.any { it.name == "game2.zip" })
         assertTrue(result.removedGamePaths.isEmpty())
-        assertTrue(result.removedUnmatchedPaths.isEmpty())
+        assertTrue(result.removedIgnoredPaths.isEmpty())
     }
 
     @Test
@@ -230,7 +232,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -258,7 +260,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -284,7 +286,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -313,7 +315,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -344,7 +346,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -380,14 +382,14 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf(mockGame1, mockGame2)
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
         assertEquals(0, result.newPaths.size)
         assertEquals(1, result.removedGamePaths.size)
         assertEquals(Path(removedGamePath), result.removedGamePaths[0])
-        assertEquals(0, result.removedUnmatchedPaths.size)
+        assertEquals(0, result.removedIgnoredPaths.size)
     }
 
     @Test
@@ -400,7 +402,9 @@ class FilesystemServiceTest {
         val existingFile = libraryDir.resolve("existing.exe")
         existingFile.createFile()
 
-        val removedUnmatchedPath = libraryDir.resolve("removed.exe").toString()
+        val removedIgnoredPathStr = libraryDir.resolve("removed.exe").toString()
+        val removedIgnoredPath =
+            IgnoredPath(path = removedIgnoredPathStr, source = IgnoredPathPluginSource(mutableListOf()))
 
         val mockLibraryDirectory = mockk<DirectoryMapping>()
         every { mockLibraryDirectory.internalPath } returns libraryDir.toString()
@@ -412,14 +416,14 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf(mockGame)
-        every { mockLibrary.unmatchedPaths } returns mutableListOf(removedUnmatchedPath)
+        every { mockLibrary.ignoredPaths } returns mutableListOf(removedIgnoredPath)
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
         assertEquals(0, result.newPaths.size)
         assertEquals(0, result.removedGamePaths.size)
-        assertEquals(1, result.removedUnmatchedPaths.size)
-        assertEquals(Path(removedUnmatchedPath), result.removedUnmatchedPaths[0])
+        assertEquals(1, result.removedIgnoredPaths.size)
+        assertEquals(removedIgnoredPathStr, result.removedIgnoredPaths[0].path)
     }
 
     @Test
@@ -444,13 +448,13 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf(mockGame)
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
         assertEquals(0, result.newPaths.size)
         assertEquals(0, result.removedGamePaths.size)
-        assertEquals(0, result.removedUnmatchedPaths.size)
+        assertEquals(0, result.removedIgnoredPaths.size)
     }
 
     @Test
@@ -466,17 +470,20 @@ class FilesystemServiceTest {
         val mockLibraryDirectory = mockk<DirectoryMapping>()
         every { mockLibraryDirectory.internalPath } returns libraryDir.toString()
 
+        val existingIgnoredPath =
+            IgnoredPath(path = existingFile.toString(), source = IgnoredPathPluginSource(mutableListOf()))
+
         val mockLibrary = mockk<Library>()
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf(existingFile.toString())
+        every { mockLibrary.ignoredPaths } returns mutableListOf(existingIgnoredPath)
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
         assertEquals(0, result.newPaths.size)
         assertEquals(0, result.removedGamePaths.size)
-        assertEquals(0, result.removedUnmatchedPaths.size)
+        assertEquals(0, result.removedIgnoredPaths.size)
     }
 
     @Test
@@ -501,7 +508,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockValidDirectory, mockInvalidDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -534,7 +541,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory1, mockLibraryDirectory2)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         val result = filesystemService.scanLibraryForGamefiles(mockLibrary)
 
@@ -558,7 +565,7 @@ class FilesystemServiceTest {
         every { mockLibrary.name } returns "Test Library"
         every { mockLibrary.directories } returns mutableListOf(mockLibraryDirectory)
         every { mockLibrary.games } returns mutableListOf()
-        every { mockLibrary.unmatchedPaths } returns mutableListOf()
+        every { mockLibrary.ignoredPaths } returns mutableListOf()
 
         libraryDir.toFile().setReadable(false)
 

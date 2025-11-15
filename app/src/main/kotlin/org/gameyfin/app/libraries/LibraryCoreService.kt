@@ -1,8 +1,15 @@
 package org.gameyfin.app.libraries
 
+import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
+import org.gameyfin.app.libraries.entities.IgnoredPathUserSource
 import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.users.UserService
+import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -13,6 +20,9 @@ import java.time.Instant
 class LibraryCoreService(
     private val libraryRepository: LibraryRepository,
     private val gameService: GameService,
+    private val ignoredPathRepository: IgnoredPathRepository,
+    private val userService: UserService,
+    private val pluginService: PluginService
 ) {
     /**
      * Adds a collection of games to the library.
@@ -25,15 +35,16 @@ class LibraryCoreService(
         val newGames = games.filter { game -> library.games.none { it.id == game.id } }
         library.games.addAll(newGames)
 
-        var removedAnyUnmatchedPaths = false
+        var removedAnyIgnoredPaths = false
         for (game in newGames) {
-            if (library.unmatchedPaths.contains(game.metadata.path)) {
-                library.unmatchedPaths.remove(game.metadata.path)
-                removedAnyUnmatchedPaths = true
+            val ignoredPath = library.ignoredPaths.find { it.path == game.metadata.path }
+            if (ignoredPath != null) {
+                library.ignoredPaths.remove(ignoredPath)
+                removedAnyIgnoredPaths = true
             }
         }
 
-        if (removedAnyUnmatchedPaths || persist) {
+        if (removedAnyIgnoredPaths || persist) {
             library.updatedAt = Instant.now()
             return libraryRepository.save(library)
         }
@@ -46,7 +57,33 @@ class LibraryCoreService(
         val library = game.library
 
         library.games.removeIf { it.id == gameId }
-        library.unmatchedPaths.add(game.metadata.path)
+
+        // Check if an IgnoredPath with this path already exists
+        val existingIgnoredPath = ignoredPathRepository.findByPath(game.metadata.path)
+
+        if (existingIgnoredPath == null) {
+            // Create an IgnoredPath with correct source
+            val auth = getCurrentAuth()
+            val source = if (auth != null) {
+                val currentUser = userService.getByUsernameNonNull(auth.name)
+                IgnoredPathUserSource(currentUser)
+            } else {
+                IgnoredPathPluginSource(
+                    pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
+                )
+            }
+
+            val ignoredPath = IgnoredPath(
+                path = game.metadata.path,
+                source = source
+            )
+            library.ignoredPaths.add(ignoredPath)
+        } else {
+            // Path already exists, just ensure it's in the library's collection if not already
+            if (!library.ignoredPaths.any { it.id == existingIgnoredPath.id }) {
+                library.ignoredPaths.add(existingIgnoredPath)
+            }
+        }
 
         library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
         libraryRepository.save(library)

@@ -2,6 +2,7 @@ package org.gameyfin.app.libraries
 
 import com.vaadin.hilla.exception.EndpointException
 import io.mockk.*
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.libraries.dto.DirectoryMappingDto
@@ -9,15 +10,21 @@ import org.gameyfin.app.libraries.dto.LibraryAdminDto
 import org.gameyfin.app.libraries.dto.LibraryStatsDto
 import org.gameyfin.app.libraries.dto.LibraryUpdateDto
 import org.gameyfin.app.libraries.entities.DirectoryMapping
+import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathUserSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
+import org.gameyfin.app.libraries.extensions.toDto
 import org.gameyfin.app.libraries.extensions.toDtos
+import org.gameyfin.app.users.UserService
+import org.gameyfin.app.users.entities.User
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.security.core.Authentication
 import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -27,13 +34,17 @@ class LibraryServiceTest {
 
     private lateinit var libraryRepository: LibraryRepository
     private lateinit var libraryScanService: LibraryScanService
+    private lateinit var userService: UserService
     private lateinit var libraryService: LibraryService
+    private lateinit var ignoredPathRepository: IgnoredPathRepository
 
     @BeforeEach
     fun setup() {
         libraryRepository = mockk()
         libraryScanService = mockk()
-        libraryService = LibraryService(libraryRepository, libraryScanService)
+        userService = mockk()
+        ignoredPathRepository = mockk()
+        libraryService = LibraryService(libraryRepository, libraryScanService, userService, ignoredPathRepository)
 
         mockkStatic("org.gameyfin.app.libraries.extensions.LibraryExtensionsKt")
     }
@@ -269,21 +280,43 @@ class LibraryServiceTest {
     }
 
     @Test
-    fun `update should update unmatchedPaths when provided`() {
-        val library = createTestLibrary(1L, unmatchedPaths = mutableListOf("/old/unmatched"))
-        val updateDto = LibraryUpdateDto(
-            id = 1L,
-            unmatchedPaths = listOf("/new/unmatched1", "/new/unmatched2")
+    fun `update should update ignoredPaths when provided`() {
+        val library = createTestLibrary(
+            1L,
+            ignoredPaths = mutableListOf(createTestIgnoredPath("/old/unmatched"))
         )
 
+        val updateDto = LibraryUpdateDto(
+            id = 1L,
+            ignoredPaths = listOf(
+                createTestIgnoredPath("/new/unmatched1").toDto(),
+                createTestIgnoredPath("/new/unmatched2").toDto()
+            )
+        )
+
+        val user = mockk<User>() {
+            every { id } returns 42L
+            every { username } returns "testuser"
+        }
+
+        val auth = mockk<Authentication> {
+            every { isAuthenticated } returns true
+            every { principal } returns "testuser"
+            every { name } returns "testuser"
+        }
+
+        mockkStatic("org.gameyfin.app.core.security.SecurityUtilsKt")
+        every { getCurrentAuth() } returns auth
+        every { userService.getByUsername("testuser") } returns user
         every { libraryRepository.findByIdOrNull(1L) } returns library
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath(any<String>()) } returns null
 
         libraryService.update(updateDto)
 
-        assertEquals(2, library.unmatchedPaths.size)
-        assertTrue(library.unmatchedPaths.contains("/new/unmatched1"))
-        assertTrue(library.unmatchedPaths.contains("/new/unmatched2"))
+        assertEquals(2, library.ignoredPaths.size)
+        assertTrue(library.ignoredPaths.map { it.path }.contains("/new/unmatched1"))
+        assertTrue(library.ignoredPaths.map { it.path }.contains("/new/unmatched2"))
     }
 
     @Test
@@ -382,7 +415,7 @@ class LibraryServiceTest {
         directories: MutableList<DirectoryMapping> = mutableListOf(),
         platforms: MutableList<Platform> = mutableListOf(),
         games: MutableList<Game> = mutableListOf(),
-        unmatchedPaths: MutableList<String> = mutableListOf()
+        ignoredPaths: MutableList<IgnoredPath> = mutableListOf()
     ): Library {
         var libraryName = name
         var updatedAtTime = Instant.now()
@@ -395,7 +428,7 @@ class LibraryServiceTest {
             every { this@mockk.directories } returns directories
             every { this@mockk.platforms } returns platforms
             every { this@mockk.games } returns games
-            every { this@mockk.unmatchedPaths } returns unmatchedPaths
+            every { this@mockk.ignoredPaths } returns ignoredPaths
             every { this@mockk.updatedAt } answers { updatedAtTime }
             every { this@mockk.updatedAt = any() } propertyType Instant::class answers {
                 updatedAtTime = value
@@ -415,6 +448,14 @@ class LibraryServiceTest {
                 extPath = value
             }
         }
+    }
+
+    private fun createTestIgnoredPath(path: String): IgnoredPath {
+        val user = mockk<User> {
+            every { id } returns 42L
+        }
+        val pluginSource = IgnoredPathUserSource(user)
+        return IgnoredPath(id = 0L, path = path, source = pluginSource)
     }
 
     private fun createTestGame(id: Long, path: String): Game {
@@ -438,7 +479,7 @@ class LibraryServiceTest {
             platforms = platforms,
             games = emptyList(),
             stats = LibraryStatsDto(0, 0),
-            unmatchedPaths = emptyList()
+            ignoredPaths = emptyList()
         )
     }
 }

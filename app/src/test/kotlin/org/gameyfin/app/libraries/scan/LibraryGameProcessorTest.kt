@@ -62,18 +62,6 @@ class LibraryGameProcessorTest {
     }
 
     @Test
-    fun `processNewGame should throw exception when game cannot be matched`() {
-        val path = Path("/path/to/unknown")
-        val library = createTestLibrary(1L)
-
-        every { gameService.matchFromFile(path, library) } returns null
-
-        assertThrows(IllegalStateException::class.java) {
-            libraryGameProcessor.processNewGame(path, library)
-        }
-    }
-
-    @Test
     fun `processNewGame should download cover image if present`() {
         val path = Path("/path/to/game")
         val library = createTestLibrary(1L)

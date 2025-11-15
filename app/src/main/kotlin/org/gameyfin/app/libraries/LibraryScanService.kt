@@ -2,15 +2,20 @@ package org.gameyfin.app.libraries
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.filesystem.FilesystemService
+import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.dto.*
+import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
+import org.gameyfin.app.libraries.entities.IgnoredPathSourceType
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.LibraryGameProcessor
 import org.gameyfin.app.libraries.scan.MatchNewGamesResult
 import org.gameyfin.app.libraries.scan.UpdateExistingGamesResult
 import org.gameyfin.app.libraries.scan.UpdateLibraryResult
+import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -31,6 +36,8 @@ class LibraryScanService(
     private val libraryCoreService: LibraryCoreService,
     private val libraryGameProcessor: LibraryGameProcessor,
     private val gameRepository: GameRepository,
+    private val ignoredPathRepository: IgnoredPathRepository,
+    private val pluginService: PluginService
 ) {
 
     companion object {
@@ -98,22 +105,28 @@ class LibraryScanService(
             val scanResult = filesystemService.scanLibraryForGamefiles(library)
             val newPaths = scanResult.newPaths
             val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
-            val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
+            val removedIgnoredPaths = scanResult.removedIgnoredPaths
+
+            // Get plugin-generated (system) ignored paths to re-scan
+            val pluginIgnoredPathsToRescan = library.ignoredPaths
+                .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+                .map { Path.of(it.path) }
 
             progress.currentStep = LibraryScanStep(
                 description = "Processing new games",
                 current = 0,
-                total = newPaths.size
+                total = newPaths.size + pluginIgnoredPathsToRescan.size
             )
             emit(progress)
 
-            // 1. Process each new game independently
-            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, newPaths, progress)
+            // 1. Process each new game independently (including re-scanned plugin ignored paths)
+            val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, allPathsToProcess, progress)
 
-            // 2. Update library (removed games/unmatched, and add persisted new ones)
+            // 2. Update library (removed games/ignored paths, and add persisted new ones)
             val (removedGames) = updateLibrary(
                 library,
-                removedUnmatchedPaths,
+                removedIgnoredPaths,
                 newUnmatchedPaths,
                 removedGamePaths
             )
@@ -160,7 +173,12 @@ class LibraryScanService(
             val scanResult = filesystemService.scanLibraryForGamefiles(library)
             val newPaths = scanResult.newPaths
             val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
-            val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
+            val removedIgnoredPaths = scanResult.removedIgnoredPaths
+
+            // Get plugin-generated (system) ignored paths to re-scan
+            val pluginIgnoredPathsToRescan = library.ignoredPaths
+                .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+                .map { Path.of(it.path) }
 
 
             // 1. Update existing games (individually)
@@ -173,19 +191,20 @@ class LibraryScanService(
 
             val (updatedGames) = updateExistingGames(library.games, progress)
 
-            // 2. Process new games (individually)
+            // 2. Process new games (individually, including re-scanned plugin ignored paths)
+            val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
             progress.currentStep = LibraryScanStep(
                 description = "Processing new games",
                 current = 0,
-                total = newPaths.size
+                total = allPathsToProcess.size
             )
             emit(progress)
 
-            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, newPaths, progress)
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, allPathsToProcess, progress)
 
             val (removedGames) = updateLibrary(
                 library,
-                removedUnmatchedPaths,
+                removedIgnoredPaths,
                 newUnmatchedPaths,
                 removedGamePaths
             )
@@ -227,18 +246,40 @@ class LibraryScanService(
         progress: LibraryScanProgress
     ): MatchNewGamesResult {
         val completed = AtomicInteger(0)
-        val newUnmatchedPaths = ConcurrentHashMap.newKeySet<String>()
+        val newUnmatchedPaths = ConcurrentHashMap.newKeySet<IgnoredPath>()
 
         val tasks = gamePaths.map { path ->
             Callable<Game?> {
                 try {
                     val persisted = libraryGameProcessor.processNewGame(path, library)
+
+                    if (persisted == null) {
+                        // Not identified, mark as unmatched by all current metadata providers
+                        val pluginSource = IgnoredPathPluginSource(
+                            pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
+                        )
+                        val ignoredPath = IgnoredPath(
+                            path = path.toString(),
+                            source = pluginSource
+                        )
+                        newUnmatchedPaths.add(ignoredPath)
+                    }
+
                     return@Callable persisted
                 } catch (e: Exception) {
-                    // If not identified or any error, mark as unmatched
-                    newUnmatchedPaths.add(path.toString())
+                    // Error, mark as unmatched by all current metadata providers
+                    val pluginSource = IgnoredPathPluginSource(
+                        pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
+                    )
+                    val ignoredPath = IgnoredPath(
+                        path = path.toString(),
+                        source = pluginSource
+                    )
+                    newUnmatchedPaths.add(ignoredPath)
+
                     log.warn { "Processing of new game at '$path' failed: ${e.message}" }
                     log.debug(e) {}
+
                     return@Callable null
                 } finally {
                     progress.currentStep.current = completed.incrementAndGet()
@@ -257,13 +298,28 @@ class LibraryScanService(
 
     private fun updateLibrary(
         library: Library,
-        removedUnmatchedPaths: List<String>,
-        newUnmatchedPaths: List<String>,
+        removedIgnoredPaths: List<IgnoredPath>,
+        newIgnoredPaths: List<IgnoredPath>,
         removedGamePaths: List<String>
     ): UpdateLibraryResult {
-        // 1.2 Add unmatched paths to the library
-        library.unmatchedPaths.removeAll(removedUnmatchedPaths)
-        library.unmatchedPaths.addAll(newUnmatchedPaths)
+        // 1.2 Remove old ignored paths from the library
+        library.ignoredPaths.removeAll(removedIgnoredPaths)
+
+        // Add new unmatched paths to the library, but check if they already exist
+        val pathsToAdd = mutableListOf<IgnoredPath>()
+        for (newPath in newIgnoredPaths) {
+            val existingPath = ignoredPathRepository.findByPath(newPath.path)
+            if (existingPath != null) {
+                // Use the existing path if not already in library's collection
+                if (!library.ignoredPaths.any { it.id == existingPath.id }) {
+                    pathsToAdd.add(existingPath)
+                }
+            } else {
+                // Add new path
+                pathsToAdd.add(newPath)
+            }
+        }
+        library.ignoredPaths.addAll(pathsToAdd)
 
         // 1.3 Remove deleted games from the library
         val removedGames = library.games.filter { removedGamePaths.contains(it.metadata.path) }

@@ -34,6 +34,6 @@ class Library(
     @OneToMany(mappedBy = "library", fetch = FetchType.EAGER, orphanRemoval = true)
     var games: MutableList<Game> = ArrayList(),
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    var unmatchedPaths: MutableList<String> = ArrayList(),
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
+    var ignoredPaths: MutableList<IgnoredPath> = ArrayList()
 )

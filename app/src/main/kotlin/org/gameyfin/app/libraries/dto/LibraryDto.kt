@@ -24,5 +24,5 @@ data class LibraryAdminDto(
     val platforms: List<Platform>,
     override val games: List<Long>?,
     val stats: LibraryStatsDto?,
-    val unmatchedPaths: List<String> = emptyList()
+    val ignoredPaths: List<IgnoredPathDto>?
 ) : LibraryDto

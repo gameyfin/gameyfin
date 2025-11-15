@@ -18,6 +18,7 @@ import {useEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
 import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
+import {initializeUserState} from "Frontend/state/UserState";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
@@ -55,6 +56,7 @@ function ViewWithAuth() {
         if (isAdmin(auth)) {
             initializeScanState();
             initializeDownloadSessionState();
+            initializeUserState();
         }
     }, [auth]);
 
