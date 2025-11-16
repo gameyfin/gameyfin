@@ -3,13 +3,15 @@ package org.gameyfin.pluginapi.gamemetadata
 /**
  * Enum representing the perspectives of a game.
  */
-enum class PlayerPerspective {
-    UNKNOWN,
-    FIRST_PERSON,
-    THIRD_PERSON,
-    BIRD_VIEW_ISOMETRIC,
-    SIDE_VIEW,
-    TEXT,
-    AUDITORY,
-    VIRTUAL_REALITY
+enum class PlayerPerspective(
+    val displayName: String
+) {
+    UNKNOWN("Unknown"),
+    FIRST_PERSON("First-Person"),
+    THIRD_PERSON("Third-Person"),
+    BIRD_VIEW_ISOMETRIC("Bird View/Isometric"),
+    SIDE_VIEW("Side View"),
+    TEXT("Text"),
+    AUDITORY("Auditory"),
+    VIRTUAL_REALITY("Virtual Reality")
 }

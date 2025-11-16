@@ -15,7 +15,7 @@ import {Fzf} from "fzf";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
-import {compoundRating, toTitleCase} from "Frontend/util/utils";
+import {compoundRating} from "Frontend/util/utils";
 
 export default function SearchView() {
     const games = useSnapshot(gameState).sortedAlphabetically as GameDto[];
@@ -392,7 +392,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedGenres}
             >
                 {Array.from(knownGenres).map((genre) => (
-                    <SelectItem key={genre}>{toTitleCase(genre)}</SelectItem>
+                    <SelectItem key={genre}>{genre}</SelectItem>
                 ))}
             </Select>
             <Select
@@ -405,7 +405,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedThemes}
             >
                 {Array.from(knownThemes).map((theme) => (
-                    <SelectItem key={theme}>{toTitleCase(theme)}</SelectItem>
+                    <SelectItem key={theme}>{theme}</SelectItem>
                 ))}
             </Select>
             <Select
@@ -418,7 +418,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedFeatures}
             >
                 {Array.from(knownFeatures).map((feature) => (
-                    <SelectItem key={feature}>{toTitleCase(feature)}</SelectItem>
+                    <SelectItem key={feature}>{feature}</SelectItem>
                 ))}
             </Select>
             <Select
@@ -431,7 +431,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedPerspectives}
             >
                 {Array.from(knownPerspectives).map((perspective) => (
-                    <SelectItem key={perspective}>{toTitleCase(perspective)}</SelectItem>
+                    <SelectItem key={perspective}>{perspective}</SelectItem>
                 ))}
             </Select>
             <Select

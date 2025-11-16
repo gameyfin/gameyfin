@@ -294,4 +294,15 @@ class GameEndpointTest {
 
         verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library, null) }
     }
+
+    @Test
+    fun `getEnumPropertyValues should call service and return values`() {
+        val enumValuesDto = mockk<GameEnumPropertyValuesDto>()
+        every { gameService.getEnumPropertyValues() } returns enumValuesDto
+
+        val result = gameEndpoint.getEnumPropertyValues()
+
+        assertEquals(enumValuesDto, result)
+        verify(exactly = 1) { gameService.getEnumPropertyValues() }
+    }
 }

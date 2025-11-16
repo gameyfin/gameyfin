@@ -1,13 +1,13 @@
 package org.gameyfin.pluginapi.gamemetadata
 
-import io.github.oshai.kotlinlogging.KotlinLogging
-
 /**
  * Enum representing the platforms of a game.
  * Source: https://api.igdb.com/v4/platforms
  */
 @Suppress("Unused", "EnumEntryName")
-enum class Platform(val displayName: String) {
+enum class Platform(
+    val displayName: String
+) {
     // 0-9 (prefixed with underscore because TypeScript enum entries cannot start with a number)
     _1292_ADVANCED_PROGRAMMABLE_VIDEO_SYSTEM("1292 Advanced Programmable Video System"),
     _3DO_INTERACTIVE_MULTIPLAYER("3DO Interactive Multiplayer"),
@@ -274,20 +274,4 @@ enum class Platform(val displayName: String) {
     // Z
     ZEEBO("Zeebo"),
     ZX_SPECTRUM("ZX Spectrum");
-
-    companion object {
-        val log = KotlinLogging.logger { }
-
-        fun fromDisplayName(name: String): Platform? {
-            entries.find { it.displayName == name }?.let { return it }
-            log.warn { "Could not map platform with display name '$name' to enum value." }
-            return null
-        }
-
-        fun fromDisplayNames(names: Collection<String>): List<Platform> {
-            return names.mapNotNull { fromDisplayName(it) }
-        }
-    }
-
-    override fun toString(): String = displayName
 }
