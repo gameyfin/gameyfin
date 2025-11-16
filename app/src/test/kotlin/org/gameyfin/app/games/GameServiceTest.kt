@@ -444,44 +444,6 @@ class GameServiceTest {
     }
 
     @Test
-    fun `edit should filter out invalid genre names`() {
-        val gameId = 1L
-        val existingGame = createTestGame(gameId)
-        val userDetails = mockk<UserDetails> {
-            every { username } returns "testuser"
-        }
-
-        every { authentication.principal } returns userDetails
-        every { gameRepository.findByIdOrNull(gameId) } returns existingGame
-        every { userService.getByUsernameNonNull("testuser") } returns mockUser
-        every { gameRepository.save(existingGame) } returns existingGame
-
-        val updateDto = GameUpdateDto(
-            id = gameId,
-            title = null,
-            platforms = null,
-            release = null,
-            coverUrl = null,
-            headerUrl = null,
-            comment = null,
-            summary = null,
-            developers = null,
-            publishers = null,
-            genres = listOf("ACTION", "INVALID_GENRE", "ROLE_PLAYING"),
-            themes = null,
-            keywords = null,
-            features = null,
-            perspectives = null,
-            metadata = null
-        )
-
-        gameService.edit(updateDto)
-
-        assertEquals(listOf(Genre.ACTION, Genre.ROLE_PLAYING), existingGame.genres)
-        verify(exactly = 1) { gameRepository.save(existingGame) }
-    }
-
-    @Test
     fun `edit should update matchConfirmed metadata field when provided`() {
         val gameId = 1L
         val existingGame = createTestGame(gameId)

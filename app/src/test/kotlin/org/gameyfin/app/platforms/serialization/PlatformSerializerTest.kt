@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import io.mockk.mockk
 import io.mockk.unmockkAll
 import io.mockk.verify
+import org.gameyfin.app.core.serialization.DisplayableSerializer
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -12,13 +13,13 @@ import org.junit.jupiter.api.Test
 
 class PlatformSerializerTest {
 
-    private lateinit var serializer: PlatformSerializer
+    private lateinit var serializer: DisplayableSerializer
     private lateinit var jsonGenerator: JsonGenerator
     private lateinit var serializerProvider: SerializerProvider
 
     @BeforeEach
     fun setup() {
-        serializer = PlatformSerializer()
+        serializer = DisplayableSerializer()
         jsonGenerator = mockk(relaxed = true)
         serializerProvider = mockk()
     }

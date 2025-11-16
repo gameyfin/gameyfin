@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationContext
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import org.gameyfin.app.core.serialization.PlatformDeserializer
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach

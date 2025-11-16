@@ -58,19 +58,19 @@ class Game(
     @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
     var developers: MutableList<Company> = mutableListOf(),
 
-    @ElementCollection(targetClass = Genre::class)
+    @ElementCollection(targetClass = Genre::class, fetch = FetchType.EAGER)
     var genres: List<Genre> = emptyList(),
 
-    @ElementCollection(targetClass = Theme::class)
+    @ElementCollection(targetClass = Theme::class, fetch = FetchType.EAGER)
     var themes: List<Theme> = emptyList(),
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     var keywords: List<String> = emptyList(),
 
-    @ElementCollection(targetClass = GameFeature::class)
+    @ElementCollection(targetClass = GameFeature::class, fetch = FetchType.EAGER)
     var features: List<GameFeature> = emptyList(),
 
-    @ElementCollection(targetClass = PlayerPerspective::class)
+    @ElementCollection(targetClass = PlayerPerspective::class, fetch = FetchType.EAGER)
     var perspectives: List<PlayerPerspective> = emptyList(),
 
     @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)

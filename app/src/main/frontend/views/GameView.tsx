@@ -5,7 +5,7 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Accordion, AccordionItem, addToast, Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
-import {humanFileSize, isAdmin, starRatingAsString, toTitleCase} from "Frontend/util/utils";
+import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
@@ -248,7 +248,7 @@ export default function GameView() {
                                                 <Link key={genre} href={`/search?genre=${encodeURIComponent(genre)}`}>
                                                     <Chip radius="sm" size="sm"
                                                           className="text-sm">
-                                                        {toTitleCase(genre)}
+                                                        {genre}
                                                     </Chip>
                                                 </Link>
                                             )
@@ -266,7 +266,7 @@ export default function GameView() {
                                                 <Link key={theme} href={`/search?theme=${encodeURIComponent(theme)}`}>
                                                     <Chip radius="sm" size="sm"
                                                           className="text-sm">
-                                                        {toTitleCase(theme)}
+                                                        {theme}
                                                     </Chip>
                                                 </Link>
                                             )
@@ -285,7 +285,7 @@ export default function GameView() {
                                                       href={`/search?feature=${encodeURIComponent(feature)}`}>
                                                     <Chip radius="sm" size="sm"
                                                           className="text-sm">
-                                                        {toTitleCase(feature)}
+                                                        {feature}
                                                     </Chip>
                                                 </Link>
                                             )

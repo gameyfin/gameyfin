@@ -207,25 +207,11 @@ class GameService(
             existingGame.metadata.fields["publishers"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.genres?.let {
-            existingGame.genres = it.mapNotNull { name ->
-                try {
-                    Genre.valueOf(name)
-                } catch (_: IllegalArgumentException) {
-                    log.error { "Invalid value for genre '$name', must be one of ${Genre.entries}" }
-                    null
-                }
-            }
+            existingGame.genres = it.toMutableList()
             existingGame.metadata.fields["genres"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.themes?.let {
-            existingGame.themes = it.mapNotNull { name ->
-                try {
-                    Theme.valueOf(name)
-                } catch (_: IllegalArgumentException) {
-                    log.error { "Invalid value for theme '$name', must be one of ${Theme.entries}" }
-                    null
-                }
-            }
+            existingGame.themes = it.toMutableList()
             existingGame.metadata.fields["themes"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.keywords?.let {
@@ -233,25 +219,11 @@ class GameService(
             existingGame.metadata.fields["keywords"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.features?.let {
-            existingGame.features = it.mapNotNull { name ->
-                try {
-                    GameFeature.valueOf(name)
-                } catch (_: IllegalArgumentException) {
-                    log.error { "Invalid value for feature '$name', must be one of ${GameFeature.entries}" }
-                    null
-                }
-            }
+            existingGame.features = it.toMutableList()
             existingGame.metadata.fields["features"]?.source = GameFieldUserSource(user = user)
         }
         gameUpdateDto.perspectives?.let {
-            existingGame.perspectives = it.mapNotNull { name ->
-                try {
-                    PlayerPerspective.valueOf(name)
-                } catch (_: IllegalArgumentException) {
-                    log.error { "Invalid value for perspective '$name', must be one of ${PlayerPerspective.entries}" }
-                    null
-                }
-            }
+            existingGame.perspectives = it.toMutableList()
             existingGame.metadata.fields["perspectives"]?.source = GameFieldUserSource(user = user)
         }
 
@@ -726,6 +698,15 @@ class GameService(
     fun incrementDownloadCount(game: Game) {
         game.metadata.downloadCount++
         gameRepository.save(game)
+    }
+
+    fun getEnumPropertyValues(): GameEnumPropertyValuesDto {
+        return GameEnumPropertyValuesDto(
+            genres = Genre.entries,
+            themes = Theme.entries,
+            features = GameFeature.entries,
+            perspectives = PlayerPerspective.entries
+        )
     }
 
     /**
