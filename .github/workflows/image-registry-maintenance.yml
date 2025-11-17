@@ -1,0 +1,35 @@
+name: GHCR Image Registry Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      older_than:
+        description: 'Only remove images older than (e.g. "1 year", leave empty to remove all untagged images)'
+        required: false
+      dry_run:
+        description: 'Dry run?'
+        required: true
+        default: true
+        type: boolean
+      validate:
+        description: 'Validate all multi-architecture images in the registry after cleanup?'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  delete-untagged-images:
+    runs-on: ubuntu-latest
+    name: Delete Untagged Images from GHCR
+    permissions:
+      packages: write
+    steps:
+      - name: Delete untagged, ghost, and orphaned images
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          older-than: ${{ github.event.inputs.older_than }}
+          dry-run: ${{ github.event.inputs.dry_run }}
+          validate: ${{ github.event.inputs.validate }}
+          delete-untagged: true
+          delete-ghost-images: true
+          delete-orphaned-images: true

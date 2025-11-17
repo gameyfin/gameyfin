@@ -1,4 +1,4 @@
-Plugin-Version: 1.0.0
+Plugin-Version: 1.2.0
 Plugin-Class: org.gameyfin.plugins.metadata.steam.SteamPlugin
 Plugin-Id: org.gameyfin.plugins.metadata.steam
 Plugin-Name: Steam Metadata

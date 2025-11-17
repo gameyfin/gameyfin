@@ -1,5 +1,5 @@
 import {useField} from "formik";
-import {Input as NextUiInput} from "@heroui/react";
+import {Input as HeroUiInput} from "@heroui/react";
 
 // @ts-ignore
 const Input = ({label, showErrorUntouched = false, ...props}) => {
@@ -7,8 +7,8 @@ const Input = ({label, showErrorUntouched = false, ...props}) => {
     const [field, meta] = useField(props);
 
     return (
-        <NextUiInput
-            className="min-h-20 flex-grow"
+        <HeroUiInput
+            className="min-h-20 grow"
             fullWidth={false}
             {...props}
             {...field}

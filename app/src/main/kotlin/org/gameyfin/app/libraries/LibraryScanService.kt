@@ -2,14 +2,20 @@ package org.gameyfin.app.libraries
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.filesystem.FilesystemService
-import org.gameyfin.app.games.GameService
+import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.dto.*
+import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
+import org.gameyfin.app.libraries.entities.IgnoredPathSourceType
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
-import org.gameyfin.app.libraries.scan.*
-import org.gameyfin.app.media.ImageService
+import org.gameyfin.app.libraries.scan.LibraryGameProcessor
+import org.gameyfin.app.libraries.scan.MatchNewGamesResult
+import org.gameyfin.app.libraries.scan.UpdateExistingGamesResult
+import org.gameyfin.app.libraries.scan.UpdateLibraryResult
+import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -28,8 +34,10 @@ class LibraryScanService(
     private val libraryRepository: LibraryRepository,
     private val filesystemService: FilesystemService,
     private val libraryCoreService: LibraryCoreService,
-    private val gameService: GameService,
-    private val imageService: ImageService,
+    private val libraryGameProcessor: LibraryGameProcessor,
+    private val gameRepository: GameRepository,
+    private val ignoredPathRepository: IgnoredPathRepository,
+    private val pluginService: PluginService
 ) {
 
     companion object {
@@ -54,7 +62,7 @@ class LibraryScanService(
             scanProgressEvents.tryEmitNext(scanProgressDto)
         }
 
-        private val executor = Executors.newVirtualThreadPerTaskExecutor()
+        private val executor = Executors.newFixedThreadPool(16)
         private val scansInProgress = ConcurrentHashMap<Long, Boolean>()
     }
 
@@ -97,63 +105,47 @@ class LibraryScanService(
             val scanResult = filesystemService.scanLibraryForGamefiles(library)
             val newPaths = scanResult.newPaths
             val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
-            val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
+            val removedIgnoredPaths = scanResult.removedIgnoredPaths
+
+            // Get plugin-generated (system) ignored paths to re-scan
+            val pluginIgnoredPathsToRescan = library.ignoredPaths
+                .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+                .map { Path.of(it.path) }
 
             progress.currentStep = LibraryScanStep(
-                description = "Matching new games",
+                description = "Processing new games",
                 current = 0,
-                total = newPaths.size
+                total = newPaths.size + pluginIgnoredPathsToRescan.size
             )
             emit(progress)
 
-            // 1. Match new games
-            val (newUnmatchedPaths, matchedGames) = matchNewGames(library, newPaths, progress)
+            // 1. Process each new game independently (including re-scanned plugin ignored paths)
+            val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, allPathsToProcess, progress)
 
+            // 2. Update library (removed games/ignored paths, and add persisted new ones)
             val (removedGames) = updateLibrary(
                 library,
-                removedUnmatchedPaths,
+                removedIgnoredPaths,
                 newUnmatchedPaths,
                 removedGamePaths
             )
 
-            // 2. Download all images
-            val totalImages = matchedGames.count { it.coverImage != null } +
-                    matchedGames.count { it.headerImage !== null } +
-                    matchedGames.sumOf { it.images.size }
-
-            progress.currentStep = LibraryScanStep(
-                description = "Downloading images",
-                current = 0,
-                total = totalImages
-            )
-            emit(progress)
-
-            val (gamesWithImages) = downloadImages(matchedGames, progress)
-
-            // 3. Calculate game file sizes
-            progress.currentStep = LibraryScanStep(
-                description = "Calculating file sizes",
-                current = 0,
-                total = gamesWithImages.size
-            )
-            emit(progress)
-
-            val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
-
+            // 3. Finish scan: persist library changes and report
             progress.currentStep = LibraryScanStep(
                 description = "Finishing up",
                 current = 0,
-                total = gamesWithFileSizes.size
+                total = persistedNewGames.size
             )
             emit(progress)
 
-            val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
+            finishScanPersisted(persistedNewGames, library, progress)
 
             progress.currentStep = LibraryScanStep(description = "Finished")
             progress.finishedAt = Instant.now()
             progress.status = LibraryScanStatus.COMPLETED
             progress.result = QuickScanResult(
-                new = persistedGames.size,
+                new = persistedNewGames.size,
                 removed = removedGames.size,
                 unmatched = newUnmatchedPaths.size
             )
@@ -181,10 +173,15 @@ class LibraryScanService(
             val scanResult = filesystemService.scanLibraryForGamefiles(library)
             val newPaths = scanResult.newPaths
             val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
-            val removedUnmatchedPaths = scanResult.removedUnmatchedPaths.map { it.toString() }
+            val removedIgnoredPaths = scanResult.removedIgnoredPaths
+
+            // Get plugin-generated (system) ignored paths to re-scan
+            val pluginIgnoredPathsToRescan = library.ignoredPaths
+                .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+                .map { Path.of(it.path) }
 
 
-            // 1. Update existing games
+            // 1. Update existing games (individually)
             progress.currentStep = LibraryScanStep(
                 description = "Updating existing games",
                 current = 0,
@@ -194,65 +191,40 @@ class LibraryScanService(
 
             val (updatedGames) = updateExistingGames(library.games, progress)
 
-            // 2. Match new games
+            // 2. Process new games (individually, including re-scanned plugin ignored paths)
+            val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
             progress.currentStep = LibraryScanStep(
-                description = "Matching new games",
+                description = "Processing new games",
                 current = 0,
-                total = newPaths.size
+                total = allPathsToProcess.size
             )
             emit(progress)
 
-            val (newUnmatchedPaths, newMatchedGames) = matchNewGames(library, newPaths, progress)
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, allPathsToProcess, progress)
 
             val (removedGames) = updateLibrary(
                 library,
-                removedUnmatchedPaths,
+                removedIgnoredPaths,
                 newUnmatchedPaths,
                 removedGamePaths
             )
 
-            // 3. Download all images
-            val newAndUpdatedGames = newMatchedGames + updatedGames
-
-            val totalImages = newAndUpdatedGames.count { it.coverImage != null } +
-                    newAndUpdatedGames.count { it.headerImage !== null } +
-                    newAndUpdatedGames.sumOf { it.images.size }
-
-            progress.currentStep = LibraryScanStep(
-                description = "Downloading images",
-                current = 0,
-                total = totalImages
-            )
-            emit(progress)
-
-            val (gamesWithImages) = downloadImages(newAndUpdatedGames, progress)
-
-            // 4. Calculate game file sizes
-            progress.currentStep = LibraryScanStep(
-                description = "Calculating file sizes",
-                current = 0,
-                total = gamesWithImages.size
-            )
-            emit(progress)
-
-            val (gamesWithFileSizes) = calculateFileSizes(gamesWithImages, progress)
-
-            // 5. Finish scan
+            // 3. Finish scan
             progress.currentStep = LibraryScanStep(
                 description = "Finishing up",
                 current = 0,
-                total = gamesWithFileSizes.size
+                total = persistedNewGames.size
             )
             emit(progress)
 
-            val (persistedGames) = finishScan(gamesWithFileSizes, library, progress)
+            finishScanPersisted(persistedNewGames, library, progress)
 
-            // 6. Send final progress update
+            // 4. Send final progress update
             progress.currentStep = LibraryScanStep(description = "Finished")
             progress.finishedAt = Instant.now()
             progress.status = LibraryScanStatus.COMPLETED
             progress.result = FullScanResult(
-                new = persistedGames.size,
+                new = persistedNewGames.size,
                 removed = removedGames.size,
                 unmatched = newUnmatchedPaths.size,
                 updated = updatedGames.size
@@ -268,58 +240,86 @@ class LibraryScanService(
         }
     }
 
-    private fun matchNewGames(
+    private fun processNewGames(
         library: Library,
         gamePaths: List<Path>,
         progress: LibraryScanProgress
     ): MatchNewGamesResult {
-        val completedMetadata = AtomicInteger(0)
+        val completed = AtomicInteger(0)
+        val newUnmatchedPaths = ConcurrentHashMap.newKeySet<IgnoredPath>()
 
-        // 1. Fetch metadata for each game
-        val newUnmatchedPaths = ConcurrentHashMap.newKeySet<String>()
-
-        val metadataTasks = gamePaths.map { path ->
+        val tasks = gamePaths.map { path ->
             Callable<Game?> {
                 try {
-                    val game = gameService.matchFromFile(path, library)
+                    val persisted = libraryGameProcessor.processNewGame(path, library)
 
-                    if (game == null) {
-                        newUnmatchedPaths.add(path.toString())
-                        return@Callable null
+                    if (persisted == null) {
+                        // Not identified, mark as unmatched by all current metadata providers
+                        val pluginSource = IgnoredPathPluginSource(
+                            pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
+                        )
+                        val ignoredPath = IgnoredPath(
+                            path = path.toString(),
+                            source = pluginSource
+                        )
+                        newUnmatchedPaths.add(ignoredPath)
                     }
 
-                    return@Callable game
+                    return@Callable persisted
                 } catch (e: Exception) {
-                    log.error { "Error processing game: ${e.message}" }
+                    // Error, mark as unmatched by all current metadata providers
+                    val pluginSource = IgnoredPathPluginSource(
+                        pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
+                    )
+                    val ignoredPath = IgnoredPath(
+                        path = path.toString(),
+                        source = pluginSource
+                    )
+                    newUnmatchedPaths.add(ignoredPath)
+
+                    log.warn { "Processing of new game at '$path' failed: ${e.message}" }
                     log.debug(e) {}
-                    newUnmatchedPaths.add(path.toString())
 
                     return@Callable null
                 } finally {
-                    progress.currentStep.current = completedMetadata.incrementAndGet()
+                    progress.currentStep.current = completed.incrementAndGet()
                     emit(progress)
                 }
             }
         }
 
-        // 1.1 Wait for all metadata tasks to complete
-        val matchedGames = executor.invokeAll(metadataTasks).mapNotNull { it.get() }
+        val persistedGames = executor.invokeAll(tasks).mapNotNull { it.get() }
 
         return MatchNewGamesResult(
             unmatchedPaths = newUnmatchedPaths.toList(),
-            matchedGames = matchedGames
+            matchedGames = persistedGames // now these are already persisted
         )
     }
 
     private fun updateLibrary(
         library: Library,
-        removedUnmatchedPaths: List<String>,
-        newUnmatchedPaths: List<String>,
+        removedIgnoredPaths: List<IgnoredPath>,
+        newIgnoredPaths: List<IgnoredPath>,
         removedGamePaths: List<String>
     ): UpdateLibraryResult {
-        // 1.2 Add unmatched paths to the library
-        library.unmatchedPaths.removeAll(removedUnmatchedPaths)
-        library.unmatchedPaths.addAll(newUnmatchedPaths)
+        // 1.2 Remove old ignored paths from the library
+        library.ignoredPaths.removeAll(removedIgnoredPaths)
+
+        // Add new unmatched paths to the library, but check if they already exist
+        val pathsToAdd = mutableListOf<IgnoredPath>()
+        for (newPath in newIgnoredPaths) {
+            val existingPath = ignoredPathRepository.findByPath(newPath.path)
+            if (existingPath != null) {
+                // Use the existing path if not already in library's collection
+                if (!library.ignoredPaths.any { it.id == existingPath.id }) {
+                    pathsToAdd.add(existingPath)
+                }
+            } else {
+                // Add new path
+                pathsToAdd.add(newPath)
+            }
+        }
+        library.ignoredPaths.addAll(pathsToAdd)
 
         // 1.3 Remove deleted games from the library
         val removedGames = library.games.filter { removedGamePaths.contains(it.metadata.path) }
@@ -328,94 +328,19 @@ class LibraryScanService(
         return UpdateLibraryResult(removedGames = removedGames)
     }
 
-    private fun downloadImages(games: List<Game>, progress: LibraryScanProgress): DownloadImagesResult {
-        val completedImageDownload = AtomicInteger(0)
+    private fun finishScanPersisted(games: List<Game>, library: Library, progress: LibraryScanProgress) {
+        val gameIds = games.mapNotNull { it.id }
+        val managedGames = if (gameIds.isNotEmpty()) gameRepository.findAllById(gameIds) else emptyList()
 
-        // Collect all images from all games in the batch
-        val allImages = games.flatMap { game ->
-            val images = mutableListOf<Image>()
-            game.coverImage?.let { images.add(it) }
-            game.headerImage?.let { images.add(it) }
-            images.addAll(game.images)
-            images
-        }
+        // Add new games to library using managed entities, but do not persist yet
+        libraryCoreService.addGamesToLibrary(managedGames, library, persist = false)
 
-        // Deduplicate by originalUrl
-        val uniqueImages = allImages
-            .filter { it.originalUrl != null }
-            .distinctBy { it.originalUrl.toString() }
-
-        // Download each unique image in parallel
-        val imageDownloadTasks = uniqueImages.map { image ->
-            Callable {
-                try {
-                    imageService.downloadIfNew(image)
-                } catch (e: Exception) {
-                    log.error { "Error downloading image '${image.originalUrl}': ${e.message}" }
-                    log.debug(e) {}
-                } finally {
-                    progress.currentStep.current = completedImageDownload.incrementAndGet()
-                    emit(progress)
-                }
-            }
-        }
-        executor.invokeAll(imageDownloadTasks)
-
-        // For remaining duplicate images, just copy the content metadata from the downloaded unique image
-        val uniqueImagesByUrl = uniqueImages.associateBy { it.originalUrl.toString() }
-
-        allImages.filter { it.originalUrl != null && it !in uniqueImages }
-            .forEach { duplicateImage ->
-                val downloadedImage = uniqueImagesByUrl[duplicateImage.originalUrl.toString()]
-                if (downloadedImage != null && downloadedImage.contentId != null) {
-                    duplicateImage.contentId = downloadedImage.contentId
-                    duplicateImage.contentLength = downloadedImage.contentLength
-                    duplicateImage.mimeType = downloadedImage.mimeType
-                }
-                progress.currentStep.current = completedImageDownload.incrementAndGet()
-                emit(progress)
-            }
-
-        return DownloadImagesResult(gamesWithImages = games)
-    }
-
-    private fun calculateFileSizes(games: List<Game>, progress: LibraryScanProgress): CalculateFilesizesResult {
-        val calculatedFileSize = AtomicInteger(0)
-
-        val calculateFileSizeTask = games.map { game ->
-            Callable {
-                game.metadata.path.let { path ->
-                    val fileSize = filesystemService.calculateFileSize(path)
-                    game.metadata.fileSize = fileSize
-
-                    progress.currentStep.current = calculatedFileSize.incrementAndGet()
-                    emit(progress)
-
-                    game
-                }
-            }
-        }
-
-        val gamesWithFileSizes = executor.invokeAll(calculateFileSizeTask).map { it.get() }
-
-        return CalculateFilesizesResult(gamesWithFilesizes = gamesWithFileSizes)
-    }
-
-    private fun finishScan(games: List<Game>, library: Library, progress: LibraryScanProgress): FinishScanResult {
-        // 4. Persist new games
-        val persistedGames = gameService.create(games)
-
-        progress.currentStep.current = persistedGames.size
+        progress.currentStep.current = games.size
         emit(progress)
 
-        // 5. Add new games to library
-        libraryCoreService.addGamesToLibrary(persistedGames, library)
-
-        // 6. Persist library
-        library.updatedAt = Instant.now() // Force the EntityListener to trigger an update and update the timestamp
+        // Persist library updates
+        library.updatedAt = Instant.now() // Force the EntityListener to update the timestamp
         libraryRepository.save(library)
-
-        return FinishScanResult(persistedGames = persistedGames)
     }
 
     private fun updateExistingGames(
@@ -424,11 +349,11 @@ class LibraryScanService(
     ): UpdateExistingGamesResult {
         val completedUpdates = AtomicInteger(0)
 
-        val metadataTasks = games.map { game ->
+        val updateTasks = games.map { game ->
             Callable<Game?> {
                 try {
-                    val game = gameService.update(game)
-                    return@Callable game
+                    val updated = libraryGameProcessor.processExistingGame(game)
+                    return@Callable updated
                 } catch (e: Exception) {
                     log.error { "Error updating game with id '${game.id}': ${e.message}" }
                     log.debug(e) {}
@@ -440,7 +365,7 @@ class LibraryScanService(
             }
         }
 
-        val updatedGames = executor.invokeAll(metadataTasks).mapNotNull { it.get() }
+        val updatedGames = executor.invokeAll(updateTasks).mapNotNull { it.get() }
         return UpdateExistingGamesResult(updatedGames = updatedGames)
     }
 }

@@ -1,5 +1,11 @@
 import {Button, Input, Select, SelectedItems, SelectItem, Tooltip} from "@heroui/react";
-import {FunnelSimple, FunnelSimpleX, MagnifyingGlass, SortAscending, Star} from "@phosphor-icons/react";
+import {
+    FunnelSimpleIcon,
+    FunnelSimpleXIcon,
+    MagnifyingGlassIcon,
+    SortAscendingIcon,
+    StarIcon
+} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";
@@ -9,7 +15,7 @@ import {Fzf} from "fzf";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
-import {compoundRating, toTitleCase} from "Frontend/util/utils";
+import {compoundRating} from "Frontend/util/utils";
 
 export default function SearchView() {
     const games = useSnapshot(gameState).sortedAlphabetically as GameDto[];
@@ -249,7 +255,7 @@ export default function SearchView() {
         const stars = [];
         for (let i = 0; i < total; i++) {
             stars.push(
-                <Star key={i} weight={i < filled ? "fill" : "regular"} className="inline-block"/>
+                <StarIcon key={i} weight={i < filled ? "fill" : "regular"} className="inline-block"/>
             );
         }
         return <div className="flex flex-row">
@@ -261,13 +267,13 @@ export default function SearchView() {
         <div className="flex w-full justify-between px-12 gap-4 flex-col lg:flex-row">
             <Input
                 classNames={{
-                    base: "w-full lg:w-96 flex-shrink-0",
+                    base: "w-full lg:w-96 shrink-0",
                     mainWrapper: "h-full",
                     inputWrapper:
                         "h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
                 }}
                 placeholder="Type to search..."
-                startContent={<MagnifyingGlass/>}
+                startContent={<MagnifyingGlassIcon/>}
                 type="search"
                 value={searchTerm}
                 isClearable
@@ -276,7 +282,7 @@ export default function SearchView() {
             />
             <div className="flex flex-row gap-2">
                 <Select
-                    startContent={<SortAscending/>}
+                    startContent={<SortAscendingIcon/>}
                     selectedKeys={[sortBy]}
                     disallowEmptySelection
                     selectionMode="single"
@@ -301,7 +307,7 @@ export default function SearchView() {
                             onPress={() => setShowFilters(!showFilters)}
                             aria-label="Toggle Filters"
                     >
-                        <FunnelSimple/>
+                        <FunnelSimpleIcon/>
                     </Button>
                 </Tooltip>
                 <Tooltip content="Clear All Filters">
@@ -318,7 +324,7 @@ export default function SearchView() {
                             }}
                             aria-label="Clear All Filters"
                     >
-                        <FunnelSimpleX/>
+                        <FunnelSimpleXIcon/>
                     </Button>
                 </Tooltip>
             </div>
@@ -386,7 +392,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedGenres}
             >
                 {Array.from(knownGenres).map((genre) => (
-                    <SelectItem key={genre}>{toTitleCase(genre)}</SelectItem>
+                    <SelectItem key={genre}>{genre}</SelectItem>
                 ))}
             </Select>
             <Select
@@ -399,7 +405,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedThemes}
             >
                 {Array.from(knownThemes).map((theme) => (
-                    <SelectItem key={theme}>{toTitleCase(theme)}</SelectItem>
+                    <SelectItem key={theme}>{theme}</SelectItem>
                 ))}
             </Select>
             <Select
@@ -412,7 +418,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedFeatures}
             >
                 {Array.from(knownFeatures).map((feature) => (
-                    <SelectItem key={feature}>{toTitleCase(feature)}</SelectItem>
+                    <SelectItem key={feature}>{feature}</SelectItem>
                 ))}
             </Select>
             <Select
@@ -425,7 +431,7 @@ export default function SearchView() {
                 onSelectionChange={setSelectedPerspectives}
             >
                 {Array.from(knownPerspectives).map((perspective) => (
-                    <SelectItem key={perspective}>{toTitleCase(perspective)}</SelectItem>
+                    <SelectItem key={perspective}>{perspective}</SelectItem>
                 ))}
             </Select>
             <Select

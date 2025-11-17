@@ -80,6 +80,15 @@ class UserService(
     fun findByOidcProviderId(oidcProviderId: String): org.gameyfin.app.users.entities.User? =
         userRepository.findByOidcProviderId(oidcProviderId)
 
+    fun getUserById(id: Long): ExtendedUserInfoDto? {
+        val user = userRepository.findById(id)
+        return if (user.isPresent) {
+            user.get().toExtendedUserInfoDto()
+        } else {
+            null
+        }
+    }
+
     fun getAllUsers(): List<ExtendedUserInfoDto> {
         return userRepository.findAll().map { it.toExtendedUserInfoDto() }
     }

@@ -1,8 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {ArrowRight} from "@phosphor-icons/react";
-import {useNavigate} from "react-router";
+import {ArrowRightIcon} from "@phosphor-icons/react";
 
 interface CoverRowProps {
     games: GameDto[];
@@ -16,7 +15,6 @@ const defaultImageWidth = aspectRatio * defaultImageHeight; // default width for
 
 export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
 
-    const navigate = useNavigate();
     const containerRef = useRef<HTMLDivElement>(null);
     const [visibleCount, setVisibleCount] = useState(games.length);
 
@@ -55,12 +53,12 @@ export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
                     <div className="flex flex-row items-center justify-end cursor-pointer"
                          onClick={onPressShowMore}>
                         <div className="absolute h-full w-1/4 right-0 bottom-0
-                        bg-gradient-to-r from-transparent to-background
+                        bg-linear-to-r from-transparent to-background
                         transition-all duration-300 ease-in-out hover:opacity-80"/>
                         <div
                             className="absolute h-full right-0 bottom-0 flex flex-row items-center gap-2 pointer-events-none">
                             <p className="text-xl font-semibold">Show more</p>
-                            <ArrowRight weight="bold"/>
+                            <ArrowRightIcon weight="bold"/>
                         </div>
                     </div>
                 )}

@@ -5,11 +5,19 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import {Accordion, AccordionItem, addToast, Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
-import {humanFileSize, isAdmin, starRatingAsString, toTitleCase} from "Frontend/util/utils";
+import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
-import {CheckCircle, Info, MagnifyingGlass, Pencil, Star, Trash, TriangleDashed} from "@phosphor-icons/react";
+import {
+    CheckCircleIcon,
+    InfoIcon,
+    MagnifyingGlassIcon,
+    PencilIcon,
+    StarIcon,
+    TrashIcon,
+    TriangleDashedIcon
+} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
@@ -17,6 +25,7 @@ import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpd
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
+import ChipList from "Frontend/components/general/ChipList";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -93,12 +102,12 @@ export default function GameView() {
                 ) : (
                     <div className="w-full h-96 bg-secondary relative"/>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background"/>
+                <div className="absolute inset-0 bg-linear-to-b from-transparent to-background"/>
             </div>
             <div className="flex flex-col gap-4 mx-24">
                 <div className="flex flex-row justify-between">
                     <div className="flex flex-row gap-4">
-                        <div className="mt-[-16.25rem]">
+                        <div className="-mt-65">
                             <GameCover game={game} size={320} radius="none"/>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -107,7 +116,7 @@ export default function GameView() {
                                     {game.title}
                                 </p>
                                 <div className="flex flex-row gap-1 mb-0.5 text-default-500">
-                                    <Star weight="fill"/>
+                                    <StarIcon weight="fill"/>
                                     {starRatingAsString(game)}
                                 </div>
                             </div>
@@ -116,10 +125,11 @@ export default function GameView() {
                                     {game.release !== undefined ? new Date(game.release).getFullYear() :
                                         <p className="text-default-500">no data</p>}
                                 </p>
+                                <ChipList items={game.platforms} maxVisible={1}/>
                                 <Tooltip
                                     content={`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
                                     placement="right">
-                                    <Info/>
+                                    <InfoIcon/>
                                 </Tooltip>
                             </div>
                         </div>
@@ -129,20 +139,20 @@ export default function GameView() {
                             <Button isIconOnly onPress={toggleMatchConfirmed}>
                                 {game.metadata.matchConfirmed ?
                                     <Tooltip content="Unconfirm match">
-                                        <CheckCircle weight="fill" className="fill-success"/>
+                                        <CheckCircleIcon weight="fill" className="fill-success"/>
                                     </Tooltip> :
                                     <Tooltip content="Confirm match">
-                                        <CheckCircle/>
+                                        <CheckCircleIcon/>
                                     </Tooltip>}
                             </Button>
                             <Tooltip content="Edit metadata">
                                 <Button isIconOnly onPress={editGameModal.onOpenChange}>
-                                    <Pencil/>
+                                    <PencilIcon/>
                                 </Button>
                             </Tooltip>
                             <Tooltip content="Search for metadata">
                                 <Button isIconOnly onPress={matchGameModal.onOpenChange}>
-                                    <MagnifyingGlass/>
+                                    <MagnifyingGlassIcon/>
                                 </Button>
                             </Tooltip>
                             <Tooltip content="Remove from library">
@@ -151,7 +161,7 @@ export default function GameView() {
                                             await deleteGame();
                                             navigate("/");
                                         }}>
-                                    <Trash/>
+                                    <TrashIcon/>
                                 </Button>
                             </Tooltip>
                         </div>}
@@ -168,7 +178,7 @@ export default function GameView() {
                             <AccordionItem key="information"
                                            aria-label="Information"
                                            title="Information"
-                                           startContent={<Info weight="fill"/>}>
+                                           startContent={<InfoIcon weight="fill"/>}>
                                 <Markdown
                                     remarkPlugins={[remarkBreaks]}
                                     components={{
@@ -195,11 +205,12 @@ export default function GameView() {
                                 <p>No summary available</p>
                             }
                         </div>
-                        <div className="flex flex-col flex-1 gap-2">
+                        <div className="flex flex-col flex-1">
                             <p className="text-default-500">Details</p>
-                            <table className="text-left w-full table-auto">
+                            <table
+                                className="text-left w-full table-auto border-separate border-spacing-y-1">
                                 <tbody>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Developed by</td>
                                     <td className="flex flex-row gap-1">
                                         {game.developers && game.developers.length > 0
@@ -213,64 +224,73 @@ export default function GameView() {
                                                 </>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Published by</td>
                                     <td className="flex flex-row gap-1">
                                         {game.publishers && game.publishers.length > 0
                                             ? [...game.publishers].sort().join(" / ")
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Genres</td>
                                     <td className="flex flex-row gap-1">
                                         {game.genres && game.genres.length > 0
                                             ? [...game.genres].sort().map(genre =>
                                                 <Link key={genre} href={`/search?genre=${encodeURIComponent(genre)}`}>
-                                                    <Chip radius="sm">{toTitleCase(genre)}</Chip>
+                                                    <Chip radius="sm" size="sm"
+                                                          className="text-sm">
+                                                        {genre}
+                                                    </Chip>
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Themes</td>
                                     <td className="flex flex-row gap-1">
                                         {game.themes && game.themes.length > 0
                                             ? [...game.themes].sort().map(theme =>
                                                 <Link key={theme} href={`/search?theme=${encodeURIComponent(theme)}`}>
-                                                    <Chip radius="sm">{toTitleCase(theme)}</Chip>
+                                                    <Chip radius="sm" size="sm"
+                                                          className="text-sm">
+                                                        {theme}
+                                                    </Chip>
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
-                                <tr className="h-6">
+                                <tr>
                                     <td className="text-default-500 w-0 min-w-32">Features</td>
                                     <td className="flex flex-row gap-1">
                                         {game.features && game.features.length > 0
                                             ? [...game.features].sort().map(feature =>
                                                 <Link key={feature}
                                                       href={`/search?feature=${encodeURIComponent(feature)}`}>
-                                                    <Chip radius="sm">{toTitleCase(feature)}</Chip>
+                                                    <Chip radius="sm" size="sm"
+                                                          className="text-sm">
+                                                        {feature}
+                                                    </Chip>
                                                 </Link>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashed className="fill-default-500 h-6 bottom-0"/>
+                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
                                             </Tooltip>
                                         }
                                     </td>

@@ -1,5 +1,5 @@
 import {Autocomplete, AutocompleteItem} from "@heroui/react";
-import {CaretRight, MagnifyingGlass} from "@phosphor-icons/react";
+import { CaretRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
@@ -41,7 +41,7 @@ export default function SearchBar() {
             },
         }}
         placeholder="Type to search..."
-        startContent={<MagnifyingGlass/>}
+        startContent={<MagnifyingGlassIcon/>}
         isVirtualized={true}
         maxListboxHeight={300}
         itemHeight={91} // 75px (cover) + 16px (margin top/bottom) = 91px
@@ -54,7 +54,7 @@ export default function SearchBar() {
                         <p><b>{item.title}</b> ({item.release && new Date(item.release).getFullYear()})</p>
                         <p className="text-default-500">{item.developers && [...item.developers].sort().join(" / ")}</p>
                     </div>
-                    <CaretRight/>
+                    <CaretRightIcon/>
                 </div>
             </AutocompleteItem>
         )}

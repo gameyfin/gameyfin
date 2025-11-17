@@ -1,9 +1,6 @@
 package org.gameyfin.app.core.plugins.management
 
-import org.pf4j.DevelopmentPluginLoader
-import org.pf4j.PluginClassLoader
-import org.pf4j.PluginDescriptor
-import org.pf4j.PluginManager
+import org.pf4j.*
 import java.nio.file.Path
 
 /**
@@ -15,6 +12,6 @@ class GameyfinDevelopmentPluginLoader(
 ) : DevelopmentPluginLoader(pluginManager) {
 
     override fun createPluginClassLoader(pluginPath: Path, pluginDescriptor: PluginDescriptor): PluginClassLoader {
-        return PluginClassLoader(pluginManager, pluginDescriptor, parentClassLoader)
+        return GameyfinPluginClassLoader(pluginManager, pluginDescriptor, parentClassLoader, ClassLoadingStrategy.APD)
     }
 }

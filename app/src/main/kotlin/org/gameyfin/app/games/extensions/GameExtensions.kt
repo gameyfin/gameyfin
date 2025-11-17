@@ -29,6 +29,7 @@ fun Game.toAdminDto(): GameAdminDto {
         updatedAt = updatedAt!!,
         libraryId = this.library.id!!,
         title = title!!,
+        platforms = this.platforms,
         coverId = this.coverImage?.id,
         headerId = this.headerImage?.id,
         comment = this.comment,
@@ -38,11 +39,11 @@ fun Game.toAdminDto(): GameAdminDto {
         criticRating = this.criticRating,
         publishers = this.publishers.map { it.name },
         developers = this.developers.map { it.name },
-        genres = this.genres.map { it.name },
-        themes = this.themes.map { it.name },
+        genres = this.genres,
+        themes = this.themes,
         keywords = this.keywords.toList(),
-        features = this.features.map { it.name },
-        perspectives = this.perspectives.map { it.name },
+        features = this.features,
+        perspectives = this.perspectives,
         imageIds = this.images.mapNotNull { it.id },
         videoUrls = this.videoUrls.map { it.toString() },
         metadata = this.metadata.toAdminDto()
@@ -56,6 +57,7 @@ fun Game.toUserDto(): GameUserDto {
         updatedAt = updatedAt!!,
         libraryId = this.library.id!!,
         title = title!!,
+        platforms = this.platforms,
         coverId = this.coverImage?.id,
         headerId = this.headerImage?.id,
         comment = this.comment,
@@ -65,18 +67,18 @@ fun Game.toUserDto(): GameUserDto {
         criticRating = this.criticRating,
         publishers = this.publishers.map { it.name },
         developers = this.developers.map { it.name },
-        genres = this.genres.map { it.name },
-        themes = this.themes.map { it.name },
+        genres = this.genres,
+        themes = this.themes,
         keywords = this.keywords.toList(),
-        features = this.features.map { it.name },
-        perspectives = this.perspectives.map { it.name },
+        features = this.features,
+        perspectives = this.perspectives,
         imageIds = this.images.mapNotNull { it.id },
         videoUrls = this.videoUrls.map { it.toString() },
         metadata = this.metadata.toUserDto()
     )
 }
 
-private fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
+fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
     return GameMetadataAdminDto(
         fileSize = this.fileSize ?: 0L,
         downloadCount = this.downloadCount,
@@ -87,16 +89,14 @@ private fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
     )
 }
 
-private fun GameMetadata.toUserDto(): GameMetadataUserDto {
+fun GameMetadata.toUserDto(): GameMetadataUserDto {
     return GameMetadataUserDto(
         fileSize = this.fileSize ?: 0L
     )
 }
 
 private fun GameFieldMetadata.toDto(): GameFieldMetadataDto {
-    val source = this.source
-
-    return when (source) {
+    return when (val source = this.source) {
         is GameFieldPluginSource -> {
             GameFieldMetadataDto(
                 type = GameFieldMetadataType.PLUGIN,

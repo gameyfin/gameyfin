@@ -16,16 +16,18 @@ import java.security.cert.X509Certificate
 import java.util.jar.JarFile
 import kotlin.io.path.Path
 import kotlin.io.path.extension
+import kotlin.reflect.KClass
 
 
 /**
- * @see https://stackoverflow.com/questions/73654174/my-application-cant-find-the-extension-with-pf4j
+ * @see "https://stackoverflow.com/questions/73654174/my-application-cant-find-the-extension-with-pf4j"
  */
 @Component
 class GameyfinPluginManager(
-    val pluginConfigRepository: PluginConfigRepository,
-    val dbPluginStatusProvider: DatabasePluginStatusProvider,
-    val pluginManagementRepository: PluginManagementRepository
+    forwardingPluginStateListener: SpringPluginStateListener,
+    private val dbPluginStatusProvider: DatabasePluginStatusProvider,
+    private val pluginConfigRepository: PluginConfigRepository,
+    private val pluginManagementRepository: PluginManagementRepository
 ) : DefaultPluginManager(Path(System.getProperty("pf4j.pluginsDir", "plugins"))) {
 
     companion object {
@@ -40,6 +42,7 @@ class GameyfinPluginManager(
         // But I learned a lot about Kotlin and Java interoperability in the process
         pluginStatusProvider = dbPluginStatusProvider
 
+        // Plugin state listener to auto-start/stop plugins
         pluginStateListeners.add { event ->
             if (event is PluginStateEvent) {
                 log.info { "Plugin ${event.plugin.pluginId} changed state to ${event.pluginState}" }
@@ -50,6 +53,9 @@ class GameyfinPluginManager(
                 }
             }
         }
+
+        // Plugin state listener to forward events into Spring context
+        addPluginStateListener(forwardingPluginStateListener)
     }
 
     override fun createPluginLoader(): PluginLoader {
@@ -77,15 +83,25 @@ class GameyfinPluginManager(
         return extensionFinder
     }
 
-    override fun loadPluginFromPath(pluginPath: Path?): PluginWrapper? {
+    public override fun checkPluginId(pluginId: String) {
+        super.checkPluginId(pluginId)
+    }
+
+    override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
+
+        if (pluginPath.endsWith("data") || pluginPath.endsWith("state")) {
+            log.info { "Skipping non-plugin path '$pluginPath'" }
+            return null
+        }
+
         val pluginWrapper = try {
             super.loadPluginFromPath(pluginPath)
         } catch (e: Exception) {
-            log.error { "Failed to load plugin $pluginPath: ${e.message}" }
+            log.error { "Failed to load plugin '$pluginPath': ${e.message}" }
             null
         }
 
-        if (pluginWrapper == null || pluginPath == null) return null
+        if (pluginWrapper == null) return null
 
         var pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
 
@@ -198,6 +214,10 @@ class GameyfinPluginManager(
         }
 
         return plugin.validateConfig(configToValidate)
+    }
+
+    fun supportsExtensionType(pluginId: String, extensionType: KClass<out ExtensionPoint>): Boolean {
+        return getExtensionTypeClasses(pluginId).any { it == extensionType.java }
     }
 
     fun getExtensionTypeClasses(pluginId: String): List<Class<ExtensionPoint>> {

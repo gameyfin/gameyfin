@@ -1,5 +1,5 @@
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
-import {Check} from "@phosphor-icons/react";
+import {CheckIcon} from "@phosphor-icons/react";
 import {addToast, Button} from "@heroui/react";
 import React from "react";
 import {Form, Formik} from "formik";
@@ -11,6 +11,9 @@ import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMa
 import Section from "Frontend/components/general/Section";
 import {useNavigate} from "react-router";
 import * as Yup from "yup";
+import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import {useSnapshot} from "valtio/react";
+import {platformState} from "Frontend/state/PlatformState";
 
 interface LibraryManagementDetailsProps {
     library: LibraryDto;
@@ -19,6 +22,7 @@ interface LibraryManagementDetailsProps {
 export default function LibraryManagementDetails({library}: LibraryManagementDetailsProps) {
     const navigate = useNavigate();
     const [librarySaved, setLibrarySaved] = React.useState(false);
+    const availablePlatforms = useSnapshot(platformState).available;
 
     async function handleSubmit(values: LibraryDto): Promise<void> {
         const changed = deepDiff(library, values) as LibraryUpdateDto;
@@ -66,7 +70,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
     >
         {(formik) => (
             <Form>
-                <div className="flex flex-row flex-grow justify-between mb-4">
+                <div className="flex flex-row grow justify-between mb-4">
                     <h1 className="text-2xl font-bold">Edit library details</h1>
                     <Button
                         color="primary"
@@ -74,11 +78,13 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                         isDisabled={formik.isSubmitting || librarySaved || !formik.dirty}
                         type="submit"
                     >
-                        {formik.isSubmitting ? "" : librarySaved ? <Check/> : "Save"}
+                        {formik.isSubmitting ? "" : librarySaved ? <CheckIcon/> : "Save"}
                     </Button>
                 </div>
 
                 <Input label="Library name" name="name"/>
+
+                <ArrayInputAutocomplete options={Array.from(availablePlatforms)} name="platforms" label="Platforms"/>
 
                 <DirectoryMappingInput name="directories"/>
 

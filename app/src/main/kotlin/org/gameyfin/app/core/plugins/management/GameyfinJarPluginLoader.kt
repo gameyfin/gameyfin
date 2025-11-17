@@ -1,5 +1,6 @@
 package org.gameyfin.app.core.plugins.management
 
+import org.pf4j.ClassLoadingStrategy
 import org.pf4j.DevelopmentPluginLoader
 import org.pf4j.PluginDescriptor
 import org.pf4j.PluginManager
@@ -23,7 +24,12 @@ class GameyfinJarPluginLoader(
             throw IllegalArgumentException("Plugin descriptor cannot be null")
         }
 
-        val pluginClassLoader = GameyfinPluginClassLoader(pluginManager, pluginDescriptor, javaClass.getClassLoader())
+        val pluginClassLoader = GameyfinPluginClassLoader(
+            pluginManager,
+            pluginDescriptor,
+            javaClass.classLoader,
+            ClassLoadingStrategy.APD
+        )
         pluginClassLoader.addFile(pluginPath.toFile())
 
         return pluginClassLoader

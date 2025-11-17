@@ -2,7 +2,7 @@ import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/input/Input";
 import {addToast, Button, Input as NextUiInput, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
-import {ArrowCounterClockwise, Check, Info, Trash} from "@phosphor-icons/react";
+import { ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon } from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import * as Yup from "yup";
@@ -82,14 +82,14 @@ export default function ProfileManagement() {
             >
                 {(formik: { values: any; isSubmitting: any; dirty: boolean; }) => (
                     <Form>
-                        <div className="flex flex-row flex-grow justify-between mb-8">
+                        <div className="flex flex-row grow justify-between mb-8">
                             <h2 className="text-2xl font-bold">My Profile</h2>
                             {auth.state.user?.managedBySso &&
                                 <p className="text-warning">Your account is managed externally.</p>}
 
                             <div className="flex flex-row items-center gap-4">
                                 {formik.values.newPassword.length > 0 &&
-                                    <SmallInfoField icon={Info}
+                                    <SmallInfoField icon={InfoIcon}
                                                     message="You will be logged out of all current sessions"
                                                     className="text-default-500"
                                     />
@@ -100,7 +100,7 @@ export default function ProfileManagement() {
                                     isDisabled={!formik.dirty || formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
                                     type="submit"
                                 >
-                                    {formik.isSubmitting ? "" : configSaved ? <Check/> : "Save"}
+                                    {formik.isSubmitting ? "" : configSaved ? <CheckIcon/> : "Save"}
                                 </Button>
                             </div>
                         </div>
@@ -117,12 +117,12 @@ export default function ProfileManagement() {
                                             color="success">Upload</Button>
                                     <Tooltip content="Remove your current avatar">
                                         <Button onPress={removeAvatar} isIconOnly color="danger"
-                                                isDisabled={auth.state.user?.managedBySso}><Trash/></Button>
+                                                isDisabled={auth.state.user?.managedBySso}><TrashIcon/></Button>
                                     </Tooltip>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col flex-grow">
+                            <div className="flex flex-col grow">
                                 <Section title="Personal information"/>
                                 <Input name="username" label="Username" type="text" autocomplete="username"
                                        isDisabled={auth.state.user?.managedBySso}/>
@@ -145,14 +145,14 @@ export default function ProfileManagement() {
                                                     variant="ghost"
                                                     className="size-14"
                                             >
-                                                <ArrowCounterClockwise size={26}/>
+                                                <ArrowCounterClockwiseIcon size={26}/>
                                             </Button>
                                         </Tooltip>
                                     }
                                 </div>
                                 {!messagesEnabled &&
                                     <div className="flex flex-row gap-2 text-warning -mt-5">
-                                        <Info/>
+                                        <InfoIcon/>
                                         <small>
                                             Email services are disabled. Please contact your administrator.
                                         </small>

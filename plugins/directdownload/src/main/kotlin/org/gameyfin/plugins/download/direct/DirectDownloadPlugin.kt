@@ -38,10 +38,11 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
             type = CompressionMode::class.java,
             label = "Compression mode",
             description = "Higher compression modes are more resource intensive, but save bandwidth",
-            default = CompressionMode.NONE
+            default = CompressionMode.None
         )
     )
 
+    @Suppress("Unused")
     @Extension(ordinal = 1)
     class DirectDownloadProvider : DownloadProvider {
         override fun download(path: Path): Download {

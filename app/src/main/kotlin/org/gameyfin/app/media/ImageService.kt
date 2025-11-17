@@ -12,8 +12,10 @@ import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageContentStore
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.users.persistence.UserRepository
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 import java.io.InputStream
@@ -80,28 +82,41 @@ class ImageService(
         }
     }
 
+    @Transactional
     fun createOrGet(image: Image): Image {
-        if (image.originalUrl != null) {
-            imageRepository.findByOriginalUrl(image.originalUrl)?.let { return it }
+        val url = image.originalUrl
+        if (url.isNullOrBlank()) {
+            // No original URL => cannot dedupe by URL; just persist as-is
+            return imageRepository.save(image)
         }
 
-        return imageRepository.save(image)
+        // Prefer a list lookup to avoid IncorrectResultSizeDataAccessException if duplicates exist pre-migration
+        val existing = imageRepository.findAllByOriginalUrl(url).firstOrNull()
+        if (existing != null) return existing
+
+        return try {
+            val toSave = Image(originalUrl = url, type = image.type)
+            imageRepository.save(toSave)
+        } catch (e: DataIntegrityViolationException) {
+            // Unique (original_url) might have been inserted concurrently; fetch and return
+            imageRepository.findAllByOriginalUrl(url).firstOrNull()
+                ?: throw e
+        }
     }
 
     fun downloadIfNew(image: Image) {
         if (image.originalUrl == null) throw IllegalArgumentException("Image must have an original URL")
 
-        // Always try to get existing image first to avoid detached entity issues
-        val existingImage = imageRepository.findByOriginalUrl(image.originalUrl)
+        // Always try to get existing image first to avoid detached entity issues and duplicate lookups
+        val existingImage = imageRepository.findAllByOriginalUrl(image.originalUrl).firstOrNull()
 
         // Check if the existing image has valid content
         val existingImageHasValidContent = (existingImage != null && imageHasValidContent(existingImage))
 
         // If the existing image has valid content we can just associate it instead of downloading again
         if (existingImageHasValidContent && existingImage.contentId != null) {
-            // If we have an existing image with content, associate it with the current image
+            // Associate existing content with the current image entity reference
             imageContentStore.associate(image, existingImage.contentId)
-            // Update the current image's content metadata
             image.contentId = existingImage.contentId
             image.contentLength = existingImage.contentLength
             image.mimeType = existingImage.mimeType
@@ -114,8 +129,12 @@ class ImageService(
             imageContentStore.setContent(image, input)
         }
 
-        // Save the image to ensure it's persisted
-        imageRepository.save(image)
+        // Save or update the image to ensure it's persisted
+        try {
+            imageRepository.save(image)
+        } catch (_: DataIntegrityViolationException) {
+            // If another thread saved the same URL meanwhile, just ignore and proceed
+        }
     }
 
     fun createFromInputStream(type: ImageType, content: InputStream, mimeType: String): Image {

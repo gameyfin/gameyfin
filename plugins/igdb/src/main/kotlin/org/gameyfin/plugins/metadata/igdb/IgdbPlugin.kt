@@ -17,6 +17,8 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.gameyfin.pluginapi.gamemetadata.Platform
+import org.gameyfin.plugins.metadata.igdb.mapper.*
 import org.pf4j.Extension
 import org.pf4j.PluginWrapper
 import proto.Game
@@ -88,6 +90,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
         log.debug("Authentication successful")
     }
 
+    @Suppress("Unused")
     @Extension(ordinal = 2)
     class IgdbMetadataProvider : GameMetadataProvider {
 
@@ -121,6 +124,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
                 "game_modes.slug",
                 "game_modes.name",
                 "cover.image_id",
+                "artworks.image_id",
                 "screenshots.image_id",
                 "videos.name",
                 "videos.video_id",
@@ -143,14 +147,25 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
             ).joinToString(",")
         }
 
-        override fun fetchByTitle(gameTitle: String, maxResults: Int): List<GameMetadata> {
-            // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
+        override val supportedPlatforms: Set<Platform>
+            get() = Platform.entries.toSet()
+
+        override fun fetchByTitle(
+            gameTitle: String,
+            platformFilter: Set<Platform>,
+            maxResults: Int
+        ): List<GameMetadata> {
             val searchByNameQuery = APICalypse()
                 .fields(QUERY_FIELDS)
-                // TODO: Change for multi-platform support
-                .where("platforms.slug = \"win\"")
+                // Note: Limit is intentionally set high because IGDBs ranking algorithm is not very good
                 .limit(100)
                 .search(gameTitle)
+
+            if (platformFilter.isNotEmpty()) {
+                val platformFilterQuery = PlatformMapper.toIgdb(platformFilter)
+                    .joinToString(separator = "\", \"", prefix = "platforms.slug = (\"", postfix = "\")")
+                searchByNameQuery.where(platformFilterQuery)
+            }
 
             // Use IGDBs search function to get a list of games that match the search query
             var games = queryIgdbGames(searchByNameQuery)
@@ -170,7 +185,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
                 .sortedByDescending { bestMatchesMap[it.name] }
                 .take(maxResults)
 
-            return games.map { toGameMetadata(it) }
+            return games.map { toGameMetadata(it, platformFilter) }
         }
 
         override fun fetchById(id: String): GameMetadata? {
@@ -181,7 +196,7 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
                 .where("slug = \"$id\"")
 
             val game = queryIgdbGames(findBySlugQuery).firstOrNull()
-            return game?.let { toGameMetadata(it) }
+            return game?.let { toGameMetadata(it, null) }
         }
 
         private fun queryIgdbGames(query: APICalypse): List<Game> {
@@ -193,29 +208,35 @@ class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
             return decorated.get()
         }
 
-        private fun toGameMetadata(game: Game): GameMetadata {
+        private fun toGameMetadata(game: Game, platformFilter: Set<Platform>?): GameMetadata {
+            val supportedPlatforms = game.platformsList.map { PlatformMapper.toGameyfin(it.slug) }
+            val filteredPlatforms = platformFilter?.let { filter -> supportedPlatforms.filter { it in filter } }
+                ?: supportedPlatforms
+
             return GameMetadata(
                 originalId = game.slug,
                 title = game.name,
+                platforms = filteredPlatforms.toSet(),
                 description = game.summary,
-                coverUrls = Mapper.cover(game.cover)?.let { listOf(it) },
+                coverUrls = MediaMapper.cover(game.cover)?.let { listOf(it) }?.toSet(),
+                headerUrls = game.artworksList.map { MediaMapper.header(it) }.toSet(),
                 release = if (game.firstReleaseDate.seconds > 0) Instant.ofEpochSecond(game.firstReleaseDate.seconds) else null,
                 userRating = game.rating.toInt(),
                 criticRating = game.aggregatedRating.toInt(),
                 developedBy = game.involvedCompaniesList.filter { it.developer }.map { it.company.name }.toSet(),
                 publishedBy = game.involvedCompaniesList.filter { it.publisher }.map { it.company.name }.toSet(),
-                genres = game.genresList.map { Mapper.genre(it) }.toSet(),
-                themes = game.themesList.map { Mapper.theme(it) }.toSet(),
+                genres = game.genresList.map { GenreMapper.genre(it) }.toSet(),
+                themes = game.themesList.map { ThemeMapper.theme(it) }.toSet(),
                 keywords = game.keywordsList.map { it.name }.toSet(),
-                screenshotUrls = game.screenshotsList.map { Mapper.screenshot(it) }.toSet(),
+                screenshotUrls = game.screenshotsList.map { MediaMapper.screenshot(it) }.toSet(),
                 videoUrls = game.videosList
                     // Lots of gameplay videos hosted on YouTube are blocked from viewing on external sites due to age ratings
                     // Trailers usually are not affected so we filter for them
                     // see https://support.google.com/youtube/answer/2802167
                     .filter { it.name.equals("trailer", ignoreCase = true) }
-                    .map { Mapper.video(it) }.toSet(),
-                features = Mapper.gameFeatures(game),
-                perspectives = game.playerPerspectivesList.map { Mapper.playerPerspective(it) }.toSet()
+                    .map { MediaMapper.video(it) }.toSet(),
+                features = GameFeatureMapper.gameFeatures(game),
+                perspectives = game.playerPerspectivesList.map { PlayerPerspectiveMapper.playerPerspective(it) }.toSet()
             )
         }
     }

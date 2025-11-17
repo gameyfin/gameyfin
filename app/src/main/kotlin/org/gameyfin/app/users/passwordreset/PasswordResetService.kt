@@ -1,17 +1,12 @@
 package org.gameyfin.app.users.passwordreset
 
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.events.PasswordResetRequestEvent
+import org.gameyfin.app.core.token.*
 import org.gameyfin.app.messages.MessageService
 import org.gameyfin.app.users.SessionService
 import org.gameyfin.app.users.UserService
-import io.github.oshai.kotlinlogging.KotlinLogging
-import org.gameyfin.app.core.Utils
-import org.gameyfin.app.shared.token.Token
-import org.gameyfin.app.shared.token.TokenDto
-import org.gameyfin.app.shared.token.TokenRepository
-import org.gameyfin.app.shared.token.TokenService
-import org.gameyfin.app.shared.token.TokenType
-import org.gameyfin.app.shared.token.TokenValidationResult
 import org.gameyfin.app.users.entities.User
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service

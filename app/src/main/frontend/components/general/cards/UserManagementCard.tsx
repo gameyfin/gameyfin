@@ -1,12 +1,12 @@
 import {Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
-import {DotsThreeVertical} from "@phosphor-icons/react";
+import {DotsThreeVerticalIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {AvatarEndpoint} from "Frontend/endpoints/endpoints";
 import Avatar from "Frontend/components/general/Avatar";
 import ConfirmUserDeletionModal from "Frontend/components/general/modals/ConfirmUserDeletionModal";
 import PasswordResetTokenModal from "Frontend/components/general/modals/PasswortResetTokenModal";
-import TokenDto from "Frontend/generated/org/gameyfin/app/shared/token/TokenDto";
+import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import RoleChip from "Frontend/components/general/RoleChip";
 import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModal";
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
@@ -112,7 +112,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                     <Dropdown placement="bottom-end" size="sm" backdrop="opaque">
                         <DropdownTrigger>
                             <Button isIconOnly variant="light">
-                                <DotsThreeVertical/>
+                                <DotsThreeVerticalIcon/>
                             </Button>
                         </DropdownTrigger>
                         <DropdownMenu aria-label="Static Actions" items={dropdownItems} disabledKeys={disabledKeys}>

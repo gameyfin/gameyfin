@@ -11,8 +11,9 @@ import {
 } from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
-import React from "react";
+import React, {useEffect, useState} from "react";
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
+import GameEnumPropertyValuesDto from "Frontend/generated/org/gameyfin/app/games/dto/GameEnumPropertyValuesDto";
 import {deepDiff} from "Frontend/util/utils";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
@@ -21,6 +22,9 @@ import GameCoverPicker from "Frontend/components/general/input/GameCoverPicker";
 import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
 import ArrayInput from "Frontend/components/general/input/ArrayInput";
 import GameHeaderPicker from "Frontend/components/general/input/GameHeaderPicker";
+import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import {useSnapshot} from "valtio/react";
+import {platformState} from "Frontend/state/PlatformState";
 
 interface EditGameMetadataModalProps {
     game: GameDto;
@@ -29,7 +33,14 @@ interface EditGameMetadataModalProps {
 }
 
 export default function EditGameMetadataModal({game, isOpen, onOpenChange}: EditGameMetadataModalProps) {
-    return (
+    const availablePlatforms = useSnapshot(platformState).available;
+    const [propertyEnumValues, setPropertyEnumValues] = useState<GameEnumPropertyValuesDto>();
+
+    useEffect(() => {
+        GameEndpoint.getEnumPropertyValues().then(setPropertyEnumValues);
+    }, []);
+
+    return propertyEnumValues && (
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="3xl">
             <ModalContent>
                 {(onClose) => {
@@ -69,6 +80,8 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                             <DatePickerInput key="release" name="release" label="Release"
                                                              className="w-fit"/>
                                         </div>
+                                        <ArrayInputAutocomplete options={Array.from(availablePlatforms)}
+                                                                name="platforms" label="Platforms"/>
                                         <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
                                         <TextAreaInput key="comment" name="comment" label="Comment (Markdown)"/>
                                         <Accordion variant="splitted"
@@ -81,14 +94,21 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                            title="Additional Metadata">
                                                 <ArrayInput key="developers" name="developers" label="Developers"/>
                                                 <ArrayInput key="publishers" name="publishers" label="Publishers"/>
-                                                <ArrayInput key="genres" name="genres" label="Genres"/>
-                                                <ArrayInput key="themes" name="themes" label="Themes"/>
+                                                <ArrayInputAutocomplete options={propertyEnumValues.genres}
+                                                                        defaultSelected={game.genres}
+                                                                        key="genres" name="genres" label="Genres"/>
+                                                <ArrayInputAutocomplete options={propertyEnumValues.themes}
+                                                                        defaultSelected={game.themes}
+                                                                        key="themes" name="themes" label="Themes"/>
+                                                <ArrayInputAutocomplete options={propertyEnumValues.features}
+                                                                        defaultSelected={game.features}
+                                                                        key="features" name="features"
+                                                                        label="Features"/>
+                                                <ArrayInputAutocomplete options={propertyEnumValues.perspectives}
+                                                                        defaultSelected={game.perspectives}
+                                                                        key="perspectives" name="perspectives"
+                                                                        label="Perspectives"/>
                                                 <ArrayInput key="keywords" name="keywords" label="Keywords"/>
-                                                <ArrayInput key="features" name="features" label="Features"/>
-                                                <ArrayInput key="perspectives" name="perspectives"
-                                                            label="Perspectives"/>
-                                                <ArrayInput key="keywords" name="keywords"
-                                                            label="Keywords"/>
                                             </AccordionItem>
                                         </Accordion>
                                     </ModalBody>

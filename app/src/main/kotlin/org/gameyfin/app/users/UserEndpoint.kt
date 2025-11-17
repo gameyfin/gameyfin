@@ -20,7 +20,7 @@ class UserEndpoint(
     @AnonymousAllowed
     fun getUserInfo(): ExtendedUserInfoDto? {
         val auth = getCurrentAuth()
-        if (auth?.isAuthenticated == false || auth?.principal == "anonymousUser") return null
+        if (auth == null || !auth.isAuthenticated || auth.principal == "anonymousUser") return null
         return userService.getUserInfo()
     }
 
@@ -33,6 +33,11 @@ class UserEndpoint(
     @RolesAllowed(Role.Names.ADMIN)
     fun existsByMail(email: String): Boolean {
         return userService.existsByEmail(email)
+    }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun getUserById(id: Long): ExtendedUserInfoDto? {
+        return userService.getUserById(id)
     }
 
     @RolesAllowed(Role.Names.ADMIN)

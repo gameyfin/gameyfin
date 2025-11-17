@@ -7,12 +7,10 @@ import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.security.isCurrentUserAdmin
-import org.gameyfin.app.games.dto.GameDto
-import org.gameyfin.app.games.dto.GameEvent
-import org.gameyfin.app.games.dto.GameSearchResultDto
-import org.gameyfin.app.games.dto.GameUpdateDto
+import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.libraries.LibraryCoreService
 import org.gameyfin.app.libraries.LibraryService
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import reactor.core.publisher.Flux
 import java.nio.file.Path
 
@@ -34,8 +32,8 @@ class GameEndpoint(
 
     fun getAll(): List<GameDto> = gameService.getAll()
 
-    fun getPotentialMatches(searchTerm: String): List<GameSearchResultDto> {
-        return gameService.getPotentialMatches(searchTerm)
+    fun getPotentialMatches(searchTerm: String, platformFilter: Set<Platform>): List<GameSearchResultDto> {
+        return gameService.getPotentialMatches(searchTerm, platformFilter)
     }
 
     @RolesAllowed(Role.Names.ADMIN)
@@ -59,5 +57,14 @@ class GameEndpoint(
         if (game != null) {
             libraryCoreService.addGamesToLibrary(listOf(game), library, true)
         }
+    }
+
+    /**
+     * This endpoint is necessary to fetch enum property values from the backend.
+     * Hilla only generates enums directly from their respective values and ignores the displayName property.
+     */
+    @RolesAllowed(Role.Names.ADMIN)
+    fun getEnumPropertyValues(): GameEnumPropertyValuesDto {
+        return gameService.getEnumPropertyValues()
     }
 }

@@ -2,6 +2,7 @@ package org.gameyfin.app.libraries.entities
 
 import jakarta.persistence.*
 import org.gameyfin.app.games.entities.Game
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import java.time.Instant
@@ -26,9 +27,13 @@ class Library(
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
     var directories: MutableList<DirectoryMapping> = ArrayList(),
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
+    @ElementCollection(targetClass = Platform::class, fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    var platforms: MutableList<Platform> = ArrayList(),
+
+    @OneToMany(mappedBy = "library", fetch = FetchType.EAGER, orphanRemoval = true)
     var games: MutableList<Game> = ArrayList(),
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    var unmatchedPaths: MutableList<String> = ArrayList(),
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
+    var ignoredPaths: MutableList<IgnoredPath> = ArrayList()
 )

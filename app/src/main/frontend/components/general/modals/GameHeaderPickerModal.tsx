@@ -3,7 +3,7 @@ import {Button, Image, Input, Modal, ModalBody, ModalContent, ModalHeader, Scrol
 import React, {useEffect, useState} from "react";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import {GameEndpoint} from "Frontend/generated/endpoints";
-import {ArrowRight, MagnifyingGlass} from "@phosphor-icons/react";
+import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
@@ -33,7 +33,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
 
     async function search() {
         setIsSearching(true);
-        const results = await GameEndpoint.getPotentialMatches(searchTerm);
+        const results = await GameEndpoint.getPotentialMatches(searchTerm, game.platforms);
         let validResults = results.filter(result => result.headerUrls && result.headerUrls.length > 0);
         setSearchResults(validResults);
         setIsSearching(false);
@@ -59,7 +59,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
                                     setHeaderUrl(headerUrl);
                                     onClose();
                                 }}>
-                                    <ArrowRight/>
+                                    <ArrowRightIcon/>
                                 </Button>
                             </div>
                             <div className="flex flex-row gap-2 mb-4">
@@ -74,7 +74,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
                                        }}
                                 />
                                 <Button isIconOnly onPress={search} color="primary" isLoading={isSearching}>
-                                    <MagnifyingGlass/>
+                                    <MagnifyingGlassIcon/>
                                 </Button>
                             </div>
                             {searchResults.length === 0 && !isSearching &&
@@ -103,7 +103,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
                                     >
                                         <Image
                                             alt={header.title}
-                                            className="z-0 object-cover group-hover:brightness-[25%]"
+                                            className="z-0 object-cover group-hover:brightness-25"
                                             src={header.url}
                                             radius="none"
                                         />
@@ -112,7 +112,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
                                             <PluginIcon plugin={state[header.source] as PluginDto} size={32}
                                                         blurred={false} showTooltip={false}/>
                                             <p className="text-s text-center">{header.title}</p>
-                                            <ArrowRight/>
+                                            <ArrowRightIcon/>
                                         </div>
                                     </div>
                                 ))}

@@ -109,24 +109,25 @@ class FilesystemService(
                 }
         }
 
-        // Get all paths already in the library as game files or as unmatched paths
+        // Get all paths already in the library as game files or as ignored paths
         val currentLibraryGamePaths = library.games.map { Path(it.metadata.path) }
-        val currentLibraryUnmatchedPaths = library.unmatchedPaths.map { Path(it) }
-        val allCurrentLibraryPaths = currentLibraryGamePaths + currentLibraryUnmatchedPaths
+        val currentLibraryIgnoredPaths = library.ignoredPaths.map { Path(it.path) }
+        val allCurrentLibraryPaths = currentLibraryGamePaths + currentLibraryIgnoredPaths
 
-        //Get all paths that are on the filesystem, but not in the library (either as game or as unmatched path)
+        //Get all paths that are on the filesystem, but not in the library (either as game or as ignored path)
         val newPaths = currentFilesystemPaths.filter { path ->
             val isInLibrary = allCurrentLibraryPaths.any { it == path }
             !isInLibrary
         }
 
-        //Get all paths that are in the library (either as game or as unmatched path), but not on the filesystem
+        //Get all paths that are in the library (either as game or as ignored path), but not on the filesystem
         val removedGamePaths = currentLibraryGamePaths.filter { path ->
             val isOnFilesystem = currentFilesystemPaths.any { it == path }
             !isOnFilesystem
         }
 
-        val removedUnmatchedPaths = currentLibraryUnmatchedPaths.filter { path ->
+        val removedIgnoredPaths = library.ignoredPaths.filter { ignoredPath ->
+            val path = Path(ignoredPath.path)
             val isOnFilesystem = currentFilesystemPaths.any { it == path }
             !isOnFilesystem
         }
@@ -134,7 +135,7 @@ class FilesystemService(
         return FilesystemScanResult(
             newPaths = newPaths,
             removedGamePaths = removedGamePaths,
-            removedUnmatchedPaths = removedUnmatchedPaths
+            removedIgnoredPaths = removedIgnoredPaths
         )
     }
 

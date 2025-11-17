@@ -16,7 +16,7 @@ import {
     useDisclosure
 } from "@heroui/react";
 import RequestGameModal from "Frontend/components/general/modals/RequestGameModal";
-import {ArrowUp, Check, Info, PlusCircle, Trash, X} from "@phosphor-icons/react";
+import {ArrowUpIcon, CheckIcon, InfoIcon, PlusCircleIcon, TrashIcon, XIcon} from "@phosphor-icons/react";
 import React, {useEffect, useMemo, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import {ConfigEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
@@ -145,9 +145,10 @@ export default function GameRequestView() {
         switch (status) {
             case GameRequestStatus.APPROVED:
                 return <Chip size="sm" radius="sm"
-                             className="text-xs bg-success-300 text-success-foreground">Approved</Chip>;
+                             className="text-xs bg-success text-success-foreground">Approved</Chip>;
             case GameRequestStatus.FULFILLED:
-                return <Chip size="sm" radius="sm" className="text-xs bg-success">Fulfilled</Chip>;
+                return <Chip size="sm" radius="sm"
+                             className="text-xs bg-success-100 text-success-foreground">Fulfilled</Chip>;
             case GameRequestStatus.REJECTED:
                 return <Chip size="sm" radius="sm"
                              className="text-xs bg-danger-300 text-danger-foreground">Rejected</Chip>;
@@ -162,13 +163,13 @@ export default function GameRequestView() {
             <h1 className="text-2xl font-bold">Game Requests</h1>
             <div className="flex flex-row items-center gap-4">
                 {!areGameRequestsEnabled &&
-                    <SmallInfoField icon={Info}
+                    <SmallInfoField icon={InfoIcon}
                                     message="Request submission is disabled"
                                     className="text-default-500"/>
                 }
                 <Button className="w-fit"
                         color="primary"
-                        startContent={<PlusCircle weight="fill"/>}
+                        startContent={<PlusCircleIcon weight="fill"/>}
                         onPress={requestGameModal.onOpen}
                         isDisabled={!areGameRequestsEnabled || (!auth.state.user && !areGuestsAllowedToRequestGames)}>
                     Request a Game
@@ -219,6 +220,7 @@ export default function GameRequestView() {
         >
             <TableHeader>
                 <TableColumn key="title" allowsSorting>Title & Release</TableColumn>
+                <TableColumn key="platform">Platform</TableColumn>
                 <TableColumn>Submitted by</TableColumn>
                 <TableColumn key="createdAt" allowsSorting>Submitted</TableColumn>
                 <TableColumn key="updatedAt" allowsSorting>Updated</TableColumn>
@@ -231,6 +233,9 @@ export default function GameRequestView() {
                     <TableRow key={item.id}>
                         <TableCell>
                             {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                        </TableCell>
+                        <TableCell>
+                            <Chip size="sm" radius="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
                         </TableCell>
                         <TableCell>
                             <p className="text-default-500">
@@ -259,7 +264,7 @@ export default function GameRequestView() {
                                                 variant={hasUserVotedForRequest(item as GameRequestDto) ? "solid" : "bordered"}
                                                 color={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "default"}
                                                 isDisabled={!auth.state.user || item.status === GameRequestStatus.FULFILLED}
-                                                startContent={<ArrowUp/>}
+                                                startContent={<ArrowUpIcon/>}
                                                 onPress={async () => await toggleVote(item.id)}>
                                             {item.voters.length}
                                         </Button>
@@ -272,7 +277,7 @@ export default function GameRequestView() {
                                                 color={item.status === GameRequestStatus.APPROVED ? "primary" : "default"}
                                                 isDisabled={item.status === GameRequestStatus.FULFILLED}
                                                 onPress={async () => await toggleApprove(item as GameRequestDto)}>
-                                            <Check/>
+                                            <CheckIcon/>
                                         </Button>
                                     </Tooltip>
                                     <Tooltip content="Reject this request">
@@ -281,7 +286,7 @@ export default function GameRequestView() {
                                                 color={item.status === GameRequestStatus.REJECTED ? "primary" : "default"}
                                                 isDisabled={item.status === GameRequestStatus.FULFILLED}
                                                 onPress={async () => await toggleReject(item as GameRequestDto)}>
-                                            <X/>
+                                            <XIcon/>
                                         </Button>
                                     </Tooltip>
                                 </div>}
@@ -290,7 +295,7 @@ export default function GameRequestView() {
                                         <Button size="sm" isIconOnly
                                                 color="danger"
                                                 onPress={async () => await deleteRequest(item.id)}>
-                                            <Trash/>
+                                            <TrashIcon/>
                                         </Button>
                                     </Tooltip>
                                 }

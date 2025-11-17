@@ -48,9 +48,14 @@ out/
 /packaged_plugins
 /logs
 /templates
+/docker/docker-compose.yml
 /app/src/main/bundles/
 /app/src/main/frontend/**/*.js
 /app/src/main/frontend/**/*.js.map
 /app/src/main/frontend/generated/
-/torrent_dotfiles/
+**/torrent_dotfiles/
 *.state.json
+/plugins/data/
+/plugins/state/
+/plugindata/
+/docker-debug/

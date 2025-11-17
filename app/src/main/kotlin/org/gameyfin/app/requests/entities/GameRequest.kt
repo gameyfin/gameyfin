@@ -3,6 +3,7 @@ package org.gameyfin.app.requests.entities
 import jakarta.persistence.*
 import org.gameyfin.app.requests.status.GameRequestStatus
 import org.gameyfin.app.users.entities.User
+import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
@@ -21,6 +22,10 @@ class GameRequest(
 
     @Column(nullable = false)
     val release: Instant?,
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    val platform: Platform,
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

@@ -6,10 +6,12 @@ on:
       - 'fix/*'
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     permissions:
+      contents: write
       packages: write
+      checks: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -25,6 +27,39 @@ jobs:
           GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
         run: ./gradlew clean build -Pvaadin.productionMode=true
 
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v6
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          path: |
+            app/build/libs/**
+            plugins/**/build/libs/**/*.jar
+
+  docker:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [ alpine, ubuntu ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Download build outputs
+        uses: actions/download-artifact@v5
+        with:
+          name: build-outputs
+          path: .
+
       - name: Extract tag from branch name
         id: extract_tag
         run: |
@@ -32,14 +67,13 @@ jobs:
           TAG="${BRANCH_NAME#fix/}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (${{ matrix.variant }})
         uses: ./.github/actions/docker-build-push
         with:
-          dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
           ghcr_username: ${{ github.actor }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
           context: .
           dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
-          tags: grimsi/gameyfin:${{ steps.extract_tag.outputs.tag }},ghcr.io/gameyfin/gameyfin:${{ steps.extract_tag.outputs.tag }}
+          tags: ghcr.io/gameyfin/gameyfin:${{ steps.extract_tag.outputs.tag }}
+          variant: ${{ matrix.variant }}

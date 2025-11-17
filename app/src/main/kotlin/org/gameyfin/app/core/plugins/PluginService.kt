@@ -15,6 +15,7 @@ import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
 import org.pf4j.ExtensionPoint
+import org.pf4j.PluginState
 import org.pf4j.PluginWrapper
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -69,10 +70,27 @@ class PluginService(
             .map { toDto(it) }
     }
 
-    fun getPluginManagementEntry(clazz: Class<ExtensionPoint>): PluginManagementEntry {
+    fun getPluginManagementEntry(clazz: Class<out ExtensionPoint>): PluginManagementEntry {
         val pluginWrapper = pluginManager.whichPlugin(clazz)
         return pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
             ?: throw IllegalArgumentException("Plugin with class $clazz not found")
+    }
+
+    fun getPluginManagementEntries(
+        type: Class<out ExtensionPoint>,
+        enabledOnly: Boolean = true
+    ): List<PluginManagementEntry> {
+        val pluginWrappers = if (enabledOnly) {
+            pluginManager.plugins.filter { it.pluginState == PluginState.STARTED }
+        } else {
+            pluginManager.plugins
+        }
+
+        return pluginWrappers.filter { pluginManager.getExtensionTypes(it.pluginId).contains(type.simpleName) }
+            .map {
+                pluginManagementRepository.findByIdOrNull(it.pluginId)
+                    ?: throw IllegalArgumentException("Plugin with id ${it.pluginId} not found")
+            }
     }
 
     fun enablePlugin(pluginId: String) {

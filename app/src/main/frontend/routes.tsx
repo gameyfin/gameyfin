@@ -26,6 +26,7 @@ import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
 import ErrorView from "Frontend/views/ErrorView";
 import GameRequestView from "Frontend/views/GameRequestView";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
+import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -98,6 +99,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'requests',
                                     element: <GameRequestManagement/>,
                                     handle: {title: 'Administration - Game Requests'}
+                                },
+                                {
+                                    path: 'downloads',
+                                    element: <DownloadManagement/>,
+                                    handle: {title: 'Administration - Downloads'}
                                 },
                                 {
                                     path: 'users',

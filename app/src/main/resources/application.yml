@@ -2,14 +2,20 @@ logging.level:
   root: warn
   org.atmosphere: warn
   org.gameyfin: info
+  org.flywaydb.core.internal.command: info
+  org.flywaydb.core.internal.sqlscript: warn
   org.gameyfin.GameyfinApplicationKt: warn
-  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
+  # Suppress false positive warnings from Spring Security 6
+  org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
+  # Hides an error log on the first aborted download
+  org.apache.catalina.core.ContainerBase: off
 
 server:
   port: 8080
   servlet:
     session:
       tracking-modes: cookie
+      timeout: 24h
   forward-headers-strategy: framework
 
 management:

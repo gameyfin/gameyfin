@@ -9,7 +9,10 @@ sealed class ConfigProperties<T : Serializable>(
     val key: String,
     val description: String,
     val default: T? = null,
-    val allowedValues: List<T>? = null
+    val allowedValues: List<T>? = null,
+    val min: Number? = null,
+    val max: Number? = null,
+    val step: Number? = null
 ) {
 
     /** Libraries */
@@ -53,8 +56,11 @@ sealed class ConfigProperties<T : Serializable>(
             data object TitleMatchMinRatio : ConfigProperties<Int>(
                 Int::class,
                 "library.scan.title-match-min-ratio",
-                "Minimum ratio for title matching (0-100). Higher values mean stricter matching.",
-                90
+                "Minimum ratio for title matching. Higher values mean stricter matching.",
+                default = 90,
+                min = 0,
+                max = 100,
+                step = 1
             )
 
             data object GameFileExtensions : ConfigProperties<Array<String>>(
@@ -127,6 +133,23 @@ sealed class ConfigProperties<T : Serializable>(
                 10
             )
         }
+    }
+
+    /** Downloads */
+    sealed class Downloads {
+        data object BandwidthLimitEnabled : ConfigProperties<Boolean>(
+            Boolean::class,
+            "downloads.bandwidth-limit.enabled",
+            "Enable per-user bandwidth limiting for downloads",
+            false
+        )
+
+        data object BandwidthLimitMbps : ConfigProperties<Int>(
+            Int::class,
+            "downloads.bandwidth-limit.mbps",
+            "Maximum download speed in Megabits per second (Mbps)",
+            100
+        )
     }
 
     /** User management */

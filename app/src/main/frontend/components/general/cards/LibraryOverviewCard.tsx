@@ -1,15 +1,16 @@
-import {Button, Card, Chip, Tooltip} from "@heroui/react";
+import {Button, Card, Tooltip} from "@heroui/react";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import React from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import {MagnifyingGlass, MagnifyingGlassPlus, SlidersHorizontal} from "@phosphor-icons/react";
+import {MagnifyingGlassIcon, MagnifyingGlassPlusIcon, SlidersHorizontalIcon} from "@phosphor-icons/react";
 import ScanType from "Frontend/generated/org/gameyfin/app/libraries/enums/ScanType";
 import {useNavigate} from "react-router";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
+import ChipList from "Frontend/components/general/ChipList";
 
 interface LibraryOverviewCardProps {
     library: LibraryAdminDto;
@@ -50,17 +51,17 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip content="Scan library (quick)" placement="bottom" color="foreground">
                         <Button isIconOnly variant="light" onPress={() => triggerScan(ScanType.QUICK)}>
-                            <MagnifyingGlass/>
+                            <MagnifyingGlassIcon/>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Scan library (full)" placement="bottom" color="foreground">
                         <Button isIconOnly variant="light" onPress={() => triggerScan(ScanType.FULL)}>
-                            <MagnifyingGlassPlus/>
+                            <MagnifyingGlassPlusIcon/>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Configuration" placement="bottom" color="foreground">
                         <Button isIconOnly variant="light" onPress={() => navigate('library/' + library.id)}>
-                            <SlidersHorizontal/>
+                            <SlidersHorizontalIcon/>
                         </Button>
                     </Tooltip>
                 </div>
@@ -73,7 +74,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                     <p>Platforms</p>
                     <p className="font-bold">{library.stats.gamesCount}</p>
                     <p className="font-bold">{library.stats.downloadedGamesCount}</p>
-                    <Chip size="sm">PC</Chip>
+                    <ChipList items={library.platforms} maxVisible={0} defaultContent="All"/>
                 </div>
             }
         </Card>

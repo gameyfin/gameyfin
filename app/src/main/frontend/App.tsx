@@ -4,7 +4,7 @@ import {HeroUIProvider} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
 import {themeNames} from "Frontend/theming/themes";
 import {AuthProvider, useAuth} from "Frontend/util/auth";
-import {IconContext, X} from "@phosphor-icons/react";
+import {IconContext, XIcon} from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
@@ -16,6 +16,9 @@ import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
 import {useEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
+import {initializePlatformState} from "Frontend/state/PlatformState";
+import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
+import {initializeUserState} from "Frontend/state/UserState";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
@@ -46,11 +49,14 @@ function ViewWithAuth() {
 
         initializeLibraryState();
         initializeGameState();
+        initializePlatformState();
         initializeGameRequestState();
         initializePluginState();
 
         if (isAdmin(auth)) {
             initializeScanState();
+            initializeDownloadSessionState();
+            initializeUserState();
         }
     }, [auth]);
 
@@ -63,7 +69,7 @@ function ViewWithAuth() {
                     radius: "sm",
                     variant: "flat",
                     hideIcon: true,
-                    closeIcon: <X/>,
+                    closeIcon: <XIcon/>,
                     classNames: {
                         closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
                         progressTrack: "h-1",
