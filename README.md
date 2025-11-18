@@ -7,11 +7,6 @@
     <p>simple / fast / <a href="https://github.com/gameyfin/gameyfin/blob/main/LICENSE.md">FOSS</a></p>
 </div>
 
-> [!IMPORTANT]
-> Gameyfins container image will move soon™.  
-> The new image is available under `ghcr.io/gameyfin/gameyfin`.
-> The old image (`grimsi/gameyfin`) will be removed in the future, so please update your setup accordingly.
-
 ## Overview
 
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
