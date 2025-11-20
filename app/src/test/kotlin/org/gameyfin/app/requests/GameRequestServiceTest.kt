@@ -639,7 +639,7 @@ class GameRequestServiceTest {
     @Test
     fun `onGameCreated should complete matching requests`() {
         val game = createTestGame(1L, "Test Game")
-        game.platforms = listOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
+        game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
         val request1 = createTestGameRequest(1L, "Test Game")
         request1.status = GameRequestStatus.PENDING
         val request2 = createTestGameRequest(2L, "Test Game")
@@ -691,7 +691,7 @@ class GameRequestServiceTest {
     @Test
     fun `onGameCreated should handle multiple platforms`() {
         val game = createTestGame(1L, "Multi Platform Game")
-        game.platforms = listOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5, Platform.XBOX_SERIES_X_S)
+        game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5, Platform.XBOX_SERIES_X_S)
         val request1 = createTestGameRequest(1L, "Multi Platform Game")
         val request2 = createTestGameRequest(2L, "Multi Platform Game")
         val request3 = createTestGameRequest(3L, "Multi Platform Game")
@@ -727,7 +727,7 @@ class GameRequestServiceTest {
     @Test
     fun `onGameUpdated should complete matching requests`() {
         val game = createTestGame(1L, "Updated Game")
-        game.platforms = listOf(Platform.NINTENDO_SWITCH)
+        game.platforms = mutableListOf(Platform.NINTENDO_SWITCH)
         val request = createTestGameRequest(1L, "Updated Game")
         request.status = GameRequestStatus.PENDING
 
@@ -751,7 +751,7 @@ class GameRequestServiceTest {
     @Test
     fun `onGameCreated should not update already fulfilled requests`() {
         val game = createTestGame(1L, "Test Game")
-        game.platforms = listOf(Platform.PC_MICROSOFT_WINDOWS)
+        game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
         val request = createTestGameRequest(1L, "Test Game")
         request.status = GameRequestStatus.FULFILLED
 
@@ -810,7 +810,7 @@ class GameRequestServiceTest {
             updatedAt = Instant.now(),
             library = mockk(relaxed = true),
             title = title,
-            platforms = listOf(Platform.PC_MICROSOFT_WINDOWS),
+            platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS),
             coverImage = null,
             headerImage = null,
             comment = null,

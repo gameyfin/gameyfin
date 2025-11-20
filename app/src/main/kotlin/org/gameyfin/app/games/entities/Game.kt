@@ -30,7 +30,7 @@ class Game(
 
     @ElementCollection(targetClass = Platform::class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
-    var platforms: List<Platform> = emptyList(),
+    var platforms: MutableList<Platform> = mutableListOf(),
 
     var title: String? = null,
 

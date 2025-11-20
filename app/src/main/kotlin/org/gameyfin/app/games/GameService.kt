@@ -614,7 +614,10 @@ class GameService(
         // Step 3: Merge results into a single Game entity
         val mergedGame = mergeResults(validResults, path, library)
 
-        // Step 4: If a replaceGameId is provided, set it (overwriting the existing entity)
+        // Step 4: Filter platforms to only those supported by the library
+        mergedGame.platforms = library.platforms.intersect(mergedGame.platforms.toSet()).toMutableList()
+
+        // Step 5: If a replaceGameId is provided, set it (overwriting the existing entity)
         if (replaceGameId != null) {
             val existingGame = getById(replaceGameId)
 
@@ -802,7 +805,7 @@ class GameService(
 
                 metadata.platforms?.takeIf { it.isNotEmpty() }?.let { platforms ->
                     if (!metadataMap.containsKey("platforms")) {
-                        mergedGame.platforms = platforms.toList()
+                        mergedGame.platforms = platforms.toMutableList()
                         metadataMap["platforms"] =
                             GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
                     }
