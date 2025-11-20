@@ -639,7 +639,7 @@ class GameServiceTest {
         val game = createTestGame(1L)
         game.metadata.originalIds = mapOf(pluginEntry to "123")
         game.title = "Test Game"
-        game.platforms = listOf(Platform.PC_MICROSOFT_WINDOWS)
+        game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
         // Add existing field metadata to simulate a previously matched game
         game.metadata.fields["title"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
         game.metadata.fields["platforms"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
@@ -658,6 +658,7 @@ class GameServiceTest {
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 1000L
+        every { library.platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
 
         val result = gameService.update(game)
 
@@ -704,7 +705,7 @@ class GameServiceTest {
         val game = createTestGame(1L)
         game.metadata.originalIds = mapOf(pluginEntry to "123")
         game.title = "User Modified Title"
-        game.platforms = listOf(Platform.PC_MICROSOFT_WINDOWS)
+        game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
         game.metadata.fields["title"] = GameFieldMetadata(source = GameFieldUserSource(user = mockUser))
         game.metadata.fields["platforms"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = pluginEntry))
 
@@ -722,6 +723,7 @@ class GameServiceTest {
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 1000L
+        every { library.platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
 
         val result = gameService.update(game)
 
@@ -1195,6 +1197,179 @@ class GameServiceTest {
         assertEquals(listOf(Genre.ACTION), result.genres)
     }
 
+    @Test
+    fun `matchManually should filter platforms to only those supported by the library`() {
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Multi-Platform Game",
+            platforms = setOf(
+                Platform.PC_MICROSOFT_WINDOWS,
+                Platform.PLAYSTATION_5,
+                Platform.XBOX_SERIES_X_S,
+                Platform.NINTENDO_SWITCH
+            )
+        )
+
+        val provider = spyk(TestProvider(metadata))
+        val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+            every { priority } returns 1
+        }
+
+        val originalIds = mapOf(
+            provider.javaClass.name to ExternalProviderIdDto("test-plugin", "123")
+        )
+        val path = Path.of("/test/game.exe")
+
+        // Library only supports PC and PlayStation 5
+        val restrictedLibrary = mockk<Library>(relaxed = true) {
+            every { id } returns 1L
+            every { platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
+        }
+
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
+        every { filesystemService.calculateFileSize(any()) } returns 1000L
+
+        val result = gameService.matchManually(originalIds, path, restrictedLibrary, null, persist = false)
+
+        assertNotNull(result)
+        assertEquals("Multi-Platform Game", result.title)
+        // Platforms should be filtered to only PC and PlayStation 5
+        assertEquals(2, result.platforms.size)
+        assertEquals(
+            setOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5),
+            result.platforms.toSet()
+        )
+    }
+
+    @Test
+    fun `matchManually should return empty platforms when library platforms don't match metadata platforms`() {
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Console Exclusive Game",
+            platforms = setOf(Platform.PLAYSTATION_5, Platform.XBOX_SERIES_X_S)
+        )
+
+        val provider = spyk(TestProvider(metadata))
+        val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+            every { priority } returns 1
+        }
+
+        val originalIds = mapOf(
+            provider.javaClass.name to ExternalProviderIdDto("test-plugin", "123")
+        )
+        val path = Path.of("/test/game.exe")
+
+        // Library only supports PC
+        val pcOnlyLibrary = mockk<Library>(relaxed = true) {
+            every { id } returns 1L
+            every { platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
+        }
+
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
+        every { filesystemService.calculateFileSize(any()) } returns 1000L
+
+        val result = gameService.matchManually(originalIds, path, pcOnlyLibrary, null, persist = false)
+
+        assertNotNull(result)
+        assertEquals("Console Exclusive Game", result.title)
+        // Platforms should be empty since there's no intersection
+        assertEquals(0, result.platforms.size)
+    }
+
+    @Test
+    fun `matchManually should preserve all platforms when library platforms list is empty`() {
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Multi-Platform Game",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
+        )
+
+        val provider = spyk(TestProvider(metadata))
+        val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+            every { priority } returns 1
+        }
+
+        val originalIds = mapOf(
+            provider.javaClass.name to ExternalProviderIdDto("test-plugin", "123")
+        )
+        val path = Path.of("/test/game.exe")
+
+        // Library with no platform restrictions
+        val unrestrictedLibrary = mockk<Library>(relaxed = true) {
+            every { id } returns 1L
+            every { platforms } returns mutableListOf()
+        }
+
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
+        every { filesystemService.calculateFileSize(any()) } returns 1000L
+
+        val result = gameService.matchManually(originalIds, path, unrestrictedLibrary, null, persist = false)
+
+        assertNotNull(result)
+        assertEquals("Multi-Platform Game", result.title)
+        // When library has no platform restrictions, result should have no platforms (empty intersect empty)
+        assertEquals(0, result.platforms.size)
+    }
+
+    @Test
+    fun `matchManually should filter platforms when replacing an existing game`() {
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "123",
+            title = "Updated Game",
+            platforms = setOf(
+                Platform.PC_MICROSOFT_WINDOWS,
+                Platform.PLAYSTATION_5,
+                Platform.XBOX_SERIES_X_S
+            )
+        )
+
+        val provider = spyk(TestProvider(metadata))
+        val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+            every { priority } returns 1
+        }
+
+        val originalIds = mapOf(
+            provider.javaClass.name to ExternalProviderIdDto("test-plugin", "123")
+        )
+        val path = Path.of("/test/game.exe")
+        val replaceGameId = 5L
+        val existingGame = createTestGame(replaceGameId)
+
+        // Library only supports PC and PlayStation 5
+        val restrictedLibrary = mockk<Library>(relaxed = true) {
+            every { id } returns 1L
+            every { platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
+        }
+
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { gameRepository.findByIdOrNull(replaceGameId) } returns existingGame
+        every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
+        every { filesystemService.calculateFileSize(any()) } returns 1000L
+
+        val result = gameService.matchManually(originalIds, path, restrictedLibrary, replaceGameId, persist = false)
+
+        assertNotNull(result)
+        assertEquals(replaceGameId, result.id)
+        assertEquals("Updated Game", result.title)
+        // Platforms should be filtered even when replacing
+        assertEquals(2, result.platforms.size)
+        assertEquals(
+            setOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5),
+            result.platforms.toSet()
+        )
+    }
+
     private fun createTestGame(id: Long?, title: String = "Test Game"): Game {
         return Game(
             id = id,
@@ -1202,7 +1377,7 @@ class GameServiceTest {
             updatedAt = Instant.now(),
             library = library,
             title = title,
-            platforms = listOf(Platform.PC_MICROSOFT_WINDOWS),
+            platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS),
             coverImage = mockk<Image>(),
             headerImage = mockk<Image>(),
             comment = "Comment",
