@@ -159,7 +159,7 @@ class GameExtensionsTest {
             updatedAt = Instant.now(),
             library = library,
             title = "Test Game",
-            platforms = emptyList(),
+            platforms = mutableListOf(),
             metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path")
         )
 
@@ -183,7 +183,7 @@ class GameExtensionsTest {
             updatedAt = Instant.now(),
             library = library,
             title = "Test Game",
-            platforms = emptyList(),
+            platforms = mutableListOf(),
             metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path")
         )
 
@@ -208,7 +208,7 @@ class GameExtensionsTest {
             updatedAt = Instant.now(),
             library = library,
             title = "Test Game",
-            platforms = emptyList(),
+            platforms = mutableListOf(),
             release = releaseInstant,
             metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path")
         )
@@ -227,7 +227,7 @@ class GameExtensionsTest {
             updatedAt = Instant.now(),
             library = library,
             title = "Test Game",
-            platforms = emptyList(),
+            platforms = mutableListOf(),
             videoUrls = listOf(URI("https://example.com/video1"), URI("https://example.com/video2")),
             metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path")
         )
@@ -255,7 +255,7 @@ class GameExtensionsTest {
             updatedAt = Instant.now(),
             library = library,
             title = "Test Game",
-            platforms = emptyList(),
+            platforms = mutableListOf(),
             images = mutableListOf(image1, image2, image3),
             metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path")
         )
@@ -332,7 +332,7 @@ class GameExtensionsTest {
             updatedAt = Instant.now(),
             library = library,
             title = "Test Game",
-            platforms = listOf(Platform.PC_MICROSOFT_WINDOWS),
+            platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS),
             coverImage = coverImage,
             headerImage = headerImage,
             comment = "Test comment",
