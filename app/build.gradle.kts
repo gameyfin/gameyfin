@@ -1,5 +1,6 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 group = "org.gameyfin"
-version = rootProject.version
 val appMainClass = "org.gameyfin.app.GameyfinApplicationKt"
 
 plugins {
@@ -102,9 +103,9 @@ tasks.withType<Test> {
 }
 
 tasks.named<ProcessResources>("processResources") {
-    val projectVersion = version.toString()
+    val projectVersion = rootProject.version.toString()
     filesMatching("application.yml") {
-        filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("project.version" to projectVersion))
+        filter<ReplaceTokens>("tokens" to mapOf("project.version" to projectVersion))
     }
 }
 
