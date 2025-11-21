@@ -47,5 +47,8 @@ class LibraryEndpoint(
     fun updateLibrary(library: LibraryUpdateDto) = libraryService.update(library)
 
     @RolesAllowed(Role.Names.ADMIN)
+    fun updateLibraries(libraries: Collection<LibraryUpdateDto>) = libraryService.update(libraries)
+
+    @RolesAllowed(Role.Names.ADMIN)
     fun deleteLibrary(libraryId: Long) = libraryService.delete(libraryId)
 }

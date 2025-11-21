@@ -35,5 +35,8 @@ class Library(
     var games: MutableList<Game> = ArrayList(),
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
-    var ignoredPaths: MutableList<IgnoredPath> = ArrayList()
+    var ignoredPaths: MutableList<IgnoredPath> = ArrayList(),
+
+    @Embedded
+    var metadata: LibraryMetadata = LibraryMetadata()
 )

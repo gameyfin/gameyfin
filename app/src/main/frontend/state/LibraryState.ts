@@ -23,8 +23,12 @@ export const libraryState = proxy<LibraryState>({
     },
     get sorted() {
         return Object.values<LibraryDto>(this.state).sort((a, b) => {
-            if (a.name === undefined || b.name === undefined) return 0;
-            return a.name.localeCompare(b.name);
+            const orderDiff = b.metadata.displayOrder - a.metadata.displayOrder;
+            if (orderDiff !== 0) {
+                return orderDiff;
+            }
+            // Fallback to creation date
+            return new Date(a.createdAt).getDate() - new Date(b.createdAt).getDate();
         });
     }
 });

@@ -27,6 +27,7 @@ import ErrorView from "Frontend/views/ErrorView";
 import GameRequestView from "Frontend/views/GameRequestView";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
+import {UiManagement} from "Frontend/components/administration/UiManagement";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -94,6 +95,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'libraries/library/:libraryId',
                                     element: <LibraryManagementView/>,
                                     handle: {title: 'Administration - Library'}
+                                },
+                                {
+                                    path: 'ui',
+                                    element: <UiManagement/>,
+                                    handle: {title: 'Administration - UI Settings'}
                                 },
                                 {
                                     path: 'requests',

@@ -5,7 +5,7 @@ import Section from "Frontend/components/general/Section";
 import * as Yup from 'yup';
 import "Frontend/util/yup-extensions";
 import {addToast, Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
-import {PlusIcon} from "@phosphor-icons/react";
+import {ListNumbersIcon, PlusIcon} from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {LibraryOverviewCard} from "Frontend/components/general/cards/LibraryOverviewCard";
 import LibraryCreationModal from "Frontend/components/general/modals/LibraryCreationModal";
@@ -13,9 +13,11 @@ import LibraryUpdateDto from "Frontend/generated/org/gameyfin/app/libraries/dto/
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
+import LibraryPrioritiesModal from "Frontend/components/general/modals/LibraryPrioritiesModal";
 
 function LibraryManagementLayout({getConfig, formik}: any) {
     const libraryCreationModal = useDisclosure();
+    const libraryOrderModal = useDisclosure();
     const state = useSnapshot(libraryState);
 
     async function updateLibrary(library: LibraryUpdateDto) {
@@ -63,11 +65,18 @@ function LibraryManagementLayout({getConfig, formik}: any) {
 
             <div className="flex flex-row items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
-                <Tooltip content="Add new library">
-                    <Button isIconOnly variant="flat" onPress={libraryCreationModal.onOpen}>
-                        <PlusIcon/>
-                    </Button>
-                </Tooltip>
+                <div className="flex flex-row gap-2">
+                    <Tooltip content="Change library order">
+                        <Button isIconOnly variant="flat" onPress={libraryOrderModal.onOpen}>
+                            <ListNumbersIcon/>
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Add new library">
+                        <Button isIconOnly variant="flat" onPress={libraryCreationModal.onOpen}>
+                            <PlusIcon/>
+                        </Button>
+                    </Tooltip>
+                </div>
             </div>
             <Divider className="mb-4"/>
             {state.sorted.length > 0 ?
@@ -85,6 +94,11 @@ function LibraryManagementLayout({getConfig, formik}: any) {
             <LibraryCreationModal
                 isOpen={libraryCreationModal.isOpen}
                 onOpenChange={libraryCreationModal.onOpenChange}
+            />
+
+            <LibraryPrioritiesModal
+                isOpen={libraryOrderModal.isOpen}
+                onOpenChange={libraryOrderModal.onOpenChange}
             />
         </div>
     );
