@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
+import java.time.Instant
 import kotlin.test.assertEquals
 
 class LibraryEndpointTest {
@@ -51,7 +52,13 @@ class LibraryEndpointTest {
     fun `subscribeToLibraryEvents should return user flux when user is not admin`() {
         mockkObject(LibraryService.Companion)
         every { isCurrentUserAdmin() } returns false
-        val userDto = LibraryUserDto(id = 1L, name = "Test Library", games = emptyList())
+        val userDto = LibraryUserDto(
+            id = 1L,
+            createdAt = Instant.now(),
+            name = "Test Library",
+            games = emptyList(),
+            metadata = LibraryMetadataDto(true, 1)
+        )
         val userEvent = LibraryUserEvent.Created(userDto)
         val userFlux: Flux<List<LibraryUserEvent>> = Flux.just(listOf(userEvent))
         every { LibraryService.subscribeUser() } returns userFlux
@@ -218,6 +225,19 @@ class LibraryEndpointTest {
     }
 
     @Test
+    fun `updateLibraries should call service to update libraries`() {
+        val updateDto1 = LibraryUpdateDto(id = 1L, name = "Updated Name 1")
+        val updateDto2 = LibraryUpdateDto(id = 2L, name = "Updated Name 2")
+        val updateDtos = listOf(updateDto1, updateDto2)
+
+        every { libraryService.update(updateDtos) } just Runs
+
+        libraryEndpoint.updateLibraries(updateDtos)
+
+        verify(exactly = 1) { libraryService.update(updateDtos) }
+    }
+
+    @Test
     fun `deleteLibrary should call service to delete library`() {
         every { libraryService.delete(1L) } just Runs
 
@@ -245,12 +265,14 @@ class LibraryEndpointTest {
     ): LibraryAdminDto {
         return LibraryAdminDto(
             id = id,
+            createdAt = Instant.now(),
             name = name,
             directories = emptyList(),
             platforms = emptyList(),
             games = emptyList(),
             stats = LibraryStatsDto(0, 0),
-            ignoredPaths = emptyList()
+            ignoredPaths = emptyList(),
+            metadata = LibraryMetadataDto(true, 1)
         )
     }
 }

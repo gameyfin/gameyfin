@@ -39,7 +39,15 @@ export default function LibraryCreationModal({
             <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="xl">
                 <ModalContent>
                     {(onClose) => (
-                        <Formik initialValues={{name: "", directories: [], platforms: []}}
+                        <Formik initialValues={{
+                            name: "",
+                            directories: [],
+                            platforms: [],
+                            metadata: {
+                                displayOnHomepage: true,
+                                displayOrder: -1
+                            }
+                        }}
                                 validationSchema={Yup.object({
                                     name: Yup.string()
                                         .required("Library name is required")

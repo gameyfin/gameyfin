@@ -183,8 +183,19 @@ class LibraryService(
                 library.ignoredPaths.addAll(pathsToAdd)
             }
 
+        libraryUpdateDto.metadata?.let {
+            library.metadata = it.toEntity()
+        }
+
         library.updatedAt = Instant.now()
         libraryRepository.save(library)
+    }
+
+    /**
+     * Updates multiple libraries in the repository.
+     */
+    fun update(libraries: Collection<LibraryUpdateDto>) {
+        libraries.forEach { update(it) }
     }
 
     /**

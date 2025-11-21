@@ -1,4 +1,5 @@
 group = "org.gameyfin"
+version = rootProject.version
 val appMainClass = "org.gameyfin.app.GameyfinApplicationKt"
 
 plugins {
@@ -99,3 +100,11 @@ dependencyManagement {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+tasks.named<ProcessResources>("processResources") {
+    val projectVersion = version.toString()
+    filesMatching("application.yml") {
+        filter<org.apache.tools.ant.filters.ReplaceTokens>("tokens" to mapOf("project.version" to projectVersion))
+    }
+}
+

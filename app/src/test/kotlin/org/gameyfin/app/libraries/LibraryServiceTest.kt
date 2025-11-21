@@ -5,10 +5,7 @@ import io.mockk.*
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
-import org.gameyfin.app.libraries.dto.DirectoryMappingDto
-import org.gameyfin.app.libraries.dto.LibraryAdminDto
-import org.gameyfin.app.libraries.dto.LibraryStatsDto
-import org.gameyfin.app.libraries.dto.LibraryUpdateDto
+import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.entities.DirectoryMapping
 import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.IgnoredPathUserSource
@@ -397,7 +394,34 @@ class LibraryServiceTest {
         libraryService.update(updateDto)
 
         assertNotNull(library.updatedAt)
-        assertTrue(library.updatedAt!! >= beforeUpdate)
+        assertTrue(library.updatedAt!! > beforeUpdate)
+    }
+
+    @Test
+    fun `update with list should call update for every element`() {
+        val library1 = createTestLibrary(1L)
+        val library2 = createTestLibrary(2L)
+        val updateDto1 = LibraryUpdateDto(id = 1L, name = "Updated 1")
+        val updateDto2 = LibraryUpdateDto(id = 2L, name = "Updated 2")
+        val beforeUpdate = Instant.now()
+
+        every { libraryRepository.findByIdOrNull(1L) } returns library1
+        every { libraryRepository.findByIdOrNull(2L) } returns library2
+        every { libraryRepository.save(library1) } answers {
+            library1.updatedAt = Instant.now()
+            library1
+        }
+        every { libraryRepository.save(library2) } answers {
+            library2.updatedAt = Instant.now()
+            library2
+        }
+
+        libraryService.update(listOf(updateDto1, updateDto2))
+
+        assertNotNull(library1.updatedAt)
+        assertTrue(library1.updatedAt!! > beforeUpdate)
+        assertNotNull(library2.updatedAt)
+        assertTrue(library2.updatedAt!! > beforeUpdate)
     }
 
     @Test
@@ -474,12 +498,14 @@ class LibraryServiceTest {
     ): LibraryAdminDto {
         return LibraryAdminDto(
             id = id,
+            createdAt = Instant.now(),
             name = name,
             directories = directories,
             platforms = platforms,
             games = emptyList(),
             stats = LibraryStatsDto(0, 0),
-            ignoredPaths = emptyList()
+            ignoredPaths = emptyList(),
+            metadata = LibraryMetadataDto(true, 1)
         )
     }
 }
