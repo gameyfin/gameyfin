@@ -39,28 +39,25 @@ export default function LibraryCreationModal({
             <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="xl">
                 <ModalContent>
                     {(onClose) => (
-                        <Formik initialValues={{
-                            name: "",
-                            directories: [],
-                            platforms: [],
-                            metadata: {
-                                displayOnHomepage: true,
-                                displayOrder: -1
-                            }
-                        }}
-                                validationSchema={Yup.object({
-                                    name: Yup.string()
-                                        .required("Library name is required")
-                                        .max(255, "Library name must be 255 characters or less"),
-                                    directories: Yup.array()
-                                        .of(Yup.object())
-                                        .min(1, "At least one directory is required")
-                                })}
-                                isInitialValid={false}
-                                onSubmit={async (values: any) => {
-                                    await createLibrary(values);
-                                    onClose();
-                                }}
+                        <Formik
+                            initialValues={{
+                                name: "",
+                                directories: [],
+                                platforms: []
+                            }}
+                            validationSchema={Yup.object({
+                                name: Yup.string()
+                                    .required("Library name is required")
+                                    .max(255, "Library name must be 255 characters or less"),
+                                directories: Yup.array()
+                                    .of(Yup.object())
+                                    .min(1, "At least one directory is required")
+                            })}
+                            isInitialValid={false}
+                            onSubmit={async (values: any) => {
+                                await createLibrary(values);
+                                onClose();
+                            }}
                         >
                             {(formik) =>
                                 <Form>
