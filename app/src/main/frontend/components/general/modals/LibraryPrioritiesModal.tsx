@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {addToast, Button, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {ListBox, ListBoxItem, useDragAndDrop} from "react-aria-components";
 import {CaretUpDownIcon} from "@phosphor-icons/react";
@@ -18,10 +18,17 @@ export default function LibraryPrioritiesModal({isOpen, onOpenChange}: LibraryPr
 
     const libraries = useSnapshot(libraryState).sorted;
 
-    const sortedLibraries = useListData({
-        initialItems: libraries as LibraryDto[],
+    const sortedLibraries = useListData<LibraryDto>({
+        initialItems: [],
         getKey: (library) => library.id
     });
+
+    // Update sortedLibraries when libraries change
+    useEffect(() => {
+        sortedLibraries.setSelectedKeys(new Set());
+        sortedLibraries.items.forEach(item => sortedLibraries.remove(item.id));
+        (libraries as LibraryDto[]).forEach(library => sortedLibraries.append(library));
+    }, [libraries]);
 
     let {dragAndDropHooks} = useDragAndDrop({
         getItems: (keys) =>
@@ -34,31 +41,16 @@ export default function LibraryPrioritiesModal({isOpen, onOpenChange}: LibraryPr
             } else if (e.target.dropPosition === 'after') {
                 sortedLibraries.moveAfter(e.target.key, e.keys);
             }
-
-            // Recalculate priority based on new position (reversed)
-            sortedLibraries.items.forEach((library, index) => {
-                const reversedPriority = sortedLibraries.items.length - index;
-                sortedLibraries.update(library.id,
-                    {
-                        ...library,
-                        metadata: {
-                            displayOnHomepage: library.metadata.displayOnHomepage,
-                            displayOrder: reversedPriority
-                        }
-                    }
-                );
-            });
         }
     });
 
     async function updateLibraryOrder(onClose: () => void) {
-        const libraryCount = sortedLibraries.items.length;
         const updateDtos: LibraryUpdateDto[] = sortedLibraries.items.map((library, index): LibraryUpdateDto => {
             return {
                 id: library.id,
                 metadata: {
-                    displayOnHomepage: library.metadata.displayOnHomepage,
-                    displayOrder: libraryCount - index // Reverse order
+                    displayOnHomepage: library.metadata!.displayOnHomepage,
+                    displayOrder: index
                 }
             };
         });

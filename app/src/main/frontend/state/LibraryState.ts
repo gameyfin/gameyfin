@@ -23,12 +23,20 @@ export const libraryState = proxy<LibraryState>({
     },
     get sorted() {
         return Object.values<LibraryDto>(this.state).sort((a, b) => {
-            const orderDiff = b.metadata.displayOrder - a.metadata.displayOrder;
+            const orderA = a.metadata!.displayOrder;
+            const orderB = b.metadata!.displayOrder;
+
+            // Handle -1 as "end of list"
+            const effectiveOrderA = orderA === -1 ? Number.MAX_SAFE_INTEGER : orderA;
+            const effectiveOrderB = orderB === -1 ? Number.MAX_SAFE_INTEGER : orderB;
+
+            const orderDiff = effectiveOrderA - effectiveOrderB;
             if (orderDiff !== 0) {
                 return orderDiff;
             }
-            // Fallback to creation date
-            return new Date(a.createdAt).getDate() - new Date(b.createdAt).getDate();
+
+            // Fallback to creation date (newer first)
+            return new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime();
         });
     }
 });

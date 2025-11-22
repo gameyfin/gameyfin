@@ -24,7 +24,7 @@ export default function HomeView() {
 
     useEffect(() => {
         const libraries = librariesState.sorted
-            .filter(library => library.metadata.displayOnHomepage)
+            .filter(library => library.metadata!.displayOnHomepage)
             .filter(library =>
                 gamesByLibrary[library.id] && gamesByLibrary[library.id].length > 0
             );
