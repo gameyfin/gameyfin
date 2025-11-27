@@ -63,7 +63,7 @@ class PlatformService(
 
     @EventListener(ApplicationReadyEvent::class)
     fun initialize() {
-        log.info { "Initializing platform caches at startup" }
+        log.debug { "Initializing platform caches at startup" }
         calculateAvailablePlatforms()
         calculatePlatformsInUseByGames()
         calculatePlatformsInUseByLibraries()

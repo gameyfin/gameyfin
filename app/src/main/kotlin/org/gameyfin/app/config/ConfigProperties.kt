@@ -28,7 +28,7 @@ sealed class ConfigProperties<T : Serializable>(
             data object EnableFilesystemWatcher : ConfigProperties<Boolean>(
                 Boolean::class,
                 "library.scan.enable-filesystem-watcher",
-                "Enable automatic library scanning using file system watchers (coming soon™)",
+                "Enable automatic library scanning using file system watchers",
                 false
             )
 

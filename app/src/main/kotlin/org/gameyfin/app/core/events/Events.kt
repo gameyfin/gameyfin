@@ -24,6 +24,7 @@ class PasswordResetRequestEvent(source: Any, val token: Token<TokenType.Password
     ApplicationEvent(source)
 
 class LibraryScanScheduleUpdatedEvent(source: Any) : ApplicationEvent(source)
+class LibraryFilesystemWatcherConfigUpdatedEvent(source: Any, val isEnabled: Boolean) : ApplicationEvent(source)
 
 class UserDeletedEvent(source: Any, val user: User, val baseUrl: String) : ApplicationEvent(source)
 class UserUpdatedEvent(source: Any, val previousState: User, val currentState: User) : ApplicationEvent(source)
