@@ -45,7 +45,7 @@ function LibraryManagementLayout({getConfig, formik}: any) {
 
             <Section title="Scanning"/>
             <div className="flex flex-col gap-4">
-                <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")} isDisabled/>
+                <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
                 <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
                 <div className="flex flex-row gap-4 items-baseline">
                     <ConfigFormField configElement={getConfig("library.scan.extract-title-using-regex")}/>
