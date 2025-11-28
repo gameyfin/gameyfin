@@ -40,9 +40,6 @@ function LibraryManagementLayout({getConfig, formik}: any) {
 
     return (
         <div className="flex flex-col">
-            <Section title="Permissions"/>
-            <ConfigFormField configElement={getConfig("library.allow-public-access")}/>
-
             <Section title="Scanning"/>
             <div className="flex flex-col gap-4">
                 <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>

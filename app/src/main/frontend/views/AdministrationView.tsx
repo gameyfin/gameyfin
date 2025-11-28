@@ -39,8 +39,8 @@ const menuItems: MenuItem[] = [
         icon: <UsersIcon/>
     },
     {
-        title: "SSO",
-        url: "sso",
+        title: "Security",
+        url: "security",
         icon: <LockKeyIcon/>
     },
     {

@@ -7,7 +7,7 @@ import App from "Frontend/App";
 import {LibraryManagement} from "Frontend/components/administration/LibraryManagement";
 import {UserManagement} from "Frontend/components/administration/UserManagement";
 import ProfileManagement from "Frontend/components/administration/ProfileManagement";
-import {SsoManagement} from "Frontend/components/administration/SsoManagement";
+import {SecurityManagement} from "Frontend/components/administration/SecurityManagement";
 import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
 import {MessageManagement} from "Frontend/components/administration/MessageManagement";
@@ -117,9 +117,9 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     handle: {title: 'Administration - Users'}
                                 },
                                 {
-                                    path: 'sso',
-                                    element: <SsoManagement/>,
-                                    handle: {title: 'Administration - SSO'}
+                                    path: 'security',
+                                    element: <SecurityManagement/>,
+                                    handle: {title: 'Administration - Security'}
                                 },
                                 {
                                     path: 'messages',

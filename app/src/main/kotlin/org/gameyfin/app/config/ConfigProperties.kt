@@ -15,15 +15,18 @@ sealed class ConfigProperties<T : Serializable>(
     val step: Number? = null
 ) {
 
-    /** Libraries */
-    sealed class Libraries {
+    /** Security */
+    sealed class Security {
         data object AllowPublicAccess : ConfigProperties<Boolean>(
             Boolean::class,
-            "library.allow-public-access",
+            "security.allow-public-access",
             "Allow access to Gameyfin without login",
             false
         )
+    }
 
+    /** Libraries */
+    sealed class Libraries {
         sealed class Scan {
             data object EnableFilesystemWatcher : ConfigProperties<Boolean>(
                 Boolean::class,

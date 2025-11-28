@@ -73,27 +73,27 @@ class ConfigServiceTest {
 
     @Test
     fun `get returns Boolean value from database`() {
-        val key = "library.allow-public-access"
+        val key = "security.allow-public-access"
         val value = true
         val configEntry = ConfigEntry(key, objectMapper.writeValueAsString(value))
 
         every { configRepository.findByIdOrNull(key) } returns configEntry
 
-        val result = configService.get(ConfigProperties.Libraries.AllowPublicAccess)
+        val result = configService.get(ConfigProperties.Security.AllowPublicAccess)
 
         assertEquals(value, result)
     }
 
     @Test
     fun `set stores Boolean value as JSON in database`() {
-        val key = "library.allow-public-access"
+        val key = "security.allow-public-access"
         val value = true
         val slot = slot<ConfigEntry>()
 
         every { configRepository.findByIdOrNull(key) } returns null
         every { configRepository.save(capture(slot)) } returns mockk()
 
-        configService.set(ConfigProperties.Libraries.AllowPublicAccess, value)
+        configService.set(ConfigProperties.Security.AllowPublicAccess, value)
 
         verify { configRepository.save(any()) }
         assertEquals(key, slot.captured.key)
@@ -458,4 +458,3 @@ class ConfigServiceTest {
         assertEquals(value.toList(), deserialized.toList())
     }
 }
-
