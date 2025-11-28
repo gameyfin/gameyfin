@@ -10,6 +10,7 @@ sealed interface GameDto {
     val createdAt: Instant
     val updatedAt: Instant
     val libraryId: Long
+    val collectionIds: List<Long>
     val title: String
     val platforms: List<Platform>
     val coverId: Long?
@@ -37,6 +38,7 @@ data class GameUserDto(
     override val createdAt: Instant,
     override val updatedAt: Instant,
     override val libraryId: Long,
+    override val collectionIds: List<Long>,
     override val title: String,
     override val platforms: List<Platform>,
     override val coverId: Long?,
@@ -64,6 +66,7 @@ data class GameAdminDto(
     override val createdAt: Instant,
     override val updatedAt: Instant,
     override val libraryId: Long,
+    override val collectionIds: List<Long>,
     override val title: String,
     override val platforms: List<Platform>,
     override val coverId: Long?,

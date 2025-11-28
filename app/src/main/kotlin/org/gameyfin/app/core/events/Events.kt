@@ -1,5 +1,6 @@
 package org.gameyfin.app.core.events
 
+import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.core.token.Token
 import org.gameyfin.app.core.token.TokenType
 import org.gameyfin.app.games.entities.Game
@@ -36,3 +37,7 @@ class GameDeletedEvent(source: Any, val game: Game) : ApplicationEvent(source)
 class LibraryCreatedEvent(source: Any, val library: Library) : ApplicationEvent(source)
 class LibraryUpdatedEvent(source: Any, val currentState: Library) : ApplicationEvent(source)
 class LibraryDeletedEvent(source: Any, val library: Library) : ApplicationEvent(source)
+
+class CollectionCreatedEvent(source: Any, val collection: Collection) : ApplicationEvent(source)
+class CollectionUpdatedEvent(source: Any, val currentState: Collection) : ApplicationEvent(source)
+class CollectionDeletedEvent(source: Any, val collection: Collection) : ApplicationEvent(source)
