@@ -204,13 +204,6 @@ sealed class ConfigProperties<T : Serializable>(
                 MatchUsersBy.entries
             )
 
-            data object AutoRegisterNewUsers : ConfigProperties<Boolean>(
-                Boolean::class,
-                "sso.oidc.auto-register-new-users",
-                "Automatically create new users after registration",
-                true
-            )
-
             data object RolesClaim : ConfigProperties<String>(
                 String::class,
                 "sso.oidc.roles-claim",
