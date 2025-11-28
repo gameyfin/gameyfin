@@ -24,7 +24,7 @@ class Collection(
     @Column(nullable = false, unique = true)
     var name: String,
 
-    @Column
+    @Lob
     var description: String? = null,
 
     @ManyToMany(fetch = FetchType.EAGER)
