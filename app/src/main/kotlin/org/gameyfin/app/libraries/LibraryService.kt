@@ -5,6 +5,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.entities.DirectoryMapping
+import org.gameyfin.app.libraries.entities.IgnoredPathSourceType
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.extensions.toDtos
@@ -166,15 +167,16 @@ class LibraryService(
             library.platforms.addAll(it)
         }
 
+        // Only allow updating USER sourced ignored paths; preserve PLUGIN sourced ones
         libraryUpdateDto.ignoredPaths
             ?.filter { it.sourceType == IgnoredPathSourceTypeDto.USER } // Only USER source type is supported for updates
             ?.let { dtos ->
-                // Get current user for USER source type paths
                 val currentUser = getCurrentAuth()?.let { auth -> userService.getByUsername(auth.name) }
 
-                library.ignoredPaths.clear()
+                // Remove existing USER-sourced ignored paths, keep PLUGIN-sourced ones intact
+                library.ignoredPaths.removeIf { it.getType() == IgnoredPathSourceType.USER }
 
-                // Check for existing paths and reuse them if they exist
+                // Recreate user-sourced paths (reuse existing entity if same path already present globally)
                 val pathsToAdd = dtos.map { dto ->
                     val existingPath = ignoredPathRepository.findByPath(dto.path)
                     existingPath ?: dto.toEntity(currentUser)
