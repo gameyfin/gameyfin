@@ -48,6 +48,8 @@ class CollectionServiceTest {
             }
         }
 
+        service.create(dto)
+
         verify { repository.save(any()) }
     }
 
@@ -84,6 +86,7 @@ class CollectionServiceTest {
         game.id = 10L
         every { repository.findByIdOrNull(1L) } returns existing
         every { gameService.getById(10L) } returns game
+        every { gameService.update(game) } returns game.apply { collections += existing }
         every { repository.save(existing) } returns existing
 
         val result = service.addGame(1L, 10L)
@@ -162,8 +165,11 @@ class CollectionServiceTest {
         existing.addGame(game)
         every { repository.findByIdOrNull(6L) } returns existing
         every { gameService.getById(77L) } returns game
+        every { gameService.update(game) } returns game.apply { collections -= existing }
         every { repository.save(existing) } returns existing
+
         val result = service.removeGame(6L, 77L)
+
         assertEquals(0, result.gameIds?.size ?: 0)
     }
 
