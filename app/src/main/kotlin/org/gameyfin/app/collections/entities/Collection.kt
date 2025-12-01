@@ -28,17 +28,24 @@ class Collection(
     var description: String? = null,
 
     @ManyToMany(fetch = FetchType.EAGER)
-    var games: MutableSet<Game> = mutableSetOf()
+    var games: MutableSet<Game> = mutableSetOf(),
+
+    @Embedded
+    var metadata: CollectionMetadata = CollectionMetadata()
 ) {
     fun addGame(game: Game) {
         games.add(game)
         if (!game.collections.contains(this)) {
             game.collections.add(this)
         }
+        // Force update to trigger @PostUpdate callback
+        updatedAt = Instant.now()
     }
 
     fun removeGame(game: Game) {
         games.remove(game)
         game.collections.remove(this)
+        // Force update to trigger @PostUpdate callback
+        updatedAt = Instant.now()
     }
 }

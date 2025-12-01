@@ -35,7 +35,7 @@ class LibraryService(
         private val libraryAdminEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryAdminEvent>(1024, false)
 
         fun subscribeUser(): Flux<List<LibraryUserEvent>> {
-            log.debug { "New user subscription for libraryEvents" }
+            log.debug { "New user subscription for libraryUserEvents" }
             return libraryUserEvents.asFlux()
                 .buffer(100.milliseconds.toJavaDuration())
                 .doOnSubscribe {
@@ -47,7 +47,7 @@ class LibraryService(
         }
 
         fun subscribeAdmin(): Flux<List<LibraryAdminEvent>> {
-            log.debug { "New admin subscription for libraryEvents" }
+            log.debug { "New admin subscription for libraryAdminEvents" }
             return libraryAdminEvents.asFlux()
                 .buffer(100.milliseconds.toJavaDuration())
                 .doOnSubscribe {

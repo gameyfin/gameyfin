@@ -54,8 +54,7 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
                     <ConfigFormField className="mb-4"
                                      configElement={getConfig("sso.oidc.enabled")}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
-                                     isDisabled={!formik.values.sso.oidc.enabled ||
-                                         !formik.values.sso.oidc["auto-register-new-users"]}/>
+                                     isDisabled={!formik.values.sso.oidc.enabled}/>
 
                     <ConfigFormField configElement={getConfig("sso.oidc.roles-claim")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
@@ -97,7 +96,6 @@ const validationSchema = Yup.object({
     sso: Yup.object({
         oidc: Yup.object({
             enabled: Yup.boolean(),
-            "auto-register-new-users": Yup.boolean().required(),
             "match-existing-users-by": Yup.string().required(),
             "client-id": Yup.string().when("enabled", ([enabled], schema) =>
                 enabled ? schema.required("Client ID is required") : schema

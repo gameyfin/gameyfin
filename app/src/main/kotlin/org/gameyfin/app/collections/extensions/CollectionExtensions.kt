@@ -2,6 +2,7 @@ package org.gameyfin.app.collections.extensions
 
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.collections.entities.Collection
+import org.gameyfin.app.collections.entities.CollectionMetadata
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 
 fun Collection.toDto(): CollectionDto = if (isCurrentUserAdmin()) this.toAdminDto() else this.toUserDto()
@@ -13,6 +14,7 @@ fun Collection.toAdminDto(): CollectionAdminDto = CollectionAdminDto(
     name = name,
     description = description,
     gameIds = games.mapNotNull { it.id },
+    metadata = this.metadata.toDto(),
     stats = CollectionStatsDto(
         gamesCount = games.size,
         downloadCount = games.sumOf { it.metadata.downloadCount },
@@ -26,7 +28,8 @@ fun Collection.toUserDto(): CollectionUserDto = CollectionUserDto(
     updatedAt = updatedAt!!,
     name = name,
     description = description,
-    gameIds = games.mapNotNull { it.id }
+    gameIds = games.mapNotNull { it.id },
+    metadata = this.metadata.toDto()
 )
 
 fun CollectionCreateDto.toEntity(): Collection = Collection(
@@ -34,3 +37,16 @@ fun CollectionCreateDto.toEntity(): Collection = Collection(
     description = description
 )
 
+fun CollectionMetadata.toDto(): CollectionMetadataDto {
+    return CollectionMetadataDto(
+        displayOnHomepage = this.displayOnHomepage,
+        displayOrder = this.displayOrder
+    )
+}
+
+fun CollectionMetadataDto.toEntity(): CollectionMetadata {
+    return CollectionMetadata(
+        displayOnHomepage = this.displayOnHomepage,
+        displayOrder = this.displayOrder
+    )
+}

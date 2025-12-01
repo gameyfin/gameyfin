@@ -13,7 +13,7 @@ import {useSnapshot} from "valtio/react";
 import {scanState} from "Frontend/state/ScanState";
 import LibraryScanProgress from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanProgress";
 import {libraryState} from "Frontend/state/LibraryState";
-import { TargetIcon, WarningIcon } from "@phosphor-icons/react";
+import {TargetIcon, WarningIcon} from "@phosphor-icons/react";
 import {timeBetween, timeUntil, toTitleCase} from "Frontend/util/utils";
 import LibraryScanStatus from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanStatus";
 import {useEffect, useState} from "react";
@@ -64,7 +64,7 @@ export default function ScanProgressPopover() {
                                             <Link underline="always"
                                                   color="foreground"
                                                   size="sm"
-                                                  href={`/administration/libraries/library/${scan.libraryId}`}>
+                                                  href={`/administration/games/library/${scan.libraryId}`}>
                                                 {libraries[scan.libraryId].name}
                                             </Link>
                                         </p>

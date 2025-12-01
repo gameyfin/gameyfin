@@ -11,6 +11,7 @@ interface CollectionDto {
     val name: String
     val description: String?
     val gameIds: List<Long>?
+    val metadata: CollectionMetadataDto?
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -20,7 +21,8 @@ data class CollectionUserDto(
     override val updatedAt: Instant,
     override val name: String,
     override val description: String?,
-    override val gameIds: List<Long>?
+    override val gameIds: List<Long> = emptyList(),
+    override val metadata: CollectionMetadataDto?,
 ) : CollectionDto
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -30,8 +32,9 @@ data class CollectionAdminDto(
     override val updatedAt: Instant,
     override val name: String,
     override val description: String?,
-    override val gameIds: List<Long>?,
-    val stats: CollectionStatsDto?
+    override val gameIds: List<Long> = emptyList(),
+    override val metadata: CollectionMetadataDto?,
+    val stats: CollectionStatsDto?,
 ) : CollectionDto
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -53,6 +56,7 @@ data class CollectionUpdateDto(
     val id: Long,
     val name: String? = null,
     val description: String? = null,
-    val gameIds: List<Long>? = null
+    val gameIds: List<Long>? = null,
+    val metadata: CollectionMetadataDto? = null
 )
 

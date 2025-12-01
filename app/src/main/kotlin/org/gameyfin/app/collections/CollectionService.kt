@@ -1,5 +1,6 @@
 package org.gameyfin.app.collections
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.collections.extensions.toDto
@@ -21,16 +22,36 @@ class CollectionService(
     private val gameService: GameService
 ) {
     companion object {
+        private val log = KotlinLogging.logger {}
+
         private val collectionUserEvents =
-            Sinks.many().multicast().onBackpressureBuffer<CollectionUserEvent>(256, false)
+            Sinks.many().multicast().onBackpressureBuffer<CollectionUserEvent>(1024, false)
         private val collectionAdminEvents =
-            Sinks.many().multicast().onBackpressureBuffer<CollectionAdminEvent>(256, false)
+            Sinks.many().multicast().onBackpressureBuffer<CollectionAdminEvent>(1024, false)
 
-        fun subscribeUser(): Flux<List<CollectionUserEvent>> =
-            collectionUserEvents.asFlux().buffer(100.milliseconds.toJavaDuration())
+        fun subscribeUser(): Flux<List<CollectionUserEvent>> {
+            log.debug { "New user subscription for collectionUserEvents" }
+            return collectionUserEvents.asFlux()
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe {
+                    log.debug { "Subscriber added to user collectionUserEvents [${collectionUserEvents.currentSubscriberCount()}]" }
+                }
+                .doFinally {
+                    log.debug { "Subscriber removed from user collectionUserEvents with signal type $it [${collectionUserEvents.currentSubscriberCount()}]" }
+                }
+        }
 
-        fun subscribeAdmin(): Flux<List<CollectionAdminEvent>> =
-            collectionAdminEvents.asFlux().buffer(100.milliseconds.toJavaDuration())
+        fun subscribeAdmin(): Flux<List<CollectionAdminEvent>> {
+            log.debug { "New admin subscription for collectionAdminEvents" }
+            return collectionAdminEvents.asFlux()
+                .buffer(100.milliseconds.toJavaDuration())
+                .doOnSubscribe {
+                    log.debug { "Subscriber added to admin collectionAdminEvents [${collectionAdminEvents.currentSubscriberCount()}]" }
+                }
+                .doFinally {
+                    log.debug { "Subscriber removed from admin collectionAdminEvents with signal type $it [${collectionAdminEvents.currentSubscriberCount()}]" }
+                }
+        }
 
         fun emitUser(event: CollectionUserEvent) {
             collectionUserEvents.tryEmitNext(event)
@@ -47,7 +68,7 @@ class CollectionService(
         ?: throw IllegalArgumentException("Collection with id $id not found")
 
     @Transactional
-    fun create(dto: CollectionCreateDto): CollectionDto {
+    fun create(dto: CollectionCreateDto) {
         if (collectionRepository.findByName(dto.name) != null) {
             throw IllegalArgumentException("Collection with name '${dto.name}' already exists")
         }
@@ -58,9 +79,7 @@ class CollectionService(
                 entity.addGame(game)
             }
         }
-        val saved = collectionRepository.save(entity)
-
-        return saved.toDto()
+        collectionRepository.save(entity)
     }
 
     @Transactional
@@ -85,9 +104,18 @@ class CollectionService(
             collection.games.clear()
             newGames.forEach { collection.addGame(it) }
         }
+        dto.metadata?.let { collection.metadata = it.toEntity() }
         val saved = collectionRepository.save(collection)
 
         return saved.toDto()
+    }
+
+    /**
+     * Updates multiple collections in the repository.
+     */
+    @Transactional
+    fun update(collections: List<CollectionUpdateDto>) {
+        collections.forEach { update(it) }
     }
 
     @Transactional

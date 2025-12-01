@@ -102,10 +102,10 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
 
         if (filter === "confirmed") {
             return filteredGames.filter(g => g.metadata.matchConfirmed);
-        }
-        if (filter === "nonConfirmed") {
+        } else if (filter === "nonConfirmed") {
             return filteredGames.filter(g => !g.metadata.matchConfirmed);
         }
+
         return filteredGames;
     }
 
@@ -178,7 +178,8 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                             <Link href={`/game/${item.id}`}
                                   color="foreground"
                                   className="text-sm"
-                                  underline="hover">{item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                                  underline="hover">
+                                {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
                             </Link>
                         </TableCell>
                         <TableCell>

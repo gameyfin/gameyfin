@@ -14,8 +14,8 @@ import withSideMenu, {MenuItem} from "Frontend/components/general/withSideMenu";
 
 const menuItems: MenuItem[] = [
     {
-        title: "Libraries",
-        url: "libraries",
+        title: "Games",
+        url: "games",
         icon: <GameControllerIcon/>
     },
     {

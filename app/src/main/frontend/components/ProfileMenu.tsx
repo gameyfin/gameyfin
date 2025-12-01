@@ -1,5 +1,5 @@
 import {useAuth} from "Frontend/util/auth";
-import { GearFineIcon, QuestionIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import {GearFineIcon, QuestionIcon, SignOutIcon, UserIcon} from "@phosphor-icons/react";
 import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/react";
 import {useNavigate} from "react-router";
 import Avatar from "Frontend/components/general/Avatar";
@@ -19,7 +19,7 @@ export default function ProfileMenu() {
         {
             label: "Administration",
             icon: <GearFineIcon/>,
-            onClick: () => navigate("/administration/libraries"),
+            onClick: () => navigate("/administration/games"),
             showIf: isAdmin(auth)
         },
         {
