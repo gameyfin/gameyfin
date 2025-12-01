@@ -53,26 +53,11 @@ export async function initializeCollectionState() {
     // Subscribe to real-time updates
     collectionState.subscription = CollectionEndpoint.subscribeToCollectionEvents().onNext((collectionEvents: CollectionEvent[]) => {
         collectionEvents.forEach((collectionEvent: CollectionEvent) => {
-            console.log('CollectionState - received event:', collectionEvent.type, collectionEvent);
             switch (collectionEvent.type) {
                 case "created":
-                    //@ts-ignore
-                    console.log('CollectionState - creating collection:', collectionEvent.collection.id, 'gameIds:', collectionEvent.collection.gameIds);
-                    collectionState.state[collectionEvent.collection.id] = collectionEvent.collection;
-                    break;
                 case "updated":
                     //@ts-ignore
-                    console.log('CollectionState - updating collection:', collectionEvent.collection.id, 'gameIds:', collectionEvent.collection.gameIds);
-                    const updatedCollection = collectionEvent.collection;
-                    const existingCollection = collectionState.state[updatedCollection.id];
-
-                    if (existingCollection) {
-                        // Update properties individually to ensure reactivity
-                        Object.assign(existingCollection, updatedCollection);
-                    } else {
-                        // If collection doesn't exist, create it
-                        collectionState.state[updatedCollection.id] = updatedCollection;
-                    }
+                    collectionState.state[collectionEvent.collection.id] = collectionEvent.collection;
                     break;
                 case "deleted":
                     //@ts-ignore

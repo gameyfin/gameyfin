@@ -122,7 +122,10 @@ class CollectionService(
     fun addGame(collectionId: Long, gameId: Long): CollectionDto {
         val collection = getById(collectionId)
         val game = gameService.getById(gameId)
+
         collection.addGame(game)
+        gameService.update(game)
+
         val saved = collectionRepository.save(collection)
 
         return saved.toDto()
@@ -132,7 +135,10 @@ class CollectionService(
     fun removeGame(collectionId: Long, gameId: Long): CollectionDto {
         val collection = getById(collectionId)
         val game = gameService.getById(gameId)
+
         collection.removeGame(game)
+        gameService.update(game)
+
         val saved = collectionRepository.save(collection)
 
         return saved.toDto()

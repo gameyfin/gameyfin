@@ -77,7 +77,7 @@ export const gameState = proxy<GameState>({
         const result: Record<number, GameDto[]> = {};
         for (const collectionId in this.gamesByCollectionId) {
             const rand = new Rand(collectionId.toString());
-            result[collectionId] = this.gamesByLibraryId[collectionId]
+            result[collectionId] = this.gamesByCollectionId[collectionId]
                 .filter((g: GameDto) => g.coverId && g.imageIds && g.imageIds.length > 0)
                 .sort((a: GameDto, b: GameDto) => a.id - b.id)
                 .sort(() => rand.next() - 0.5);

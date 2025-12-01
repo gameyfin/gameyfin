@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
+import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.Executors
@@ -236,7 +237,7 @@ class GameService(
     }
 
     @Transactional
-    fun update(game: Game): Game? {
+    fun updateMetadata(game: Game): Game? {
         var wasGameUpdated = false
 
         val game = getById(game.id!!)
@@ -445,6 +446,11 @@ class GameService(
         )
 
         return if (wasGameUpdated) game else null
+    }
+
+    fun update(game: Game): Game {
+        game.updatedAt = Instant.now()
+        return gameRepository.save(game)
     }
 
     fun delete(gameId: Long) {

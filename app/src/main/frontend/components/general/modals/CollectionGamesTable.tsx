@@ -1,5 +1,4 @@
 import {useSnapshot} from "valtio/react";
-import CollectionAdminDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionAdminDto";
 import {
     Button,
     Input,
@@ -15,7 +14,7 @@ import {
     TableRow,
     Tooltip
 } from "@heroui/react";
-import React, {useState} from "react";
+import React, {useMemo, useState} from "react";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
 import {MinusIcon, PlusIcon} from "@phosphor-icons/react";
@@ -34,61 +33,71 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
     const librariesState = useSnapshot(libraryState);
     const libraries = librariesState.state as Record<number, LibraryAdminDto>;
     const collectionsState = useSnapshot(collectionState);
-    const collection = collectionsState.state[collectionId] as CollectionAdminDto;
-
-    console.log('CollectionGamesTable render - collection.gameIds:', collection?.gameIds);
+    const collection = collectionsState.state[collectionId];
 
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "path", direction: "ascending"});
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "inCollection" | "notInCollection">("all");
 
-    function isGameInCollection(game: GameAdminDto) {
-        return collection?.gameIds?.includes(game.id) || false;
-    }
-
-    const filteredGames = games
-        .filter((game) => game.title.toLowerCase().includes(searchTerm.toLowerCase()))
-        .filter(game => {
-            if (filter === "inCollection") {
-                return isGameInCollection(game);
-            } else if (filter === "notInCollection") {
-                return !isGameInCollection(game);
-            }
-            return true;
-        });
-
-    const sortedGames = filteredGames
-        .slice()
-        .sort((a, b) => {
-            let cmp: number;
-            switch (sortDescriptor.column) {
-                case "title":
-                    cmp = a.title.localeCompare(b.title);
-                    break;
-                case "library":
-                    cmp = (libraryName(a)).localeCompare(libraryName(b));
-                    break;
-                default:
-                    cmp = 0;
-            }
-            if (sortDescriptor.direction === "descending") {
-                cmp *= -1;
-            }
-            return cmp;
-        });
-
-    async function addGameToCollection(game: GameAdminDto) {
-        await CollectionEndpoint.addGameToCollection(collection.id, game.id);
-    }
-
-    async function removeGameFromCollection(game: GameAdminDto) {
-        await CollectionEndpoint.removeGameFromCollection(collection.id, game.id);
-    }
-
     function libraryName(game: GameAdminDto) {
         return libraries[game.libraryId]?.name || "Unknown";
     }
 
+    const gameInCollectionMap = useMemo(() => {
+        const map = new Map<number, boolean>();
+        games.forEach(game => {
+            map.set(game.id, collection.gameIds!!.includes(game.id));
+        });
+        return map;
+    }, [games, collection.gameIds]);
+
+    function isGameInCollection(game: GameAdminDto) {
+        return gameInCollectionMap.get(game.id) ?? false;
+    }
+
+    const filteredGames = useMemo(() => {
+        return games
+            .filter((game) => game.title.toLowerCase().includes(searchTerm.toLowerCase()))
+            .filter(game => {
+                if (filter === "inCollection") {
+                    return isGameInCollection(game);
+                } else if (filter === "notInCollection") {
+                    return !isGameInCollection(game);
+                }
+                return true;
+            });
+    }, [games, searchTerm, filter, gameInCollectionMap]);
+
+    const sortedGames = useMemo(() => {
+        return filteredGames
+            .slice()
+            .sort((a, b) => {
+                let cmp: number;
+                switch (sortDescriptor.column) {
+                    case "title":
+                        cmp = a.title.localeCompare(b.title);
+                        break;
+                    case "library":
+                        cmp = (libraryName(a)).localeCompare(libraryName(b));
+                        break;
+                    default:
+                        cmp = 0;
+                }
+                if (sortDescriptor.direction === "descending") {
+                    cmp *= -1;
+                }
+                return cmp;
+            })
+            .map(game => ({...game, _inCollection: isGameInCollection(game)}));
+    }, [filteredGames, sortDescriptor, libraries, gameInCollectionMap]);
+
+    async function addGameToCollection(game: GameAdminDto) {
+        await CollectionEndpoint.addGameToCollection(collectionId, game.id);
+    }
+
+    async function removeGameFromCollection(game: GameAdminDto) {
+        await CollectionEndpoint.removeGameFromCollection(collectionId, game.id);
+    }
 
     return (
         <div className="flex flex-col gap-2">
@@ -124,7 +133,8 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                     emptyContent="Your filters did not match any games."
                     items={sortedGames}>
                     {(game) => (
-                        <TableRow key={game.id}>
+                        // Key includes _inCollection to force re-render when that value changes
+                        <TableRow key={`${game.id}-${game._inCollection}`}>
                             <TableCell>
                                 <Link href={`/game/${game.id}`}
                                       color="foreground"
@@ -146,14 +156,14 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                     <Tooltip content="Add game to collection">
                                         <Button isIconOnly size="sm"
                                                 onPress={() => addGameToCollection(game)}
-                                                isDisabled={isGameInCollection(game)}>
+                                                isDisabled={game._inCollection}>
                                             <PlusIcon/>
                                         </Button>
                                     </Tooltip>
                                     <Tooltip content="Remove game from collection">
                                         <Button isIconOnly size="sm"
                                                 onPress={() => removeGameFromCollection(game)}
-                                                isDisabled={!isGameInCollection(game)}>
+                                                isDisabled={!game._inCollection}>
                                             <MinusIcon/>
                                         </Button>
                                     </Tooltip>
