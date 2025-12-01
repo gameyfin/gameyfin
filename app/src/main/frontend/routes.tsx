@@ -29,6 +29,7 @@ import {GameRequestManagement} from "Frontend/components/administration/GameRequ
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
 import {UiManagement} from "Frontend/components/administration/UiManagement";
 import CollectionManagementView from "Frontend/views/CollectionManagementView";
+import CollectionView from "Frontend/views/CollectionView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -60,6 +61,10 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         {
                             path: 'library/:libraryId',
                             element: <LibraryView/>
+                        },
+                        {
+                            path: 'collection/:collectionId',
+                            element: <CollectionView/>
                         },
                         {
                             path: 'game/:gameId',

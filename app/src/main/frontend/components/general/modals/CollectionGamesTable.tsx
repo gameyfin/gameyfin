@@ -46,7 +46,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
     const gameInCollectionMap = useMemo(() => {
         const map = new Map<number, boolean>();
         games.forEach(game => {
-            map.set(game.id, collection.gameIds!!.includes(game.id));
+            map.set(game.id, collection.gameIds!.includes(game.id));
         });
         return map;
     }, [games, collection.gameIds]);
@@ -123,7 +123,10 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
             </div>
             <Table isStriped isHeaderSticky
                    sortDescriptor={sortDescriptor}
-                   onSortChange={setSortDescriptor}>
+                   onSortChange={setSortDescriptor}
+                   classNames={{
+                       base: "h-96 overflow-scroll"
+                   }}>
                 <TableHeader>
                     <TableColumn key="title" allowsSorting>Title</TableColumn>
                     <TableColumn key="library" allowsSorting>Library</TableColumn>

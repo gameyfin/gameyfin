@@ -14,6 +14,7 @@ import LibraryPrioritiesModal from "Frontend/components/general/modals/LibraryPr
 import {collectionState} from "Frontend/state/CollectionState";
 import {CollectionOverviewCard} from "Frontend/components/general/cards/CollectionOverviewCard";
 import CollectionCreationModal from "Frontend/components/general/modals/CollectionCreationModal";
+import CollectionPrioritiesModal from "Frontend/components/general/modals/CollectionPrioritiesModal";
 
 function GameManagementLayout({getConfig, formik}: any) {
     const libraries = useSnapshot(libraryState);
@@ -61,7 +62,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                             <ListNumbersIcon/>
                         </Button>
                     </Tooltip>
-                    <Tooltip content="Add new collection">
+                    <Tooltip content="Create new collection">
                         <Button isIconOnly variant="flat" onPress={collectionCreationModal.onOpen}>
                             <PlusIcon/>
                         </Button>
@@ -114,6 +115,10 @@ function GameManagementLayout({getConfig, formik}: any) {
                 isOpen={collectionCreationModal.isOpen}
                 onOpenChange={collectionCreationModal.onOpenChange}
             />
+
+            <CollectionPrioritiesModal
+                isOpen={collectionOrderModal.isOpen}
+                onOpenChange={collectionOrderModal.onOpenChange}/>
 
         </div>
     );

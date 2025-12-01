@@ -94,7 +94,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
 
     function getFilteredGames() {
         let filteredGames = (games as GameAdminDto[]).filter((game) =>
-            game.metadata.path!!.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            game.metadata.path!.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.publishers?.some(publisher => publisher.toLowerCase().includes(searchTerm.toLowerCase())) ||
             game.developers?.some(developer => developer.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -239,7 +239,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         <EditGameMetadataModal game={selectedGame}
                                isOpen={editGameModal.isOpen}
                                onOpenChange={editGameModal.onOpenChange}/>
-        <MatchGameModal path={selectedGame.metadata.path!!}
+        <MatchGameModal path={selectedGame.metadata.path!}
                         libraryId={library.id}
                         replaceGameId={selectedGame.id}
                         initialSearchTerm={selectedGame.title}

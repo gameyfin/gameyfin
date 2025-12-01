@@ -5,6 +5,7 @@ import Input from "Frontend/components/general/input/Input";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
 import CollectionCreateDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionCreateDto";
 import * as Yup from "yup";
+import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
 
 interface CollectionCreationModalProps {
     isOpen: boolean;
@@ -50,7 +51,7 @@ export default function CollectionCreationModal({
                         >
                             {(formik) =>
                                 <Form>
-                                    <ModalHeader className="flex flex-col gap-1">Add a new library</ModalHeader>
+                                    <ModalHeader className="flex flex-col gap-1">Create a new collection</ModalHeader>
                                     <ModalBody>
                                         <div className="flex flex-col gap-2">
                                             <Input
@@ -60,7 +61,7 @@ export default function CollectionCreationModal({
                                                 value={formik.values.name}
                                                 required
                                             />
-                                            <Input
+                                            <TextAreaInput
                                                 name="description"
                                                 label="Collection Description"
                                                 placeholder="Enter collection description"

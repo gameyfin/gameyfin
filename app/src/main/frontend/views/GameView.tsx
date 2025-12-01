@@ -26,6 +26,8 @@ import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import ChipList from "Frontend/components/general/ChipList";
+import {collectionState} from "Frontend/state/CollectionState";
+import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -38,6 +40,7 @@ export default function GameView() {
 
     const state = useSnapshot(gameState);
     const game = gameId ? state.state[parseInt(gameId)] as GameAdminDto : undefined;
+    const collections = useSnapshot(collectionState).state as Record<number, CollectionDto>;
 
     const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
 
@@ -220,7 +223,7 @@ export default function GameView() {
                                                           color="foreground" underline="hover">
                                                         {dev}
                                                     </Link>
-                                                    {index !== game.developers!!.length - 1 && <p>/</p>}
+                                                    {index !== game.developers!.length - 1 && <p>/</p>}
                                                 </>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
@@ -295,6 +298,25 @@ export default function GameView() {
                                         }
                                     </td>
                                 </tr>
+                                {game.collectionIds.length > 0 &&
+                                    <tr>
+                                        <td className="text-default-500 w-0 min-w-32">Collections</td>
+                                        <td className="flex flex-row gap-1">
+                                            {[...game.collectionIds]
+                                                .map((collectionId) => collections[collectionId])
+                                                .sort((a, b) => a.id - b.id)
+                                                .map((collection, index) =>
+                                                    <>
+                                                        <Link key={collection.id} href={`/collection/${collection.id}`}
+                                                              color="foreground" underline="hover">
+                                                            {collection.name}
+                                                        </Link>
+                                                        {index !== game.collectionIds!.length - 1 && <p>/</p>}
+                                                    </>
+                                                )}
+                                        </td>
+                                    </tr>
+                                }
                                 </tbody>
                             </table>
                         </div>
@@ -312,7 +334,7 @@ export default function GameView() {
             <EditGameMetadataModal game={game}
                                    isOpen={editGameModal.isOpen}
                                    onOpenChange={editGameModal.onOpenChange}/>
-            <MatchGameModal path={game.metadata.path!!}
+            <MatchGameModal path={game.metadata.path!}
                             libraryId={game.libraryId}
                             replaceGameId={game.id}
                             initialSearchTerm={game.title}

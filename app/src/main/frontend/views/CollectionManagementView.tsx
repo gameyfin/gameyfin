@@ -15,6 +15,7 @@ import CollectionUpdateDto from "Frontend/generated/org/gameyfin/app/collections
 import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
 import CollectionHeader from "Frontend/components/general/covers/CollectionHeader";
 import CollectionGamesTable from "Frontend/components/general/modals/CollectionGamesTable";
+import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
 
 
 export default function CollectionManagementView() {
@@ -109,6 +110,7 @@ export default function CollectionManagementView() {
 
                         <Input label="Collection name" name="name"/>
                         <TextAreaInput label="Collection description" name="description"/>
+                        <CheckboxInput label="Display on homepage" name="metadata.displayOnHomepage" className="mb-4"/>
 
                         <div className="flex flex-col gap-4">
                             <h1 className="text-2xl font-bold">Manage games in collection</h1>

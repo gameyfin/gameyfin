@@ -85,7 +85,7 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
     }
 
     function getFilteredPaths() {
-        return library.ignoredPaths!!.filter((path) =>
+        return library.ignoredPaths!.filter((path) =>
             path.path.toLowerCase().includes(searchTerm.toLowerCase())
         )
     }
