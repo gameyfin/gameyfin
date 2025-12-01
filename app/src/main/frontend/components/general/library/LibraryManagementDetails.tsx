@@ -46,7 +46,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                 color: "success"
             });
 
-            navigate("/administration/libraries");
+            navigate("/administration/games");
         } catch (e) {
             addToast({
                 title: "Error deleting library",

@@ -11,10 +11,12 @@ type GameState = {
     state: Record<number, GameDto>;
     games: GameDto[];
     gamesByLibraryId: Record<number, GameDto[]>;
+    gamesByCollectionId: Record<number, GameDto[]>;
     sortedAlphabetically: GameDto[];
     recentlyAdded: GameDto[];
     recentlyUpdated: GameDto[];
     randomlyOrderedGamesByLibraryId: Record<number, GameDto[]>;
+    randomlyOrderedGamesByCollectionId: Record<number, GameDto[]>;
     knownPublishers: Set<string>;
     knownDevelopers: Set<string>;
     knownGenres: Set<string>;
@@ -38,6 +40,14 @@ export const gameState = proxy<GameState>({
             return acc;
         }, {});
     },
+    get gamesByCollectionId() {
+        return this.sortedAlphabetically.reduce((acc: Record<number, GameDto[]>, game: GameDto) => {
+            game.collectionIds?.forEach((collectionId: number) => {
+                (acc[collectionId] ||= []).push(game);
+            });
+            return acc;
+        }, {});
+    },
     get sortedAlphabetically() {
         return this.games
             .sort((a: GameDto, b: GameDto) => a.title.localeCompare(b.title, undefined, {sensitivity: 'base'}));
@@ -57,6 +67,17 @@ export const gameState = proxy<GameState>({
         for (const libraryId in this.gamesByLibraryId) {
             const rand = new Rand(libraryId.toString());
             result[libraryId] = this.gamesByLibraryId[libraryId]
+                .filter((g: GameDto) => g.coverId && g.imageIds && g.imageIds.length > 0)
+                .sort((a: GameDto, b: GameDto) => a.id - b.id)
+                .sort(() => rand.next() - 0.5);
+        }
+        return result;
+    },
+    get randomlyOrderedGamesByCollectionId() {
+        const result: Record<number, GameDto[]> = {};
+        for (const collectionId in this.gamesByCollectionId) {
+            const rand = new Rand(collectionId.toString());
+            result[collectionId] = this.gamesByCollectionId[collectionId]
                 .filter((g: GameDto) => g.coverId && g.imageIds && g.imageIds.length > 0)
                 .sort((a: GameDto, b: GameDto) => a.id - b.id)
                 .sort(() => rand.next() - 0.5);

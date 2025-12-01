@@ -52,7 +52,6 @@
     "remark-breaks": "^4.0.0",
     "swiper": "^11.2.6",
     "valtio": "^2.1.5",
-    "valtio-reactive": "^0.1.2",
     "yup": "^1.6.1"
   },
   "devDependencies": {
@@ -137,7 +136,6 @@
     "react-markdown": "$react-markdown",
     "remark-breaks": "$remark-breaks",
     "valtio": "$valtio",
-    "valtio-reactive": "$valtio-reactive",
     "fzf": "$fzf",
     "@vaadin/router": "2.0.0",
     "@tailwindcss/vite": "$@tailwindcss/vite",
@@ -264,6 +262,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "45fe1cd9320d2da603b811b433279d79b37370c9732e877490fc304807ef6163"
+    "hash": "90577f3dd852e456018a9ebec26810bff802a7dc68133e7f8806ca7be35dd17b"
   }
 }

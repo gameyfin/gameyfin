@@ -4,10 +4,10 @@ import HomeView from "Frontend/views/HomeView";
 import SetupView from "Frontend/views/SetupView";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import App from "Frontend/App";
-import {LibraryManagement} from "Frontend/components/administration/LibraryManagement";
+import {GameManagement} from "Frontend/components/administration/GameManagement";
 import {UserManagement} from "Frontend/components/administration/UserManagement";
 import ProfileManagement from "Frontend/components/administration/ProfileManagement";
-import {SsoManagement} from "Frontend/components/administration/SsoManagement";
+import {SecurityManagement} from "Frontend/components/administration/SecurityManagement";
 import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
 import {MessageManagement} from "Frontend/components/administration/MessageManagement";
@@ -28,6 +28,8 @@ import GameRequestView from "Frontend/views/GameRequestView";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
 import {UiManagement} from "Frontend/components/administration/UiManagement";
+import CollectionManagementView from "Frontend/views/CollectionManagementView";
+import CollectionView from "Frontend/views/CollectionView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -61,6 +63,10 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             element: <LibraryView/>
                         },
                         {
+                            path: 'collection/:collectionId',
+                            element: <CollectionView/>
+                        },
+                        {
                             path: 'game/:gameId',
                             element: <GameView/>
                         },
@@ -87,14 +93,19 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             handle: {title: 'Administration'},
                             children: [
                                 {
-                                    path: 'libraries',
-                                    element: <LibraryManagement/>,
-                                    handle: {title: 'Administration - Libraries'}
+                                    path: 'games',
+                                    element: <GameManagement/>,
+                                    handle: {title: 'Administration - Games'}
                                 },
                                 {
-                                    path: 'libraries/library/:libraryId',
+                                    path: 'games/library/:libraryId',
                                     element: <LibraryManagementView/>,
                                     handle: {title: 'Administration - Library'}
+                                },
+                                {
+                                    path: 'games/collection/:collectionId',
+                                    element: <CollectionManagementView/>,
+                                    handle: {title: 'Administration - Collection'}
                                 },
                                 {
                                     path: 'ui',
@@ -117,9 +128,9 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     handle: {title: 'Administration - Users'}
                                 },
                                 {
-                                    path: 'sso',
-                                    element: <SsoManagement/>,
-                                    handle: {title: 'Administration - SSO'}
+                                    path: 'security',
+                                    element: <SecurityManagement/>,
+                                    handle: {title: 'Administration - Security'}
                                 },
                                 {
                                     path: 'messages',

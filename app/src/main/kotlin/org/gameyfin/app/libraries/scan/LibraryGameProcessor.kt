@@ -51,7 +51,7 @@ class LibraryGameProcessor(
         // Note: GameService.update will load and save the managed entity inside this same transaction
         var updated: Game? = null
         try {
-            updated = gameService.update(game)
+            updated = gameService.updateMetadata(game)
             if (updated != null) {
                 // Download any images now associated with the game
                 downloadImagesForGame(updated)
