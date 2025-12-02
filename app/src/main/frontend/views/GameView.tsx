@@ -331,15 +331,17 @@ export default function GameView() {
                     </div>
                 </div>
             </div>
-            <EditGameMetadataModal game={game}
-                                   isOpen={editGameModal.isOpen}
-                                   onOpenChange={editGameModal.onOpenChange}/>
-            <MatchGameModal path={game.metadata.path!}
-                            libraryId={game.libraryId}
-                            replaceGameId={game.id}
-                            initialSearchTerm={game.title}
-                            isOpen={matchGameModal.isOpen}
-                            onOpenChange={matchGameModal.onOpenChange}/>
+            {isAdmin(auth) && <>
+                <EditGameMetadataModal game={game}
+                                       isOpen={editGameModal.isOpen}
+                                       onOpenChange={editGameModal.onOpenChange}/>
+                <MatchGameModal path={game.metadata.path!}
+                                libraryId={game.libraryId}
+                                replaceGameId={game.id}
+                                initialSearchTerm={game.title}
+                                isOpen={matchGameModal.isOpen}
+                                onOpenChange={matchGameModal.onOpenChange}/>
+            </>}
         </div>
     );
 }
