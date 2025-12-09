@@ -8,9 +8,8 @@ import org.gameyfin.app.games.dto.GameUserDto
 import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.entities.CompanyType
 import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.libraries.entities.Library
-import org.gameyfin.app.media.Image
-import org.gameyfin.app.media.ImageType
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -104,8 +103,8 @@ class GameExtensionsTest {
         assertEquals(1L, result.libraryId)
         assertEquals("Test Game", result.title)
         assertEquals(listOf(Platform.PC_MICROSOFT_WINDOWS), result.platforms)
-        assertEquals(10L, result.cover!!.id)
-        assertEquals(11L, result.header!!.id)
+        assertEquals(10L, result.coverId)
+        assertEquals(11L, result.headerId)
         assertEquals("Test comment", result.comment)
         assertEquals("Test summary", result.summary)
         assertNotNull(result.release)
@@ -118,7 +117,7 @@ class GameExtensionsTest {
         assertEquals(listOf("keyword1"), result.keywords)
         assertEquals(listOf(GameFeature.SINGLEPLAYER), result.features)
         assertEquals(listOf(PlayerPerspective.FIRST_PERSON), result.perspectives)
-        assertEquals(listOf(12L), result.images!!.map { it.id })
+        assertEquals(listOf(12L), result.imageIds)
         assertEquals(listOf("https://example.com/video"), result.videoUrls)
         assertNotNull(result.metadata)
     }
@@ -133,8 +132,8 @@ class GameExtensionsTest {
         assertEquals(1L, result.libraryId)
         assertEquals("Test Game", result.title)
         assertEquals(listOf(Platform.PC_MICROSOFT_WINDOWS), result.platforms)
-        assertEquals(10L, result.cover!!.id)
-        assertEquals(11L, result.header!!.id)
+        assertEquals(10L, result.coverId)
+        assertEquals(11L, result.headerId)
         assertEquals("Test comment", result.comment)
         assertEquals("Test summary", result.summary)
         assertNotNull(result.release)
@@ -147,7 +146,7 @@ class GameExtensionsTest {
         assertEquals(listOf("keyword1"), result.keywords)
         assertEquals(listOf(GameFeature.SINGLEPLAYER), result.features)
         assertEquals(listOf(PlayerPerspective.FIRST_PERSON), result.perspectives)
-        assertEquals(listOf(12L), result.images!!.map { it.id })
+        assertEquals(listOf(12L), result.imageIds)
         assertEquals(listOf("https://example.com/video"), result.videoUrls)
         assertNotNull(result.metadata)
     }
@@ -167,8 +166,8 @@ class GameExtensionsTest {
         val result = game.toAdminDto()
 
         assertEquals("Test Game", result.title)
-        assertEquals(null, result.cover?.id)
-        assertEquals(null, result.header?.id)
+        assertEquals(null, result.coverId)
+        assertEquals(null, result.headerId)
         assertEquals(null, result.comment)
         assertEquals(null, result.summary)
         assertEquals(null, result.release)
@@ -191,8 +190,8 @@ class GameExtensionsTest {
         val result = game.toUserDto()
 
         assertEquals("Test Game", result.title)
-        assertEquals(null, result.cover?.id)
-        assertEquals(null, result.header?.id)
+        assertEquals(null, result.coverId)
+        assertEquals(null, result.headerId)
         assertEquals(null, result.comment)
         assertEquals(null, result.summary)
         assertEquals(null, result.release)
@@ -236,6 +235,34 @@ class GameExtensionsTest {
         val result = game.toAdminDto()
 
         assertEquals(listOf("https://example.com/video1", "https://example.com/video2"), result.videoUrls)
+    }
+
+    @Test
+    fun `toAdminDto should filter out null image IDs`() {
+        val image1 = mockk<Image> {
+            every { id } returns 1L
+        }
+        val image2 = mockk<Image> {
+            every { id } returns null
+        }
+        val image3 = mockk<Image> {
+            every { id } returns 3L
+        }
+
+        game = Game(
+            id = 1L,
+            createdAt = Instant.now(),
+            updatedAt = Instant.now(),
+            library = library,
+            title = "Test Game",
+            platforms = mutableListOf(),
+            images = mutableListOf(image1, image2, image3),
+            metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path")
+        )
+
+        val result = game.toAdminDto()
+
+        assertEquals(listOf(1L, 3L), result.imageIds)
     }
 
     @Test
@@ -289,18 +316,12 @@ class GameExtensionsTest {
     private fun createTestGame(id: Long = 1L): Game {
         val coverImage = mockk<Image> {
             every { this@mockk.id } returns 10L
-            every { type } returns ImageType.COVER
-            every { blurhash } returns "mockedBlurhash"
         }
         val headerImage = mockk<Image> {
             every { this@mockk.id } returns 11L
-            every { type } returns ImageType.HEADER
-            every { blurhash } returns "mockedBlurhash"
         }
         val image = mockk<Image> {
             every { this@mockk.id } returns 12L
-            every { type } returns ImageType.SCREENSHOT
-            every { blurhash } returns "mockedBlurhash"
         }
         val publisher = Company(id = 1L, name = "Publisher1", type = CompanyType.PUBLISHER)
         val developer = Company(id = 2L, name = "Developer1", type = CompanyType.DEVELOPER)

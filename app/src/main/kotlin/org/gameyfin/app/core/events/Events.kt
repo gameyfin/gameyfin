@@ -1,6 +1,5 @@
 package org.gameyfin.app.core.events
 
-import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.core.token.Token
 import org.gameyfin.app.core.token.TokenType
 import org.gameyfin.app.games.entities.Game
@@ -25,7 +24,6 @@ class PasswordResetRequestEvent(source: Any, val token: Token<TokenType.Password
     ApplicationEvent(source)
 
 class LibraryScanScheduleUpdatedEvent(source: Any) : ApplicationEvent(source)
-class LibraryFilesystemWatcherConfigUpdatedEvent(source: Any, val isEnabled: Boolean) : ApplicationEvent(source)
 
 class UserDeletedEvent(source: Any, val user: User, val baseUrl: String) : ApplicationEvent(source)
 class UserUpdatedEvent(source: Any, val previousState: User, val currentState: User) : ApplicationEvent(source)
@@ -37,7 +35,3 @@ class GameDeletedEvent(source: Any, val game: Game) : ApplicationEvent(source)
 class LibraryCreatedEvent(source: Any, val library: Library) : ApplicationEvent(source)
 class LibraryUpdatedEvent(source: Any, val currentState: Library) : ApplicationEvent(source)
 class LibraryDeletedEvent(source: Any, val library: Library) : ApplicationEvent(source)
-
-class CollectionCreatedEvent(source: Any, val collection: Collection) : ApplicationEvent(source)
-class CollectionUpdatedEvent(source: Any, val currentState: Collection) : ApplicationEvent(source)
-class CollectionDeletedEvent(source: Any, val collection: Collection) : ApplicationEvent(source)

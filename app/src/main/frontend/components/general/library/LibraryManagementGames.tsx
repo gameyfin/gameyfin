@@ -38,12 +38,12 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const rowsPerPage = 25;
 
     const state = useSnapshot(gameState);
-    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] : [];
+    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameAdminDto[] : [];
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "title", direction: "ascending"});
 
-    const [selectedGame, setSelectedGame] = useState<GameAdminDto>(games[0] as GameAdminDto);
+    const [selectedGame, setSelectedGame] = useState<GameAdminDto>(games[0]);
     const editGameModal = useDisclosure();
     const matchGameModal = useDisclosure();
 
@@ -94,7 +94,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
 
     function getFilteredGames() {
         let filteredGames = (games as GameAdminDto[]).filter((game) =>
-            game.metadata.path!.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            game.metadata.path!!.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.publishers?.some(publisher => publisher.toLowerCase().includes(searchTerm.toLowerCase())) ||
             game.developers?.some(developer => developer.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -102,10 +102,10 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
 
         if (filter === "confirmed") {
             return filteredGames.filter(g => g.metadata.matchConfirmed);
-        } else if (filter === "nonConfirmed") {
+        }
+        if (filter === "nonConfirmed") {
             return filteredGames.filter(g => !g.metadata.matchConfirmed);
         }
-
         return filteredGames;
     }
 
@@ -178,8 +178,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                             <Link href={`/game/${item.id}`}
                                   color="foreground"
                                   className="text-sm"
-                                  underline="hover">
-                                {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                                  underline="hover">{item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
                             </Link>
                         </TableCell>
                         <TableCell>
@@ -239,7 +238,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         <EditGameMetadataModal game={selectedGame}
                                isOpen={editGameModal.isOpen}
                                onOpenChange={editGameModal.onOpenChange}/>
-        <MatchGameModal path={selectedGame.metadata.path!}
+        <MatchGameModal path={selectedGame.metadata.path!!}
                         libraryId={library.id}
                         replaceGameId={selectedGame.id}
                         initialSearchTerm={selectedGame.title}

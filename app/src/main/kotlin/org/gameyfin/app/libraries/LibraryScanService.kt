@@ -102,37 +102,60 @@ class LibraryScanService(
         emit(progress)
 
         try {
-            val scanData = performFilesystemScan(library)
+            val scanResult = filesystemService.scanLibraryForGamefiles(library)
+            val newPaths = scanResult.newPaths
+            val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
+            val removedIgnoredPaths = scanResult.removedIgnoredPaths
+
+            // Get plugin-generated (system) ignored paths to re-scan
+            val pluginIgnoredPathsToRescan = library.ignoredPaths
+                .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+                .map { Path.of(it.path) }
+
+            progress.currentStep = LibraryScanStep(
+                description = "Processing new games",
+                current = 0,
+                total = newPaths.size + pluginIgnoredPathsToRescan.size
+            )
+            emit(progress)
 
             // 1. Process each new game independently (including re-scanned plugin ignored paths)
-            val (newUnmatchedPaths, persistedNewGames) = processNewGamesWithProgress(
-                library,
-                scanData.allPathsToProcess,
-                progress
-            )
+            val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, allPathsToProcess, progress)
 
             // 2. Update library (removed games/ignored paths, and add persisted new ones)
             val (removedGames) = updateLibrary(
                 library,
-                scanData.removedIgnoredPaths,
+                removedIgnoredPaths,
                 newUnmatchedPaths,
-                scanData.removedGamePaths
+                removedGamePaths
             )
 
             // 3. Finish scan: persist library changes and report
-            finishScanWithProgress(persistedNewGames, library, progress)
-
-            // 4. Send final progress update
-            completeScan(
-                progress,
-                QuickScanResult(
-                    new = persistedNewGames.size,
-                    removed = removedGames.size,
-                    unmatched = newUnmatchedPaths.size
-                )
+            progress.currentStep = LibraryScanStep(
+                description = "Finishing up",
+                current = 0,
+                total = persistedNewGames.size
             )
+            emit(progress)
+
+            finishScanPersisted(persistedNewGames, library, progress)
+
+            progress.currentStep = LibraryScanStep(description = "Finished")
+            progress.finishedAt = Instant.now()
+            progress.status = LibraryScanStatus.COMPLETED
+            progress.result = QuickScanResult(
+                new = persistedNewGames.size,
+                removed = removedGames.size,
+                unmatched = newUnmatchedPaths.size
+            )
+            emit(progress)
         } catch (e: Exception) {
-            handleScanError(e, library, progress, "quick scan")
+            log.error { "Error during quick scan for library ${library.id}: ${e.message}" }
+            log.debug(e) {}
+            progress.status = LibraryScanStatus.FAILED
+            progress.finishedAt = Instant.now()
+            emit(progress)
         }
     }
 
@@ -147,7 +170,16 @@ class LibraryScanService(
         emit(progress)
 
         try {
-            val scanData = performFilesystemScan(library)
+            val scanResult = filesystemService.scanLibraryForGamefiles(library)
+            val newPaths = scanResult.newPaths
+            val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
+            val removedIgnoredPaths = scanResult.removedIgnoredPaths
+
+            // Get plugin-generated (system) ignored paths to re-scan
+            val pluginIgnoredPathsToRescan = library.ignoredPaths
+                .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+                .map { Path.of(it.path) }
+
 
             // 1. Update existing games (individually)
             progress.currentStep = LibraryScanStep(
@@ -160,107 +192,52 @@ class LibraryScanService(
             val (updatedGames) = updateExistingGames(library.games, progress)
 
             // 2. Process new games (individually, including re-scanned plugin ignored paths)
-            val (newUnmatchedPaths, persistedNewGames) = processNewGamesWithProgress(
-                library,
-                scanData.allPathsToProcess,
-                progress
+            val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
+            progress.currentStep = LibraryScanStep(
+                description = "Processing new games",
+                current = 0,
+                total = allPathsToProcess.size
             )
+            emit(progress)
+
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, allPathsToProcess, progress)
 
             val (removedGames) = updateLibrary(
                 library,
-                scanData.removedIgnoredPaths,
+                removedIgnoredPaths,
                 newUnmatchedPaths,
-                scanData.removedGamePaths
+                removedGamePaths
             )
 
             // 3. Finish scan
-            finishScanWithProgress(persistedNewGames, library, progress)
+            progress.currentStep = LibraryScanStep(
+                description = "Finishing up",
+                current = 0,
+                total = persistedNewGames.size
+            )
+            emit(progress)
+
+            finishScanPersisted(persistedNewGames, library, progress)
 
             // 4. Send final progress update
-            completeScan(
-                progress,
-                FullScanResult(
-                    new = persistedNewGames.size,
-                    removed = removedGames.size,
-                    unmatched = newUnmatchedPaths.size,
-                    updated = updatedGames.size
-                )
+            progress.currentStep = LibraryScanStep(description = "Finished")
+            progress.finishedAt = Instant.now()
+            progress.status = LibraryScanStatus.COMPLETED
+            progress.result = FullScanResult(
+                new = persistedNewGames.size,
+                removed = removedGames.size,
+                unmatched = newUnmatchedPaths.size,
+                updated = updatedGames.size
             )
+            emit(progress)
         } catch (e: Exception) {
-            handleScanError(e, library, progress, "full scan")
+            log.error { "Error during full scan for library ${library.id}: ${e.message}" }
+            log.debug(e) {}
+            progress.status = LibraryScanStatus.FAILED
+            progress.finishedAt = Instant.now()
+            emit(progress)
+            return
         }
-    }
-
-    private data class FilesystemScanData(
-        val allPathsToProcess: List<Path>,
-        val removedGamePaths: List<String>,
-        val removedIgnoredPaths: List<IgnoredPath>
-    )
-
-    private fun performFilesystemScan(library: Library): FilesystemScanData {
-        val scanResult = filesystemService.scanLibraryForGamefiles(library)
-        val newPaths = scanResult.newPaths
-        val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
-        val removedIgnoredPaths = scanResult.removedIgnoredPaths
-
-        // Get plugin-generated (system) ignored paths to re-scan
-        val pluginIgnoredPathsToRescan = library.ignoredPaths
-            .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
-            .map { Path.of(it.path) }
-
-        val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
-
-        return FilesystemScanData(
-            allPathsToProcess = allPathsToProcess,
-            removedGamePaths = removedGamePaths,
-            removedIgnoredPaths = removedIgnoredPaths
-        )
-    }
-
-    private fun processNewGamesWithProgress(
-        library: Library,
-        gamePaths: List<Path>,
-        progress: LibraryScanProgress
-    ): MatchNewGamesResult {
-        progress.currentStep = LibraryScanStep(
-            description = "Processing new games",
-            current = 0,
-            total = gamePaths.size
-        )
-        emit(progress)
-
-        return processNewGames(library, gamePaths, progress)
-    }
-
-    private fun finishScanWithProgress(
-        persistedNewGames: List<Game>,
-        library: Library,
-        progress: LibraryScanProgress
-    ) {
-        progress.currentStep = LibraryScanStep(
-            description = "Finishing up",
-            current = 0,
-            total = persistedNewGames.size
-        )
-        emit(progress)
-
-        finishScanPersisted(persistedNewGames, library, progress)
-    }
-
-    private fun completeScan(progress: LibraryScanProgress, result: LibraryScanResult) {
-        progress.currentStep = LibraryScanStep(description = "Finished")
-        progress.finishedAt = Instant.now()
-        progress.status = LibraryScanStatus.COMPLETED
-        progress.result = result
-        emit(progress)
-    }
-
-    private fun handleScanError(e: Exception, library: Library, progress: LibraryScanProgress, scanType: String) {
-        log.error { "Error during $scanType for library ${library.id}: ${e.message}" }
-        log.debug(e) {}
-        progress.status = LibraryScanStatus.FAILED
-        progress.finishedAt = Instant.now()
-        emit(progress)
     }
 
     private fun processNewGames(

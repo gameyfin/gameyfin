@@ -121,13 +121,13 @@ function MessageManagementLayout({getConfig, formik}: any) {
             <EditTemplateModal
                 isOpen={editorModal.isOpen}
                 onOpenChange={editorModal.onOpenChange}
-                selectedTemplate={selectedTemplate!}
+                selectedTemplate={selectedTemplate!!}
             />
 
             <SendTestNotificationModal
                 isOpen={testNotificationModal.isOpen}
                 onOpenChange={testNotificationModal.onOpenChange}
-                selectedTemplate={selectedTemplate!}
+                selectedTemplate={selectedTemplate!!}
             />
         </div>
     );

@@ -100,7 +100,7 @@ class LibraryExtensionsTest {
 
         assertEquals(1L, result.id)
         assertEquals("Test Library", result.name)
-        assertEquals(listOf(1L, 2L), result.gameIds)
+        assertEquals(listOf(1L, 2L), result.games)
     }
 
     @Test
@@ -110,7 +110,7 @@ class LibraryExtensionsTest {
         val result = library.toUserDto()
 
         assertEquals(1L, result.id)
-        assertTrue(result.gameIds!!.isEmpty())
+        assertTrue(result.games!!.isEmpty())
     }
 
     @Test
@@ -125,8 +125,8 @@ class LibraryExtensionsTest {
 
         val result = library.toUserDto()
 
-        assertEquals(2, result.gameIds!!.size)
-        assertEquals(listOf(1L, 3L), result.gameIds)
+        assertEquals(2, result.games!!.size)
+        assertEquals(listOf(1L, 3L), result.games)
     }
 
     @Test
@@ -159,7 +159,7 @@ class LibraryExtensionsTest {
         assertEquals("/ext1", result.directories[0].externalPath)
         assertEquals(2, result.platforms.size)
         assertTrue(result.platforms.contains(Platform.PC_MICROSOFT_WINDOWS))
-        assertEquals(listOf(1L, 2L), result.gameIds)
+        assertEquals(listOf(1L, 2L), result.games)
         assertNotNull(result.stats)
         assertEquals(2, result.stats.gamesCount)
         assertEquals(15, result.stats.downloadedGamesCount)
@@ -199,7 +199,7 @@ class LibraryExtensionsTest {
 
         val result = library.toAdminDto()
 
-        assertTrue(result.gameIds!!.isEmpty())
+        assertTrue(result.games!!.isEmpty())
         assertNotNull(result.stats)
         assertEquals(0, result.stats.gamesCount)
         assertEquals(0, result.stats.downloadedGamesCount)
@@ -217,8 +217,8 @@ class LibraryExtensionsTest {
 
         val result = library.toAdminDto()
 
-        assertEquals(2, result.gameIds!!.size)
-        assertEquals(listOf(1L, 3L), result.gameIds)
+        assertEquals(2, result.games!!.size)
+        assertEquals(listOf(1L, 3L), result.games)
     }
 
     @Test

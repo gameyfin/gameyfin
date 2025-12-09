@@ -4,10 +4,10 @@ import HomeView from "Frontend/views/HomeView";
 import SetupView from "Frontend/views/SetupView";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import App from "Frontend/App";
-import {GameManagement} from "Frontend/components/administration/GameManagement";
+import {LibraryManagement} from "Frontend/components/administration/LibraryManagement";
 import {UserManagement} from "Frontend/components/administration/UserManagement";
 import ProfileManagement from "Frontend/components/administration/ProfileManagement";
-import {SecurityManagement} from "Frontend/components/administration/SecurityManagement";
+import {SsoManagement} from "Frontend/components/administration/SsoManagement";
 import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
 import {MessageManagement} from "Frontend/components/administration/MessageManagement";
@@ -20,14 +20,13 @@ import {SystemManagement} from "Frontend/components/administration/SystemManagem
 import GameView from "Frontend/views/GameView";
 import LibraryManagementView from "Frontend/views/LibraryManagementView";
 import SearchView from "Frontend/views/SearchView";
+import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
 import ErrorView from "Frontend/views/ErrorView";
 import GameRequestView from "Frontend/views/GameRequestView";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
-import CollectionManagementView from "Frontend/views/CollectionManagementView";
-import CollectionView from "Frontend/views/CollectionView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -47,6 +46,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             handle: {title: 'Search'}
                         },
                         {
+                            path: 'recently-added',
+                            element: <RecentlyAddedView/>,
+                            handle: {title: 'Recently Added'}
+                        },
+                        {
                             path: '/requests',
                             element: <GameRequestView/>,
                             handle: {title: 'Game requests'}
@@ -54,10 +58,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         {
                             path: 'library/:libraryId',
                             element: <LibraryView/>
-                        },
-                        {
-                            path: 'collection/:collectionId',
-                            element: <CollectionView/>
                         },
                         {
                             path: 'game/:gameId',
@@ -86,19 +86,14 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             handle: {title: 'Administration'},
                             children: [
                                 {
-                                    path: 'games',
-                                    element: <GameManagement/>,
-                                    handle: {title: 'Administration - Games'}
+                                    path: 'libraries',
+                                    element: <LibraryManagement/>,
+                                    handle: {title: 'Administration - Libraries'}
                                 },
                                 {
-                                    path: 'games/library/:libraryId',
+                                    path: 'libraries/library/:libraryId',
                                     element: <LibraryManagementView/>,
                                     handle: {title: 'Administration - Library'}
-                                },
-                                {
-                                    path: 'games/collection/:collectionId',
-                                    element: <CollectionManagementView/>,
-                                    handle: {title: 'Administration - Collection'}
                                 },
                                 {
                                     path: 'requests',
@@ -116,9 +111,9 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     handle: {title: 'Administration - Users'}
                                 },
                                 {
-                                    path: 'security',
-                                    element: <SecurityManagement/>,
-                                    handle: {title: 'Administration - Security'}
+                                    path: 'sso',
+                                    element: <SsoManagement/>,
+                                    handle: {title: 'Administration - SSO'}
                                 },
                                 {
                                     path: 'messages',

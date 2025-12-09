@@ -85,7 +85,7 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
     }
 
     function getFilteredPaths() {
-        return library.ignoredPaths!.filter((path) =>
+        return library.ignoredPaths!!.filter((path) =>
             path.path.toLowerCase().includes(searchTerm.toLowerCase())
         )
     }
@@ -165,10 +165,7 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
                                 </Tooltip>
                                 <Tooltip content="Remove entry from list">
                                     <Button isIconOnly size="sm" color="danger"
-                                            onPress={() => deleteIgnoredPath(item.path)}
-                                            isDisabled={item.path.sourceType !== IgnoredPathSourceTypeDto.USER}
-                                    >
-                                        <TrashIcon/>
+                                            onPress={() => deleteIgnoredPath(item.path)}><TrashIcon/>
                                     </Button>
                                 </Tooltip>
                             </div>

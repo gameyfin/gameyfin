@@ -1,7 +1,8 @@
 import {Autocomplete, AutocompleteItem} from "@heroui/react";
-import {CaretRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
+import { CaretRightIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
+import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {useNavigate} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 
@@ -9,7 +10,7 @@ export default function SearchBar() {
 
     const navigate = useNavigate();
     const state = useSnapshot(gameState);
-    const games = state.games;
+    const games = state.games as GameDto[];
 
     return <Autocomplete
         aria-label="Search for games"

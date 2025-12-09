@@ -77,7 +77,7 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
         if (subDirectories === undefined) return;
 
         const newNodes = fileDtosToNodes(subDirectories as FileDto[]);
-        const updatedTree = updateTreeWithNewNodes(fileTree!, element.id, newNodes);
+        const updatedTree = updateTreeWithNewNodes(fileTree!!, element.id, newNodes);
 
         setFileTree(updatedTree);
         setFlattenedFileTree(flattenTree(updatedTree));

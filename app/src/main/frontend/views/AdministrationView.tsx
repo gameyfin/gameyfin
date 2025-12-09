@@ -13,8 +13,8 @@ import withSideMenu, {MenuItem} from "Frontend/components/general/withSideMenu";
 
 const menuItems: MenuItem[] = [
     {
-        title: "Games",
-        url: "games",
+        title: "Libraries",
+        url: "libraries",
         icon: <GameControllerIcon/>
     },
     {
@@ -33,8 +33,8 @@ const menuItems: MenuItem[] = [
         icon: <UsersIcon/>
     },
     {
-        title: "Security",
-        url: "security",
+        title: "SSO",
+        url: "sso",
         icon: <LockKeyIcon/>
     },
     {

@@ -1,5 +1,3 @@
-import org.apache.tools.ant.filters.ReplaceTokens
-
 group = "org.gameyfin"
 val appMainClass = "org.gameyfin.app.GameyfinApplicationKt"
 
@@ -33,7 +31,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.springframework.cloud:spring-cloud-starter")
     implementation("jakarta.validation:jakarta.validation-api:3.1.0")
 
@@ -73,9 +70,8 @@ dependencies {
     implementation(project(":plugin-api"))
 
     // Utils
-    implementation("org.apache.tika:tika-core:3.2.3")
+    implementation("org.apache.tika:tika-core:3.1.0")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
-    implementation("com.vanniktech:blurhash:0.3.0")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
@@ -103,11 +99,3 @@ dependencyManagement {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
-
-tasks.named<ProcessResources>("processResources") {
-    val projectVersion = rootProject.version.toString()
-    filesMatching("application.yml") {
-        filter<ReplaceTokens>("tokens" to mapOf("project.version" to projectVersion))
-    }
-}
-

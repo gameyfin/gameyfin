@@ -1,6 +1,6 @@
 {
   "name": "gameyfin",
-  "version": "2.3.0-preview",
+  "version": "2.2.1",
   "type": "module",
   "dependencies": {
     "@heroui/react": "^2.8.5",
@@ -26,7 +26,6 @@
     "@vaadin/vaadin-material-styles": "24.9.4",
     "@vaadin/vaadin-themable-mixin": "24.9.4",
     "@vaadin/vaadin-usage-statistics": "2.1.3",
-    "blurhash": "^2.0.5",
     "classnames": "^2.5.1",
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
@@ -50,10 +49,10 @@
     "react-player": "^2.16.0",
     "react-realtime-chart": "^0.8.1",
     "react-router": "7.6.3",
-    "react-window": "^2.2.3",
     "remark-breaks": "^4.0.0",
     "swiper": "^11.2.6",
     "valtio": "^2.1.5",
+    "valtio-reactive": "^0.1.2",
     "yup": "^1.6.1"
   },
   "devDependencies": {
@@ -65,7 +64,6 @@
     "@types/node": "^22.4.0",
     "@types/react": "19.1.17",
     "@types/react-dom": "19.1.11",
-    "@types/react-window": "^1.8.8",
     "@vaadin/hilla-generator-cli": "24.9.4",
     "@vaadin/hilla-generator-core": "24.9.4",
     "@vaadin/hilla-generator-plugin-backbone": "24.9.4",
@@ -139,6 +137,7 @@
     "react-markdown": "$react-markdown",
     "remark-breaks": "$remark-breaks",
     "valtio": "$valtio",
+    "valtio-reactive": "$valtio-reactive",
     "fzf": "$fzf",
     "@vaadin/router": "2.0.0",
     "@tailwindcss/vite": "$@tailwindcss/vite",
@@ -203,9 +202,7 @@
     "@vaadin/upload": "24.9.4",
     "@vaadin/vertical-layout": "24.9.4",
     "@vaadin/virtual-list": "24.9.4",
-    "react-realtime-chart": "$react-realtime-chart",
-    "react-window": "$react-window",
-    "blurhash": "$blurhash"
+    "react-realtime-chart": "$react-realtime-chart"
   },
   "vaadin": {
     "dependencies": {
@@ -267,6 +264,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "d06c4b56ae3a7bc3c4356d3669fc1ed559d83e5285df4e8b3e99bff46869f939"
+    "hash": "45fe1cd9320d2da603b811b433279d79b37370c9732e877490fc304807ef6163"
   }
 }

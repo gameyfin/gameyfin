@@ -23,9 +23,7 @@ import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDtos
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
-import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
-import org.gameyfin.app.media.ImageType
 import org.gameyfin.app.users.UserService
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.data.repository.findByIdOrNull
@@ -36,7 +34,6 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
-import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.Executors
@@ -239,7 +236,7 @@ class GameService(
     }
 
     @Transactional
-    fun updateMetadata(game: Game): Game? {
+    fun update(game: Game): Game? {
         var wasGameUpdated = false
 
         val game = getById(game.id!!)
@@ -448,11 +445,6 @@ class GameService(
         )
 
         return if (wasGameUpdated) game else null
-    }
-
-    fun update(game: Game): Game {
-        game.updatedAt = Instant.now()
-        return gameRepository.save(game)
     }
 
     fun delete(gameId: Long) {
@@ -688,7 +680,7 @@ class GameService(
             .toMap()
 
         if (metadataResults.isEmpty()) {
-            log.debug { "Could not identify game at path '$path'" }
+            log.info { "Could not identify game at path '$path'" }
             return null
         }
 

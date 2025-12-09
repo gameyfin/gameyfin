@@ -1,7 +1,7 @@
 import {FieldArray, useField} from "formik";
 import {Button, Chip, Input, Popover, PopoverContent, PopoverTrigger} from "@heroui/react";
 import {KeyboardEvent, useState} from "react";
-import {PlusIcon} from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react";
 
 // @ts-ignore
 const ArrayInput = ({label, ...props}) => {
@@ -35,23 +35,13 @@ const ArrayInput = ({label, ...props}) => {
 
                                 <div className="flex flex-row flex-wrap gap-2 items-center">
                                     {field.value.map((element: any, index: number) => (
-                                        <Chip key={index}
-                                              onClose={() => arrayHelpers.remove(index)}
-                                              isDisabled={props.isDisabled}
-                                        >
+                                        <Chip key={index} onClose={() => arrayHelpers.remove(index)}>
                                             {element}
                                         </Chip>
                                     ))}
                                     <Popover placement="bottom" showArrow={true}>
                                         <PopoverTrigger>
-                                            <Button isIconOnly
-                                                    size="sm"
-                                                    variant="light"
-                                                    radius="full"
-                                                    isDisabled={props.isDisabled}
-                                            >
-                                                <PlusIcon/>
-                                            </Button>
+                                            <Button isIconOnly size="sm" variant="light" radius="full"><PlusIcon/></Button>
                                         </PopoverTrigger>
                                         <PopoverContent>
                                             <Input
