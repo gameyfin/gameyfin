@@ -272,18 +272,4 @@ class ImageService(
             null
         }
     }
-
-    fun calculateAndSaveBlurhash(image: Image): Image {
-        if (image.blurhash != null) return image
-
-        val content = imageContentStore.getContent(image) ?: return image
-        content.use { stream ->
-            val blurhash = calculateBlurhash(stream)
-            if (blurhash != null) {
-                image.blurhash = blurhash
-                imageRepository.save(image)
-            }
-        }
-        return image
-    }
 }

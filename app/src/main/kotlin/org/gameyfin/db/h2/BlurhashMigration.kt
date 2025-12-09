@@ -118,7 +118,7 @@ object BlurhashMigration {
                     } else {
                         failedCount.incrementAndGet()
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     failedCount.incrementAndGet()
                     // Silently fail individual images to avoid spam
                 } finally {

@@ -73,7 +73,7 @@ dependencies {
     implementation(project(":plugin-api"))
 
     // Utils
-    implementation("org.apache.tika:tika-core:3.1.0")
+    implementation("org.apache.tika:tika-core:3.2.3")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
     implementation("com.vanniktech:blurhash:0.3.0")
 
