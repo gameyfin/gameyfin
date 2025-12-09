@@ -49,6 +49,7 @@
     "react-player": "^2.16.0",
     "react-realtime-chart": "^0.8.1",
     "react-router": "7.6.3",
+    "react-window": "^2.2.3",
     "remark-breaks": "^4.0.0",
     "swiper": "^11.2.6",
     "valtio": "^2.1.5",
@@ -63,6 +64,7 @@
     "@types/node": "^22.4.0",
     "@types/react": "19.1.17",
     "@types/react-dom": "19.1.11",
+    "@types/react-window": "^1.8.8",
     "@vaadin/hilla-generator-cli": "24.9.4",
     "@vaadin/hilla-generator-core": "24.9.4",
     "@vaadin/hilla-generator-plugin-backbone": "24.9.4",
@@ -200,7 +202,8 @@
     "@vaadin/upload": "24.9.4",
     "@vaadin/vertical-layout": "24.9.4",
     "@vaadin/virtual-list": "24.9.4",
-    "react-realtime-chart": "$react-realtime-chart"
+    "react-realtime-chart": "$react-realtime-chart",
+    "react-window": "$react-window"
   },
   "vaadin": {
     "dependencies": {
@@ -262,6 +265,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "90577f3dd852e456018a9ebec26810bff802a7dc68133e7f8806ca7be35dd17b"
+    "hash": "ec0fed38038bd5fa9b83342719e9fe39f2e2d4c70123643c0a8651de6621861e"
   }
 }

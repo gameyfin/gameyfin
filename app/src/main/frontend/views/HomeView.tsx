@@ -1,30 +1,24 @@
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {CoverRow} from "Frontend/components/general/covers/CoverRow";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
 import React, {useEffect, useState} from "react";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
-import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import {collectionState} from "Frontend/state/CollectionState";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import {StartPageDisplayCard} from "Frontend/components/general/cards/StartPageDisplayCard";
+import {Link} from "@heroui/react";
+import {CaretRightIcon} from "@phosphor-icons/react";
 
 export default function HomeView() {
     const librariesState = useSnapshot(libraryState);
     const collectionsState = useSnapshot(collectionState);
     const gamesState = useSnapshot(gameState);
-    const recentlyAddedGames = gamesState.recentlyAdded as GameDto[];
-    const gamesByLibrary = gamesState.gamesByLibraryId as Record<number, GameDto[]>;
-    const gamesByCollection = gamesState.gamesByCollectionId as Record<number, GameDto[]>;
+    const gamesByLibrary = gamesState.gamesByLibraryId;
+    const gamesByCollection = gamesState.gamesByCollectionId;
 
-    const [showRecentlyAdded, setShowRecentlyAdded] = useState<boolean>(false);
     const [filteredAndSortedLibraries, setFilteredAndSortedLibraries] = useState<LibraryDto[]>([]);
     const [filteredAndSortedCollections, setFilteredAndSortedCollections] = useState<CollectionDto[]>([]);
-
-    useEffect(() => {
-        ConfigEndpoint.showRecentlyAddedOnHomepage().then(setShowRecentlyAdded);
-    }, []);
 
     useEffect(() => {
         const libraries = librariesState.sorted
@@ -33,7 +27,7 @@ export default function HomeView() {
                 gamesByLibrary[library.id] && gamesByLibrary[library.id].length > 0
             );
 
-        setFilteredAndSortedLibraries(libraries as LibraryDto[]);
+        setFilteredAndSortedLibraries(libraries);
 
         const collections = collectionsState.sorted
             .filter(collection => collection.metadata!.displayOnHomepage)
@@ -41,17 +35,21 @@ export default function HomeView() {
                 gamesByCollection[collection.id] && gamesByCollection[collection.id].length > 0
             );
 
-        setFilteredAndSortedCollections(collections as CollectionDto[]);
+        setFilteredAndSortedCollections(collections);
 
     }, [librariesState.sorted, collectionsState.sorted, gamesByLibrary, gamesByCollection]);
 
     return (
         <div className="w-full">
             <div className="flex flex-col gap-4">
-                {(filteredAndSortedLibraries.length === 0 && filteredAndSortedCollections.length === 0) &&
+                {(filteredAndSortedLibraries.length > 0 && filteredAndSortedCollections.length > 0) &&
                     <div className="flex flex-col gap-2">
-                        <p className="text-2xl font-bold mb-4">All games</p>
-                        <div className="flex flex-row gap-4">
+                        <Link href="/search" className="flex flex-row gap-1 w-fit items-baseline" color="foreground"
+                              underline="hover">
+                            <p className="text-2xl font-bold mb-4">Your games</p>
+                            <CaretRightIcon weight="bold" size={16}/>
+                        </Link>
+                        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
                             {filteredAndSortedLibraries.length > 0 &&
                                 filteredAndSortedLibraries.map((library: LibraryDto) => (
                                     <StartPageDisplayCard key={library.id} item={library}/>
@@ -64,9 +62,6 @@ export default function HomeView() {
                             }
                         </div>
                     </div>
-                }
-                {recentlyAddedGames.length > 0 && showRecentlyAdded &&
-                    <CoverRow title="Recently added" games={recentlyAddedGames} link="/recently-added"/>
                 }
                 {filteredAndSortedLibraries.map((library) => (
                     <CoverRow key={library.id} title={library.name}

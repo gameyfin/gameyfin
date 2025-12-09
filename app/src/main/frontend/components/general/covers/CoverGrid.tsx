@@ -1,16 +1,110 @@
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
+import type {CellComponentProps} from "react-window";
+import {Grid} from "react-window";
+import {useEffect, useRef, useState} from "react";
 
 interface CoverGridProps {
     games: GameDto[];
 }
 
+// Constants for grid layout
+const MIN_COLUMN_WIDTH = 180; // Minimum width per item (minmax value from original)
+const MAX_COLUMN_WIDTH = 212; // Maximum width per item (minmax value from original)
+const GAP = 16; // gap-4 = 1rem = 16px
+const ASPECT_RATIO = 12 / 17; // Game cover aspect ratio (width/height)
+
 export default function CoverGrid({games}: CoverGridProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [containerWidth, setContainerWidth] = useState(0);
+
+    // Update container width on resize
+    useEffect(() => {
+        const updateDimensions = () => {
+            if (containerRef.current) {
+                setContainerWidth(containerRef.current.offsetWidth);
+            }
+        };
+
+        const resizeObserver = new ResizeObserver(updateDimensions);
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
+        updateDimensions();
+
+        return () => resizeObserver.disconnect();
+    }, []);
+
+    // Calculate how many columns can fit
+    const columnCount = Math.max(1, Math.floor((containerWidth + GAP) / (MIN_COLUMN_WIDTH + GAP)));
+
+    // Calculate actual column width to distribute space evenly (up to MAX_COLUMN_WIDTH)
+    const actualColumnWidth = Math.min(
+        MAX_COLUMN_WIDTH,
+        Math.floor((containerWidth - (columnCount - 1) * GAP) / columnCount)
+    );
+
+    // Calculate cover height based on width and aspect ratio
+    // GameCover's size prop is the height, so we need to calculate height from width
+    const coverHeight = Math.floor(actualColumnWidth / ASPECT_RATIO);
+
+    // Calculate row count
+    const rowCount = Math.ceil(games.length / columnCount);
+
+    // Cell renderer for react-window Grid
+    const Cell = ({
+                      columnIndex,
+                      rowIndex,
+                      style
+                  }: CellComponentProps<{}>) => {
+        const gameIndex = rowIndex * columnCount + columnIndex;
+
+        // Return empty cell if we're past the end of the games array
+        if (gameIndex >= games.length) {
+            return <div style={style}/>;
+        }
+
+        const game = games[gameIndex];
+
+        return (
+            <div
+                style={{
+                    ...style,
+                    paddingBottom: GAP,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    boxSizing: 'border-box'
+                }}
+            >
+                <GameCover game={game} interactive={true} size={coverHeight} lazy={true}/>
+            </div>
+        );
+    };
+
+    // Column width function to handle the last column differently
+    const getColumnWidth = (index: number) => {
+        // Last column doesn't need gap after it
+        if (index === columnCount - 1) {
+            return actualColumnWidth;
+        }
+        return actualColumnWidth + GAP;
+    };
+
     return (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,212px))] gap-4 justify-center">
-            {games.map((game) => (
-                <GameCover key={game.id} game={game} interactive={true}/>
-            ))}
+        <div ref={containerRef} className="w-full">
+            {containerWidth > 0 && (
+                <Grid<{}>
+                    columnCount={columnCount}
+                    columnWidth={getColumnWidth}
+                    rowCount={rowCount}
+                    rowHeight={coverHeight + GAP}
+                    defaultWidth={containerWidth}
+                    cellComponent={Cell}
+                    cellProps={{}}
+                    style={{overflowX: 'hidden'}}
+                />
+            )}
         </div>
     );
 }

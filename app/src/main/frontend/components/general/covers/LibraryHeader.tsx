@@ -1,6 +1,5 @@
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import React from "react";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
@@ -17,7 +16,9 @@ export default function LibraryHeader({library, className}: LibraryHeaderProps) 
     const randomGames = getRandomGames();
 
     function getRandomGames() {
-        const games = state.randomlyOrderedGamesByLibraryId[library.id] as GameDto[];
+        if (!state.randomlyOrderedGamesByLibraryId[library.id]) return [];
+        const games = state.randomlyOrderedGamesByLibraryId[library.id]
+            .filter(game => game.imageIds && game.imageIds.length > 0);
         if (!games) return [];
         return games.slice(0, MAX_COVER_COUNT);
     }

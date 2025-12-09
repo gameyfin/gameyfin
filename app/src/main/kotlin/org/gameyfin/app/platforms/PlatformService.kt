@@ -48,9 +48,9 @@ class PlatformService(
     private val metadataPlugins: List<GameMetadataProvider>
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
 
-    private lateinit var _availablePlatforms: Set<Platform>
-    private lateinit var _platformsInUseByGames: Set<Platform>
-    private lateinit var _platformsInUseByLibraries: Set<Platform>
+    private var _availablePlatforms: Set<Platform> = emptySet()
+    private var _platformsInUseByGames: Set<Platform> = emptySet()
+    private var _platformsInUseByLibraries: Set<Platform> = emptySet()
 
     val availablePlatforms: Set<Platform>
         get() = _availablePlatforms

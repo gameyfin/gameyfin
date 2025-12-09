@@ -22,7 +22,9 @@ export default function CollectionHeader({collection, className}: CollectionHead
     }, [state]);
 
     function getRandomGames() {
-        const games = state.randomlyOrderedGamesByCollectionId[collection.id] as GameDto[];
+        if (!state.randomlyOrderedGamesByCollectionId[collection.id]) return [];
+        const games = state.randomlyOrderedGamesByCollectionId[collection.id]
+            .filter(game => game.imageIds && game.imageIds.length > 0);
         if (!games) return [];
         return games.slice(0, MAX_COVER_COUNT);
     }

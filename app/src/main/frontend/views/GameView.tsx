@@ -24,10 +24,9 @@ import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMe
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
-import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import ChipList from "Frontend/components/general/ChipList";
 import {collectionState} from "Frontend/state/CollectionState";
-import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
+import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -39,8 +38,8 @@ export default function GameView() {
     const matchGameModal = useDisclosure();
 
     const state = useSnapshot(gameState);
-    const game = gameId ? state.state[parseInt(gameId)] as GameAdminDto : undefined;
-    const collections = useSnapshot(collectionState).state as Record<number, CollectionDto>;
+    const game = gameId ? state.state[parseInt(gameId)] : undefined;
+    const collections = useSnapshot(collectionState).state;
 
     const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
 
@@ -72,7 +71,7 @@ export default function GameView() {
         await GameEndpoint.updateGame(
             {
                 id: game.id,
-                metadata: {matchConfirmed: !game.metadata.matchConfirmed}
+                metadata: {matchConfirmed: !(game.metadata as GameMetadataAdminDto).matchConfirmed}
             } as GameUpdateDto
         )
     }
@@ -140,7 +139,7 @@ export default function GameView() {
                     <div className="flex flex-row items-center gap-8">
                         {isAdmin(auth) && <div className="flex flex-row gap-2">
                             <Button isIconOnly onPress={toggleMatchConfirmed}>
-                                {game.metadata.matchConfirmed ?
+                                {(game.metadata as GameMetadataAdminDto).matchConfirmed ?
                                     <Tooltip content="Unconfirm match">
                                         <CheckCircleIcon weight="fill" className="fill-success"/>
                                     </Tooltip> :
@@ -335,7 +334,7 @@ export default function GameView() {
                 <EditGameMetadataModal game={game}
                                        isOpen={editGameModal.isOpen}
                                        onOpenChange={editGameModal.onOpenChange}/>
-                <MatchGameModal path={game.metadata.path!}
+                <MatchGameModal path={(game.metadata as GameMetadataAdminDto).path!}
                                 libraryId={game.libraryId}
                                 replaceGameId={game.id}
                                 initialSearchTerm={game.title}

@@ -30,7 +30,7 @@ export default function LibraryManagementView() {
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>
         </div>
-        <LibraryHeader library={state.state[parseInt(libraryId)] as LibraryAdminDto} className="h-32"/>
+        <LibraryHeader library={state.state[parseInt(libraryId)]} className="h-32"/>
         <Tabs color="primary" fullWidth
               selectedKey={hash.length > 0 ? hash : "#details"}
               onSelectionChange={(newKey) => navigate(newKey.toString(), {replace: true})}>

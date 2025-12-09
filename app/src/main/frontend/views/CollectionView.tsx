@@ -3,14 +3,17 @@ import {gameState} from "Frontend/state/GameState";
 import React, {useEffect} from "react";
 import {useNavigate, useParams} from "react-router";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {collectionState} from "Frontend/state/CollectionState";
 
 export default function CollectionView() {
     const {collectionId} = useParams();
     const navigate = useNavigate();
     const collections = useSnapshot(collectionState);
-    const games = (collectionId ? useSnapshot(gameState).gamesByCollectionId[parseInt(collectionId!)] || [] : []) as GameDto[];
+    const games = collectionId ? useSnapshot(gameState).gamesByCollectionId[parseInt(collectionId!)] || [] : [];
+
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
 
     useEffect(() => {
         if (collections.isLoaded && (!collectionId || !collections.state[parseInt(collectionId)])) {

@@ -20,7 +20,6 @@ import {SystemManagement} from "Frontend/components/administration/SystemManagem
 import GameView from "Frontend/views/GameView";
 import LibraryManagementView from "Frontend/views/LibraryManagementView";
 import SearchView from "Frontend/views/SearchView";
-import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
 import ErrorView from "Frontend/views/ErrorView";
@@ -47,11 +46,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             path: 'search',
                             element: <SearchView/>,
                             handle: {title: 'Search'}
-                        },
-                        {
-                            path: 'recently-added',
-                            element: <RecentlyAddedView/>,
-                            handle: {title: 'Recently Added'}
                         },
                         {
                             path: '/requests',

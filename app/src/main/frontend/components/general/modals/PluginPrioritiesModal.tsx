@@ -30,7 +30,7 @@ export default function PluginPrioritiesModal({isOpen, onOpenChange, type}: Plug
         <PrioritiesModal
             title="Edit plugin order"
             subtitle="Plugins higher on the list are preferred"
-            items={plugins as PluginDto[]}
+            items={plugins}
             updateItems={updatePlugins}
             isOpen={isOpen}
             onOpenChange={onOpenChange}

@@ -1,5 +1,4 @@
 import {Button, Card, Tooltip} from "@heroui/react";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import React from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
@@ -23,7 +22,9 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     const randomGames = getRandomGames();
 
     function getRandomGames() {
-        const games = state.randomlyOrderedGamesByLibraryId[library.id] as GameDto[];
+        if (!state.randomlyOrderedGamesByLibraryId[library.id]) return [];
+        const games = state.randomlyOrderedGamesByLibraryId[library.id]
+            .filter(game => game.coverId != null);
         if (!games) return [];
         return games.slice(0, MAX_COVER_COUNT);
     }

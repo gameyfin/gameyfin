@@ -4,7 +4,6 @@ import {PluginManagementCard} from "Frontend/components/general/cards/PluginMana
 import React from "react";
 import PluginPrioritiesModal from "Frontend/components/general/modals/PluginPrioritiesModal";
 import {camelCaseToTitle} from "Frontend/util/utils";
-import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
 
@@ -13,7 +12,7 @@ interface PluginManagementSectionProps {
 }
 
 export function PluginManagementSection({type}: PluginManagementSectionProps) {
-    const plugins = useSnapshot(pluginState).sortedByType[type] as PluginDto[];
+    const plugins = useSnapshot(pluginState).sortedByType[type];
 
     const pluginPrioritiesModal = useDisclosure();
 

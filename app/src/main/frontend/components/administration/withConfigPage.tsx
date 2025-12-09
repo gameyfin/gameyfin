@@ -3,7 +3,7 @@ import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/org/gameyfin/app/config/dto/ConfigEntryDto";
 import {Form, Formik} from "formik";
 import {Button, Skeleton} from "@heroui/react";
-import { CheckIcon, InfoIcon } from "@phosphor-icons/react";
+import {CheckIcon, InfoIcon} from "@phosphor-icons/react";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {configState, initializeConfigState, NestedConfig} from "Frontend/state/ConfigState";
 import {useSnapshot} from "valtio/react";
@@ -32,7 +32,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
         }
 
         function getConfig(key: string): ConfigEntryDto | undefined {
-            return state.state[key] as ConfigEntryDto | undefined;
+            return state.state[key];
         }
 
         function getChangedValues(initial: NestedConfig, current: NestedConfig): Record<string, any> {
