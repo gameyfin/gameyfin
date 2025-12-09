@@ -11,7 +11,6 @@ import {
 } from "@heroui/react";
 import {useSnapshot} from "valtio/react";
 import {scanState} from "Frontend/state/ScanState";
-import LibraryScanProgress from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanProgress";
 import {libraryState} from "Frontend/state/LibraryState";
 import {TargetIcon, WarningIcon} from "@phosphor-icons/react";
 import {timeBetween, timeUntil, toTitleCase} from "Frontend/util/utils";
@@ -20,7 +19,7 @@ import {useEffect, useState} from "react";
 
 export default function ScanProgressPopover() {
     const libraries = useSnapshot(libraryState).state;
-    const scans = useSnapshot(scanState).sortedByStartTime as LibraryScanProgress[];
+    const scans = useSnapshot(scanState).sortedByStartTime;
     const scanInProgress = useSnapshot(scanState).isScanning;
 
     // Add state to track current time and force re-renders
@@ -50,7 +49,7 @@ export default function ScanProgressPopover() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent>
-                <div className="flex flex-col gap-2 m-2 min-w-96 w-fit">
+                <div className="flex flex-col gap-2 m-2 min-w-md">
                     {scans.length === 0 ?
                         <p className="flex h-12 items-center justify-center text-sm text-default-500">
                             No scans in progress or in history.
@@ -59,7 +58,7 @@ export default function ScanProgressPopover() {
                             {scans.map((scan, index) =>
                                 <div className="flex flex-col" key={scan.scanId}>
                                     <div
-                                        className="flex flex-row justify-between items-center text-default-500 mb-1">
+                                        className="flex flex-row gap-4 justify-between items-center text-default-500 mb-1">
                                         <p>{toTitleCase(scan.type)} scan for library&nbsp;
                                             <Link underline="always"
                                                   color="foreground"

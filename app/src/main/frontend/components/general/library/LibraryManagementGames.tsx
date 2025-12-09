@@ -38,12 +38,12 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const rowsPerPage = 25;
 
     const state = useSnapshot(gameState);
-    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] as GameAdminDto[] : [];
+    const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] : [];
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "title", direction: "ascending"});
 
-    const [selectedGame, setSelectedGame] = useState<GameAdminDto>(games[0]);
+    const [selectedGame, setSelectedGame] = useState<GameAdminDto>(games[0] as GameAdminDto);
     const editGameModal = useDisclosure();
     const matchGameModal = useDisclosure();
 

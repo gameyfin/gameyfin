@@ -51,9 +51,4 @@ class ConfigEndpoint(
     @AnonymousAllowed
     fun areGuestsAllowedToRequestGames(): Boolean =
         configService.get(ConfigProperties.Requests.Games.AllowGuestsToRequestGames) == true
-
-    @DynamicPublicAccess
-    @AnonymousAllowed
-    fun showRecentlyAddedOnHomepage(): Boolean =
-        configService.get(ConfigProperties.UI.Homepage.ShowRecentlyAddedGames) == true
 }

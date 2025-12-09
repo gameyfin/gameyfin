@@ -16,12 +16,12 @@ export default function GameHeaderPicker({game, showErrorUntouched = false, ...p
     return (<>
         <div className="relative group size-full cursor-pointer bg-background/50"
              onClick={gameHeaderPickerModal.onOpenChange}>
-            {field.value || game.headerId ?
+            {field.value || game.header?.id ?
                 <div className="size-full overflow-hidden">
                     <Image
                         alt={game.title}
                         className="z-0 object-cover group-hover:brightness-25"
-                        src={field.value ? field.value : `images/cover/${game.headerId}`}
+                        src={field.value ? field.value : `images/cover/${game.header?.id}`}
                         {...props}
                         {...field}
                         radius="none"

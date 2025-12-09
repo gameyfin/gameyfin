@@ -10,7 +10,7 @@ import org.gameyfin.app.core.events.EmailNeedsConfirmationEvent
 import org.gameyfin.app.core.events.RegistrationAttemptWithExistingEmailEvent
 import org.gameyfin.app.core.events.UserRegistrationWaitingForApprovalEvent
 import org.gameyfin.app.core.security.getCurrentAuth
-import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserRegistrationDto

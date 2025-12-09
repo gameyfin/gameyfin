@@ -40,13 +40,15 @@ fun CollectionCreateDto.toEntity(): Collection = Collection(
 fun CollectionMetadata.toDto(): CollectionMetadataDto {
     return CollectionMetadataDto(
         displayOnHomepage = this.displayOnHomepage,
-        displayOrder = this.displayOrder
+        displayOrder = this.displayOrder,
+        gamesAddedAt = this.gamesAddedAt.toMap()
     )
 }
 
 fun CollectionMetadataDto.toEntity(): CollectionMetadata {
     return CollectionMetadata(
         displayOnHomepage = this.displayOnHomepage,
-        displayOrder = this.displayOrder
+        displayOrder = this.displayOrder,
+        gamesAddedAt = this.gamesAddedAt.toMutableMap()
     )
 }

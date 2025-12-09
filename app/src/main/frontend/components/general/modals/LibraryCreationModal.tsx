@@ -1,15 +1,14 @@
 import React, {useState} from "react";
 import {addToast, Button, Checkbox, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {Form, Formik} from "formik";
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMappingInput";
-import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 interface LibraryCreationModalProps {
     isOpen: boolean;
@@ -24,8 +23,8 @@ export default function LibraryCreationModal({
     const [scanAfterCreation, setScanAfterCreation] = useState<boolean>(true);
     const availablePlatforms = useSnapshot(platformState).available;
 
-    async function createLibrary(library: LibraryDto) {
-        await LibraryEndpoint.createLibrary(library as LibraryAdminDto, scanAfterCreation);
+    async function createLibrary(library: LibraryAdminDto) {
+        await LibraryEndpoint.createLibrary(library, scanAfterCreation);
 
         addToast({
             title: "New library created",

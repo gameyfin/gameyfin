@@ -32,7 +32,7 @@ export default function LibraryPrioritiesModal({isOpen, onOpenChange}: LibraryPr
         <PrioritiesModal
             title="Edit library order"
             subtitle="Libraries higher on the list are displayed at the start"
-            items={libraries as LibraryDto[]}
+            items={libraries}
             updateItems={updateLibraries}
             isOpen={isOpen}
             onOpenChange={onOpenChange}

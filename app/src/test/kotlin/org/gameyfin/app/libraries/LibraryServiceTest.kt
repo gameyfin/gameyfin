@@ -502,7 +502,7 @@ class LibraryServiceTest {
             name = name,
             directories = directories,
             platforms = platforms,
-            games = emptyList(),
+            gameIds = emptyList(),
             stats = LibraryStatsDto(0, 0),
             ignoredPaths = emptyList(),
             metadata = LibraryMetadataDto(true, 1)

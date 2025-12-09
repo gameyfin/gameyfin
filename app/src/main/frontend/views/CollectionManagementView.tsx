@@ -89,9 +89,7 @@ export default function CollectionManagementView() {
                 validationSchema={Yup.object({
                     name: Yup.string()
                         .required("Collection name is required")
-                        .max(255, "Collection name must be 255 characters or less"),
-                    description: Yup.string()
-                        .required("Collection description is required")
+                        .max(255, "Collection name must be 255 characters or less")
                 })}
             >
                 {(formik) => (

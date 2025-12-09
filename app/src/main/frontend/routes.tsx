@@ -20,14 +20,12 @@ import {SystemManagement} from "Frontend/components/administration/SystemManagem
 import GameView from "Frontend/views/GameView";
 import LibraryManagementView from "Frontend/views/LibraryManagementView";
 import SearchView from "Frontend/views/SearchView";
-import RecentlyAddedView from "Frontend/views/RecentlyAddedView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
 import ErrorView from "Frontend/views/ErrorView";
 import GameRequestView from "Frontend/views/GameRequestView";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
-import {UiManagement} from "Frontend/components/administration/UiManagement";
 import CollectionManagementView from "Frontend/views/CollectionManagementView";
 import CollectionView from "Frontend/views/CollectionView";
 
@@ -47,11 +45,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             path: 'search',
                             element: <SearchView/>,
                             handle: {title: 'Search'}
-                        },
-                        {
-                            path: 'recently-added',
-                            element: <RecentlyAddedView/>,
-                            handle: {title: 'Recently Added'}
                         },
                         {
                             path: '/requests',
@@ -106,11 +99,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'games/collection/:collectionId',
                                     element: <CollectionManagementView/>,
                                     handle: {title: 'Administration - Collection'}
-                                },
-                                {
-                                    path: 'ui',
-                                    element: <UiManagement/>,
-                                    handle: {title: 'Administration - UI Settings'}
                                 },
                                 {
                                     path: 'requests',

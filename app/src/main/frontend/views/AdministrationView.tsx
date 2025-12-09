@@ -3,7 +3,6 @@ import {
     DownloadSimpleIcon,
     EnvelopeIcon,
     GameControllerIcon,
-    LayoutIcon,
     LockKeyIcon,
     LogIcon,
     PlugIcon,
@@ -17,11 +16,6 @@ const menuItems: MenuItem[] = [
         title: "Games",
         url: "games",
         icon: <GameControllerIcon/>
-    },
-    {
-        title: "UI Settings",
-        url: "ui",
-        icon: <LayoutIcon/>
     },
     {
         title: "Game Requests",

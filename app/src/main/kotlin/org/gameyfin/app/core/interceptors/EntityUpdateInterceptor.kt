@@ -3,7 +3,7 @@ package org.gameyfin.app.core.interceptors
 import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.events.UserUpdatedEvent
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.media.Image
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.util.EventPublisherHolder
 import org.gameyfin.pluginapi.gamemetadata.Platform

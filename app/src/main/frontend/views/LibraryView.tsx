@@ -4,13 +4,16 @@ import {gameState} from "Frontend/state/GameState";
 import React, {useEffect} from "react";
 import {useNavigate, useParams} from "react-router";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 
 export default function LibraryView() {
     const {libraryId} = useParams();
     const navigate = useNavigate();
     const libraries = useSnapshot(libraryState);
-    const games = (libraryId ? useSnapshot(gameState).gamesByLibraryId[parseInt(libraryId!)] || [] : []) as GameDto[];
+    const games = useSnapshot(gameState).gamesByLibraryId[parseInt(libraryId!)] || [];
+
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [])
 
     useEffect(() => {
         if (libraries.isLoaded && (!libraryId || !libraries.state[parseInt(libraryId)])) {

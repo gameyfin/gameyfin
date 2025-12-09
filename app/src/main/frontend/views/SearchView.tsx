@@ -13,19 +13,18 @@ import {useSearchParams} from "react-router";
 import React, {useEffect, useMemo, useState} from "react";
 import {Fzf} from "fzf";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
 import {compoundRating} from "Frontend/util/utils";
 
 export default function SearchView() {
-    const games = useSnapshot(gameState).sortedAlphabetically as GameDto[];
-    const knownDevelopers = useSnapshot(gameState).knownDevelopers as Set<string>;
+    const games = useSnapshot(gameState).sortedAlphabetically;
+    const knownDevelopers = useSnapshot(gameState).knownDevelopers;
     const knownGenres = useSnapshot(gameState).knownGenres;
     const knownThemes = useSnapshot(gameState).knownThemes;
     const knownFeatures = useSnapshot(gameState).knownFeatures;
     const knownPerspectives = useSnapshot(gameState).knownPerspectives;
     const knownKeywords = useSnapshot(gameState).knownKeywords;
-    const libraries = useSnapshot(libraryState).libraries as LibraryDto[];
+    const libraries = useSnapshot(libraryState).libraries;
 
     const [searchParams, setSearchParams] = useSearchParams();
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -46,6 +45,9 @@ export default function SearchView() {
 
     // Load initial filter values from URL parameters on component mount
     useEffect(() => {
+        // Scroll to top on load
+        window.scrollTo(0, 0)
+
         // Get all parameters from the URL
         const term = searchParams.get("term") || "";
         const libs = searchParams.getAll("lib");

@@ -1,13 +1,12 @@
 package org.gameyfin.app.media
 
+import com.vanniktech.blurhash.BlurHash
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
 import org.gameyfin.app.core.events.GameDeletedEvent
 import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.events.UserDeletedEvent
 import org.gameyfin.app.core.events.UserUpdatedEvent
-import org.gameyfin.app.games.entities.Image
-import org.gameyfin.app.games.entities.ImageType
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageContentStore
 import org.gameyfin.app.games.repositories.ImageRepository
@@ -18,8 +17,12 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.net.URI
+import javax.imageio.ImageIO
 
 @Service
 class ImageService(
@@ -30,6 +33,37 @@ class ImageService(
 ) {
     companion object {
         private val tika = Tika()
+
+        /**
+         * Scale down image for faster blurhash calculation.
+         * Blurhash doesn't need full resolution - 100px width is plenty for a good blur.
+         */
+        fun scaleImageForBlurhash(original: BufferedImage, maxWidth: Int = 100): BufferedImage {
+            val originalWidth = original.width
+            val originalHeight = original.height
+
+            // If image is already small enough, return as-is
+            if (originalWidth <= maxWidth) {
+                return original
+            }
+
+            val scale = maxWidth.toDouble() / originalWidth
+            val targetWidth = maxWidth
+            val targetHeight = (originalHeight * scale).toInt()
+
+            val scaled = BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB)
+            val g2d = scaled.createGraphics()
+
+            // Use fast scaling for blurhash - quality doesn't matter much for a blur
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED)
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
+
+            g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null)
+            g2d.dispose()
+
+            return scaled
+        }
     }
 
     @TransactionalEventListener(
@@ -126,7 +160,19 @@ class ImageService(
         // If no existing image or existing image has no valid content, download it
         TikaInputStream.get { URI.create(image.originalUrl).toURL().openStream() }.use { input ->
             image.mimeType = tika.detect(input)
-            imageContentStore.setContent(image, input)
+
+            // Read the input stream into a byte array so we can use it twice
+            val imageBytes = input.readBytes()
+
+            // Calculate blurhash
+            ByteArrayInputStream(imageBytes).use { blurhashStream ->
+                image.blurhash = calculateBlurhash(blurhashStream)
+            }
+
+            // Store content
+            ByteArrayInputStream(imageBytes).use { contentStream ->
+                imageContentStore.setContent(image, contentStream)
+            }
         }
 
         // Save or update the image to ensure it's persisted
@@ -139,8 +185,22 @@ class ImageService(
 
     fun createFromInputStream(type: ImageType, content: InputStream, mimeType: String): Image {
         val image = Image(type = type, mimeType = mimeType)
-        imageRepository.save(image)
-        return imageContentStore.setContent(image, content)
+
+        // Read the input stream into a byte array so we can use it twice
+        val imageBytes = content.readBytes()
+
+        // Calculate blurhash
+        ByteArrayInputStream(imageBytes).use { blurhashStream ->
+            image.blurhash = calculateBlurhash(blurhashStream)
+        }
+
+        // Store content
+        ByteArrayInputStream(imageBytes).use { contentStream ->
+            imageContentStore.setContent(image, contentStream)
+        }
+
+        // Save with blurhash
+        return imageRepository.save(image)
     }
 
     fun getImage(id: Long): Image? {
@@ -165,12 +225,51 @@ class ImageService(
 
     fun updateFileContent(image: Image, content: InputStream, mimeType: String? = null): Image {
         mimeType?.let { image.mimeType = it }
-        imageRepository.save(image)
-        return imageContentStore.setContent(image, content)
+
+        // Read the input stream into a byte array so we can use it twice
+        val imageBytes = content.readBytes()
+
+        // Calculate blurhash
+        ByteArrayInputStream(imageBytes).use { blurhashStream ->
+            image.blurhash = calculateBlurhash(blurhashStream)
+        }
+
+        // Store content
+        ByteArrayInputStream(imageBytes).use { contentStream ->
+            imageContentStore.setContent(image, contentStream)
+        }
+
+        // Save with blurhash
+        return imageRepository.save(image)
     }
 
     private fun imageHasValidContent(image: Image): Boolean {
         val imageContent = imageContentStore.getContent(image)
         return imageContent != null && image.contentLength != null && image.contentLength!! > 0
+    }
+
+    private fun calculateBlurhash(inputStream: InputStream): String? {
+        return try {
+            val originalImage = ImageIO.read(inputStream)
+            if (originalImage != null) {
+                // Scale down for much faster processing
+                val scaledImage = scaleImageForBlurhash(originalImage)
+
+                return if (scaledImage.width > scaledImage.height) {
+                    // Landscape
+                    BlurHash.encode(scaledImage, componentX = 4, componentY = 3)
+                } else if (scaledImage.width < scaledImage.height) {
+                    // Portrait
+                    BlurHash.encode(scaledImage, componentX = 3, componentY = 4)
+                } else {
+                    // Square
+                    BlurHash.encode(scaledImage, componentX = 3, componentY = 3)
+                }
+            } else {
+                null
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 }

@@ -39,9 +39,7 @@ export default function CollectionCreationModal({
                             validationSchema={Yup.object({
                                 name: Yup.string()
                                     .required("Collection name is required")
-                                    .max(255, "Collection name must be 255 characters or less"),
-                                description: Yup.string()
-                                    .required("Collection description is required")
+                                    .max(255, "Collection name must be 255 characters or less")
                             })}
                             isInitialValid={false}
                             onSubmit={async (values: any) => {
@@ -66,7 +64,6 @@ export default function CollectionCreationModal({
                                                 label="Collection Description"
                                                 placeholder="Enter collection description"
                                                 value={formik.values.description}
-                                                required
                                             />
                                         </div>
                                     </ModalBody>
