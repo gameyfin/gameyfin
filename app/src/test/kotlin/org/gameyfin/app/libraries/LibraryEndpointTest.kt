@@ -56,7 +56,7 @@ class LibraryEndpointTest {
             id = 1L,
             createdAt = Instant.now(),
             name = "Test Library",
-            games = emptyList(),
+            gameIds = emptyList(),
             metadata = LibraryMetadataDto(true, 1)
         )
         val userEvent = LibraryUserEvent.Created(userDto)
@@ -269,7 +269,7 @@ class LibraryEndpointTest {
             name = name,
             directories = emptyList(),
             platforms = emptyList(),
-            games = emptyList(),
+            gameIds = emptyList(),
             stats = LibraryStatsDto(0, 0),
             ignoredPaths = emptyList(),
             metadata = LibraryMetadataDto(true, 1)

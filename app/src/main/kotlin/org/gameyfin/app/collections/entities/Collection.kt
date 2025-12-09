@@ -38,6 +38,10 @@ class Collection(
         if (!game.collections.contains(this)) {
             game.collections.add(this)
         }
+        // Track when the game was added
+        game.id?.let { gameId ->
+            metadata.gamesAddedAt[gameId] = Instant.now()
+        }
         // Force update to trigger @PostUpdate callback
         updatedAt = Instant.now()
     }
@@ -45,6 +49,10 @@ class Collection(
     fun removeGame(game: Game) {
         games.remove(game)
         game.collections.remove(this)
+        // Remove the timestamp tracking for this game
+        game.id?.let { gameId ->
+            metadata.gamesAddedAt.remove(gameId)
+        }
         // Force update to trigger @PostUpdate callback
         updatedAt = Instant.now()
     }

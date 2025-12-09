@@ -3,6 +3,7 @@ package org.gameyfin.app.collections
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.collections.entities.Collection
+import org.gameyfin.app.collections.entities.CollectionMetadata
 import org.gameyfin.app.collections.extensions.toDto
 import org.gameyfin.app.collections.extensions.toEntity
 import org.gameyfin.app.collections.repositories.CollectionRepository
@@ -104,7 +105,14 @@ class CollectionService(
             collection.games.clear()
             newGames.forEach { collection.addGame(it) }
         }
-        dto.metadata?.let { collection.metadata = it.toEntity() }
+        dto.metadata?.let {
+            collection.metadata = CollectionMetadata(
+                it.displayOnHomepage ?: collection.metadata.displayOnHomepage,
+                it.displayOrder ?: collection.metadata.displayOrder,
+                collection.metadata.gamesAddedAt
+            )
+        }
+
         val saved = collectionRepository.save(collection)
 
         return saved.toDto()

@@ -3,11 +3,12 @@ import {CoverRow} from "Frontend/components/general/covers/CoverRow";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import {collectionState} from "Frontend/state/CollectionState";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
+import {StartPageDisplayCard} from "Frontend/components/general/cards/StartPageDisplayCard";
 
 export default function HomeView() {
     const librariesState = useSnapshot(libraryState);
@@ -46,7 +47,24 @@ export default function HomeView() {
 
     return (
         <div className="w-full">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
+                {(filteredAndSortedLibraries.length === 0 && filteredAndSortedCollections.length === 0) &&
+                    <div className="flex flex-col gap-2">
+                        <p className="text-2xl font-bold mb-4">All games</p>
+                        <div className="flex flex-row gap-4">
+                            {filteredAndSortedLibraries.length > 0 &&
+                                filteredAndSortedLibraries.map((library: LibraryDto) => (
+                                    <StartPageDisplayCard key={library.id} item={library}/>
+                                ))
+                            }
+                            {filteredAndSortedCollections.length > 0 &&
+                                filteredAndSortedCollections.map((collection: CollectionDto) => (
+                                    <StartPageDisplayCard key={collection.id} item={collection}/>
+                                ))
+                            }
+                        </div>
+                    </div>
+                }
                 {recentlyAddedGames.length > 0 && showRecentlyAdded &&
                     <CoverRow title="Recently added" games={recentlyAddedGames} link="/recently-added"/>
                 }

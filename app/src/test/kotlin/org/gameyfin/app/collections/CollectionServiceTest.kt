@@ -185,7 +185,8 @@ class CollectionServiceTest {
         // subscribe and capture first buffered batch
         val flux: Flux<List<CollectionUserEvent>> = CollectionService.subscribeUser().take(1)
         val now = Instant.now()
-        val userDto = CollectionUserDto(1L, now, now, "n", null, emptyList(), CollectionMetadataDto(true, 1))
+        val userDto =
+            CollectionUserDto(1L, now, now, "n", null, emptyList(), CollectionMetadataDto(true, 1, emptyMap()))
         CollectionService.emitUser(CollectionUserEvent.Created(userDto))
         val batch = flux.blockFirst(Duration.ofSeconds(1))
         assertEquals(1, batch?.size)

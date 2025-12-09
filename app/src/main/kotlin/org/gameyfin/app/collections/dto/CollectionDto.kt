@@ -57,6 +57,6 @@ data class CollectionUpdateDto(
     val name: String? = null,
     val description: String? = null,
     val gameIds: List<Long>? = null,
-    val metadata: CollectionMetadataDto? = null
+    val metadata: CollectionMetadataUpdateDto? = null
 )
 
