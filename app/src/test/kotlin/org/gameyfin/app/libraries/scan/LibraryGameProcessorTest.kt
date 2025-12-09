@@ -5,8 +5,8 @@ import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
-import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows

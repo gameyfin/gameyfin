@@ -75,6 +75,7 @@ dependencies {
     // Utils
     implementation("org.apache.tika:tika-core:3.1.0")
     implementation("me.xdrop:fuzzywuzzy:1.4.0")
+    implementation("com.vanniktech:blurhash:0.3.0")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")

@@ -7,8 +7,6 @@ import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.events.UserDeletedEvent
 import org.gameyfin.app.core.events.UserUpdatedEvent
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.Image
-import org.gameyfin.app.games.entities.ImageType
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageContentStore
 import org.gameyfin.app.games.repositories.ImageRepository

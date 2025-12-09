@@ -24,7 +24,7 @@ export default function CollectionHeader({collection, className}: CollectionHead
     function getRandomGames() {
         if (!state.randomlyOrderedGamesByCollectionId[collection.id]) return [];
         const games = state.randomlyOrderedGamesByCollectionId[collection.id]
-            .filter(game => game.imageIds && game.imageIds.length > 0);
+            .filter(game => game.images && game.images.length > 0);
         if (!games) return [];
         return games.slice(0, MAX_COVER_COUNT);
     }
@@ -43,7 +43,7 @@ export default function CollectionHeader({collection, className}: CollectionHead
                         }}
                     >
                         <img
-                            src={`/images/screenshot/${game.imageIds![0]}`}
+                            src={`/images/screenshot/${game.images![0].id}`}
                             alt={`Image ${idx}`}
                         />
                     </div>

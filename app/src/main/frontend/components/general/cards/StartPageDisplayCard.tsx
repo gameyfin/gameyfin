@@ -25,7 +25,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     };
 
     const gamesState = useSnapshot(gameState);
-    const randomImageId = useMemo<number | null>(() => getRandomImageId(), [item]);
+    const randomImageId = useMemo<string | null>(() => getRandomImageId(), [item]);
     const link = useMemo<string>(() => getLink(), [item]);
     const type = isCollection(item) ? 'Collection' : 'Library';
 
@@ -34,7 +34,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
      * Since the Random class is seeded with the game ID, the same game and image will always be selected for a given library/collection (unless the games inside change).
      * @return {number | null} The random cover ID or null if none found.
      */
-    function getRandomImageId(): number | null {
+    function getRandomImageId(): string | null {
         let games: GameDto[] = [];
 
         if (isCollection(item)) {
@@ -46,13 +46,13 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
         if (!games || games.length == 0) return null;
 
         // Find the first game that has at least one screenshot available
-        let game: GameDto | undefined = games.find(game => game.imageIds && game.imageIds.length > 0);
+        let game: GameDto | undefined = games.find(game => game.images && game.images.length > 0);
 
         if (!game) return null;
 
         const random = new Rand(`${item.id}-${game.id}`);
-        const randomImageIndex = Math.floor(random.next() * game.imageIds!.length);
-        return game.imageIds![randomImageIndex];
+        const randomImageIndex = Math.floor(random.next() * game.images!.length);
+        return game.images![randomImageIndex].id;
     }
 
     function getLink(): string {

@@ -28,7 +28,7 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
     function getRandomGames() {
         if (!state.randomlyOrderedGamesByCollectionId[collection.id]) return [];
         const games = state.randomlyOrderedGamesByCollectionId[collection.id]
-            .filter(game => game.coverId != null);
+            .filter(game => game.cover?.id != null);
         if (!games) return [];
         return games.slice(0, MAX_COVER_COUNT);
     }
@@ -42,7 +42,7 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
                     {randomGames.length > 0 &&
                         <div className="absolute flex flex-row">
                             {randomGames.map((game) => (
-                                <GameCover game={game} size={100} radius="none" key={game.coverId}/>
+                                <GameCover game={game} size={100} radius="none" key={game.cover?.id}/>
                             ))}
                         </div>
                     }

@@ -8,8 +8,8 @@ import org.gameyfin.app.games.dto.GameUserDto
 import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.entities.CompanyType
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.media.Image
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -103,7 +103,7 @@ class GameExtensionsTest {
         assertEquals(1L, result.libraryId)
         assertEquals("Test Game", result.title)
         assertEquals(listOf(Platform.PC_MICROSOFT_WINDOWS), result.platforms)
-        assertEquals(10L, result.coverId)
+        assertEquals(10L, result.cover)
         assertEquals(11L, result.headerId)
         assertEquals("Test comment", result.comment)
         assertEquals("Test summary", result.summary)
@@ -117,7 +117,7 @@ class GameExtensionsTest {
         assertEquals(listOf("keyword1"), result.keywords)
         assertEquals(listOf(GameFeature.SINGLEPLAYER), result.features)
         assertEquals(listOf(PlayerPerspective.FIRST_PERSON), result.perspectives)
-        assertEquals(listOf(12L), result.imageIds)
+        assertEquals(listOf(12L), result.images)
         assertEquals(listOf("https://example.com/video"), result.videoUrls)
         assertNotNull(result.metadata)
     }
@@ -132,7 +132,7 @@ class GameExtensionsTest {
         assertEquals(1L, result.libraryId)
         assertEquals("Test Game", result.title)
         assertEquals(listOf(Platform.PC_MICROSOFT_WINDOWS), result.platforms)
-        assertEquals(10L, result.coverId)
+        assertEquals(10L, result.cover)
         assertEquals(11L, result.headerId)
         assertEquals("Test comment", result.comment)
         assertEquals("Test summary", result.summary)
@@ -146,7 +146,7 @@ class GameExtensionsTest {
         assertEquals(listOf("keyword1"), result.keywords)
         assertEquals(listOf(GameFeature.SINGLEPLAYER), result.features)
         assertEquals(listOf(PlayerPerspective.FIRST_PERSON), result.perspectives)
-        assertEquals(listOf(12L), result.imageIds)
+        assertEquals(listOf(12L), result.images)
         assertEquals(listOf("https://example.com/video"), result.videoUrls)
         assertNotNull(result.metadata)
     }
@@ -166,7 +166,7 @@ class GameExtensionsTest {
         val result = game.toAdminDto()
 
         assertEquals("Test Game", result.title)
-        assertEquals(null, result.coverId)
+        assertEquals(null, result.cover)
         assertEquals(null, result.headerId)
         assertEquals(null, result.comment)
         assertEquals(null, result.summary)
@@ -190,7 +190,7 @@ class GameExtensionsTest {
         val result = game.toUserDto()
 
         assertEquals("Test Game", result.title)
-        assertEquals(null, result.coverId)
+        assertEquals(null, result.cover)
         assertEquals(null, result.headerId)
         assertEquals(null, result.comment)
         assertEquals(null, result.summary)
@@ -262,7 +262,7 @@ class GameExtensionsTest {
 
         val result = game.toAdminDto()
 
-        assertEquals(listOf(1L, 3L), result.imageIds)
+        assertEquals(listOf(1L, 3L), result.images)
     }
 
     @Test

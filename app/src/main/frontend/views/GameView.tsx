@@ -89,17 +89,17 @@ export default function GameView() {
     return game && (
         <div className="flex flex-col gap-4">
             <div className="overflow-hidden relative rounded-t-lg">
-                {game.headerId ? (
+                {game.header?.id ? (
                     <img
                         className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                         alt="Game header"
-                        src={`/images/header/${game.headerId}`}
+                        src={`/images/header/${game.header?.id}`}
                     />
-                ) : game.imageIds && game.imageIds.length > 0 ? (
+                ) : game.images && game.images.length > 0 ? (
                     <img
                         className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                         alt="Game screenshot"
-                        src={`/images/screenshot/${game.imageIds[0]}`}
+                        src={`/images/screenshot/${game.images[0].id}`}
                     />
                 ) : (
                     <div className="w-full h-96 bg-secondary relative"/>
@@ -323,7 +323,7 @@ export default function GameView() {
                     <div className="flex flex-col gap-4">
                         <p className="text-default-500">Media</p>
                         <ImageCarousel
-                            imageUrls={game.imageIds?.map(id => `/images/screenshot/${id}`)}
+                            imageUrls={game.images?.map(image => `/images/screenshot/${image.id}`)}
                             videosUrls={game.videoUrls}
                             className="-mx-24"
                         />
