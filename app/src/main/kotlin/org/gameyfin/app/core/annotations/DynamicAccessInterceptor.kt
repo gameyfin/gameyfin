@@ -27,7 +27,7 @@ class DynamicAccessInterceptor(
                     clazz.isAnnotationPresent(DynamicPublicAccess::class.java)
 
         if (hasDynamicPublicAccess) {
-            if (request.userPrincipal != null || config.get(ConfigProperties.Security.AllowPublicAccess) == true) {
+            if (request.userPrincipal != null || config.get(ConfigProperties.Libraries.AllowPublicAccess) == true) {
                 return true
             }
             response.status = HttpServletResponse.SC_UNAUTHORIZED

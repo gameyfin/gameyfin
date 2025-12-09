@@ -8,6 +8,8 @@ import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.games.entities.ImageType
 import org.gameyfin.app.users.UserService
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.InputStreamResource

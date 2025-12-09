@@ -52,7 +52,6 @@ spring:
     fs.filesystem-root: ./data/
   application:
     name: Gameyfin
-    version: @project.version@
   threads:
     virtual.enabled: true
   mvc:

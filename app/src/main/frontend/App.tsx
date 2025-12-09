@@ -19,7 +19,6 @@ import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
 import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
 import {initializeUserState} from "Frontend/state/UserState";
-import {initializeCollectionState} from "Frontend/state/CollectionState";
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
@@ -49,11 +48,10 @@ function ViewWithAuth() {
         if (auth.state.initializing || auth.state.loading) return;
 
         initializeLibraryState();
-        initializeCollectionState();
+        initializeGameState();
         initializePlatformState();
         initializeGameRequestState();
         initializePluginState();
-        initializeGameState();
 
         if (isAdmin(auth)) {
             initializeScanState();

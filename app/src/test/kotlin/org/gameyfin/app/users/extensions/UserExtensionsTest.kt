@@ -1,8 +1,8 @@
 package org.gameyfin.app.users.extensions
 
 import org.gameyfin.app.core.Role
-import org.gameyfin.app.media.Image
-import org.gameyfin.app.media.ImageType
+import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.games.entities.ImageType
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserInfoDto
 import org.gameyfin.app.users.entities.User

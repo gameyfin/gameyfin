@@ -19,6 +19,7 @@ import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/G
 import PluginIcon from "../plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
+import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 import {libraryState} from "Frontend/state/LibraryState";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
@@ -128,7 +129,7 @@ export default function MatchGameModal({
                                                 <div className="flex flex-row gap-2">
                                                     {Object.values(item.originalIds).map(
                                                         originalId => <PluginIcon
-                                                            plugin={state[originalId.pluginId]}/>
+                                                            plugin={state[originalId.pluginId] as PluginDto}/>
                                                     )}
                                                 </div>
                                             </TableCell>

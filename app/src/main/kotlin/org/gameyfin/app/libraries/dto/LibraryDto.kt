@@ -2,34 +2,27 @@ package org.gameyfin.app.libraries.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.gameyfin.pluginapi.gamemetadata.Platform
-import java.time.Instant
 
 interface LibraryDto {
     val id: Long
     val name: String
-    val createdAt: Instant?
-    val gameIds: List<Long>?
-    val metadata: LibraryMetadataDto?
+    val games: List<Long>?
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class LibraryUserDto(
     override val id: Long,
     override val name: String,
-    override val createdAt: Instant?,
-    override val gameIds: List<Long>?,
-    override val metadata: LibraryMetadataDto?
+    override val games: List<Long>?
 ) : LibraryDto
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class LibraryAdminDto(
     override val id: Long,
     override val name: String,
-    override val createdAt: Instant?,
     val directories: List<DirectoryMappingDto>,
     val platforms: List<Platform>,
-    override val gameIds: List<Long>?,
+    override val games: List<Long>?,
     val stats: LibraryStatsDto?,
-    val ignoredPaths: List<IgnoredPathDto>?,
-    override val metadata: LibraryMetadataDto?
+    val ignoredPaths: List<IgnoredPathDto>?
 ) : LibraryDto

@@ -10,7 +10,4 @@ sealed class UserPreferences<T : Serializable>(
 ) {
     data object PreferredTheme : UserPreferences<String>(String::class, "preferred-theme")
     data object PreferredDownloadMethod : UserPreferences<String>(String::class, "preferred-download-method")
-
-    data object FavouriteGames : UserPreferences<String>(String::class, "favourite-games")
-    data object RecentDownloads : UserPreferences<String>(String::class, "recent-downloads")
 }

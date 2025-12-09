@@ -39,7 +39,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should allow access when user is authenticated and public access is disabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns false
 
         val authentication = UsernamePasswordAuthenticationToken(
             "user",
@@ -56,7 +56,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should allow access when user is authenticated and public access is enabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns true
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns true
 
         val authentication = UsernamePasswordAuthenticationToken(
             "user",
@@ -73,7 +73,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should allow access when user is not authenticated and public access is enabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns true
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns true
 
         val authentication = mockk<Authentication>()
         every { authentication.isAuthenticated } returns false
@@ -89,7 +89,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should deny access when user is not authenticated and public access is disabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns false
 
         val authentication = mockk<Authentication>()
         every { authentication.isAuthenticated } returns false
@@ -105,7 +105,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should deny access when authentication is null and public access is disabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns false
 
         val authSupplier = Supplier<Authentication?> { null }
 
@@ -117,7 +117,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should allow access when authentication is null and public access is enabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns true
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns true
 
         val authSupplier = Supplier<Authentication?> { null }
 
@@ -129,7 +129,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should deny access when user is authenticated as anonymousUser and public access is disabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns false
 
         val authentication = mockk<Authentication>()
         every { authentication.isAuthenticated } returns true
@@ -145,7 +145,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should allow access when user is authenticated as non-anonymous and public access is disabled`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns false
 
         val authentication = mockk<Authentication>()
         every { authentication.isAuthenticated } returns true
@@ -161,7 +161,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should deny access when public access config is null and user not authenticated`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns null
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns null
 
         val authentication = mockk<Authentication>()
         every { authentication.isAuthenticated } returns false
@@ -177,7 +177,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should work when supplier is null`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns false
 
         val decision = manager.authorize(null, context)
 
@@ -187,7 +187,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
 
     @Test
     fun `check should work when context is null`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { configService.get(ConfigProperties.Libraries.AllowPublicAccess) } returns false
 
         val authentication = UsernamePasswordAuthenticationToken(
             "user",

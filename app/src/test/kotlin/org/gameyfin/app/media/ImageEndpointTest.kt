@@ -3,6 +3,8 @@ package org.gameyfin.app.media
 import io.mockk.*
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.games.entities.Image
+import org.gameyfin.app.games.entities.ImageType
 import org.gameyfin.app.users.UserService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows

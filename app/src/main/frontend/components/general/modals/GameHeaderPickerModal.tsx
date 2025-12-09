@@ -7,6 +7,7 @@ import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
+import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
 interface GameHeaderPickerModalProps {
     game: GameDto;
@@ -108,7 +109,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
                                         />
                                         <div
                                             className="absolute inset-0 flex flex-col gap-4 items-center justify-center opacity-0 group-hover:opacity-100">
-                                            <PluginIcon plugin={state[header.source]} size={32}
+                                            <PluginIcon plugin={state[header.source] as PluginDto} size={32}
                                                         blurred={false} showTooltip={false}/>
                                             <p className="text-s text-center">{header.title}</p>
                                             <ArrowRightIcon/>

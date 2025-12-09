@@ -19,7 +19,7 @@ export default function PluginManagement() {
             <div className="flex flex-col gap-8">
                 {pluginTypes.map(type =>
                     // @ts-ignore
-                    <PluginManagementSection key={type} type={type}/>
+                    <PluginManagementSection key={type} type={type} plugins={state.pluginsByType[type]}/>
                 )}
             </div>
         </div>

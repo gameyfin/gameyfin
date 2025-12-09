@@ -1,7 +1,6 @@
 package org.gameyfin.app.games.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import org.gameyfin.app.media.ImageDto
 import org.gameyfin.pluginapi.gamemetadata.*
 import java.time.Instant
 import java.time.LocalDate
@@ -11,11 +10,10 @@ sealed interface GameDto {
     val createdAt: Instant
     val updatedAt: Instant
     val libraryId: Long
-    val collectionIds: List<Long>
     val title: String
     val platforms: List<Platform>
-    val cover: ImageDto?
-    val header: ImageDto?
+    val coverId: Long?
+    val headerId: Long?
     val comment: String?
     val summary: String?
     val release: LocalDate?
@@ -28,7 +26,7 @@ sealed interface GameDto {
     val keywords: List<String>?
     val features: List<GameFeature>?
     val perspectives: List<PlayerPerspective>?
-    val images: List<ImageDto>?
+    val imageIds: List<Long>?
     val videoUrls: List<String>?
     val metadata: GameMetadataDto
 }
@@ -39,11 +37,10 @@ data class GameUserDto(
     override val createdAt: Instant,
     override val updatedAt: Instant,
     override val libraryId: Long,
-    override val collectionIds: List<Long>,
     override val title: String,
     override val platforms: List<Platform>,
-    override val cover: ImageDto?,
-    override val header: ImageDto?,
+    override val coverId: Long?,
+    override val headerId: Long?,
     override val comment: String?,
     override val summary: String?,
     override val release: LocalDate?,
@@ -56,7 +53,7 @@ data class GameUserDto(
     override val keywords: List<String>?,
     override val features: List<GameFeature>?,
     override val perspectives: List<PlayerPerspective>?,
-    override val images: List<ImageDto>?,
+    override val imageIds: List<Long>?,
     override val videoUrls: List<String>?,
     override val metadata: GameMetadataUserDto
 ) : GameDto
@@ -67,11 +64,10 @@ data class GameAdminDto(
     override val createdAt: Instant,
     override val updatedAt: Instant,
     override val libraryId: Long,
-    override val collectionIds: List<Long>,
     override val title: String,
     override val platforms: List<Platform>,
-    override val cover: ImageDto?,
-    override val header: ImageDto?,
+    override val coverId: Long?,
+    override val headerId: Long?,
     override val comment: String?,
     override val summary: String?,
     override val release: LocalDate?,
@@ -84,7 +80,7 @@ data class GameAdminDto(
     override val keywords: List<String>?,
     override val features: List<GameFeature>?,
     override val perspectives: List<PlayerPerspective>?,
-    override val images: List<ImageDto>?,
+    override val imageIds: List<Long>?,
     override val videoUrls: List<String>?,
     override val metadata: GameMetadataAdminDto
 ) : GameDto

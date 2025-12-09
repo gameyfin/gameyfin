@@ -24,9 +24,8 @@ import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMe
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
 import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
+import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import ChipList from "Frontend/components/general/ChipList";
-import {collectionState} from "Frontend/state/CollectionState";
-import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -38,8 +37,7 @@ export default function GameView() {
     const matchGameModal = useDisclosure();
 
     const state = useSnapshot(gameState);
-    const game = gameId ? state.state[parseInt(gameId)] : undefined;
-    const collections = useSnapshot(collectionState).state;
+    const game = gameId ? state.state[parseInt(gameId)] as GameAdminDto : undefined;
 
     const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
 
@@ -71,7 +69,7 @@ export default function GameView() {
         await GameEndpoint.updateGame(
             {
                 id: game.id,
-                metadata: {matchConfirmed: !(game.metadata as GameMetadataAdminDto).matchConfirmed}
+                metadata: {matchConfirmed: !game.metadata.matchConfirmed}
             } as GameUpdateDto
         )
     }
@@ -89,17 +87,17 @@ export default function GameView() {
     return game && (
         <div className="flex flex-col gap-4">
             <div className="overflow-hidden relative rounded-t-lg">
-                {game.header?.id ? (
+                {game.headerId ? (
                     <img
                         className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                         alt="Game header"
-                        src={`/images/header/${game.header?.id}`}
+                        src={`/images/header/${game.headerId}`}
                     />
-                ) : game.images && game.images.length > 0 ? (
+                ) : game.imageIds && game.imageIds.length > 0 ? (
                     <img
                         className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                         alt="Game screenshot"
-                        src={`/images/screenshot/${game.images[0].id}`}
+                        src={`/images/screenshot/${game.imageIds[0]}`}
                     />
                 ) : (
                     <div className="w-full h-96 bg-secondary relative"/>
@@ -139,7 +137,7 @@ export default function GameView() {
                     <div className="flex flex-row items-center gap-8">
                         {isAdmin(auth) && <div className="flex flex-row gap-2">
                             <Button isIconOnly onPress={toggleMatchConfirmed}>
-                                {(game.metadata as GameMetadataAdminDto).matchConfirmed ?
+                                {game.metadata.matchConfirmed ?
                                     <Tooltip content="Unconfirm match">
                                         <CheckCircleIcon weight="fill" className="fill-success"/>
                                     </Tooltip> :
@@ -222,7 +220,7 @@ export default function GameView() {
                                                           color="foreground" underline="hover">
                                                         {dev}
                                                     </Link>
-                                                    {index !== game.developers!.length - 1 && <p>/</p>}
+                                                    {index !== game.developers!!.length - 1 && <p>/</p>}
                                                 </>
                                             )
                                             : <Tooltip content="Missing data" color="foreground" placement="right">
@@ -297,25 +295,6 @@ export default function GameView() {
                                         }
                                     </td>
                                 </tr>
-                                {game.collectionIds.length > 0 &&
-                                    <tr>
-                                        <td className="text-default-500 w-0 min-w-32">Collections</td>
-                                        <td className="flex flex-row gap-1">
-                                            {[...game.collectionIds]
-                                                .map((collectionId) => collections[collectionId])
-                                                .sort((a, b) => a.id - b.id)
-                                                .map((collection, index) =>
-                                                    <>
-                                                        <Link key={collection.id} href={`/collection/${collection.id}`}
-                                                              color="foreground" underline="hover">
-                                                            {collection.name}
-                                                        </Link>
-                                                        {index !== game.collectionIds!.length - 1 && <p>/</p>}
-                                                    </>
-                                                )}
-                                        </td>
-                                    </tr>
-                                }
                                 </tbody>
                             </table>
                         </div>
@@ -323,24 +302,22 @@ export default function GameView() {
                     <div className="flex flex-col gap-4">
                         <p className="text-default-500">Media</p>
                         <ImageCarousel
-                            imageUrls={game.images?.map(image => `/images/screenshot/${image.id}`)}
+                            imageUrls={game.imageIds?.map(id => `/images/screenshot/${id}`)}
                             videosUrls={game.videoUrls}
                             className="-mx-24"
                         />
                     </div>
                 </div>
             </div>
-            {isAdmin(auth) && <>
-                <EditGameMetadataModal game={game}
-                                       isOpen={editGameModal.isOpen}
-                                       onOpenChange={editGameModal.onOpenChange}/>
-                <MatchGameModal path={(game.metadata as GameMetadataAdminDto).path!}
-                                libraryId={game.libraryId}
-                                replaceGameId={game.id}
-                                initialSearchTerm={game.title}
-                                isOpen={matchGameModal.isOpen}
-                                onOpenChange={matchGameModal.onOpenChange}/>
-            </>}
+            <EditGameMetadataModal game={game}
+                                   isOpen={editGameModal.isOpen}
+                                   onOpenChange={editGameModal.onOpenChange}/>
+            <MatchGameModal path={game.metadata.path!!}
+                            libraryId={game.libraryId}
+                            replaceGameId={game.id}
+                            initialSearchTerm={game.title}
+                            isOpen={matchGameModal.isOpen}
+                            onOpenChange={matchGameModal.onOpenChange}/>
         </div>
     );
 }

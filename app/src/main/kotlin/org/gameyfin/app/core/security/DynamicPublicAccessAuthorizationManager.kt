@@ -20,7 +20,7 @@ class DynamicPublicAccessAuthorizationManager(
     ): AuthorizationDecision {
         val auth = authentication?.get()
         val allow = (auth?.isAuthenticated == true && auth.principal != "anonymousUser") ||
-                config.get(ConfigProperties.Security.AllowPublicAccess) == true
+                config.get(ConfigProperties.Libraries.AllowPublicAccess) == true
         return AuthorizationDecision(allow)
     }
 

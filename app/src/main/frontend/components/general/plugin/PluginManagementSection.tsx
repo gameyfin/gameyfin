@@ -1,19 +1,17 @@
 import {Button, Tooltip, useDisclosure} from "@heroui/react";
-import {ListNumbersIcon} from "@phosphor-icons/react";
+import { ListNumbersIcon } from "@phosphor-icons/react";
 import {PluginManagementCard} from "Frontend/components/general/cards/PluginManagementCard";
 import React from "react";
 import PluginPrioritiesModal from "Frontend/components/general/modals/PluginPrioritiesModal";
 import {camelCaseToTitle} from "Frontend/util/utils";
-import {useSnapshot} from "valtio/react";
-import {pluginState} from "Frontend/state/PluginState";
+import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
 interface PluginManagementSectionProps {
     type: string;
+    plugins: PluginDto[];
 }
 
-export function PluginManagementSection({type}: PluginManagementSectionProps) {
-    const plugins = useSnapshot(pluginState).sortedByType[type];
-
+export function PluginManagementSection({type, plugins = []}: PluginManagementSectionProps) {
     const pluginPrioritiesModal = useDisclosure();
 
     return (
@@ -42,9 +40,10 @@ export function PluginManagementSection({type}: PluginManagementSectionProps) {
             </div>}
 
             <PluginPrioritiesModal
+                key={plugins.map(p => p.id + p.priority).join(',')} // force re-mount if plugin order changes
+                plugins={[...plugins].sort((a, b) => b.priority - a.priority)}
                 isOpen={pluginPrioritiesModal.isOpen}
                 onOpenChange={pluginPrioritiesModal.onOpenChange}
-                type={type}
             />
         </div>);
 }

@@ -12,7 +12,7 @@ import {DownloadSessionCard} from "Frontend/components/general/cards/DownloadSes
 import {humanFileSize} from "Frontend/util/utils";
 
 function DownloadManagementLayout({getConfig, formik}: any) {
-    const sessions = useSnapshot(downloadSessionState).all;
+    const sessions = useSnapshot(downloadSessionState).all as SessionStatsDto[];
     const [lastDaySum, setLastDaySum] = React.useState<number>(0);
 
     React.useEffect(() => {

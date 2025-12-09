@@ -19,18 +19,18 @@ export default function LibraryManagementView() {
 
     useEffect(() => {
         if (state.isLoaded && (!libraryId || !state.state[parseInt(libraryId)])) {
-            navigate("/administration/games");
+            navigate("/administration/libraries");
         }
     }, [state, libraryId]);
 
     return libraryId && state.state[parseInt(libraryId)] && <div className="flex flex-col gap-4">
         <div className="flex flex-row gap-4 items-center">
-            <Button isIconOnly variant="light" onPress={() => history.back()}>
+            <Button isIconOnly variant="light" onPress={() => navigate("/administration/libraries")}>
                 <ArrowLeftIcon/>
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>
         </div>
-        <LibraryHeader library={state.state[parseInt(libraryId)]} className="h-32"/>
+        <LibraryHeader library={state.state[parseInt(libraryId)] as LibraryAdminDto} className="h-32"/>
         <Tabs color="primary" fullWidth
               selectedKey={hash.length > 0 ? hash : "#details"}
               onSelectionChange={(newKey) => navigate(newKey.toString(), {replace: true})}>

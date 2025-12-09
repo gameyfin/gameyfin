@@ -1,166 +1,66 @@
 import React, {useEffect, useRef, useState} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {CaretLeftIcon, CaretRightIcon} from "@phosphor-icons/react";
-import {Button, Link} from "@heroui/react";
-import {Grid, GridImperativeAPI} from "react-window";
+import {ArrowRightIcon} from "@phosphor-icons/react";
 
 interface CoverRowProps {
     games: GameDto[];
     title: string;
-    link: string;
+    onPressShowMore: () => void;
 }
 
 const aspectRatio = 12 / 17; // aspect ratio of the game cover
 const defaultImageHeight = 300; // default height for the image
 const defaultImageWidth = aspectRatio * defaultImageHeight; // default width for the image
-const gap = 8; // gap between items in pixels (gap-2 = 0.5rem = 8px)
 
-export function CoverRow({games, title, link}: CoverRowProps) {
-    const gridRef = useRef<GridImperativeAPI | null>(null);
-    const [scrollPosition, setScrollPosition] = useState(0);
-    const [containerWidth, setContainerWidth] = useState(0);
+export function CoverRow({games, title, onPressShowMore}: CoverRowProps) {
+
     const containerRef = useRef<HTMLDivElement>(null);
+    const [visibleCount, setVisibleCount] = useState(games.length);
 
-    // Update container width on resize
     useEffect(() => {
-        const updateWidth = () => {
+        const calculateVisible = () => {
             if (containerRef.current) {
-                setContainerWidth(containerRef.current.offsetWidth);
+                const containerWidth = containerRef.current.offsetWidth;
+                const maxFit = Math.floor((containerWidth - defaultImageWidth) / defaultImageWidth) + 1;
+                setVisibleCount(maxFit < games.length ? maxFit : games.length);
             }
         };
 
-        const resizeObserver = new ResizeObserver(updateWidth);
+        const resizeObserver = new ResizeObserver(calculateVisible);
         if (containerRef.current) {
             resizeObserver.observe(containerRef.current);
         }
 
-        updateWidth();
+        calculateVisible(); // initial calculation
 
         return () => resizeObserver.disconnect();
-    }, []);
+    }, [games.length]);
 
-    // Handle scroll updates - track scroll position from the grid element
-    useEffect(() => {
-        let gridElement: HTMLDivElement | null = null;
-
-        const handleScroll = () => {
-            if (gridElement) {
-                setScrollPosition(gridElement.scrollLeft);
-            }
-        };
-
-        // Small delay to ensure grid is mounted
-        const timer = setTimeout(() => {
-            gridElement = gridRef.current?.element ?? null;
-            if (gridElement) {
-                gridElement.addEventListener('scroll', handleScroll);
-                // Initial scroll position
-                setScrollPosition(gridElement.scrollLeft);
-            }
-        }, 100);
-
-        return () => {
-            clearTimeout(timer);
-            if (gridElement) {
-                gridElement.removeEventListener('scroll', handleScroll);
-            }
-        };
-    }, [containerWidth, games.length]);
-
-    const totalWidth = games.length * (defaultImageWidth + gap);
-    const maxScroll = Math.max(0, totalWidth - containerWidth);
-
-    const scrollLeft = () => {
-        const gridElement = gridRef.current?.element;
-        if (gridElement) {
-            const itemWidth = defaultImageWidth + gap;
-            const scrollAmount = itemWidth * 3; // Scroll exactly 3 items
-            const newPosition = Math.max(0, scrollPosition - scrollAmount);
-            gridElement.scrollTo({
-                left: newPosition,
-                behavior: "smooth"
-            });
-        }
-    };
-
-    const scrollRight = () => {
-        const gridElement = gridRef.current?.element;
-        if (gridElement) {
-            const itemWidth = defaultImageWidth + gap;
-            const scrollAmount = itemWidth * 3; // Scroll exactly 3 items
-            const newPosition = Math.min(maxScroll, scrollPosition + scrollAmount);
-            gridElement.scrollTo({
-                left: newPosition,
-                behavior: "smooth"
-            });
-        }
-    };
-
-    const canScrollLeft = scrollPosition > 1; // Allow small margin for floating point issues
-    const canScrollRight = scrollPosition < maxScroll - 1 && maxScroll > 0;
-
-    // Cell renderer for react-window Grid
-    const Cell = ({columnIndex, style}: {
-        ariaAttributes: { "aria-colindex": number; role: "gridcell" };
-        columnIndex: number;
-        rowIndex: number;
-        style: React.CSSProperties;
-    }) => {
-        const game = games[columnIndex];
-        return (
-            <div style={{...style, paddingRight: gap}}>
-                <GameCover game={game} radius="sm" interactive={true}/>
-            </div>
-        );
-    };
+    const showMore = visibleCount < games.length;
 
     return (
         <div className="flex flex-col mb-4">
-            <div className="flex flex-row justify-between items-baseline mb-4">
-                <Link href={link} className="flex flex-row gap-1 w-fit items-baseline" color="foreground"
-                      underline="hover">
-                    <p className="text-2xl font-bold">{title}</p>
-                    <CaretRightIcon weight="bold" size={16}/>
-                </Link>
-                <div className="flex flex-row gap-2">
-                    <Button
-                        isIconOnly
-                        size="sm"
-                        variant="flat"
-                        onPress={scrollLeft}
-                        isDisabled={!canScrollLeft}
-                        aria-label="Scroll left"
-                    >
-                        <CaretLeftIcon weight="bold" size={20}/>
-                    </Button>
-                    <Button
-                        isIconOnly
-                        size="sm"
-                        variant="flat"
-                        onPress={scrollRight}
-                        isDisabled={!canScrollRight}
-                        aria-label="Scroll right"
-                    >
-                        <CaretRightIcon weight="bold" size={20}/>
-                    </Button>
+            <p className="text-2xl font-bold mb-4">{title}</p>
+            <div className="w-full relative">
+                <div ref={containerRef} className="flex flex-row gap-2 rounded-md bg-transparent">
+                    {games.slice(0, visibleCount).map((game, index) => (
+                        <GameCover key={index} game={game} radius="sm" interactive={true}/>
+                    ))}
                 </div>
-            </div>
-            <div ref={containerRef} className="w-full relative overflow-hidden">
-                {containerWidth > 0 && (
-                    <Grid<{}>
-                        gridRef={gridRef}
-                        columnCount={games.length}
-                        columnWidth={defaultImageWidth + gap}
-                        rowCount={1}
-                        rowHeight={defaultImageHeight}
-                        defaultHeight={defaultImageHeight}
-                        defaultWidth={containerWidth}
-                        cellComponent={Cell}
-                        cellProps={{}}
-                        className="scrollbar-hide"
-                        style={{overflow: 'auto'}}
-                    />
+
+                {showMore && (
+                    <div className="flex flex-row items-center justify-end cursor-pointer"
+                         onClick={onPressShowMore}>
+                        <div className="absolute h-full w-1/4 right-0 bottom-0
+                        bg-linear-to-r from-transparent to-background
+                        transition-all duration-300 ease-in-out hover:opacity-80"/>
+                        <div
+                            className="absolute h-full right-0 bottom-0 flex flex-row items-center gap-2 pointer-events-none">
+                            <p className="text-xl font-semibold">Show more</p>
+                            <ArrowRightIcon weight="bold"/>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

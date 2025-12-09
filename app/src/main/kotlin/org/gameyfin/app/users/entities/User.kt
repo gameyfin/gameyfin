@@ -3,7 +3,7 @@ package org.gameyfin.app.users.entities
 import jakarta.persistence.*
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.security.EncryptionConverter
-import org.gameyfin.app.media.Image
+import org.gameyfin.app.games.entities.Image
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 
 

@@ -5,7 +5,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.entities.DirectoryMapping
-import org.gameyfin.app.libraries.entities.IgnoredPathSourceType
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.extensions.toDtos
@@ -35,7 +34,7 @@ class LibraryService(
         private val libraryAdminEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryAdminEvent>(1024, false)
 
         fun subscribeUser(): Flux<List<LibraryUserEvent>> {
-            log.debug { "New user subscription for libraryUserEvents" }
+            log.debug { "New user subscription for libraryEvents" }
             return libraryUserEvents.asFlux()
                 .buffer(100.milliseconds.toJavaDuration())
                 .doOnSubscribe {
@@ -47,7 +46,7 @@ class LibraryService(
         }
 
         fun subscribeAdmin(): Flux<List<LibraryAdminEvent>> {
-            log.debug { "New admin subscription for libraryAdminEvents" }
+            log.debug { "New admin subscription for libraryEvents" }
             return libraryAdminEvents.asFlux()
                 .buffer(100.milliseconds.toJavaDuration())
                 .doOnSubscribe {
@@ -167,16 +166,15 @@ class LibraryService(
             library.platforms.addAll(it)
         }
 
-        // Only allow updating USER sourced ignored paths; preserve PLUGIN sourced ones
         libraryUpdateDto.ignoredPaths
             ?.filter { it.sourceType == IgnoredPathSourceTypeDto.USER } // Only USER source type is supported for updates
             ?.let { dtos ->
+                // Get current user for USER source type paths
                 val currentUser = getCurrentAuth()?.let { auth -> userService.getByUsername(auth.name) }
 
-                // Remove existing USER-sourced ignored paths, keep PLUGIN-sourced ones intact
-                library.ignoredPaths.removeIf { it.getType() == IgnoredPathSourceType.USER }
+                library.ignoredPaths.clear()
 
-                // Recreate user-sourced paths (reuse existing entity if same path already present globally)
+                // Check for existing paths and reuse them if they exist
                 val pathsToAdd = dtos.map { dto ->
                     val existingPath = ignoredPathRepository.findByPath(dto.path)
                     existingPath ?: dto.toEntity(currentUser)
@@ -185,19 +183,8 @@ class LibraryService(
                 library.ignoredPaths.addAll(pathsToAdd)
             }
 
-        libraryUpdateDto.metadata?.let {
-            library.metadata = it.toEntity()
-        }
-
         library.updatedAt = Instant.now()
         libraryRepository.save(library)
-    }
-
-    /**
-     * Updates multiple libraries in the repository.
-     */
-    fun update(libraries: Collection<LibraryUpdateDto>) {
-        libraries.forEach { update(it) }
     }
 
     /**
