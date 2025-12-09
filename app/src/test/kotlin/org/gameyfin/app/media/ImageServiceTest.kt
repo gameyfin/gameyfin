@@ -317,7 +317,7 @@ class ImageServiceTest {
 
         assertNotNull(result)
         verify(exactly = 1) { imageRepository.save(any<Image>()) }
-        verify(exactly = 1) { imageContentStore.setContent(any<Image>(), inputStream) }
+        verify(exactly = 1) { imageContentStore.setContent(any<Image>(), any<InputStream>()) }
     }
 
     @Test
@@ -437,7 +437,7 @@ class ImageServiceTest {
 
         assertEquals("image/jpeg", image.mimeType)
         verify(exactly = 1) { imageRepository.save(image) }
-        verify(exactly = 1) { imageContentStore.setContent(image, inputStream) }
+        verify(exactly = 1) { imageContentStore.setContent(image, any<InputStream>()) }
     }
 
     @Test
@@ -448,11 +448,11 @@ class ImageServiceTest {
         every { imageRepository.save(image) } returns image
         every { imageContentStore.setContent(any<Image>(), any<InputStream>()) } returns image
 
-        imageService.updateFileContent(image, inputStream, null)
+        imageService.updateFileContent(image, inputStream)
 
         assertEquals("image/png", image.mimeType)
         verify(exactly = 1) { imageRepository.save(image) }
-        verify(exactly = 1) { imageContentStore.setContent(image, inputStream) }
+        verify(exactly = 1) { imageContentStore.setContent(image, any<InputStream>()) }
     }
 
     @Test

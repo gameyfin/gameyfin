@@ -25,7 +25,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     };
 
     const gamesState = useSnapshot(gameState);
-    const randomImageId = useMemo<string | null>(() => getRandomImageId(), [item]);
+    const randomImageId = useMemo<number | null>(() => getRandomImageId(), [item]);
     const link = useMemo<string>(() => getLink(), [item]);
     const type = isCollection(item) ? 'Collection' : 'Library';
 
@@ -34,7 +34,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
      * Since the Random class is seeded with the game ID, the same game and image will always be selected for a given library/collection (unless the games inside change).
      * @return {number | null} The random cover ID or null if none found.
      */
-    function getRandomImageId(): string | null {
+    function getRandomImageId(): number | null {
         let games: GameDto[] = [];
 
         if (isCollection(item)) {

@@ -5,7 +5,7 @@ import {useEffect, useRef, useState} from "react";
 import {decode} from "blurhash";
 
 // Cache to track which images have been loaded across component remounts
-const loadedImagesCache = new Set<string>();
+const loadedImagesCache = new Set<number>();
 
 interface GameCoverProps {
     game: GameDto;

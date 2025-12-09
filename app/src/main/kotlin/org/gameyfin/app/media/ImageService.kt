@@ -185,7 +185,6 @@ class ImageService(
 
     fun createFromInputStream(type: ImageType, content: InputStream, mimeType: String): Image {
         val image = Image(type = type, mimeType = mimeType)
-        imageRepository.save(image)
 
         // Read the input stream into a byte array so we can use it twice
         val imageBytes = content.readBytes()
