@@ -1,9 +1,6 @@
 package org.gameyfin.app.media
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
+import jakarta.persistence.*
 import org.springframework.content.commons.annotations.ContentId
 import org.springframework.content.commons.annotations.ContentLength
 import org.springframework.content.commons.annotations.MimeType
@@ -14,6 +11,7 @@ class Image(
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
+    @Lob
     val originalUrl: String? = null,
 
     val type: ImageType,
