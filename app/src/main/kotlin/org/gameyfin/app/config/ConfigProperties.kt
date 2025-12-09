@@ -112,18 +112,6 @@ sealed class ConfigProperties<T : Serializable>(
         }
     }
 
-    /** UI */
-    sealed class UI {
-        sealed class Homepage {
-            data object ShowRecentlyAddedGames : ConfigProperties<Boolean>(
-                Boolean::class,
-                "ui.homepage.show-recently-added-games",
-                "Show recently added games on the homepage",
-                true
-            )
-        }
-    }
-
     /** Requests */
     sealed class Requests {
         sealed class Games {

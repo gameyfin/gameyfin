@@ -42,7 +42,7 @@ export default function HomeView() {
     return (
         <div className="w-full">
             <div className="flex flex-col gap-4">
-                {(filteredAndSortedLibraries.length > 0 && filteredAndSortedCollections.length > 0) &&
+                {(filteredAndSortedLibraries.length + filteredAndSortedCollections.length > 0) &&
                     <div className="flex flex-col gap-2">
                         <Link href="/search" className="flex flex-row gap-1 w-fit items-baseline" color="foreground"
                               underline="hover">

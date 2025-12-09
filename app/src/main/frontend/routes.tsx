@@ -26,7 +26,6 @@ import ErrorView from "Frontend/views/ErrorView";
 import GameRequestView from "Frontend/views/GameRequestView";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
-import {UiManagement} from "Frontend/components/administration/UiManagement";
 import CollectionManagementView from "Frontend/views/CollectionManagementView";
 import CollectionView from "Frontend/views/CollectionView";
 
@@ -100,11 +99,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'games/collection/:collectionId',
                                     element: <CollectionManagementView/>,
                                     handle: {title: 'Administration - Collection'}
-                                },
-                                {
-                                    path: 'ui',
-                                    element: <UiManagement/>,
-                                    handle: {title: 'Administration - UI Settings'}
                                 },
                                 {
                                     path: 'requests',
