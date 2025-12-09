@@ -2,7 +2,9 @@ package org.gameyfin.app.games.entities
 
 import jakarta.persistence.*
 import jakarta.persistence.CascadeType.*
+import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.media.Image
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
@@ -78,6 +80,9 @@ class Game(
 
     @ElementCollection
     var videoUrls: List<URI> = emptyList(),
+
+    @ManyToMany(mappedBy = "games", fetch = FetchType.EAGER)
+    var collections: MutableList<Collection> = mutableListOf(),
 
     @Embedded
     var metadata: GameMetadata

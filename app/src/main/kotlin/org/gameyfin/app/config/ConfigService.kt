@@ -1,5 +1,7 @@
 package org.gameyfin.app.config
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.dto.ConfigEntryDto
 import org.gameyfin.app.config.dto.ConfigUpdateDto
@@ -15,7 +17,8 @@ import kotlin.time.toJavaDuration
 
 @Service
 class ConfigService(
-    private val appConfigRepository: ConfigRepository
+    private val appConfigRepository: ConfigRepository,
+    private val objectMapper: ObjectMapper
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
@@ -50,7 +53,7 @@ class ConfigService(
 
         val appConfig = appConfigRepository.findByIdOrNull(configProperty.key)
         return if (appConfig != null) {
-            getValue(appConfig.value, configProperty)
+            deserializeValue(appConfig.value, configProperty)
         } else {
             configProperty.default ?: return null
         }
@@ -102,6 +105,18 @@ class ConfigService(
     }
 
     /**
+     * Set the value for a specified key in a type-safe way.
+     *
+     * @param configProperty: The target config property
+     * @param value: Value to set the config property to
+     * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
+     */
+    fun <T : Serializable> set(configProperty: ConfigProperties<T>, value: T) {
+        return set(configProperty.key, value)
+    }
+
+
+    /**
      * Set the value for a specified key.
      * Checks if the value can be cast to the type defined for the config property.
      *
@@ -117,16 +132,12 @@ class ConfigService(
 
         var configEntry = appConfigRepository.findByIdOrNull(key)
 
-        val parsedValue =
-            if (value.javaClass.isArray) {
-                (value as Array<Serializable>).joinToString(",")
-            } else
-                value.toString()
+        val serializedValue = serializeValue(value, key)
 
         if (configEntry == null) {
-            configEntry = ConfigEntry(configProperty.key, parsedValue)
+            configEntry = ConfigEntry(configProperty.key, serializedValue)
         } else {
-            configEntry.value = parsedValue
+            configEntry.value = serializedValue
         }
 
         appConfigRepository.save(configEntry)
@@ -150,17 +161,6 @@ class ConfigService(
     }
 
     /**
-     * Set the value for a specified key in a type-safe way.
-     *
-     * @param configProperty: The target config property
-     * @param value: Value to set the config property to
-     * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
-     */
-    fun <T : Serializable> set(configProperty: ConfigProperties<T>, value: T) {
-        return set(configProperty.key, value)
-    }
-
-    /**
      * Remove a config property from the database.
      * This will also cause it to reset to its default value.
      *
@@ -175,41 +175,45 @@ class ConfigService(
     }
 
     /**
-     * Get the value of the config property in a type-safe way.
+     * Deserialize a value from the database to its proper type.
+     *
+     * @param value: The serialized value from the database
+     * @param configProperty: The config property containing type information
+     * @return The deserialized value
      */
     @Suppress("UNCHECKED_CAST")
-    private fun <T : Serializable> getValue(value: Serializable, configProperty: ConfigProperties<T>): T {
-        val value = value.toString()
-        return when {
-            configProperty.type == String::class -> value as T
-            configProperty.type == Boolean::class -> value.toBoolean() as T
-            configProperty.type == Int::class -> value.toFloat().toInt() as T
-            configProperty.type == Float::class -> value.toFloat() as T
+    private fun <T : Serializable> deserializeValue(value: Serializable, configProperty: ConfigProperties<T>): T {
+        return try {
+            val typeReference = objectMapper.typeFactory.constructType(configProperty.type.java)
+            objectMapper.readValue(value.toString(), typeReference) as T
+        } catch (e: JsonProcessingException) {
+            throw IllegalArgumentException(
+                "Failed to deserialize value '$value' for key '${configProperty.key}' to type ${configProperty.type.simpleName}: ${e.message}",
+                e
+            )
+        } catch (e: Exception) {
+            throw IllegalArgumentException(
+                "Failed to deserialize value '$value' for key '${configProperty.key}' to type ${configProperty.type.simpleName}: ${e.message}",
+                e
+            )
+        }
+    }
 
-            configProperty.type.java.isEnum -> {
-                val enumConstants = configProperty.type.java.enumConstants
-                enumConstants.firstOrNull { it.toString() == value }
-                    ?: throw IllegalArgumentException("Unknown enum value '$value' for key ${configProperty.key}")
-            }
-
-            configProperty.type.java.isArray -> {
-                val componentType = configProperty.type.java.componentType
-                // Remove the brackets and split the string by commas
-                val elements = value
-                    .removeSurrounding("[", "]")
-                    .split(",")
-                    .filter { it.isNotBlank() }
-
-                when (componentType) {
-                    String::class.java -> elements.toTypedArray() as T
-                    Boolean::class.java -> elements.map { it.toBoolean() }.toTypedArray() as T
-                    Int::class.java -> elements.map { it.toInt() }.toTypedArray() as T
-                    Float::class.java -> elements.map { it.toFloat() }.toTypedArray() as T
-                    else -> throw IllegalArgumentException("Unsupported array type: ${componentType.name}")
-                }
-            }
-
-            else -> throw IllegalArgumentException("Unknown config type ${configProperty.type}: '$value' for key ${configProperty.key}")
+    /**
+     * Serialize a value to be stored in the database.
+     *
+     * @param value: The value to serialize
+     * @param key: The config key (for error messages)
+     * @return The serialized value as a string
+     */
+    private fun <T : Serializable> serializeValue(value: T, key: String): String {
+        return try {
+            objectMapper.writeValueAsString(value)
+        } catch (e: JsonProcessingException) {
+            throw IllegalArgumentException(
+                "Failed to serialize value for key '$key': ${e.message}",
+                e
+            )
         }
     }
 

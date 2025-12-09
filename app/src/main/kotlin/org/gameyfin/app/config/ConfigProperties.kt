@@ -15,20 +15,23 @@ sealed class ConfigProperties<T : Serializable>(
     val step: Number? = null
 ) {
 
-    /** Libraries */
-    sealed class Libraries {
+    /** Security */
+    sealed class Security {
         data object AllowPublicAccess : ConfigProperties<Boolean>(
             Boolean::class,
-            "library.allow-public-access",
+            "security.allow-public-access",
             "Allow access to Gameyfin without login",
             false
         )
+    }
 
+    /** Libraries */
+    sealed class Libraries {
         sealed class Scan {
             data object EnableFilesystemWatcher : ConfigProperties<Boolean>(
                 Boolean::class,
                 "library.scan.enable-filesystem-watcher",
-                "Enable automatic library scanning using file system watchers (coming soon™)",
+                "Enable automatic library scanning using file system watchers",
                 false
             )
 
@@ -187,13 +190,6 @@ sealed class ConfigProperties<T : Serializable>(
                 "Match existing users by",
                 MatchUsersBy.username,
                 MatchUsersBy.entries
-            )
-
-            data object AutoRegisterNewUsers : ConfigProperties<Boolean>(
-                Boolean::class,
-                "sso.oidc.auto-register-new-users",
-                "Automatically create new users after registration",
-                true
             )
 
             data object RolesClaim : ConfigProperties<String>(

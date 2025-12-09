@@ -5,8 +5,8 @@ import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
-import org.gameyfin.app.games.entities.Image
 import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -182,26 +182,26 @@ class LibraryGameProcessorTest {
         val game = createTestGame(1L, "/path/to/game")
         val updatedGame = createTestGame(1L, "/path/to/game")
 
-        every { gameService.update(game) } returns updatedGame
+        every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(any()) } just Runs
         every { filesystemService.calculateFileSize("/path/to/game") } returns 1024L
 
         val result = libraryGameProcessor.processExistingGame(game)
 
         assertEquals(updatedGame, result)
-        verify(exactly = 1) { gameService.update(game) }
+        verify(exactly = 1) { gameService.updateMetadata(game) }
     }
 
     @Test
     fun `processExistingGame should return null when game is not updated`() {
         val game = createTestGame(1L, "/path/to/game")
 
-        every { gameService.update(game) } returns null
+        every { gameService.updateMetadata(game) } returns null
 
         val result = libraryGameProcessor.processExistingGame(game)
 
         assertEquals(null, result)
-        verify(exactly = 1) { gameService.update(game) }
+        verify(exactly = 1) { gameService.updateMetadata(game) }
     }
 
     @Test
@@ -210,7 +210,7 @@ class LibraryGameProcessorTest {
         val coverImage = createTestImage(1L)
         val updatedGame = createTestGame(1L, "/path/to/game", coverImage = coverImage)
 
-        every { gameService.update(game) } returns updatedGame
+        every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(coverImage) } just Runs
         every { imageService.downloadIfNew(any()) } just Runs
         every { filesystemService.calculateFileSize("/path/to/game") } returns 1024L
@@ -226,7 +226,7 @@ class LibraryGameProcessorTest {
         val updatedGame = createTestGame(1L, "/path/to/game")
         val newSize = 4096L
 
-        every { gameService.update(game) } returns updatedGame
+        every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(any()) } just Runs
         every { filesystemService.calculateFileSize("/path/to/game") } returns newSize
 
@@ -242,7 +242,7 @@ class LibraryGameProcessorTest {
         val coverImage = createTestImage(1L)
         val updatedGame = createTestGame(1L, "/path/to/game", coverImage = coverImage)
 
-        every { gameService.update(game) } returns updatedGame
+        every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(coverImage) } just Runs
         every { imageService.downloadIfNew(any()) } just Runs
         every { filesystemService.calculateFileSize("/path/to/game") } throws RuntimeException("File error")
@@ -259,7 +259,7 @@ class LibraryGameProcessorTest {
     fun `processExistingGame should throw exception on update failure`() {
         val game = createTestGame(1L, "/path/to/game")
 
-        every { gameService.update(game) } throws RuntimeException("Update error")
+        every { gameService.updateMetadata(game) } throws RuntimeException("Update error")
 
         assertThrows(RuntimeException::class.java) {
             libraryGameProcessor.processExistingGame(game)
@@ -270,7 +270,7 @@ class LibraryGameProcessorTest {
     fun `processExistingGame should not download images when game is not updated`() {
         val game = createTestGame(1L, "/path/to/game")
 
-        every { gameService.update(game) } returns null
+        every { gameService.updateMetadata(game) } returns null
 
         libraryGameProcessor.processExistingGame(game)
 
@@ -290,7 +290,7 @@ class LibraryGameProcessorTest {
             images = mutableListOf(image1, image2, image3)
         )
 
-        every { gameService.update(game) } returns updatedGame
+        every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(any()) } just Runs
         every { filesystemService.calculateFileSize("/path/to/game") } returns 1024L
 

@@ -20,7 +20,7 @@ function GameRequestManagementLayout({getConfig, formik}: any) {
                     <div className="flex flex-row items-center gap-4">
                         <ConfigFormField
                             configElement={getConfig("requests.games.allow-guests-to-request-games")}
-                            isDisabled={!formik.values.library["allow-public-access"]}/>
+                            isDisabled={!formik.values.security["allow-public-access"]}/>
                         <ConfigFormField configElement={getConfig("requests.games.max-open-requests-per-user")}/>
                     </div>
 

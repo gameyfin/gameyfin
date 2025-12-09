@@ -1,4 +1,4 @@
-package org.gameyfin.app.games.entities
+package org.gameyfin.app.media
 
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -25,7 +25,9 @@ class Image(
     var contentLength: Long? = null,
 
     @MimeType
-    var mimeType: String? = null
+    var mimeType: String? = null,
+
+    var blurhash: String? = null
 )
 
 enum class ImageType {

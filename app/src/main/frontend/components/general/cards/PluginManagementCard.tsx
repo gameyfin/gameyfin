@@ -1,5 +1,20 @@
 import {Button, Card, Chip, Tooltip, useDisclosure} from "@heroui/react";
-import { CheckCircleIcon, IconContext, PauseCircleIcon, PlayCircleIcon, PowerIcon, QuestionIcon, QuestionMarkIcon, SealCheckIcon, SealQuestionIcon, SealWarningIcon, SlidersHorizontalIcon, StopCircleIcon, WarningCircleIcon, XCircleIcon } from "@phosphor-icons/react";
+import {
+    CheckCircleIcon,
+    IconContext,
+    PauseCircleIcon,
+    PlayCircleIcon,
+    PowerIcon,
+    QuestionIcon,
+    QuestionMarkIcon,
+    SealCheckIcon,
+    SealQuestionIcon,
+    SealWarningIcon,
+    SlidersHorizontalIcon,
+    StopCircleIcon,
+    WarningCircleIcon,
+    XCircleIcon
+} from "@phosphor-icons/react";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
 import React, {ReactNode} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
@@ -105,11 +120,11 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
         return state === PluginState.DISABLED;
     }
 
-    function togglePluginEnabled() {
+    async function togglePluginEnabled() {
         if (isDisabled(plugin.state)) {
-            PluginEndpoint.enablePlugin(plugin.id);
+            await PluginEndpoint.enablePlugin(plugin.id);
         } else {
-            PluginEndpoint.disablePlugin(plugin.id);
+            await PluginEndpoint.disablePlugin(plugin.id);
         }
     }
 
