@@ -3,6 +3,7 @@ package org.gameyfin.app.games.entities
 import jakarta.persistence.PostPersist
 import jakarta.persistence.PostRemove
 import jakarta.persistence.PostUpdate
+import jakarta.persistence.PreRemove
 import org.gameyfin.app.core.events.GameCreatedEvent
 import org.gameyfin.app.core.events.GameDeletedEvent
 import org.gameyfin.app.games.GameService
@@ -26,6 +27,13 @@ class GameEntityListener {
         GameService.emitUser(GameUserEvent.Updated(game.toUserDto()))
         GameService.emitAdmin(GameAdminEvent.Updated(game.toAdminDto()))
         // GameUpdateEvent triggered via {@link org.gameyfin.app.core.interceptors.EntityUpdateInterceptor#onFlushDirty}
+    }
+
+    @PreRemove
+    fun preDelete(game: Game) {
+        val collectionsToUpdate = game.collections.toList()
+        collectionsToUpdate.forEach { it.removeGame(game) }
+        game.collections.clear()
     }
 
     @PostRemove
