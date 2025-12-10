@@ -2,7 +2,7 @@ import {Image, useDisclosure} from "@heroui/react";
 import React from "react";
 import {useField} from "formik";
 import {GameCoverPickerModal} from "Frontend/components/general/modals/GameCoverPickerModal";
-import { ImageBrokenIcon, PencilIcon } from "@phosphor-icons/react";
+import {ImageBrokenIcon, PencilIcon} from "@phosphor-icons/react";
 
 
 // @ts-ignore
@@ -16,12 +16,12 @@ export default function GameCoverPicker({game, showErrorUntouched = false, ...pr
     return (<>
         <div className="relative group aspect-12/17 cursor-pointer bg-background/50"
              onClick={gameCoverPickerModal.onOpenChange}>
-            {field.value || game.coverId ?
+            {field.value || game.cover?.id ?
                 <div className="size-full overflow-hidden">
                     <Image
                         alt={game.title}
                         className="z-0 object-cover group-hover:brightness-25"
-                        src={field.value ? field.value : `images/cover/${game.coverId}`}
+                        src={field.value ? field.value : `images/cover/${game.cover?.id}`}
                         {...props}
                         {...field}
                         radius="none"

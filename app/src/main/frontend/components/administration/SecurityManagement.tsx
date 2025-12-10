@@ -3,14 +3,14 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {addToast, Button, Checkbox, CheckboxGroup, Tooltip} from "@heroui/react";
-import { MagicWandIcon, WarningIcon } from "@phosphor-icons/react";
+import {addToast, Button} from "@heroui/react";
+import {MagicWandIcon} from "@phosphor-icons/react";
 
-function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
+function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
     useEffect(() => {
         if (formik.dirty) {
-            setSaveMessage("Gameyfin must be restarted for the changes to take effect");
+            setSaveMessage("Gameyfin must be restarted for changes in the SSO configuration to take effect");
         } else {
             setSaveMessage(null);
         }
@@ -43,41 +43,26 @@ function SsoManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
     return (
         <div className="flex flex-col">
-            <div className="flex flex-row">
+
+            <Section title="Permissions"/>
+            <ConfigFormField configElement={getConfig("security.allow-public-access")}/>
+
+            <Section title="Single Sign-On"/>
+            <div className="flex flex-row items-start gap-8">
+                <div className="flex flex-col">
+                    <h2 className="text-xl font-bold mb-4">General configuration</h2>
+                    <ConfigFormField className="mb-4"
+                                     configElement={getConfig("sso.oidc.enabled")}/>
+                    <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
+                                     isDisabled={!formik.values.sso.oidc.enabled}/>
+
+                    <ConfigFormField configElement={getConfig("sso.oidc.roles-claim")}
+                                     isDisabled={!formik.values.sso.oidc.enabled}/>
+                    <ConfigFormField configElement={getConfig("sso.oidc.oauth-scopes")}
+                                     isDisabled={!formik.values.sso.oidc.enabled}/>
+                </div>
                 <div className="flex flex-col flex-1">
-                    <Section title="SSO configuration"/>
-                    <ConfigFormField configElement={getConfig("sso.oidc.enabled")}/>
-
-                    <Section title="SSO user handling"/>
-                    <div className="flex flex-row items-baseline mb-4">
-                        <CheckboxGroup className="flex flex-col flex-1 items-baseline gap-2"
-                                       value={["auto-register-new-users"]}>
-                            <div className="flex flex-row gap-2">
-                                <Checkbox className="items-baseline" value="auto-register-new-users" isDisabled>
-                                    Automatically create new users after registration
-                                </Checkbox>
-                                <Tooltip content={"Currently not configurable (always enabled)"} placement="right">
-                                    <WarningIcon weight="fill"/>
-                                </Tooltip>
-                            </div>
-                        </CheckboxGroup>
-                        {/*TODO: enable when the issues with unregistered SSO users are sorted
-
-                            <ConfigFormField configElement={getConfig("sso.oidc.auto-register-new-users")} isDisabled={!formik.values.sso.oidc.enabled}/>
-                        */}
-                        <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
-                                         isDisabled={!formik.values.sso.oidc.enabled ||
-                                             !formik.values.sso.oidc["auto-register-new-users"]}/>
-                    </div>
-
-                    <div className="flex flex-row items-center gap-4">
-                        <ConfigFormField configElement={getConfig("sso.oidc.roles-claim")}
-                                         isDisabled={!formik.values.sso.oidc.enabled}/>
-                        <ConfigFormField configElement={getConfig("sso.oidc.oauth-scopes")}
-                                         isDisabled={!formik.values.sso.oidc.enabled}/>
-                    </div>
-
-                    <Section title="SSO provider configuration"/>
+                    <h2 className="text-xl font-bold mb-4">SSO Provider Configuration</h2>
                     <ConfigFormField configElement={getConfig("sso.oidc.client-id")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.client-secret")}
@@ -111,7 +96,6 @@ const validationSchema = Yup.object({
     sso: Yup.object({
         oidc: Yup.object({
             enabled: Yup.boolean(),
-            "auto-register-new-users": Yup.boolean().required(),
             "match-existing-users-by": Yup.string().required(),
             "client-id": Yup.string().when("enabled", ([enabled], schema) =>
                 enabled ? schema.required("Client ID is required") : schema
@@ -141,4 +125,4 @@ const validationSchema = Yup.object({
     })
 });
 
-export const SsoManagement = withConfigPage(SsoManagementLayout, "Single Sign-On", validationSchema);
+export const SecurityManagement = withConfigPage(SecurityManagementLayout, "Security", validationSchema);

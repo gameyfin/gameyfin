@@ -9,7 +9,7 @@ type PluginState = {
     isLoaded: boolean;
     state: Record<string, PluginDto>;
     plugins: PluginDto[];
-    pluginsByType: Record<string, PluginDto[]>;
+    sortedByType: Record<string, PluginDto[]>;
 };
 
 export const pluginState = proxy<PluginState>({
@@ -20,8 +20,8 @@ export const pluginState = proxy<PluginState>({
     get plugins() {
         return Object.values<PluginDto>(this.state);
     },
-    get pluginsByType() {
-        return groupPluginsByType(this.state);
+    get sortedByType() {
+        return sortPluginsByType(this.state);
     }
 });
 
@@ -52,7 +52,7 @@ export async function initializePluginState() {
 
 /** Computed **/
 
-function groupPluginsByType(pluginsMap: Record<string, PluginDto>): Record<string, PluginDto[]> {
+function sortPluginsByType(pluginsMap: Record<string, PluginDto>): Record<string, PluginDto[]> {
     const pluginsByType: Record<string, PluginDto[]> = {};
 
     // Convert map to array of plugins
@@ -70,6 +70,11 @@ function groupPluginsByType(pluginsMap: Record<string, PluginDto>): Record<strin
             // Add plugin to the appropriate type array
             pluginsByType[type].push(plugin);
         }
+    }
+
+    // Sort plugins within each type by priority (descending order - higher priority first)
+    for (const type in pluginsByType) {
+        pluginsByType[type].sort((a, b) => b.priority - a.priority);
     }
 
     return pluginsByType;

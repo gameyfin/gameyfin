@@ -3,6 +3,7 @@ package org.gameyfin.app.games.extensions
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
+import org.gameyfin.app.media.toDto
 import java.time.ZoneOffset
 
 
@@ -28,10 +29,11 @@ fun Game.toAdminDto(): GameAdminDto {
         createdAt = createdAt!!,
         updatedAt = updatedAt!!,
         libraryId = this.library.id!!,
+        collectionIds = this.collections.mapNotNull { it.id },
         title = title!!,
         platforms = this.platforms,
-        coverId = this.coverImage?.id,
-        headerId = this.headerImage?.id,
+        cover = this.coverImage?.toDto(),
+        header = this.headerImage?.toDto(),
         comment = this.comment,
         summary = this.summary,
         release = this.release?.atZone(ZoneOffset.UTC)?.toLocalDate(),
@@ -44,7 +46,7 @@ fun Game.toAdminDto(): GameAdminDto {
         keywords = this.keywords.toList(),
         features = this.features,
         perspectives = this.perspectives,
-        imageIds = this.images.mapNotNull { it.id },
+        images = this.images.map { it.toDto() },
         videoUrls = this.videoUrls.map { it.toString() },
         metadata = this.metadata.toAdminDto()
     )
@@ -56,10 +58,11 @@ fun Game.toUserDto(): GameUserDto {
         createdAt = createdAt!!,
         updatedAt = updatedAt!!,
         libraryId = this.library.id!!,
+        collectionIds = this.collections.mapNotNull { it.id },
         title = title!!,
         platforms = this.platforms,
-        coverId = this.coverImage?.id,
-        headerId = this.headerImage?.id,
+        cover = this.coverImage?.toDto(),
+        header = this.headerImage?.toDto(),
         comment = this.comment,
         summary = this.summary,
         release = this.release?.atZone(ZoneOffset.UTC)?.toLocalDate(),
@@ -72,7 +75,7 @@ fun Game.toUserDto(): GameUserDto {
         keywords = this.keywords.toList(),
         features = this.features,
         perspectives = this.perspectives,
-        imageIds = this.images.mapNotNull { it.id },
+        images = this.images.map { it.toDto() },
         videoUrls = this.videoUrls.map { it.toString() },
         metadata = this.metadata.toUserDto()
     )

@@ -23,8 +23,20 @@ export const libraryState = proxy<LibraryState>({
     },
     get sorted() {
         return Object.values<LibraryDto>(this.state).sort((a, b) => {
-            if (a.name === undefined || b.name === undefined) return 0;
-            return a.name.localeCompare(b.name);
+            const orderA = a.metadata!.displayOrder;
+            const orderB = b.metadata!.displayOrder;
+
+            // Handle -1 as "end of list"
+            const effectiveOrderA = orderA === -1 ? Number.MAX_SAFE_INTEGER : orderA;
+            const effectiveOrderB = orderB === -1 ? Number.MAX_SAFE_INTEGER : orderB;
+
+            const orderDiff = effectiveOrderA - effectiveOrderB;
+            if (orderDiff !== 0) {
+                return orderDiff;
+            }
+
+            // Fallback to creation date (newer first)
+            return new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime();
         });
     }
 });

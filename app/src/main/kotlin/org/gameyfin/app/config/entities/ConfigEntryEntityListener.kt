@@ -4,6 +4,7 @@ import jakarta.persistence.PostPersist
 import jakarta.persistence.PostRemove
 import jakarta.persistence.PostUpdate
 import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.core.events.LibraryFilesystemWatcherConfigUpdatedEvent
 import org.gameyfin.app.core.events.LibraryScanScheduleUpdatedEvent
 import org.gameyfin.app.util.EventPublisherHolder
 
@@ -19,7 +20,12 @@ class ConfigEntryEntityListener {
             }
 
             ConfigProperties.Libraries.Scan.EnableFilesystemWatcher.key -> {
-                TODO()
+                EventPublisherHolder.publish(
+                    LibraryFilesystemWatcherConfigUpdatedEvent(
+                        this,
+                        configEntry.value.toBoolean()
+                    )
+                )
             }
         }
     }

@@ -15,7 +15,9 @@ import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDtos
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
+import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
+import org.gameyfin.app.media.ImageType
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
@@ -587,7 +589,7 @@ class GameServiceTest {
         every { gameRepository.findByIdOrNull(999L) } returns null
 
         assertThrows(IllegalArgumentException::class.java) {
-            gameService.update(game)
+            gameService.updateMetadata(game)
         }
     }
 
@@ -603,7 +605,7 @@ class GameServiceTest {
         every { pluginManager.getExtensions("test-plugin") } returns emptyList<Any>()
 
         assertThrows(NoSuchElementException::class.java) {
-            gameService.update(game)
+            gameService.updateMetadata(game)
         }
     }
 
@@ -625,7 +627,7 @@ class GameServiceTest {
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
         every { pluginManager.getPluginForExtension(provider.javaClass) } returns null
 
-        val result = gameService.update(game)
+        val result = gameService.updateMetadata(game)
 
         assertNull(result)
     }
@@ -660,7 +662,7 @@ class GameServiceTest {
         every { filesystemService.calculateFileSize(any()) } returns 1000L
         every { library.platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
 
-        val result = gameService.update(game)
+        val result = gameService.updateMetadata(game)
 
         assertNull(result)
     }
@@ -690,7 +692,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 1000L
 
-        val result = gameService.update(game)
+        val result = gameService.updateMetadata(game)
 
         assertNotNull(result)
         assertEquals("New Title", result.title)
@@ -725,7 +727,7 @@ class GameServiceTest {
         every { filesystemService.calculateFileSize(any()) } returns 1000L
         every { library.platforms } returns mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
 
-        val result = gameService.update(game)
+        val result = gameService.updateMetadata(game)
 
         // Should return null because no fields were actually updated
         assertNull(result)
@@ -763,7 +765,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 1000L
 
-        val result = gameService.update(game)
+        val result = gameService.updateMetadata(game)
 
         assertNotNull(result)
         assertEquals("New Title", result.title)

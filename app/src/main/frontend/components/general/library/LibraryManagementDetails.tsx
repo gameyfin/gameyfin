@@ -14,6 +14,7 @@ import * as Yup from "yup";
 import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
+import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
 
 interface LibraryManagementDetailsProps {
     library: LibraryDto;
@@ -45,7 +46,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                 color: "success"
             });
 
-            navigate("/administration/libraries");
+            navigate("/administration/games");
         } catch (e) {
             addToast({
                 title: "Error deleting library",
@@ -83,6 +84,8 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                 </div>
 
                 <Input label="Library name" name="name"/>
+
+                <CheckboxInput label="Display on homepage" name="metadata.displayOnHomepage" className="mb-4"/>
 
                 <ArrayInputAutocomplete options={Array.from(availablePlatforms)} name="platforms" label="Platforms"/>
 
