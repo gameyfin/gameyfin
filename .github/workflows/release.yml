@@ -107,10 +107,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        variant: [ alpine, ubuntu ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -142,7 +138,7 @@ jobs:
           TAGS="$GHCR_TAGS"
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image (${{ matrix.variant }})
+      - name: Build and push Docker image
         uses: ./.github/actions/docker-build-push
         with:
           ghcr_username: ${{ github.actor }}
@@ -151,7 +147,6 @@ jobs:
           dockerfile: docker/Dockerfile
           platforms: linux/arm64/v8,linux/amd64
           tags: ${{ steps.docker_tags.outputs.tags }}
-          variant: ${{ matrix.variant }}
 
   plugin_api:
     needs: setup
