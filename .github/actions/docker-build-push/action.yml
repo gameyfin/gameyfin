@@ -13,36 +13,25 @@ runs:
         username: ${{ inputs.ghcr_username }}
         password: ${{ inputs.ghcr_token }}
 
-    - name: Prepare Ubuntu tags
-      id: ubuntu_tags
-      if: ${{ inputs.variant != 'alpine' }}
+    - name: Prepare combined tags (default + ubuntu suffix)
+      id: combined_tags
       shell: bash
       run: |
         TAGS="${{ inputs.tags }}"
+        # Generate both default tags and ubuntu-suffixed tags
+        DEFAULT_TAGS="$TAGS"
         UBUNTU_TAGS=$(echo "$TAGS" | awk -F, '{for(i=1;i<=NF;i++){split($i,a,":"); printf "%s:%s-ubuntu", a[1], a[2]; if(i<NF) printf ","}}')
-        echo "ubuntu_tags=$UBUNTU_TAGS" >> $GITHUB_OUTPUT
-
-    - name: Build and push Docker image (Alpine)
-      if: ${{ inputs.variant != 'ubuntu' }}
-      uses: docker/build-push-action@v5
-      with:
-        context: ${{ inputs.context }}
-        file: ${{ inputs.dockerfile }}
-        platforms: ${{ inputs.platforms }}
-        push: true
-        tags: ${{ inputs.tags }}
-        cache-from: type=gha
-        cache-to: type=gha
+        COMBINED_TAGS="$DEFAULT_TAGS,$UBUNTU_TAGS"
+        echo "combined_tags=$COMBINED_TAGS" >> $GITHUB_OUTPUT
 
     - name: Build and push Docker image (Ubuntu)
-      if: ${{ inputs.variant != 'alpine' }}
       uses: docker/build-push-action@v5
       with:
         context: ${{ inputs.context }}
         file: docker/Dockerfile.ubuntu
         platforms: ${{ inputs.platforms }}
         push: true
-        tags: ${{ steps.ubuntu_tags.outputs.ubuntu_tags }}
+        tags: ${{ steps.combined_tags.outputs.combined_tags }}
         cache-from: type=gha
         cache-to: type=gha
 
@@ -65,7 +54,4 @@ inputs:
   tags:
     required: true
     description: 'Comma-separated list of image tags'
-  variant:
-    required: true
-    default: 'both'
-    description: 'Image variant to build: alpine, ubuntu, or both'
+
