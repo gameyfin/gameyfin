@@ -125,7 +125,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                    sortDescriptor={sortDescriptor}
                    onSortChange={setSortDescriptor}
                    classNames={{
-                       base: "h-96 overflow-scroll"
+                       base: "h-96"
                    }}>
                 <TableHeader>
                     <TableColumn key="title" allowsSorting>Title</TableColumn>
