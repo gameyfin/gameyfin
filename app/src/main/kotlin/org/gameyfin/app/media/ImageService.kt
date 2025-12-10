@@ -13,6 +13,7 @@ import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.users.persistence.UserRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
@@ -66,6 +67,7 @@ class ImageService(
         }
     }
 
+    @Async
     @TransactionalEventListener(
         classes = [GameDeletedEvent::class],
         phase = TransactionPhase.AFTER_COMPLETION
