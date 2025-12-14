@@ -39,6 +39,32 @@ export default function HomeView() {
 
     }, [librariesState.sorted, collectionsState.sorted, gamesByLibrary, gamesByCollection]);
 
+    // Sort games by date added (newest first) for libraries
+    const getSortedLibraryGames = (libraryId: number) => {
+        const games = gamesByLibrary[libraryId] || [];
+        return [...games].sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA; // Descending order (newest first)
+        });
+    };
+
+    // Sort games by date added (newest first) for collections
+    const getSortedCollectionGames = (collection: CollectionDto) => {
+        const games = gamesByCollection[collection.id] || [];
+        const gamesAddedAt = collection.metadata?.gamesAddedAt || {};
+
+        return [...games].sort((a, b) => {
+            const dateA = gamesAddedAt[a.id.toString()]
+                ? new Date(gamesAddedAt[a.id.toString()]).getTime()
+                : 0;
+            const dateB = gamesAddedAt[b.id.toString()]
+                ? new Date(gamesAddedAt[b.id.toString()]).getTime()
+                : 0;
+            return dateB - dateA; // Descending order (newest first)
+        });
+    };
+
     return (
         <div className="w-full">
             <div className="flex flex-col gap-4">
@@ -65,13 +91,13 @@ export default function HomeView() {
                 }
                 {filteredAndSortedLibraries.map((library) => (
                     <CoverRow key={library.id} title={library.name}
-                              games={gamesByLibrary[library.id] || []}
+                              games={getSortedLibraryGames(library.id)}
                               link={"/library/" + library.id}
                     />
                 ))}
                 {filteredAndSortedCollections.map((collection) => (
                     <CoverRow key={collection.id} title={collection.name}
-                              games={gamesByCollection[collection.id] || []}
+                              games={getSortedCollectionGames(collection)}
                               link={"/collection/" + collection.id}
                     />
                 ))}

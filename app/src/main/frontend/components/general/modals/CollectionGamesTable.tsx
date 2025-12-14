@@ -80,6 +80,9 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                     case "library":
                         cmp = (libraryName(a)).localeCompare(libraryName(b));
                         break;
+                    case "dateAdded":
+                        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                        break;
                     default:
                         cmp = 0;
                 }
@@ -130,6 +133,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                 <TableHeader>
                     <TableColumn key="title" allowsSorting>Title</TableColumn>
                     <TableColumn key="library" allowsSorting>Library</TableColumn>
+                    <TableColumn key="dateAdded" allowsSorting>Date added</TableColumn>
                     <TableColumn width={1}>Actions</TableColumn>
                 </TableHeader>
                 <TableBody
@@ -153,6 +157,9 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                       underline="hover">
                                     {libraryName(game)}
                                 </Link>
+                            </TableCell>
+                            <TableCell>
+                                {new Date(game.createdAt).toLocaleString()}
                             </TableCell>
                             <TableCell>
                                 <div className="flex flex-row gap-2">
