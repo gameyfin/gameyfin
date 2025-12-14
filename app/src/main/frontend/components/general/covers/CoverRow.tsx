@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {CaretLeftIcon, CaretRightIcon} from "@phosphor-icons/react";
@@ -100,20 +100,23 @@ export function CoverRow({games, title, link}: CoverRowProps) {
     const canScrollLeft = scrollPosition > 1; // Allow small margin for floating point issues
     const canScrollRight = scrollPosition < maxScroll - 1 && maxScroll > 0;
 
-    // Cell renderer for react-window Grid
-    const Cell = ({columnIndex, style}: {
-        ariaAttributes: { "aria-colindex": number; role: "gridcell" };
+    // Define interface for Cell props
+    interface RowCellProps {
         columnIndex: number;
         rowIndex: number;
         style: React.CSSProperties;
-    }) => {
-        const game = games[columnIndex];
+        games: GameDto[];
+    }
+
+    // Cell renderer for react-window Grid
+    const Cell = useCallback(({columnIndex, style, games: gamesData}: RowCellProps) => {
+        const game = gamesData[columnIndex];
         return (
             <div style={{...style, paddingRight: gap}}>
-                <GameCover game={game} radius="sm" interactive={true}/>
+                <GameCover key={game.id} game={game} radius="sm" interactive={true}/>
             </div>
         );
-    };
+    }, []);
 
     return (
         <div className="flex flex-col mb-4">
@@ -148,7 +151,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
             </div>
             <div ref={containerRef} className="w-full relative overflow-hidden">
                 {containerWidth > 0 && (
-                    <Grid<{}>
+                    <Grid<{ games: GameDto[] }>
                         gridRef={gridRef}
                         columnCount={games.length}
                         columnWidth={defaultImageWidth + gap}
@@ -157,7 +160,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
                         defaultHeight={defaultImageHeight}
                         defaultWidth={containerWidth}
                         cellComponent={Cell}
-                        cellProps={{}}
+                        cellProps={{games}}
                         className="scrollbar-hide"
                         style={{overflow: 'auto'}}
                     />

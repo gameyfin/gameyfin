@@ -1,11 +1,19 @@
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import type {CellComponentProps} from "react-window";
 import {Grid} from "react-window";
-import {useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 
 interface CoverGridProps {
     games: GameDto[];
+}
+
+interface GridCellProps {
+    columnIndex: number;
+    rowIndex: number;
+    style: React.CSSProperties;
+    games: GameDto[];
+    columnCount: number;
+    coverHeight: number;
 }
 
 // Constants for grid layout
@@ -52,20 +60,24 @@ export default function CoverGrid({games}: CoverGridProps) {
     // Calculate row count
     const rowCount = Math.ceil(games.length / columnCount);
 
+
     // Cell renderer for react-window Grid
-    const Cell = ({
-                      columnIndex,
-                      rowIndex,
-                      style
-                  }: CellComponentProps<{}>) => {
-        const gameIndex = rowIndex * columnCount + columnIndex;
+    const Cell = useCallback(({
+                                  columnIndex,
+                                  rowIndex,
+                                  style,
+                                  games: gamesData,
+                                  columnCount: colCount,
+                                  coverHeight: height
+                              }: GridCellProps) => {
+        const gameIndex = rowIndex * colCount + columnIndex;
 
         // Return empty cell if we're past the end of the games array
-        if (gameIndex >= games.length) {
+        if (gameIndex >= gamesData.length) {
             return <div style={style}/>;
         }
 
-        const game = games[gameIndex];
+        const game = gamesData[gameIndex];
 
         return (
             <div
@@ -77,10 +89,10 @@ export default function CoverGrid({games}: CoverGridProps) {
                     boxSizing: 'border-box'
                 }}
             >
-                <GameCover game={game} interactive={true} size={coverHeight} lazy={true}/>
+                <GameCover key={game.id} game={game} interactive={true} size={height} lazy={true}/>
             </div>
         );
-    };
+    }, []);
 
     // Column width function to handle the last column differently
     const getColumnWidth = (index: number) => {
@@ -94,14 +106,14 @@ export default function CoverGrid({games}: CoverGridProps) {
     return (
         <div ref={containerRef} className="w-full">
             {containerWidth > 0 && (
-                <Grid<{}>
+                <Grid<{ games: GameDto[], columnCount: number, coverHeight: number }>
                     columnCount={columnCount}
                     columnWidth={getColumnWidth}
                     rowCount={rowCount}
                     rowHeight={coverHeight + GAP}
                     defaultWidth={containerWidth}
                     cellComponent={Cell}
-                    cellProps={{}}
+                    cellProps={{games, columnCount, coverHeight}}
                     style={{overflowX: 'hidden'}}
                 />
             )}

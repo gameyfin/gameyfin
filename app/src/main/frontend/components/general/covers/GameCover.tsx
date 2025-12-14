@@ -1,7 +1,7 @@
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {Image} from "@heroui/react";
 import {GameCoverFallback} from "Frontend/components/general/covers/GameCoverFallback";
-import {useEffect, useRef, useState} from "react";
+import {memo, useEffect, useRef, useState} from "react";
 import {decode} from "blurhash";
 
 // Cache to track which images have been loaded across component remounts
@@ -15,18 +15,17 @@ interface GameCoverProps {
     lazy?: boolean;
 }
 
-export function GameCover({game, size = 300, radius = "sm", interactive = false, lazy = false}: GameCoverProps) {
+const GameCoverComponent = ({game, size = 300, radius = "sm", interactive = false, lazy = false}: GameCoverProps) => {
     const [shouldLoad, setShouldLoad] = useState(!lazy);
     // Check cache to see if this image has already been loaded
-    const [isImageLoaded, setIsImageLoaded] = useState(
-        game.cover ? loadedImagesCache.has(game.cover.id) : false
-    );
+    const isCached = game.cover ? loadedImagesCache.has(game.cover.id) : false;
+    const [isImageLoaded, setIsImageLoaded] = useState(isCached);
     const [blurhashUrl, setBlurhashUrl] = useState<string | undefined>(undefined);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Generate blurhash placeholder image
     useEffect(() => {
-        if (game.cover?.blurhash) {
+        if (game.cover?.blurhash && !blurhashUrl) {
             try {
                 // Decode blurhash to pixel data
                 const pixels = decode(game.cover.blurhash, 32, 45); // Small size for placeholder
@@ -49,7 +48,7 @@ export function GameCover({game, size = 300, radius = "sm", interactive = false,
                 console.error('Failed to decode blurhash:', e);
             }
         }
-    }, [game.cover?.blurhash]);
+    }, [game.cover?.blurhash, blurhashUrl]);
 
     useEffect(() => {
         if (!lazy || shouldLoad) return;
@@ -99,7 +98,7 @@ export function GameCover({game, size = 300, radius = "sm", interactive = false,
             <Image
                 alt={game.title}
                 className="z-0 object-cover aspect-12/17"
-                src={shouldLoad && isImageLoaded ? `images/cover/${game.cover.id}` : blurhashUrl}
+                src={(shouldLoad || isCached) && isImageLoaded ? `images/cover/${game.cover.id}` : blurhashUrl}
                 radius={radius}
                 height={size}
                 fallbackSrc={<GameCoverFallback title={game.title} size={size} radius={radius}/>}
@@ -114,4 +113,14 @@ export function GameCover({game, size = 300, radius = "sm", interactive = false,
             {coverContent}
         </a>
     ) : coverContent;
-}
+};
+
+// Memoize the component to prevent unnecessary re-renders
+// Only re-render if the game ID, size, radius, interactive, or lazy props change
+export const GameCover = memo(GameCoverComponent, (prevProps, nextProps) => {
+    return prevProps.game.id === nextProps.game.id &&
+        prevProps.size === nextProps.size &&
+        prevProps.radius === nextProps.radius &&
+        prevProps.interactive === nextProps.interactive &&
+        prevProps.lazy === nextProps.lazy;
+});
