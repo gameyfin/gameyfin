@@ -83,7 +83,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download build outputs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: build-outputs
           path: .
