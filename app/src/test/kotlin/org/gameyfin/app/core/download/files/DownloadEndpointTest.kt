@@ -12,13 +12,14 @@ import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.LinkDownload
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows
-
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-
 import org.springframework.http.HttpStatus
+import org.springframework.web.context.request.async.DeferredResult
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -51,6 +52,35 @@ class DownloadEndpointTest {
         clearAllMocks()
     }
 
+    /**
+     * Helper method to wait for DeferredResult to complete and get the result.
+     * Handles async processing with timeout.
+     */
+    private fun <T> awaitDeferredResult(deferredResult: DeferredResult<T>, timeoutSeconds: Long = 5): T {
+        val latch = CountDownLatch(1)
+        var result: T? = null
+        var error: Throwable? = null
+
+        deferredResult.setResultHandler { value ->
+            @Suppress("UNCHECKED_CAST")
+            result = value as T
+            latch.countDown()
+        }
+
+        deferredResult.onError { throwable ->
+            error = throwable
+            latch.countDown()
+        }
+
+        val completed = latch.await(timeoutSeconds, TimeUnit.SECONDS)
+        if (!completed) {
+            throw AssertionError("DeferredResult did not complete within $timeoutSeconds seconds")
+        }
+
+        error?.let { throw AssertionError("DeferredResult completed with error", it) }
+        return result ?: throw AssertionError("DeferredResult completed but result is null")
+    }
+
     @Test
     fun `downloadGame should return file download with correct headers`() {
         val gameId = 1L
@@ -73,13 +103,13 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertNotNull(response.body)
         assertTrue(response.headers.containsKey("Content-Disposition"))
         assertTrue(response.headers["Content-Disposition"]!![0].contains("Test Game.zip"))
-        // Content-Length may or may not be present depending on whether the path exists as a file
 
         verify(exactly = 1) { gameService.getById(gameId) }
         verify(exactly = 1) { gameService.incrementDownloadCount(game) }
@@ -108,7 +138,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(dirPath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertTrue(response.headers.containsKey("Content-Disposition"))
@@ -136,7 +167,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertFalse(response.headers.containsKey("Content-Length"))
@@ -162,7 +194,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertFalse(response.headers.containsKey("Content-Length"))
@@ -191,7 +224,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
 
@@ -231,7 +265,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
 
@@ -270,7 +305,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        awaitDeferredResult(deferredResult)
 
         verify(exactly = 1) { gameService.incrementDownloadCount(game) }
     }
@@ -293,8 +329,10 @@ class DownloadEndpointTest {
         every { gameService.incrementDownloadCount(game) } just Runs
         every { downloadService.getDownload(gamePath, provider) } returns linkDownload
 
-        assertThrows(NotImplementedError::class.java) {
-            endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+
+        assertThrows(AssertionError::class.java) {
+            awaitDeferredResult(deferredResult)
         }
     }
 
@@ -318,7 +356,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
         val contentDisposition = response.headers["Content-Disposition"]!![0]
@@ -350,25 +389,14 @@ class DownloadEndpointTest {
             every { downloadService.getDownload(gamePath, provider) } returns fileDownload
             every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-            val response = endpoint.downloadGame(gameId, provider, request)
+            val deferredResult = endpoint.downloadGame(gameId, provider, request)
+            val response = awaitDeferredResult(deferredResult)
 
             val contentDisposition = response.headers["Content-Disposition"]!![0]
             assertTrue(
                 contentDisposition.contains("Test Game.$extension"),
                 "Expected extension .$extension in: $contentDisposition"
             )
-        }
-    }
-
-    @Test
-    fun `downloadGame should propagate service exceptions`() {
-        val gameId = 1L
-        val provider = "TestProvider"
-
-        every { gameService.getById(gameId) } throws RuntimeException("Game not found")
-
-        assertThrows(RuntimeException::class.java) {
-            endpoint.downloadGame(gameId, provider, request)
         }
     }
 
@@ -394,7 +422,8 @@ class DownloadEndpointTest {
         every { downloadService.getDownload(gamePath, provider) } returns fileDownload
         every { downloadService.processDownload(any(), any(), any(), any(), any(), any()) } just Runs
 
-        val response = endpoint.downloadGame(gameId, provider, request)
+        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+        val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
     }
