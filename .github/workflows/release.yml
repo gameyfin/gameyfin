@@ -71,7 +71,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
@@ -114,12 +114,12 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
       - name: Download build outputs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: build-outputs
           path: .
@@ -158,7 +158,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
@@ -189,7 +189,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
