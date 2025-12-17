@@ -22,6 +22,19 @@ const GameCoverComponent = ({game, size = 300, radius = "sm", interactive = fals
     const [isImageLoaded, setIsImageLoaded] = useState(isCached);
     const [blurhashUrl, setBlurhashUrl] = useState<string | undefined>(undefined);
     const containerRef = useRef<HTMLDivElement>(null);
+    const prevCoverIdRef = useRef<number | undefined>(game.cover?.id);
+
+    // Reset state when cover ID changes
+    useEffect(() => {
+        const currentCoverId = game.cover?.id;
+        if (prevCoverIdRef.current !== currentCoverId) {
+            prevCoverIdRef.current = currentCoverId;
+            const newIsCached = currentCoverId ? loadedImagesCache.has(currentCoverId) : false;
+            setIsImageLoaded(newIsCached);
+            setBlurhashUrl(undefined);
+            setShouldLoad(!lazy);
+        }
+    }, [game.cover?.id, lazy]);
 
     // Generate blurhash placeholder image
     useEffect(() => {
@@ -116,9 +129,10 @@ const GameCoverComponent = ({game, size = 300, radius = "sm", interactive = fals
 };
 
 // Memoize the component to prevent unnecessary re-renders
-// Only re-render if the game ID, size, radius, interactive, or lazy props change
+// Only re-render if the game ID, cover ID, size, radius, interactive, or lazy props change
 export const GameCover = memo(GameCoverComponent, (prevProps, nextProps) => {
     return prevProps.game.id === nextProps.game.id &&
+        prevProps.game.cover?.id === nextProps.game.cover?.id &&
         prevProps.size === nextProps.size &&
         prevProps.radius === nextProps.radius &&
         prevProps.interactive === nextProps.interactive &&

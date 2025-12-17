@@ -34,7 +34,7 @@ jobs:
           report_paths: '**/build/test-results/test/TEST-*.xml'
 
       - name: Upload build outputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-outputs
           path: |
@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Download build outputs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: build-outputs
           path: .

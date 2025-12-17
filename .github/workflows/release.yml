@@ -50,7 +50,7 @@ jobs:
           jq ".version = \"$RELEASE_VERSION\"" app/package.json > app/package.json.tmp && mv app/package.json.tmp app/package.json
 
       - name: Upload modified files
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: modified-files
           path: |
@@ -71,7 +71,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
@@ -95,7 +95,7 @@ jobs:
           report_paths: '**/build/test-results/test/TEST-*.xml'
 
       - name: Upload build outputs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: build-outputs
           path: |
@@ -114,12 +114,12 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
       - name: Download build outputs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: build-outputs
           path: .
@@ -158,7 +158,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
@@ -189,7 +189,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: modified-files
 
