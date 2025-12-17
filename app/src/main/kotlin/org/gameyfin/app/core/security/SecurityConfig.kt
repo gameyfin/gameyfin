@@ -47,6 +47,7 @@ class SecurityConfig(
                 // Gameyfin static resources and public endpoints
                 .requestMatchers(
                     "/login",
+                    "/loginredirect",
                     "/setup",
                     "/reset-password",
                     "/accept-invitation",
@@ -85,7 +86,9 @@ class SecurityConfig(
             }
 
             // Use custom success handler to handle user registration
-            http.oauth2Login { oauth2Login -> oauth2Login.successHandler(ssoAuthenticationSuccessHandler) }
+            http.oauth2Login { oauth2Login ->
+                oauth2Login.successHandler(ssoAuthenticationSuccessHandler)
+            }
             // Prevent unnecessary redirects
             http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
 
