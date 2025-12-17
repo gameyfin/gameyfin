@@ -17,6 +17,10 @@ server:
       tracking-modes: cookie
       timeout: 24h
   forward-headers-strategy: framework
+  tomcat:
+    remoteip:
+      protocol-header: X-Forwarded-Proto
+      remote-ip-header: X-Forwarded-For
 
 management:
   server:
