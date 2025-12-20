@@ -51,7 +51,9 @@ class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(
             return FileDownload(
                 data = streamContentAsSingleFile(path),
                 fileExtension = if (path.isDirectory()) "zip" else path.extension,
-                size = path.fileSize()
+                size = path.isDirectory().let {
+                    if (it) null else path.fileSize()
+                }
             )
         }
 
