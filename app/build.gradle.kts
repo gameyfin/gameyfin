@@ -59,6 +59,7 @@ dependencies {
     implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.17")
     implementation("org.flywaydb:flyway-core")
     implementation("commons-io:commons-io:2.18.0")
+    implementation("com.google.guava:guava:33.5.0-jre")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -67,7 +68,7 @@ dependencies {
 
     // Notifications
     implementation("org.springframework.boot:spring-boot-starter-mail")
-    implementation("ch.digitalfondue.mjml4j:mjml4j:1.0.3")
+    implementation("ch.digitalfondue.mjml4j:mjml4j:1.1.4")
 
     // Plugins
     implementation(project(":plugin-api"))
