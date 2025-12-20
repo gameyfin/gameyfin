@@ -4,7 +4,7 @@ import java.io.OutputStream
 
 /**
  * An OutputStream wrapper that tracks bandwidth usage without throttling.
- * Used when bandwidth limiting is disabled but we still want real-time statistics.
+ * Used when bandwidth limiting is disabled, but we still want real-time statistics.
  *
  * @param outputStream The underlying output stream to write to
  * @param sessionTracker The session-wide bandwidth tracker
