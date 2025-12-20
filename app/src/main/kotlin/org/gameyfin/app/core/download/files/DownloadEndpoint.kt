@@ -44,11 +44,26 @@ class DownloadEndpoint(
 
                 val result = when (val download = downloadService.getDownload(game.metadata.path, provider)) {
                     is FileDownload -> {
+                        val filename = if (download.fileExtension != null) {
+                            "${game.title}.${download.fileExtension}"
+                        } else {
+                            game.title
+                        }
+
                         val responseBuilder = ResponseEntity.ok()
                             .header(
                                 "Content-Disposition",
-                                "attachment; filename=\"${game.title}.${download.fileExtension}\""
+                                "attachment; filename=\"$filename\""
                             )
+                            .header(
+                                "Content-Type",
+                                "application/octet-stream"
+                            )
+
+                        val downloadSize = download.size
+                        if(downloadSize != null) {
+                            responseBuilder.contentLength(downloadSize)
+                        }
 
                         responseBuilder.body(StreamingResponseBody { outputStream ->
                             downloadService.processDownload(

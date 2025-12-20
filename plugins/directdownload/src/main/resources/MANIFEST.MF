@@ -1,4 +1,4 @@
-Plugin-Version: 1.0.1
+Plugin-Version: 1.0.2
 Plugin-Class: org.gameyfin.plugins.download.direct.DirectDownloadPlugin
 Plugin-Id: org.gameyfin.plugins.download.direct
 Plugin-Name: Direct Download
