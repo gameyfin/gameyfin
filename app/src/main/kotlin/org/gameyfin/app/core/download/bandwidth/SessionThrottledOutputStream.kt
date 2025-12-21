@@ -20,9 +20,6 @@ class SessionThrottledOutputStream(
     private val remoteIp: String? = null
 ) : OutputStream() {
 
-    // 512 KB provides good balance between throughput and throttling responsiveness
-    private val optimalBufferSize = 512 * 1024
-
     init {
         sessionTracker.downloadStarted(gameId, username, remoteIp)
     }
@@ -37,17 +34,10 @@ class SessionThrottledOutputStream(
     }
 
     override fun write(b: ByteArray, off: Int, len: Int) {
-        // Write in chunks to maintain accurate throttling across concurrent downloads
-        var remaining = len
-        var offset = off
-
-        while (remaining > 0) {
-            val chunkSize = minOf(remaining, optimalBufferSize)
-            sessionTracker.throttle(chunkSize.toLong())
-            outputStream.write(b, offset, chunkSize)
-            remaining -= chunkSize
-            offset += chunkSize
-        }
+        // Throttle first, then write - this provides smoother bandwidth control
+        // by acquiring permits before the actual write operation
+        sessionTracker.throttle(len.toLong())
+        outputStream.write(b, off, len)
     }
 
     override fun flush() {

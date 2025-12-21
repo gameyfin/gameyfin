@@ -39,6 +39,13 @@ class SessionBandwidthTracker(
     @Volatile
     private var monitoringWindowStart: Long = System.nanoTime()
 
+    // For smoothing the monitoring window transitions
+    private val previousWindowBytesAtomic = AtomicLong(0)
+    @Volatile
+    private var previousWindowStart: Long = System.nanoTime()
+    @Volatile
+    private var previousWindowEnd: Long = System.nanoTime()
+
     // Timestamp of when the session first started (for UI display only)
     @Volatile
     var startTime: Long = System.nanoTime()
@@ -154,7 +161,7 @@ class SessionBandwidthTracker(
         // Add new measurement at the front
         bandwidthHistory.addLast(currentRate)
 
-        // Remove oldest measurement if we exceed the max size
+        // Remove the oldest measurement if we exceed the max size
         if (bandwidthHistory.size > maxHistorySize) {
             bandwidthHistory.removeFirst()
         }
@@ -163,17 +170,24 @@ class SessionBandwidthTracker(
     /**
      * Update monitoring statistics for bytes transferred.
      * This is lock-free for maximum performance during high-bandwidth transfers.
+     * Uses a sliding window approach to avoid hard resets every 10 seconds.
      */
     private fun updateMonitoringStatistics(bytes: Long) {
         val currentTime = System.nanoTime()
 
-        // Check if we need to reset monitoring window (lock-free check, occasional race is acceptable)
+        // Check if we need to rotate monitoring window (lock-free check, occasional race is acceptable)
         val monitoringElapsed = currentTime - monitoringWindowStart
         if (monitoringElapsed > monitoringWindowNanos) {
-            // Use synchronized only for the reset operation (infrequent)
+            // Use synchronized only for the rotation operation (infrequent)
             synchronized(this) {
                 // Double-check after acquiring lock
-                if (currentTime - monitoringWindowStart > monitoringWindowNanos) {
+                val elapsed = currentTime - monitoringWindowStart
+                if (elapsed > monitoringWindowNanos) {
+                    // Rotate windows: current -> previous, then reset current
+                    previousWindowBytesAtomic.set(bytesWrittenAtomic.get())
+                    previousWindowStart = monitoringWindowStart
+                    previousWindowEnd = currentTime
+
                     bytesWrittenAtomic.set(0)
                     monitoringWindowStart = currentTime
                 }
@@ -206,13 +220,37 @@ class SessionBandwidthTracker(
     }
 
     /**
-     * Get current transfer rate in bytes per second based on monitoring window
+     * Get current transfer rate in bytes per second based on monitoring window.
+     * Uses a sliding window approach that smoothly transitions between measurement periods.
      */
     fun getCurrentBytesPerSecond(): Long {
-        val elapsedNanos = System.nanoTime() - monitoringWindowStart
-        val elapsedSeconds = elapsedNanos / 1_000_000_000.0
-        return if (elapsedSeconds > 0) {
-            (bytesWrittenAtomic.get() / elapsedSeconds).toLong()
+        val currentTime = System.nanoTime()
+        val currentWindowElapsed = currentTime - monitoringWindowStart
+        val currentWindowSeconds = currentWindowElapsed / 1_000_000_000.0
+
+        // If current window is very young (< 1 second), blend with previous window for stability
+        if (currentWindowSeconds < 1.0 && previousWindowEnd > previousWindowStart) {
+            val previousWindowDuration = (previousWindowEnd - previousWindowStart) / 1_000_000_000.0
+            val previousRate = if (previousWindowDuration > 0) {
+                previousWindowBytesAtomic.get() / previousWindowDuration
+            } else {
+                0.0
+            }
+
+            val currentRate = if (currentWindowSeconds > 0) {
+                bytesWrittenAtomic.get() / currentWindowSeconds
+            } else {
+                0.0
+            }
+
+            // Weighted blend: newer window gets more weight as it ages
+            val weight = currentWindowSeconds // 0.0 to 1.0 over first second
+            return ((previousRate * (1.0 - weight)) + (currentRate * weight)).toLong()
+        }
+
+        // Normal case: current window is mature enough
+        return if (currentWindowSeconds > 0) {
+            (bytesWrittenAtomic.get() / currentWindowSeconds).toLong()
         } else {
             0L
         }
