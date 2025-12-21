@@ -4,7 +4,7 @@ FROM eclipse-temurin:21-jre-alpine as builder
 WORKDIR /opt/gameyfin
 ARG JAR_FILE=./app/build/libs/app.jar
 COPY ${JAR_FILE} application.jar
-RUN java -Djarmode=tools -jar application.jar extract --layers --launcher
+RUN java -Djarmode=tools -jar application.jar extract --layers --launcher --destination extracted
 
 # Pre-collect plugin JARs so final stage can copy them in a single layer
 COPY --link ./plugins/ /tmp/plugins/
@@ -50,10 +50,10 @@ RUN groupadd -g "$GID" "$USER" && \
 COPY --link --chown=${UID}:${GID} --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
 
 # Copy application layers and plugin jars from builder stage
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/dependencies/ ./
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/spring-boot-loader/ ./
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/snapshot-dependencies/ ./
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/application/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/dependencies/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/spring-boot-loader/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/snapshot-dependencies/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/application/ ./
 COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/plugins ./plugins
 
 EXPOSE 8080
