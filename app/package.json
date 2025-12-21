@@ -3,8 +3,8 @@
   "version": "2.3.3-preview",
   "type": "module",
   "dependencies": {
-    "@heroui/react": "^2.8.5",
-    "@phosphor-icons/react": "^2.1.7",
+    "@heroui/react": "^2.8.7",
+    "@phosphor-icons/react": "^2.1.10",
     "@polymer/polymer": "3.5.2",
     "@react-stately/data": "^3.12.2",
     "@react-types/shared": "^3.28.0",
@@ -267,6 +267,6 @@
       "workbox-precaching": "7.3.0"
     },
     "disableUsageStatistics": true,
-    "hash": "d06c4b56ae3a7bc3c4356d3669fc1ed559d83e5285df4e8b3e99bff46869f939"
+    "hash": "760523c518e07bbe0567ae5d1b281ccf90326b285b5feb3c0f269c52ec774f88"
   }
 }
