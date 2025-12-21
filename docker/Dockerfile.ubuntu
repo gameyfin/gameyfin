@@ -4,7 +4,7 @@ FROM eclipse-temurin:21-jre-alpine as builder
 WORKDIR /opt/gameyfin
 ARG JAR_FILE=./app/build/libs/app.jar
 COPY ${JAR_FILE} application.jar
-RUN java -Djarmode=layertools -jar application.jar extract
+RUN java -Djarmode=tools -jar application.jar extract --layers --launcher
 
 # Pre-collect plugin JARs so final stage can copy them in a single layer
 COPY --link ./plugins/ /tmp/plugins/
