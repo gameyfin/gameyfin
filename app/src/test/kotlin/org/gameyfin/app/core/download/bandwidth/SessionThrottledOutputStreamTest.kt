@@ -96,7 +96,7 @@ class SessionThrottledOutputStreamTest {
         val data = "Hello World".toByteArray()
         throttledStream.write(data)
 
-        // Should be called at least once (may be chunked)
+        // Should be called at least once
         verify(atLeast = 1) { sessionTracker.throttle(any()) }
         assertEquals("Hello World", underlyingOutputStream.toString())
     }
@@ -116,7 +116,7 @@ class SessionThrottledOutputStreamTest {
     }
 
     @Test
-    fun `write empty byte array should not throttle`() {
+    fun `write empty byte array should call throttle`() {
         throttledStream = SessionThrottledOutputStream(
             underlyingOutputStream,
             sessionTracker
@@ -124,12 +124,12 @@ class SessionThrottledOutputStreamTest {
 
         throttledStream.write(byteArrayOf())
 
-        verify(exactly = 0) { sessionTracker.throttle(any()) }
+        verify(exactly = 1) { sessionTracker.throttle(0) }
         assertEquals("", underlyingOutputStream.toString())
     }
 
     @Test
-    fun `write byte array with zero length should not throttle`() {
+    fun `write byte array with zero length should throttle with zero bytes`() {
         throttledStream = SessionThrottledOutputStream(
             underlyingOutputStream,
             sessionTracker
@@ -138,43 +138,24 @@ class SessionThrottledOutputStreamTest {
         val data = "Hello".toByteArray()
         throttledStream.write(data, 0, 0)
 
-        verify(exactly = 0) { sessionTracker.throttle(any()) }
+        verify(exactly = 1) { sessionTracker.throttle(0) }
         assertEquals("", underlyingOutputStream.toString())
     }
 
     @Test
-    fun `write large byte array should be chunked`() {
+    fun `write should throttle exact byte count without chunking`() {
         throttledStream = SessionThrottledOutputStream(
             underlyingOutputStream,
             sessionTracker
         )
 
-        val data = ByteArray(1200 * 1024) { it.toByte() } // 1200 KB = 1.17 MB
-        throttledStream.write(data)
-
-        // With 512KB chunks, 1200KB should require at least 2 chunks
-        verify(atLeast = 2) { sessionTracker.throttle(any()) }
-        assertEquals(1200 * 1024, underlyingOutputStream.size())
-    }
-
-    @Test
-    fun `write should respect optimal buffer size for chunking`() {
-        throttledStream = SessionThrottledOutputStream(
-            underlyingOutputStream,
-            sessionTracker
-        )
-
-        // Write exactly 1024 KB (2 * 512KB chunks)
+        // Write exactly 1024 KB
         val data = ByteArray(1024 * 1024) { 0 }
         throttledStream.write(data)
 
-        // Should be throttled in at least 2 chunks
-        verify(atLeast = 2) { sessionTracker.throttle(any()) }
-
-        // Each chunk should be <= 512KB
-        val slots = mutableListOf<Long>()
-        verify(atLeast = 2) { sessionTracker.throttle(capture(slots)) }
-        assertTrue(slots.all { it <= 512 * 1024 })
+        // Should be throttled exactly once for the entire write
+        verify(exactly = 1) { sessionTracker.throttle(1024L * 1024) }
+        assertEquals(1024 * 1024, underlyingOutputStream.size())
     }
 
     @Test
@@ -384,27 +365,6 @@ class SessionThrottledOutputStreamTest {
     }
 
     @Test
-    fun `should chunk large writes correctly`() {
-        throttledStream = SessionThrottledOutputStream(
-            underlyingOutputStream,
-            sessionTracker
-        )
-
-        // Write exactly 3 chunks worth (1536 KB = 3 * 512 KB)
-        val data = ByteArray(1536 * 1024) { 0 }
-        throttledStream.write(data)
-
-        val capturedSizes = mutableListOf<Long>()
-        verify(atLeast = 3) { sessionTracker.throttle(capture(capturedSizes)) }
-
-        // Verify total bytes throttled equals data size
-        assertEquals(data.size.toLong(), capturedSizes.sum())
-
-        // Verify all chunks are <= 512KB
-        assertTrue(capturedSizes.all { it <= 512 * 1024 })
-    }
-
-    @Test
     fun `should handle small writes without chunking`() {
         throttledStream = SessionThrottledOutputStream(
             underlyingOutputStream,
@@ -425,14 +385,12 @@ class SessionThrottledOutputStreamTest {
             sessionTracker
         )
 
-        // Write large data with offset/length that spans multiple chunks
+        // Write large data with offset/length
         val data = ByteArray(1200 * 1024) { it.toByte() }
         throttledStream.write(data, 10000, 800000)
 
-        // Should write exactly 800000 bytes
-        val capturedSizes = mutableListOf<Long>()
-        verify(atLeast = 2) { sessionTracker.throttle(capture(capturedSizes)) }
-        assertEquals(800000L, capturedSizes.sum())
+        // Should throttle exactly once for the specified length
+        verify(exactly = 1) { sessionTracker.throttle(800000L) }
         assertEquals(800000, underlyingOutputStream.size())
     }
 
@@ -465,39 +423,8 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write("EF".toByteArray())
 
         assertEquals("ABCDEF", underlyingOutputStream.toString())
-        verify(atLeast = 4) { sessionTracker.throttle(any()) }
-    }
-
-    @Test
-    fun `should handle exact chunk boundary`() {
-        throttledStream = SessionThrottledOutputStream(
-            underlyingOutputStream,
-            sessionTracker
-        )
-
-        // Write exactly 512KB (one chunk)
-        val data = ByteArray(512 * 1024) { 0 }
-        throttledStream.write(data)
-
-        verify(exactly = 1) { sessionTracker.throttle(512L * 1024) }
-        assertEquals(512 * 1024, underlyingOutputStream.size())
-    }
-
-    @Test
-    fun `should handle chunk boundary plus one byte`() {
-        throttledStream = SessionThrottledOutputStream(
-            underlyingOutputStream,
-            sessionTracker
-        )
-
-        // Write 512KB + 1 byte (should be 2 chunks)
-        val data = ByteArray(512 * 1024 + 1) { 0 }
-        throttledStream.write(data)
-
-        val capturedSizes = mutableListOf<Long>()
-        verify(exactly = 2) { sessionTracker.throttle(capture(capturedSizes)) }
-        assertEquals(512L * 1024, capturedSizes[0])
-        assertEquals(1L, capturedSizes[1])
+        verify(exactly = 2) { sessionTracker.throttle(1) }  // Two single bytes
+        verify(exactly = 2) { sessionTracker.throttle(2) }  // Two 2-byte arrays
     }
 }
 
