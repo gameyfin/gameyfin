@@ -20,8 +20,8 @@ class SessionThrottledOutputStream(
     private val remoteIp: String? = null
 ) : OutputStream() {
 
-    // Buffer size for optimal I/O performance
-    private val optimalBufferSize = 64 * 1024
+    // 512 KB provides good balance between throughput and throttling responsiveness
+    private val optimalBufferSize = 512 * 1024
 
     init {
         sessionTracker.downloadStarted(gameId, username, remoteIp)

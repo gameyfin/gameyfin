@@ -1,20 +1,29 @@
 package org.gameyfin.app.core.download.bandwidth
 
+import com.google.common.util.concurrent.RateLimiter
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.locks.LockSupport
 
 
 /**
  * Tracks bandwidth usage for a single session across all their downloads.
- * Thread-safe for concurrent downloads.
+ * Thread-safe for concurrent downloads using Google Guava's RateLimiter.
  */
+@Suppress("UnstableApiUsage")
 class SessionBandwidthTracker(
     val sessionId: String,
     @Volatile private var maxBytesPerSecond: Long
 ) {
+    // Guava RateLimiter for thread-safe bandwidth throttling
+    // Only created when bandwidth limiting is enabled (maxBytesPerSecond > 0)
+    private var rateLimiter: RateLimiter? = if (maxBytesPerSecond > 0) {
+        RateLimiter.create(maxBytesPerSecond.toDouble())
+    } else {
+        null
+    }
+
     // Total bytes transferred for the lifetime of this session (for UI display)
     private val totalBytesTransferredAtomic = AtomicLong(0)
     var totalBytesTransferred: Long
@@ -22,14 +31,6 @@ class SessionBandwidthTracker(
         private set(value) {
             totalBytesTransferredAtomic.set(value)
         }
-
-    // Token bucket for bandwidth limiting - tracks available "tokens" (bytes)
-    @Volatile
-    private var availableTokens: Double = 0.0
-
-    // Last time tokens were refilled
-    @Volatile
-    private var lastRefillTime: Long = System.nanoTime()
 
     // For monitoring: bytes written in the current measurement window (lock-free)
     private val bytesWrittenAtomic = AtomicLong(0)
@@ -52,8 +53,6 @@ class SessionBandwidthTracker(
     // Maximum monitoring window duration before resetting statistics (10 seconds)
     private val monitoringWindowNanos = 10_000_000_000L
 
-    // Maximum burst size: allow accumulating up to 2 seconds worth of tokens
-    private val maxBurstMultiplier = 2.0
 
     @Volatile
     var username: String? = null
@@ -76,6 +75,18 @@ class SessionBandwidthTracker(
      */
     fun updateLimit(newLimit: Long) {
         maxBytesPerSecond = newLimit
+        if (newLimit > 0) {
+            // Create or update RateLimiter
+            val limiter = rateLimiter
+            if (limiter != null) {
+                limiter.rate = newLimit.toDouble()
+            } else {
+                rateLimiter = RateLimiter.create(newLimit.toDouble())
+            }
+        } else {
+            // Unlimited bandwidth - don't need RateLimiter
+            rateLimiter = null
+        }
     }
 
     /**
@@ -150,10 +161,10 @@ class SessionBandwidthTracker(
     }
 
     /**
-     * Record bytes written without throttling (used for monitoring-only mode).
+     * Update monitoring statistics for bytes transferred.
      * This is lock-free for maximum performance during high-bandwidth transfers.
      */
-    fun recordBytes(bytes: Long) {
+    private fun updateMonitoringStatistics(bytes: Long) {
         val currentTime = System.nanoTime()
 
         // Check if we need to reset monitoring window (lock-free check, occasional race is acceptable)
@@ -176,74 +187,22 @@ class SessionBandwidthTracker(
     }
 
     /**
-     * Throttle the current thread based on session-wide bandwidth usage using token bucket algorithm.
-     * This is called by each download stream, but they all share the same bandwidth quota.
+     * Record bytes written without throttling (used for monitoring-only mode).
      */
-    @Synchronized
+    fun recordBytes(bytes: Long) {
+        updateMonitoringStatistics(bytes)
+    }
+
+    /**
+     * Throttle the current thread based on session-wide bandwidth usage.
+     * This is called by each download stream, but they all share the same bandwidth quota.
+     * Uses Guava's RateLimiter which is thread-safe and implements a token bucket algorithm.
+     */
     fun throttle(bytes: Long) {
-        val currentTime = System.nanoTime()
+        updateMonitoringStatistics(bytes)
 
-        // Update monitoring statistics using atomic operations
-        val monitoringElapsed = currentTime - monitoringWindowStart
-        if (monitoringElapsed > monitoringWindowNanos) {
-            bytesWrittenAtomic.set(0)
-            monitoringWindowStart = currentTime
-        }
-        bytesWrittenAtomic.addAndGet(bytes)
-        totalBytesTransferredAtomic.addAndGet(bytes)
-
-        // Skip throttling if no limit is set (0 or negative means unlimited)
-        if (maxBytesPerSecond <= 0) {
-            lastActivityTime = currentTime
-            return
-        }
-
-        // Token bucket algorithm: refill tokens based on elapsed time
-        val elapsedNanos = currentTime - lastRefillTime
-        val elapsedSeconds = elapsedNanos / 1_000_000_000.0
-
-        // Add tokens based on elapsed time
-        val tokensToAdd = elapsedSeconds * maxBytesPerSecond
-        availableTokens = minOf(
-            availableTokens + tokensToAdd,
-            maxBytesPerSecond * maxBurstMultiplier // Cap at max burst size
-        )
-        lastRefillTime = currentTime
-
-        // Try to consume tokens for this write
-        if (availableTokens >= bytes) {
-            // We have enough tokens, consume them and proceed
-            availableTokens -= bytes
-            lastActivityTime = currentTime
-        } else {
-            // Not enough tokens - need to wait
-            val tokensNeeded = bytes - availableTokens
-            val sleepTimeNanos = (tokensNeeded * 1_000_000_000.0 / maxBytesPerSecond).toLong()
-
-            if (sleepTimeNanos > 0) {
-                // Use LockSupport.parkNanos for virtual thread compatibility
-                LockSupport.parkNanos(sleepTimeNanos)
-
-                // Check if interrupted
-                if (Thread.interrupted()) {
-                    Thread.currentThread().interrupt()
-                }
-            }
-
-            // After sleeping, refill tokens and consume
-            val currentTimeAfterSleep = System.nanoTime()
-            val additionalElapsedNanos = currentTimeAfterSleep - lastRefillTime
-            val additionalElapsedSeconds = additionalElapsedNanos / 1_000_000_000.0
-            val additionalTokens = additionalElapsedSeconds * maxBytesPerSecond
-
-            availableTokens = minOf(
-                availableTokens + additionalTokens,
-                maxBytesPerSecond * maxBurstMultiplier
-            )
-            availableTokens -= bytes
-            lastRefillTime = currentTimeAfterSleep
-            lastActivityTime = currentTimeAfterSleep
-        }
+        // Only throttle if RateLimiter exists (bandwidth limit is set)
+        rateLimiter?.acquire(bytes.toInt())
     }
 
     /**
@@ -261,11 +220,9 @@ class SessionBandwidthTracker(
 
     /**
      * Reset the tracker (useful if we want to restart bandwidth calculation)
-     * Note: This only resets the throttling calculation, not the total bytes transferred
+     * Note: This only resets the monitoring calculation, not the total bytes transferred
      */
     fun reset() {
-        availableTokens = 0.0
-        lastRefillTime = System.nanoTime()
         bytesWrittenAtomic.set(0)
         monitoringWindowStart = System.nanoTime()
         startTime = System.nanoTime()

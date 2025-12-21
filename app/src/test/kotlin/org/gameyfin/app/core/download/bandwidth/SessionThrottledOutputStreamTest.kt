@@ -149,12 +149,12 @@ class SessionThrottledOutputStreamTest {
             sessionTracker
         )
 
-        val data = ByteArray(200 * 1024) { it.toByte() } // 200 KB
+        val data = ByteArray(1200 * 1024) { it.toByte() } // 1200 KB = 1.17 MB
         throttledStream.write(data)
 
-        // With 64KB chunks, 200KB should require at least 3 chunks
-        verify(atLeast = 3) { sessionTracker.throttle(any()) }
-        assertEquals(200 * 1024, underlyingOutputStream.size())
+        // With 512KB chunks, 1200KB should require at least 2 chunks
+        verify(atLeast = 2) { sessionTracker.throttle(any()) }
+        assertEquals(1200 * 1024, underlyingOutputStream.size())
     }
 
     @Test
@@ -164,17 +164,17 @@ class SessionThrottledOutputStreamTest {
             sessionTracker
         )
 
-        // Write exactly 128 KB (2 * 64KB chunks)
-        val data = ByteArray(128 * 1024) { 0 }
+        // Write exactly 1024 KB (2 * 512KB chunks)
+        val data = ByteArray(1024 * 1024) { 0 }
         throttledStream.write(data)
 
         // Should be throttled in at least 2 chunks
         verify(atLeast = 2) { sessionTracker.throttle(any()) }
 
-        // Each chunk should be <= 64KB
+        // Each chunk should be <= 512KB
         val slots = mutableListOf<Long>()
         verify(atLeast = 2) { sessionTracker.throttle(capture(slots)) }
-        assertTrue(slots.all { it <= 64 * 1024 })
+        assertTrue(slots.all { it <= 512 * 1024 })
     }
 
     @Test
@@ -251,8 +251,23 @@ class SessionThrottledOutputStreamTest {
 
     @Test
     fun `should work with real tracker and throttle bandwidth`() {
-        val bytesPerSecond = 10_000L // 10 KB/s
+        val bytesPerSecond = 100_000L // 100 KB/s
         val realTracker = SessionBandwidthTracker("test-session", bytesPerSecond)
+
+        // Consume the initial burst from RateLimiter (RateLimiter allows up to 1 second of burst)
+        // We need to consume more than the burst capacity before throttling kicks in
+        val burstData = ByteArray(200_000) { 0 } // 200 KB = 2 seconds worth at 100 KB/s
+        val burstStream = SessionThrottledOutputStream(
+            ByteArrayOutputStream(),
+            realTracker,
+            gameId = 999L,
+            username = "testuser",
+            remoteIp = "127.0.0.1"
+        )
+        burstStream.write(burstData)
+        burstStream.close()
+
+        // Now create the actual test stream - this should be properly throttled
         throttledStream = SessionThrottledOutputStream(
             underlyingOutputStream,
             realTracker,
@@ -264,14 +279,14 @@ class SessionThrottledOutputStreamTest {
         assertEquals(1, realTracker.activeDownloads.get())
 
         val startTime = System.nanoTime()
-        val data = ByteArray(20_000) { it.toByte() } // 20 KB
+        val data = ByteArray(200_000) { it.toByte() } // 200 KB
         throttledStream.write(data)
         val elapsed = (System.nanoTime() - startTime) / 1_000_000_000.0
 
-        // Should take at least 1.5 seconds to transfer 20 KB at 10 KB/s
-        // Using 1.3 to account for timing variations
-        assertTrue(elapsed >= 1.3, "Expected at least 1.3 seconds but was $elapsed")
-        assertEquals(20_000L, realTracker.totalBytesTransferred)
+        // Should take at least 1.8 seconds to transfer 200 KB at 100 KB/s
+        // Using 1.7 to account for timing variations
+        assertTrue(elapsed >= 1.7, "Expected at least 1.7 seconds but was $elapsed")
+        assertEquals(400_000L, realTracker.totalBytesTransferred)
 
         throttledStream.close()
         assertEquals(0, realTracker.activeDownloads.get())
@@ -375,8 +390,8 @@ class SessionThrottledOutputStreamTest {
             sessionTracker
         )
 
-        // Write exactly 3 chunks worth (192 KB)
-        val data = ByteArray(192 * 1024) { 0 }
+        // Write exactly 3 chunks worth (1536 KB = 3 * 512 KB)
+        val data = ByteArray(1536 * 1024) { 0 }
         throttledStream.write(data)
 
         val capturedSizes = mutableListOf<Long>()
@@ -385,8 +400,8 @@ class SessionThrottledOutputStreamTest {
         // Verify total bytes throttled equals data size
         assertEquals(data.size.toLong(), capturedSizes.sum())
 
-        // Verify all chunks are <= 64KB
-        assertTrue(capturedSizes.all { it <= 64 * 1024 })
+        // Verify all chunks are <= 512KB
+        assertTrue(capturedSizes.all { it <= 512 * 1024 })
     }
 
     @Test
@@ -411,14 +426,14 @@ class SessionThrottledOutputStreamTest {
         )
 
         // Write large data with offset/length that spans multiple chunks
-        val data = ByteArray(200 * 1024) { it.toByte() }
-        throttledStream.write(data, 10000, 150000)
+        val data = ByteArray(1200 * 1024) { it.toByte() }
+        throttledStream.write(data, 10000, 800000)
 
-        // Should write exactly 150000 bytes
+        // Should write exactly 800000 bytes
         val capturedSizes = mutableListOf<Long>()
         verify(atLeast = 2) { sessionTracker.throttle(capture(capturedSizes)) }
-        assertEquals(150000L, capturedSizes.sum())
-        assertEquals(150000, underlyingOutputStream.size())
+        assertEquals(800000L, capturedSizes.sum())
+        assertEquals(800000, underlyingOutputStream.size())
     }
 
     @Test
@@ -460,12 +475,12 @@ class SessionThrottledOutputStreamTest {
             sessionTracker
         )
 
-        // Write exactly 64KB (one chunk)
-        val data = ByteArray(64 * 1024) { 0 }
+        // Write exactly 512KB (one chunk)
+        val data = ByteArray(512 * 1024) { 0 }
         throttledStream.write(data)
 
-        verify(exactly = 1) { sessionTracker.throttle(64L * 1024) }
-        assertEquals(64 * 1024, underlyingOutputStream.size())
+        verify(exactly = 1) { sessionTracker.throttle(512L * 1024) }
+        assertEquals(512 * 1024, underlyingOutputStream.size())
     }
 
     @Test
@@ -475,13 +490,13 @@ class SessionThrottledOutputStreamTest {
             sessionTracker
         )
 
-        // Write 64KB + 1 byte (should be 2 chunks)
-        val data = ByteArray(64 * 1024 + 1) { 0 }
+        // Write 512KB + 1 byte (should be 2 chunks)
+        val data = ByteArray(512 * 1024 + 1) { 0 }
         throttledStream.write(data)
 
         val capturedSizes = mutableListOf<Long>()
         verify(exactly = 2) { sessionTracker.throttle(capture(capturedSizes)) }
-        assertEquals(64L * 1024, capturedSizes[0])
+        assertEquals(512L * 1024, capturedSizes[0])
         assertEquals(1L, capturedSizes[1])
     }
 }
