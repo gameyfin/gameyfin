@@ -1,28 +1,52 @@
 package org.gameyfin.app.core.download.bandwidth
 
+import com.google.common.util.concurrent.RateLimiter
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.locks.LockSupport
+import java.util.concurrent.atomic.AtomicLong
 
 
 /**
  * Tracks bandwidth usage for a single session across all their downloads.
- * Thread-safe for concurrent downloads.
+ * Thread-safe for concurrent downloads using Google Guava's RateLimiter.
  */
+@Suppress("UnstableApiUsage")
 class SessionBandwidthTracker(
     val sessionId: String,
     @Volatile private var maxBytesPerSecond: Long
 ) {
+    // Guava RateLimiter for thread-safe bandwidth throttling
+    // Only created when bandwidth limiting is enabled (maxBytesPerSecond > 0)
+    private var rateLimiter: RateLimiter? = if (maxBytesPerSecond > 0) {
+        RateLimiter.create(maxBytesPerSecond.toDouble())
+    } else {
+        null
+    }
+
     // Total bytes transferred for the lifetime of this session (for UI display)
-    @Volatile
-    var totalBytesTransferred: Long = 0
-        private set
+    private val totalBytesTransferredAtomic = AtomicLong(0)
+    var totalBytesTransferred: Long
+        get() = totalBytesTransferredAtomic.get()
+        private set(value) {
+            totalBytesTransferredAtomic.set(value)
+        }
 
-    // Bytes used for throttling calculation (resets when all downloads complete)
-    @Volatile
-    private var bytesWritten: Long = 0
+    // For monitoring: bytes written in the current measurement window (lock-free)
+    private val bytesWrittenAtomic = AtomicLong(0)
 
+    // For monitoring: start time of the current measurement window
+    @Volatile
+    private var monitoringWindowStart: Long = System.nanoTime()
+
+    // For smoothing the monitoring window transitions
+    private val previousWindowBytesAtomic = AtomicLong(0)
+    @Volatile
+    private var previousWindowStart: Long = System.nanoTime()
+    @Volatile
+    private var previousWindowEnd: Long = System.nanoTime()
+
+    // Timestamp of when the session first started (for UI display only)
     @Volatile
     var startTime: Long = System.nanoTime()
         private set
@@ -32,6 +56,10 @@ class SessionBandwidthTracker(
         private set
 
     val activeDownloads = AtomicInteger(0)
+
+    // Maximum monitoring window duration before resetting statistics (10 seconds)
+    private val monitoringWindowNanos = 10_000_000_000L
+
 
     @Volatile
     var username: String? = null
@@ -54,6 +82,18 @@ class SessionBandwidthTracker(
      */
     fun updateLimit(newLimit: Long) {
         maxBytesPerSecond = newLimit
+        if (newLimit > 0) {
+            // Create or update RateLimiter
+            val limiter = rateLimiter
+            if (limiter != null) {
+                limiter.rate = newLimit.toDouble()
+            } else {
+                rateLimiter = RateLimiter.create(newLimit.toDouble())
+            }
+        } else {
+            // Unlimited bandwidth - don't need RateLimiter
+            rateLimiter = null
+        }
     }
 
     /**
@@ -121,89 +161,96 @@ class SessionBandwidthTracker(
         // Add new measurement at the front
         bandwidthHistory.addLast(currentRate)
 
-        // Remove oldest measurement if we exceed the max size
+        // Remove the oldest measurement if we exceed the max size
         if (bandwidthHistory.size > maxHistorySize) {
             bandwidthHistory.removeFirst()
         }
     }
 
     /**
-     * Record bytes written without throttling (used for monitoring-only mode)
+     * Update monitoring statistics for bytes transferred.
+     * This is lock-free for maximum performance during high-bandwidth transfers.
+     * Uses a sliding window approach to avoid hard resets every 10 seconds.
      */
-    @Synchronized
-    fun recordBytes(bytes: Long) {
-        // If this is the first write after being idle, reset the timer
-        if (bytesWritten == 0L) {
-            startTime = System.nanoTime()
+    private fun updateMonitoringStatistics(bytes: Long) {
+        val currentTime = System.nanoTime()
+
+        // Check if we need to rotate monitoring window (lock-free check, occasional race is acceptable)
+        val monitoringElapsed = currentTime - monitoringWindowStart
+        if (monitoringElapsed > monitoringWindowNanos) {
+            // Use synchronized only for the rotation operation (infrequent)
+            synchronized(this) {
+                // Double-check after acquiring lock
+                val elapsed = currentTime - monitoringWindowStart
+                if (elapsed > monitoringWindowNanos) {
+                    // Rotate windows: current -> previous, then reset current
+                    previousWindowBytesAtomic.set(bytesWrittenAtomic.get())
+                    previousWindowStart = monitoringWindowStart
+                    previousWindowEnd = currentTime
+
+                    bytesWrittenAtomic.set(0)
+                    monitoringWindowStart = currentTime
+                }
+            }
         }
 
-        bytesWritten += bytes
-        totalBytesTransferred += bytes
-        lastActivityTime = System.nanoTime()
+        // Lock-free atomic operations for high-performance byte counting
+        bytesWrittenAtomic.addAndGet(bytes)
+        totalBytesTransferredAtomic.addAndGet(bytes)
+        lastActivityTime = currentTime
+    }
+
+    /**
+     * Record bytes written without throttling (used for monitoring-only mode).
+     */
+    fun recordBytes(bytes: Long) {
+        updateMonitoringStatistics(bytes)
     }
 
     /**
      * Throttle the current thread based on session-wide bandwidth usage.
      * This is called by each download stream, but they all share the same bandwidth quota.
+     * Uses Guava's RateLimiter which is thread-safe and implements a token bucket algorithm.
      */
-    @Synchronized
     fun throttle(bytes: Long) {
-        // Skip throttling if no limit is set (0 or negative means unlimited)
-        if (maxBytesPerSecond <= 0) {
-            // If this is the first write after being idle, reset the timer
-            if (bytesWritten == 0L) {
-                startTime = System.nanoTime()
-            }
-            bytesWritten += bytes
-            totalBytesTransferred += bytes
-            lastActivityTime = System.nanoTime()
-            return
-        }
+        updateMonitoringStatistics(bytes)
 
-        // If this is the first write after being idle, reset the timer
-        if (bytesWritten == 0L) {
-            startTime = System.nanoTime()
-        }
-
-        bytesWritten += bytes
-        totalBytesTransferred += bytes
-
-        // Calculate elapsed time BEFORE updating lastActivityTime
-        val currentTime = System.nanoTime()
-        val elapsedNanos = currentTime - startTime
-        val elapsedSeconds = elapsedNanos / 1_000_000_000.0
-
-        // Calculate how many bytes we should have written by now
-        val expectedBytes = (elapsedSeconds * maxBytesPerSecond).toLong()
-
-        // If we've written more than expected, sleep to catch up
-        if (bytesWritten > expectedBytes) {
-            val bytesAhead = bytesWritten - expectedBytes
-            val sleepTimeNanos = (bytesAhead * 1_000_000_000.0 / maxBytesPerSecond).toLong()
-
-            if (sleepTimeNanos > 0) {
-                // Use LockSupport.parkNanos for virtual thread compatibility
-                LockSupport.parkNanos(sleepTimeNanos)
-
-                // Check if interrupted
-                if (Thread.interrupted()) {
-                    Thread.currentThread().interrupt()
-                }
-            }
-        }
-
-        // Update last activity time after throttling
-        lastActivityTime = System.nanoTime()
+        // Only throttle if RateLimiter exists (bandwidth limit is set)
+        rateLimiter?.acquire(bytes.toInt())
     }
 
     /**
-     * Get current transfer rate in bytes per second
+     * Get current transfer rate in bytes per second based on monitoring window.
+     * Uses a sliding window approach that smoothly transitions between measurement periods.
      */
     fun getCurrentBytesPerSecond(): Long {
-        val elapsedNanos = System.nanoTime() - startTime
-        val elapsedSeconds = elapsedNanos / 1_000_000_000.0
-        return if (elapsedSeconds > 0) {
-            (bytesWritten / elapsedSeconds).toLong()
+        val currentTime = System.nanoTime()
+        val currentWindowElapsed = currentTime - monitoringWindowStart
+        val currentWindowSeconds = currentWindowElapsed / 1_000_000_000.0
+
+        // If current window is very young (< 1 second), blend with previous window for stability
+        if (currentWindowSeconds < 1.0 && previousWindowEnd > previousWindowStart) {
+            val previousWindowDuration = (previousWindowEnd - previousWindowStart) / 1_000_000_000.0
+            val previousRate = if (previousWindowDuration > 0) {
+                previousWindowBytesAtomic.get() / previousWindowDuration
+            } else {
+                0.0
+            }
+
+            val currentRate = if (currentWindowSeconds > 0) {
+                bytesWrittenAtomic.get() / currentWindowSeconds
+            } else {
+                0.0
+            }
+
+            // Weighted blend: newer window gets more weight as it ages
+            val weight = currentWindowSeconds // 0.0 to 1.0 over first second
+            return ((previousRate * (1.0 - weight)) + (currentRate * weight)).toLong()
+        }
+
+        // Normal case: current window is mature enough
+        return if (currentWindowSeconds > 0) {
+            (bytesWrittenAtomic.get() / currentWindowSeconds).toLong()
         } else {
             0L
         }
@@ -211,10 +258,11 @@ class SessionBandwidthTracker(
 
     /**
      * Reset the tracker (useful if we want to restart bandwidth calculation)
-     * Note: This only resets the throttling calculation, not the total bytes transferred
+     * Note: This only resets the monitoring calculation, not the total bytes transferred
      */
     fun reset() {
-        bytesWritten = 0
+        bytesWrittenAtomic.set(0)
+        monitoringWindowStart = System.nanoTime()
         startTime = System.nanoTime()
         lastActivityTime = System.nanoTime()
         // totalBytesTransferred is intentionally NOT reset - we want to keep this for UI display

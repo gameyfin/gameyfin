@@ -337,7 +337,7 @@ class DownloadEndpointTest {
     }
 
     @Test
-    fun `downloadGame should handle special characters in filename`() {
+    fun `downloadGame should remove common invalid chars from filename`() {
         val gameId = 1L
         val provider = "TestProvider"
         val gamePath = "/path/to/game"
@@ -361,7 +361,7 @@ class DownloadEndpointTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         val contentDisposition = response.headers["Content-Disposition"]!![0]
-        assertTrue(contentDisposition.contains("Test: Game (2024) [Edition].zip"))
+        assertTrue(contentDisposition.contains("Test Game (2024) [Edition].zip")) // ":" should be removed since most filesystems don't allow it
     }
 
     @Test
