@@ -11,6 +11,10 @@
 
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 
+Gameyfin will turn your disorganized collection of video games into a beautiful, easy-to-navigate library that you can access from any device with a web browser.  
+It will automatically scan your game folders, download metadata and cover images, and present everything in a user-friendly interface.  
+Download your game files directly from the web UI, share your library with friends, and enjoy your games like never before.  
+
 ### Documentation
 
 The documentation and screenshots are available at [gameyfin.org](https://gameyfin.org/).
