@@ -4,7 +4,7 @@
     </a>
     <h2>Gameyfin</h2>
     <h4>Manage your video games.</h4>
-    <p>simple / fast / <a href="https://github.com/gameyfin/gameyfin/blob/main/LICENSE.md">FOSS</a></p>
+    <p>simple / fast / <a href="https://gameyfin.org/blog/2025/12/22/why-gameyfin-is-foss/">FOSS</a></p>
 </div>
 
 ## Overview
