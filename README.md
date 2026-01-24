@@ -45,3 +45,9 @@ Gameyfin v2 is written in Kotlin and uses the following libraries/frameworks:
 * Vaadin Hilla & React for the frontend
 * PF4J for the plugin system
 * H2 database for persistence
+
+### Acknowledgements
+ 
+
+[![YourKit Logo](https://www.yourkit.com/images/yklogo.png)](https://www.yourkit.com/)  
+Gameyfin is supported by [YourKit](https://www.yourkit.com/), the makers of [YourKit Java Profiler](https://yourkit.com/java/profiler/), a powerful tool for profiling Java and Kotlin applications.
