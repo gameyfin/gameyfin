@@ -11,7 +11,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        > [!INFORMATION]
+        > [!IMPORTANT]
         > **Before submitting your bug report**
         >
         > To help us resolve your issue efficiently, please ensure you have reviewed our [FAQs](https://gameyfin.org/faq/) and [Getting started guide](https://gameyfin.org/installation/getting-started/). 
