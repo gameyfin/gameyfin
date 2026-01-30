@@ -1,0 +1,14 @@
+name: Feature request
+description: Request a feature
+title: 'Feature request'
+labels: []
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!CAUTION]
+        > **Feature requests should not be submitted as issues!**
+        >
+        > Please use the [discussions](https://github.com/gameyfin/gameyfin/discussions/categories/feature-requests) for feature requests instead.
