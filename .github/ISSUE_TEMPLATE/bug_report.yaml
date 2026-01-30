@@ -11,11 +11,12 @@ body:
   - type: markdown
     attributes:
       value: |
-        "## Before submitting your bug report"
-        
-        To help us resolve your issue efficiently, please ensure you have reviewed our [FAQs](https://gameyfin.org/faq/) and [Getting started guide](https://gameyfin.org/installation/getting-started/). 
-        
-        **Issues that could have been resolved by following these resources may be closed to allow us to focus on genuine bugs.**
+        > [!INFORMATION]
+        > **Before submitting your bug report**
+        >
+        > To help us resolve your issue efficiently, please ensure you have reviewed our [FAQs](https://gameyfin.org/faq/) and [Getting started guide](https://gameyfin.org/installation/getting-started/). 
+        >
+        > Issues that could have been resolved by following these resources may be closed to allow us to focus on genuine bugs.
 
   - type: checkboxes
     id: prerequisites
