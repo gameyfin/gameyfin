@@ -1,7 +1,8 @@
 name: Bug report
 description: Create a report to help us improve
-title: '[Bug] '
-labels: ['Bug']
+title: ''
+labels:
+ - Bug
 assignees:
   - grimsi
 
@@ -9,7 +10,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ## Before submitting your bug report
+        "## Before submitting your bug report"
         
         To help us resolve your issue efficiently, please ensure you have reviewed our [FAQs](https://gameyfin.org/faq/) and [Getting started guide](https://gameyfin.org/installation/getting-started/). 
         
@@ -81,7 +82,7 @@ body:
   - type: textarea
     id: expected-behavior
     attributes:
-      label: Expected Behaviour
+      label: Expected Behavior
       description: A clear and concise description of what you expected to happen
       placeholder: What should have happened?
     validations:
@@ -90,7 +91,7 @@ body:
   - type: textarea
     id: actual-behavior
     attributes:
-      label: Actual Behaviour
+      label: Actual Behavior
       description: A clear and concise description of what actually happened
       placeholder: What actually happened?
     validations:
