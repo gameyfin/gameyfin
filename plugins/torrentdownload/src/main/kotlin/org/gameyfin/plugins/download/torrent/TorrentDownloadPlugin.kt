@@ -3,6 +3,9 @@ package org.gameyfin.plugins.download.torrent
 import com.frostwire.jlibtorrent.TorrentBuilder
 import com.frostwire.jlibtorrent.swig.create_torrent.v1_only
 import com.frostwire.jlibtorrent.swig.create_torrent.v2_only
+import org.gameyfin.pluginapi.actions.PluginAction
+import org.gameyfin.pluginapi.actions.PluginActionProvider
+import org.gameyfin.pluginapi.actions.PluginActionResult
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -242,6 +245,34 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         return URI.create("$protocol://$host:$port/$path")
     }
 
+    @Suppress("DEPRECATION")
+    private fun buildTorrentFileContent(gameFilesPath: Path): ByteArray {
+        val torrentBuilder = TorrentBuilder()
+
+        val trackerUrl = getTrackerUri().toString()
+        val isPrivate = config<Boolean>("privateMode")
+        val torrentVersions = config<TorrentVersion>("torrentVersions")
+
+        val flags = when (torrentVersions) {
+            TorrentVersion.`V1 only` -> v1_only
+            TorrentVersion.`V2 only` -> v2_only
+            TorrentVersion.`V1 and V2` -> null
+        }
+
+        val builder = torrentBuilder.path(gameFilesPath.toFile())
+            .creator("Gameyfin Torrent plugin v${wrapper.descriptor.version}")
+            .addTracker(trackerUrl)
+            .setPrivate(isPrivate)
+
+        if (flags != null) {
+            builder.flags(flags)
+        }
+
+        val builderResult = builder.generate()
+
+        return builderResult.entry().bencode()
+    }
+
 
     @Extension(ordinal = 2)
     class TorrentDownloadProvider : DownloadProvider {
@@ -271,7 +302,13 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
             if (isNewTorrent) {
                 Files.createFile(torrentFile)
-                Files.write(torrentFile, torrentFileContent(gameFilesPath))
+
+                val trackerUrl = plugin.getTrackerUri().toString()
+                val isPrivate = plugin.config<Boolean>("privateMode")
+                val torrentVersions = plugin.config<TorrentVersion>("torrentVersions")
+                log.info("Creating ${if (isPrivate) "private" else "public"} ${if (torrentVersions !== TorrentVersion.`V1 and V2`) torrentVersions else ""} torrent with announce URL '$trackerUrl'")
+
+                Files.write(torrentFile, plugin.buildTorrentFileContent(gameFilesPath))
 
                 state.torrentFilesMetadata.add(
                     TorrentFileMetadata(
@@ -294,35 +331,191 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
 
             return torrentFile
         }
+    }
 
-        @Suppress("DEPRECATION")
-        private fun torrentFileContent(gameFilesPath: Path): ByteArray {
-            val torrentBuilder = TorrentBuilder()
+    @Extension
+    class TorrentActionProvider : PluginActionProvider {
+        private val log = LoggerFactory.getLogger(TorrentActionProvider::class.java)
 
-            val trackerUrl = plugin.getTrackerUri().toString()
-            val isPrivate = plugin.config<Boolean>("privateMode")
-            val torrentVersions = plugin.config<TorrentVersion>("torrentVersions")
+        override fun getActions(): List<PluginAction> {
+            return listOf(
+                PluginAction(
+                    id = "pre-generate-torrents",
+                    name = "Pre-generate Torrent Files",
+                    description = "Pre-generates or updates torrent files for all game files in the data directory. " +
+                            "This improves download performance by avoiding on-demand generation delays.",
+                    category = "Optimization",
+                    handler = ::preGenerateTorrents
+                ),
+                PluginAction(
+                    id = "clean-invalid-torrents",
+                    name = "Clean Invalid Torrents",
+                    description = "Removes torrent files that no longer have corresponding game files or are outdated.",
+                    category = "Maintenance",
+                    handler = ::cleanInvalidTorrents
+                )
+            )
+        }
 
-            log.info("Creating ${if (isPrivate) "private" else "public"} ${if (torrentVersions !== TorrentVersion.`V1 and V2`) torrentVersions else ""} torrent with announce URL '$trackerUrl'")
+        private fun preGenerateTorrents(): PluginActionResult {
+            return try {
+                log.info("Starting torrent pre-generation...")
 
-            val flags = when (torrentVersions) {
-                TorrentVersion.`V1 only` -> v1_only
-                TorrentVersion.`V2 only` -> v2_only
-                TorrentVersion.`V1 and V2` -> null
+                // Find all potential game files
+                val gameFiles = findGameFiles()
+
+                if (gameFiles.isEmpty()) {
+                    return PluginActionResult.success(
+                        message = "No game files found to generate torrents for.",
+                        data = mapOf("generated" to 0, "skipped" to 0, "failed" to 0)
+                    )
+                }
+
+                var generated = 0
+                var skipped = 0
+                var failed = 0
+                val errors = mutableListOf<String>()
+
+                for (gameFile in gameFiles) {
+                    try {
+                        val torrentFile = plugin.dataDirectory
+                            .resolve("${gameFile.nameWithoutExtension}-${gameFile.hashCode()}.torrent")
+
+                        // Check if torrent already exists and is up-to-date
+                        if (Files.exists(torrentFile) &&
+                            gameFile.getLastModifiedTime().toInstant()
+                                .isBefore(torrentFile.getLastModifiedTime().toInstant())) {
+                            log.debug("Torrent for '${gameFile.name}' is up-to-date, skipping...")
+                            skipped++
+                            continue
+                        }
+
+                        log.info("Generating torrent for '${gameFile.name}'...")
+
+                        // Generate torrent
+                        if (!Files.exists(torrentFile)) {
+                            Files.createFile(torrentFile)
+                        }
+
+                        val trackerUrl = plugin.getTrackerUri().toString()
+                        val isPrivate = plugin.config<Boolean>("privateMode")
+                        val torrentVersions = plugin.config<TorrentVersion>("torrentVersions")
+                        log.debug(
+                            "Creating {} {} torrent with announce URL '{}'",
+                            if (isPrivate) "private" else "public",
+                            if (torrentVersions !== TorrentVersion.`V1 and V2`) torrentVersions else "",
+                            trackerUrl
+                        )
+
+                        val torrentContent = plugin.buildTorrentFileContent(gameFile)
+                        Files.write(torrentFile, torrentContent)
+
+                        // Update state
+                        val metadata = state.torrentFilesMetadata.find { it.gameFile == gameFile }
+                        if (metadata == null) {
+                            state.torrentFilesMetadata.add(
+                                TorrentFileMetadata(
+                                    torrentFile = torrentFile,
+                                    gameFile = gameFile
+                                )
+                            )
+                        }
+
+                        // Add to client for seeding
+                        try {
+                            client?.addTorrent(torrentFile, gameFile)
+                        } catch (e: Exception) {
+                            log.warn("Failed to add torrent to seeding session: ${e.message}")
+                        }
+
+                        generated++
+                        log.info("Successfully generated torrent for '${gameFile.name}'")
+
+                    } catch (e: Exception) {
+                        log.error("Failed to generate torrent for '${gameFile.name}'", e)
+                        errors.add("${gameFile.name}: ${e.message}")
+                        failed++
+                    }
+                }
+
+                plugin.saveState(state)
+
+                val resultMessage = "Pre-generation complete: $generated generated, $skipped skipped, $failed failed"
+                log.info(resultMessage)
+
+                val data = mapOf(
+                    "generated" to generated,
+                    "skipped" to skipped,
+                    "failed" to failed,
+                    "totalFiles" to gameFiles.size,
+                    "errors" to errors
+                )
+
+                if (failed > 0) {
+                    PluginActionResult(
+                        success = false,
+                        message = resultMessage,
+                        data = data
+                    )
+                } else {
+                    PluginActionResult.success(resultMessage, data)
+                }
+
+            } catch (e: Exception) {
+                log.error("Torrent pre-generation failed", e)
+                PluginActionResult.failure(
+                    message = "Failed to pre-generate torrents: ${e.message}",
+                    data = mapOf("error" to (e.message ?: "Unknown error"))
+                )
             }
+        }
 
-            val builder = torrentBuilder.path(gameFilesPath.toFile())
-                .creator("Gameyfin Torrent plugin v${plugin.wrapper.descriptor.version}")
-                .addTracker(trackerUrl)
-                .setPrivate(isPrivate)
+        private fun cleanInvalidTorrents(): PluginActionResult {
+            return try {
+                log.info("Cleaning invalid torrents...")
 
-            if (flags != null) {
-                builder.flags(flags)
+                var removed = 0
+
+                state.torrentFilesMetadata.removeIf { metadata ->
+                    val shouldRemove = !Files.exists(metadata.torrentFile) ||
+                            !Files.exists(metadata.gameFile) ||
+                            metadata.gameFile.getLastModifiedTime().toInstant()
+                                .isAfter(metadata.torrentFile.getLastModifiedTime().toInstant())
+
+                    if (shouldRemove) {
+                        try {
+                            if (Files.exists(metadata.torrentFile)) {
+                                Files.delete(metadata.torrentFile)
+                                log.info("Removed invalid torrent: ${metadata.torrentFile.name}")
+                            }
+                            removed++
+                        } catch (e: Exception) {
+                            log.error("Failed to delete torrent file: ${metadata.torrentFile}", e)
+                        }
+                        true
+                    } else {
+                        false
+                    }
+                }
+
+                plugin.saveState(state)
+
+                PluginActionResult.success(
+                    message = "Cleaned $removed invalid torrent file(s)",
+                    data = mapOf("removed" to removed)
+                )
+
+            } catch (e: Exception) {
+                log.error("Failed to clean invalid torrents", e)
+                PluginActionResult.failure(
+                    message = "Failed to clean invalid torrents: ${e.message}",
+                    data = mapOf("error" to (e.message ?: "Unknown error"))
+                )
             }
+        }
 
-            val builderResult = builder.generate()
-
-            return builderResult.entry().bencode()
+        private fun findGameFiles(): List<Path> {
+            TODO("Needs DB access to find actual game files - this is just a placeholder")
         }
     }
 }
