@@ -115,6 +115,18 @@ tasks.jacocoTestReport {
     }
 }
 
+sonar {
+    properties {
+        property("sonar.projectKey", "gameyfin")
+        property("sonar.organization", "gameyfin")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            "${layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml"
+        )
+    }
+}
+
 tasks.named<ProcessResources>("processResources") {
     val projectVersion = rootProject.version.toString()
     filesMatching("application.yml") {
