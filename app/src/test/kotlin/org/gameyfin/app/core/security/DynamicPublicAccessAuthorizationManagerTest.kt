@@ -46,7 +46,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
             "password",
             listOf(SimpleGrantedAuthority("ROLE_USER"))
         )
-        val authSupplier = Supplier<Authentication?> { authentication }
+        val authSupplier = Supplier<Authentication> { authentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -63,7 +63,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
             "password",
             listOf(SimpleGrantedAuthority("ROLE_USER"))
         )
-        val authSupplier = Supplier<Authentication?> { authentication }
+        val authSupplier = Supplier<Authentication> { authentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -79,7 +79,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
         every { authentication.isAuthenticated } returns false
         every { authentication.principal } returns "anonymousUser"
 
-        val authSupplier = Supplier<Authentication?> { authentication }
+        val authSupplier = Supplier<Authentication> { authentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -95,7 +95,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
         every { authentication.isAuthenticated } returns false
         every { authentication.principal } returns "anonymousUser"
 
-        val authSupplier = Supplier<Authentication?> { authentication }
+        val authSupplier = Supplier<Authentication> { authentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -107,7 +107,8 @@ class DynamicPublicAccessAuthorizationManagerTest {
     fun `check should deny access when authentication is null and public access is disabled`() {
         every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
 
-        val authSupplier = Supplier<Authentication?> { null }
+        val mockAuthentication = mockk<Authentication>(relaxed = true)
+        val authSupplier = Supplier<Authentication> { mockAuthentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -119,7 +120,8 @@ class DynamicPublicAccessAuthorizationManagerTest {
     fun `check should allow access when authentication is null and public access is enabled`() {
         every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns true
 
-        val authSupplier = Supplier<Authentication?> { null }
+        val mockAuthentication = mockk<Authentication>(relaxed = true)
+        val authSupplier = Supplier<Authentication> { mockAuthentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -135,7 +137,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
         every { authentication.isAuthenticated } returns true
         every { authentication.principal } returns "anonymousUser"
 
-        val authSupplier = Supplier<Authentication?> { authentication }
+        val authSupplier = Supplier<Authentication> { authentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -151,7 +153,7 @@ class DynamicPublicAccessAuthorizationManagerTest {
         every { authentication.isAuthenticated } returns true
         every { authentication.principal } returns "john.doe"
 
-        val authSupplier = Supplier<Authentication?> { authentication }
+        val authSupplier = Supplier<Authentication> { authentication }
 
         val decision = manager.authorize(authSupplier, context)
 
@@ -167,38 +169,11 @@ class DynamicPublicAccessAuthorizationManagerTest {
         every { authentication.isAuthenticated } returns false
         every { authentication.principal } returns "anonymousUser"
 
-        val authSupplier = Supplier<Authentication?> { authentication }
+        val authSupplier = Supplier<Authentication> { authentication }
 
         val decision = manager.authorize(authSupplier, context)
 
         assertNotNull(decision)
         assertFalse(decision.isGranted)
-    }
-
-    @Test
-    fun `check should work when supplier is null`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
-
-        val decision = manager.authorize(null, context)
-
-        assertNotNull(decision)
-        assertFalse(decision.isGranted)
-    }
-
-    @Test
-    fun `check should work when context is null`() {
-        every { configService.get(ConfigProperties.Security.AllowPublicAccess) } returns false
-
-        val authentication = UsernamePasswordAuthenticationToken(
-            "user",
-            "password",
-            listOf(SimpleGrantedAuthority("ROLE_USER"))
-        )
-        val authSupplier = Supplier<Authentication?> { authentication }
-
-        val decision = manager.authorize(authSupplier, null)
-
-        assertNotNull(decision)
-        assertTrue(decision.isGranted)
     }
 }

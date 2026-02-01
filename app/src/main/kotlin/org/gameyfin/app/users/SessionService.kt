@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service
 class SessionService(private val sessionRegistry: SessionRegistry) {
 
     fun logoutAllSessions() {
-        val auth = getCurrentAuth()
-        val sessions: List<SessionInformation> = sessionRegistry.getAllSessions(auth?.principal, false)
+        val authPrincipal = getCurrentAuth()?.principal ?: return
+        val sessions: List<SessionInformation> = sessionRegistry.getAllSessions(authPrincipal, false)
         for (sessionInfo in sessions) {
             sessionInfo.expireNow()
         }

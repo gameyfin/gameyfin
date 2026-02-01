@@ -12,6 +12,8 @@ plugins {
     kotlin("plugin.jpa")
     id("com.google.devtools.ksp")
     application
+    jacoco
+    id("org.sonarqube")
 }
 
 application {
@@ -50,6 +52,7 @@ dependencies {
         exclude("com.vaadin:flow-react")
     }
     implementation("com.vaadin:vaadin-spring-boot-starter")
+    implementation("com.vaadin:hilla-spring-boot-starter")
 
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:${rootProject.extra["kotlinLoggingVersion"]}")
@@ -103,6 +106,13 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    reports {
+        xml.required = true
+    }
 }
 
 tasks.named<ProcessResources>("processResources") {

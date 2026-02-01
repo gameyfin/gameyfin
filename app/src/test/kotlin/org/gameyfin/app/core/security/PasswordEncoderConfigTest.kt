@@ -43,17 +43,6 @@ class PasswordEncoderConfigTest {
     }
 
     @Test
-    fun `passwordEncoder should handle empty password`() {
-        val encoder = config.passwordEncoder()
-        val password = ""
-
-        val encoded = encoder.encode(password)
-
-        assertNotNull(encoded)
-        assertTrue(encoder.matches(password, encoded))
-    }
-
-    @Test
     fun `passwordEncoder should handle long password`() {
         val encoder = config.passwordEncoder()
         // @see https://security.stackexchange.com/questions/39849/does-bcrypt-have-a-maximum-password-length

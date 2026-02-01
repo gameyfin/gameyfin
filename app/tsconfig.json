@@ -10,7 +10,7 @@
     "jsx": "react-jsx",
     "inlineSources": true,
     "module": "esNext",
-    "target": "es2022",
+    "target": "es2023",
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,

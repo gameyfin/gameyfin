@@ -3,7 +3,7 @@ package org.gameyfin.app.core.config
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.coyote.ProtocolHandler
 import org.apache.coyote.http11.AbstractHttp11Protocol
-import org.springframework.boot.web.embedded.tomcat.TomcatProtocolHandlerCustomizer
+import org.springframework.boot.tomcat.TomcatProtocolHandlerCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 

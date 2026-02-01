@@ -47,12 +47,12 @@ class RoleService(
     }
 
     fun getRolesBelowAuth(auth: Authentication): List<Role> {
-        val highestUserRole = getHighestRole(auth.authorities.mapNotNull { Role.Companion.safeValueOf(it.authority) })
+        val highestUserRole = getHighestRole(auth.authorities.mapNotNull { Role.safeValueOf(it.authority) })
         return Role.entries.filter { it.powerLevel < highestUserRole.powerLevel }
     }
 
     fun authoritiesToRoles(authorities: Collection<GrantedAuthority>): List<Role> {
-        return authorities.mapNotNull { Role.Companion.safeValueOf(it.authority) }
+        return authorities.mapNotNull { Role.safeValueOf(it.authority) }
     }
 
     /**

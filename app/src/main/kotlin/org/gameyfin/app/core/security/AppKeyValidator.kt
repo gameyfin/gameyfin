@@ -12,7 +12,7 @@ class AppKeyValidator : CommandLineRunner {
         val log = KotlinLogging.logger {}
     }
 
-    override fun run(vararg args: String?) {
+    override fun run(vararg args: String) {
         val base64Key = System.getenv("APP_KEY")
         if (!hasValidAppKey(base64Key)) exitProcess(1)
     }

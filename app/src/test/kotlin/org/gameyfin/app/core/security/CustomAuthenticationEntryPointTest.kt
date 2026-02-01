@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.AuthenticationException
 import kotlin.test.assertEquals
@@ -96,7 +97,7 @@ class CustomAuthenticationEntryPointTest {
         every { request.getParameter("direct") } returns "1"
         every { response.sendRedirect(any()) } just Runs
 
-        entryPoint.commence(request, response, null)
+        entryPoint.commence(request, response, AuthenticationCredentialsNotFoundException("Test"))
 
         verify(exactly = 1) { response.sendRedirect("/login") }
     }

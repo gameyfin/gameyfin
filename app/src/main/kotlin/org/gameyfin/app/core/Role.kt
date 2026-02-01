@@ -28,7 +28,8 @@ enum class Role(val roleName: String, val powerLevel: Int) {
             return entries.find { it.roleName == enumString }
         }
 
-        fun safeValueOf(type: String): Role? {
+        fun safeValueOf(type: String?): Role? {
+            if (type == null) return null
             val enumString = type.removePrefix(RoleService.INTERNAL_ROLE_PREFIX)
             return try {
                 Enum.valueOf(Role::class.java, enumString)

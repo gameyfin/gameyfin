@@ -11,7 +11,7 @@ class CustomAuthenticationEntryPoint : AuthenticationEntryPoint {
     override fun commence(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        authException: AuthenticationException?
+        authException: AuthenticationException
     ) {
         if (request.getParameter("direct") == "1") {
             response.sendRedirect("/login")
