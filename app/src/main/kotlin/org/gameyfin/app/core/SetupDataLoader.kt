@@ -33,11 +33,14 @@ class SetupDataLoader(
 
         val protocol = if (env.getProperty("server.ssl.key-store") != null) "https" else "http"
         val rawAppUrl = env.getProperty("app.url")
+
+        @Suppress("HttpUrlsUsage")
         val appUrl = when {
             rawAppUrl.isNullOrBlank() -> null
             rawAppUrl.startsWith("http://") || rawAppUrl.startsWith("https://") -> rawAppUrl
             else -> "$protocol://$rawAppUrl"
         }
+
         val setupUrl =
             appUrl ?: "${protocol}://${InetAddress.getLocalHost().hostName}:${env.getProperty("server.port")}/setup"
         log.info { "Visit $setupUrl to complete the setup" }

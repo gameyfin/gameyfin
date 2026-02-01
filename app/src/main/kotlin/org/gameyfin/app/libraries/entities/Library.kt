@@ -29,6 +29,7 @@ class Library(
 
     @ElementCollection(targetClass = Platform::class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     var platforms: MutableList<Platform> = ArrayList(),
 
     @OneToMany(mappedBy = "library", fetch = FetchType.EAGER, orphanRemoval = true)

@@ -131,7 +131,8 @@ class LogEndpointTest {
 
     @Test
     fun `getApplicationLogs should return empty flux when authentication is null`() {
-        val securityContext = SecurityContextImpl(null)
+        val mockAuthentication = mockk<Authentication>(relaxed = true)
+        val securityContext = SecurityContextImpl(mockAuthentication)
         SecurityContextHolder.setContext(securityContext)
 
         val result = logEndpoint.getApplicationLogs()

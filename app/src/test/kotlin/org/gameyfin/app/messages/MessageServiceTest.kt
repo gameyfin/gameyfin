@@ -17,6 +17,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBeansOfType
 import org.springframework.context.ApplicationContext
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContext
@@ -55,7 +56,7 @@ class MessageServiceTest {
     fun `enabled should return true when at least one provider is enabled`() {
         every { mockProvider1.enabled } returns true
         every { mockProvider2.enabled } returns false
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1,
             "provider2" to mockProvider2
         )
@@ -69,7 +70,7 @@ class MessageServiceTest {
     fun `enabled should return false when no providers are enabled`() {
         every { mockProvider1.enabled } returns false
         every { mockProvider2.enabled } returns false
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1,
             "provider2" to mockProvider2
         )
@@ -81,7 +82,7 @@ class MessageServiceTest {
 
     @Test
     fun `enabled should return false when no providers exist`() {
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         val result = messageService.enabled
 
@@ -95,7 +96,7 @@ class MessageServiceTest {
 
         every { mockProvider1.providerKey } returns providerKey
         every { mockProvider1.testCredentials(any()) } returns true
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
 
@@ -112,7 +113,7 @@ class MessageServiceTest {
 
         every { mockProvider1.providerKey } returns providerKey
         every { mockProvider1.testCredentials(any()) } returns false
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
 
@@ -127,7 +128,7 @@ class MessageServiceTest {
         val credentials = mapOf("host" to "smtp.example.com")
 
         every { mockProvider1.providerKey } returns "email"
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
 
@@ -145,7 +146,7 @@ class MessageServiceTest {
 
         every { mockProvider1.providerKey } returns providerKey
         every { mockProvider1.testCredentials(any()) } returns true
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
 
@@ -167,7 +168,7 @@ class MessageServiceTest {
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
         every { mockProvider2.enabled } returns true
         every { mockProvider2.supportedTemplateType } returns TemplateType.TEXT
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1,
             "provider2" to mockProvider2
         )
@@ -197,7 +198,7 @@ class MessageServiceTest {
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
         every { mockProvider2.enabled } returns false
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1,
             "provider2" to mockProvider2
         )
@@ -218,7 +219,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns false
         every { mockProvider2.enabled } returns false
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1,
             "provider2" to mockProvider2
         )
@@ -231,7 +232,7 @@ class MessageServiceTest {
 
     @Test
     fun `sendTestNotification should return false when messaging is disabled`() {
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         val result = messageService.sendTestNotification("password-reset-request", emptyMap())
 
@@ -249,7 +250,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every { userService.getByUsername("testuser") } returns user
@@ -274,7 +275,7 @@ class MessageServiceTest {
         val placeholders = mapOf("username" to "testuser", "resetLink" to "http://example.com/reset")
 
         every { mockProvider1.enabled } returns true
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
 
@@ -291,7 +292,7 @@ class MessageServiceTest {
         setupSecurityContext("testuser")
 
         every { mockProvider1.enabled } returns true
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every { userService.getByUsername("testuser") } returns null
@@ -310,7 +311,7 @@ class MessageServiceTest {
         setupSecurityContext("testuser")
 
         every { mockProvider1.enabled } returns true
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every { userService.getByUsername("testuser") } returns user
@@ -330,7 +331,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -358,7 +359,7 @@ class MessageServiceTest {
         val token = Token(creator = user, secret = "secret123", type = TokenType.PasswordReset)
         val event = PasswordResetRequestEvent(this, token, "http://example.com")
 
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         messageService.onPasswordResetRequest(event)
 
@@ -373,7 +374,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -394,7 +395,7 @@ class MessageServiceTest {
         val user = User(username = "newuser", email = "new@example.com", password = "hash")
         val event = UserRegistrationWaitingForApprovalEvent(this, user)
 
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         messageService.onUserRegistrationWaitingForApproval(event)
 
@@ -409,7 +410,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -439,7 +440,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -466,7 +467,7 @@ class MessageServiceTest {
         val user = User(username = "testuser", email = "user@example.com", password = "hash")
         val event = AccountStatusChangedEvent(this, user, "http://example.com")
 
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         messageService.onAccountStatusChanged(event)
 
@@ -481,7 +482,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -502,7 +503,7 @@ class MessageServiceTest {
         val user = User(username = "existinguser", email = "existing@example.com", password = "hash")
         val event = RegistrationAttemptWithExistingEmailEvent(this, user, "http://example.com")
 
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         messageService.onRegistrationAttemptWithExistingEmail(event)
 
@@ -518,7 +519,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -543,7 +544,7 @@ class MessageServiceTest {
         val token = Token(creator = user, secret = "confirm123", type = TokenType.EmailConfirmation)
         val event = EmailNeedsConfirmationEvent(this, token, "http://example.com")
 
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         messageService.onEmailNeedsConfirmation(event)
 
@@ -559,7 +560,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -587,7 +588,7 @@ class MessageServiceTest {
         val token = Token(creator = user, secret = "invite123", type = TokenType.Invitation)
         val event = UserInvitationEvent(this, token, "http://example.com", "invited@example.com")
 
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         messageService.onUserInvitation(event)
 
@@ -602,7 +603,7 @@ class MessageServiceTest {
 
         every { mockProvider1.enabled } returns true
         every { mockProvider1.supportedTemplateType } returns TemplateType.MJML
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns mapOf(
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns mapOf(
             "provider1" to mockProvider1
         )
         every {
@@ -629,7 +630,7 @@ class MessageServiceTest {
         val user = User(username = "deleteduser", email = "deleted@example.com", password = "hash")
         val event = UserDeletedEvent(this, user, "http://example.com")
 
-        every { applicationContext.getBeansOfType(AbstractMessageProvider::class.java) } returns emptyMap()
+        every { applicationContext.getBeansOfType<AbstractMessageProvider>() } returns emptyMap()
 
         messageService.onAccountDeletion(event)
 

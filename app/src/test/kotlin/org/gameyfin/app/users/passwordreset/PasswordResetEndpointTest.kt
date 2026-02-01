@@ -23,7 +23,7 @@ class PasswordResetEndpointTest {
     fun setup() {
         passwordResetService = mockk()
         userService = mockk()
-        passwordResetEndpoint = PasswordResetEndpoint(passwordResetService, userService)
+        passwordResetEndpoint = PasswordResetEndpoint(passwordResetService)
     }
 
     @AfterEach

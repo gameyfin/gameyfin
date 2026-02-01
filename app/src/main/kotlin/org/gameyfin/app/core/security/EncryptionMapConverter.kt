@@ -1,8 +1,8 @@
 package org.gameyfin.app.core.security
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
+import tools.jackson.databind.ObjectMapper
 
 @Converter
 class EncryptionMapConverter : AttributeConverter<Map<String, String>, String> {

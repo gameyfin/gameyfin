@@ -29,7 +29,7 @@ class UserPreferencesService(
         return if (appConfig != null) {
             getValue(appConfig.value, userPreference)
         } else {
-            return null
+            null
         }
     }
 
@@ -51,7 +51,7 @@ class UserPreferencesService(
         return if (appConfig != null) {
             getValue(appConfig.value, userPreference).toString()
         } else {
-            return null
+            null
         }
     }
 

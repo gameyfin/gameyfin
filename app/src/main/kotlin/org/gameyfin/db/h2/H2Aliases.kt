@@ -1,7 +1,7 @@
 package org.gameyfin.db.h2
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.gameyfin.app.core.security.EncryptionUtils
+import tools.jackson.databind.ObjectMapper
 import java.sql.Connection
 import java.sql.SQLException
 

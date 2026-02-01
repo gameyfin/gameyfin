@@ -1,4 +1,4 @@
-val jacksonVersion = "2.19.1"
+val jacksonVersion = "3.0.4"
 
 plugins {
     kotlin("jvm")
@@ -16,8 +16,8 @@ dependencies {
     implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 
     // JSON serialization
-    compileOnly("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    compileOnly("tools.jackson.core:jackson-databind:$jacksonVersion")
+    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonVersion")
 }
 
 mavenPublishing {

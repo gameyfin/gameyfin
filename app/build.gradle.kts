@@ -12,6 +12,8 @@ plugins {
     kotlin("plugin.jpa")
     id("com.google.devtools.ksp")
     application
+    jacoco
+    id("org.sonarqube")
 }
 
 application {
@@ -33,15 +35,19 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("org.springframework.boot:spring-boot-starter-aspectj")
+    implementation("org.springframework.boot:spring-boot-starter-jackson")
     implementation("org.springframework.cloud:spring-cloud-starter")
-    implementation("jakarta.validation:jakarta.validation-api:3.1.0")
+    implementation("jakarta.validation:jakarta.validation-api:${rootProject.extra["jakartaValidationVersion"]}")
 
     // Kotlin extensions
     implementation(kotlin("reflect"))
 
     // Reactive
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-webflux") {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-reactor-netty")
+    }
+    implementation("org.springframework.boot:spring-boot-starter-jetty")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
@@ -49,17 +55,19 @@ dependencies {
     implementation("com.vaadin:vaadin-core") {
         exclude("com.vaadin:flow-react")
     }
-    implementation("com.vaadin:vaadin-spring-boot-starter")
+    implementation("com.vaadin:vaadin-spring-boot-starter") {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
+    }
+    implementation("com.vaadin:hilla-spring-boot-starter")
 
     // Logging
-    implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
+    implementation("io.github.oshai:kotlin-logging-jvm:${rootProject.extra["kotlinLoggingVersion"]}")
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.17")
-    implementation("org.flywaydb:flyway-core")
-    implementation("commons-io:commons-io:2.18.0")
-    implementation("com.google.guava:guava:33.5.0-jre")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("commons-io:commons-io:${rootProject.extra["commonsIoVersion"]}")
+    implementation("com.google.guava:guava:${rootProject.extra["guavaVersion"]}")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -68,18 +76,19 @@ dependencies {
 
     // Notifications
     implementation("org.springframework.boot:spring-boot-starter-mail")
-    implementation("ch.digitalfondue.mjml4j:mjml4j:1.1.4")
+    implementation("ch.digitalfondue.mjml4j:mjml4j:${rootProject.extra["mjml4jVersion"]}")
 
     // Plugins
     implementation(project(":plugin-api"))
 
     // Utils
-    implementation("org.apache.tika:tika-core:3.2.3")
-    implementation("me.xdrop:fuzzywuzzy:1.4.0")
-    implementation("com.vanniktech:blurhash:0.3.0")
+    implementation("org.apache.tika:tika-core:${rootProject.extra["tikaVersion"]}")
+    implementation("me.xdrop:fuzzywuzzy:${rootProject.extra["fuzzywuzzyVersion"]}")
+    implementation("com.vanniktech:blurhash:${rootProject.extra["blurhashVersion"]}")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    developmentOnly("com.vaadin:vaadin-dev")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
@@ -103,6 +112,30 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required = true
+        xml.outputLocation = layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml")
+    }
+}
+
+tasks.named("sonar") {
+    dependsOn(tasks.jacocoTestReport)
+}
+
+sonar {
+    properties {
+        property("sonar.organization", "gameyfin")
+        property("sonar.projectKey", "gameyfin_gameyfin")
+        property("sonar.projectName", "gameyfin")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.coverage.exclusions", "**/*Config.kt,**/org/gameyfin/db/h2/**")
+    }
 }
 
 tasks.named<ProcessResources>("processResources") {

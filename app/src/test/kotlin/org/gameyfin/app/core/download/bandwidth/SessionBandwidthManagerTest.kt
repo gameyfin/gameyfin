@@ -1,6 +1,5 @@
 package org.gameyfin.app.core.download.bandwidth
 
-import com.helger.commons.mock.CommonsAssert.assertEquals
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -104,7 +103,7 @@ class SessionBandwidthManagerTest {
 
         val stat1 = stats["session-1"]
         assertNotNull(stat1)
-        assertEquals("session-1", stat1!!.sessionId)
+        assertEquals("session-1", stat1.sessionId)
         assertEquals(1, stat1.activeDownloads)
         assertEquals("user1", stat1.username)
         assertEquals("192.168.1.1", stat1.remoteIp)

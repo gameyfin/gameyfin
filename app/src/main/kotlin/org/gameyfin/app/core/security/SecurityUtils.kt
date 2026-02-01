@@ -13,5 +13,5 @@ fun isCurrentUserAdmin(): Boolean {
 }
 
 fun Authentication.isAdmin(): Boolean {
-    return this.authorities?.any { it.authority == Role.Names.ADMIN || it.authority == Role.Names.SUPERADMIN } ?: false
+    return this.authorities.any { it.authority == Role.Names.ADMIN || it.authority == Role.Names.SUPERADMIN }
 }

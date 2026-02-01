@@ -42,7 +42,7 @@ class GameyfinPluginManagerTest {
         pluginManagementRepository = mockk(relaxed = true)
 
         // Set up default mocks
-        every { pluginConfigRepository.findAllById_PluginId(any()) } returns emptyList()
+        every { pluginConfigRepository.findAllByPluginId(any()) } returns emptyList()
         every { pluginManagementRepository.findByIdOrNull(any()) } returns null
         every { pluginManagementRepository.save(any()) } returnsArgument 0
         every { pluginManagementRepository.findMaxPriority() } returns null
@@ -233,7 +233,7 @@ class GameyfinPluginManagerTest {
         every { pluginManager.getPlugin("test-plugin") } returns pluginWrapper
         every { pluginManager.stopPlugin("test-plugin") } returns PluginState.STOPPED
         every { pluginManager.startPlugin("test-plugin") } returns PluginState.STARTED
-        every { pluginConfigRepository.findAllById_PluginId("test-plugin") } returns configEntries
+        every { pluginConfigRepository.findAllByPluginId("test-plugin") } returns configEntries
 
         pluginManager.restart("test-plugin")
 

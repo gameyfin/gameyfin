@@ -1,6 +1,5 @@
 package org.gameyfin.app.core.security
 
-import com.vaadin.flow.spring.security.VaadinAwareSecurityContextHolderStrategyConfiguration
 import com.vaadin.flow.spring.security.VaadinSecurityConfigurer
 import com.vaadin.hilla.route.RouteUtil
 import org.gameyfin.app.config.ConfigProperties
@@ -8,7 +7,6 @@ import org.gameyfin.app.config.ConfigService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -25,9 +23,6 @@ import org.springframework.security.web.authentication.logout.HttpStatusReturnin
 
 @Configuration
 @EnableWebSecurity
-@Import(
-    VaadinAwareSecurityContextHolderStrategyConfiguration::class
-)
 class SecurityConfig(
     private val environment: Environment,
     private val config: ConfigService,
@@ -41,6 +36,31 @@ class SecurityConfig(
 
     @Bean
     fun filterChain(http: HttpSecurity, routeUtil: RouteUtil): SecurityFilterChain {
+        // Apply Vaadin configuration first to properly configure CSRF and request matchers
+        if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
+            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
+                // Redirect to SSO provider on logout
+                configurer.loginView("/login", config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
+            }
+
+            // Use custom success handler to handle user registration
+            http.oauth2Login { oauth2Login ->
+                oauth2Login.successHandler(ssoAuthenticationSuccessHandler)
+            }
+            // Prevent unnecessary redirects
+            http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
+
+            // Custom authentication entry point to support SSO and direct login
+            http.exceptionHandling { exceptionHandling ->
+                exceptionHandling.authenticationEntryPoint(CustomAuthenticationEntryPoint())
+            }
+        } else {
+            // Use default Vaadin login URLs
+            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
+                configurer.loginView("/login")
+            }
+        }
+
         http.authorizeHttpRequests { auth ->
             // Set default security policy that permits Hilla internal requests and denies all other
             auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
@@ -55,6 +75,13 @@ class SecurityConfig(
                     "/images/**",
                     "/favicon.ico",
                     "/favicon.svg"
+                ).permitAll()
+                // Client-side SPA routes - these need to pass through to serve index.html
+                // Authentication will be handled by Hilla on the client side
+                .requestMatchers(
+                    "/administration/**",
+                    "/settings/**",
+                    "/collection/**"
                 ).permitAll()
                 // Dynamic public access for certain endpoints
                 .requestMatchers(
@@ -78,30 +105,6 @@ class SecurityConfig(
         http.cors { cors -> cors.disable() }
 
 
-        if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
-
-            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
-                // Redirect to SSO provider on logout
-                configurer.loginView("/login", config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
-            }
-
-            // Use custom success handler to handle user registration
-            http.oauth2Login { oauth2Login ->
-                oauth2Login.successHandler(ssoAuthenticationSuccessHandler)
-            }
-            // Prevent unnecessary redirects
-            http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
-
-            // Custom authentication entry point to support SSO and direct login
-            http.exceptionHandling { exceptionHandling ->
-                exceptionHandling.authenticationEntryPoint(CustomAuthenticationEntryPoint())
-            }
-        } else {
-            // Use default Vaadin login URLs
-            http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
-                configurer.loginView("/login")
-            }
-        }
 
         if ("dev" in environment.activeProfiles) {
             http.authorizeHttpRequests { auth -> auth.requestMatchers("/h2-console/**").permitAll() }

@@ -1,7 +1,5 @@
 package org.gameyfin.app.config
 
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.dto.ConfigEntryDto
 import org.gameyfin.app.config.dto.ConfigUpdateDto
@@ -11,6 +9,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import tools.jackson.core.JacksonException
+import tools.jackson.databind.ObjectMapper
 import java.io.Serializable
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
@@ -186,7 +186,7 @@ class ConfigService(
         return try {
             val typeReference = objectMapper.typeFactory.constructType(configProperty.type.java)
             objectMapper.readValue(value.toString(), typeReference) as T
-        } catch (e: JsonProcessingException) {
+        } catch (e: JacksonException) {
             throw IllegalArgumentException(
                 "Failed to deserialize value '$value' for key '${configProperty.key}' to type ${configProperty.type.simpleName}: ${e.message}",
                 e
@@ -209,7 +209,7 @@ class ConfigService(
     private fun <T : Serializable> serializeValue(value: T, key: String): String {
         return try {
             objectMapper.writeValueAsString(value)
-        } catch (e: JsonProcessingException) {
+        } catch (e: JacksonException) {
             throw IllegalArgumentException(
                 "Failed to serialize value for key '$key': ${e.message}",
                 e

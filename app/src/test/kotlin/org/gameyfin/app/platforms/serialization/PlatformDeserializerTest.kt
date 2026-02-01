@@ -1,7 +1,5 @@
 package org.gameyfin.app.platforms.serialization
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
@@ -10,6 +8,8 @@ import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -33,7 +33,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return correct platform for valid displayName`() {
-        every { jsonParser.text } returns "PC (Microsoft Windows)"
+        every { jsonParser.string } returns "PC (Microsoft Windows)"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -42,7 +42,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return null for unknown displayName`() {
-        every { jsonParser.text } returns "Unknown Platform"
+        every { jsonParser.string } returns "Unknown Platform"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -51,7 +51,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return null for empty string`() {
-        every { jsonParser.text } returns ""
+        every { jsonParser.string } returns ""
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -60,7 +60,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return correct platform for PlayStation 5`() {
-        every { jsonParser.text } returns "PlayStation 5"
+        every { jsonParser.string } returns "PlayStation 5"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -69,7 +69,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return correct platform for Xbox Series X S`() {
-        every { jsonParser.text } returns "Xbox Series X|S"
+        every { jsonParser.string } returns "Xbox Series X|S"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -78,7 +78,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return correct platform for Nintendo Switch`() {
-        every { jsonParser.text } returns "Nintendo Switch"
+        every { jsonParser.string } returns "Nintendo Switch"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -87,7 +87,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should be case-sensitive`() {
-        every { jsonParser.text } returns "playstation 5"
+        every { jsonParser.string } returns "playstation 5"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -96,7 +96,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle platforms with special characters`() {
-        every { jsonParser.text } returns "Odyssey 2 / Videopac G7000"
+        every { jsonParser.string } returns "Odyssey 2 / Videopac G7000"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -105,7 +105,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle platforms with numbers at start`() {
-        every { jsonParser.text } returns "3DO Interactive Multiplayer"
+        every { jsonParser.string } returns "3DO Interactive Multiplayer"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -114,7 +114,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle platforms with hyphens`() {
-        every { jsonParser.text } returns "Atari 8-bit"
+        every { jsonParser.string } returns "Atari 8-bit"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -123,7 +123,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle platforms with apostrophes`() {
-        every { jsonParser.text } returns "Super A'Can"
+        every { jsonParser.string } returns "Super A'Can"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -132,7 +132,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return null for whitespace-only string`() {
-        every { jsonParser.text } returns "   "
+        every { jsonParser.string } returns "   "
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -141,7 +141,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should not trim whitespace from displayName`() {
-        every { jsonParser.text } returns " PlayStation 5 "
+        every { jsonParser.string } returns " PlayStation 5 "
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -150,7 +150,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Arcade platform`() {
-        every { jsonParser.text } returns "Arcade"
+        every { jsonParser.string } returns "Arcade"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -159,7 +159,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Web browser platform`() {
-        every { jsonParser.text } returns "Web browser"
+        every { jsonParser.string } returns "Web browser"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -168,7 +168,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Android platform`() {
-        every { jsonParser.text } returns "Android"
+        every { jsonParser.string } returns "Android"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -177,7 +177,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle iOS platform`() {
-        every { jsonParser.text } returns "iOS"
+        every { jsonParser.string } returns "iOS"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -186,7 +186,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Linux platform`() {
-        every { jsonParser.text } returns "Linux"
+        every { jsonParser.string } returns "Linux"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -195,7 +195,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Mac platform`() {
-        every { jsonParser.text } returns "Mac"
+        every { jsonParser.string } returns "Mac"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -204,7 +204,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle DOS platform`() {
-        every { jsonParser.text } returns "DOS"
+        every { jsonParser.string } returns "DOS"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -213,7 +213,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Dreamcast platform`() {
-        every { jsonParser.text } returns "Dreamcast"
+        every { jsonParser.string } returns "Dreamcast"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -222,7 +222,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Virtual Boy platform`() {
-        every { jsonParser.text } returns "Virtual Boy"
+        every { jsonParser.string } returns "Virtual Boy"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -231,7 +231,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle ZX Spectrum platform`() {
-        every { jsonParser.text } returns "ZX Spectrum"
+        every { jsonParser.string } returns "ZX Spectrum"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -240,7 +240,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Game Boy platform`() {
-        every { jsonParser.text } returns "Game Boy"
+        every { jsonParser.string } returns "Game Boy"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -249,7 +249,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle PlayStation VR2 platform`() {
-        every { jsonParser.text } returns "PlayStation VR2"
+        every { jsonParser.string } returns "PlayStation VR2"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -258,7 +258,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Nintendo Entertainment System platform`() {
-        every { jsonParser.text } returns "Nintendo Entertainment System"
+        every { jsonParser.string } returns "Nintendo Entertainment System"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -267,7 +267,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Super Nintendo Entertainment System platform`() {
-        every { jsonParser.text } returns "Super Nintendo Entertainment System"
+        every { jsonParser.string } returns "Super Nintendo Entertainment System"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -276,7 +276,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle Sega Mega Drive Genesis platform`() {
-        every { jsonParser.text } returns "Sega Mega Drive/Genesis"
+        every { jsonParser.string } returns "Sega Mega Drive/Genesis"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -285,7 +285,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should handle platforms with long names`() {
-        every { jsonParser.text } returns "Call-A-Computer time-shared mainframe computer system"
+        every { jsonParser.string } returns "Call-A-Computer time-shared mainframe computer system"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -294,7 +294,7 @@ class PlatformDeserializerTest {
 
     @Test
     fun `deserialize should return null for partial match`() {
-        every { jsonParser.text } returns "PlayStation"
+        every { jsonParser.string } returns "PlayStation"
 
         val result = deserializer.deserialize(jsonParser, deserializationContext)
 
@@ -304,7 +304,7 @@ class PlatformDeserializerTest {
     @Test
     fun `deserialize should handle all valid platform displayNames correctly`() {
         Platform.entries.forEach { platform ->
-            every { jsonParser.text } returns platform.displayName
+            every { jsonParser.string } returns platform.displayName
 
             val result = deserializer.deserialize(jsonParser, deserializationContext)
 

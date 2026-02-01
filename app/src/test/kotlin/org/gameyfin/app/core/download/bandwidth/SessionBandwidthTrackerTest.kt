@@ -425,5 +425,122 @@ class SessionBandwidthTrackerTest {
         val afterRecordTime = tracker.lastActivityTime
         assertTrue(afterRecordTime > initialTime)
     }
+
+    @Test
+    fun `updateMonitoringStatistics should handle concurrent window rotation`() {
+        val threadCount = 10
+        val executor = Executors.newFixedThreadPool(threadCount)
+        val latch = CountDownLatch(threadCount)
+
+        // Set window start to 11 seconds ago to trigger rotation
+        val monitoringWindowStartField = tracker.javaClass.getDeclaredField("monitoringWindowStart")
+        monitoringWindowStartField.isAccessible = true
+        val elevenSecondsAgo = System.nanoTime() - 11_000_000_000L
+        monitoringWindowStartField.setLong(tracker, elevenSecondsAgo)
+
+        // Have multiple threads try to record bytes at the same time
+        // This should trigger concurrent window rotation attempts
+        repeat(threadCount) {
+            executor.submit {
+                try {
+                    tracker.recordBytes(100)
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+
+        assertTrue(latch.await(5, TimeUnit.SECONDS))
+        executor.shutdown()
+        assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS))
+
+        // All bytes should be recorded despite concurrent rotation
+        assertEquals(1000, tracker.totalBytesTransferred)
+    }
+
+    @Test
+    fun `updateMonitoringStatistics should update totalBytesTransferred atomically`() {
+        tracker.recordBytes(1000)
+        assertEquals(1000, tracker.totalBytesTransferred)
+
+        tracker.recordBytes(2000)
+        assertEquals(3000, tracker.totalBytesTransferred)
+
+        tracker.recordBytes(500)
+        assertEquals(3500, tracker.totalBytesTransferred)
+    }
+
+    @Test
+    fun `updateMonitoringStatistics should update lastActivityTime on each call`() {
+        val time1 = tracker.lastActivityTime
+        Thread.sleep(10)
+
+        tracker.recordBytes(100)
+        val time2 = tracker.lastActivityTime
+        assertTrue(time2 > time1, "Activity time should increase after recordBytes")
+
+        Thread.sleep(10)
+        tracker.throttle(100)
+        val time3 = tracker.lastActivityTime
+        assertTrue(time3 > time2, "Activity time should increase after throttle")
+    }
+
+    @Test
+    fun `getCurrentBytesPerSecond should blend with previous window when current window is young`() {
+        // Record bytes in first window
+        tracker.recordBytes(10_000)
+        Thread.sleep(1100) // Wait over 1 second to ensure first window is mature
+
+        // Force window rotation by setting window start to 11 seconds ago
+        val monitoringWindowStartField = tracker.javaClass.getDeclaredField("monitoringWindowStart")
+        monitoringWindowStartField.isAccessible = true
+        val elevenSecondsAgo = System.nanoTime() - 11_000_000_000L
+        monitoringWindowStartField.setLong(tracker, elevenSecondsAgo)
+
+        // Record bytes to trigger rotation
+        tracker.recordBytes(5_000)
+
+        // Immediately check rate - should blend with previous window since current is young
+        Thread.sleep(100) // Sleep a bit but less than 1 second
+        val rate = tracker.getCurrentBytesPerSecond()
+
+        // The rate should be positive and influenced by both windows
+        assertTrue(rate > 0, "Rate should be positive with blended windows")
+        assertTrue(tracker.totalBytesTransferred == 15_000L, "Total should be 15,000 bytes")
+    }
+
+    @Test
+    fun `updateMonitoringStatistics should handle synchronized block correctly during rotation`() {
+        // Record initial bytes
+        tracker.recordBytes(1000)
+
+        // Set up for window rotation
+        val monitoringWindowStartField = tracker.javaClass.getDeclaredField("monitoringWindowStart")
+        monitoringWindowStartField.isAccessible = true
+        val elevenSecondsAgo = System.nanoTime() - 11_000_000_000L
+        monitoringWindowStartField.setLong(tracker, elevenSecondsAgo)
+
+        // Record more bytes - should trigger synchronized block for rotation
+        tracker.recordBytes(2000)
+
+        // Verify the bytes were recorded correctly
+        assertEquals(3000, tracker.totalBytesTransferred)
+
+        // Record more bytes in the new window
+        tracker.recordBytes(500)
+        assertEquals(3500, tracker.totalBytesTransferred)
+    }
+
+    @Test
+    fun `throttle should call updateMonitoringStatistics with correct byte count`() {
+        val bytes = 5000L
+        tracker.throttle(bytes)
+
+        // Verify bytes were recorded
+        assertEquals(bytes, tracker.totalBytesTransferred)
+
+        // Verify activity time was updated
+        assertTrue(tracker.lastActivityTime > 0)
+    }
 }
 

@@ -12,7 +12,7 @@ import org.hibernate.type.Type
 import org.springframework.stereotype.Component
 
 @Component
-class EntityUpdateInterceptor() : Interceptor {
+class EntityUpdateInterceptor : Interceptor {
 
     override fun onFlushDirty(
         entity: Any?,

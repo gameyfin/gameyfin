@@ -253,7 +253,7 @@ class GameyfinPluginManager(
     }
 
     private fun getConfig(pluginId: String): Map<String, String?> {
-        return pluginConfigRepository.findAllById_PluginId(pluginId).associate { it.id.key to it.value }
+        return pluginConfigRepository.findAllByPluginId(pluginId).associate { it.id.key to it.value }
     }
 
     private fun loadPluginSignaturePublicKey(): PublicKey {

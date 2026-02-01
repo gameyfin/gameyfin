@@ -132,11 +132,11 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
         // Try to convert common types
         try {
             return when (expectedType) {
-                Int::class.java, Integer::class.java -> value.toString().toInt()
-                Float::class.java, java.lang.Float::class.java -> value.toString().toFloat()
-                Double::class.java, java.lang.Double::class.java -> value.toString().toDouble()
-                Long::class.java, java.lang.Long::class.java -> value.toString().toLong()
-                Boolean::class.java, java.lang.Boolean::class.java -> value.toString().toBooleanStrict()
+                Int::class.java -> value.toString().toInt()
+                Float::class.java -> value.toString().toFloat()
+                Double::class.java -> value.toString().toDouble()
+                Long::class.java -> value.toString().toLong()
+                Boolean::class.java -> value.toString().toBooleanStrict()
                 String::class.java -> value.toString()
                 else -> {
                     // Try valueOf(String) or parse(String) via reflection

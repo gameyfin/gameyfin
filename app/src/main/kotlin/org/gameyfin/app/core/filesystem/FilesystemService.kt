@@ -29,7 +29,7 @@ class FilesystemService(
      * @return A list of FileDto objects representing the files and directories.
      */
     fun listContents(path: String?): List<FileDto> {
-        if (path == null || path.isEmpty()) {
+        if (path.isNullOrEmpty()) {
             val roots = FileSystems.getDefault().rootDirectories.toList()
 
             if (getHostOperatingSystem() == OperatingSystemType.WINDOWS) return roots.map {
@@ -145,7 +145,7 @@ class FilesystemService(
             if (file.isFile) {
                 file.length()
             } else if (file.isDirectory) {
-                File(path).walkTopDown().filter { it.isFile }.map { it.length() }.sum()
+                File(path).walkTopDown().filter { it.isFile }.sumOf { it.length() }
             } else {
                 0L
             }

@@ -7,8 +7,6 @@ logging.level:
   org.gameyfin.GameyfinApplicationKt: warn
   # Suppress false positive warnings from Spring Security 6
   org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
-  # Hides an error log on the first aborted download
-  org.apache.catalina.core.ContainerBase: off
 
 server:
   port: 8080
@@ -17,10 +15,10 @@ server:
       tracking-modes: cookie
       timeout: 24h
   forward-headers-strategy: framework
-  tomcat:
-    remoteip:
-      protocol-header: X-Forwarded-Proto
-      remote-ip-header: X-Forwarded-For
+  jetty:
+    threads:
+      max: 200
+      min: 8
 
 management:
   server:

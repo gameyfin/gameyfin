@@ -331,6 +331,7 @@ sealed class ConfigProperties<T : Serializable>(
     }
 }
 
+@Suppress("EnumEntryName")
 enum class MatchUsersBy {
     username, email
 }

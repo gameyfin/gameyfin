@@ -15,6 +15,10 @@ import kotlin.time.toJavaDuration
 @Entity
 class Token<T : TokenType>(
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    val id: String? = null,
+
+    @Column(unique = true, nullable = false)
     @Convert(converter = EncryptionConverter::class)
     val secret: String = UUID.randomUUID().toString(),
 

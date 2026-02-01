@@ -1,6 +1,7 @@
 package org.gameyfin.app.util
 
 import jakarta.persistence.EntityManager
+import org.springframework.beans.factory.getBean
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.springframework.stereotype.Component
@@ -10,7 +11,7 @@ object EntityManagerHolder : ApplicationContextAware {
     private var entityManager: EntityManager? = null
 
     override fun setApplicationContext(context: ApplicationContext) {
-        entityManager = context.getBean(EntityManager::class.java)
+        entityManager = context.getBean<EntityManager>()
     }
 
     fun getEntityManager(): EntityManager {

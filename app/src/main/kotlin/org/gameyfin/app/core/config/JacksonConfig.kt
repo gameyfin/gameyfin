@@ -1,13 +1,16 @@
 package org.gameyfin.app.core.config
 
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.module.SimpleModule
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.vaadin.hilla.EndpointController.ENDPOINT_MAPPER_FACTORY_BEAN_QUALIFIER
+import com.vaadin.hilla.parser.jackson.ByteArrayModule
+import com.vaadin.hilla.parser.jackson.JacksonObjectMapperFactory
 import org.gameyfin.app.core.serialization.*
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.module.SimpleModule
+
 
 /**
  * Jackson configuration for custom serializers and deserializers.
@@ -15,13 +18,20 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 @Configuration
 class JacksonConfig {
 
-
-    @Bean
-    fun objectMapperCustomizer(): Jackson2ObjectMapperBuilder {
-        return Jackson2ObjectMapperBuilder()
-            .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .modulesToInstall(JavaTimeModule(), displayableEnumModule())
+    @Bean(ENDPOINT_MAPPER_FACTORY_BEAN_QUALIFIER)
+    fun jsonMapperFactory(): JacksonObjectMapperFactory {
+        return JacksonObjectMapperFactory {
+            JsonMapper.builder()
+                // Default Hilla options
+                .addModule(ByteArrayModule())
+                .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, false)
+                .enable(DeserializationFeature.ACCEPT_FLOAT_AS_INT)
+                // Custom modules
+                .addModule(displayableEnumModule())
+                .build()
+        }
     }
+
 
     fun displayableEnumModule(): SimpleModule {
         val module = SimpleModule("DisplayableEnumModule")

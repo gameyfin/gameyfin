@@ -29,14 +29,14 @@ tasks.named<Jar>("jar") {
 subprojects {
     apply(plugin = "java")
 
-    java.sourceCompatibility = JavaVersion.VERSION_21
-    java.targetCompatibility = JavaVersion.VERSION_21
+    java.sourceCompatibility = JavaVersion.VERSION_25
+    java.targetCompatibility = JavaVersion.VERSION_25
 
     tasks.withType<KotlinJvmCompile> {
         compilerOptions {
-            languageVersion = KotlinVersion.KOTLIN_2_2
-            apiVersion = KotlinVersion.KOTLIN_2_2
-            jvmTarget = JvmTarget.JVM_21
+            languageVersion = KotlinVersion.KOTLIN_2_3
+            apiVersion = KotlinVersion.KOTLIN_2_3
+            jvmTarget = JvmTarget.JVM_25
             progressiveMode = true
             freeCompilerArgs.add("-Xjsr305=strict")
         }

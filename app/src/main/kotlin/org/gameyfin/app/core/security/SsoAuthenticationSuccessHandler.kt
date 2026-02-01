@@ -23,7 +23,7 @@ class SsoAuthenticationSuccessHandler(
     private val userService: UserService,
     private val roleService: RoleService,
     private val config: ConfigService,
-    private val roleHierarchy: RoleHierarchy,
+    roleHierarchy: RoleHierarchy,
 ) : AuthenticationSuccessHandler {
 
     private val authoritiesMapper = RoleHierarchyAuthoritiesMapper(roleHierarchy)
@@ -77,9 +77,13 @@ class SsoAuthenticationSuccessHandler(
         // Update SecurityContext with expanded authorities through RoleHierarchy
         val mappedAuthorities = authoritiesMapper.mapAuthorities(grantedAuthorities)
 
-        val newAuth =
-            UsernamePasswordAuthenticationToken(authentication.principal, authentication.credentials, mappedAuthorities)
-        SecurityContextHolder.getContext().authentication = newAuth
+        val authPrincipal = authentication.principal
+        val authCredentials = authentication.credentials
+
+        if (authPrincipal != null && authCredentials != null) {
+            val newAuth = UsernamePasswordAuthenticationToken(authPrincipal, authCredentials, mappedAuthorities)
+            SecurityContextHolder.getContext().authentication = newAuth
+        }
 
         // Get the continue parameter from the request to redirect back to the original page
         val continueUrl = request.getParameter("continue")

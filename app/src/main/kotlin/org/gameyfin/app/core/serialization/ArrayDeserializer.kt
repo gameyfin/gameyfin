@@ -1,18 +1,18 @@
 package org.gameyfin.app.core.serialization
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ValueDeserializer
 import java.io.Serializable
 
-class ArrayDeserializer : JsonDeserializer<Serializable>() {
+class ArrayDeserializer : ValueDeserializer<Serializable>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): Serializable {
-        val node = p.codec.readTree<JsonNode>(p)
+        val node = p.objectReadContext().readTree<JsonNode>(p)
         return if (node.isArray) {
-            node.map { it.asText() }.toTypedArray()
+            node.map { it.asString() }.toTypedArray()
         } else {
-            p.codec.treeToValue(node, Serializable::class.java)
+            ctxt.readTreeAsValue(node, Serializable::class.java)
         }
     }
 }

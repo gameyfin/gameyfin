@@ -1,6 +1,5 @@
 package org.gameyfin.app.config
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.mockk.*
 import org.gameyfin.app.config.entities.ConfigEntry
 import org.gameyfin.app.config.persistence.ConfigRepository
@@ -9,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.boot.logging.LogLevel
 import org.springframework.data.repository.findByIdOrNull
+import tools.jackson.databind.ObjectMapper
 import java.io.Serializable
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

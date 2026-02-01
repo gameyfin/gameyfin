@@ -5,6 +5,7 @@ import org.gameyfin.app.config.ConfigProperties
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBean
 import org.springframework.context.annotation.ConditionContext
 import org.springframework.core.env.Environment
 import org.springframework.core.type.AnnotatedTypeMetadata
@@ -30,7 +31,7 @@ class SsoEnabledConditionTest {
         environment = mockk<Environment>()
 
         every { context.beanFactory } returns mockk {
-            every { getBean(Environment::class.java) } returns environment
+            every { getBean<Environment>() } returns environment
         }
     }
 

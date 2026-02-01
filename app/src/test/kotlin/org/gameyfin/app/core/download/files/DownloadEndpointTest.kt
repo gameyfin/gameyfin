@@ -56,7 +56,7 @@ class DownloadEndpointTest {
      * Helper method to wait for DeferredResult to complete and get the result.
      * Handles async processing with timeout.
      */
-    private fun <T> awaitDeferredResult(deferredResult: DeferredResult<T>, timeoutSeconds: Long = 5): T {
+    private fun <T : Any> awaitDeferredResult(deferredResult: DeferredResult<T>, timeoutSeconds: Long = 5): T {
         val latch = CountDownLatch(1)
         var result: T? = null
         var error: Throwable? = null
@@ -108,7 +108,7 @@ class DownloadEndpointTest {
 
         assertEquals(HttpStatus.OK, response.statusCode)
         assertNotNull(response.body)
-        assertTrue(response.headers.containsKey("Content-Disposition"))
+        assertTrue(response.headers.containsHeader("Content-Disposition"))
         assertTrue(response.headers["Content-Disposition"]!![0].contains("Test Game.zip"))
 
         verify(exactly = 1) { gameService.getById(gameId) }
@@ -142,9 +142,9 @@ class DownloadEndpointTest {
         val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        assertTrue(response.headers.containsKey("Content-Disposition"))
+        assertTrue(response.headers.containsHeader("Content-Disposition"))
         // Content-Length should not be present for directories
-        assertFalse(response.headers.containsKey("Content-Length"))
+        assertFalse(response.headers.containsHeader("Content-Length"))
     }
 
     @Test
@@ -171,7 +171,7 @@ class DownloadEndpointTest {
         val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        assertFalse(response.headers.containsKey("Content-Length"))
+        assertFalse(response.headers.containsHeader("Content-Length"))
     }
 
     @Test
@@ -198,7 +198,7 @@ class DownloadEndpointTest {
         val response = awaitDeferredResult(deferredResult)
 
         assertEquals(HttpStatus.OK, response.statusCode)
-        assertFalse(response.headers.containsKey("Content-Length"))
+        assertFalse(response.headers.containsHeader("Content-Length"))
     }
 
     @Test

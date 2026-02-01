@@ -8,6 +8,7 @@ import org.gameyfin.app.messages.providers.AbstractMessageProvider
 import org.gameyfin.app.messages.templates.MessageTemplateService
 import org.gameyfin.app.messages.templates.MessageTemplates
 import org.gameyfin.app.users.UserService
+import org.springframework.beans.factory.getBeansOfType
 import org.springframework.context.ApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
@@ -27,7 +28,7 @@ class MessageService(
         get() = providers.any { it.enabled }
 
     private val providers: List<AbstractMessageProvider>
-        get() = applicationContext.getBeansOfType(AbstractMessageProvider::class.java).values.toList()
+        get() = applicationContext.getBeansOfType<AbstractMessageProvider>().values.toList()
 
     fun testCredentials(provider: String, credentials: Map<String, Any>): Boolean {
         val messageProvider = providers.find { it.providerKey == provider }

@@ -3,7 +3,7 @@ package org.gameyfin.app.core.plugins.management
 import org.pf4j.ManifestPluginDescriptorFinder
 import java.util.jar.Manifest
 
-class GameyfinManifestPluginDescriptorFinder() : ManifestPluginDescriptorFinder() {
+class GameyfinManifestPluginDescriptorFinder : ManifestPluginDescriptorFinder() {
 
     companion object {
         const val PLUGIN_NAME: String = "Plugin-Name"

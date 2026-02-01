@@ -1,17 +1,17 @@
 package org.gameyfin.app.core.serialization
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
 import org.gameyfin.pluginapi.gamemetadata.GameFeature
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
 
 /**
  * Jackson deserializer for GameFeature enum.
  * Deserializes JSON strings by matching against the GameFeature's displayName property.
  */
-class GameFeatureDeserializer : JsonDeserializer<GameFeature?>() {
+class GameFeatureDeserializer : ValueDeserializer<GameFeature?>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): GameFeature? {
-        val displayName = p.text ?: return null
+        val displayName = p.string ?: return null
 
         if (displayName.isEmpty()) {
             return null

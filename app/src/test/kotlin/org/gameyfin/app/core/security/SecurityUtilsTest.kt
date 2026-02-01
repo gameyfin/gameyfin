@@ -117,17 +117,6 @@ class SecurityUtilsTest {
     }
 
     @Test
-    fun `isCurrentUserAdmin should return false when authorities is null`() {
-        val authentication = mockk<Authentication>()
-        every { authentication.authorities } returns null
-        every { securityContext.authentication } returns authentication
-
-        val result = isCurrentUserAdmin()
-
-        assertFalse(result)
-    }
-
-    @Test
     fun `isCurrentUserAdmin should return true when user has both ADMIN and USER roles`() {
         val authentication = UsernamePasswordAuthenticationToken(
             "user",
@@ -184,14 +173,6 @@ class SecurityUtilsTest {
             "password",
             emptyList()
         )
-
-        assertFalse(authentication.isAdmin())
-    }
-
-    @Test
-    fun `Authentication isAdmin should return false when authorities is null`() {
-        val authentication = mockk<Authentication>()
-        every { authentication.authorities } returns null
 
         assertFalse(authentication.isAdmin())
     }

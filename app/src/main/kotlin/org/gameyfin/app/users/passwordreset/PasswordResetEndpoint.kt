@@ -6,13 +6,11 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.token.TokenDto
 import org.gameyfin.app.core.token.TokenValidationResult
-import org.gameyfin.app.users.UserService
 
 @Endpoint
 @AnonymousAllowed
 class PasswordResetEndpoint(
-    private val passwordResetService: PasswordResetService,
-    private val userService: UserService
+    private val passwordResetService: PasswordResetService
 ) {
 
     fun requestPasswordReset(email: String) {

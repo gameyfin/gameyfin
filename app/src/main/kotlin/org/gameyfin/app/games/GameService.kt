@@ -120,7 +120,7 @@ class GameService(
                 imageService.downloadIfNew(it)
             }
 
-            game.images.map {
+            game.images.forEach {
                 imageService.downloadIfNew(it)
             }
         } catch (e: Exception) {
@@ -647,7 +647,7 @@ class GameService(
         // (Optional) Step 0: Extract title from filename using regex
         if (config.get(ConfigProperties.Libraries.Scan.ExtractTitleUsingRegex) == true) {
             val regexString = config.get(ConfigProperties.Libraries.Scan.TitleExtractionRegex)
-            if (regexString != null && regexString.isNotEmpty()) {
+            if (!regexString.isNullOrEmpty()) {
                 try {
                     val regex = Regex(regexString)
                     val originalQuery = query
