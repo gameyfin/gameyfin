@@ -33,9 +33,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("org.springframework.boot:spring-boot-starter-aspectj")
     implementation("org.springframework.cloud:spring-cloud-starter")
-    implementation("jakarta.validation:jakarta.validation-api:3.1.0")
+    implementation("jakarta.validation:jakarta.validation-api:${rootProject.extra["jakartaValidationVersion"]}")
 
     // Kotlin extensions
     implementation(kotlin("reflect"))
@@ -52,14 +52,14 @@ dependencies {
     implementation("com.vaadin:vaadin-spring-boot-starter")
 
     // Logging
-    implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
+    implementation("io.github.oshai:kotlin-logging-jvm:${rootProject.extra["kotlinLoggingVersion"]}")
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:3.0.17")
+    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:${rootProject.extra["springContentVersion"]}")
     implementation("org.flywaydb:flyway-core")
-    implementation("commons-io:commons-io:2.18.0")
-    implementation("com.google.guava:guava:33.5.0-jre")
+    implementation("commons-io:commons-io:${rootProject.extra["commonsIoVersion"]}")
+    implementation("com.google.guava:guava:${rootProject.extra["guavaVersion"]}")
 
     // SSO
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -68,15 +68,15 @@ dependencies {
 
     // Notifications
     implementation("org.springframework.boot:spring-boot-starter-mail")
-    implementation("ch.digitalfondue.mjml4j:mjml4j:1.1.4")
+    implementation("ch.digitalfondue.mjml4j:mjml4j:${rootProject.extra["mjml4jVersion"]}")
 
     // Plugins
     implementation(project(":plugin-api"))
 
     // Utils
-    implementation("org.apache.tika:tika-core:3.2.3")
-    implementation("me.xdrop:fuzzywuzzy:1.4.0")
-    implementation("com.vanniktech:blurhash:0.3.0")
+    implementation("org.apache.tika:tika-core:${rootProject.extra["tikaVersion"]}")
+    implementation("me.xdrop:fuzzywuzzy:${rootProject.extra["fuzzywuzzyVersion"]}")
+    implementation("com.vanniktech:blurhash:${rootProject.extra["blurhashVersion"]}")
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
