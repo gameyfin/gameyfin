@@ -123,8 +123,9 @@ tasks.named("sonar") {
 
 sonar {
     properties {
-        property("sonar.projectKey", "gameyfin_gameyfin")
         property("sonar.organization", "gameyfin")
+        property("sonar.projectKey", "gameyfin_gameyfin")
+        property("sonar.projectName", "gameyfin")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
     }
