@@ -36,6 +36,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-aspectj")
+    implementation("org.springframework.boot:spring-boot-starter-jackson")
     implementation("org.springframework.cloud:spring-cloud-starter")
     implementation("jakarta.validation:jakarta.validation-api:${rootProject.extra["jakartaValidationVersion"]}")
 

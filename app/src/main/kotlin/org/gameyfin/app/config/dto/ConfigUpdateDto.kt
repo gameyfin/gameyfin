@@ -1,7 +1,7 @@
 package org.gameyfin.app.config.dto
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import org.gameyfin.app.core.serialization.ArrayDeserializer
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.io.Serializable
 
 data class ConfigUpdateDto(

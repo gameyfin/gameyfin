@@ -1,15 +1,16 @@
 package org.gameyfin.app.core.serialization
 
-import com.fasterxml.jackson.core.JsonGenerator
-import com.fasterxml.jackson.databind.JsonSerializer
-import com.fasterxml.jackson.databind.SerializerProvider
+import tools.jackson.core.JsonGenerator
+import tools.jackson.databind.SerializationContext
+import tools.jackson.databind.ValueSerializer
+
 
 /**
  * A generic Jackson serializer for enums that have a displayName property.
  * This serializer writes the displayName value instead of the enum constant name.
  */
-class DisplayableSerializer : JsonSerializer<Any>() {
-    override fun serialize(value: Any?, gen: JsonGenerator, serializers: SerializerProvider) {
+class DisplayableSerializer : ValueSerializer<Any>() {
+    override fun serialize(value: Any?, gen: JsonGenerator, serializers: SerializationContext) {
         if (value == null) {
             return
         }

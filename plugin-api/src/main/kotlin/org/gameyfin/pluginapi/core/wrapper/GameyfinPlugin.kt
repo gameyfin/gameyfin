@@ -1,9 +1,10 @@
 package org.gameyfin.pluginapi.core.wrapper
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.jsonMapper
+import tools.jackson.module.kotlin.kotlinModule
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -48,7 +49,9 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     /**
      * JSON serializer for serializing and deserializing plugin state.
      */
-    val objectMapper: ObjectMapper = ObjectMapper().registerModule(KotlinModule.Builder().build())
+    val objectMapper: ObjectMapper = jsonMapper {
+        addModule(kotlinModule())
+    }
 
     /**
      * Checks if the plugin contains a logo file in any supported format.

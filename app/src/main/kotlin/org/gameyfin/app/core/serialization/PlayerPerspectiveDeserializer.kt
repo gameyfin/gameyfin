@@ -1,17 +1,17 @@
 package org.gameyfin.app.core.serialization
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.DeserializationContext
-import com.fasterxml.jackson.databind.JsonDeserializer
 import org.gameyfin.pluginapi.gamemetadata.PlayerPerspective
+import tools.jackson.core.JsonParser
+import tools.jackson.databind.DeserializationContext
+import tools.jackson.databind.ValueDeserializer
 
 /**
  * Jackson deserializer for PlayerPerspective enum.
  * Deserializes JSON strings by matching against the PlayerPerspective's displayName property.
  */
-class PlayerPerspectiveDeserializer : JsonDeserializer<PlayerPerspective?>() {
+class PlayerPerspectiveDeserializer : ValueDeserializer<PlayerPerspective?>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): PlayerPerspective? {
-        val displayName = p.text ?: return null
+        val displayName = p.string ?: return null
 
         if (displayName.isEmpty()) {
             return null
