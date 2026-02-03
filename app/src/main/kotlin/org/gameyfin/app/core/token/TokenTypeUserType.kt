@@ -1,6 +1,6 @@
 package org.gameyfin.app.core.token
 
-import org.hibernate.engine.spi.SharedSessionContractImplementor
+import org.hibernate.type.descriptor.WrapperOptions
 import org.hibernate.usertype.UserType
 import java.io.Serializable
 import java.sql.PreparedStatement
@@ -25,8 +25,7 @@ class TokenTypeUserType : UserType<TokenType> {
     override fun nullSafeGet(
         rs: ResultSet,
         position: Int,
-        session: SharedSessionContractImplementor,
-        owner: Any?
+        options: WrapperOptions
     ): TokenType? {
         val key = rs.getString(position) ?: return null
         val tokenTypeClass = TokenType::class
@@ -41,7 +40,7 @@ class TokenTypeUserType : UserType<TokenType> {
         st: PreparedStatement,
         value: TokenType?,
         index: Int,
-        session: SharedSessionContractImplementor
+        options: WrapperOptions
     ) {
         if (value == null) {
             st.setNull(index, Types.VARCHAR)

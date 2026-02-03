@@ -22,6 +22,7 @@ object BlurhashMigration {
      * Scale down image for faster blurhash calculation.
      * Blurhash doesn't need full resolution - 100px width is plenty for a good blur.
      */
+    @Suppress("DuplicatedCode")
     private fun scaleImageForBlurhash(original: BufferedImage, maxWidth: Int = 100): BufferedImage {
         val originalWidth = original.width
         val originalHeight = original.height
@@ -32,10 +33,9 @@ object BlurhashMigration {
         }
 
         val scale = maxWidth.toDouble() / originalWidth
-        val targetWidth = maxWidth
         val targetHeight = (originalHeight * scale).toInt()
 
-        val scaled = BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB)
+        val scaled = BufferedImage(maxWidth, targetHeight, BufferedImage.TYPE_INT_RGB)
         val g2d = scaled.createGraphics()
 
         // Use fast scaling for blurhash - quality doesn't matter much for a blur
@@ -43,7 +43,7 @@ object BlurhashMigration {
         g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED)
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
 
-        g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null)
+        g2d.drawImage(original, 0, 0, maxWidth, targetHeight, null)
         g2d.dispose()
 
         return scaled

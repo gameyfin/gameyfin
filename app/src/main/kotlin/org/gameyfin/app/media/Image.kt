@@ -1,9 +1,6 @@
 package org.gameyfin.app.media
 
 import jakarta.persistence.*
-import org.springframework.content.commons.annotations.ContentId
-import org.springframework.content.commons.annotations.ContentLength
-import org.springframework.content.commons.annotations.MimeType
 
 @Entity
 class Image(
@@ -16,13 +13,10 @@ class Image(
 
     val type: ImageType,
 
-    @ContentId
     var contentId: String? = null,
 
-    @ContentLength
     var contentLength: Long? = null,
 
-    @MimeType
     var mimeType: String? = null,
 
     var blurhash: String? = null

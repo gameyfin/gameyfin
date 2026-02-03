@@ -8,7 +8,6 @@ import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.events.UserDeletedEvent
 import org.gameyfin.app.core.events.UserUpdatedEvent
 import org.gameyfin.app.games.repositories.GameRepository
-import org.gameyfin.app.games.repositories.ImageContentStore
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.users.persistence.UserRepository
 import org.springframework.dao.DataIntegrityViolationException
@@ -28,7 +27,7 @@ import javax.imageio.ImageIO
 @Service
 class ImageService(
     private val imageRepository: ImageRepository,
-    private val imageContentStore: ImageContentStore,
+    private val fileStorageService: FileStorageService,
     private val gameRepository: GameRepository,
     private val userRepository: UserRepository
 ) {
@@ -39,6 +38,7 @@ class ImageService(
          * Scale down image for faster blurhash calculation.
          * Blurhash doesn't need full resolution - 100px width is plenty for a good blur.
          */
+        @Suppress("DuplicatedCode")
         fun scaleImageForBlurhash(original: BufferedImage, maxWidth: Int = 100): BufferedImage {
             val originalWidth = original.width
             val originalHeight = original.height
@@ -49,10 +49,9 @@ class ImageService(
             }
 
             val scale = maxWidth.toDouble() / originalWidth
-            val targetWidth = maxWidth
             val targetHeight = (originalHeight * scale).toInt()
 
-            val scaled = BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB)
+            val scaled = BufferedImage(maxWidth, targetHeight, BufferedImage.TYPE_INT_RGB)
             val g2d = scaled.createGraphics()
 
             // Use fast scaling for blurhash - quality doesn't matter much for a blur
@@ -60,7 +59,7 @@ class ImageService(
             g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED)
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF)
 
-            g2d.drawImage(original, 0, 0, targetWidth, targetHeight, null)
+            g2d.drawImage(original, 0, 0, maxWidth, targetHeight, null)
             g2d.dispose()
 
             return scaled
@@ -152,7 +151,6 @@ class ImageService(
         // If the existing image has valid content we can just associate it instead of downloading again
         if (existingImageHasValidContent && existingImage.contentId != null) {
             // Associate existing content with the current image entity reference
-            imageContentStore.associate(image, existingImage.contentId)
             image.contentId = existingImage.contentId
             image.contentLength = existingImage.contentLength
             image.mimeType = existingImage.mimeType
@@ -162,19 +160,7 @@ class ImageService(
         // If no existing image or existing image has no valid content, download it
         TikaInputStream.get { URI.create(image.originalUrl).toURL().openStream() }.use { input ->
             image.mimeType = tika.detect(input)
-
-            // Read the input stream into a byte array so we can use it twice
-            val imageBytes = input.readBytes()
-
-            // Calculate blurhash
-            ByteArrayInputStream(imageBytes).use { blurhashStream ->
-                image.blurhash = calculateBlurhash(blurhashStream)
-            }
-
-            // Store content
-            ByteArrayInputStream(imageBytes).use { contentStream ->
-                imageContentStore.setContent(image, contentStream)
-            }
+            processImageContent(image, input)
         }
 
         // Save or update the image to ensure it's persisted
@@ -187,21 +173,7 @@ class ImageService(
 
     fun createFromInputStream(type: ImageType, content: InputStream, mimeType: String): Image {
         val image = Image(type = type, mimeType = mimeType)
-
-        // Read the input stream into a byte array so we can use it twice
-        val imageBytes = content.readBytes()
-
-        // Calculate blurhash
-        ByteArrayInputStream(imageBytes).use { blurhashStream ->
-            image.blurhash = calculateBlurhash(blurhashStream)
-        }
-
-        // Store content
-        ByteArrayInputStream(imageBytes).use { contentStream ->
-            imageContentStore.setContent(image, contentStream)
-        }
-
-        // Save with blurhash
+        processImageContent(image, content)
         return imageRepository.save(image)
     }
 
@@ -210,8 +182,7 @@ class ImageService(
     }
 
     fun getFileContent(image: Image): InputStream? {
-        return imageContentStore.getContent(image)
-
+        return fileStorageService.getFile(image.contentId)
     }
 
     fun deleteImageIfUnused(image: Image) {
@@ -221,13 +192,30 @@ class ImageService(
 
         if (!isImageStillInUse) {
             imageRepository.delete(image)
-            imageContentStore.unsetContent(image)
+            fileStorageService.deleteFile(image.contentId)
         }
     }
 
     fun updateFileContent(image: Image, content: InputStream, mimeType: String? = null): Image {
         mimeType?.let { image.mimeType = it }
 
+        // Delete old file if it exists
+        image.contentId?.let { fileStorageService.deleteFile(it) }
+
+        // Process and store new content
+        processImageContent(image, content)
+
+        return imageRepository.save(image)
+    }
+
+    private fun imageHasValidContent(image: Image): Boolean {
+        return image.contentId != null
+                && fileStorageService.fileExists(image.contentId)
+                && image.contentLength != null
+                && image.contentLength!! > 0
+    }
+
+    private fun processImageContent(image: Image, content: InputStream) {
         // Read the input stream into a byte array so we can use it twice
         val imageBytes = content.readBytes()
 
@@ -238,16 +226,9 @@ class ImageService(
 
         // Store content
         ByteArrayInputStream(imageBytes).use { contentStream ->
-            imageContentStore.setContent(image, contentStream)
+            image.contentId = fileStorageService.saveFile(contentStream)
+            image.contentLength = imageBytes.size.toLong()
         }
-
-        // Save with blurhash
-        return imageRepository.save(image)
-    }
-
-    private fun imageHasValidContent(image: Image): Boolean {
-        val imageContent = imageContentStore.getContent(image)
-        return imageContent != null && image.contentLength != null && image.contentLength!! > 0
     }
 
     private fun calculateBlurhash(inputStream: InputStream): String? {

@@ -43,7 +43,10 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // Reactive
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-webflux") {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-reactor-netty")
+    }
+    implementation("org.springframework.boot:spring-boot-starter-jetty")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
@@ -51,7 +54,9 @@ dependencies {
     implementation("com.vaadin:vaadin-core") {
         exclude("com.vaadin:flow-react")
     }
-    implementation("com.vaadin:vaadin-spring-boot-starter")
+    implementation("com.vaadin:vaadin-spring-boot-starter") {
+        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
+    }
     implementation("com.vaadin:hilla-spring-boot-starter")
 
     // Logging
@@ -59,8 +64,7 @@ dependencies {
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("com.github.paulcwarren:spring-content-fs-boot-starter:${rootProject.extra["springContentVersion"]}")
-    implementation("org.flywaydb:flyway-core")
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("commons-io:commons-io:${rootProject.extra["commonsIoVersion"]}")
     implementation("com.google.guava:guava:${rootProject.extra["guavaVersion"]}")
 
@@ -83,6 +87,7 @@ dependencies {
 
     // Development
     developmentOnly("org.springframework.boot:spring-boot-devtools")
+    developmentOnly("com.vaadin:vaadin-dev")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")

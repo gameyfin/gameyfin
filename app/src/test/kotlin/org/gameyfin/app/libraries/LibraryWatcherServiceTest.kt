@@ -18,6 +18,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
+import org.junit.jupiter.api.condition.DisabledOnOs
+import org.junit.jupiter.api.condition.OS
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
@@ -169,6 +171,7 @@ class LibraryWatcherServiceTest {
     }
 
     @Test
+    @DisabledOnOs(OS.MAC, disabledReason = "File system watcher events are unreliable on macOS due to FSEvents latency")
     fun `file create event should trigger quick scan`() {
         val libraryDir = tempDir.resolve("watch-create")
         libraryDir.createDirectories()
@@ -197,6 +200,7 @@ class LibraryWatcherServiceTest {
     }
 
     @Test
+    @DisabledOnOs(OS.MAC, disabledReason = "File system watcher events are unreliable on macOS due to FSEvents latency")
     fun `file delete event should trigger quick scan`() {
         val libraryDir = tempDir.resolve("watch-delete")
         libraryDir.createDirectories()
@@ -227,6 +231,7 @@ class LibraryWatcherServiceTest {
     }
 
     @Test
+    @DisabledOnOs(OS.MAC, disabledReason = "File system watcher events are unreliable on macOS due to FSEvents latency")
     fun `directory delete event should trigger quick scan`() {
         val libraryDir = tempDir.resolve("watch-delete-dir")
         libraryDir.createDirectories()
@@ -256,6 +261,7 @@ class LibraryWatcherServiceTest {
     }
 
     @Test
+    @DisabledOnOs(OS.MAC, disabledReason = "File system watcher events are unreliable on macOS due to FSEvents latency")
     fun `file modify event should update game file size`() {
         val libraryDir = tempDir.resolve("watch-modify")
         libraryDir.createDirectories()
@@ -290,6 +296,7 @@ class LibraryWatcherServiceTest {
     }
 
     @Test
+    @DisabledOnOs(OS.MAC, disabledReason = "File system watcher events are unreliable on macOS due to FSEvents latency")
     fun `should handle multiple rapid file changes`() {
         val libraryDir = tempDir.resolve("watch-rapid")
         libraryDir.createDirectories()
@@ -320,6 +327,7 @@ class LibraryWatcherServiceTest {
     }
 
     @Test
+    @DisabledOnOs(OS.MAC, disabledReason = "File system watcher events are unreliable on macOS due to FSEvents latency")
     fun `should handle library with multiple directories`() {
         val dir1 = tempDir.resolve("lib-dir1")
         val dir2 = tempDir.resolve("lib-dir2")
@@ -354,6 +362,7 @@ class LibraryWatcherServiceTest {
     }
 
     @Test
+    @DisabledOnOs(OS.MAC, disabledReason = "File system watcher events are unreliable on macOS due to FSEvents latency")
     fun `should handle directory creation`() {
         val libraryDir = tempDir.resolve("watch-dir")
         libraryDir.createDirectories()

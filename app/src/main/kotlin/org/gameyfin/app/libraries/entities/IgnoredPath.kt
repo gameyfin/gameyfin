@@ -9,9 +9,12 @@ class IgnoredPath(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
+
     @Column(unique = true, nullable = false, length = 1024)
     val path: String,
+
     @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(nullable = false)
     val source: IgnoredPathSource
 ) {
     fun getType(): IgnoredPathSourceType {
