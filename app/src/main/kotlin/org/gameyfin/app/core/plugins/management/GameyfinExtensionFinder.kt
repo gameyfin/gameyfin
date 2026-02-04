@@ -3,10 +3,10 @@ package org.gameyfin.app.core.plugins.management
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.pf4j.ExtensionDescriptor
 import org.pf4j.ExtensionWrapper
-import org.pf4j.LegacyExtensionFinder
+import org.pf4j.IndexedExtensionFinder
 import org.pf4j.PluginManager
 
-class GameyfinExtensionFinder(pluginManager: PluginManager) : LegacyExtensionFinder(pluginManager) {
+class GameyfinExtensionFinder(pluginManager: PluginManager) : IndexedExtensionFinder(pluginManager) {
     companion object {
         private val log = KotlinLogging.logger { }
     }
