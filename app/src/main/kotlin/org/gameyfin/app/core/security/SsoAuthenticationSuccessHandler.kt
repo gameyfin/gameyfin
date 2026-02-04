@@ -23,7 +23,7 @@ class SsoAuthenticationSuccessHandler(
     private val userService: UserService,
     private val roleService: RoleService,
     private val config: ConfigService,
-    private val roleHierarchy: RoleHierarchy,
+    roleHierarchy: RoleHierarchy,
 ) : AuthenticationSuccessHandler {
 
     private val authoritiesMapper = RoleHierarchyAuthoritiesMapper(roleHierarchy)

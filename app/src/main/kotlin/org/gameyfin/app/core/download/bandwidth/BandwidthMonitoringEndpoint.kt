@@ -1,7 +1,6 @@
 package org.gameyfin.app.core.download.bandwidth
 
 import com.vaadin.hilla.Endpoint
-import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.security.PermitAll
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
@@ -17,11 +16,6 @@ import reactor.core.publisher.Flux
 class BandwidthMonitoringEndpoint(
     private val bandwidthMonitoringService: BandwidthMonitoringService
 ) {
-
-    companion object {
-        private val log = KotlinLogging.logger {}
-    }
-
     @PermitAll
     fun subscribe(): Flux<List<List<SessionStatsDto>>> {
         return if (isCurrentUserAdmin()) BandwidthMonitoringService.subscribe()

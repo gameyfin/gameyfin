@@ -27,14 +27,14 @@ class InvitationService(
 
     fun createInvitation(email: String): TokenDto {
         if (userService.existsByEmail(email))
-            throw IllegalStateException("User with email ${Utils.Companion.maskEmail(email)} is already registered")
+            throw IllegalStateException("User with email ${Utils.maskEmail(email)} is already registered")
 
         val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
         val user = userService.getByUsername(auth.name) ?: throw IllegalStateException("User not found")
         val payload = mapOf(EMAIL_KEY to email)
         val token = super.generateWithPayload(user, payload)
 
-        eventPublisher.publishEvent(UserInvitationEvent(this, token, Utils.Companion.getBaseUrl(), email))
+        eventPublisher.publishEvent(UserInvitationEvent(this, token, Utils.getBaseUrl(), email))
         return TokenDto(token)
     }
 
@@ -52,8 +52,8 @@ class InvitationService(
         try {
             val user = userService.registerUserFromInvitation(registration, email)
             super.delete(invitationToken)
-            eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.Companion.getBaseUrl()))
-        } catch (e: IllegalStateException) {
+            eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
+        } catch (_: IllegalStateException) {
             return UserInvitationAcceptanceResult.USERNAME_TAKEN
         }
 

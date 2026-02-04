@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.security
 
 import org.gameyfin.app.config.ConfigProperties
+import org.springframework.beans.factory.getBean
 import org.springframework.context.annotation.Condition
 import org.springframework.context.annotation.ConditionContext
 import org.springframework.core.env.Environment
@@ -15,11 +16,11 @@ import java.sql.DriverManager
 class SsoEnabledCondition : Condition {
     override fun matches(context: ConditionContext, metadata: AnnotatedTypeMetadata): Boolean {
         try {
-            val environment = context.beanFactory!!.getBean(Environment::class.java);
-            val url = environment.getProperty("spring.datasource.url");
-            val user = environment.getProperty("spring.datasource.username");
-            val password = environment.getProperty("spring.datasource.password");
-            val connection = DriverManager.getConnection(url, user, password);
+            val environment = context.beanFactory!!.getBean<Environment>()
+            val url = environment.getProperty("spring.datasource.url")
+            val user = environment.getProperty("spring.datasource.username")
+            val password = environment.getProperty("spring.datasource.password")
+            val connection = DriverManager.getConnection(url, user, password)
 
             connection.use { c ->
                 val statement = c.prepareStatement("SELECT \"value\" FROM app_config WHERE \"key\" = ?")

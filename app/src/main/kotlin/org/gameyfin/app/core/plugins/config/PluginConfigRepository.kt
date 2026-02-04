@@ -1,8 +1,10 @@
 package org.gameyfin.app.core.plugins.config
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 
 interface PluginConfigRepository : JpaRepository<PluginConfigEntry, PluginConfigEntryKey> {
-    fun findAllById_PluginId(pluginId: String): List<PluginConfigEntry>
-    fun findById_PluginIdAndId_Key(pluginId: String, key: String): PluginConfigEntry?
+
+    @Query("SELECT p FROM PluginConfigEntry p WHERE p.id.pluginId = :pluginId")
+    fun findAllByPluginId(pluginId: String): List<PluginConfigEntry>
 }

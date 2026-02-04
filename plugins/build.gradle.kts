@@ -13,7 +13,7 @@ val keystorePasswordProperty = "gameyfin.keystorePassword"
 
 val keystorePath: String = rootProject.file("certs/gameyfin.jks").absolutePath
 val keystoreAlias = "gameyfin-plugins"
-val keystorePasswordProvider = provider {
+val keystorePasswordProvider: Provider<String> = provider {
     (findProperty(keystorePasswordProperty) as String?)
         ?: System.getenv(keystorePasswordEnvironmentVariable)
         ?: ""

@@ -59,7 +59,7 @@ class PasswordResetService(
      */
     fun requestPasswordReset(email: String) {
 
-        val maskedEmail = Utils.Companion.maskEmail(email)
+        val maskedEmail = Utils.maskEmail(email)
 
         log.info { "Initiating password reset request for '${maskedEmail}'" }
 
@@ -81,7 +81,7 @@ class PasswordResetService(
         }
 
         val token = generate(user)
-        eventPublisher.publishEvent(PasswordResetRequestEvent(this, token, Utils.Companion.getBaseUrl()))
+        eventPublisher.publishEvent(PasswordResetRequestEvent(this, token, Utils.getBaseUrl()))
 
         // Simulate a delay to prevent timing attacks
         Thread.sleep(secureRandom.nextLong(1024))

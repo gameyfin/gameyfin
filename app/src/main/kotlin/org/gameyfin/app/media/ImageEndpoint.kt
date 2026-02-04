@@ -28,22 +28,22 @@ class ImageEndpoint(
 ) {
 
     @GetMapping("/screenshot/{id}")
-    fun getScreenshot(@PathVariable("id") id: Long): ResponseEntity<InputStreamResource>? {
+    fun getScreenshot(@PathVariable id: Long): ResponseEntity<InputStreamResource>? {
         return getImageContent(id)
     }
 
     @GetMapping("/cover/{id}")
-    fun getCover(@PathVariable("id") id: Long): ResponseEntity<InputStreamResource>? {
+    fun getCover(@PathVariable id: Long): ResponseEntity<InputStreamResource>? {
         return getImageContent(id)
     }
 
     @GetMapping("/header/{id}")
-    fun getHeader(@PathVariable("id") id: Long): ResponseEntity<InputStreamResource>? {
+    fun getHeader(@PathVariable id: Long): ResponseEntity<InputStreamResource>? {
         return getImageContent(id)
     }
 
-    @GetMapping("/plugins/{id}/logo")
-    fun getPluginLogo(@PathVariable("id") pluginId: String): ResponseEntity<ByteArrayResource>? {
+    @GetMapping("/plugins/{pluginId}/logo")
+    fun getPluginLogo(@PathVariable pluginId: String): ResponseEntity<ByteArrayResource>? {
         val logo = pluginService.getLogo(pluginId)
         return Utils.inputStreamToResponseEntity(logo)
     }

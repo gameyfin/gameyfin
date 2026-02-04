@@ -27,7 +27,7 @@ class GameyfinExtensionFinder(pluginManager: PluginManager) : IndexedExtensionFi
         }
 
         val classLoader =
-            if (pluginId != null) pluginManager.getPluginClassLoader(pluginId) else javaClass.getClassLoader()
+            if (pluginId != null) pluginManager.getPluginClassLoader(pluginId) else javaClass.classLoader
 
         for (className in classNames) {
             try {

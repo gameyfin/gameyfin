@@ -67,7 +67,7 @@ class EmailMessageProvider(
 
         val transport = session.getTransport("smtp")
 
-        try {
+        transport.use { transport ->
             transport.connect(
                 credentials["host"] as String,
                 credentials["port"] as Int,
@@ -75,8 +75,6 @@ class EmailMessageProvider(
                 credentials["password"] as String
             )
             transport.sendMessage(mimeMessage, mimeMessage.allRecipients)
-        } finally {
-            transport.close()
         }
     }
 }

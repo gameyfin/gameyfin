@@ -136,7 +136,7 @@ class PluginService(
 
     fun getConfig(pluginWrapper: PluginWrapper): Map<String, String?> {
         log.debug { "Getting config for plugin ${pluginWrapper.pluginId}" }
-        return pluginConfigRepository.findAllById_PluginId(pluginWrapper.pluginId).associate { it.id.key to it.value }
+        return pluginConfigRepository.findAllByPluginId(pluginWrapper.pluginId).associate { it.id.key to it.value }
     }
 
     fun updateConfig(pluginId: String, config: Map<String, String>) {
