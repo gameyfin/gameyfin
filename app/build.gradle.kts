@@ -134,7 +134,7 @@ sonar {
         property("sonar.projectName", "gameyfin")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
-        property("sonar.coverage.exclusions", "**/*Config.kt")
+        property("sonar.coverage.exclusions", "**/*Config.kt,**/org/gameyfin/db/h2/**")
     }
 }
 
