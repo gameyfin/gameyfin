@@ -137,7 +137,6 @@
     "react-window": "$react-window",
     "blurhash": "$blurhash",
     "@vaadin/aura": "$@vaadin/aura",
-    "@vaadin/router": "2.0.1",
     "@vaadin/a11y-base": "25.0.3",
     "@vaadin/accordion": "25.0.3",
     "@vaadin/app-layout": "25.0.3",
@@ -194,6 +193,7 @@
     "@vaadin/time-picker": "25.0.3",
     "@vaadin/tooltip": "25.0.3",
     "@vaadin/upload": "25.0.3",
+    "@vaadin/router": "2.0.1",
     "@vaadin/vertical-layout": "25.0.3",
     "@vaadin/virtual-list": "25.0.3"
   },
