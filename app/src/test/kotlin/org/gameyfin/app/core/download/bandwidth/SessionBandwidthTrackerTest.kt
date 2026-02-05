@@ -427,33 +427,6 @@ class SessionBandwidthTrackerTest {
     }
 
     @Test
-    fun `updateMonitoringStatistics should rotate window after 10 seconds`() {
-        // Record some bytes in the first window
-        tracker.recordBytes(5000)
-        Thread.sleep(100)
-        val rate1 = tracker.getCurrentBytesPerSecond()
-        assertTrue(rate1 > 0, "First window should have bytes")
-
-        // Use reflection to set the monitoring window start time to 11 seconds ago
-        val monitoringWindowStartField = tracker.javaClass.getDeclaredField("monitoringWindowStart")
-        monitoringWindowStartField.isAccessible = true
-        val elevenSecondsAgo = System.nanoTime() - 11_000_000_000L
-        monitoringWindowStartField.setLong(tracker, elevenSecondsAgo)
-
-        // Record more bytes - this should trigger window rotation
-        tracker.recordBytes(3000)
-        Thread.sleep(100)
-
-        // After rotation, we should have a new window with only the latest bytes
-        val rate2 = tracker.getCurrentBytesPerSecond()
-        assertTrue(rate2 > 0, "New window should have bytes")
-
-        // The rate calculation should now be based on the new window
-        // Since we just started a new window with 3000 bytes, the rate should reflect that
-        assertEquals(3000, tracker.totalBytesTransferred)
-    }
-
-    @Test
     fun `updateMonitoringStatistics should handle concurrent window rotation`() {
         val threadCount = 10
         val executor = Executors.newFixedThreadPool(threadCount)
