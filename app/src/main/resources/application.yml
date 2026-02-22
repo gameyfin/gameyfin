@@ -34,15 +34,10 @@ management:
       access: unrestricted
 
 spring:
-  # Workaround for https://github.com/vaadin/hilla/issues/842
-  devtools.restart.additional-exclude: dev/hilla/openapi.json
   jpa:
-    # defer-datasource-initialization: true
     hibernate:
       ddl-auto: validate
     open-in-view: true
-  mustache:
-    check-template-location: false
   sql.init.mode: always
   datasource:
     username: gfadmin
@@ -50,6 +45,9 @@ spring:
     db-name: gameyfin_db
     url: jdbc:h2:file:./db/${spring.datasource.db-name}
     driverClassName: org.h2.Driver
+    hikari:
+      maximum-pool-size: 50
+      connection-timeout: 60_000
   content:
     fs.filesystem-root: ./data/
   application:
