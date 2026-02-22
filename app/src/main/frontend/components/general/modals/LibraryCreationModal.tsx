@@ -1,5 +1,16 @@
 import React, {useState} from "react";
-import {addToast, Button, Checkbox, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {
+    addToast,
+    Alert,
+    Button,
+    Checkbox,
+    Link,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader
+} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
@@ -9,6 +20,8 @@ import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInput
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
+import {pluginState, PluginType} from "Frontend/state/PluginState";
+import PluginState from "Frontend/generated/org/pf4j/PluginState";
 
 interface LibraryCreationModalProps {
     isOpen: boolean;
@@ -22,6 +35,8 @@ export default function LibraryCreationModal({
 
     const [scanAfterCreation, setScanAfterCreation] = useState<boolean>(true);
     const availablePlatforms = useSnapshot(platformState).available;
+    const metadataPlugins = useSnapshot(pluginState).sortedByType[PluginType.GameMetadataProvider].filter(p => p.state == PluginState.STARTED);
+    const hasActiveMetadataPlugins = metadataPlugins && metadataPlugins.length > 0;
 
     async function createLibrary(library: LibraryAdminDto) {
         await LibraryEndpoint.createLibrary(library, scanAfterCreation);
@@ -77,10 +92,21 @@ export default function LibraryCreationModal({
                                             />
                                             <DirectoryMappingInput name="directories"/>
                                         </div>
+                                        {(!metadataPlugins || metadataPlugins.length == 0) &&
+                                            <Alert color="warning">
+                                                <p>No metadata plugins are currently enabled.</p>
+                                                <p>Go to <Link underline="always" color="foreground"
+                                                               href="/administration/plugins">Plugins</Link> and enable
+                                                    at least one metadata plugin in order to scan your library.</p>
+                                            </Alert>
+                                        }
                                     </ModalBody>
                                     <ModalFooter className="flex flex-row justify-between">
-                                        <Checkbox isSelected={scanAfterCreation} onValueChange={setScanAfterCreation}>Scan
-                                            after creation?</Checkbox>
+                                        <Checkbox
+                                            isSelected={hasActiveMetadataPlugins && scanAfterCreation}
+                                            isDisabled={!hasActiveMetadataPlugins}
+                                            onValueChange={setScanAfterCreation}
+                                        >Scan after creation?</Checkbox>
                                         <div className="flex flex-row">
                                             <Button variant="light" onPress={onClose}>
                                                 Cancel
