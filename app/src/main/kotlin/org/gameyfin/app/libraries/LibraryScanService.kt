@@ -16,6 +16,7 @@ import org.gameyfin.app.libraries.scan.MatchNewGamesResult
 import org.gameyfin.app.libraries.scan.UpdateExistingGamesResult
 import org.gameyfin.app.libraries.scan.UpdateLibraryResult
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.pf4j.PluginState
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -70,6 +71,10 @@ class LibraryScanService(
      * Wrapper function to trigger a scan for a list of libraries.
      */
     fun triggerScan(scanType: ScanType, libraryIds: Collection<Long>?) {
+        if (pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isEmpty()) {
+            throw IllegalStateException("At least one metadata plugin must be enabled to perform a scan.")
+        }
+
         val libraries = libraryIds?.let { libraryRepository.findAllById(libraryIds) } ?: libraryRepository.findAll()
         libraries.forEach { library ->
             val libraryId = library.id!!

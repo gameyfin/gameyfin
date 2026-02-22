@@ -21,6 +21,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 
@@ -67,6 +68,12 @@ class PluginService(
 
     fun getAll(): List<PluginDto> {
         return pluginManager.plugins
+            .map { toDto(it) }
+    }
+
+    fun getAllByTypeAndState(type: KClass<out ExtensionPoint>, state: PluginState): List<PluginDto> {
+        return pluginManager.getPluginsForExtension(type)
+            .filter { it.pluginState == state }
             .map { toDto(it) }
     }
 

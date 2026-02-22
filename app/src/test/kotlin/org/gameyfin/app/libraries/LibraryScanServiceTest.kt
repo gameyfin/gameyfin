@@ -4,6 +4,7 @@ import io.mockk.*
 import org.gameyfin.app.core.filesystem.FilesystemScanResult
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.plugins.dto.PluginDto
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
@@ -11,9 +12,12 @@ import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.LibraryGameProcessor
+import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.pf4j.PluginState
 import java.nio.file.Path
 import java.time.Instant
 import kotlin.io.path.Path
@@ -38,6 +42,11 @@ class LibraryScanServiceTest {
         gameRepository = mockk()
         ignoredPathRepository = mockk()
         pluginService = mockk()
+
+        // By default, at least one GameMetadataProvider is started so scans are allowed
+        every { pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED) } returns listOf(
+            mockk<PluginDto>()
+        )
 
         libraryScanService = LibraryScanService(
             libraryRepository,
@@ -147,6 +156,23 @@ class LibraryScanServiceTest {
         libraryScanService.triggerScan(ScanType.QUICK, null)
 
         Thread.sleep(50)
+        verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
+    }
+
+    @Test
+    fun `triggerScan should throw when no GameMetadataProvider plugin is started`() {
+        every {
+            pluginService.getAllByTypeAndState(
+                GameMetadataProvider::class,
+                PluginState.STARTED
+            )
+        } returns emptyList()
+
+        assertThrows<IllegalStateException> {
+            libraryScanService.triggerScan(ScanType.QUICK, null)
+        }
+
+        verify(exactly = 0) { libraryRepository.findAll() }
         verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
     }
 

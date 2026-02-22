@@ -466,7 +466,7 @@ class GameService(
                 try {
                     plugin.fetchByTitle(searchTerm, platformFilter, 10).map { plugin to it }
                 } catch (e: Exception) {
-                    val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
+                    val pluginWrapper = pluginManager.getPluginForExtension(plugin::class)
                     log.warn { "Error fetching metadata for searchterm '$searchTerm' with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
                     log.debug(e) {}
                     emptyList()
@@ -601,7 +601,7 @@ class GameService(
                         try {
                             return@async plugin.fetchById(originalId)
                         } catch (e: Exception) {
-                            val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
+                            val pluginWrapper = pluginManager.getPluginForExtension(plugin::class)
                             log.warn { "Error fetching metadata for game [id: $originalId] with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
                             log.debug(e) {}
                             null
@@ -749,7 +749,7 @@ class GameService(
                 try {
                     plugin.fetchByTitle(gameTitle, platforms).firstOrNull()
                 } catch (e: Exception) {
-                    val pluginWrapper = pluginManager.getPluginForExtension(plugin.javaClass)
+                    val pluginWrapper = pluginManager.getPluginForExtension(plugin::class)
                     log.warn { "Error fetching metadata for game title '$gameTitle' with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
                     log.debug(e) {}
                     null
