@@ -10,6 +10,7 @@ data class PluginConfigEntry(
     @EmbeddedId
     val id: PluginConfigEntryKey,
 
+    @Lob
     @Column(name = "`value`")
     @Convert(converter = EncryptionConverter::class)
     val value: String
