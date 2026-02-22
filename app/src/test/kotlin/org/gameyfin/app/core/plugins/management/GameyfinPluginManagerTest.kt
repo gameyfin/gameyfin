@@ -391,8 +391,7 @@ class GameyfinPluginManagerTest {
         every { pluginManager.getPlugins() } returns listOf(pluginWrapper)
         every { pluginManager.getExtensionClasses("test-plugin") } returns extensionClasses
 
-        @Suppress("UNCHECKED_CAST")
-        val result = pluginManager.getPluginForExtension(TestExtension1::class.java as Class<ExtensionPoint>)
+        val result = pluginManager.getPluginForExtension(TestExtensionPoint1::class)
 
         assertNotNull(result)
         assertEquals("test-plugin", result.pluginId)
@@ -418,8 +417,7 @@ class GameyfinPluginManagerTest {
         every { pluginManager.getPlugins() } returns listOf(pluginWrapper)
         every { pluginManager.getExtensionClasses("test-plugin") } returns extensionClasses
 
-        @Suppress("UNCHECKED_CAST")
-        val result = pluginManager.getPluginForExtension(TestExtension2::class.java as Class<ExtensionPoint>)
+        val result = pluginManager.getPluginForExtension(TestExtensionPoint2::class)
 
         assertNull(result)
     }

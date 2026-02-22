@@ -625,7 +625,7 @@ class GameServiceTest {
         every { pluginManager.getExtensions("test-plugin") } returns listOf(provider)
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
-        every { pluginManager.getPluginForExtension(provider.javaClass) } returns null
+        every { pluginManager.getPluginForExtension(provider::class) } returns null
 
         val result = gameService.updateMetadata(game)
 
@@ -895,7 +895,7 @@ class GameServiceTest {
         )
         every { pluginService.getPluginManagementEntry(workingProvider.javaClass) } returns pluginEntry1
         every { pluginService.getPluginManagementEntry(failingProvider.javaClass) } returns pluginEntry2
-        every { pluginManager.getPluginForExtension(failingProvider.javaClass) } returns pluginWrapper
+        every { pluginManager.getPluginForExtension(failingProvider::class) } returns pluginWrapper
 
         val results = gameService.getPotentialMatches("Test Game", emptySet())
 
