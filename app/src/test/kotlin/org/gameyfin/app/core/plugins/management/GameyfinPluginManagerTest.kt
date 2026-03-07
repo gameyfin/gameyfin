@@ -516,19 +516,10 @@ class GameyfinPluginManagerTest {
             )
         )
 
-        val entry = PluginManagementEntry("unknown-plugin", enabled = false, priority = 1)
-        entry.trustLevel = PluginTrustLevel.UNTRUSTED
-
         val pluginWrapper = mockk<PluginWrapper>()
-        val pluginDescriptor = mockk<GameyfinPluginDescriptor>()
 
         every { pluginWrapper.pluginId } returns "unknown-plugin"
         every { pluginWrapper.pluginState } returns PluginState.RESOLVED
-        every { pluginWrapper.pluginClassLoader } returns mockk<ClassLoader>()
-        every { pluginWrapper.plugin } returns mockk<Plugin>()
-        every { pluginWrapper.descriptor } returns pluginDescriptor
-        every { pluginDescriptor.pluginId } returns "unknown-plugin"
-        every { pluginDescriptor.version } returns "unknown_version"
         every { pluginManagementRepository.findByIdOrNull("unknown-plugin") } returns null
         every { pluginManager.getPlugin("unknown-plugin") } returns pluginWrapper
 

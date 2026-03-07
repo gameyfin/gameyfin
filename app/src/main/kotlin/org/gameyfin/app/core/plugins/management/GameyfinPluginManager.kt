@@ -165,12 +165,21 @@ class GameyfinPluginManager(
         if (pluginId == null) return PluginState.FAILED
 
         val trustLevel = pluginManagementRepository.findByIdOrNull(pluginId)?.trustLevel ?: PluginTrustLevel.UNKNOWN
-        if (trustLevel == PluginTrustLevel.UNTRUSTED) {
-            val pluginWrapper = getPlugin(pluginId)
-            val pluginState = PluginState.UNLOADED
+        when (trustLevel) {
+            PluginTrustLevel.UNTRUSTED -> {
+                val pluginWrapper = getPlugin(pluginId)
+                val pluginState = PluginState.UNLOADED
+                this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
+                return pluginState
+            }
 
-            this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
-            return pluginState
+            PluginTrustLevel.UNKNOWN -> {
+                val pluginWrapper = getPlugin(pluginId)
+                log.warn { "Plugin $pluginId has unknown trust level, not starting" }
+                return pluginWrapper?.pluginState
+            }
+
+            else -> {}
         }
 
         // Validate config before starting the plugin
