@@ -531,7 +531,6 @@ class GameyfinPluginManagerTest {
         every { pluginDescriptor.version } returns "unknown_version"
         every { pluginManagementRepository.findByIdOrNull("unknown-plugin") } returns null
         every { pluginManager.getPlugin("unknown-plugin") } returns pluginWrapper
-        every { pluginManager.checkPluginId("unknown-plugin") } just runs
 
         val result = pluginManager.startPlugin("unknown-plugin")
 
