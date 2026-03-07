@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 
 group = "org.gameyfin"
-version = "856-malformed-external-links-preview"
+version = "2.4.0-preview"
 
 allprojects {
     repositories {
