@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 
-FROM eclipse-temurin:21-jre-alpine as builder
+FROM eclipse-temurin:25-jre-alpine as builder
 WORKDIR /opt/gameyfin
 ARG JAR_FILE=./app/build/libs/app.jar
 COPY ${JAR_FILE} application.jar
@@ -13,7 +13,7 @@ RUN mkdir -p /opt/gameyfin/plugins \
     && rm -rf /tmp/plugins
 
 
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 
 # OCI labels
 LABEL maintainer="grimsi" \
