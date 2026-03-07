@@ -12,10 +12,7 @@ import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pf4j.ExtensionPoint
-import org.pf4j.Plugin
-import org.pf4j.PluginState
-import org.pf4j.PluginWrapper
+import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
 import java.nio.file.Path
 import kotlin.test.*
@@ -516,22 +513,12 @@ class GameyfinPluginManagerTest {
             )
         )
 
-        val entry = PluginManagementEntry("unknown-plugin", enabled = false, priority = 1)
-        entry.trustLevel = PluginTrustLevel.UNTRUSTED
-
         val pluginWrapper = mockk<PluginWrapper>()
-        val pluginDescriptor = mockk<GameyfinPluginDescriptor>()
 
         every { pluginWrapper.pluginId } returns "unknown-plugin"
         every { pluginWrapper.pluginState } returns PluginState.RESOLVED
-        every { pluginWrapper.pluginClassLoader } returns mockk<ClassLoader>()
-        every { pluginWrapper.plugin } returns mockk<Plugin>()
-        every { pluginWrapper.descriptor } returns pluginDescriptor
-        every { pluginDescriptor.pluginId } returns "unknown-plugin"
-        every { pluginDescriptor.version } returns "unknown_version"
         every { pluginManagementRepository.findByIdOrNull("unknown-plugin") } returns null
         every { pluginManager.getPlugin("unknown-plugin") } returns pluginWrapper
-        every { pluginManager.checkPluginId("unknown-plugin") } just runs
 
         val result = pluginManager.startPlugin("unknown-plugin")
 
@@ -555,6 +542,53 @@ class GameyfinPluginManagerTest {
         // Verify the plugin manager initializes properly
         assertNotNull(pluginManager)
         assertNotNull(pluginManager.pluginsRoot)
+    }
+
+    @Test
+    fun `createPluginLoader should return CompoundPluginLoader containing only GameyfinJarPluginLoader in non-development mode`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+        System.clearProperty("pf4j.mode")
+
+        pluginManager = GameyfinPluginManager(
+            forwardingPluginStateListener,
+            dbPluginStatusProvider,
+            pluginConfigRepository,
+            pluginManagementRepository
+        )
+
+        val loader = invokeCreatePluginLoader(pluginManager)
+
+        assertIs<CompoundPluginLoader>(loader)
+        val loaders = getLoadersFromCompound(loader)
+
+        assertEquals(1, loaders.size, "Expected exactly one loader in non-development mode")
+        assertIs<GameyfinJarPluginLoader>(loaders[0])
+    }
+
+    @Test
+    fun `createPluginLoader should return CompoundPluginLoader containing GameyfinJarPluginLoader and GameyfinDevelopmentPluginLoader in development mode`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+        System.setProperty("pf4j.mode", "development")
+
+        try {
+            pluginManager = GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+
+            val loader = invokeCreatePluginLoader(pluginManager)
+
+            assertIs<CompoundPluginLoader>(loader)
+            val loaders = getLoadersFromCompound(loader)
+
+            assertEquals(2, loaders.size, "Expected two loaders in development mode")
+            assertIs<GameyfinJarPluginLoader>(loaders[0])
+            assertIs<GameyfinDevelopmentPluginLoader>(loaders[1])
+        } finally {
+            System.clearProperty("pf4j.mode")
+        }
     }
 
     @Test
@@ -587,5 +621,18 @@ class GameyfinPluginManagerTest {
 
     @Suppress("DEPRECATION")
     abstract class TestConfigurablePlugin(wrapper: PluginWrapper) : Plugin(wrapper), Configurable
+
+    private fun invokeCreatePluginLoader(manager: GameyfinPluginManager): PluginLoader {
+        val method = DefaultPluginManager::class.java.getDeclaredMethod("createPluginLoader")
+        method.isAccessible = true
+        return method.invoke(manager) as PluginLoader
+    }
+
+    private fun getLoadersFromCompound(compoundLoader: CompoundPluginLoader): List<*> {
+        val loadersField = CompoundPluginLoader::class.java.getDeclaredField("loaders")
+        loadersField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        return loadersField.get(compoundLoader) as List<*>
+    }
 }
 
