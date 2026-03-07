@@ -6,7 +6,7 @@ import Markdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
-import { ArrowClockwiseIcon } from "@phosphor-icons/react";
+import {ArrowClockwiseIcon} from "@phosphor-icons/react";
 import PluginConfigMetadataDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginConfigMetadataDto";
 import PluginConfigFormField from "Frontend/components/general/plugin/PluginConfigFormField";
 
