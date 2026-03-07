@@ -57,5 +57,6 @@ out/
 *.state.json
 /plugins/data/
 /plugins/state/
+/plugins/**/*.jar
 /plugindata/
 /docker-debug/

@@ -59,10 +59,24 @@ class GameyfinPluginManager(
     }
 
     override fun createPluginLoader(): PluginLoader {
-        return when (this.isDevelopment) {
-            true -> GameyfinDevelopmentPluginLoader(this, javaClass.classLoader)
-            false -> GameyfinJarPluginLoader(this)
+        val pluginLoader = CompoundPluginLoader()
+
+        val jarPluginLoader = GameyfinJarPluginLoader(this)
+        pluginLoader.add(jarPluginLoader)
+
+        if (this.isDevelopment) {
+            val classPluginLoader = GameyfinDevelopmentPluginLoader(this, javaClass.classLoader)
+            pluginLoader.add(classPluginLoader)
         }
+
+        return pluginLoader
+    }
+
+    override fun createPluginRepository(): PluginRepository? {
+        return CompoundPluginRepository()
+            .add(JarPluginRepository(getPluginsRoots()))
+            .add(DefaultPluginRepository(getPluginsRoots()))
+            .add(DevelopmentPluginRepository(getPluginsRoots())) { this.isDevelopment }
     }
 
     override fun createPluginStatusProvider(): PluginStatusProvider {
@@ -81,10 +95,6 @@ class GameyfinPluginManager(
         val extensionFinder = GameyfinExtensionFinder(this)
         addPluginStateListener(extensionFinder)
         return extensionFinder
-    }
-
-    public override fun checkPluginId(pluginId: String) {
-        super.checkPluginId(pluginId)
     }
 
     override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
