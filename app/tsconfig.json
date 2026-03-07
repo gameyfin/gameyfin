@@ -22,6 +22,7 @@
     "noUnusedParameters": false,
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
+    "noEmit": true,
     "baseUrl": "src/main/frontend",
     "paths": {
       "@vaadin/flow-frontend": [

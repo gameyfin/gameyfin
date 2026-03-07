@@ -59,10 +59,24 @@ class GameyfinPluginManager(
     }
 
     override fun createPluginLoader(): PluginLoader {
-        return when (this.isDevelopment) {
-            true -> GameyfinDevelopmentPluginLoader(this, javaClass.classLoader)
-            false -> GameyfinJarPluginLoader(this)
+        val pluginLoader = CompoundPluginLoader()
+
+        val jarPluginLoader = GameyfinJarPluginLoader(this)
+        pluginLoader.add(jarPluginLoader)
+
+        if (this.isDevelopment) {
+            val classPluginLoader = GameyfinDevelopmentPluginLoader(this, javaClass.classLoader)
+            pluginLoader.add(classPluginLoader)
         }
+
+        return pluginLoader
+    }
+
+    override fun createPluginRepository(): PluginRepository? {
+        return CompoundPluginRepository()
+            .add(JarPluginRepository(getPluginsRoots()))
+            .add(DefaultPluginRepository(getPluginsRoots()))
+            .add(DevelopmentPluginRepository(getPluginsRoots())) { this.isDevelopment }
     }
 
     override fun createPluginStatusProvider(): PluginStatusProvider {
@@ -81,10 +95,6 @@ class GameyfinPluginManager(
         val extensionFinder = GameyfinExtensionFinder(this)
         addPluginStateListener(extensionFinder)
         return extensionFinder
-    }
-
-    public override fun checkPluginId(pluginId: String) {
-        super.checkPluginId(pluginId)
     }
 
     override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
@@ -155,12 +165,21 @@ class GameyfinPluginManager(
         if (pluginId == null) return PluginState.FAILED
 
         val trustLevel = pluginManagementRepository.findByIdOrNull(pluginId)?.trustLevel ?: PluginTrustLevel.UNKNOWN
-        if (trustLevel == PluginTrustLevel.UNTRUSTED) {
-            val pluginWrapper = getPlugin(pluginId)
-            val pluginState = PluginState.UNLOADED
+        when (trustLevel) {
+            PluginTrustLevel.UNTRUSTED -> {
+                val pluginWrapper = getPlugin(pluginId)
+                val pluginState = PluginState.UNLOADED
+                this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
+                return pluginState
+            }
 
-            this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
-            return pluginState
+            PluginTrustLevel.UNKNOWN -> {
+                val pluginWrapper = getPlugin(pluginId)
+                log.warn { "Plugin $pluginId has unknown trust level, not starting" }
+                return pluginWrapper?.pluginState
+            }
+
+            else -> {}
         }
 
         // Validate config before starting the plugin
@@ -233,10 +252,14 @@ class GameyfinPluginManager(
             .map { it.simpleName }
     }
 
-    fun getPluginForExtension(extensionClass: Class<ExtensionPoint>): PluginWrapper? {
-        return getPlugins().firstOrNull { pluginWrapper ->
-            getExtensionClasses(pluginWrapper.pluginId).any { it == extensionClass }
+    fun getPluginsForExtension(extensionClass: KClass<out ExtensionPoint>): List<PluginWrapper> {
+        return getPlugins().filter { pluginWrapper ->
+            supportsExtensionType(pluginWrapper.pluginId, extensionClass)
         }
+    }
+
+    fun getPluginForExtension(extensionClass: KClass<out ExtensionPoint>): PluginWrapper? {
+        return getPluginsForExtension(extensionClass).firstOrNull()
     }
 
     fun getManagementEntry(pluginId: String): PluginManagementEntry {

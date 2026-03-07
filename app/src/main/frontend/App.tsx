@@ -14,7 +14,7 @@ import {ToastProvider} from "@heroui/toast";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
-import {useEffect} from "react";
+import {useCallback, useEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
 import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
@@ -25,6 +25,12 @@ export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
 
     const navigate = useNavigate();
+    const reactRouterUseHref = useHref;
+    // Fixes an issue where external links would be treated as internal links
+    const safeUseHref = useCallback(
+        (href: string) => /^https?:\/\//i.test(href) ? href : reactRouterUseHref(href),
+        [reactRouterUseHref]
+    );
     const routeMetadata = useRouteMetadata();
 
     useEffect(() => {
@@ -32,7 +38,7 @@ export default function App() {
     }, [routeMetadata, window.location.href]);
 
     return (
-        <HeroUIProvider className="size-full" navigate={navigate} useHref={useHref}>
+        <HeroUIProvider className="size-full" navigate={navigate} useHref={safeUseHref}>
             <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark">
                 <AuthProvider>
                     <ViewWithAuth/>
