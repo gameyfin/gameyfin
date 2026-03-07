@@ -9,7 +9,7 @@
     <module name="Gameyfin.app.main" />
     <option name="SHORTEN_COMMAND_LINE" value="ARGS_FILE" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="org.gameyfin.app.GameyfinApplication" />
-    <option name="VM_PARAMETERS" value="-Dpf4j.mode=development -Djava.net.preferIPv4Stack=true" />
+    <option name="VM_PARAMETERS" value="-Dpf4j.mode=development -Djava.net.preferIPv4Stack=true -Dvaadin.frontend.hotdeploy=true" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="org.gameyfin.app.*" />

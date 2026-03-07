@@ -4,6 +4,11 @@ import PluginUpdateDto from "Frontend/generated/org/gameyfin/app/core/plugins/dt
 import {proxy} from "valtio/index";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 
+export enum PluginType {
+    GameMetadataProvider = "GameMetadataProvider",
+    DownloadProvider = "DownloadProvider",
+}
+
 type PluginState = {
     subscription?: Subscription<PluginUpdateDto[]>;
     isLoaded: boolean;

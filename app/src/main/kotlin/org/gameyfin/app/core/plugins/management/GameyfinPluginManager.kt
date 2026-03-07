@@ -233,10 +233,14 @@ class GameyfinPluginManager(
             .map { it.simpleName }
     }
 
-    fun getPluginForExtension(extensionClass: Class<ExtensionPoint>): PluginWrapper? {
-        return getPlugins().firstOrNull { pluginWrapper ->
-            getExtensionClasses(pluginWrapper.pluginId).any { it == extensionClass }
+    fun getPluginsForExtension(extensionClass: KClass<out ExtensionPoint>): List<PluginWrapper> {
+        return getPlugins().filter { pluginWrapper ->
+            supportsExtensionType(pluginWrapper.pluginId, extensionClass)
         }
+    }
+
+    fun getPluginForExtension(extensionClass: KClass<out ExtensionPoint>): PluginWrapper? {
+        return getPluginsForExtension(extensionClass).firstOrNull()
     }
 
     fun getManagementEntry(pluginId: String): PluginManagementEntry {
