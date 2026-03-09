@@ -2,11 +2,20 @@ import {FieldArray, useField} from "formik";
 import {Button, Chip, Input, Popover, PopoverContent, PopoverTrigger} from "@heroui/react";
 import {KeyboardEvent, useState} from "react";
 import {PlusIcon} from "@phosphor-icons/react";
+import InfoPopup from "Frontend/components/administration/InfoPopup";
+import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
-// @ts-ignore
-const ArrayInput = ({label, ...props}) => {
-    // @ts-ignore
-    const [field, meta] = useField(props);
+interface ArrayInputProps {
+    label: string;
+    name: string;
+    type?: string;
+    description?: string;
+    resetValue?: unknown;
+    isDisabled?: boolean;
+}
+
+export default function ArrayInput({label, description, resetValue, ...props}: ArrayInputProps) {
+    const [field, meta] = useField<string[]>(props.name);
     const [newElementValue, setNewElementValue] = useState<string>("");
 
     return (
@@ -29,12 +38,17 @@ const ArrayInput = ({label, ...props}) => {
                         return (
                             <div className="flex flex-col flex-1 gap-2">
                                 <div className="flex flex-row justify-between">
-                                    <p>{label}</p>
+                                    <span className="flex items-center gap-1">
+                                        <p>{label}</p>
+                                        {description && <InfoPopup content={description}/>}
+                                        {resetValue !== undefined &&
+                                            <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
+                                    </span>
                                     <small>{field.value.length} {field.value.length == 1 ? "element" : "elements"}</small>
                                 </div>
 
                                 <div className="flex flex-row flex-wrap gap-2 items-center">
-                                    {field.value.map((element: any, index: number) => (
+                                    {field.value.map((element: string, index: number) => (
                                         <Chip key={index}
                                               onClose={() => arrayHelpers.remove(index)}
                                               isDisabled={props.isDisabled}
@@ -76,5 +90,3 @@ const ArrayInput = ({label, ...props}) => {
         />
     );
 }
-
-export default ArrayInput;

@@ -330,7 +330,7 @@ class ConfigServiceTest {
         result.forEach { entry ->
             assertNotNull(entry.key)
             assertNotNull(entry.type)
-            assertNotNull(entry.description)
+            assertNotNull(entry.name)
         }
     }
 

@@ -6,6 +6,7 @@ import java.io.Serializable
 @JsonInclude(JsonInclude.Include.ALWAYS)
 data class ConfigEntryDto(
     val key: String,
+    val name: String,
     val description: String,
     val value: Serializable?,
     val defaultValue: Serializable?,

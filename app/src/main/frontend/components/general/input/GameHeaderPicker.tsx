@@ -3,13 +3,17 @@ import React from "react";
 import {useField} from "formik";
 import {ImageBrokenIcon, PencilIcon} from "@phosphor-icons/react";
 import {GameHeaderPickerModal} from "Frontend/components/general/modals/GameHeaderPickerModal";
+import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 
+interface GameHeaderPickerProps {
+    game: GameDto;
+    name: string;
+    showErrorUntouched?: boolean;
+}
 
-// @ts-ignore
-export default function GameHeaderPicker({game, showErrorUntouched = false, ...props}) {
+export default function GameHeaderPicker({game, showErrorUntouched = false, ...props}: GameHeaderPickerProps) {
 
-    // @ts-ignore
-    const [field] = useField(props);
+    const [field] = useField(props.name);
 
     const gameHeaderPickerModal = useDisclosure();
 

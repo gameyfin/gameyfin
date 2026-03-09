@@ -1,15 +1,22 @@
 import React, {useEffect, useState} from "react";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/org/gameyfin/app/config/dto/ConfigEntryDto";
-import {Form, Formik} from "formik";
+import {Form, Formik, FormikProps} from "formik";
 import {Button, Skeleton} from "@heroui/react";
 import {CheckIcon, InfoIcon} from "@phosphor-icons/react";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {configState, initializeConfigState, NestedConfig} from "Frontend/state/ConfigState";
 import {useSnapshot} from "valtio/react";
+import * as Yup from "yup";
 
-export default function withConfigPage(WrappedComponent: React.ComponentType<any>, title: String, validationSchema?: any) {
-    return function ConfigPage(props: any) {
+export interface ConfigPageProps {
+    getConfig: (key: string) => ConfigEntryDto | undefined;
+    formik: FormikProps<NestedConfig>;
+    setSaveMessage: (message: string | undefined) => void;
+}
+
+export default function withConfigPage(WrappedComponent: React.ComponentType<ConfigPageProps>, title: string, validationSchema?: Yup.ObjectSchema<Record<string, unknown>>) {
+    return function ConfigPage(props: Record<string, never>) {
         const [configSaved, setConfigSaved] = useState(false);
         const [saveMessage, setSaveMessage] = useState<string>();
 
@@ -35,14 +42,14 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
             return state.state[key];
         }
 
-        function getChangedValues(initial: NestedConfig, current: NestedConfig): Record<string, any> {
-            const flatten = (obj: NestedConfig, parentKey = ''): Record<string, any> => {
-                let result: Record<string, any> = {};
+        function getChangedValues(initial: NestedConfig, current: NestedConfig): Record<string, NestedConfig[string]> {
+            const flatten = (obj: NestedConfig, parentKey = ''): Record<string, NestedConfig[string]> => {
+                let result: Record<string, NestedConfig[string]> = {};
                 for (const key in obj) {
                     if (obj.hasOwnProperty(key)) {
                         const newKey = parentKey ? `${parentKey}.${key}` : key;
                         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-                            Object.assign(result, flatten(obj[key], newKey));
+                            Object.assign(result, flatten(obj[key] as NestedConfig, newKey));
                         } else {
                             result[newKey] = obj[key];
                         }
@@ -51,11 +58,11 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
                 return result;
             };
 
-            const arraysEqual = (a: any[], b: any[]): boolean => {
+            const arraysEqual = (a: unknown[], b: unknown[]): boolean => {
                 if (a.length !== b.length) return false;
                 for (let i = 0; i < a.length; i++) {
                     if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-                        if (!arraysEqual(a[i], b[i])) return false;
+                        if (!arraysEqual(a[i] as unknown[], b[i] as unknown[])) return false;
                     } else if (a[i] !== b[i]) {
                         return false;
                     }
@@ -66,7 +73,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<any
             const flatInitial = flatten(initial);
             const flatCurrent = flatten(current);
 
-            const changed: Record<string, any> = {};
+            const changed: Record<string, NestedConfig[string]> = {};
             for (const key in flatCurrent) {
                 const valA = flatCurrent[key];
                 const valB = flatInitial[key];

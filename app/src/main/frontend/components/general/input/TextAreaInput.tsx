@@ -1,10 +1,13 @@
 import {useField} from "formik";
-import {Textarea} from "@heroui/react";
+import {Textarea, TextAreaProps} from "@heroui/react";
 
-// @ts-ignore
-export default function TextAreaInput({label, showErrorUntouched = false, ...props}) {
-    // @ts-ignore
-    const [field, meta] = useField(props);
+interface TextAreaInputProps extends Omit<TextAreaProps, "name"> {
+    name: string;
+    showErrorUntouched?: boolean;
+}
+
+export default function TextAreaInput({label, showErrorUntouched = false, ...props}: TextAreaInputProps) {
+    const [field, meta] = useField(props.name);
 
     return (
         <Textarea
@@ -12,7 +15,7 @@ export default function TextAreaInput({label, showErrorUntouched = false, ...pro
             fullWidth={false}
             {...props}
             {...field}
-            id={label}
+            id={label as string}
             label={label}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
             errorMessage={meta.initialError || meta.error}
