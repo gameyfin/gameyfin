@@ -1,8 +1,8 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/input/Input";
 import {addToast, Button, Input as NextUiInput, Tooltip} from "@heroui/react";
-import {Form, Formik} from "formik";
-import { ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon } from "@phosphor-icons/react";
+import {Form, Formik, FormikProps} from "formik";
+import {ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import * as Yup from "yup";
@@ -12,9 +12,16 @@ import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
 import Avatar from "Frontend/components/general/Avatar";
 
+interface ProfileFormValues {
+    username: string | undefined;
+    email: string | undefined;
+    newPassword: string;
+    passwordRepeat: string;
+}
+
 export default function ProfileManagement() {
     const auth = useAuth();
-    const [avatar, setAvatar] = useState<any>();
+    const [avatar, setAvatar] = useState<File>();
     const [configSaved, setConfigSaved] = useState(false);
     const [messagesEnabled, setMessagesEnabled] = useState(false);
 
@@ -29,11 +36,11 @@ export default function ProfileManagement() {
     }, [configSaved])
 
 
-    function onFileSelected(event: any) {
-        setAvatar(event.target.files[0]);
+    function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+        setAvatar(event.target.files?.[0]);
     }
 
-    async function handleSubmit(values: any) {
+    async function handleSubmit(values: ProfileFormValues) {
         const userUpdate: UserUpdateDto = {
             username: values.username,
             email: values.email
@@ -80,7 +87,7 @@ export default function ProfileManagement() {
                         .equals([Yup.ref('newPassword')], 'Passwords do not match')
                 })}
             >
-                {(formik: { values: any; isSubmitting: any; dirty: boolean; }) => (
+                {(formik: FormikProps<ProfileFormValues>) => (
                     <Form>
                         <div className="flex flex-row grow justify-between mb-8">
                             <h2 className="text-2xl font-bold">My Profile</h2>
@@ -124,10 +131,10 @@ export default function ProfileManagement() {
 
                             <div className="flex flex-col grow">
                                 <Section title="Personal information"/>
-                                <Input name="username" label="Username" type="text" autocomplete="username"
+                                <Input name="username" label="Username" type="text" autoComplete="username"
                                        isDisabled={auth.state.user?.managedBySso}/>
                                 <div className="flex flex-row gap-4">
-                                    <Input name="email" label="Email" type="email" autocomplete="email"
+                                    <Input name="email" label="Email" type="email" autoComplete="email"
                                            isDisabled={auth.state.user?.managedBySso || !messagesEnabled}/>
                                     {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&
                                         <Tooltip content="Resend email confirmation message">
@@ -160,9 +167,9 @@ export default function ProfileManagement() {
                                 }
                                 <Section title="Security"/>
                                 <Input name="newPassword" label="New Password" type="password"
-                                       autocomplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
+                                       autoComplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
                                 <Input name="passwordRepeat" label="Repeat password" type="password"
-                                       autocomplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
+                                       autoComplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
                             </div>
                         </div>
                     </Form>

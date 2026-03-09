@@ -1,12 +1,15 @@
 import {useField} from "formik";
-import {DatePicker, DateValue} from "@heroui/react";
+import {DatePicker, DatePickerProps, DateValue} from "@heroui/react";
 import {parseDate} from "@internationalized/date";
 import {useState} from "react";
 
-// @ts-ignore
-export default function DatePickerInput({label, showErrorUntouched = false, ...props}) {
-    // @ts-ignore
-    const [field, meta] = useField(props);
+interface DatePickerInputProps extends Omit<DatePickerProps, "name"> {
+    name: string;
+    showErrorUntouched?: boolean;
+}
+
+export default function DatePickerInput({label, showErrorUntouched = false, ...props}: DatePickerInputProps) {
+    const [field, meta] = useField(props.name);
     const [value, setValue] = useState<DateValue | null>(field.value ? parseDate(field.value) : null);
 
     return (
@@ -26,7 +29,7 @@ export default function DatePickerInput({label, showErrorUntouched = false, ...p
                     }
                 });
             }}
-            id={label}
+            id={label as string}
             label={label}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
             errorMessage={meta.initialError || meta.error}
