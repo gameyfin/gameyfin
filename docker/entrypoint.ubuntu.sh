@@ -50,4 +50,4 @@ else
   export JDK_JAVA_OPTIONS="${DEFAULT_JVM_OPTS} ${JAVA_OPTS:-}"
 fi
 
-exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true org.springframework.boot.loader.launch.JarLauncher
+exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true -jar application.jar
