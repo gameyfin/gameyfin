@@ -6,6 +6,14 @@ ARG JAR_FILE=./app/build/libs/app.jar
 COPY ${JAR_FILE} application.jar
 RUN java -Djarmode=tools -jar application.jar extract --layers --launcher --destination extracted
 
+# Generate AOT Cache (JEP 483, Java 24+) to reduce startup time and
+# memory footprint. The training run starts the Spring context and exits
+# immediately. Must run from the extracted application directory.
+RUN cd extracted && \
+    java -XX:AOTCacheOutput=/opt/gameyfin/app.aot \
+         -Dspring.context.exit=onRefresh \
+         -jar application.jar || true
+
 # Pre-collect plugin JARs so final stage can copy them in a single layer
 COPY --link ./plugins/ /tmp/plugins/
 RUN mkdir -p /opt/gameyfin/plugins \
@@ -48,6 +56,9 @@ RUN groupadd -g "$GID" "$USER" && \
 
 # Copy entrypoint script with proper perms and ownership
 COPY --link --chown=${UID}:${GID} --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
+
+# Copy AOT cache (reduces startup time and memory footprint at runtime)
+COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/app.aot ./
 
 # Copy application layers and plugin jars from builder stage
 COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/dependencies/ ./

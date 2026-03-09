@@ -17,7 +17,7 @@ server:
   forward-headers-strategy: framework
   jetty:
     threads:
-      max: 200
+      max: 50
       min: 8
 
 management:
@@ -46,7 +46,7 @@ spring:
     url: jdbc:h2:file:./db/${spring.datasource.db-name}
     driverClassName: org.h2.Driver
     hikari:
-      maximum-pool-size: 50
+      maximum-pool-size: 15
       connection-timeout: 60_000
   content:
     fs.filesystem-root: ./data/
