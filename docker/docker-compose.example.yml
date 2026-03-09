@@ -3,9 +3,7 @@ services:
     image: ghcr.io/gameyfin/gameyfin:2
     container_name: gameyfin
     restart: unless-stopped
-    # Set a memory limit so the JVM can right-size the heap via
-    # -XX:MaxRAMPercentage (default 75%). Without a limit the JVM
-    # sees all host RAM and may over-allocate.
+    # Without a limit Gameyfin sees all host RAM and may over-allocate.
     mem_limit: 1024m
     environment:
       # Generate a new APP_KEY using the command "openssl rand -base64 32" or similar.

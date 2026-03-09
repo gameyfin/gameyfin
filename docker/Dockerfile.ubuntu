@@ -1,23 +1,23 @@
 # syntax=docker/dockerfile:1.4
 
-FROM eclipse-temurin:25-jre-alpine as builder
-WORKDIR /opt/gameyfin
+FROM eclipse-temurin:25-jre-alpine AS builder
+WORKDIR /builder
 ARG JAR_FILE=./app/build/libs/app.jar
 COPY ${JAR_FILE} application.jar
-RUN java -Djarmode=tools -jar application.jar extract --layers --launcher --destination extracted
+# Extract the jar file using the layered layout (no --launcher flag so we
+# get an application.jar inside /extracted that references the layers)
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
-# Generate AOT Cache (JEP 483, Java 24+) to reduce startup time and
-# memory footprint. The training run starts the Spring context and exits
-# immediately. Must run from the extracted application directory.
-RUN cd extracted && \
-    java -XX:AOTCacheOutput=/opt/gameyfin/app.aot \
+# Generate AOT Cache to reduce startup time and memory footprint.
+# The training run starts the Spring context and exits immediately, producing app.aot in the extracted directory.
+RUN java -XX:AOTCacheOutput=app.aot \
          -Dspring.context.exit=onRefresh \
-         -jar application.jar || true
+         -jar application.jar
 
 # Pre-collect plugin JARs so final stage can copy them in a single layer
 COPY --link ./plugins/ /tmp/plugins/
-RUN mkdir -p /opt/gameyfin/plugins \
-    && find /tmp/plugins -type f -path "*/build/libs/*.jar" -exec cp {} /opt/gameyfin/plugins/ \; \
+RUN mkdir -p /builder/plugins \
+    && find /tmp/plugins -type f -path "*/build/libs/*.jar" -exec cp {} /builder/plugins/ \; \
     && rm -rf /tmp/plugins
 
 
@@ -58,14 +58,14 @@ RUN groupadd -g "$GID" "$USER" && \
 COPY --link --chown=${UID}:${GID} --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
 
 # Copy AOT cache (reduces startup time and memory footprint at runtime)
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/app.aot ./
+COPY --from=builder --link --chown=${UID}:${GID} /builder/app.aot ./
 
 # Copy application layers and plugin jars from builder stage
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/dependencies/ ./
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/spring-boot-loader/ ./
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/snapshot-dependencies/ ./
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/extracted/application/ ./
-COPY --from=builder --link --chown=${UID}:${GID} /opt/gameyfin/plugins ./plugins
+COPY --from=builder --link --chown=${UID}:${GID} /builder/extracted/dependencies/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /builder/extracted/application/ ./
+COPY --from=builder --link --chown=${UID}:${GID} /builder/plugins ./plugins
 
 EXPOSE 8080
 

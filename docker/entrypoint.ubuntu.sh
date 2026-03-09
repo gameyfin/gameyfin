@@ -34,8 +34,8 @@ DEFAULT_JVM_OPTS="\
   -XX:+UseCompactObjectHeaders \
   -Xss512k"
 
-# Append AOT Cache flag if the training cache file exists
-if [ -f /opt/gameyfin/app.aot ]; then
+# Append AOT Cache flag if a non-empty training cache file exists
+if [ -s /opt/gameyfin/app.aot ]; then
   DEFAULT_JVM_OPTS="${DEFAULT_JVM_OPTS} -XX:AOTCache=/opt/gameyfin/app.aot"
 fi
 
