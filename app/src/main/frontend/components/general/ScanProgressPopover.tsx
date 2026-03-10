@@ -15,6 +15,7 @@ import {libraryState} from "Frontend/state/LibraryState";
 import {TargetIcon, WarningIcon} from "@phosphor-icons/react";
 import {timeBetween, timeUntil, toTitleCase} from "Frontend/util/utils";
 import LibraryScanStatus from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanStatus";
+import type LibraryScanProgress from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanProgress";
 import {useEffect, useRef, useState} from "react";
 
 export default function ScanProgressPopover() {
@@ -38,11 +39,7 @@ export default function ScanProgressPopover() {
         return () => clearInterval(intervalId);
     }, []);
 
-    function estimateTimeLeft(scan: {
-        scanId: string;
-        startedAt: string;
-        currentStep: { current?: number | null; total?: number | null }
-    }): string | null {
+    function estimateTimeLeft(scan: LibraryScanProgress): string | null {
         const now = Date.now();
         const cached = etaCacheRef.current[scan.scanId];
         // Only recompute every 5 seconds
@@ -127,7 +124,7 @@ export default function ScanProgressPopover() {
                                                             {`${scan.currentStep.description} (${scan.currentStep.current}/${scan.currentStep.total})`}
                                                         </p>
                                                         <p className="text-default-500">
-                                                            {scan.status === LibraryScanStatus.IN_PROGRESS && estimateTimeLeft(scan as any)}
+                                                            {estimateTimeLeft(scan)}
                                                         </p>
                                                     </div>
                                                     <Progress
