@@ -1,6 +1,8 @@
 package org.gameyfin.app.libraries
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.entities.Game
@@ -22,9 +24,8 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
 import java.time.Instant
-import java.util.concurrent.Callable
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
+import java.util.*
+import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
@@ -38,18 +39,29 @@ class LibraryScanService(
     private val libraryGameProcessor: LibraryGameProcessor,
     private val gameRepository: GameRepository,
     private val ignoredPathRepository: IgnoredPathRepository,
-    private val pluginService: PluginService
+    private val pluginService: PluginService,
+    private val configService: ConfigService
 ) {
 
     companion object {
         private val log = KotlinLogging.logger {}
 
-        private val SCAN_RESULT_TTL = 24.hours.toJavaDuration()
-        private val scanProgressEvents = Sinks.many().replay().limit<LibraryScanProgress>(SCAN_RESULT_TTL)
+        private val SCAN_PROGRESS_RETENTION = 24.hours.toJavaDuration()
+
+        /**
+         * Keeps only the **most recent** progress event per scan (keyed by scanId).
+         */
+        private val latestProgressPerScan = ConcurrentHashMap<UUID, LibraryScanProgress>()
+        private val scanProgressEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryScanProgress>(1024, false)
 
         fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
             log.debug { "New subscription for scanProgressEvents" }
-            return scanProgressEvents.asFlux()
+
+            // Replay the current snapshot first, then stream live updates
+            val snapshot = Flux.fromIterable(latestProgressPerScan.values.toList())
+            val live = scanProgressEvents.asFlux()
+
+            return Flux.concat(snapshot, live)
                 .buffer(1.seconds.toJavaDuration())
                 .doOnSubscribe {
                     log.debug { "Subscriber added to scanProgressEvents [${scanProgressEvents.currentSubscriberCount()}]" }
@@ -60,11 +72,30 @@ class LibraryScanService(
         }
 
         fun emit(scanProgressDto: LibraryScanProgress) {
+            latestProgressPerScan[scanProgressDto.scanId] = scanProgressDto
             scanProgressEvents.tryEmitNext(scanProgressDto)
         }
 
-        private val executor = Executors.newFixedThreadPool(16)
+        /** Remove scans which are not running and have finished longer ago than the retention. */
+        private fun evictStaleScanProgress() {
+            val cutoff = Instant.now().minus(SCAN_PROGRESS_RETENTION)
+            latestProgressPerScan.values.removeIf { it.finishedAt?.isBefore(cutoff) == true }
+        }
+
+        @Volatile
+        private var scanSemaphore = Semaphore(ConfigProperties.Libraries.Scan.MaxConcurrency.default!!)
+        private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
         private val scansInProgress = ConcurrentHashMap<Long, Boolean>()
+    }
+
+    /**
+     * Re-creates the concurrency semaphore from the current config value.
+     * Called once at the start of each scan so that config changes take
+     * effect without restarting the application.
+     */
+    private fun refreshScanSemaphore() {
+        val permits = configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency)!!
+        scanSemaphore = Semaphore(permits)
     }
 
     /**
@@ -74,6 +105,9 @@ class LibraryScanService(
         check(!(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isEmpty())) {
             "At least one metadata plugin must be enabled to perform a scan."
         }
+
+        refreshScanSemaphore()
+        evictStaleScanProgress()
 
         val libraries = libraryIds?.let { libraryRepository.findAllById(libraryIds) } ?: libraryRepository.findAll()
         libraries.forEach { library ->
@@ -278,6 +312,7 @@ class LibraryScanService(
 
         val tasks = gamePaths.map { path ->
             Callable<Game?> {
+                scanSemaphore.acquire()
                 try {
                     val persisted = libraryGameProcessor.processNewGame(path, library)
 
@@ -310,6 +345,7 @@ class LibraryScanService(
 
                     return@Callable null
                 } finally {
+                    scanSemaphore.release()
                     progress.currentStep.current = completed.incrementAndGet()
                     emit(progress)
                 }
@@ -379,6 +415,7 @@ class LibraryScanService(
 
         val updateTasks = games.map { game ->
             Callable<Game?> {
+                scanSemaphore.acquire()
                 try {
                     val updated = libraryGameProcessor.processExistingGame(game)
                     return@Callable updated
@@ -387,6 +424,7 @@ class LibraryScanService(
                     log.debug(e) {}
                     return@Callable null
                 } finally {
+                    scanSemaphore.release()
                     progress.currentStep.current = completedUpdates.incrementAndGet()
                     emit(progress)
                 }

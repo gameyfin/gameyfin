@@ -1,6 +1,8 @@
 package org.gameyfin.app.libraries
 
 import io.mockk.*
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemScanResult
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.plugins.PluginService
@@ -32,6 +34,7 @@ class LibraryScanServiceTest {
     private lateinit var libraryScanService: LibraryScanService
     private lateinit var ignoredPathRepository: IgnoredPathRepository
     private lateinit var pluginService: PluginService
+    private lateinit var configService: ConfigService
 
     @BeforeEach
     fun setup() {
@@ -42,11 +45,15 @@ class LibraryScanServiceTest {
         gameRepository = mockk()
         ignoredPathRepository = mockk()
         pluginService = mockk()
+        configService = mockk()
 
         // By default, at least one GameMetadataProvider is started so scans are allowed
         every { pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED) } returns listOf(
             mockk<PluginDto>()
         )
+
+        // Return default max-concurrency value
+        every { configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency) } returns ConfigProperties.Libraries.Scan.MaxConcurrency.default
 
         libraryScanService = LibraryScanService(
             libraryRepository,
@@ -55,7 +62,8 @@ class LibraryScanServiceTest {
             libraryGameProcessor,
             gameRepository,
             ignoredPathRepository,
-            pluginService
+            pluginService,
+            configService
         )
     }
 

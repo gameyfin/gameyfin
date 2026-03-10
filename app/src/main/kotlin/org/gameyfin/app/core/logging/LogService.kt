@@ -2,9 +2,9 @@ package org.gameyfin.app.core.logging
 
 import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.joran.JoranConfigurator
-import org.gameyfin.app.config.ConfigService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.logging.util.AsyncFileTailer
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationStartedEvent
@@ -27,7 +27,7 @@ class LogService(
         private const val LOG_CONFIG_TEMPLATE = "templates/log-config-template.xml"
         private const val LOG_FILE_NAME = "gameyfin"
         private val LOG_REFRESH_INTERVAL = 5.seconds
-        private const val LOG_STREAM_RETENTION = 1000
+        private const val LOG_STREAM_RETENTION = 500
     }
 
     private val log = KotlinLogging.logger {}
