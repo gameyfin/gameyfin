@@ -23,7 +23,7 @@ export default function ScanProgressPopover() {
     const scanInProgress = useSnapshot(scanState).isScanning;
 
     // Add state to track current time and force re-renders
-    const [currentTime, setCurrentTime] = useState(Date.now());
+    const [_currentTime, setCurrentTime] = useState(Date.now());
 
     // Set up an interval to update the time every second
     useEffect(() => {
@@ -34,6 +34,27 @@ export default function ScanProgressPopover() {
         // Clean up the interval when component unmounts
         return () => clearInterval(intervalId);
     }, []);
+
+    function estimateTimeLeft(scan: {
+        startedAt: string;
+        currentStep: { current?: number | null; total?: number | null }
+    }): string | null {
+        const current = scan.currentStep.current;
+        const total = scan.currentStep.total;
+        if (!current || !total || current <= 0 || total <= 0) return null;
+
+        const elapsed = (Date.now() - new Date(scan.startedAt).getTime()) / 1000;
+        if (elapsed <= 0) return null;
+
+        const rate = current / elapsed; // items per second
+        const remaining = total - current;
+        const secondsLeft = Math.round(remaining / rate);
+        if (secondsLeft < 0) return null;
+
+        const mins = Math.floor(secondsLeft / 60);
+        const secs = secondsLeft % 60;
+        return `${mins}:${secs.toString().padStart(2, "0")}m left`;
+    }
 
     return (
         <Popover placement="bottom-end" showArrow={true}>
@@ -73,6 +94,10 @@ export default function ScanProgressPopover() {
                                             </p> :
                                             <p className="text-default-500">
                                                 Started {timeUntil(scan.startedAt)}
+                                                {scan.status === LibraryScanStatus.IN_PROGRESS && (() => {
+                                                    const eta = estimateTimeLeft(scan);
+                                                    return eta ? ` (${eta})` : null;
+                                                })()}
                                             </p>
                                         }
                                     </div>
