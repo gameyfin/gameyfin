@@ -15,7 +15,7 @@ import {libraryState} from "Frontend/state/LibraryState";
 import {TargetIcon, WarningIcon} from "@phosphor-icons/react";
 import {timeBetween, timeUntil, toTitleCase} from "Frontend/util/utils";
 import LibraryScanStatus from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanStatus";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 export default function ScanProgressPopover() {
     const libraries = useSnapshot(libraryState).state;
@@ -24,6 +24,9 @@ export default function ScanProgressPopover() {
 
     // Add state to track current time and force re-renders
     const [_currentTime, setCurrentTime] = useState(Date.now());
+
+    // Cache ETAs per scanId: { eta: string | null, computedAt: number }
+    const etaCacheRef = useRef<Record<string, { eta: string | null; computedAt: number }>>({});
 
     // Set up an interval to update the time every second
     useEffect(() => {
@@ -36,24 +39,43 @@ export default function ScanProgressPopover() {
     }, []);
 
     function estimateTimeLeft(scan: {
+        scanId: string;
         startedAt: string;
         currentStep: { current?: number | null; total?: number | null }
     }): string | null {
+        const now = Date.now();
+        const cached = etaCacheRef.current[scan.scanId];
+        // Only recompute every 5 seconds
+        if (cached && now - cached.computedAt < 5000) {
+            return cached.eta;
+        }
+
         const current = scan.currentStep.current;
         const total = scan.currentStep.total;
-        if (!current || !total || current <= 0 || total <= 0) return null;
+        if (!current || !total || current <= 0 || total <= 0) {
+            etaCacheRef.current[scan.scanId] = {eta: null, computedAt: now};
+            return null;
+        }
 
-        const elapsed = (Date.now() - new Date(scan.startedAt).getTime()) / 1000;
-        if (elapsed <= 0) return null;
+        const elapsed = (now - new Date(scan.startedAt).getTime()) / 1000;
+        if (elapsed <= 0) {
+            etaCacheRef.current[scan.scanId] = {eta: null, computedAt: now};
+            return null;
+        }
 
         const rate = current / elapsed; // items per second
         const remaining = total - current;
         const secondsLeft = Math.round(remaining / rate);
-        if (secondsLeft < 0) return null;
+        if (secondsLeft < 0) {
+            etaCacheRef.current[scan.scanId] = {eta: null, computedAt: now};
+            return null;
+        }
 
         const mins = Math.floor(secondsLeft / 60);
         const secs = secondsLeft % 60;
-        return `${mins}:${secs.toString().padStart(2, "0")}m left`;
+        const eta = `${mins}:${secs.toString().padStart(2, "0")} min left`;
+        etaCacheRef.current[scan.scanId] = {eta, computedAt: now};
+        return eta;
     }
 
     return (
@@ -94,19 +116,20 @@ export default function ScanProgressPopover() {
                                             </p> :
                                             <p className="text-default-500">
                                                 Started {timeUntil(scan.startedAt)}
-                                                {scan.status === LibraryScanStatus.IN_PROGRESS && (() => {
-                                                    const eta = estimateTimeLeft(scan);
-                                                    return eta ? ` (${eta})` : null;
-                                                })()}
                                             </p>
                                         }
                                     </div>
                                     {scan.status === LibraryScanStatus.IN_PROGRESS &&
                                         (scan.currentStep.current && scan.currentStep.total ?
                                                 <div className="flex flex-col gap-1">
-                                                    <p className="text-default-500">
-                                                        {`${scan.currentStep.description} (${scan.currentStep.current}/${scan.currentStep.total})`}
-                                                    </p>
+                                                    <div className="flex flex-row justify-between">
+                                                        <p className="text-default-500">
+                                                            {`${scan.currentStep.description} (${scan.currentStep.current}/${scan.currentStep.total})`}
+                                                        </p>
+                                                        <p className="text-default-500">
+                                                            {scan.status === LibraryScanStatus.IN_PROGRESS && estimateTimeLeft(scan as any)}
+                                                        </p>
+                                                    </div>
                                                     <Progress
                                                         value={scan.currentStep.current / scan.currentStep.total * 100}
                                                         size="sm"/>
