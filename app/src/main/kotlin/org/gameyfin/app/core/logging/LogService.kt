@@ -80,7 +80,7 @@ class LogService(
         levelRoot: LogLevel
     ): InputStream {
         val template = javaClass.classLoader.getResourceAsStream(LOG_CONFIG_TEMPLATE)
-            ?: throw IllegalStateException("Log config template not found")
+            ?: error("Log config template not found")
 
         val templateString = template.bufferedReader().use { it.readText() }
         return templateString

@@ -102,14 +102,16 @@ class LibraryScanService(
      * Wrapper function to trigger a scan for a list of libraries.
      */
     fun triggerScan(scanType: ScanType, libraryIds: Collection<Long>?) {
-        check(!(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isEmpty())) {
+        check(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isNotEmpty()) {
             "At least one metadata plugin must be enabled to perform a scan."
         }
 
         refreshScanSemaphore()
         evictStaleScanProgress()
 
-        val libraries = libraryIds?.let { libraryRepository.findAllById(libraryIds) } ?: libraryRepository.findAll()
+        val libraries = (libraryIds?.let { libraryRepository.findAllById(libraryIds) } ?: libraryRepository.findAll())
+            .toList()
+        
         libraries.forEach { library ->
             val libraryId = library.id!!
             if (scansInProgress.putIfAbsent(libraryId, true) == null) {

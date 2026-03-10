@@ -42,8 +42,12 @@ class UserService(
     private val eventPublisher: ApplicationEventPublisher
 ) : UserDetailsService {
 
-    private val log = KotlinLogging.logger {}
+    companion object {
+        private const val NO_AUTH_FOUND = "No authentication found"
 
+        private val log = KotlinLogging.logger {}
+    }
+    
     val selfRegistrationAllowed: Boolean
         get() = config.get(ConfigProperties.Users.SignUps.Allow) == true
 
@@ -106,7 +110,7 @@ class UserService(
     }
 
     fun getUserInfo(): ExtendedUserInfoDto {
-        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
+        val auth = getCurrentAuth() ?: error(NO_AUTH_FOUND)
         val principal = auth.principal
 
         if (principal is OidcUser) {
@@ -159,13 +163,8 @@ class UserService(
     }
 
     fun selfRegisterUser(registration: UserRegistrationDto) {
-        if (!selfRegistrationAllowed) {
-            throw IllegalStateException("Sign ups are not allowed")
-        }
-
-        if (existsByUsername(registration.username)) {
-            throw IllegalStateException("User with username '${registration.username}' already exists")
-        }
+        check(selfRegistrationAllowed) { "Sign ups are not allowed" }
+        check(!existsByUsername(registration.username)) { "User with username '${registration.username}' already exists" }
 
         userRepository.findByEmail(registration.email)?.let {
             eventPublisher.publishEvent(
@@ -216,7 +215,7 @@ class UserService(
         )
 
         if (existsByUsername(user.username)) {
-            throw IllegalStateException("User with username '${user.username}' already exists")
+            error("User with username '${user.username}' already exists")
         }
 
         return userRepository.save(user)
@@ -252,7 +251,7 @@ class UserService(
             return RoleAssignmentResult.NO_ROLES_PROVIDED
         }
 
-        val currentUser = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
+        val currentUser = getCurrentAuth() ?: error(NO_AUTH_FOUND)
         val targetUser = getByUsernameNonNull(username)
 
         if (!canManage(targetUser)) {
@@ -280,7 +279,7 @@ class UserService(
     }
 
     fun canManage(targetUser: org.gameyfin.app.users.entities.User): Boolean {
-        val currentUser = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
+        val currentUser = getCurrentAuth() ?: error(NO_AUTH_FOUND)
         val currentUserLevel = roleService.getHighestRoleFromAuthorities(currentUser.authorities).powerLevel
         val targetUserLevel = roleService.getHighestRole(targetUser.roles).powerLevel
         return currentUserLevel > targetUserLevel

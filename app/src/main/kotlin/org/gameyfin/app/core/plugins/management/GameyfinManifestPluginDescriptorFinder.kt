@@ -13,7 +13,7 @@ class GameyfinManifestPluginDescriptorFinder : ManifestPluginDescriptorFinder() 
     }
 
     public override fun createPluginDescriptor(manifest: Manifest?): GameyfinPluginDescriptor {
-        if (manifest == null) throw IllegalArgumentException("Manifest cannot be null")
+        requireNotNull(manifest) { "Manifest cannot be null" }
 
         val pluginDescriptor = super.createPluginDescriptor(manifest)
 
@@ -22,10 +22,10 @@ class GameyfinManifestPluginDescriptorFinder : ManifestPluginDescriptorFinder() 
         return GameyfinPluginDescriptor(
             descriptor = pluginDescriptor,
             name = attributes.getValue(PLUGIN_NAME)
-                ?: throw IllegalStateException("Plugin-Name not found in manifest"),
+                ?: error("Plugin-Name not found in manifest"),
             shortDescription = attributes.getValue(PLUGIN_SHORT_DESCRIPTION),
             author = attributes.getValue(PLUGIN_AUTHOR)
-                ?: throw IllegalStateException("Plugin-Author not found in manifest"),
+                ?: error("Plugin-Author not found in manifest"),
             url = attributes.getValue(PLUGIN_URL),
         )
     }

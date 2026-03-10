@@ -20,9 +20,7 @@ class GameyfinJarPluginLoader(
     }
 
     override fun loadPlugin(pluginPath: Path, pluginDescriptor: PluginDescriptor?): ClassLoader {
-        if (pluginDescriptor == null) {
-            throw IllegalArgumentException("Plugin descriptor cannot be null")
-        }
+        requireNotNull(pluginDescriptor) { "Plugin descriptor cannot be null" }
 
         val pluginClassLoader = GameyfinPluginClassLoader(
             pluginManager,

@@ -16,7 +16,7 @@ class EncryptionUtils {
         // Extracted for testability
         internal fun getAppKey(): String {
             return System.getenv("APP_KEY")
-                ?: throw IllegalStateException("APP_KEY environment variable is not set or empty")
+                ?: error("APP_KEY environment variable is not set or empty")
         }
 
         fun encrypt(value: String): String {

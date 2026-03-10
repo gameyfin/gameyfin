@@ -19,7 +19,7 @@ class EmailConfirmationEndpoint(
 
     @PermitAll
     fun resendEmailConfirmation() {
-        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
+        val auth = getCurrentAuth() ?: error("No authentication found")
         userService.getByUsername(auth.name)?.let {
             emailConfirmationService.resendEmailConfirmation(it)
         }

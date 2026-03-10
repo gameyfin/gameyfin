@@ -100,11 +100,11 @@ class FilesystemService(
                     if (!it.isDirectory()) return@filter true
 
                     val contents = safeReadDirectoryContents(it)
-                    if (contents.isEmpty() && !config.get(ConfigProperties.Libraries.Scan.ScanEmptyDirectories)!!) {
+                    return@filter if (contents.isEmpty() && !config.get(ConfigProperties.Libraries.Scan.ScanEmptyDirectories)!!) {
                         log.debug { "Directory '$it' is empty and will be ignored" }
-                        return@filter false
+                        false
                     } else {
-                        return@filter true
+                        true
                     }
                 }
         }

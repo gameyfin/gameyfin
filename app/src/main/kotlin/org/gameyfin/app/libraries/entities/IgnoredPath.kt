@@ -21,7 +21,7 @@ class IgnoredPath(
         return when (source) {
             is IgnoredPathPluginSource -> IgnoredPathSourceType.PLUGIN
             is IgnoredPathUserSource -> IgnoredPathSourceType.USER
-            else -> throw IllegalStateException("Unknown IgnoredPathSource type")
+            else -> error("Unknown IgnoredPathSource type")
         }
     }
 }

@@ -26,10 +26,7 @@ class PasswordResetService(
     private val secureRandom = SecureRandom()
 
     override fun generate(user: User): Token<TokenType.PasswordReset> {
-        if (user.oidcProviderId != null) {
-            throw IllegalStateException("Cannot create password reset token for user '${user.username}' because user is managed externally")
-        }
-
+        check(user.oidcProviderId == null) { "Cannot create password reset token for user '${user.username}' because user is managed externally" }
         return super.generate(user)
     }
 
@@ -44,9 +41,7 @@ class PasswordResetService(
         val user = userService.getByUsername(username)
             ?: throw IllegalArgumentException("Cannot create password reset token for user '$username' because user does not exist")
 
-        if (messageService.enabled && user.emailConfirmed) {
-            throw IllegalStateException("Cannot create password reset token for user '$username' because self-service is enabled")
-        }
+        check(!(messageService.enabled && user.emailConfirmed)) { "Cannot create password reset token for user '$username' because self-service is enabled" }
 
         val token = generate(user)
         return TokenDto(token)

@@ -103,7 +103,7 @@ class GameService(
 
 
     fun getAll(): List<GameDto> {
-        val entities = gameRepository.findAll()
+        val entities = gameRepository.findAll().toList()
         return entities.toDtos()
     }
 
@@ -155,7 +155,7 @@ class GameService(
         val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
             is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername)
-            else -> throw IllegalStateException("Unkown user type: ${userDetails?.javaClass?.name}")
+            else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
         // Update only non-null fields
@@ -807,144 +807,112 @@ class GameService(
 
         sortedResults.forEach { (provider, metadata) ->
             val sourcePlugin = providerToManagementEntry[provider] ?: return@forEach
+            if (metadata == null) return@forEach
 
-            metadata?.let { metadata ->
-                originalIdsMap[sourcePlugin] = metadata.originalId
-
-                metadata.platforms?.takeIf { it.isNotEmpty() }?.let { platforms ->
-                    if (!metadataMap.containsKey("platforms")) {
-                        mergedGame.platforms = platforms.toMutableList()
-                        metadataMap["platforms"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.title.takeIf { it.isNotBlank() }?.let { title ->
-                    if (!metadataMap.containsKey("title")) {
-                        mergedGame.title = title
-                        metadataMap["title"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.description?.takeIf { it.isNotBlank() }?.let { description ->
-                    if (!metadataMap.containsKey("summary")) {
-                        mergedGame.summary = description
-                        metadataMap["summary"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.coverUrls?.firstOrNull()?.let { coverUrl ->
-                    if (!metadataMap.containsKey("coverImage")) {
-                        mergedGame.coverImage = imageService.createOrGet(
-                            Image(originalUrl = coverUrl.toString(), type = ImageType.COVER)
-                        )
-                        metadataMap["coverImage"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.headerUrls?.firstOrNull()?.let { headerUrl ->
-                    if (!metadataMap.containsKey("headerImage")) {
-                        mergedGame.headerImage = imageService.createOrGet(
-                            Image(originalUrl = headerUrl.toString(), type = ImageType.HEADER)
-                        )
-                        metadataMap["headerImage"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.release?.let { release ->
-                    if (!metadataMap.containsKey("release")) {
-                        mergedGame.release = release
-                        metadataMap["release"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.userRating?.let { userRating ->
-                    if (!metadataMap.containsKey("userRating")) {
-                        mergedGame.userRating = userRating
-                        metadataMap["userRating"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.criticRating?.let { criticRating ->
-                    if (!metadataMap.containsKey("criticRating")) {
-                        mergedGame.criticRating = criticRating
-                        metadataMap["criticRating"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.publishedBy?.takeIf { it.isNotEmpty() }?.let { publishedBy ->
-                    if (!metadataMap.containsKey("publishers")) {
-                        mergedGame.publishers =
-                            publishedBy.map { Company(name = it, type = CompanyType.PUBLISHER) }.toMutableList()
-                        metadataMap["publishers"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.developedBy?.takeIf { it.isNotEmpty() }?.let { developedBy ->
-                    if (!metadataMap.containsKey("developers")) {
-                        mergedGame.developers =
-                            developedBy.map { Company(name = it, type = CompanyType.DEVELOPER) }.toMutableList()
-                        metadataMap["developers"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.genres?.takeIf { it.isNotEmpty() }?.let { genres ->
-                    if (!metadataMap.containsKey("genres")) {
-                        mergedGame.genres = genres.toList()
-                        metadataMap["genres"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.themes?.takeIf { it.isNotEmpty() }?.let { themes ->
-                    if (!metadataMap.containsKey("themes")) {
-                        mergedGame.themes = themes.toList()
-                        metadataMap["themes"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.keywords?.takeIf { it.isNotEmpty() }?.let { keywords ->
-                    if (!metadataMap.containsKey("keywords")) {
-                        mergedGame.keywords = keywords.toList()
-                        metadataMap["keywords"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.features?.takeIf { it.isNotEmpty() }?.let { features ->
-                    if (!metadataMap.containsKey("features")) {
-                        mergedGame.features = features.toList()
-                        metadataMap["features"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.perspectives?.takeIf { it.isNotEmpty() }?.let { perspectives ->
-                    if (!metadataMap.containsKey("perspectives")) {
-                        mergedGame.perspectives = perspectives.toList()
-                        metadataMap["perspectives"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.screenshotUrls?.takeIf { it.isNotEmpty() }?.let { screenshotUrls ->
-                    if (!metadataMap.containsKey("images")) {
-                        mergedGame.images = runBlocking {
-                            screenshotUrls.map {
-                                imageService.createOrGet(
-                                    Image(originalUrl = it.toString(), type = ImageType.SCREENSHOT)
-                                )
-                            }.toMutableList()
-                        }
-                        metadataMap["images"] = GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-                metadata.videoUrls?.takeIf { it.isNotEmpty() }?.let { videoUrls ->
-                    if (!metadataMap.containsKey("videoUrls")) {
-                        mergedGame.videoUrls = videoUrls.toList()
-                        metadataMap["videoUrls"] =
-                            GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
-                    }
-                }
-            }
+            originalIdsMap[sourcePlugin] = metadata.originalId
+            applyMetadataFields(metadata, sourcePlugin, mergedGame, metadataMap)
         }
 
         mergedGame.metadata.fields = metadataMap
         mergedGame.metadata.originalIds = originalIdsMap
 
         return mergedGame
+    }
+
+    /**
+     * Sets a field on the merged game if it has not already been set by a higher-priority plugin.
+     */
+    private fun <T> setFieldIfAbsent(
+        fieldName: String,
+        value: T?,
+        metadataMap: MutableMap<String, GameFieldMetadata>,
+        sourcePlugin: PluginManagementEntry,
+        setter: (T) -> Unit
+    ) {
+        if (value != null && !metadataMap.containsKey(fieldName)) {
+            setter(value)
+            metadataMap[fieldName] = GameFieldMetadata(source = GameFieldPluginSource(plugin = sourcePlugin))
+        }
+    }
+
+    /**
+     * Applies all metadata fields from a single plugin result onto the merged game,
+     * respecting the first-write-wins rule via [setFieldIfAbsent].
+     */
+    private fun applyMetadataFields(
+        metadata: PluginApiMetadata,
+        sourcePlugin: PluginManagementEntry,
+        mergedGame: Game,
+        metadataMap: MutableMap<String, GameFieldMetadata>
+    ) {
+        setFieldIfAbsent("platforms", metadata.platforms?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.platforms = it.toMutableList()
+        }
+        setFieldIfAbsent("title", metadata.title.takeIf { it.isNotBlank() }, metadataMap, sourcePlugin) {
+            mergedGame.title = it
+        }
+        setFieldIfAbsent("summary", metadata.description?.takeIf { it.isNotBlank() }, metadataMap, sourcePlugin) {
+            mergedGame.summary = it
+        }
+        setFieldIfAbsent("coverImage", metadata.coverUrls?.firstOrNull(), metadataMap, sourcePlugin) {
+            mergedGame.coverImage = imageService.createOrGet(
+                Image(originalUrl = it.toString(), type = ImageType.COVER)
+            )
+        }
+        setFieldIfAbsent("headerImage", metadata.headerUrls?.firstOrNull(), metadataMap, sourcePlugin) {
+            mergedGame.headerImage = imageService.createOrGet(
+                Image(originalUrl = it.toString(), type = ImageType.HEADER)
+            )
+        }
+        setFieldIfAbsent("release", metadata.release, metadataMap, sourcePlugin) {
+            mergedGame.release = it
+        }
+        setFieldIfAbsent("userRating", metadata.userRating, metadataMap, sourcePlugin) {
+            mergedGame.userRating = it
+        }
+        setFieldIfAbsent("criticRating", metadata.criticRating, metadataMap, sourcePlugin) {
+            mergedGame.criticRating = it
+        }
+        setFieldIfAbsent("publishers", metadata.publishedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.publishers =
+                it.map { name -> Company(name = name, type = CompanyType.PUBLISHER) }.toMutableList()
+        }
+        setFieldIfAbsent("developers", metadata.developedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.developers =
+                it.map { name -> Company(name = name, type = CompanyType.DEVELOPER) }.toMutableList()
+        }
+        setFieldIfAbsent("genres", metadata.genres?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.genres = it.toList()
+        }
+        setFieldIfAbsent("themes", metadata.themes?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.themes = it.toList()
+        }
+        setFieldIfAbsent("keywords", metadata.keywords?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.keywords = it.toList()
+        }
+        setFieldIfAbsent("features", metadata.features?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.features = it.toList()
+        }
+        setFieldIfAbsent("perspectives", metadata.perspectives?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.perspectives = it.toList()
+        }
+        setFieldIfAbsent(
+            "images",
+            metadata.screenshotUrls?.takeIf { it.isNotEmpty() },
+            metadataMap,
+            sourcePlugin
+        ) { screenshotUrls ->
+            mergedGame.images = runBlocking {
+                screenshotUrls.map {
+                    imageService.createOrGet(
+                        Image(originalUrl = it.toString(), type = ImageType.SCREENSHOT)
+                    )
+                }.toMutableList()
+            }
+        }
+        setFieldIfAbsent("videoUrls", metadata.videoUrls?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
+            mergedGame.videoUrls = it.toList()
+        }
     }
 
     private fun String.fuzzyMatchTitle(other: String): Boolean {

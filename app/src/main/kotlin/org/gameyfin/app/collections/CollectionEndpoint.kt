@@ -50,13 +50,13 @@ class CollectionEndpoint(
     @RolesAllowed(Role.Names.ADMIN)
     fun deleteCollection(collectionId: Long) = collectionService.delete(collectionId)
 
-    /* Unused endpoints for Hilla to generate typescript classes */
+    /* Unused endpoints for Hilla to generate TypeScript classes */
 
-    @Suppress("Unused", "FunctionName")
+    @Suppress("Unused", "FunctionName", "kotlin:S100")
     @RolesAllowed(Role.Names.ADMIN)
     fun _getAdminDto(id: Long): CollectionAdminDto = collectionService.getById(id).toAdminDto()
 
-    @Suppress("Unused", "FunctionName")
+    @Suppress("Unused", "FunctionName", "kotlin:S100")
     @RolesAllowed(Role.Names.ADMIN)
     fun _getUserDto(id: Long): CollectionUserDto = collectionService.getById(id).toUserDto()
 }

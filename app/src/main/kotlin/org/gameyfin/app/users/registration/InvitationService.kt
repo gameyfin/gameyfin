@@ -26,11 +26,10 @@ class InvitationService(
     }
 
     fun createInvitation(email: String): TokenDto {
-        if (userService.existsByEmail(email))
-            throw IllegalStateException("User with email ${Utils.maskEmail(email)} is already registered")
+        check(!(userService.existsByEmail(email))) { "User with email ${Utils.maskEmail(email)} is already registered" }
 
-        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
-        val user = userService.getByUsername(auth.name) ?: throw IllegalStateException("User not found")
+        val auth = getCurrentAuth() ?: error("No authentication found")
+        val user = userService.getByUsername(auth.name) ?: error("User not found")
         val payload = mapOf(EMAIL_KEY to email)
         val token = super.generateWithPayload(user, payload)
 
