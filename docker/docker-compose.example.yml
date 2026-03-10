@@ -3,8 +3,8 @@ services:
     image: ghcr.io/gameyfin/gameyfin:2
     container_name: gameyfin
     restart: unless-stopped
-    # Without a limit Gameyfin sees all host RAM and may over-allocate.
-    mem_limit: 1024m
+    # (optional) Limit the memory usage of the container. Recommended minimum is 1024m.
+    # mem_limit: 1024m
     environment:
       # Generate a new APP_KEY using the command "openssl rand -base64 32" or similar.
       APP_KEY: <your app key here>
@@ -17,8 +17,7 @@ services:
       # PUID: 1000 # Change this to your user ID if needed
       # PGID: 1000 # Change this to your group ID if needed
 
-      # (optional) Override or extend JVM flags. The container ships with
-      # sensible defaults (G1GC, MaxRAMPercentage=75, CDS, etc.).
+      # (optional) Override or extend JVM flags. The container ships with sensible defaults.
       #
       # JAVA_OPTS – extra flags *appended* to the built-in defaults:
       # JAVA_OPTS: -Dsome.property=value
