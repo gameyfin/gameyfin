@@ -23,10 +23,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ImageServiceTest {
 
@@ -678,7 +675,7 @@ class ImageServiceTest {
 
     /**
      * Creates a minimal in-memory PNG of the given dimensions filled with a solid colour.
-     * Returns the bytes as an [InputStream] that can be fed directly to [ImageIO.read].
+     * Returns the bytes as an [java.io.InputStream] that can be fed directly to [ImageIO.read].
      */
     private fun createPngStream(width: Int, height: Int, color: Color = Color.BLUE): ByteArrayInputStream {
         val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
@@ -703,14 +700,14 @@ class ImageServiceTest {
             val small = BufferedImage(80, 60, BufferedImage.TYPE_INT_RGB)
             val result = ImageService.scaleImageForBlurhash(small, maxWidth = 100)
             assertNotNull(result)
-            assertTrue(result === small, "Expected the same instance to be returned for small images")
+            assertSame(result, small, "Expected the same instance to be returned for small images")
         }
 
         @Test
         fun `returns original image when width exactly equals maxWidth`() {
             val exact = BufferedImage(100, 75, BufferedImage.TYPE_INT_RGB)
             val result = ImageService.scaleImageForBlurhash(exact, maxWidth = 100)
-            assertTrue(result === exact)
+            assertSame(result, exact)
         }
 
         @Test
@@ -749,7 +746,7 @@ class ImageServiceTest {
         @Test
         fun `blurhash is set for a valid landscape PNG`() {
             val pngStream = createPngStream(width = 200, height = 100)
-            val savedImage = Image(id = 1L, type = ImageType.COVER, mimeType = "image/png")
+            Image(id = 1L, type = ImageType.COVER, mimeType = "image/png")
 
             every { fileStorageService.saveFile(any()) } returns "content-id"
             every { imageRepository.save(any<Image>()) } answers { firstArg() }
