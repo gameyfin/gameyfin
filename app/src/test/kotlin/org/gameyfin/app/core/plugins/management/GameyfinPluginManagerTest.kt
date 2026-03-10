@@ -592,6 +592,51 @@ class GameyfinPluginManagerTest {
     }
 
     @Test
+    fun `loadPluginFromPath should save management entry before starting a new bundled plugin`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+        )
+
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        val plugin = mockk<Plugin>(relaxed = true)
+
+        every { pluginWrapper.pluginId } returns "my-bundled-plugin"
+        every { pluginWrapper.plugin } returns plugin
+
+        // Plugin is not yet in the database (new plugin)
+        every { pluginManagementRepository.findByIdOrNull("my-bundled-plugin") } returns null
+        every { pluginManagementRepository.findMaxPriority() } returns 5
+        every { pluginManager.startPlugin("my-bundled-plugin") } returns PluginState.STARTED
+
+        // Mock the super.loadPluginFromPath to return our pluginWrapper
+        every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
+
+        // Create a fake non-jar plugin path (non-jar extension → BUNDLED trust level)
+        val fakePath = tempPluginsDir.resolve("my-plugin")
+        fakePath.toFile().mkdirs()
+
+        // Call our override
+        val result = pluginManager.loadPluginFromPath(fakePath)
+
+        assertNotNull(result)
+
+        // Verify that save was called before startPlugin (line 139 followed by line 140)
+        verifyOrder {
+            pluginManagementRepository.save(match {
+                it.pluginId == "my-bundled-plugin" && it.enabled && it.trustLevel == PluginTrustLevel.BUNDLED
+            })
+            pluginManager.startPlugin("my-bundled-plugin")
+        }
+    }
+
+    @Test
     fun `getExtensionTypeClasses should return empty list for plugin with no extensions`() {
         System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
 

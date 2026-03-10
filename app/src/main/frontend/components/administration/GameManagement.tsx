@@ -92,6 +92,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                 </div>
                 <ConfigFormField configElement={getConfig("library.scan.title-match-min-ratio")}/>
                 <ConfigFormField configElement={getConfig("library.scan.game-file-extensions")}/>
+                <ConfigFormField configElement={getConfig("library.scan.max-concurrency")}/>
             </div>
 
             <Section title="Metadata"/>

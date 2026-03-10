@@ -97,7 +97,7 @@ class GameyfinPluginManager(
         return extensionFinder
     }
 
-    override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
+    public override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
 
         if (pluginPath.endsWith("data") || pluginPath.endsWith("state")) {
             log.info { "Skipping non-plugin path '$pluginPath'" }
@@ -105,7 +105,7 @@ class GameyfinPluginManager(
         }
 
         val pluginWrapper = try {
-            super.loadPluginFromPath(pluginPath)
+            superLoadPluginFromPath(pluginPath)
         } catch (e: Exception) {
             log.error { "Failed to load plugin '$pluginPath': ${e.message}" }
             null
@@ -135,6 +135,8 @@ class GameyfinPluginManager(
             ) {
                 pluginManagementEntry.enabled = true
                 log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
+                // Save management entry before starting, so startPlugin can find it in the database
+                pluginManagementRepository.save(pluginManagementEntry)
                 startPlugin(pluginWrapper.pluginId)
             }
         } else {
@@ -330,5 +332,10 @@ class GameyfinPluginManager(
             }
         }
         return PluginTrustLevel.OFFICIAL
+    }
+
+    // Needed for unit testing since super.loadPluginFromPath is protected
+    internal fun superLoadPluginFromPath(pluginPath: Path): PluginWrapper? {
+        return super.loadPluginFromPath(pluginPath)
     }
 }

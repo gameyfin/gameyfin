@@ -58,7 +58,10 @@ export async function initializePluginState() {
 /** Computed **/
 
 function sortPluginsByType(pluginsMap: Record<string, PluginDto>): Record<string, PluginDto[]> {
-    const pluginsByType: Record<string, PluginDto[]> = {};
+    // Initialize with empty arrays for all known plugin types so consumers never get undefined
+    const pluginsByType: Record<string, PluginDto[]> = Object.fromEntries(
+        Object.values(PluginType).map(type => [type, []])
+    );
 
     // Convert map to array of plugins
     const plugins = Object.values(pluginsMap);

@@ -66,7 +66,8 @@ sealed class ConfigProperties<T : Serializable>(
                 Int::class,
                 "library.scan.title-match-min-ratio",
                 "Minimum ratio for title matching. Higher values mean stricter matching.",
-                "Used to match titles **across different metadata sources (plugins)**.\nRaise this value to reduce false positives; lower it to match more liberally.",
+                """Used to match titles **across different metadata sources (plugins)**.
+                    |Raise this value to reduce false positives; lower it to match more liberally.""".trimMargin(),
                 default = 90,
                 min = 0,
                 max = 100,
@@ -100,6 +101,19 @@ sealed class ConfigProperties<T : Serializable>(
                     "dmg",
                     "elf"
                 )
+            )
+
+            data object MaxConcurrency : ConfigProperties<Int>(
+                Int::class,
+                "library.scan.max-concurrency",
+                "Scan concurrency",
+                """Controls how many games are processed simultaneously during a library scan (metadata fetching, image downloading, etc.).
+                    |Lower values reduce peak memory usage; higher values speed up large scans.
+                    |Does **not** affect already running scans.""".trimMargin(),
+                default = 4,
+                min = 1,
+                max = 16,
+                step = 1
             )
         }
 

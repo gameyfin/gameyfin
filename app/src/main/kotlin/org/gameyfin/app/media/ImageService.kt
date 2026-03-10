@@ -19,9 +19,10 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import javax.imageio.ImageIO
 
 @Service
@@ -216,40 +217,57 @@ class ImageService(
     }
 
     private fun processImageContent(image: Image, content: InputStream) {
-        // Read the input stream into a byte array so we can use it twice
-        val imageBytes = content.readBytes()
+        // Stream to a temp file to avoid holding the full image bytes on the heap.
+        // This is critical during library scans where multiple images are processed
+        // concurrently — buffering each one as a byte[] can easily cause OOM.
+        val tempFile = Files.createTempFile("gf-img-", ".tmp")
+        try {
+            // 1. Write the stream to disk
+            content.use { input ->
+                Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING)
+            }
 
-        // Calculate blurhash
-        ByteArrayInputStream(imageBytes).use { blurhashStream ->
-            image.blurhash = calculateBlurhash(blurhashStream)
-        }
+            val fileSize = Files.size(tempFile)
 
-        // Store content
-        ByteArrayInputStream(imageBytes).use { contentStream ->
-            image.contentId = fileStorageService.saveFile(contentStream)
-            image.contentLength = imageBytes.size.toLong()
+            // 2. Calculate blurhash from the temp file
+            Files.newInputStream(tempFile).use { blurhashStream ->
+                image.blurhash = calculateBlurhash(blurhashStream)
+            }
+
+            // 3. Store content from the temp file
+            Files.newInputStream(tempFile).use { contentStream ->
+                image.contentId = fileStorageService.saveFile(contentStream)
+                image.contentLength = fileSize
+            }
+        } finally {
+            Files.deleteIfExists(tempFile)
         }
     }
 
     private fun calculateBlurhash(inputStream: InputStream): String? {
         return try {
-            val originalImage = ImageIO.read(inputStream)
-            if (originalImage != null) {
-                // Scale down for much faster processing
+            val originalImage = ImageIO.read(inputStream) ?: return null
+            try {
+                // Scale down for much faster processing and less memory
                 val scaledImage = scaleImageForBlurhash(originalImage)
-
-                return if (scaledImage.width > scaledImage.height) {
-                    // Landscape
-                    BlurHash.encode(scaledImage, componentX = 4, componentY = 3)
-                } else if (scaledImage.width < scaledImage.height) {
-                    // Portrait
-                    BlurHash.encode(scaledImage, componentX = 3, componentY = 4)
-                } else {
-                    // Square
-                    BlurHash.encode(scaledImage, componentX = 3, componentY = 3)
+                try {
+                    return if (scaledImage.width > scaledImage.height) {
+                        // Landscape
+                        BlurHash.encode(scaledImage, componentX = 4, componentY = 3)
+                    } else if (scaledImage.width < scaledImage.height) {
+                        // Portrait
+                        BlurHash.encode(scaledImage, componentX = 3, componentY = 4)
+                    } else {
+                        // Square
+                        BlurHash.encode(scaledImage, componentX = 3, componentY = 3)
+                    }
+                } finally {
+                    // Release scaled image native memory immediately
+                    if (scaledImage !== originalImage) scaledImage.flush()
                 }
-            } else {
-                null
+            } finally {
+                // Release original image native memory immediately
+                originalImage.flush()
             }
         } catch (_: Exception) {
             null
