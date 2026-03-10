@@ -9,7 +9,7 @@ ARG JAR_FILE=./app/build/libs/app.jar
 COPY ${JAR_FILE} application.jar
 
 # Extract using layered layout for optimal Docker layer caching
-RUN java -Djarmode=tools -jar application.jar extract --layers --launcher --destination extracted
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
 # Pre-collect plugin JARs so final stage can copy them in a single layer
 COPY --link ./plugins/ /tmp/plugins/
@@ -35,7 +35,7 @@ COPY --from=extractor /builder/plugins ./plugins
 RUN java -XX:AOTCacheOutput=app.aot \
          -XX:+UseCompactObjectHeaders \
          -Dspring.context.exit=onRefresh \
-         org.springframework.boot.loader.launch.JarLauncher
+         -jar application.jar
 
 # ── Stage 3: runtime image ───────────────────────────────────────────────
 FROM eclipse-temurin:25-jre
