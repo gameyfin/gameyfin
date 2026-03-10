@@ -14,13 +14,19 @@ import org.gameyfin.app.users.persistence.UserRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
+import java.awt.Color
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import javax.imageio.ImageIO
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ImageServiceTest {
 
@@ -664,5 +670,158 @@ class ImageServiceTest {
 
         verify(exactly = 1) { imageRepository.delete(oldAvatar) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Creates a minimal in-memory PNG of the given dimensions filled with a solid colour.
+     * Returns the bytes as an [InputStream] that can be fed directly to [ImageIO.read].
+     */
+    private fun createPngStream(width: Int, height: Int, color: Color = Color.BLUE): ByteArrayInputStream {
+        val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+        val g = img.createGraphics()
+        g.color = color
+        g.fillRect(0, 0, width, height)
+        g.dispose()
+        val out = ByteArrayOutputStream()
+        ImageIO.write(img, "png", out)
+        return ByteArrayInputStream(out.toByteArray())
+    }
+
+    // ---------------------------------------------------------------------------
+    // scaleImageForBlurhash – companion object helper (public, directly testable)
+    // ---------------------------------------------------------------------------
+
+    @Nested
+    inner class ScaleImageForBlurhash {
+
+        @Test
+        fun `returns original image when width is already within maxWidth`() {
+            val small = BufferedImage(80, 60, BufferedImage.TYPE_INT_RGB)
+            val result = ImageService.scaleImageForBlurhash(small, maxWidth = 100)
+            assertNotNull(result)
+            assertTrue(result === small, "Expected the same instance to be returned for small images")
+        }
+
+        @Test
+        fun `returns original image when width exactly equals maxWidth`() {
+            val exact = BufferedImage(100, 75, BufferedImage.TYPE_INT_RGB)
+            val result = ImageService.scaleImageForBlurhash(exact, maxWidth = 100)
+            assertTrue(result === exact)
+        }
+
+        @Test
+        fun `scales down a landscape image to maxWidth maintaining aspect ratio`() {
+            val landscape = BufferedImage(400, 200, BufferedImage.TYPE_INT_RGB)
+            val result = ImageService.scaleImageForBlurhash(landscape, maxWidth = 100)
+            assertEquals(100, result.width)
+            assertEquals(50, result.height)   // 200 * (100/400) = 50
+        }
+
+        @Test
+        fun `scales down a portrait image preserving aspect ratio`() {
+            val portrait = BufferedImage(200, 400, BufferedImage.TYPE_INT_RGB)
+            val result = ImageService.scaleImageForBlurhash(portrait, maxWidth = 100)
+            assertEquals(100, result.width)
+            assertEquals(200, result.height)  // 400 * (100/200) = 200
+        }
+
+        @Test
+        fun `scales down a square image preserving aspect ratio`() {
+            val square = BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB)
+            val result = ImageService.scaleImageForBlurhash(square, maxWidth = 100)
+            assertEquals(100, result.width)
+            assertEquals(100, result.height)
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // calculateBlurhash – tested indirectly via createFromInputStream
+    // The blurhash is stored on the Image entity that processImageContent populates.
+    // ---------------------------------------------------------------------------
+
+    @Nested
+    inner class CalculateBlurhash {
+
+        @Test
+        fun `blurhash is set for a valid landscape PNG`() {
+            val pngStream = createPngStream(width = 200, height = 100)
+            val savedImage = Image(id = 1L, type = ImageType.COVER, mimeType = "image/png")
+
+            every { fileStorageService.saveFile(any()) } returns "content-id"
+            every { imageRepository.save(any<Image>()) } answers { firstArg() }
+
+            val result = imageService.createFromInputStream(ImageType.COVER, pngStream, "image/png")
+
+            assertNotNull(result.blurhash, "Expected a blurhash to be generated for a landscape image")
+            assertTrue(result.blurhash!!.isNotBlank())
+        }
+
+        @Test
+        fun `blurhash is set for a valid portrait PNG`() {
+            val pngStream = createPngStream(width = 100, height = 200)
+
+            every { fileStorageService.saveFile(any()) } returns "content-id"
+            every { imageRepository.save(any<Image>()) } answers { firstArg() }
+
+            val result = imageService.createFromInputStream(ImageType.COVER, pngStream, "image/png")
+
+            assertNotNull(result.blurhash, "Expected a blurhash to be generated for a portrait image")
+            assertTrue(result.blurhash!!.isNotBlank())
+        }
+
+        @Test
+        fun `blurhash is set for a valid square PNG`() {
+            val pngStream = createPngStream(width = 150, height = 150)
+
+            every { fileStorageService.saveFile(any()) } returns "content-id"
+            every { imageRepository.save(any<Image>()) } answers { firstArg() }
+
+            val result = imageService.createFromInputStream(ImageType.COVER, pngStream, "image/png")
+
+            assertNotNull(result.blurhash, "Expected a blurhash to be generated for a square image")
+            assertTrue(result.blurhash!!.isNotBlank())
+        }
+
+        @Test
+        fun `blurhash is set for an image already smaller than the scaling threshold`() {
+            // 50x50 is below the default maxWidth=100 used in scaleImageForBlurhash
+            val pngStream = createPngStream(width = 50, height = 50)
+
+            every { fileStorageService.saveFile(any()) } returns "content-id"
+            every { imageRepository.save(any<Image>()) } answers { firstArg() }
+
+            val result = imageService.createFromInputStream(ImageType.COVER, pngStream, "image/png")
+
+            assertNotNull(result.blurhash, "Expected a blurhash even when image is already small")
+        }
+
+        @Test
+        fun `blurhash is null when input stream does not contain a valid image`() {
+            // Feed random non-image bytes; ImageIO.read returns null, so blurhash should be null
+            val garbage = ByteArrayInputStream("not-an-image".toByteArray())
+
+            every { fileStorageService.saveFile(any()) } returns "content-id"
+            every { imageRepository.save(any<Image>()) } answers { firstArg() }
+
+            val result = imageService.createFromInputStream(ImageType.COVER, garbage, "image/png")
+
+            assertNull(result.blurhash, "Expected null blurhash for non-image input")
+        }
+
+        @Test
+        fun `blurhash is null for an empty input stream`() {
+            val empty = ByteArrayInputStream(ByteArray(0))
+
+            every { fileStorageService.saveFile(any()) } returns "content-id"
+            every { imageRepository.save(any<Image>()) } answers { firstArg() }
+
+            val result = imageService.createFromInputStream(ImageType.COVER, empty, "image/png")
+
+            assertNull(result.blurhash, "Expected null blurhash for empty input")
+        }
     }
 }
