@@ -21,17 +21,33 @@ if [ -n "$PUID$PGID" ]; then
 fi
 
 # ── JVM memory tuning for containers ──────────────────────────────
-# MaxRAMPercentage caps the heap to 75 % of that limit.
-# UseG1GC is a good general-purpose GC for server apps with large heaps.
+# Explicit heap cap instead of MaxRAMPercentage to leave room for
+# metaspace, native threads, NIO direct buffers and H2 file-mapped pages.
+# -Xmx512m / -Xms128m  – hard heap ceiling; floor at 128 m so idle apps shrink.
+# UseG1GC              – good general-purpose GC.
+# G1HeapRegionSize=1m  – smaller regions improve reclamation at small heaps.
+# MinHeapFreeRatio / MaxHeapFreeRatio – return unused heap to the OS faster.
+# G1PeriodicGCInterval – triggers a concurrent GC every 15 s while idle so
+#                        the free-ratio settings are actually evaluated and
+#                        uncommitted pages are returned to the OS.
 # UseStringDeduplication saves heap on duplicate String values.
 # UseCompactObjectHeaders saves ~8 bytes per object reference on 64-bit JVMs.
 # Reduced thread-stack size (-Xss512k) saves ~0.5 MB per thread.
+# MaxMetaspaceSize     – bounds class-metadata growth (Vaadin/Spring load many).
+# MaxDirectMemorySize  – caps NIO direct buffers.
 # AOT Cache reduces startup time and memory footprint.
 DEFAULT_JVM_OPTS="\
-  -XX:MaxRAMPercentage=75.0 \
+  -Xms128m \
+  -Xmx512m \
   -XX:+UseG1GC \
+  -XX:G1HeapRegionSize=1m \
+  -XX:MinHeapFreeRatio=15 \
+  -XX:MaxHeapFreeRatio=30 \
+  -XX:G1PeriodicGCInterval=15000 \
   -XX:+UseStringDeduplication \
   -XX:+UseCompactObjectHeaders \
+  -XX:MaxMetaspaceSize=192m \
+  -XX:MaxDirectMemorySize=64m \
   -Xss512k"
 
 # Append AOT Cache flag if a non-empty training cache file exists
