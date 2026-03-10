@@ -135,6 +135,8 @@ class GameyfinPluginManager(
             ) {
                 pluginManagementEntry.enabled = true
                 log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
+                // Save management entry before starting, so startPlugin can find it in the database
+                pluginManagementRepository.save(pluginManagementEntry)
                 startPlugin(pluginWrapper.pluginId)
             }
         } else {
