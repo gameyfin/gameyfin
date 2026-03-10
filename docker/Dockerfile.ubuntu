@@ -1,12 +1,15 @@
 # syntax=docker/dockerfile:1.4
 
-# ── Stage 1: extract layers & collect plugins (lightweight Alpine image) ──
+# ── Stage 1: extract layers & collect plugins ────────────────────────────
 FROM eclipse-temurin:25-jre-alpine AS extractor
+
 WORKDIR /builder
+
 ARG JAR_FILE=./app/build/libs/app.jar
 COPY ${JAR_FILE} application.jar
+
 # Extract using layered layout for optimal Docker layer caching
-RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
+RUN java -Djarmode=tools -jar application.jar extract --layers --launcher --destination extracted
 
 # Pre-collect plugin JARs so final stage can copy them in a single layer
 COPY --link ./plugins/ /tmp/plugins/
@@ -16,18 +19,23 @@ RUN mkdir -p /builder/plugins \
 
 # ── Stage 2: AOT cache training (must use the *runtime* JVM) ─────────────
 FROM eclipse-temurin:25-jre AS aot-training
+
 WORKDIR /training
+
 # Copy the extracted layers to reassemble the application for the training run
 COPY --from=extractor /builder/extracted/dependencies/ ./
 COPY --from=extractor /builder/extracted/spring-boot-loader/ ./
 COPY --from=extractor /builder/extracted/snapshot-dependencies/ ./
 COPY --from=extractor /builder/extracted/application/ ./
-# Run AOT cache training using the same JVM that will serve the app at runtime.
-# -Dspring.context.exit=onRefresh exits after context refresh (no DB needed).
+
+# Copy plugins
+COPY --from=extractor /builder/plugins ./plugins
+
+# Run AOT cache training
 RUN java -XX:AOTCacheOutput=app.aot \
          -XX:+UseCompactObjectHeaders \
          -Dspring.context.exit=onRefresh \
-         -jar application.jar
+         org.springframework.boot.loader.launch.JarLauncher
 
 # ── Stage 3: runtime image ───────────────────────────────────────────────
 FROM eclipse-temurin:25-jre
@@ -73,7 +81,7 @@ COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/snapshot-d
 COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/application/ ./
 COPY --from=extractor --link --chown=${UID}:${GID} /builder/plugins ./plugins
 
-# Copy AOT cache from training stage (built with the same JVM as this runtime)
+# Copy AOT cache from training stage
 COPY --from=aot-training --link --chown=${UID}:${GID} /training/app.aot ./
 
 EXPOSE 8080
