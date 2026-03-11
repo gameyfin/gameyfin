@@ -19,7 +19,7 @@ class UserEntityListener {
         val gameRequests = entityManager.createQuery(
             "SELECT gr FROM GameRequest gr WHERE :user MEMBER OF gr.voters OR gr.requester = :user",
             GameRequest::class.java
-        ).setParameter("user", user).resultList
+        ).setParameter("user", user).resultList.toList()
         for (gr in gameRequests) {
             gr.voters.remove(user)
             if (gr.requester == user) gr.requester = null

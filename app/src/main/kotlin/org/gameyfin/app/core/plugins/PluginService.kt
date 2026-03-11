@@ -165,14 +165,15 @@ class PluginService(
     }
 
     fun validatePluginConfig(pluginId: String, forceRevalidation: Boolean = false): PluginConfigValidationResult {
-        if (forceRevalidation || !pluginConfigValidationCache.containsKey(pluginId)) {
+        return if (forceRevalidation || !pluginConfigValidationCache.containsKey(pluginId)) {
             log.debug { "Validating config for plugin $pluginId" }
             val result = pluginManager.validatePluginConfig(pluginId)
             pluginConfigValidationCache[pluginId] = result
-            return result
+            result
         } else {
             log.debug { "Using cached validation result for plugin $pluginId" }
-            return pluginConfigValidationCache[pluginId]!!
+            pluginConfigValidationCache[pluginId]
+                ?: error("Plugin with id $pluginId not found in validation cache")
         }
     }
 

@@ -8,12 +8,10 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
 import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import java.io.InputStream
 import java.nio.file.Path
 import java.security.PublicKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import java.util.jar.JarFile
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 import kotlin.reflect.KClass
@@ -32,10 +30,11 @@ class GameyfinPluginManager(
 
     companion object {
         private const val PUBLIC_KEY_FILE = "certificates/gameyfin-plugins.pem"
+        private val log = KotlinLogging.logger {}
     }
-
-    private val log = KotlinLogging.logger {}
+    
     private val publicKey: PublicKey = loadPluginSignaturePublicKey()
+    private val signatureVerifier = PluginSignatureVerifier(publicKey)
 
     init {
         // This took me way too long to figure out...
@@ -125,7 +124,7 @@ class GameyfinPluginManager(
                 PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
 
             pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> verifyPluginSignature(pluginPath)
+                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
                 else -> PluginTrustLevel.BUNDLED
             }
 
@@ -142,7 +141,7 @@ class GameyfinPluginManager(
         } else {
             // Just re-verify the plugin if it was already in the database
             pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> verifyPluginSignature(pluginPath)
+                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
                 else -> PluginTrustLevel.BUNDLED
             }
         }
@@ -181,7 +180,7 @@ class GameyfinPluginManager(
                 return pluginWrapper?.pluginState
             }
 
-            else -> {}
+            else -> Unit
         }
 
         // Validate config before starting the plugin
@@ -289,50 +288,6 @@ class GameyfinPluginManager(
         return cert.publicKey
     }
 
-    private fun verifyPluginSignature(pluginPath: Path): PluginTrustLevel {
-        val jarFile = JarFile(pluginPath.toFile(), true)
-        val entries = jarFile.entries()
-
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (entry.isDirectory || entry.name.startsWith("META-INF/")) continue
-
-            try {
-                val buffer = ByteArray(8192)
-                val entryInputStream: InputStream = jarFile.getInputStream(entry)
-                while ((entryInputStream.read(buffer, 0, buffer.size)) != -1) {
-                    // We just read
-                    // This will throw a SecurityException if a signature/digest check fails
-                }
-            } catch (_: SecurityException) {
-                // Signature verification failed
-                return PluginTrustLevel.UNTRUSTED
-            }
-
-            val codeSigners = entry.codeSigners
-
-            if (codeSigners == null || codeSigners.isEmpty()) {
-                // No code signers, so we can't verify the signature
-                return PluginTrustLevel.THIRD_PARTY
-            }
-
-            for (codeSigner in codeSigners) {
-                val certs = codeSigner.signerCertPath.certificates
-
-                for (cert in certs) {
-                    if (cert is X509Certificate) {
-                        try {
-                            cert.verify(publicKey)
-                        } catch (_: Exception) {
-                            // Signature verification failed
-                            return PluginTrustLevel.UNTRUSTED
-                        }
-                    }
-                }
-            }
-        }
-        return PluginTrustLevel.OFFICIAL
-    }
 
     // Needed for unit testing since super.loadPluginFromPath is protected
     internal fun superLoadPluginFromPath(pluginPath: Path): PluginWrapper? {

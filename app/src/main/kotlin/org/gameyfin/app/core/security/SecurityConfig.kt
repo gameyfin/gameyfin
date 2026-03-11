@@ -32,6 +32,7 @@ class SecurityConfig(
 
     companion object {
         const val SSO_PROVIDER_KEY = "oidc"
+        const val LOGIN_URL = "/login"
     }
 
     @Bean
@@ -40,7 +41,7 @@ class SecurityConfig(
         if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
             http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
                 // Redirect to SSO provider on logout
-                configurer.loginView("/login", config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
+                configurer.loginView(LOGIN_URL, config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
             }
 
             // Use custom success handler to handle user registration
@@ -57,7 +58,7 @@ class SecurityConfig(
         } else {
             // Use default Vaadin login URLs
             http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
-                configurer.loginView("/login")
+                configurer.loginView(LOGIN_URL)
             }
         }
 
@@ -66,7 +67,7 @@ class SecurityConfig(
             auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
                 // Gameyfin static resources and public endpoints
                 .requestMatchers(
-                    "/login",
+                    LOGIN_URL,
                     "/loginredirect",
                     "/setup",
                     "/reset-password",

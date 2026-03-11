@@ -54,6 +54,7 @@ object BlurhashMigration {
      * This method is called from Flyway migration V2.3.0.6.
      * Uses multithreading and batch updates for performance.
      */
+    @Suppress("kotlin:S3776")
     @JvmStatic
     fun calculateBlurhashesForAllImages(conn: Connection, dataPath: String) {
         val startTime = System.currentTimeMillis()

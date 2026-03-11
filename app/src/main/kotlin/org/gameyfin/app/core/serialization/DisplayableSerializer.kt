@@ -18,7 +18,7 @@ class DisplayableSerializer : ValueSerializer<Any>() {
         // Use reflection to get the displayName property
         val displayName = value::class.java.getDeclaredField("displayName").apply {
             isAccessible = true
-        }.get(value) as String
+        }[value] as String
 
         gen.writeString(displayName)
     }

@@ -48,20 +48,12 @@ class SsoAuthenticationSuccessHandler(
             matchedUser = when (config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy)) {
                 MatchUsersBy.username -> userService.getByUsername(resolvedUsername)
                 MatchUsersBy.email -> userService.getByEmail(oidcUser.email)
-                else -> throw IllegalStateException("Unknown 'match users by' configuration")
+                else -> error("Unknown 'match users by' configuration")
             }
         }
 
         // User could not be found in the database
         if (matchedUser == null) {
-            // TODO: User registration is currently forced, but this should be configurable.
-            //  However, this causes conflict with user preferences and game entities (since both reference the user entity)
-            // Check if new user registration is enabled
-            //if (config.get(ConfigProperties.SSO.OIDC.AutoRegisterNewUsers) == false) {
-            //    response.sendRedirect("/")
-            //    return
-            //
-
             // Register as new user
             matchedUser = User(oidcUser, resolvedUsername)
         } else {

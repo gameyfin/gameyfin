@@ -79,7 +79,7 @@ class TorrentClient(
         // Verify file access before adding to session
         if (!Files.isReadable(gameFile)) {
             log.error("Cannot read game file for seeding: $gameFile - check file permissions")
-            throw IllegalStateException("Game file is not readable: $gameFile")
+            error("Game file is not readable: $gameFile")
         }
 
         try {
@@ -193,17 +193,25 @@ class TorrentClient(
                 val distributedFullCopies = status.distributedFullCopies()
 
                 // If there are other seeders or complete peers, stop seeding
-                if (distributedFullCopies > 0) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $distributedFullCopies distributed full copies.")
-                    session?.remove(handle)
-                } else if (completePeersFromTracker > 1) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $completePeersFromTracker complete peers from tracker.")
-                    session?.remove(handle)
-                } else if (knownSeeders > 0) {
-                    log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $knownSeeders known seeders.")
-                    session?.remove(handle)
-                } else {
-                    log.debug("Continuing to seed torrent '${status.name()}' - no other complete peers found.")
+                when {
+                    distributedFullCopies > 0 -> {
+                        log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $distributedFullCopies distributed full copies.")
+                        session?.remove(handle)
+                    }
+
+                    completePeersFromTracker > 1 -> {
+                        log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $completePeersFromTracker complete peers from tracker.")
+                        session?.remove(handle)
+                    }
+
+                    knownSeeders > 0 -> {
+                        log.debug("Stopping seeding for torrent '${status.name()}' as it is healthy: $knownSeeders known seeders.")
+                        session?.remove(handle)
+                    }
+
+                    else -> {
+                        log.debug("Continuing to seed torrent '${status.name()}' - no other complete peers found.")
+                    }
                 }
             }
         }

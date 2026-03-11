@@ -72,7 +72,7 @@ class LibraryService(
      * Retrieves all libraries from the repository.
      */
     fun getAll(): List<LibraryDto> {
-        val entities = libraryRepository.findAll()
+        val entities = libraryRepository.findAll().toList()
         return entities.toDtos()
     }
 

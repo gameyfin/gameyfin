@@ -73,9 +73,8 @@ class ImageService(
         phase = TransactionPhase.AFTER_COMPLETION
     )
     fun onGameDeleted(event: GameDeletedEvent) {
-        val imagesToDelete = listOfNotNull(event.game.coverImage, event.game.headerImage)
-            .toMutableList()
-            .apply { addAll(event.game.images) }
+        val imagesToDelete = listOfNotNull(event.game.coverImage, event.game.headerImage) +
+                event.game.images
 
         imagesToDelete.forEach { deleteImageIfUnused(it) }
     }
@@ -85,14 +84,12 @@ class ImageService(
         phase = TransactionPhase.AFTER_COMPLETION
     )
     fun onGameUpdated(event: GameUpdatedEvent) {
-        val imagesBeforeUpdate = listOfNotNull(event.previousState.coverImage, event.previousState.headerImage)
-            .toMutableList()
-            .apply { addAll(event.previousState.images) }
+        val imagesBeforeUpdate = (listOfNotNull(event.previousState.coverImage, event.previousState.headerImage) +
+                event.previousState.images)
             .toSet()
 
-        val imagesStillInUse = listOfNotNull(event.currentState.coverImage, event.currentState.headerImage)
-            .toMutableList()
-            .apply { addAll(event.currentState.images) }
+        val imagesStillInUse = (listOfNotNull(event.currentState.coverImage, event.currentState.headerImage) +
+                event.currentState.images)
             .toSet()
 
         imagesBeforeUpdate.minus(imagesStillInUse).forEach { deleteImageIfUnused(it) }
@@ -141,7 +138,7 @@ class ImageService(
     }
 
     fun downloadIfNew(image: Image) {
-        if (image.originalUrl == null) throw IllegalArgumentException("Image must have an original URL")
+        requireNotNull(image.originalUrl) { "Image must have an original URL" }
 
         // Always try to get existing image first to avoid detached entity issues and duplicate lookups
         val existingImage = imageRepository.findAllByOriginalUrl(image.originalUrl).firstOrNull()
