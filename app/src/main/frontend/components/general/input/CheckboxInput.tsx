@@ -10,12 +10,12 @@ interface CheckboxInputProps extends Omit<CheckboxProps, "name"> {
     resetValue?: unknown;
 }
 
-export default function CheckboxInput({label, description, resetValue, ...props}: CheckboxInputProps) {
+export default function CheckboxInput({label, description, resetValue, className, ...props}: CheckboxInputProps) {
     const [field, meta] = useField({name: props.name, type: "checkbox"});
 
     return (
         <CheckboxGroup
-            className="flex flex-row flex-1 gap-2"
+            className={`flex flex-row flex-1 gap-2 ${className ?? ""}`}
             isInvalid={!!meta.error}
             errorMessage={meta.initialError || meta.error}
             value={field.value ? [field.name] : []}
