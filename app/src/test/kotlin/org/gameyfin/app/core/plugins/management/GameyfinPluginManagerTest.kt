@@ -15,6 +15,9 @@ import org.junit.jupiter.api.io.TempDir
 import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
 import java.nio.file.Path
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
 import kotlin.test.*
 
 class GameyfinPluginManagerTest {
@@ -678,6 +681,105 @@ class GameyfinPluginManagerTest {
         loadersField.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         return loadersField.get(compoundLoader) as List<*>
+    }
+
+    // ========================================================================================
+    // Integration tests for loadPluginFromPath with JAR signature verification
+    // ========================================================================================
+
+    @Test
+    fun `loadPluginFromPath should set THIRD_PARTY trust level for unsigned JAR plugin`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+        )
+
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        val plugin = mockk<Plugin>(relaxed = true)
+
+        every { pluginWrapper.pluginId } returns "unsigned-plugin"
+        every { pluginWrapper.plugin } returns plugin
+        every { pluginManagementRepository.findByIdOrNull("unsigned-plugin") } returns null
+        every { pluginManagementRepository.findMaxPriority() } returns 0
+        every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
+
+        // Create an unsigned JAR with actual content entries
+        val jarPath = createUnsignedJar("unsigned-plugin.jar", mapOf("com/example/MyClass.class" to "dummy"))
+
+        pluginManager.loadPluginFromPath(jarPath)
+
+        // Unsigned JAR → THIRD_PARTY trust level, which means not auto-enabled, not auto-started
+        verify {
+            pluginManagementRepository.save(match {
+                it.pluginId == "unsigned-plugin" && it.trustLevel == PluginTrustLevel.THIRD_PARTY && !it.enabled
+            })
+        }
+        // THIRD_PARTY plugins should NOT be auto-started
+        verify(exactly = 0) { pluginManager.startPlugin("unsigned-plugin") }
+    }
+
+    @Test
+    fun `loadPluginFromPath should re-verify existing plugin as THIRD_PARTY for unsigned JAR`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+        )
+
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        val plugin = mockk<Plugin>(relaxed = true)
+        val existingEntry = PluginManagementEntry("re-verified-plugin", enabled = true, priority = 1)
+        existingEntry.trustLevel = PluginTrustLevel.OFFICIAL
+
+        every { pluginWrapper.pluginId } returns "re-verified-plugin"
+        every { pluginWrapper.plugin } returns plugin
+        every { pluginManagementRepository.findByIdOrNull("re-verified-plugin") } returns existingEntry
+        every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
+
+        val jarPath = createUnsignedJar("re-verified-plugin.jar", mapOf("com/example/MyClass.class" to "dummy"))
+
+        pluginManager.loadPluginFromPath(jarPath)
+
+        // Re-verification of an unsigned JAR should update trust level to THIRD_PARTY
+        verify {
+            pluginManagementRepository.save(match {
+                it.pluginId == "re-verified-plugin" && it.trustLevel == PluginTrustLevel.THIRD_PARTY
+            })
+        }
+    }
+
+    // ========================================================================================
+    // JAR creation helpers
+    // ========================================================================================
+
+    /**
+     * Creates an unsigned JAR file with the given entries at the temp directory.
+     */
+    private fun createUnsignedJar(fileName: String, entries: Map<String, String>): Path {
+        val jarPath = tempPluginsDir.resolve(fileName)
+        val manifest = Manifest()
+        manifest.mainAttributes.putValue("Manifest-Version", "1.0")
+
+        JarOutputStream(jarPath.toFile().outputStream(), manifest).use { jos ->
+            for ((name, content) in entries) {
+                jos.putNextEntry(JarEntry(name))
+                jos.write(content.toByteArray())
+                jos.closeEntry()
+            }
+        }
+
+        return jarPath
     }
 }
 

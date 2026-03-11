@@ -8,13 +8,10 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
 import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import java.io.InputStream
 import java.nio.file.Path
 import java.security.PublicKey
-import java.security.cert.Certificate
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import java.util.jar.JarFile
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 import kotlin.reflect.KClass
@@ -33,10 +30,11 @@ class GameyfinPluginManager(
 
     companion object {
         private const val PUBLIC_KEY_FILE = "certificates/gameyfin-plugins.pem"
+        private val log = KotlinLogging.logger {}
     }
-
-    private val log = KotlinLogging.logger {}
+    
     private val publicKey: PublicKey = loadPluginSignaturePublicKey()
+    private val signatureVerifier = PluginSignatureVerifier(publicKey)
 
     init {
         // This took me way too long to figure out...
@@ -126,7 +124,7 @@ class GameyfinPluginManager(
                 PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
 
             pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> verifyPluginSignature(pluginPath)
+                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
                 else -> PluginTrustLevel.BUNDLED
             }
 
@@ -143,7 +141,7 @@ class GameyfinPluginManager(
         } else {
             // Just re-verify the plugin if it was already in the database
             pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> verifyPluginSignature(pluginPath)
+                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
                 else -> PluginTrustLevel.BUNDLED
             }
         }
@@ -290,65 +288,6 @@ class GameyfinPluginManager(
         return cert.publicKey
     }
 
-    private fun verifyPluginSignature(pluginPath: Path): PluginTrustLevel {
-        val jarFile = JarFile(pluginPath.toFile(), true)
-        val entries = jarFile.entries()
-
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (entry.isDirectory || entry.name.startsWith("META-INF/")) continue
-
-            if (!verifyEntryDigest(jarFile, entry)) return PluginTrustLevel.UNTRUSTED
-
-            val codeSigners = entry.codeSigners
-            if (codeSigners.isNullOrEmpty()) return PluginTrustLevel.THIRD_PARTY
-
-            val signersTrustLevel = verifyCodeSigners(codeSigners)
-            if (signersTrustLevel != PluginTrustLevel.OFFICIAL) return signersTrustLevel
-        }
-        return PluginTrustLevel.OFFICIAL
-    }
-
-    /**
-     * Reads the full entry stream to trigger JAR signature/digest verification.
-     * Returns `true` if the entry is valid, `false` if signature verification failed.
-     */
-    private fun verifyEntryDigest(jarFile: JarFile, entry: java.util.jar.JarEntry): Boolean {
-        return try {
-            val buffer = ByteArray(8192)
-            val entryInputStream: InputStream = jarFile.getInputStream(entry)
-            while (entryInputStream.read(buffer, 0, buffer.size) != -1) {
-                // Reading to trigger SecurityException on digest mismatch
-            }
-            true
-        } catch (_: SecurityException) {
-            false
-        }
-    }
-
-    /**
-     * Verifies that all code signers' certificates are signed with the expected public key.
-     */
-    private fun verifyCodeSigners(codeSigners: Array<java.security.CodeSigner>): PluginTrustLevel {
-        for (codeSigner in codeSigners) {
-            val certs = codeSigner.signerCertPath.certificates.toList()
-            val trustLevel = verifyCertificates(certs)
-            if (trustLevel != PluginTrustLevel.OFFICIAL) return trustLevel
-        }
-        return PluginTrustLevel.OFFICIAL
-    }
-
-    private fun verifyCertificates(certs: List<Certificate>): PluginTrustLevel {
-        for (cert in certs) {
-            if (cert !is X509Certificate) continue
-            try {
-                cert.verify(publicKey)
-            } catch (_: Exception) {
-                return PluginTrustLevel.UNTRUSTED
-            }
-        }
-        return PluginTrustLevel.OFFICIAL
-    }
 
     // Needed for unit testing since super.loadPluginFromPath is protected
     internal fun superLoadPluginFromPath(pluginPath: Path): PluginWrapper? {
