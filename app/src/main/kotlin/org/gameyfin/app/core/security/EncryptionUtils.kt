@@ -4,6 +4,10 @@ import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
 
+// Suppress warnings about use of AES/ECB mode.
+// DB lookups (SQL WHERE) need deterministic values which is only possible when using a mode without IV.
+// This is a trade-off between security and practicability.
+@Suppress("kotlin:S5542")
 class EncryptionUtils {
     companion object {
         private const val ALGORITHM = "AES"
