@@ -225,11 +225,21 @@ sealed class ConfigProperties<T : Serializable>(
                 MatchUsersBy.entries
             )
 
+            data object UsernameClaim : ConfigProperties<String>(
+                String::class,
+                "sso.oidc.username-claim",
+                "Username claim",
+                """Name of the OIDC / userinfo claim used as the Gameyfin username (e.g. `preferred_username`, `name`, `email`).
+                    |If the claim is absent or blank, Gameyfin falls back through `preferred_username` → `nickname` → `name` → `email` → `sub` automatically.""".trimMargin(),
+                "preferred_username"
+            )
+
             data object RolesClaim : ConfigProperties<String>(
                 String::class,
                 "sso.oidc.roles-claim",
-                "JWT claim to extract roles from",
-                "Name of the JWT / userinfo claim that contains the user's roles. Gameyfin maps these roles to its own permission system.",
+                "Role claim",
+                """Name of the OIDC / userinfo claim that contains the user's roles.
+                    |Gameyfin maps these roles to its own permission system.""".trimMargin(),
                 "roles"
             )
 
