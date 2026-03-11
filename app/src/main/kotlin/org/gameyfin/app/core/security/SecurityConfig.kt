@@ -120,7 +120,7 @@ class SecurityConfig(
             .clientId(config.get(ConfigProperties.SSO.OIDC.ClientId))
             .clientSecret(config.get(ConfigProperties.SSO.OIDC.ClientSecret))
             .scope(config.get(ConfigProperties.SSO.OIDC.OAuthScopes)?.toList())
-            .userNameAttributeName("preferred_username")
+            .userNameAttributeName(config.get(ConfigProperties.SSO.OIDC.UsernameClaim))
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .issuerUri(config.get(ConfigProperties.SSO.OIDC.IssuerUrl))
             .authorizationUri(config.get(ConfigProperties.SSO.OIDC.AuthorizeUrl))
