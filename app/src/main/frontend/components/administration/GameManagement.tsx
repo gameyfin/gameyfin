@@ -1,11 +1,13 @@
 import React from "react";
+import {LibraryEndpoint} from "Frontend/generated/endpoints";
+import ScanType from "Frontend/generated/org/gameyfin/app/libraries/enums/ScanType";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import * as Yup from 'yup';
 import "Frontend/util/yup-extensions";
 import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
-import {ListNumbersIcon, PlusIcon} from "@phosphor-icons/react";
+import {ListNumbersIcon, MagnifyingGlassIcon, MagnifyingGlassPlusIcon, PlusIcon} from "@phosphor-icons/react";
 import {LibraryOverviewCard} from "Frontend/components/general/cards/LibraryOverviewCard";
 import LibraryCreationModal from "Frontend/components/general/modals/LibraryCreationModal";
 import {useSnapshot} from "valtio/react";
@@ -25,11 +27,25 @@ function GameManagementLayout({getConfig, formik}: any) {
     const collectionCreationModal = useDisclosure();
     const collectionOrderModal = useDisclosure();
 
+    async function triggerScan(scanType: ScanType) {
+        await LibraryEndpoint.triggerScan(scanType, undefined);
+    }
+
     return (
         <div className="flex flex-col">
             <div className="flex flex-row items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
                 <div className="flex flex-row gap-2">
+                    <Tooltip content="Scan all libraries (quick)">
+                        <Button isIconOnly variant="flat" onPress={() => triggerScan(ScanType.QUICK)}>
+                            <MagnifyingGlassIcon/>
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Scan all libraries (full)">
+                        <Button isIconOnly variant="flat" onPress={() => triggerScan(ScanType.FULL)}>
+                            <MagnifyingGlassPlusIcon/>
+                        </Button>
+                    </Tooltip>
                     <Tooltip content="Change library order">
                         <Button isIconOnly variant="flat" onPress={libraryOrderModal.onOpen}>
                             <ListNumbersIcon/>

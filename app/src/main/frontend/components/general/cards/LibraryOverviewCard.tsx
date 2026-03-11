@@ -47,7 +47,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                     }
                 </div>
 
-                <p className="absolute text-2xl font-bold">{library.name}</p>
+                <p className="mt-6 absolute text-2xl text-center font-bold">{library.name}</p>
 
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip content="Scan library (quick)" placement="bottom" color="foreground">

@@ -109,9 +109,10 @@ class LibraryScanService(
         refreshScanSemaphore()
         evictStaleScanProgress()
 
-        val libraries = (libraryIds?.let { libraryRepository.findAllById(libraryIds) } ?: libraryRepository.findAll())
-            .toList()
-        
+        val libraries =
+            if (libraryIds.isNullOrEmpty()) libraryRepository.findAll().toList()
+            else libraryRepository.findAllById(libraryIds).toList()
+
         libraries.forEach { library ->
             val libraryId = library.id!!
             if (scansInProgress.putIfAbsent(libraryId, true) == null) {
