@@ -2092,6 +2092,225 @@ class GameServiceTest {
         assertEquals(PlayerPerspective.entries, result.perspectives)
     }
 
+    // ========================
+    // applyMetadataFields — all fields populated
+    // ========================
+
+    @Test
+    fun `matchManually should populate all metadata fields when fully-populated metadata is provided`() {
+        val coverUri = java.net.URI("https://example.com/cover.jpg")
+        val headerUri = java.net.URI("https://example.com/header.jpg")
+        val screenshotUri = java.net.URI("https://example.com/screenshot.jpg")
+        val videoUri = java.net.URI("https://example.com/video.mp4")
+        val releaseInstant = Instant.parse("2024-06-15T00:00:00Z")
+
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "full-123",
+            title = "Fully Populated Game",
+            description = "A full description",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            coverUrls = setOf(coverUri),
+            headerUrls = setOf(headerUri),
+            screenshotUrls = setOf(screenshotUri),
+            release = releaseInstant,
+            userRating = 85,
+            criticRating = 90,
+            publishedBy = setOf("TestPublisher"),
+            developedBy = setOf("TestDeveloper"),
+            genres = setOf(Genre.ACTION),
+            themes = setOf(Theme.FANTASY),
+            keywords = setOf("keyword1", "keyword2"),
+            features = setOf(GameFeature.SINGLEPLAYER),
+            perspectives = setOf(PlayerPerspective.FIRST_PERSON),
+            videoUrls = setOf(videoUri)
+        )
+
+        val provider = spyk(TestProvider(metadata))
+        val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+            every { priority } returns 1
+        }
+
+        val originalIds = mapOf(
+            provider.javaClass.name to ExternalProviderIdDto("test-plugin", "full-123")
+        )
+        val path = Path.of("/test/full-game.exe")
+
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
+        every { filesystemService.calculateFileSize(any()) } returns 5000L
+
+        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+
+        assertNotNull(result)
+        assertEquals("Fully Populated Game", result.title)
+        assertEquals("A full description", result.summary)
+        assertEquals(releaseInstant, result.release)
+        assertEquals(85, result.userRating)
+        assertEquals(90, result.criticRating)
+        assertEquals(1, result.publishers.size)
+        assertEquals("TestPublisher", result.publishers[0].name)
+        assertEquals(CompanyType.PUBLISHER, result.publishers[0].type)
+        assertEquals(1, result.developers.size)
+        assertEquals("TestDeveloper", result.developers[0].name)
+        assertEquals(CompanyType.DEVELOPER, result.developers[0].type)
+        assertEquals(listOf(Genre.ACTION), result.genres)
+        assertEquals(listOf(Theme.FANTASY), result.themes)
+        assertEquals(listOf("keyword1", "keyword2"), result.keywords)
+        assertEquals(listOf(GameFeature.SINGLEPLAYER), result.features)
+        assertEquals(listOf(PlayerPerspective.FIRST_PERSON), result.perspectives)
+        assertEquals(listOf(videoUri), result.videoUrls)
+        assertEquals(1, result.images.size)
+    }
+
+    @Test
+    fun `matchManually should handle metadata with blank title and null-or-empty optional fields`() {
+        // Metadata with empty/null optional fields to exercise the takeIf guards
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "sparse-456",
+            title = "Sparse Game",
+            description = "",           // blank description
+            platforms = emptySet(),      // empty platforms
+            coverUrls = null,
+            headerUrls = null,
+            screenshotUrls = null,
+            release = null,
+            userRating = null,
+            criticRating = null,
+            publishedBy = emptySet(),    // empty publishers
+            developedBy = emptySet(),    // empty developers
+            genres = emptySet(),         // empty genres
+            themes = emptySet(),         // empty themes
+            keywords = emptySet(),       // empty keywords
+            features = emptySet(),       // empty features
+            perspectives = emptySet(),   // empty perspectives
+            videoUrls = emptySet()      // empty videoUrls
+        )
+
+        val provider = spyk(TestProvider(metadata))
+        val pluginEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "test-plugin"
+            every { priority } returns 1
+        }
+
+        val originalIds = mapOf(
+            provider.javaClass.name to ExternalProviderIdDto("test-plugin", "sparse-456")
+        )
+        val path = Path.of("/test/sparse-game.exe")
+
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
+        every { filesystemService.calculateFileSize(any()) } returns 1000L
+
+        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+
+        assertNotNull(result)
+        // Title should still be set (it's non-blank)
+        assertEquals("Sparse Game", result.title)
+        // All optional fields should remain at defaults since metadata was empty/null
+        assertNull(result.summary)
+        assertNull(result.release)
+        assertNull(result.coverImage)
+        assertNull(result.headerImage)
+        assertNull(result.userRating)
+        assertNull(result.criticRating)
+        assertEquals(emptyList<Company>(), result.publishers)
+        assertEquals(emptyList<Company>(), result.developers)
+        assertEquals(emptyList<Genre>(), result.genres)
+        assertEquals(emptyList<Theme>(), result.themes)
+        assertEquals(emptyList<String>(), result.keywords)
+        assertEquals(emptyList<GameFeature>(), result.features)
+        assertEquals(emptyList<PlayerPerspective>(), result.perspectives)
+        assertEquals(emptyList<java.net.URI>(), result.videoUrls)
+        assertEquals(emptyList<Image>(), result.images)
+    }
+
+    @Test
+    fun `matchManually should skip fields from lower priority plugin when higher priority already set them`() {
+        val highPriorityMetadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "hp-1",
+            title = "HP Title",
+            description = "HP Summary",
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
+            release = Instant.parse("2024-01-01T00:00:00Z"),
+            userRating = 95,
+            criticRating = 88,
+            publishedBy = setOf("HP Publisher"),
+            developedBy = setOf("HP Developer"),
+            genres = setOf(Genre.ROLE_PLAYING),
+            themes = setOf(Theme.SCIENCE_FICTION),
+            keywords = setOf("hp-kw"),
+            features = setOf(GameFeature.MULTIPLAYER),
+            perspectives = setOf(PlayerPerspective.THIRD_PERSON),
+            videoUrls = setOf(java.net.URI("https://hp.com/video.mp4"))
+        )
+
+        val lowPriorityMetadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "lp-2",
+            title = "LP Title",
+            description = "LP Summary",
+            platforms = setOf(Platform.PLAYSTATION_5),
+            release = Instant.parse("2023-01-01T00:00:00Z"),
+            userRating = 50,
+            criticRating = 40,
+            publishedBy = setOf("LP Publisher"),
+            developedBy = setOf("LP Developer"),
+            genres = setOf(Genre.ADVENTURE),
+            themes = setOf(Theme.FANTASY),
+            keywords = setOf("lp-kw"),
+            features = setOf(GameFeature.SINGLEPLAYER),
+            perspectives = setOf(PlayerPerspective.FIRST_PERSON),
+            videoUrls = setOf(java.net.URI("https://lp.com/video.mp4"))
+        )
+
+        val highProvider = spyk(TestProvider(highPriorityMetadata))
+        val lowProvider = spyk(TestProvider(lowPriorityMetadata))
+
+        val highEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "hp-plugin"
+            every { priority } returns 100
+        }
+        val lowEntry = mockk<PluginManagementEntry>(relaxed = true) {
+            every { pluginId } returns "lp-plugin"
+            every { priority } returns 10
+        }
+
+        val originalIds = mapOf(
+            highProvider.javaClass.name to ExternalProviderIdDto("hp-plugin", "hp-1"),
+            lowProvider.javaClass.name to ExternalProviderIdDto("lp-plugin", "lp-2")
+        )
+        val path = Path.of("/test/priority-game.exe")
+
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(
+            highProvider,
+            lowProvider
+        )
+        every { pluginService.getPluginManagementEntry(highProvider.javaClass) } returns highEntry
+        every { pluginService.getPluginManagementEntry(lowProvider.javaClass) } returns lowEntry
+        every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
+        every { filesystemService.calculateFileSize(any()) } returns 3000L
+
+        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+
+        assertNotNull(result)
+        // All fields should come from the high-priority plugin
+        assertEquals("HP Title", result.title)
+        assertEquals("HP Summary", result.summary)
+        assertEquals(Instant.parse("2024-01-01T00:00:00Z"), result.release)
+        assertEquals(95, result.userRating)
+        assertEquals(88, result.criticRating)
+        assertEquals("HP Publisher", result.publishers[0].name)
+        assertEquals("HP Developer", result.developers[0].name)
+        assertEquals(listOf(Genre.ROLE_PLAYING), result.genres)
+        assertEquals(listOf(Theme.SCIENCE_FICTION), result.themes)
+        assertEquals(listOf("hp-kw"), result.keywords)
+        assertEquals(listOf(GameFeature.MULTIPLAYER), result.features)
+        assertEquals(listOf(PlayerPerspective.THIRD_PERSON), result.perspectives)
+        assertEquals(listOf(java.net.URI("https://hp.com/video.mp4")), result.videoUrls)
+    }
+
     private fun createTestGame(id: Long?, title: String = "Test Game"): Game {
         return Game(
             id = id,
