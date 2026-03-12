@@ -51,7 +51,7 @@ until curl -sf "${HEALTH_URL}" 2>/dev/null | grep -q '"status":"UP"'; do
         kill "$APP_PID" 2>/dev/null || true
         exit 1
     fi
-    sleep 1
+    sleep 1s
     elapsed=$((elapsed + 1))
 done
 echo "✓ Application is ready (took ~${elapsed}s)."

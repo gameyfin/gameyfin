@@ -26,6 +26,8 @@ runs:
 
     - name: Build and push Docker image (Ubuntu)
       uses: docker/build-push-action@v5
+      env:
+        BUILDKIT_PROGRESS: plain
       with:
         context: ${{ inputs.context }}
         file: docker/Dockerfile.ubuntu
