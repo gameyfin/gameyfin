@@ -17,7 +17,7 @@ set -euo pipefail
 APP_PORT=8080
 MGMT_PORT=8081
 HEALTH_URL="http://localhost:${MGMT_PORT}/actuator/health/readiness"
-MAX_WAIT=120          # seconds to wait for the app to become ready
+MAX_WAIT=300          # seconds to wait for the app to become ready
 WARMUP_PAUSE=2        # seconds to sleep after warmup before sending SIGTERM
 
 # Dummy AES key — only used inside the ephemeral training container
