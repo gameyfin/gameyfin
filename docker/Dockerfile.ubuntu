@@ -32,8 +32,10 @@ COPY --from=extractor /builder/extracted/application/ ./
 COPY --from=extractor /builder/plugins ./plugins
 
 # Run AOT cache training
+# UseAVX=0 restricts generated code to baseline x86-64 (SSE2) so the cache is portable across all amd64 CPUs
 RUN java -XX:AOTCacheOutput=app.aot \
          -XX:+UseCompactObjectHeaders \
+         -XX:UseAVX=0 \
          -Dspring.context.exit=onRefresh \
          -jar application.jar
 
