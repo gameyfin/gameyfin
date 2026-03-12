@@ -18,9 +18,17 @@ RUN mkdir -p /builder/plugins \
     && rm -rf /tmp/plugins
 
 # ── Stage 2: AOT cache training (must use the *runtime* JVM) ─────────────
+# Boot the full application, wait for readiness, fire warm-up HTTP requests
+# that exercise Vaadin/Hilla, Spring Security, Hibernate, and PF4J plugin
+# loading, then gracefully shut down
 FROM eclipse-temurin:25-jre AS aot-training
 
 WORKDIR /training
+
+# curl is needed by the training script to poll health and send warm-up requests
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the extracted layers to reassemble the application for the training run
 COPY --from=extractor /builder/extracted/dependencies/ ./
@@ -31,13 +39,11 @@ COPY --from=extractor /builder/extracted/application/ ./
 # Copy plugins
 COPY --from=extractor /builder/plugins ./plugins
 
-# Run AOT cache training
-# UseAVX=0 restricts generated code to baseline x86-64 (SSE2) so the cache is portable across all amd64 CPUs
-RUN java -XX:AOTCacheOutput=app.aot \
-         -XX:+UseCompactObjectHeaders \
-         -XX:UseAVX=0 \
-         -Dspring.context.exit=onRefresh \
-         -jar application.jar
+# Copy and run the AOT training script
+# On x86-64, the script passes UseAVX=0 to restrict generated code to baseline
+# SSE2 so the cache is portable across all amd64 CPUs (skipped on aarch64).
+COPY --link ./docker/aot-training.sh ./aot-training.sh
+RUN chmod +x aot-training.sh && ./aot-training.sh
 
 # ── Stage 3: runtime image ───────────────────────────────────────────────
 FROM eclipse-temurin:25-jre

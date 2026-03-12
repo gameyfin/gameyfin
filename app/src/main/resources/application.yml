@@ -26,12 +26,16 @@ management:
   endpoints:
     web:
       exposure:
-        include: restart, health, info, metrics, prometheus
+        include: restart, health, metrics, prometheus
   endpoint:
     pause:
       enabled: false
     restart:
       access: unrestricted
+    health:
+      group:
+        readiness:
+          include: pluginsLoaded
 
 spring:
   jpa:

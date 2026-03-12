@@ -8,7 +8,8 @@ import org.springframework.scheduling.annotation.Async
 
 @Configuration
 class PluginManagerConfig(
-    private val pluginManager: GameyfinPluginManager
+    private val pluginManager: GameyfinPluginManager,
+    private val pluginsLoadedIndicator: PluginsLoadedIndicator
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -18,5 +19,6 @@ class PluginManagerConfig(
         pluginManager.loadPlugins()
         pluginManager.startPlugins()
         log.info { "Loaded plugins: ${pluginManager.plugins.map { it.pluginId }}" }
+        pluginsLoadedIndicator.markReady()
     }
 }

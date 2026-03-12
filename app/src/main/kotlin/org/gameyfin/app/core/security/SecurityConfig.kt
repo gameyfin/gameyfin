@@ -7,6 +7,7 @@ import org.gameyfin.app.config.ConfigService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -35,6 +36,16 @@ class SecurityConfig(
         const val LOGIN_URL = "/login"
     }
 
+    @Order(1)
+    @Bean
+    fun actuatorFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http.securityMatcher("/actuator/**")
+            .authorizeHttpRequests { auth -> auth.anyRequest().permitAll() }
+            .csrf { csrf -> csrf.disable() }
+        return http.build()
+    }
+
+    @Order(2)
     @Bean
     fun filterChain(http: HttpSecurity, routeUtil: RouteUtil): SecurityFilterChain {
         // Apply Vaadin configuration first to properly configure CSRF and request matchers
