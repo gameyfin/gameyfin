@@ -71,9 +71,17 @@ jobs:
             app/build/libs/**
             plugins/**/build/libs/**/*.jar
 
-  docker:
+  docker-build:
     needs: build
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     permissions:
       packages: write
     steps:
@@ -88,12 +96,31 @@ jobs:
           name: build-outputs
           path: .
 
-      - name: Build and push Docker image
-        uses: ./.github/actions/docker-build-push
+      - name: Build platform image
+        uses: ./.github/actions/docker-build-platform
         with:
           ghcr_username: ${{ github.actor }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
           context: .
-          dockerfile: docker/Dockerfile
-          platforms: linux/arm64/v8,linux/amd64
+          file: docker/Dockerfile.ubuntu
+          platform: ${{ matrix.platform }}
+          image_name: ghcr.io/gameyfin/gameyfin
+
+  docker-merge:
+    needs: [build, docker-build]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create and push manifest
+        uses: ./.github/actions/docker-create-manifest
+        with:
+          ghcr_username: ${{ github.actor }}
+          ghcr_token: ${{ secrets.GITHUB_TOKEN }}
           tags: ghcr.io/gameyfin/gameyfin:${{ needs.build.outputs.version }}
+          image_name: ghcr.io/gameyfin/gameyfin

@@ -1,0 +1,70 @@
+name: 'Docker Build Platform'
+description: 'Builds and pushes a single-platform Docker image by digest.'
+runs:
+  using: 'composite'
+  steps:
+    - name: Prepare platform pair
+      id: prepare
+      shell: bash
+      run: |
+        platform="${{ inputs.platform }}"
+        echo "platform_pair=${platform//\//-}" >> $GITHUB_OUTPUT
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ inputs.ghcr_username }}
+        password: ${{ inputs.ghcr_token }}
+
+    - name: Build and push by digest
+      id: build
+      uses: docker/build-push-action@v6
+      env:
+        BUILDKIT_PROGRESS: plain
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.file }}
+        platforms: ${{ inputs.platform }}
+        outputs: type=image,"name=${{ inputs.image_name }}",push-by-digest=true,name-canonical=true,push=true
+        cache-from: type=gha,scope=build-${{ steps.prepare.outputs.platform_pair }}
+        cache-to: type=gha,mode=max,scope=build-${{ steps.prepare.outputs.platform_pair }}
+
+    - name: Export digest
+      shell: bash
+      run: |
+        mkdir -p "${{ runner.temp }}/digests"
+        digest="${{ steps.build.outputs.digest }}"
+        touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+    - name: Upload digest
+      uses: actions/upload-artifact@v7
+      with:
+        name: digests-${{ steps.prepare.outputs.platform_pair }}
+        path: ${{ runner.temp }}/digests/*
+        if-no-files-found: error
+        retention-days: 1
+
+inputs:
+  ghcr_username:
+    required: true
+    description: 'GHCR username'
+  ghcr_token:
+    required: true
+    description: 'GHCR token'
+  context:
+    required: true
+    description: 'Build context'
+  file:
+    required: true
+    description: 'Dockerfile path'
+  platform:
+    required: true
+    description: 'Target platform (e.g. linux/amd64)'
+  image_name:
+    required: true
+    description: 'Image name without tag (e.g. ghcr.io/gameyfin/gameyfin)'
+
