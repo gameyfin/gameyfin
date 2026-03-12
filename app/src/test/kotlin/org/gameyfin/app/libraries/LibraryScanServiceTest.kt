@@ -1,10 +1,12 @@
 package org.gameyfin.app.libraries
 
 import io.mockk.*
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemScanResult
 import org.gameyfin.app.core.filesystem.FilesystemService
+import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.plugins.dto.PluginDto
 import org.gameyfin.app.games.entities.Game
@@ -63,7 +65,8 @@ class LibraryScanServiceTest {
             gameRepository,
             ignoredPathRepository,
             pluginService,
-            configService
+            configService,
+            ScanMetrics(SimpleMeterRegistry())
         )
     }
 

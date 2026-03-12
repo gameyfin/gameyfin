@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemService
+import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.repositories.GameRepository
@@ -40,7 +41,8 @@ class LibraryScanService(
     private val gameRepository: GameRepository,
     private val ignoredPathRepository: IgnoredPathRepository,
     private val pluginService: PluginService,
-    private val configService: ConfigService
+    private val configService: ConfigService,
+    private val scanMetrics: ScanMetrics
 ) {
 
     companion object {
@@ -142,6 +144,8 @@ class LibraryScanService(
             )
         )
         emit(progress)
+        scanMetrics.recordScanStarted(ScanType.QUICK)
+        val scanStartTime = System.currentTimeMillis()
 
         try {
             val scanData = performFilesystemScan(library)
@@ -173,20 +177,32 @@ class LibraryScanService(
                     unmatched = newUnmatchedPaths.size
                 )
             )
+
+            scanMetrics.recordScanCompleted(
+                type = ScanType.QUICK,
+                durationMillis = System.currentTimeMillis() - scanStartTime,
+                newGames = persistedNewGames.size,
+                removedGames = removedGames.size,
+                unmatchedPaths = newUnmatchedPaths.size
+            )
         } catch (e: Exception) {
+            scanMetrics.recordScanFailed(ScanType.QUICK, System.currentTimeMillis() - scanStartTime)
             handleScanError(e, library, progress, "quick scan")
         }
     }
 
     private fun fullScan(library: Library, triggeredBySchedule: Boolean) {
+        val scanType = if (triggeredBySchedule) ScanType.SCHEDULED else ScanType.FULL
         val progress = LibraryScanProgress(
             libraryId = library.id!!,
-            type = if (triggeredBySchedule) ScanType.SCHEDULED else ScanType.FULL,
+            type = scanType,
             currentStep = LibraryScanStep(
                 description = "Scanning filesystem"
             )
         )
         emit(progress)
+        scanMetrics.recordScanStarted(scanType)
+        val scanStartTime = System.currentTimeMillis()
 
         try {
             val scanData = performFilesystemScan(library)
@@ -228,7 +244,17 @@ class LibraryScanService(
                     updated = updatedGames.size
                 )
             )
+
+            scanMetrics.recordScanCompleted(
+                type = scanType,
+                durationMillis = System.currentTimeMillis() - scanStartTime,
+                newGames = persistedNewGames.size,
+                removedGames = removedGames.size,
+                unmatchedPaths = newUnmatchedPaths.size,
+                updatedGames = updatedGames.size
+            )
         } catch (e: Exception) {
+            scanMetrics.recordScanFailed(scanType, System.currentTimeMillis() - scanStartTime)
             handleScanError(e, library, progress, "full scan")
         }
     }

@@ -7,6 +7,7 @@ import org.gameyfin.app.core.download.bandwidth.SessionBandwidthManager
 import org.gameyfin.app.core.download.bandwidth.SessionMonitoredOutputStream
 import org.gameyfin.app.core.download.bandwidth.SessionThrottledOutputStream
 import org.gameyfin.app.core.download.provider.DownloadProviderDto
+import org.gameyfin.app.core.metrics.DownloadMetrics
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
@@ -25,6 +26,7 @@ class DownloadService(
     private val pluginManager: GameyfinPluginManager,
     private val configService: ConfigService,
     private val sessionBandwidthManager: SessionBandwidthManager,
+    private val downloadMetrics: DownloadMetrics,
 ) {
 
     companion object {
@@ -80,7 +82,9 @@ class DownloadService(
         // Always get a tracker to enable stats monitoring, even without throttling
         val tracker = sessionBandwidthManager.getTracker(sessionId, maxBytesPerSecond)
 
-        val finalOutputStream = if (maxBytesPerSecond > 0) {
+        val throttled = maxBytesPerSecond > 0
+
+        val finalOutputStream = if (throttled) {
             log.debug {
                 "Applying session-based bandwidth limit of $bandwidthLimitMbps Mbps ($maxBytesPerSecond bytes/sec) " +
                         "for download of '${game.title}' (active downloads for this session: ${tracker.activeDownloads.get()})"
@@ -94,6 +98,8 @@ class DownloadService(
             SessionMonitoredOutputStream(outputStream, tracker, game.id, username, remoteIp)
         }
 
+        downloadMetrics.recordDownloadStarted(throttled)
+
         try {
             finalOutputStream.use {
                 val timeTaken = measureTime {
@@ -101,12 +107,17 @@ class DownloadService(
                     finalOutputStream.flush()
                 }
 
+                val bytesWritten = tracker.totalBytesTransferred
+                downloadMetrics.recordDownloadCompleted(bytesWritten)
+
                 log.debug {
                     "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
                             "(session: $sessionId) completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
                 }
             }
         } catch (e: IOException) {
+            downloadMetrics.recordDownloadFailed()
+
             // Client disconnected (cancelled download, network error, etc.)
             // This is expected behavior, log at debug level instead of error
             log.debug {

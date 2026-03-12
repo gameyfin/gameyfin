@@ -1,10 +1,12 @@
 package org.gameyfin.app.core.download.files
 
 import io.mockk.*
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.download.bandwidth.SessionBandwidthManager
 import org.gameyfin.app.core.download.bandwidth.SessionBandwidthTracker
+import org.gameyfin.app.core.metrics.DownloadMetrics
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
@@ -35,7 +37,8 @@ class DownloadServiceTest {
         pluginManager = mockk<GameyfinPluginManager>(relaxed = true)
         configService = mockk<ConfigService>(relaxed = true)
         sessionBandwidthManager = mockk<SessionBandwidthManager>(relaxed = true)
-        service = DownloadService(pluginManager, configService, sessionBandwidthManager)
+        val downloadMetrics = DownloadMetrics(SimpleMeterRegistry(), sessionBandwidthManager)
+        service = DownloadService(pluginManager, configService, sessionBandwidthManager, downloadMetrics)
     }
 
     @AfterEach
