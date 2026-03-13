@@ -2,6 +2,7 @@ package org.gameyfin.app.media
 
 import com.github.benmanes.caffeine.cache.Cache
 import com.vanniktech.blurhash.BlurHash
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
 import org.gameyfin.app.core.events.GameDeletedEvent
@@ -11,6 +12,8 @@ import org.gameyfin.app.core.events.UserUpdatedEvent
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.users.persistence.UserRepository
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
@@ -35,6 +38,8 @@ class ImageService(
     private val imageCache: Cache<Long, Image>
 ) {
     companion object {
+        private val log = KotlinLogging.logger { }
+
         private val tika = Tika()
 
         /**
@@ -67,6 +72,16 @@ class ImageService(
 
             return scaled
         }
+    }
+
+    /**
+     * Pre-populate the image cache at startup
+     */
+    @EventListener(ApplicationReadyEvent::class)
+    fun prePopulateImageCache() {
+        val images = imageRepository.findAll().toList()
+        images.forEach { image -> image.id?.let { imageCache.put(it, image) } }
+        log.debug { "Pre-populated image cache with ${images.size} entries" }
     }
 
     @Async
@@ -122,7 +137,7 @@ class ImageService(
         val url = image.originalUrl
         if (url.isNullOrBlank()) {
             // No original URL => cannot dedupe by URL; just persist as-is
-            return imageRepository.save(image)
+            return imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
         }
 
         // Prefer a list lookup to avoid IncorrectResultSizeDataAccessException if duplicates exist pre-migration
@@ -131,7 +146,7 @@ class ImageService(
 
         return try {
             val toSave = Image(originalUrl = url, type = image.type)
-            imageRepository.save(toSave)
+            imageRepository.save(toSave).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
         } catch (e: DataIntegrityViolationException) {
             // Unique (original_url) might have been inserted concurrently; fetch and return
             imageRepository.findAllByOriginalUrl(url).firstOrNull()
@@ -165,7 +180,7 @@ class ImageService(
 
         // Save or update the image to ensure it's persisted
         try {
-            imageRepository.save(image)
+            imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
         } catch (_: DataIntegrityViolationException) {
             // If another thread saved the same URL meanwhile, just ignore and proceed
         }
@@ -174,7 +189,7 @@ class ImageService(
     fun createFromInputStream(type: ImageType, content: InputStream, mimeType: String): Image {
         val image = Image(type = type, mimeType = mimeType)
         processImageContent(image, content)
-        return imageRepository.save(image)
+        return imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
     }
 
     fun getImage(id: Long): Image? {

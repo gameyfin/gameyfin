@@ -1,5 +1,6 @@
 logging.level:
   root: info
+  org.gameyfin: debug
   org.gameyfin.app.GameyfinApplicationKt: info
   org.flywaydb.core.internal.database.base: warn
 

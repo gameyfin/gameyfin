@@ -1,8 +1,10 @@
 package org.gameyfin.app.media
 
 import jakarta.persistence.*
+import org.hibernate.annotations.BatchSize
 
 @Entity
+@BatchSize(size = 100)
 class Image(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
