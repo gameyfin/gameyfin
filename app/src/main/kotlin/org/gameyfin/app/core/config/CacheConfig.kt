@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration
 import java.util.concurrent.TimeUnit
 
 @Configuration
-class CacheConfiguration {
+class CacheConfig {
 
     /**
      * Cache for Image entities keyed by ID.

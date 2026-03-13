@@ -49,10 +49,7 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // Reactive
-    implementation("org.springframework.boot:spring-boot-starter-webflux") {
-        exclude(group = "org.springframework.boot", module = "spring-boot-starter-reactor-netty")
-    }
-    implementation("org.springframework.boot:spring-boot-starter-jetty")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
@@ -60,9 +57,7 @@ dependencies {
     implementation("com.vaadin:vaadin-core") {
         exclude("com.vaadin:flow-react")
     }
-    implementation("com.vaadin:vaadin-spring-boot-starter") {
-        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
-    }
+    implementation("com.vaadin:vaadin-spring-boot-starter")
     implementation("com.vaadin:hilla-spring-boot-starter")
 
     // Logging

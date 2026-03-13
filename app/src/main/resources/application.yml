@@ -16,10 +16,17 @@ server:
       tracking-modes: cookie
       timeout: 4h
   forward-headers-strategy: framework
-  jetty:
+  tomcat:
+    remoteip:
+      protocol-header: X-Forwarded-Proto
+      remote-ip-header: X-Forwarded-For
     threads:
-      max: 20
-      min: 4
+      max: 200
+      min-spare: 10
+    max-connections: 10_000
+    max-keep-alive-requests: 100
+    connection-timeout: 10m
+    keep-alive-timeout: 10m
 
 management:
   server:
