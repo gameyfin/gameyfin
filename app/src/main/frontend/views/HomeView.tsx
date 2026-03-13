@@ -8,9 +8,12 @@ import {collectionState} from "Frontend/state/CollectionState";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import {StartPageDisplayCard} from "Frontend/components/general/cards/StartPageDisplayCard";
 import {Link} from "@heroui/react";
-import {CaretRightIcon} from "@phosphor-icons/react";
+import {CaretRightIcon, FolderOpenIcon} from "@phosphor-icons/react";
+import {useAuth} from "Frontend/util/auth";
+import {isAdmin} from "Frontend/util/utils";
 
 export default function HomeView() {
+    const auth = useAuth();
     const librariesState = useSnapshot(libraryState);
     const collectionsState = useSnapshot(collectionState);
     const gamesState = useSnapshot(gameState);
@@ -64,6 +67,33 @@ export default function HomeView() {
             return dateB - dateA; // Descending order (newest first)
         });
     };
+
+    const hasNoContent = filteredAndSortedLibraries.length === 0 && filteredAndSortedCollections.length === 0;
+
+    if (hasNoContent) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-4">
+                <FolderOpenIcon size={64} className="text-default-300"/>
+                <p className="text-xl font-semibold text-default-600">Nothing here yet</p>
+                {isAdmin(auth) ? (
+                    <>
+                        <p className="text-default-400 max-w-lg">
+                            Get started by adding libraries and games in the{" "}
+                            <Link href="/administration/games" underline="always">
+                                administration panel
+                            </Link>.
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-default-400 max-w-md">
+                            There is currently no content available. Check back later!
+                        </p>
+                    </>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="w-full">

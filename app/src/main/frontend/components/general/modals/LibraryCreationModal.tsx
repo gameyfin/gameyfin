@@ -20,8 +20,7 @@ import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInput
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
-import {pluginState, PluginType} from "Frontend/state/PluginState";
-import PluginState from "Frontend/generated/org/pf4j/PluginState";
+import {pluginState} from "Frontend/state/PluginState";
 
 interface LibraryCreationModalProps {
     isOpen: boolean;
@@ -35,11 +34,10 @@ export default function LibraryCreationModal({
 
     const [scanAfterCreation, setScanAfterCreation] = useState<boolean>(true);
     const availablePlatforms = useSnapshot(platformState).available;
-    const metadataPlugins = useSnapshot(pluginState).sortedByType[PluginType.GameMetadataProvider].filter(p => p.state == PluginState.STARTED);
-    const hasActiveMetadataPlugins = metadataPlugins && metadataPlugins.length > 0;
+    const hasActiveMetadataPlugins = useSnapshot(pluginState).hasActiveMetadataPlugins;
 
     async function createLibrary(library: LibraryAdminDto) {
-        await LibraryEndpoint.createLibrary(library, scanAfterCreation);
+        await LibraryEndpoint.createLibrary(library, hasActiveMetadataPlugins && scanAfterCreation);
 
         addToast({
             title: "New library created",
@@ -92,7 +90,7 @@ export default function LibraryCreationModal({
                                             />
                                             <DirectoryMappingInput name="directories"/>
                                         </div>
-                                        {(!metadataPlugins || metadataPlugins.length == 0) &&
+                                        {!hasActiveMetadataPlugins &&
                                             <Alert color="warning">
                                                 <p>No metadata plugins are currently enabled.</p>
                                                 <p>Go to <Link underline="always" color="foreground"

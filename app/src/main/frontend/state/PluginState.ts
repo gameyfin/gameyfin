@@ -3,6 +3,7 @@ import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/Plug
 import PluginUpdateDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginUpdateDto";
 import {proxy} from "valtio/index";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
+import Pf4jPluginState from "Frontend/generated/org/pf4j/PluginState";
 
 export enum PluginType {
     GameMetadataProvider = "GameMetadataProvider",
@@ -15,6 +16,7 @@ type PluginState = {
     state: Record<string, PluginDto>;
     plugins: PluginDto[];
     sortedByType: Record<string, PluginDto[]>;
+    hasActiveMetadataPlugins: boolean;
 };
 
 export const pluginState = proxy<PluginState>({
@@ -27,6 +29,11 @@ export const pluginState = proxy<PluginState>({
     },
     get sortedByType() {
         return sortPluginsByType(this.state);
+    },
+    get hasActiveMetadataPlugins() {
+        return this.sortedByType[PluginType.GameMetadataProvider]
+            ?.filter((p: PluginDto) => p.state == Pf4jPluginState.STARTED)
+            .length > 0;
     }
 });
 

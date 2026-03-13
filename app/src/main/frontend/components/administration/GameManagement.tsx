@@ -17,6 +17,7 @@ import {collectionState} from "Frontend/state/CollectionState";
 import {CollectionOverviewCard} from "Frontend/components/general/cards/CollectionOverviewCard";
 import CollectionCreationModal from "Frontend/components/general/modals/CollectionCreationModal";
 import CollectionPrioritiesModal from "Frontend/components/general/modals/CollectionPrioritiesModal";
+import {pluginState} from "Frontend/state/PluginState";
 
 function GameManagementLayout({getConfig, formik}: any) {
     const libraries = useSnapshot(libraryState);
@@ -26,6 +27,8 @@ function GameManagementLayout({getConfig, formik}: any) {
     const collections = useSnapshot(collectionState);
     const collectionCreationModal = useDisclosure();
     const collectionOrderModal = useDisclosure();
+
+    const hasActiveMetadataPlugins = useSnapshot(pluginState).hasActiveMetadataPlugins;
 
     async function triggerScan(scanType: ScanType) {
         await LibraryEndpoint.triggerScan(scanType, undefined);
@@ -37,12 +40,16 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
                 <div className="flex flex-row gap-2">
                     <Tooltip content="Scan all libraries (quick)">
-                        <Button isIconOnly variant="flat" onPress={() => triggerScan(ScanType.QUICK)}>
+                        <Button isIconOnly variant="flat"
+                                isDisabled={!hasActiveMetadataPlugins}
+                                onPress={() => triggerScan(ScanType.QUICK)}>
                             <MagnifyingGlassIcon/>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Scan all libraries (full)">
-                        <Button isIconOnly variant="flat" onPress={() => triggerScan(ScanType.FULL)}>
+                        <Button isIconOnly variant="flat"
+                                isDisabled={!hasActiveMetadataPlugins}
+                                onPress={() => triggerScan(ScanType.FULL)}>
                             <MagnifyingGlassPlusIcon/>
                         </Button>
                     </Tooltip>
