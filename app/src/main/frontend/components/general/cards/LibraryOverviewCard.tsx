@@ -10,6 +10,7 @@ import {gameState} from "Frontend/state/GameState";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import ChipList from "Frontend/components/general/ChipList";
+import {pluginState} from "Frontend/state/PluginState";
 
 interface LibraryOverviewCardProps {
     library: LibraryAdminDto;
@@ -20,6 +21,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     const navigate = useNavigate();
     const state = useSnapshot(gameState);
     const randomGames = getRandomGames();
+    const hasActiveMetadataPlugins = useSnapshot(pluginState).hasActiveMetadataPlugins;
 
     function getRandomGames() {
         if (!state.randomlyOrderedGamesByLibraryId[library.id]) return [];
@@ -47,16 +49,20 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                     }
                 </div>
 
-                <p className="absolute text-2xl font-bold">{library.name}</p>
+                <p className="mt-6 absolute text-2xl text-center font-bold">{library.name}</p>
 
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip content="Scan library (quick)" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light" onPress={() => triggerScan(ScanType.QUICK)}>
+                        <Button isIconOnly variant="light"
+                                isDisabled={!hasActiveMetadataPlugins}
+                                onPress={() => triggerScan(ScanType.QUICK)}>
                             <MagnifyingGlassIcon/>
                         </Button>
                     </Tooltip>
                     <Tooltip content="Scan library (full)" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light" onPress={() => triggerScan(ScanType.FULL)}>
+                        <Button isIconOnly variant="light"
+                                isDisabled={!hasActiveMetadataPlugins}
+                                onPress={() => triggerScan(ScanType.FULL)}>
                             <MagnifyingGlassPlusIcon/>
                         </Button>
                     </Tooltip>

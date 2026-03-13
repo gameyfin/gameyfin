@@ -51,11 +51,12 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
             <div className="flex flex-row items-start gap-8">
                 <div className="flex flex-col">
                     <h2 className="text-xl font-bold mb-4">General configuration</h2>
-                    <ConfigFormField className="mb-4"
-                                     configElement={getConfig("sso.oidc.enabled")}/>
+                    <ConfigFormField className="mb-4" configElement={getConfig("sso.oidc.enabled")}/>
+
                     <ConfigFormField configElement={getConfig("sso.oidc.match-existing-users-by")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
-
+                    <ConfigFormField configElement={getConfig("sso.oidc.username-claim")}
+                                     isDisabled={!formik.values.sso.oidc.enabled}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.roles-claim")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.oauth-scopes")}

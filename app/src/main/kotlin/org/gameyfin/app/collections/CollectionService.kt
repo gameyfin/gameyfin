@@ -70,8 +70,8 @@ class CollectionService(
 
     @Transactional
     fun create(dto: CollectionCreateDto) {
-        if (collectionRepository.findByName(dto.name) != null) {
-            throw IllegalArgumentException("Collection with name '${dto.name}' already exists")
+        require(collectionRepository.findByName(dto.name) == null) {
+            "Collection with name '${dto.name}' already exists"
         }
         val entity = dto.toEntity()
         dto.gameIds?.let { ids ->
@@ -87,8 +87,8 @@ class CollectionService(
     fun update(dto: CollectionUpdateDto): CollectionDto {
         val collection = getById(dto.id)
         dto.name?.let { newName ->
-            if (newName != collection.name && collectionRepository.findByName(newName) != null) {
-                throw IllegalArgumentException("Collection with name '$newName' already exists")
+            require(collectionRepository.findByName(dto.name) == null) {
+                "Collection with name '${dto.name}' already exists"
             }
             collection.name = newName
         }

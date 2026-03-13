@@ -8,12 +8,10 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
 import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
-import java.io.InputStream
 import java.nio.file.Path
 import java.security.PublicKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import java.util.jar.JarFile
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 import kotlin.reflect.KClass
@@ -32,10 +30,11 @@ class GameyfinPluginManager(
 
     companion object {
         private const val PUBLIC_KEY_FILE = "certificates/gameyfin-plugins.pem"
+        private val log = KotlinLogging.logger {}
     }
-
-    private val log = KotlinLogging.logger {}
+    
     private val publicKey: PublicKey = loadPluginSignaturePublicKey()
+    private val signatureVerifier = PluginSignatureVerifier(publicKey)
 
     init {
         // This took me way too long to figure out...
@@ -59,10 +58,24 @@ class GameyfinPluginManager(
     }
 
     override fun createPluginLoader(): PluginLoader {
-        return when (this.isDevelopment) {
-            true -> GameyfinDevelopmentPluginLoader(this, javaClass.classLoader)
-            false -> GameyfinJarPluginLoader(this)
+        val pluginLoader = CompoundPluginLoader()
+
+        val jarPluginLoader = GameyfinJarPluginLoader(this)
+        pluginLoader.add(jarPluginLoader)
+
+        if (this.isDevelopment) {
+            val classPluginLoader = GameyfinDevelopmentPluginLoader(this, javaClass.classLoader)
+            pluginLoader.add(classPluginLoader)
         }
+
+        return pluginLoader
+    }
+
+    override fun createPluginRepository(): PluginRepository? {
+        return CompoundPluginRepository()
+            .add(JarPluginRepository(getPluginsRoots()))
+            .add(DefaultPluginRepository(getPluginsRoots()))
+            .add(DevelopmentPluginRepository(getPluginsRoots())) { this.isDevelopment }
     }
 
     override fun createPluginStatusProvider(): PluginStatusProvider {
@@ -83,11 +96,7 @@ class GameyfinPluginManager(
         return extensionFinder
     }
 
-    public override fun checkPluginId(pluginId: String) {
-        super.checkPluginId(pluginId)
-    }
-
-    override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
+    public override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
 
         if (pluginPath.endsWith("data") || pluginPath.endsWith("state")) {
             log.info { "Skipping non-plugin path '$pluginPath'" }
@@ -95,7 +104,7 @@ class GameyfinPluginManager(
         }
 
         val pluginWrapper = try {
-            super.loadPluginFromPath(pluginPath)
+            superLoadPluginFromPath(pluginPath)
         } catch (e: Exception) {
             log.error { "Failed to load plugin '$pluginPath': ${e.message}" }
             null
@@ -115,7 +124,7 @@ class GameyfinPluginManager(
                 PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
 
             pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> verifyPluginSignature(pluginPath)
+                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
                 else -> PluginTrustLevel.BUNDLED
             }
 
@@ -125,12 +134,14 @@ class GameyfinPluginManager(
             ) {
                 pluginManagementEntry.enabled = true
                 log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
+                // Save management entry before starting, so startPlugin can find it in the database
+                pluginManagementRepository.save(pluginManagementEntry)
                 startPlugin(pluginWrapper.pluginId)
             }
         } else {
             // Just re-verify the plugin if it was already in the database
             pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> verifyPluginSignature(pluginPath)
+                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
                 else -> PluginTrustLevel.BUNDLED
             }
         }
@@ -155,12 +166,21 @@ class GameyfinPluginManager(
         if (pluginId == null) return PluginState.FAILED
 
         val trustLevel = pluginManagementRepository.findByIdOrNull(pluginId)?.trustLevel ?: PluginTrustLevel.UNKNOWN
-        if (trustLevel == PluginTrustLevel.UNTRUSTED) {
-            val pluginWrapper = getPlugin(pluginId)
-            val pluginState = PluginState.UNLOADED
+        when (trustLevel) {
+            PluginTrustLevel.UNTRUSTED -> {
+                val pluginWrapper = getPlugin(pluginId)
+                val pluginState = PluginState.UNLOADED
+                this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
+                return pluginState
+            }
 
-            this.firePluginStateEvent(PluginStateEvent(this, pluginWrapper, pluginState))
-            return pluginState
+            PluginTrustLevel.UNKNOWN -> {
+                val pluginWrapper = getPlugin(pluginId)
+                log.warn { "Plugin $pluginId has unknown trust level, not starting" }
+                return pluginWrapper?.pluginState
+            }
+
+            else -> Unit
         }
 
         // Validate config before starting the plugin
@@ -233,10 +253,14 @@ class GameyfinPluginManager(
             .map { it.simpleName }
     }
 
-    fun getPluginForExtension(extensionClass: Class<ExtensionPoint>): PluginWrapper? {
-        return getPlugins().firstOrNull { pluginWrapper ->
-            getExtensionClasses(pluginWrapper.pluginId).any { it == extensionClass }
+    fun getPluginsForExtension(extensionClass: KClass<out ExtensionPoint>): List<PluginWrapper> {
+        return getPlugins().filter { pluginWrapper ->
+            supportsExtensionType(pluginWrapper.pluginId, extensionClass)
         }
+    }
+
+    fun getPluginForExtension(extensionClass: KClass<out ExtensionPoint>): PluginWrapper? {
+        return getPluginsForExtension(extensionClass).firstOrNull()
     }
 
     fun getManagementEntry(pluginId: String): PluginManagementEntry {
@@ -264,48 +288,9 @@ class GameyfinPluginManager(
         return cert.publicKey
     }
 
-    private fun verifyPluginSignature(pluginPath: Path): PluginTrustLevel {
-        val jarFile = JarFile(pluginPath.toFile(), true)
-        val entries = jarFile.entries()
 
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (entry.isDirectory || entry.name.startsWith("META-INF/")) continue
-
-            try {
-                val buffer = ByteArray(8192)
-                val entryInputStream: InputStream = jarFile.getInputStream(entry)
-                while ((entryInputStream.read(buffer, 0, buffer.size)) != -1) {
-                    // We just read
-                    // This will throw a SecurityException if a signature/digest check fails
-                }
-            } catch (_: SecurityException) {
-                // Signature verification failed
-                return PluginTrustLevel.UNTRUSTED
-            }
-
-            val codeSigners = entry.codeSigners
-
-            if (codeSigners == null || codeSigners.isEmpty()) {
-                // No code signers, so we can't verify the signature
-                return PluginTrustLevel.THIRD_PARTY
-            }
-
-            for (codeSigner in codeSigners) {
-                val certs = codeSigner.signerCertPath.certificates
-
-                for (cert in certs) {
-                    if (cert is X509Certificate) {
-                        try {
-                            cert.verify(publicKey)
-                        } catch (_: Exception) {
-                            // Signature verification failed
-                            return PluginTrustLevel.UNTRUSTED
-                        }
-                    }
-                }
-            }
-        }
-        return PluginTrustLevel.OFFICIAL
+    // Needed for unit testing since super.loadPluginFromPath is protected
+    internal fun superLoadPluginFromPath(pluginPath: Path): PluginWrapper? {
+        return super.loadPluginFromPath(pluginPath)
     }
 }

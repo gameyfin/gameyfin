@@ -2,6 +2,13 @@
     <a href="https://gameyfin.org">
         <img src="assets/v2/Banner.svg" width="auto" alt="Gameyfin Logo">
     </a>
+
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=gameyfin_gameyfin&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=gameyfin_gameyfin)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=gameyfin_gameyfin&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=gameyfin_gameyfin)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=gameyfin_gameyfin&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=gameyfin_gameyfin)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=gameyfin_gameyfin&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=gameyfin_gameyfin)
+</div>
+<div align="center">
     <h2>Gameyfin</h2>
     <h4>Manage your video games.</h4>
     <p>simple / fast / <a href="https://gameyfin.org/blog/2025/12/22/why-gameyfin-is-foss/">FOSS</a></p>
@@ -11,9 +18,12 @@
 
 Name and functionality inspired by [Jellyfin](https://jellyfin.org/).
 
-Gameyfin will turn your disorganized collection of video games into a beautiful, easy-to-navigate library that you can access from any device with a web browser.  
-It will automatically scan your game folders, download metadata and cover images, and present everything in a user-friendly interface.  
-Download your game files directly from the web UI, share your library with friends, and enjoy your games like never before.  
+Gameyfin will turn your disorganized collection of video games into a beautiful, easy-to-navigate library that you can
+access from any device with a web browser.  
+It will automatically scan your game folders, download metadata and cover images, and present everything in a
+user-friendly interface.  
+Download your game files directly from the web UI, share your library with friends, and enjoy your games like never
+before.
 
 ### Documentation
 
@@ -47,7 +57,8 @@ Gameyfin v2 is written in Kotlin and uses the following libraries/frameworks:
 * H2 database for persistence
 
 ### Acknowledgements
- 
 
 [![YourKit Logo](https://www.yourkit.com/images/yklogo.png)](https://www.yourkit.com/)  
-Gameyfin is supported by [YourKit](https://www.yourkit.com/), the makers of [YourKit Java Profiler](https://yourkit.com/java/profiler/), a powerful tool for profiling Java and Kotlin applications.
+Gameyfin is supported by [YourKit](https://www.yourkit.com/), the makers
+of [YourKit Java Profiler](https://yourkit.com/java/profiler/), a powerful tool for profiling Java and Kotlin
+applications.

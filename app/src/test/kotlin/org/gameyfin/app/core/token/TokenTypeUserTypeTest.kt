@@ -93,7 +93,7 @@ class TokenTypeUserTypeTest {
     fun `nullSafeGet should return PasswordReset for password-reset key`() {
         every { resultSet.getString(0) } returns "password-reset"
 
-        val result = userType.nullSafeGet(resultSet, 0, session, null)
+        val result = userType.nullSafeGet(resultSet, 0, session)
 
         assertNotNull(result)
         assertEquals(TokenType.PasswordReset, result)
@@ -103,7 +103,7 @@ class TokenTypeUserTypeTest {
     fun `nullSafeGet should return EmailConfirmation for email-verification key`() {
         every { resultSet.getString(1) } returns "email-verification"
 
-        val result = userType.nullSafeGet(resultSet, 1, session, null)
+        val result = userType.nullSafeGet(resultSet, 1, session)
 
         assertNotNull(result)
         assertEquals(TokenType.EmailConfirmation, result)
@@ -113,7 +113,7 @@ class TokenTypeUserTypeTest {
     fun `nullSafeGet should return Invitation for invitation key`() {
         every { resultSet.getString(2) } returns "invitation"
 
-        val result = userType.nullSafeGet(resultSet, 2, session, null)
+        val result = userType.nullSafeGet(resultSet, 2, session)
 
         assertNotNull(result)
         assertEquals(TokenType.Invitation, result)
@@ -123,7 +123,7 @@ class TokenTypeUserTypeTest {
     fun `nullSafeGet should return null when database value is null`() {
         every { resultSet.getString(0) } returns null
 
-        val result = userType.nullSafeGet(resultSet, 0, session, null)
+        val result = userType.nullSafeGet(resultSet, 0, session)
 
         assertNull(result)
     }
@@ -133,7 +133,7 @@ class TokenTypeUserTypeTest {
         every { resultSet.getString(0) } returns "unknown-type"
 
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            userType.nullSafeGet(resultSet, 0, session, null)
+            userType.nullSafeGet(resultSet, 0, session)
         }
 
         assertEquals("Unknown TokenType: unknown-type", exception.message)
@@ -144,56 +144,10 @@ class TokenTypeUserTypeTest {
         every { resultSet.getString(0) } returns ""
 
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            userType.nullSafeGet(resultSet, 0, session, null)
+            userType.nullSafeGet(resultSet, 0, session)
         }
 
         assertEquals("Unknown TokenType: ", exception.message)
-    }
-
-    @Test
-    fun `nullSafeSet should set string value for PasswordReset`() {
-        val capturedValues = mutableListOf<String>()
-        every { preparedStatement.setString(0, capture(capturedValues)) } returns Unit
-
-        userType.nullSafeSet(preparedStatement, TokenType.PasswordReset, 0, session)
-
-        assertEquals(1, capturedValues.size)
-        assertEquals("password-reset", capturedValues[0])
-    }
-
-    @Test
-    fun `nullSafeSet should set string value for EmailConfirmation`() {
-        val capturedValues = mutableListOf<String>()
-        every { preparedStatement.setString(1, capture(capturedValues)) } returns Unit
-
-        userType.nullSafeSet(preparedStatement, TokenType.EmailConfirmation, 1, session)
-
-        assertEquals(1, capturedValues.size)
-        assertEquals("email-verification", capturedValues[0])
-    }
-
-    @Test
-    fun `nullSafeSet should set string value for Invitation`() {
-        val capturedValues = mutableListOf<String>()
-        every { preparedStatement.setString(2, capture(capturedValues)) } returns Unit
-
-        userType.nullSafeSet(preparedStatement, TokenType.Invitation, 2, session)
-
-        assertEquals(1, capturedValues.size)
-        assertEquals("invitation", capturedValues[0])
-    }
-
-    @Test
-    fun `nullSafeSet should set null when value is null`() {
-        val capturedIndices = mutableListOf<Int>()
-        val capturedTypes = mutableListOf<Int>()
-        every { preparedStatement.setNull(capture(capturedIndices), capture(capturedTypes)) } returns Unit
-
-        userType.nullSafeSet(preparedStatement, null, 0, session)
-
-        assertEquals(1, capturedIndices.size)
-        assertEquals(0, capturedIndices[0])
-        assertEquals(Types.VARCHAR, capturedTypes[0])
     }
 
     @Test

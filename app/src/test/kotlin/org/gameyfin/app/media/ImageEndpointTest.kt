@@ -1,6 +1,7 @@
 package org.gameyfin.app.media
 
 import io.mockk.*
+import jakarta.servlet.http.HttpServletRequest
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.users.UserService
@@ -8,21 +9,29 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.core.Authentication
 import org.springframework.web.multipart.MultipartFile
 import java.io.ByteArrayInputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class ImageEndpointTest {
 
+    @TempDir
+    lateinit var tempDir: Path
+
     private lateinit var imageService: ImageService
     private lateinit var userService: UserService
     private lateinit var pluginService: PluginService
     private lateinit var imageEndpoint: ImageEndpoint
+    private lateinit var mockRequest: HttpServletRequest
 
     @BeforeEach
     fun setup() {
@@ -30,6 +39,9 @@ class ImageEndpointTest {
         userService = mockk()
         pluginService = mockk()
         imageEndpoint = ImageEndpoint(imageService, userService, pluginService)
+        mockRequest = mockk {
+            every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns null
+        }
 
         mockkStatic("org.gameyfin.app.core.security.SecurityUtilsKt")
     }
@@ -40,23 +52,29 @@ class ImageEndpointTest {
         clearAllMocks()
     }
 
+    private fun createTempFile(content: String = "image data"): Path {
+        val file = Files.createTempFile(tempDir, "test-img-", ".tmp")
+        Files.write(file, content.toByteArray())
+        return file
+    }
+
     @Test
     fun `getScreenshot should return image content when image exists`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = 1024L)
-        val inputStream = ByteArrayInputStream("image data".toByteArray())
+        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = 1024L, contentId = "abc")
+        val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getScreenshot(imageId)
+        val response = imageEndpoint.getScreenshot(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(1024L, response.headers.contentLength)
         assertEquals(MediaType.parseMediaType("image/jpeg"), response.headers.contentType)
         verify(exactly = 1) { imageService.getImage(imageId) }
-        verify(exactly = 1) { imageService.getFileContent(image) }
+        verify(exactly = 1) { imageService.getFilePath(image) }
     }
 
     @Test
@@ -65,47 +83,47 @@ class ImageEndpointTest {
 
         every { imageService.getImage(imageId) } returns null
 
-        val response = imageEndpoint.getScreenshot(imageId)
+        val response = imageEndpoint.getScreenshot(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         verify(exactly = 1) { imageService.getImage(imageId) }
-        verify(exactly = 0) { imageService.getFileContent(any()) }
+        verify(exactly = 0) { imageService.getFilePath(any()) }
     }
 
     @Test
-    fun `getScreenshot should return not found when file content is null`() {
+    fun `getScreenshot should return not found when file path is null`() {
         val imageId = 1L
         val image = Image(id = imageId, type = ImageType.SCREENSHOT)
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns null
+        every { imageService.getFilePath(image) } returns null
 
-        val response = imageEndpoint.getScreenshot(imageId)
+        val response = imageEndpoint.getScreenshot(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         verify(exactly = 1) { imageService.getImage(imageId) }
-        verify(exactly = 1) { imageService.getFileContent(image) }
+        verify(exactly = 1) { imageService.getFilePath(image) }
     }
 
     @Test
     fun `getCover should return image content when image exists`() {
         val imageId = 2L
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L)
-        val inputStream = ByteArrayInputStream("cover data".toByteArray())
+        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = "def")
+        val filePath = createTempFile("cover data")
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getCover(imageId)
+        val response = imageEndpoint.getCover(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(2048L, response.headers.contentLength)
         assertEquals(MediaType.parseMediaType("image/png"), response.headers.contentType)
         verify(exactly = 1) { imageService.getImage(imageId) }
-        verify(exactly = 1) { imageService.getFileContent(image) }
+        verify(exactly = 1) { imageService.getFilePath(image) }
     }
 
     @Test
@@ -114,7 +132,7 @@ class ImageEndpointTest {
 
         every { imageService.getImage(imageId) } returns null
 
-        val response = imageEndpoint.getCover(imageId)
+        val response = imageEndpoint.getCover(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
@@ -124,20 +142,20 @@ class ImageEndpointTest {
     @Test
     fun `getHeader should return image content when image exists`() {
         val imageId = 3L
-        val image = Image(id = imageId, type = ImageType.HEADER, mimeType = "image/webp", contentLength = 4096L)
-        val inputStream = ByteArrayInputStream("header data".toByteArray())
+        val image = Image(id = imageId, type = ImageType.HEADER, mimeType = "image/webp", contentLength = 4096L, contentId = "ghi")
+        val filePath = createTempFile("header data")
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getHeader(imageId)
+        val response = imageEndpoint.getHeader(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(4096L, response.headers.contentLength)
         assertEquals(MediaType.parseMediaType("image/webp"), response.headers.contentType)
         verify(exactly = 1) { imageService.getImage(imageId) }
-        verify(exactly = 1) { imageService.getFileContent(image) }
+        verify(exactly = 1) { imageService.getFilePath(image) }
     }
 
     @Test
@@ -146,7 +164,7 @@ class ImageEndpointTest {
 
         every { imageService.getImage(imageId) } returns null
 
-        val response = imageEndpoint.getHeader(imageId)
+        val response = imageEndpoint.getHeader(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
@@ -183,14 +201,14 @@ class ImageEndpointTest {
     @Test
     fun `getAvatarByUsername should return avatar when user has avatar`() {
         val username = "testuser"
-        val avatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg", contentLength = 512L)
-        val inputStream = ByteArrayInputStream("avatar data".toByteArray())
+        val avatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg", contentLength = 512L, contentId = "avatar-id")
+        val filePath = createTempFile("avatar data")
 
         every { userService.getAvatar(username) } returns avatar
         every { imageService.getImage(1L) } returns avatar
-        every { imageService.getFileContent(avatar) } returns inputStream
+        every { imageService.getFilePath(avatar) } returns filePath
 
-        val response = imageEndpoint.getAvatarByUsername(username)
+        val response = imageEndpoint.getAvatarByUsername(username, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -198,7 +216,7 @@ class ImageEndpointTest {
         assertEquals(MediaType.parseMediaType("image/jpeg"), response.headers.contentType)
         verify(exactly = 1) { userService.getAvatar(username) }
         verify(exactly = 1) { imageService.getImage(1L) }
-        verify(exactly = 1) { imageService.getFileContent(avatar) }
+        verify(exactly = 1) { imageService.getFilePath(avatar) }
     }
 
     @Test
@@ -207,7 +225,7 @@ class ImageEndpointTest {
 
         every { userService.getAvatar(username) } returns null
 
-        val response = imageEndpoint.getAvatarByUsername(username)
+        val response = imageEndpoint.getAvatarByUsername(username, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
@@ -222,7 +240,7 @@ class ImageEndpointTest {
 
         every { userService.getAvatar(username) } returns avatar
 
-        val response = imageEndpoint.getAvatarByUsername(username)
+        val response = imageEndpoint.getAvatarByUsername(username, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
@@ -334,13 +352,13 @@ class ImageEndpointTest {
     @Test
     fun `getImageContent should handle image without content length`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = null)
-        val inputStream = ByteArrayInputStream("image data".toByteArray())
+        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = null, contentId = "abc")
+        val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getScreenshot(imageId)
+        val response = imageEndpoint.getScreenshot(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -351,13 +369,13 @@ class ImageEndpointTest {
     @Test
     fun `getImageContent should handle image without mime type`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = null, contentLength = 1024L)
-        val inputStream = ByteArrayInputStream("image data".toByteArray())
+        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = null, contentLength = 1024L, contentId = "abc")
+        val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getScreenshot(imageId)
+        val response = imageEndpoint.getScreenshot(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -369,13 +387,13 @@ class ImageEndpointTest {
     @Test
     fun `getImageContent should handle image without content length and mime type`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = null, contentLength = null)
-        val inputStream = ByteArrayInputStream("image data".toByteArray())
+        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = null, contentLength = null, contentId = "abc")
+        val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getScreenshot(imageId)
+        val response = imageEndpoint.getScreenshot(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -409,13 +427,13 @@ class ImageEndpointTest {
     fun `getScreenshot should handle large content length`() {
         val imageId = 1L
         val largeSize = Long.MAX_VALUE
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = largeSize)
-        val inputStream = ByteArrayInputStream("image data".toByteArray())
+        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = largeSize, contentId = "abc")
+        val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getScreenshot(imageId)
+        val response = imageEndpoint.getScreenshot(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -426,13 +444,13 @@ class ImageEndpointTest {
     @Test
     fun `getCover should handle zero content length`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 0L)
-        val inputStream = ByteArrayInputStream("".toByteArray())
+        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 0L, contentId = "abc")
+        val filePath = createTempFile("")
 
         every { imageService.getImage(imageId) } returns image
-        every { imageService.getFileContent(image) } returns inputStream
+        every { imageService.getFilePath(image) } returns filePath
 
-        val response = imageEndpoint.getCover(imageId)
+        val response = imageEndpoint.getCover(imageId, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -443,14 +461,14 @@ class ImageEndpointTest {
     @Test
     fun `getAvatarByUsername should handle empty username`() {
         val username = ""
-        val avatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg", contentLength = 512L)
-        val inputStream = ByteArrayInputStream("avatar data".toByteArray())
+        val avatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg", contentLength = 512L, contentId = "avatar-id")
+        val filePath = createTempFile("avatar data")
 
         every { userService.getAvatar(username) } returns avatar
         every { imageService.getImage(1L) } returns avatar
-        every { imageService.getFileContent(avatar) } returns inputStream
+        every { imageService.getFilePath(avatar) } returns filePath
 
-        val response = imageEndpoint.getAvatarByUsername(username)
+        val response = imageEndpoint.getAvatarByUsername(username, mockRequest)
 
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -504,5 +522,83 @@ class ImageEndpointTest {
 
         verify(exactly = 1) { imageService.createFromInputStream(ImageType.AVATAR, inputStream, "image/png") }
     }
-}
 
+    @Test
+    fun `should return 304 Not Modified when ETag matches If-None-Match`() {
+        val imageId = 1L
+        val contentId = "abc-123"
+        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = contentId)
+        val requestWithEtag = mockk<HttpServletRequest> {
+            every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns "\"$contentId\""
+        }
+
+        every { imageService.getImage(imageId) } returns image
+
+        val response = imageEndpoint.getCover(imageId, requestWithEtag)
+
+        assertNotNull(response)
+        assertEquals(HttpStatus.NOT_MODIFIED, response.statusCode)
+        assertNull(response.body)
+        verify(exactly = 1) { imageService.getImage(imageId) }
+        verify(exactly = 0) { imageService.getFilePath(any()) }
+    }
+
+    @Test
+    fun `should return 200 with ETag when If-None-Match does not match`() {
+        val imageId = 1L
+        val contentId = "abc-123"
+        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = contentId)
+        val filePath = createTempFile("cover data")
+        val requestWithOldEtag = mockk<HttpServletRequest> {
+            every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns "\"old-etag\""
+        }
+
+        every { imageService.getImage(imageId) } returns image
+        every { imageService.getFilePath(image) } returns filePath
+
+        val response = imageEndpoint.getCover(imageId, requestWithOldEtag)
+
+        assertNotNull(response)
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertNotNull(response.body)
+        assertEquals("\"$contentId\"", response.headers.eTag)
+        verify(exactly = 1) { imageService.getImage(imageId) }
+        verify(exactly = 1) { imageService.getFilePath(image) }
+    }
+
+    @Test
+    fun `should include ETag and Cache-Control headers in response`() {
+        val imageId = 1L
+        val contentId = "content-uuid-456"
+        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/jpeg", contentLength = 1024L, contentId = contentId)
+        val filePath = createTempFile()
+
+        every { imageService.getImage(imageId) } returns image
+        every { imageService.getFilePath(image) } returns filePath
+
+        val response = imageEndpoint.getCover(imageId, mockRequest)
+
+        assertNotNull(response)
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals("\"$contentId\"", response.headers.eTag)
+        assertNotNull(response.headers.cacheControl)
+    }
+
+    @Test
+    fun `should return 304 for weak ETag match`() {
+        val imageId = 1L
+        val contentId = "abc-123"
+        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = contentId)
+        val requestWithWeakEtag = mockk<HttpServletRequest> {
+            every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns "W/\"$contentId\""
+        }
+
+        every { imageService.getImage(imageId) } returns image
+
+        val response = imageEndpoint.getCover(imageId, requestWithWeakEtag)
+
+        assertNotNull(response)
+        assertEquals(HttpStatus.NOT_MODIFIED, response.statusCode)
+        verify(exactly = 0) { imageService.getFilePath(any()) }
+    }
+}

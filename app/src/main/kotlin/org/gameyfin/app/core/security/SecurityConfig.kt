@@ -7,6 +7,7 @@ import org.gameyfin.app.config.ConfigService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.core.env.Environment
 import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -32,15 +33,26 @@ class SecurityConfig(
 
     companion object {
         const val SSO_PROVIDER_KEY = "oidc"
+        const val LOGIN_URL = "/login"
     }
 
+    @Order(1)
+    @Bean
+    fun actuatorFilterChain(http: HttpSecurity): SecurityFilterChain {
+        http.securityMatcher("/actuator/**")
+            .authorizeHttpRequests { auth -> auth.anyRequest().permitAll() }
+            .csrf { csrf -> csrf.disable() }
+        return http.build()
+    }
+
+    @Order(2)
     @Bean
     fun filterChain(http: HttpSecurity, routeUtil: RouteUtil): SecurityFilterChain {
         // Apply Vaadin configuration first to properly configure CSRF and request matchers
         if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
             http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
                 // Redirect to SSO provider on logout
-                configurer.loginView("/login", config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
+                configurer.loginView(LOGIN_URL, config.get(ConfigProperties.SSO.OIDC.LogoutUrl))
             }
 
             // Use custom success handler to handle user registration
@@ -57,7 +69,7 @@ class SecurityConfig(
         } else {
             // Use default Vaadin login URLs
             http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
-                configurer.loginView("/login")
+                configurer.loginView(LOGIN_URL)
             }
         }
 
@@ -66,7 +78,7 @@ class SecurityConfig(
             auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
                 // Gameyfin static resources and public endpoints
                 .requestMatchers(
-                    "/login",
+                    LOGIN_URL,
                     "/loginredirect",
                     "/setup",
                     "/reset-password",
@@ -120,7 +132,7 @@ class SecurityConfig(
             .clientId(config.get(ConfigProperties.SSO.OIDC.ClientId))
             .clientSecret(config.get(ConfigProperties.SSO.OIDC.ClientSecret))
             .scope(config.get(ConfigProperties.SSO.OIDC.OAuthScopes)?.toList())
-            .userNameAttributeName("preferred_username")
+            .userNameAttributeName(config.get(ConfigProperties.SSO.OIDC.UsernameClaim))
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .issuerUri(config.get(ConfigProperties.SSO.OIDC.IssuerUrl))
             .authorizationUri(config.get(ConfigProperties.SSO.OIDC.AuthorizeUrl))

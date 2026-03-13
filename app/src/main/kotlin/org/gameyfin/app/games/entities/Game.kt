@@ -79,7 +79,7 @@ class Game(
     @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
     var images: MutableList<Image> = mutableListOf(),
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     var videoUrls: List<URI> = emptyList(),
 
     @ManyToMany(mappedBy = "games", fetch = FetchType.EAGER)

@@ -12,12 +12,12 @@ import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.pf4j.ExtensionPoint
-import org.pf4j.Plugin
-import org.pf4j.PluginState
-import org.pf4j.PluginWrapper
+import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
 import java.nio.file.Path
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
 import kotlin.test.*
 
 class GameyfinPluginManagerTest {
@@ -391,8 +391,7 @@ class GameyfinPluginManagerTest {
         every { pluginManager.getPlugins() } returns listOf(pluginWrapper)
         every { pluginManager.getExtensionClasses("test-plugin") } returns extensionClasses
 
-        @Suppress("UNCHECKED_CAST")
-        val result = pluginManager.getPluginForExtension(TestExtension1::class.java as Class<ExtensionPoint>)
+        val result = pluginManager.getPluginForExtension(TestExtensionPoint1::class)
 
         assertNotNull(result)
         assertEquals("test-plugin", result.pluginId)
@@ -418,8 +417,7 @@ class GameyfinPluginManagerTest {
         every { pluginManager.getPlugins() } returns listOf(pluginWrapper)
         every { pluginManager.getExtensionClasses("test-plugin") } returns extensionClasses
 
-        @Suppress("UNCHECKED_CAST")
-        val result = pluginManager.getPluginForExtension(TestExtension2::class.java as Class<ExtensionPoint>)
+        val result = pluginManager.getPluginForExtension(TestExtensionPoint2::class)
 
         assertNull(result)
     }
@@ -518,22 +516,12 @@ class GameyfinPluginManagerTest {
             )
         )
 
-        val entry = PluginManagementEntry("unknown-plugin", enabled = false, priority = 1)
-        entry.trustLevel = PluginTrustLevel.UNTRUSTED
-
         val pluginWrapper = mockk<PluginWrapper>()
-        val pluginDescriptor = mockk<GameyfinPluginDescriptor>()
 
         every { pluginWrapper.pluginId } returns "unknown-plugin"
         every { pluginWrapper.pluginState } returns PluginState.RESOLVED
-        every { pluginWrapper.pluginClassLoader } returns mockk<ClassLoader>()
-        every { pluginWrapper.plugin } returns mockk<Plugin>()
-        every { pluginWrapper.descriptor } returns pluginDescriptor
-        every { pluginDescriptor.pluginId } returns "unknown-plugin"
-        every { pluginDescriptor.version } returns "unknown_version"
         every { pluginManagementRepository.findByIdOrNull("unknown-plugin") } returns null
         every { pluginManager.getPlugin("unknown-plugin") } returns pluginWrapper
-        every { pluginManager.checkPluginId("unknown-plugin") } just runs
 
         val result = pluginManager.startPlugin("unknown-plugin")
 
@@ -557,6 +545,98 @@ class GameyfinPluginManagerTest {
         // Verify the plugin manager initializes properly
         assertNotNull(pluginManager)
         assertNotNull(pluginManager.pluginsRoot)
+    }
+
+    @Test
+    fun `createPluginLoader should return CompoundPluginLoader containing only GameyfinJarPluginLoader in non-development mode`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+        System.clearProperty("pf4j.mode")
+
+        pluginManager = GameyfinPluginManager(
+            forwardingPluginStateListener,
+            dbPluginStatusProvider,
+            pluginConfigRepository,
+            pluginManagementRepository
+        )
+
+        val loader = invokeCreatePluginLoader(pluginManager)
+
+        assertIs<CompoundPluginLoader>(loader)
+        val loaders = getLoadersFromCompound(loader)
+
+        assertEquals(1, loaders.size, "Expected exactly one loader in non-development mode")
+        assertIs<GameyfinJarPluginLoader>(loaders[0])
+    }
+
+    @Test
+    fun `createPluginLoader should return CompoundPluginLoader containing GameyfinJarPluginLoader and GameyfinDevelopmentPluginLoader in development mode`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+        System.setProperty("pf4j.mode", "development")
+
+        try {
+            pluginManager = GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+
+            val loader = invokeCreatePluginLoader(pluginManager)
+
+            assertIs<CompoundPluginLoader>(loader)
+            val loaders = getLoadersFromCompound(loader)
+
+            assertEquals(2, loaders.size, "Expected two loaders in development mode")
+            assertIs<GameyfinJarPluginLoader>(loaders[0])
+            assertIs<GameyfinDevelopmentPluginLoader>(loaders[1])
+        } finally {
+            System.clearProperty("pf4j.mode")
+        }
+    }
+
+    @Test
+    fun `loadPluginFromPath should save management entry before starting a new bundled plugin`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+        )
+
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        val plugin = mockk<Plugin>(relaxed = true)
+
+        every { pluginWrapper.pluginId } returns "my-bundled-plugin"
+        every { pluginWrapper.plugin } returns plugin
+
+        // Plugin is not yet in the database (new plugin)
+        every { pluginManagementRepository.findByIdOrNull("my-bundled-plugin") } returns null
+        every { pluginManagementRepository.findMaxPriority() } returns 5
+        every { pluginManager.startPlugin("my-bundled-plugin") } returns PluginState.STARTED
+
+        // Mock the super.loadPluginFromPath to return our pluginWrapper
+        every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
+
+        // Create a fake non-jar plugin path (non-jar extension → BUNDLED trust level)
+        val fakePath = tempPluginsDir.resolve("my-plugin")
+        fakePath.toFile().mkdirs()
+
+        // Call our override
+        val result = pluginManager.loadPluginFromPath(fakePath)
+
+        assertNotNull(result)
+
+        // Verify that save was called before startPlugin (line 139 followed by line 140)
+        verifyOrder {
+            pluginManagementRepository.save(match {
+                it.pluginId == "my-bundled-plugin" && it.enabled && it.trustLevel == PluginTrustLevel.BUNDLED
+            })
+            pluginManager.startPlugin("my-bundled-plugin")
+        }
     }
 
     @Test
@@ -589,5 +669,117 @@ class GameyfinPluginManagerTest {
 
     @Suppress("DEPRECATION")
     abstract class TestConfigurablePlugin(wrapper: PluginWrapper) : Plugin(wrapper), Configurable
+
+    private fun invokeCreatePluginLoader(manager: GameyfinPluginManager): PluginLoader {
+        val method = DefaultPluginManager::class.java.getDeclaredMethod("createPluginLoader")
+        method.isAccessible = true
+        return method.invoke(manager) as PluginLoader
+    }
+
+    private fun getLoadersFromCompound(compoundLoader: CompoundPluginLoader): List<*> {
+        val loadersField = CompoundPluginLoader::class.java.getDeclaredField("loaders")
+        loadersField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        return loadersField.get(compoundLoader) as List<*>
+    }
+
+    // ========================================================================================
+    // Integration tests for loadPluginFromPath with JAR signature verification
+    // ========================================================================================
+
+    @Test
+    fun `loadPluginFromPath should set THIRD_PARTY trust level for unsigned JAR plugin`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+        )
+
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        val plugin = mockk<Plugin>(relaxed = true)
+
+        every { pluginWrapper.pluginId } returns "unsigned-plugin"
+        every { pluginWrapper.plugin } returns plugin
+        every { pluginManagementRepository.findByIdOrNull("unsigned-plugin") } returns null
+        every { pluginManagementRepository.findMaxPriority() } returns 0
+        every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
+
+        // Create an unsigned JAR with actual content entries
+        val jarPath = createUnsignedJar("unsigned-plugin.jar", mapOf("com/example/MyClass.class" to "dummy"))
+
+        pluginManager.loadPluginFromPath(jarPath)
+
+        // Unsigned JAR → THIRD_PARTY trust level, which means not auto-enabled, not auto-started
+        verify {
+            pluginManagementRepository.save(match {
+                it.pluginId == "unsigned-plugin" && it.trustLevel == PluginTrustLevel.THIRD_PARTY && !it.enabled
+            })
+        }
+        // THIRD_PARTY plugins should NOT be auto-started
+        verify(exactly = 0) { pluginManager.startPlugin("unsigned-plugin") }
+    }
+
+    @Test
+    fun `loadPluginFromPath should re-verify existing plugin as THIRD_PARTY for unsigned JAR`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository
+            )
+        )
+
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        val plugin = mockk<Plugin>(relaxed = true)
+        val existingEntry = PluginManagementEntry("re-verified-plugin", enabled = true, priority = 1)
+        existingEntry.trustLevel = PluginTrustLevel.OFFICIAL
+
+        every { pluginWrapper.pluginId } returns "re-verified-plugin"
+        every { pluginWrapper.plugin } returns plugin
+        every { pluginManagementRepository.findByIdOrNull("re-verified-plugin") } returns existingEntry
+        every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
+
+        val jarPath = createUnsignedJar("re-verified-plugin.jar", mapOf("com/example/MyClass.class" to "dummy"))
+
+        pluginManager.loadPluginFromPath(jarPath)
+
+        // Re-verification of an unsigned JAR should update trust level to THIRD_PARTY
+        verify {
+            pluginManagementRepository.save(match {
+                it.pluginId == "re-verified-plugin" && it.trustLevel == PluginTrustLevel.THIRD_PARTY
+            })
+        }
+    }
+
+    // ========================================================================================
+    // JAR creation helpers
+    // ========================================================================================
+
+    /**
+     * Creates an unsigned JAR file with the given entries at the temp directory.
+     */
+    private fun createUnsignedJar(fileName: String, entries: Map<String, String>): Path {
+        val jarPath = tempPluginsDir.resolve(fileName)
+        val manifest = Manifest()
+        manifest.mainAttributes.putValue("Manifest-Version", "1.0")
+
+        JarOutputStream(jarPath.toFile().outputStream(), manifest).use { jos ->
+            for ((name, content) in entries) {
+                jos.putNextEntry(JarEntry(name))
+                jos.write(content.toByteArray())
+                jos.closeEntry()
+            }
+        }
+
+        return jarPath
+    }
 }
 

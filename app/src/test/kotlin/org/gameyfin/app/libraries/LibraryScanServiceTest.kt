@@ -1,9 +1,14 @@
 package org.gameyfin.app.libraries
 
 import io.mockk.*
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemScanResult
 import org.gameyfin.app.core.filesystem.FilesystemService
+import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.plugins.dto.PluginDto
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
@@ -11,9 +16,12 @@ import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.LibraryGameProcessor
+import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.pf4j.PluginState
 import java.nio.file.Path
 import java.time.Instant
 import kotlin.io.path.Path
@@ -28,6 +36,7 @@ class LibraryScanServiceTest {
     private lateinit var libraryScanService: LibraryScanService
     private lateinit var ignoredPathRepository: IgnoredPathRepository
     private lateinit var pluginService: PluginService
+    private lateinit var configService: ConfigService
 
     @BeforeEach
     fun setup() {
@@ -38,6 +47,15 @@ class LibraryScanServiceTest {
         gameRepository = mockk()
         ignoredPathRepository = mockk()
         pluginService = mockk()
+        configService = mockk()
+
+        // By default, at least one GameMetadataProvider is started so scans are allowed
+        every { pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED) } returns listOf(
+            mockk<PluginDto>()
+        )
+
+        // Return default max-concurrency value
+        every { configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency) } returns ConfigProperties.Libraries.Scan.MaxConcurrency.default
 
         libraryScanService = LibraryScanService(
             libraryRepository,
@@ -46,7 +64,9 @@ class LibraryScanServiceTest {
             libraryGameProcessor,
             gameRepository,
             ignoredPathRepository,
-            pluginService
+            pluginService,
+            configService,
+            ScanMetrics(SimpleMeterRegistry())
         )
     }
 
@@ -147,6 +167,23 @@ class LibraryScanServiceTest {
         libraryScanService.triggerScan(ScanType.QUICK, null)
 
         Thread.sleep(50)
+        verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
+    }
+
+    @Test
+    fun `triggerScan should throw when no GameMetadataProvider plugin is started`() {
+        every {
+            pluginService.getAllByTypeAndState(
+                GameMetadataProvider::class,
+                PluginState.STARTED
+            )
+        } returns emptyList()
+
+        assertThrows<IllegalStateException> {
+            libraryScanService.triggerScan(ScanType.QUICK, null)
+        }
+
+        verify(exactly = 0) { libraryRepository.findAll() }
         verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
     }
 

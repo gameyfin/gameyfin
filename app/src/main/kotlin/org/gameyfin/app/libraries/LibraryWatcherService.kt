@@ -80,7 +80,7 @@ class LibraryWatcherService(
         running.set(true)
 
         // Start watching all existing libraries
-        val libraries = libraryRepository.findAll()
+        val libraries = libraryRepository.findAll().toList()
         libraries.forEach { library ->
             startWatchingLibrary(library)
         }
@@ -231,7 +231,7 @@ class LibraryWatcherService(
                 val watchKey = watchService?.poll(1, TimeUnit.SECONDS) ?: continue
                 val watchInfo = watchKeys[watchKey] ?: continue
 
-                val events = watchKey.pollEvents()
+                val events = watchKey.pollEvents().toList()
                 if (events.isEmpty()) {
                     watchKey.reset()
                     continue

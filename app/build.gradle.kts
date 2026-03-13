@@ -1,6 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 group = "org.gameyfin"
+version = rootProject.version
 val appMainClass = "org.gameyfin.app.GameyfinApplicationKt"
 
 plugins {
@@ -18,6 +19,10 @@ plugins {
 
 application {
     mainClass.set(appMainClass)
+}
+
+springBoot {
+    buildInfo()
 }
 
 allOpen {
@@ -44,10 +49,7 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // Reactive
-    implementation("org.springframework.boot:spring-boot-starter-webflux") {
-        exclude(group = "org.springframework.boot", module = "spring-boot-starter-reactor-netty")
-    }
-    implementation("org.springframework.boot:spring-boot-starter-jetty")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
@@ -55,9 +57,7 @@ dependencies {
     implementation("com.vaadin:vaadin-core") {
         exclude("com.vaadin:flow-react")
     }
-    implementation("com.vaadin:vaadin-spring-boot-starter") {
-        exclude(group = "org.springframework.boot", module = "spring-boot-starter-tomcat")
-    }
+    implementation("com.vaadin:vaadin-spring-boot-starter")
     implementation("com.vaadin:hilla-spring-boot-starter")
 
     // Logging
@@ -80,6 +80,9 @@ dependencies {
 
     // Plugins
     implementation(project(":plugin-api"))
+
+    // Caching
+    implementation("com.github.ben-manes.caffeine:caffeine:${rootProject.extra["caffeineVersion"]}")
 
     // Utils
     implementation("org.apache.tika:tika-core:${rootProject.extra["tikaVersion"]}")

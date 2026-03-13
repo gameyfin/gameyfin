@@ -19,6 +19,8 @@ class GameyfinPluginClassLoader(
         try {
             return super.loadClass(className)
         } catch (_: SecurityException) {
+            // This can happen when the plugin JAR is signed but the signature is invalid (e.g. due to file corruption or tampering).
+            // In this case, we want to catch the exception and return null to indicate that the class could not be loaded, instead of crashing the entire plugin loading process.
         }
 
         return null

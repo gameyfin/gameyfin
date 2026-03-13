@@ -13,6 +13,7 @@ import org.gameyfin.app.libraries.extensions.toEntity
 import org.gameyfin.app.users.UserService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.Instant
@@ -72,7 +73,7 @@ class LibraryService(
      * Retrieves all libraries from the repository.
      */
     fun getAll(): List<LibraryDto> {
-        val entities = libraryRepository.findAll()
+        val entities = libraryRepository.findAll().toList()
         return entities.toDtos()
     }
 
@@ -119,6 +120,7 @@ class LibraryService(
      * @return The updated LibraryDto.
      * @throws IllegalArgumentException if the library ID is null or the library is not found.
      */
+    @Transactional
     fun update(libraryUpdateDto: LibraryUpdateDto) {
         val library = libraryRepository.findByIdOrNull(libraryUpdateDto.id)
             ?: throw IllegalArgumentException("Library with ID $libraryUpdateDto.id not found")
@@ -196,6 +198,7 @@ class LibraryService(
     /**
      * Updates multiple libraries in the repository.
      */
+    @Transactional
     fun update(libraries: Collection<LibraryUpdateDto>) {
         libraries.forEach { update(it) }
     }

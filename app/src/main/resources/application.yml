@@ -4,7 +4,8 @@ logging.level:
   org.gameyfin: info
   org.flywaydb.core.internal.command: info
   org.flywaydb.core.internal.sqlscript: warn
-  org.gameyfin.GameyfinApplicationKt: warn
+  org.flywaydb.core.internal.database.base: error
+  org.gameyfin.app.GameyfinApplicationKt: warn
   # Suppress false positive warnings from Spring Security 6
   org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
 
@@ -13,12 +14,19 @@ server:
   servlet:
     session:
       tracking-modes: cookie
-      timeout: 24h
+      timeout: 4h
   forward-headers-strategy: framework
-  jetty:
+  tomcat:
+    remoteip:
+      protocol-header: X-Forwarded-Proto
+      remote-ip-header: X-Forwarded-For
     threads:
       max: 200
-      min: 8
+      min-spare: 10
+    max-connections: 10_000
+    max-keep-alive-requests: 100
+    connection-timeout: 10m
+    keep-alive-timeout: 10m
 
 management:
   server:
@@ -26,42 +34,49 @@ management:
   endpoints:
     web:
       exposure:
-        include: restart, health, info, metrics, prometheus
+        include: restart, health, metrics, prometheus, info
   endpoint:
     pause:
       enabled: false
     restart:
       access: unrestricted
+    health:
+      group:
+        readiness:
+          include: pluginsLoaded
 
 spring:
-  # Workaround for https://github.com/vaadin/hilla/issues/842
-  devtools.restart.additional-exclude: dev/hilla/openapi.json
-  jpa:
-    # defer-datasource-initialization: true
-    hibernate:
-      ddl-auto: validate
-    open-in-view: true
-  mustache:
-    check-template-location: false
-  sql.init.mode: always
-  datasource:
-    username: gfadmin
-    password: gameyfin
-    db-name: gameyfin_db
-    url: jdbc:h2:file:./db/${spring.datasource.db-name}
-    driverClassName: org.h2.Driver
-  content:
-    fs.filesystem-root: ./data/
   application:
     name: Gameyfin
     version: @project.version@
   threads:
     virtual.enabled: true
-  mvc:
-    async.request-timeout: 0
+  sql.init.mode: always
+  datasource:
+    username: gfadmin
+    password: gameyfin
+    db-name: gameyfin_db
+    url: jdbc:h2:file:./db/${spring.datasource.db-name};CACHE_SIZE=16384
+    driverClassName: org.h2.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 60_000
   flyway:
     baseline-on-migrate: true
     baseline-version: 2.0.0
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.batch_size: 25
+        order_inserts: true
+        order_updates: true
+  content:
+    fs.filesystem-root: ./data/
+  mvc:
+    async.request-timeout: 0
 
 vaadin:
   # To improve the performance during development.

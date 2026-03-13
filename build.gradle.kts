@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 
 group = "org.gameyfin"
-version = "2.3.3"
+version = "2.4.0-preview"
 
 allprojects {
     repositories {
@@ -43,7 +43,7 @@ subprojects {
     }
 }
 
-extra.set("pluginDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))
+extra.set("pf4j.pluginsDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))
 
 abstract class UpdatePackageJsonVersionTask : DefaultTask() {
     @get:Input

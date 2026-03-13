@@ -50,7 +50,7 @@ jobs:
           jq ".version = \"$RELEASE_VERSION\"" app/package.json > app/package.json.tmp && mv app/package.json.tmp app/package.json
 
       - name: Upload modified files
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: modified-files
           path: |
@@ -71,7 +71,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: modified-files
 
@@ -95,16 +95,24 @@ jobs:
           report_paths: '**/build/test-results/test/TEST-*.xml'
 
       - name: Upload build outputs
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: build-outputs
           path: |
             app/build/libs/**
             plugins/**/build/libs/**/*.jar
 
-  docker:
-    needs: [ setup, build ]
-    runs-on: ubuntu-latest
+  docker-build:
+    needs: [setup, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     permissions:
       packages: write
     steps:
@@ -114,15 +122,36 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: modified-files
 
       - name: Download build outputs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-outputs
           path: .
+
+      - name: Build platform image
+        uses: ./.github/actions/docker-build-platform
+        with:
+          ghcr_username: ${{ github.actor }}
+          ghcr_token: ${{ secrets.GITHUB_TOKEN }}
+          context: .
+          file: docker/Dockerfile.ubuntu
+          platform: ${{ matrix.platform }}
+          image_name: ghcr.io/gameyfin/gameyfin
+
+  docker-merge:
+    needs: [setup, docker-build]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Generate container image tags
         id: docker_tags
@@ -138,15 +167,13 @@ jobs:
           TAGS="$GHCR_TAGS"
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image
-        uses: ./.github/actions/docker-build-push
+      - name: Create and push manifest
+        uses: ./.github/actions/docker-create-manifest
         with:
           ghcr_username: ${{ github.actor }}
           ghcr_token: ${{ secrets.GITHUB_TOKEN }}
-          context: .
-          dockerfile: docker/Dockerfile
-          platforms: linux/arm64/v8,linux/amd64
           tags: ${{ steps.docker_tags.outputs.tags }}
+          image_name: ghcr.io/gameyfin/gameyfin
 
   plugin_api:
     needs: setup
@@ -158,7 +185,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: modified-files
 
@@ -180,7 +207,7 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVENCENTRAL_PASSWORD }}
 
   finalize:
-    needs: [ docker, plugin_api ]
+    needs: [ docker-merge, plugin_api ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -189,7 +216,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download modified files
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: modified-files
 

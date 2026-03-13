@@ -1,6 +1,8 @@
 package org.gameyfin.app.media
 
+import com.github.benmanes.caffeine.cache.Cache
 import com.vanniktech.blurhash.BlurHash
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
 import org.gameyfin.app.core.events.GameDeletedEvent
@@ -10,6 +12,8 @@ import org.gameyfin.app.core.events.UserUpdatedEvent
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.users.persistence.UserRepository
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
@@ -19,9 +23,11 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import javax.imageio.ImageIO
 
 @Service
@@ -29,9 +35,12 @@ class ImageService(
     private val imageRepository: ImageRepository,
     private val fileStorageService: FileStorageService,
     private val gameRepository: GameRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val imageCache: Cache<Long, Image>
 ) {
     companion object {
+        private val log = KotlinLogging.logger { }
+
         private val tika = Tika()
 
         /**
@@ -66,15 +75,24 @@ class ImageService(
         }
     }
 
+    /**
+     * Pre-populate the image cache at startup
+     */
+    @EventListener(ApplicationReadyEvent::class)
+    fun prePopulateImageCache() {
+        val images = imageRepository.findAll().toList()
+        images.forEach { image -> image.id?.let { imageCache.put(it, image) } }
+        log.debug { "Pre-populated image cache with ${images.size} entries" }
+    }
+
     @Async
     @TransactionalEventListener(
         classes = [GameDeletedEvent::class],
         phase = TransactionPhase.AFTER_COMPLETION
     )
     fun onGameDeleted(event: GameDeletedEvent) {
-        val imagesToDelete = listOfNotNull(event.game.coverImage, event.game.headerImage)
-            .toMutableList()
-            .apply { addAll(event.game.images) }
+        val imagesToDelete = listOfNotNull(event.game.coverImage, event.game.headerImage) +
+                event.game.images
 
         imagesToDelete.forEach { deleteImageIfUnused(it) }
     }
@@ -84,14 +102,12 @@ class ImageService(
         phase = TransactionPhase.AFTER_COMPLETION
     )
     fun onGameUpdated(event: GameUpdatedEvent) {
-        val imagesBeforeUpdate = listOfNotNull(event.previousState.coverImage, event.previousState.headerImage)
-            .toMutableList()
-            .apply { addAll(event.previousState.images) }
+        val imagesBeforeUpdate = (listOfNotNull(event.previousState.coverImage, event.previousState.headerImage) +
+                event.previousState.images)
             .toSet()
 
-        val imagesStillInUse = listOfNotNull(event.currentState.coverImage, event.currentState.headerImage)
-            .toMutableList()
-            .apply { addAll(event.currentState.images) }
+        val imagesStillInUse = (listOfNotNull(event.currentState.coverImage, event.currentState.headerImage) +
+                event.currentState.images)
             .toSet()
 
         imagesBeforeUpdate.minus(imagesStillInUse).forEach { deleteImageIfUnused(it) }
@@ -122,7 +138,7 @@ class ImageService(
         val url = image.originalUrl
         if (url.isNullOrBlank()) {
             // No original URL => cannot dedupe by URL; just persist as-is
-            return imageRepository.save(image)
+            return imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
         }
 
         // Prefer a list lookup to avoid IncorrectResultSizeDataAccessException if duplicates exist pre-migration
@@ -131,7 +147,7 @@ class ImageService(
 
         return try {
             val toSave = Image(originalUrl = url, type = image.type)
-            imageRepository.save(toSave)
+            imageRepository.save(toSave).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
         } catch (e: DataIntegrityViolationException) {
             // Unique (original_url) might have been inserted concurrently; fetch and return
             imageRepository.findAllByOriginalUrl(url).firstOrNull()
@@ -140,7 +156,7 @@ class ImageService(
     }
 
     fun downloadIfNew(image: Image) {
-        if (image.originalUrl == null) throw IllegalArgumentException("Image must have an original URL")
+        requireNotNull(image.originalUrl) { "Image must have an original URL" }
 
         // Always try to get existing image first to avoid detached entity issues and duplicate lookups
         val existingImage = imageRepository.findAllByOriginalUrl(image.originalUrl).firstOrNull()
@@ -165,7 +181,7 @@ class ImageService(
 
         // Save or update the image to ensure it's persisted
         try {
-            imageRepository.save(image)
+            imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
         } catch (_: DataIntegrityViolationException) {
             // If another thread saved the same URL meanwhile, just ignore and proceed
         }
@@ -174,15 +190,22 @@ class ImageService(
     fun createFromInputStream(type: ImageType, content: InputStream, mimeType: String): Image {
         val image = Image(type = type, mimeType = mimeType)
         processImageContent(image, content)
-        return imageRepository.save(image)
+        return imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
     }
 
     fun getImage(id: Long): Image? {
-        return imageRepository.findByIdOrNull(id)
+        imageCache.getIfPresent(id)?.let { return it }
+        val image = imageRepository.findByIdOrNull(id)
+        if (image != null) imageCache.put(id, image)
+        return image
     }
 
     fun getFileContent(image: Image): InputStream? {
         return fileStorageService.getFile(image.contentId)
+    }
+
+    fun getFilePath(image: Image): Path? {
+        return fileStorageService.getFilePath(image.contentId)
     }
 
     fun deleteImageIfUnused(image: Image) {
@@ -191,6 +214,7 @@ class ImageService(
         val isImageStillInUse = gameRepository.existsByImage(imageId) || userRepository.existsByAvatar(imageId)
 
         if (!isImageStillInUse) {
+            imageCache.invalidate(imageId)
             imageRepository.delete(image)
             fileStorageService.deleteFile(image.contentId)
         }
@@ -205,6 +229,9 @@ class ImageService(
         // Process and store new content
         processImageContent(image, content)
 
+        // Invalidate cache so the next read picks up fresh data
+        image.id?.let { imageCache.invalidate(it) }
+
         return imageRepository.save(image)
     }
 
@@ -216,40 +243,57 @@ class ImageService(
     }
 
     private fun processImageContent(image: Image, content: InputStream) {
-        // Read the input stream into a byte array so we can use it twice
-        val imageBytes = content.readBytes()
+        // Stream to a temp file to avoid holding the full image bytes on the heap.
+        // This is critical during library scans where multiple images are processed
+        // concurrently — buffering each one as a byte[] can easily cause OOM.
+        val tempFile = Files.createTempFile("gf-img-", ".tmp")
+        try {
+            // 1. Write the stream to disk
+            content.use { input ->
+                Files.copy(input, tempFile, StandardCopyOption.REPLACE_EXISTING)
+            }
 
-        // Calculate blurhash
-        ByteArrayInputStream(imageBytes).use { blurhashStream ->
-            image.blurhash = calculateBlurhash(blurhashStream)
-        }
+            val fileSize = Files.size(tempFile)
 
-        // Store content
-        ByteArrayInputStream(imageBytes).use { contentStream ->
-            image.contentId = fileStorageService.saveFile(contentStream)
-            image.contentLength = imageBytes.size.toLong()
+            // 2. Calculate blurhash from the temp file
+            Files.newInputStream(tempFile).use { blurhashStream ->
+                image.blurhash = calculateBlurhash(blurhashStream)
+            }
+
+            // 3. Store content from the temp file
+            Files.newInputStream(tempFile).use { contentStream ->
+                image.contentId = fileStorageService.saveFile(contentStream)
+                image.contentLength = fileSize
+            }
+        } finally {
+            Files.deleteIfExists(tempFile)
         }
     }
 
     private fun calculateBlurhash(inputStream: InputStream): String? {
         return try {
-            val originalImage = ImageIO.read(inputStream)
-            if (originalImage != null) {
-                // Scale down for much faster processing
+            val originalImage = ImageIO.read(inputStream) ?: return null
+            try {
+                // Scale down for much faster processing and less memory
                 val scaledImage = scaleImageForBlurhash(originalImage)
-
-                return if (scaledImage.width > scaledImage.height) {
-                    // Landscape
-                    BlurHash.encode(scaledImage, componentX = 4, componentY = 3)
-                } else if (scaledImage.width < scaledImage.height) {
-                    // Portrait
-                    BlurHash.encode(scaledImage, componentX = 3, componentY = 4)
-                } else {
-                    // Square
-                    BlurHash.encode(scaledImage, componentX = 3, componentY = 3)
+                try {
+                    return if (scaledImage.width > scaledImage.height) {
+                        // Landscape
+                        BlurHash.encode(scaledImage, componentX = 4, componentY = 3)
+                    } else if (scaledImage.width < scaledImage.height) {
+                        // Portrait
+                        BlurHash.encode(scaledImage, componentX = 3, componentY = 4)
+                    } else {
+                        // Square
+                        BlurHash.encode(scaledImage, componentX = 3, componentY = 3)
+                    }
+                } finally {
+                    // Release scaled image native memory immediately
+                    if (scaledImage !== originalImage) scaledImage.flush()
                 }
-            } else {
-                null
+            } finally {
+                // Release original image native memory immediately
+                originalImage.flush()
             }
         } catch (_: Exception) {
             null

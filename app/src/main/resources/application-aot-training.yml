@@ -1,0 +1,24 @@
+# ── Spring profile activated only during AOT cache training ────────────
+# Overrides that let the app boot from scratch in an ephemeral container
+# without a pre-existing database or real external services.
+
+logging.level:
+  root: warn
+  org.gameyfin: info
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+
+server:
+  shutdown: graceful
+
+spring.lifecycle:
+  timeout-per-shutdown-phase: 15s
+
+
+

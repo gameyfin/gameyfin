@@ -15,6 +15,6 @@ object EntityManagerHolder : ApplicationContextAware {
     }
 
     fun getEntityManager(): EntityManager {
-        return entityManager ?: throw IllegalStateException("EntityManager not set")
+        return entityManager ?: error("EntityManager not set")
     }
 }

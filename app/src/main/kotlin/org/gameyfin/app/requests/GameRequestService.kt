@@ -78,7 +78,7 @@ class GameRequestService(
     }
 
     fun getAll(): List<GameRequestDto> {
-        val entities = gameRequestRepository.findAll()
+        val entities = gameRequestRepository.findAll().toList()
         return entities.toDtos()
     }
 
@@ -177,9 +177,9 @@ class GameRequestService(
 
     @Transactional
     fun toggleRequestVote(id: Long) {
-        val auth = getCurrentAuth() ?: throw IllegalStateException("No authentication found")
+        val auth = getCurrentAuth() ?: error("No authentication found")
         val currentUser =
-            userService.getByUsername(auth.name) ?: throw IllegalStateException("Current user not found")
+            userService.getByUsername(auth.name) ?: error("Current user not found")
         val gameRequest = gameRequestRepository.findById(id)
             .orElseThrow { NoSuchElementException("No game request found with id $id") }
 
@@ -192,8 +192,6 @@ class GameRequestService(
         }
         gameRequest.voters = updatedVoters
 
-        // Ensure the entity is marked as dirty
-        gameRequest.status = gameRequest.status
 
         gameRequestRepository.save(gameRequest)
     }
@@ -201,7 +199,7 @@ class GameRequestService(
     private fun completeMatchingRequests(game: Game) {
         val gameTitle = game.title
         val gameRelease = game.release
-        val gamePlatforms = game.platforms
+        val gamePlatforms = game.platforms.toList()
 
         if (gameTitle == null) {
             log.warn { "Game '${game.id}' is missing title, cannot complete matching requests" }

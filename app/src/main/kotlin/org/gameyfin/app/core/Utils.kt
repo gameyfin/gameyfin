@@ -20,7 +20,8 @@ class Utils {
         val jvmNanoTimeDiff: Long = System.currentTimeMillis() * 1_000_000 - System.nanoTime()
 
         fun maskEmail(email: String): String {
-            val regex = """(?:\G(?!^)|(?<=^[^@]{2}|@))[^@](?!\.[^.]+$)""".toRegex()
+            @Suppress("RegExpUnnecessaryNonCapturingGroup")
+            val regex = """(?:\G(?!^)|(?<=(?:^[^@]{2})|(?:@)))[^@](?!\.[^.]+$)""".toRegex()
             return email.replace(regex, "*")
         }
 
@@ -101,10 +102,7 @@ fun String.replaceRomanNumerals(): String {
         return sum
     }
 
-    val regex = Regex(
-        """(?<=\s|^)(M{0,4}(CM|CD|D?C{0,3})?(XC|XL|L?X{0,3})?(IX|IV|V?I{0,3})?)(?=\b|\s|$)""",
-        RegexOption.IGNORE_CASE
-    )
+    val regex = Regex("""(?<=\s|^)([MDCLXVI]+)(?=\s|$)""", RegexOption.IGNORE_CASE)
 
     return regex.replace(this) { match ->
         val roman = match.value.uppercase()
@@ -133,35 +131,29 @@ fun HttpServletRequest.getRemoteIp(lookupPolicy: LookupPolicy = LookupPolicy.ANY
     // Add the direct remote address
     this.remoteAddr?.let { candidateIps.add(it) }
 
-    when (lookupPolicy) {
+    return when (lookupPolicy) {
         LookupPolicy.IPV4_ONLY -> {
-            val ipv4Address = candidateIps.firstOrNull { isIpv4(it) }
-            return ipv4Address ?: "unknown"
+            candidateIps.firstOrNull { isIpv4(it) } ?: "unknown"
         }
 
         LookupPolicy.IPV6_ONLY -> {
-            val ipv6Address = candidateIps.firstOrNull { isIpv6(it) }
-            return ipv6Address ?: "unknown"
+            candidateIps.firstOrNull { isIpv6(it) } ?: "unknown"
         }
 
         LookupPolicy.IPV4_PREFERRED -> {
-            val ipv4Address = candidateIps.firstOrNull { isIpv4(it) }
-            return ipv4Address ?: run {
-                val ipv6Address = candidateIps.firstOrNull { isIpv6(it) }
-                ipv6Address ?: "unknown"
-            }
+            candidateIps.firstOrNull { isIpv4(it) }
+                ?: candidateIps.firstOrNull { isIpv6(it) }
+                ?: "unknown"
         }
 
         LookupPolicy.IPV6_PREFERRED -> {
-            val ipv6Address = candidateIps.firstOrNull { isIpv6(it) }
-            return ipv6Address ?: run {
-                val ipv4Address = candidateIps.firstOrNull { isIpv4(it) }
-                ipv4Address ?: "unknown"
-            }
+            candidateIps.firstOrNull { isIpv6(it) }
+                ?: candidateIps.firstOrNull { isIpv4(it) }
+                ?: "unknown"
         }
 
         LookupPolicy.ANY -> {
-            return candidateIps.firstOrNull() ?: "unknown"
+            candidateIps.firstOrNull() ?: "unknown"
         }
     }
 }

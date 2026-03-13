@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class JpaConfiguration {
+class JpaConfig {
 
     @Bean
     fun hibernatePropertiesCustomizer(entityUpdateInterceptor: EntityUpdateInterceptor): HibernatePropertiesCustomizer {

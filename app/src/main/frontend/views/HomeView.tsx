@@ -2,42 +2,41 @@ import {CoverRow} from "Frontend/components/general/covers/CoverRow";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
-import React, {useEffect, useState} from "react";
+import React, {useMemo} from "react";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {collectionState} from "Frontend/state/CollectionState";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import {StartPageDisplayCard} from "Frontend/components/general/cards/StartPageDisplayCard";
-import {Link} from "@heroui/react";
-import {CaretRightIcon} from "@phosphor-icons/react";
+import {Link, Spinner} from "@heroui/react";
+import {CaretRightIcon, FolderOpenIcon} from "@phosphor-icons/react";
+import {useAuth} from "Frontend/util/auth";
+import {isAdmin} from "Frontend/util/utils";
 
 export default function HomeView() {
+    const auth = useAuth();
     const librariesState = useSnapshot(libraryState);
     const collectionsState = useSnapshot(collectionState);
     const gamesState = useSnapshot(gameState);
     const gamesByLibrary = gamesState.gamesByLibraryId;
     const gamesByCollection = gamesState.gamesByCollectionId;
 
-    const [filteredAndSortedLibraries, setFilteredAndSortedLibraries] = useState<LibraryDto[]>([]);
-    const [filteredAndSortedCollections, setFilteredAndSortedCollections] = useState<CollectionDto[]>([]);
-
-    useEffect(() => {
-        const libraries = librariesState.sorted
+    const filteredAndSortedLibraries = useMemo(() =>
+        librariesState.sorted
             .filter(library => library.metadata!.displayOnHomepage)
             .filter(library =>
                 gamesByLibrary[library.id] && gamesByLibrary[library.id].length > 0
-            );
+            ),
+        [librariesState.sorted, gamesByLibrary]
+    );
 
-        setFilteredAndSortedLibraries(libraries);
-
-        const collections = collectionsState.sorted
+    const filteredAndSortedCollections = useMemo(() =>
+        collectionsState.sorted
             .filter(collection => collection.metadata!.displayOnHomepage)
             .filter(collection =>
                 gamesByCollection[collection.id] && gamesByCollection[collection.id].length > 0
-            );
-
-        setFilteredAndSortedCollections(collections);
-
-    }, [librariesState.sorted, collectionsState.sorted, gamesByLibrary, gamesByCollection]);
+            ),
+        [collectionsState.sorted, gamesByCollection]
+    );
 
     // Sort games by date added (newest first) for libraries
     const getSortedLibraryGames = (libraryId: number) => {
@@ -64,6 +63,43 @@ export default function HomeView() {
             return dateB - dateA; // Descending order (newest first)
         });
     };
+
+    const hasNoContent = filteredAndSortedLibraries.length === 0 && filteredAndSortedCollections.length === 0;
+    const allStatesLoaded = librariesState.isLoaded && collectionsState.isLoaded && gamesState.isLoaded;
+
+    if (!allStatesLoaded) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-4">
+                <Spinner size="lg"/>
+                <p className="text-xl font-semibold text-default-600">Loading...</p>
+            </div>
+        );
+    }
+
+    if (hasNoContent) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-4">
+                <FolderOpenIcon size={64} className="text-default-300"/>
+                <p className="text-xl font-semibold text-default-600">Nothing here yet</p>
+                {isAdmin(auth) ? (
+                    <>
+                        <p className="text-default-400 max-w-lg">
+                            Get started by adding libraries and games in the{" "}
+                            <Link href="/administration/games" underline="always">
+                                administration panel
+                            </Link>.
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-default-400 max-w-md">
+                            There is currently no content available. Check back later!
+                        </p>
+                    </>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="w-full">

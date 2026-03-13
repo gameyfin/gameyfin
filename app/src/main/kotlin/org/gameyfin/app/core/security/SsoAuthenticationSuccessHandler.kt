@@ -35,6 +35,10 @@ class SsoAuthenticationSuccessHandler(
     ) {
         val oidcUser = authentication.principal as OidcUser
 
+        // Resolve the username using the configured claim with automatic fallback
+        val usernameAttributeName = config.get(ConfigProperties.SSO.OIDC.UsernameClaim) ?: "preferred_username"
+        val resolvedUsername = oidcUser.resolvedUsername(usernameAttributeName)
+
         // Check if user is already registered via SSO
         var matchedUser = userService.findByOidcProviderId(oidcUser.subject)
 
@@ -42,27 +46,19 @@ class SsoAuthenticationSuccessHandler(
         // This is meant to map existing users to SSO users
         if (matchedUser == null) {
             matchedUser = when (config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy)) {
-                MatchUsersBy.username -> userService.getByUsername(oidcUser.preferredUsername)
+                MatchUsersBy.username -> userService.getByUsername(resolvedUsername)
                 MatchUsersBy.email -> userService.getByEmail(oidcUser.email)
-                else -> throw IllegalStateException("Unknown 'match users by' configuration")
+                else -> error("Unknown 'match users by' configuration")
             }
         }
 
         // User could not be found in the database
         if (matchedUser == null) {
-            // TODO: User registration is currently forced, but this should be configurable.
-            //  However, this causes conflict with user preferences and game entities (since both reference the user entity)
-            // Check if new user registration is enabled
-            //if (config.get(ConfigProperties.SSO.OIDC.AutoRegisterNewUsers) == false) {
-            //    response.sendRedirect("/")
-            //    return
-            //
-
             // Register as new user
-            matchedUser = User(oidcUser)
+            matchedUser = User(oidcUser, resolvedUsername)
         } else {
             // Update user with new SSO data
-            matchedUser.username = oidcUser.preferredUsername
+            matchedUser.username = resolvedUsername
             matchedUser.email = oidcUser.email
             matchedUser.emailConfirmed = true
             matchedUser.oidcProviderId = oidcUser.subject

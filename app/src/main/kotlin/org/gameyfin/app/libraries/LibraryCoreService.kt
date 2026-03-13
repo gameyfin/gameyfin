@@ -11,6 +11,7 @@ import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.users.UserService
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 
 /**
@@ -52,6 +53,7 @@ class LibraryCoreService(
         return library
     }
 
+    @Transactional
     fun deleteGameFromLibrary(gameId: Long) {
         val game = gameService.getById(gameId)
         val library = game.library

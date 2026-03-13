@@ -38,7 +38,7 @@ data class GameyfinPluginDescriptor(
         // This is because the internal (List<PluginDependency>) and external (List<String>) representation of the field differ
         this.javaClass.superclass.getDeclaredField("dependencies").let {
             it.isAccessible = true
-            it.set(this, descriptor.dependencies)
+            it[this] = descriptor.dependencies
         }
     }
 

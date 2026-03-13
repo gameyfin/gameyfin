@@ -1,29 +1,39 @@
 import {useField} from "formik";
-import {Checkbox, CheckboxGroup} from "@heroui/react";
+import {Checkbox, CheckboxGroup, CheckboxProps} from "@heroui/react";
+import InfoPopup from "Frontend/components/administration/InfoPopup";
+import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
-// @ts-ignore
-const CheckboxInput = ({label, ...props}) => {
-    // @ts-ignore
-    const [field, meta] = useField(props);
+interface CheckboxInputProps extends Omit<CheckboxProps, "name"> {
+    label: string;
+    name: string;
+    description?: string;
+    resetValue?: unknown;
+}
+
+export default function CheckboxInput({label, description, resetValue, className, ...props}: CheckboxInputProps) {
+    const [field, meta] = useField({name: props.name, type: "checkbox"});
 
     return (
         <CheckboxGroup
-            className="flex flex-row flex-1 items-baseline gap-2"
+            className={`flex flex-row flex-1 gap-2 ${className ?? ""}`}
             isInvalid={!!meta.error}
             errorMessage={meta.initialError || meta.error}
             value={field.value ? [field.name] : []}
         >
-            <Checkbox
-                className="items-baseline"
-                {...field}
-                {...props}
-                // @ts-ignore
-                value={field.name}
-            >
-                {label}
-            </Checkbox>
+            <span className="flex items-center gap-1">
+                <Checkbox
+                    {...field}
+                    {...props}
+                    className="items-center"
+                    value={field.name}
+                >
+                    {label}
+                </Checkbox>
+                {description && <InfoPopup content={description}/>}
+                {resetValue !== undefined &&
+                    <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
+            </span>
         </CheckboxGroup>
     );
 }
 
-export default CheckboxInput;

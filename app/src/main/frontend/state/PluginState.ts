@@ -3,6 +3,12 @@ import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/Plug
 import PluginUpdateDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginUpdateDto";
 import {proxy} from "valtio/index";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
+import Pf4jPluginState from "Frontend/generated/org/pf4j/PluginState";
+
+export enum PluginType {
+    GameMetadataProvider = "GameMetadataProvider",
+    DownloadProvider = "DownloadProvider",
+}
 
 type PluginState = {
     subscription?: Subscription<PluginUpdateDto[]>;
@@ -10,6 +16,7 @@ type PluginState = {
     state: Record<string, PluginDto>;
     plugins: PluginDto[];
     sortedByType: Record<string, PluginDto[]>;
+    hasActiveMetadataPlugins: boolean;
 };
 
 export const pluginState = proxy<PluginState>({
@@ -22,6 +29,11 @@ export const pluginState = proxy<PluginState>({
     },
     get sortedByType() {
         return sortPluginsByType(this.state);
+    },
+    get hasActiveMetadataPlugins() {
+        return this.sortedByType[PluginType.GameMetadataProvider]
+            ?.filter((p: PluginDto) => p.state == Pf4jPluginState.STARTED)
+            .length > 0;
     }
 });
 
@@ -53,7 +65,10 @@ export async function initializePluginState() {
 /** Computed **/
 
 function sortPluginsByType(pluginsMap: Record<string, PluginDto>): Record<string, PluginDto[]> {
-    const pluginsByType: Record<string, PluginDto[]> = {};
+    // Initialize with empty arrays for all known plugin types so consumers never get undefined
+    const pluginsByType: Record<string, PluginDto[]> = Object.fromEntries(
+        Object.values(PluginType).map(type => [type, []])
+    );
 
     // Convert map to array of plugins
     const plugins = Object.values(pluginsMap);

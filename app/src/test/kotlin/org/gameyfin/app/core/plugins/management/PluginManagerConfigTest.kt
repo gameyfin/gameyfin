@@ -13,11 +13,13 @@ class PluginManagerConfigTest {
 
     private lateinit var pluginManager: GameyfinPluginManager
     private lateinit var pluginManagerConfig: PluginManagerConfig
+    private lateinit var pluginsLoadedIndicator: PluginsLoadedIndicator
 
     @BeforeEach
     fun setup() {
         pluginManager = mockk(relaxed = true)
-        pluginManagerConfig = PluginManagerConfig(pluginManager)
+        pluginsLoadedIndicator = mockk(relaxed = true)
+        pluginManagerConfig = PluginManagerConfig(pluginManager, pluginsLoadedIndicator)
     }
 
     @AfterEach

@@ -3,13 +3,17 @@ import React from "react";
 import {useField} from "formik";
 import {GameCoverPickerModal} from "Frontend/components/general/modals/GameCoverPickerModal";
 import {ImageBrokenIcon, PencilIcon} from "@phosphor-icons/react";
+import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 
+interface GameCoverPickerProps {
+    game: GameDto;
+    name: string;
+    showErrorUntouched?: boolean;
+}
 
-// @ts-ignore
-export default function GameCoverPicker({game, showErrorUntouched = false, ...props}) {
+export default function GameCoverPicker({game, showErrorUntouched = false, ...props}: GameCoverPickerProps) {
 
-    // @ts-ignore
-    const [field] = useField(props);
+    const [field] = useField(props.name);
 
     const gameCoverPickerModal = useDisclosure();
 

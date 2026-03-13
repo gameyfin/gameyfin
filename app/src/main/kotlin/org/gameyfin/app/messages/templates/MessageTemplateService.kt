@@ -40,8 +40,8 @@ class MessageTemplateService {
     }
 
     fun fillMessageTemplate(template: MessageTemplates, type: TemplateType, placeholders: Map<String, String>): String {
-        if (placeholders.keys != template.availablePlaceholders.toSet()) {
-            throw IllegalArgumentException("Placeholders do not match available placeholders for template '${template.key}'")
+        require(placeholders.keys == template.availablePlaceholders.toSet()) {
+            "Placeholders do not match available placeholders for template '${template.key}'"
         }
 
         val content = getMessageTemplateContent(template.key, type)
@@ -82,7 +82,7 @@ class MessageTemplateService {
     private fun getDefaultTemplateFile(key: String, type: TemplateType): Path {
         log.debug { "No custom message template found for '$key.${type.extension}', returning default" }
         val resourceUrl = javaClass.classLoader.getResource("$DEFAULT_TEMPLATE_PATH/$key.${type.extension}")
-            ?: throw IllegalStateException("Default template file not found for '$key.${type.extension}'")
+            ?: error("Default template file not found for '$key.${type.extension}'")
         return Paths.get(resourceUrl.toURI())
     }
 

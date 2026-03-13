@@ -46,4 +46,12 @@ class User(
         enabled = true,
         oidcProviderId = oidcUser.subject
     )
+
+    constructor(oidcUser: OidcUser, resolvedUsername: String) : this(
+        username = resolvedUsername,
+        email = oidcUser.email,
+        emailConfirmed = true,
+        enabled = true,
+        oidcProviderId = oidcUser.subject
+    )
 }
