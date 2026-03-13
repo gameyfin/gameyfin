@@ -41,7 +41,7 @@ abstract class IgnoredPathSource(
 
 @Entity
 class IgnoredPathPluginSource(
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     val plugins: MutableList<PluginManagementEntry>
 ) : IgnoredPathSource()
 

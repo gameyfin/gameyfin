@@ -102,6 +102,7 @@ class GameService(
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
 
 
+    @Transactional(readOnly = true)
     fun getAll(): List<GameDto> {
         val entities = gameRepository.findAll().toList()
         return entities.toDtos()
@@ -148,6 +149,7 @@ class GameService(
         return gameRepository.saveAll(gamesToBePersisted)
     }
 
+    @Transactional
     fun edit(gameUpdateDto: GameUpdateDto) {
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")

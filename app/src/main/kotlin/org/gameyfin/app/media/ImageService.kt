@@ -1,5 +1,6 @@
 package org.gameyfin.app.media
 
+import com.github.benmanes.caffeine.cache.Cache
 import com.vanniktech.blurhash.BlurHash
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
@@ -30,7 +31,8 @@ class ImageService(
     private val imageRepository: ImageRepository,
     private val fileStorageService: FileStorageService,
     private val gameRepository: GameRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val imageCache: Cache<Long, Image>
 ) {
     companion object {
         private val tika = Tika()
@@ -176,7 +178,10 @@ class ImageService(
     }
 
     fun getImage(id: Long): Image? {
-        return imageRepository.findByIdOrNull(id)
+        imageCache.getIfPresent(id)?.let { return it }
+        val image = imageRepository.findByIdOrNull(id)
+        if (image != null) imageCache.put(id, image)
+        return image
     }
 
     fun getFileContent(image: Image): InputStream? {
@@ -189,6 +194,7 @@ class ImageService(
         val isImageStillInUse = gameRepository.existsByImage(imageId) || userRepository.existsByAvatar(imageId)
 
         if (!isImageStillInUse) {
+            imageCache.invalidate(imageId)
             imageRepository.delete(image)
             fileStorageService.deleteFile(image.contentId)
         }
@@ -202,6 +208,9 @@ class ImageService(
 
         // Process and store new content
         processImageContent(image, content)
+
+        // Invalidate cache so the next read picks up fresh data
+        image.id?.let { imageCache.invalidate(it) }
 
         return imageRepository.save(image)
     }

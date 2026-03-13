@@ -81,6 +81,9 @@ dependencies {
     // Plugins
     implementation(project(":plugin-api"))
 
+    // Caching
+    implementation("com.github.ben-manes.caffeine:caffeine:${rootProject.extra["caffeineVersion"]}")
+
     // Utils
     implementation("org.apache.tika:tika-core:${rootProject.extra["tikaVersion"]}")
     implementation("me.xdrop:fuzzywuzzy:${rootProject.extra["fuzzywuzzyVersion"]}")

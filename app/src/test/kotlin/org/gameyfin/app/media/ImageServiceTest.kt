@@ -1,5 +1,7 @@
 package org.gameyfin.app.media
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.mockk.*
 import org.apache.tika.io.TikaInputStream
 import org.gameyfin.app.core.events.GameDeletedEvent
@@ -31,6 +33,7 @@ class ImageServiceTest {
     private lateinit var fileStorageService: FileStorageService
     private lateinit var gameRepository: GameRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var imageCache: Cache<Long, Image>
     private lateinit var imageService: ImageService
 
     @BeforeEach
@@ -39,7 +42,8 @@ class ImageServiceTest {
         fileStorageService = mockk()
         gameRepository = mockk()
         userRepository = mockk()
-        imageService = ImageService(imageRepository, fileStorageService, gameRepository, userRepository)
+        imageCache = Caffeine.newBuilder().build()
+        imageService = ImageService(imageRepository, fileStorageService, gameRepository, userRepository, imageCache)
     }
 
     @AfterEach

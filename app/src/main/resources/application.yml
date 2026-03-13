@@ -38,15 +38,11 @@ management:
           include: pluginsLoaded
 
 spring:
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: true
-    properties:
-      hibernate:
-        jdbc.batch_size: 25
-        order_inserts: true
-        order_updates: true
+  application:
+    name: Gameyfin
+    version: @project.version@
+  threads:
+    virtual.enabled: true
   sql.init.mode: always
   datasource:
     username: gfadmin
@@ -55,20 +51,24 @@ spring:
     url: jdbc:h2:file:./db/${spring.datasource.db-name};CACHE_SIZE=16384
     driverClassName: org.h2.Driver
     hikari:
-      maximum-pool-size: 5
+      maximum-pool-size: 10
       connection-timeout: 60_000
-  content:
-    fs.filesystem-root: ./data/
-  application:
-    name: Gameyfin
-    version: @project.version@
-  threads:
-    virtual.enabled: true
-  mvc:
-    async.request-timeout: 0
   flyway:
     baseline-on-migrate: true
     baseline-version: 2.0.0
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc.batch_size: 25
+        order_inserts: true
+        order_updates: true
+  content:
+    fs.filesystem-root: ./data/
+  mvc:
+    async.request-timeout: 0
 
 vaadin:
   # To improve the performance during development.
