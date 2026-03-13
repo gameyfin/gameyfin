@@ -27,7 +27,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: restart, health, metrics, prometheus
+        include: restart, health, metrics, prometheus, info
   endpoint:
     pause:
       enabled: false

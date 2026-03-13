@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage
 import java.io.InputStream
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import javax.imageio.ImageIO
 
@@ -201,6 +202,10 @@ class ImageService(
 
     fun getFileContent(image: Image): InputStream? {
         return fileStorageService.getFile(image.contentId)
+    }
+
+    fun getFilePath(image: Image): Path? {
+        return fileStorageService.getFilePath(image.contentId)
     }
 
     fun deleteImageIfUnused(image: Image) {

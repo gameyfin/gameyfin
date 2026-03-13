@@ -81,6 +81,16 @@ class FileStorageService(
     }
 
     /**
+     * Resolves the file path for a given content ID.
+     * Returns null if the content ID is null or the file doesn't exist.
+     */
+    fun getFilePath(contentId: String?): Path? {
+        if (contentId == null) return null
+        val filePath = rootPath.resolve(contentId)
+        return if (filePath.exists()) filePath else null
+    }
+
+    /**
      * Checks if a file exists for the given content ID.
      */
     fun fileExists(contentId: String?): Boolean {

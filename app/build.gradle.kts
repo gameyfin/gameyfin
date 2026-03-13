@@ -1,6 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
 group = "org.gameyfin"
+version = rootProject.version
 val appMainClass = "org.gameyfin.app.GameyfinApplicationKt"
 
 plugins {
@@ -18,6 +19,10 @@ plugins {
 
 application {
     mainClass.set(appMainClass)
+}
+
+springBoot {
+    buildInfo()
 }
 
 allOpen {
