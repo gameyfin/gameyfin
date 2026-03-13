@@ -102,7 +102,6 @@ class GameService(
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
 
 
-    @Transactional(readOnly = true)
     fun getAll(): List<GameDto> {
         val entities = gameRepository.findAll().toList()
         return entities.toDtos()

@@ -72,7 +72,6 @@ class LibraryService(
     /**
      * Retrieves all libraries from the repository.
      */
-    @Transactional(readOnly = true)
     fun getAll(): List<LibraryDto> {
         val entities = libraryRepository.findAll().toList()
         return entities.toDtos()
