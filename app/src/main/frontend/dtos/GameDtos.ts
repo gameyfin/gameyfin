@@ -11,6 +11,7 @@ export interface GameMetadataAdminDto {
     originalIds?: { [key: string]: string } | null;
     downloadCount: number;
     matchConfirmed: boolean;
+    completenessScore: number;
 }
 
 export interface GameFieldMetadataDto {

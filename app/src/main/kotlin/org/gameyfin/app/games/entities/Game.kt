@@ -89,4 +89,34 @@ class Game(
     var metadata: GameMetadata
 ) {
     constructor(path: Path, library: Library) : this(library = library, metadata = GameMetadata(path = path.toString()))
+
+    /**
+     * Return the percentage of fields with non-empty content (except "comment", "collections" and "metadata").
+     * 
+     * @return percentage of filled fields as an integer between 0 and 100
+     */
+    fun calculateCompletenessScore(): Int {
+        // Hint: When a field gets added/removed, a DB migration script needs to re-calculate the scores!
+        val fields: List<Boolean> = listOf(
+            !title.isNullOrBlank(),
+            coverImage != null,
+            headerImage != null,
+            !summary.isNullOrBlank(),
+            release != null,
+            userRating != null,
+            criticRating != null,
+            platforms.isNotEmpty(),
+            publishers.isNotEmpty(),
+            developers.isNotEmpty(),
+            genres.isNotEmpty(),
+            themes.isNotEmpty(),
+            keywords.isNotEmpty(),
+            features.isNotEmpty(),
+            perspectives.isNotEmpty(),
+            images.isNotEmpty(),
+            videoUrls.isNotEmpty(),
+        )
+        val filled = fields.count { it }
+        return (filled * 100) / fields.size
+    }
 }

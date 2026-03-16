@@ -27,7 +27,6 @@ import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMe
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
-import {metadataCompleteness} from "Frontend/util/utils";
 import ChipList from "Frontend/components/general/ChipList";
 
 interface LibraryManagementGamesProps {
@@ -71,7 +70,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                     cmp = a.metadata.downloadCount - b.metadata.downloadCount;
                     break;
                 case "completeness":
-                    cmp = metadataCompleteness(a) - metadataCompleteness(b);
+                    cmp = a.metadata.completenessScore - b.metadata.completenessScore;
                     break;
                 default:
                     return 0; // No sorting if the column is not recognized

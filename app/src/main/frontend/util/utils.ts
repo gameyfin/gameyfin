@@ -215,27 +215,6 @@ export function fileNameFromPath(path: string, includeExtension: boolean = true)
 }
 
 /**
- * Calculate the completeness of a GameDto
- * @param game
- * @returns completeness percentage (0-100)
- */
-export function metadataCompleteness(game: GameDto) {
-    // Total number of fields considered for completeness
-    // Includes all fields except "comment" and "platforms"
-    const totalFields = 21;
-
-    const filledFields = Object.values(game).filter(value => {
-        if (value === null || value === undefined) return false;
-        if (Array.isArray(value)) return value.length > 0;
-        if (typeof value === "string") return value.trim().length > 0;
-        return true;
-    }).length;
-
-    const completeness = Math.round((filledFields / totalFields) * 100);
-    return Math.min(100, completeness); // Never exceed 100%
-}
-
-/**
  * Scale a number from one range to another
  * @param value The number to scale
  * @param originalRange The original range [min, max]

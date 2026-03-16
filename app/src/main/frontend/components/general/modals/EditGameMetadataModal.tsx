@@ -65,9 +65,7 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                         >
                             {(formik: any) => (
                                 <Form>
-                                    <ModalHeader className="flex flex-col gap-1">
-                                        Update game metadata
-                                    </ModalHeader>
+                                    <ModalHeader>Update game metadata</ModalHeader>
                                     <ModalBody>
                                         <Input key="metadata.path" name="metadata.path" label="Path"
                                                isDisabled className="mb-0"/>

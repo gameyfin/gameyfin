@@ -88,7 +88,8 @@ fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
         path = this.path,
         fields = this.fields.mapValues { it.value.toDto() },
         originalIds = this.originalIds.mapKeys { it.key.pluginId },
-        matchConfirmed = this.matchConfirmed
+        matchConfirmed = this.matchConfirmed,
+        completenessScore = this.completenessScore
     )
 }
 

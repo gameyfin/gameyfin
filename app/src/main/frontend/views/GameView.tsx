@@ -27,6 +27,7 @@ import remarkBreaks from "remark-breaks";
 import ChipList from "Frontend/components/general/ChipList";
 import {collectionState} from "Frontend/state/CollectionState";
 import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
+import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -138,6 +139,7 @@ export default function GameView() {
                     </div>
                     <div className="flex flex-row items-center gap-8">
                         {isAdmin(auth) && <div className="flex flex-row gap-2">
+                            <MetadataCompletenessIndicator game={game} showPercentageOnHover/>
                             <Button isIconOnly onPress={toggleMatchConfirmed}>
                                 {(game.metadata as GameMetadataAdminDto).matchConfirmed ?
                                     <Tooltip content="Unconfirm match">

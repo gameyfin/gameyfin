@@ -18,5 +18,6 @@ data class GameMetadataAdminDto(
     val fields: Map<String, GameFieldMetadataDto>?,
     val originalIds: Map<String, String>?,
     val downloadCount: Int,
-    val matchConfirmed: Boolean
+    val matchConfirmed: Boolean,
+    val completenessScore: Int
 ) : GameMetadataDto
