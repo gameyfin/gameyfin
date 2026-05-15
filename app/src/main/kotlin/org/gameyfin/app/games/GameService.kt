@@ -876,11 +876,19 @@ class GameService(
         }
         setFieldIfAbsent("publishers", metadata.publishedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.publishers =
-                it.map { name -> Company(name = name, type = CompanyType.PUBLISHER) }.toMutableList()
+                it.map { name ->
+                    companyService.createOrGet(
+                        Company(name = name, type = CompanyType.PUBLISHER)
+                    )
+                }.toMutableList()
         }
         setFieldIfAbsent("developers", metadata.developedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.developers =
-                it.map { name -> Company(name = name, type = CompanyType.DEVELOPER) }.toMutableList()
+                it.map { name ->
+                    companyService.createOrGet(
+                        Company(name = name, type = CompanyType.DEVELOPER)
+                    )
+                }.toMutableList()
         }
         setFieldIfAbsent("genres", metadata.genres?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.genres = it.toList()

@@ -812,6 +812,7 @@ class GameServiceTest {
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider1, provider2)
         every { pluginService.getPluginManagementEntry(provider1.javaClass) } returns pluginEntry1
         every { pluginService.getPluginManagementEntry(provider2.javaClass) } returns pluginEntry2
+        every { companyService.createOrGet(any()) } answers { firstArg() }
 
         val results = gameService.getPotentialMatches("Test Game", emptySet())
 
@@ -2138,6 +2139,7 @@ class GameServiceTest {
 
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { companyService.createOrGet(any()) } answers { firstArg() }
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 5000L
 
@@ -2289,6 +2291,7 @@ class GameServiceTest {
         )
         every { pluginService.getPluginManagementEntry(highProvider.javaClass) } returns highEntry
         every { pluginService.getPluginManagementEntry(lowProvider.javaClass) } returns lowEntry
+        every { companyService.createOrGet(any()) } answers { firstArg() }
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 3000L
 

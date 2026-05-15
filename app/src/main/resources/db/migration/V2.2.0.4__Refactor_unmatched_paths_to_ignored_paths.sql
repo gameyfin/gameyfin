@@ -1,27 +1,23 @@
 -- Flyway Migration: V2.2.0.4
--- Purpose: Refactor LIBRARY_UNMATCHED_PATHS to LIBRARY_IGNORED_PATHS with proper entity structure
---          Add IGNORED_PATH and IGNORED_PATH_SOURCE tables using single-table inheritance
---          Migrate existing unmatched paths as plugin-sourced ignored paths (system-generated)
+-- Purpose: Refactor LIBRARY_UNMATCHED_PATHS to LIBRARY_IGNORED_PATHS with proper entity structure.
+-- Compatibility: H2 2.2+ and PostgreSQL 13+ Fully compatible. All standard DDL syntax.
 
---- Create sequence for primary key generation
 CREATE SEQUENCE IGNORED_PATH_SEQ
     INCREMENT BY 50;
 
 CREATE SEQUENCE IGNORED_PATH_SOURCE_SEQ
     INCREMENT BY 50;
 
--- Create the IGNORED_PATH_SOURCE table (single-table inheritance)
 CREATE TABLE IGNORED_PATH_SOURCE
 (
     ID      BIGINT      NOT NULL PRIMARY KEY,
-    DTYPE   VARCHAR(31) NOT NULL, -- Discriminator column for inheritance
-    USER_ID BIGINT,               -- For IgnoredPathUserSource
+    DTYPE   VARCHAR(31) NOT NULL,
+    USER_ID BIGINT,
     CONSTRAINT FK_IGNORED_PATH_SOURCE_USER
         FOREIGN KEY (USER_ID) REFERENCES USERS (ID)
             ON DELETE CASCADE
 );
 
--- Create junction table for plugin sources (many-to-many relationship)
 CREATE TABLE IGNORED_PATH_SOURCE_PLUGINS
 (
     IGNORED_PATH_PLUGIN_SOURCE_ID BIGINT       NOT NULL,
@@ -34,7 +30,6 @@ CREATE TABLE IGNORED_PATH_SOURCE_PLUGINS
             ON DELETE CASCADE
 );
 
--- Create IGNORED_PATH table
 CREATE TABLE IGNORED_PATH
 (
     ID        BIGINT        NOT NULL PRIMARY KEY,
@@ -49,7 +44,6 @@ CREATE TABLE IGNORED_PATH
         CHECK (TRIM(PATH) <> '')
 );
 
--- Create LIBRARY_IGNORED_PATHS junction table
 CREATE TABLE LIBRARY_IGNORED_PATHS
 (
     LIBRARY_ID       BIGINT NOT NULL,
@@ -64,12 +58,9 @@ CREATE TABLE LIBRARY_IGNORED_PATHS
             ON DELETE CASCADE
 );
 
--- Create indexes for better query performance
 CREATE INDEX IDX_LIBRARY_IGNORED_PATHS_LIBRARY_ID ON LIBRARY_IGNORED_PATHS (LIBRARY_ID);
 CREATE INDEX IDX_IGNORED_PATH_SOURCE_ID ON IGNORED_PATH (SOURCE_ID);
 CREATE INDEX IDX_IGNORED_PATH_SOURCE_USER_ID ON IGNORED_PATH_SOURCE (USER_ID);
 CREATE INDEX IDX_IGNORED_PATH_SOURCE_PLUGINS ON IGNORED_PATH_SOURCE_PLUGINS (IGNORED_PATH_PLUGIN_SOURCE_ID);
 
--- Drop the old LIBRARY_UNMATCHED_PATHS table
 DROP TABLE LIBRARY_UNMATCHED_PATHS;
-

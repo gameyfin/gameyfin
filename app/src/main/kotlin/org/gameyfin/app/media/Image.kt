@@ -2,6 +2,8 @@ package org.gameyfin.app.media
 
 import jakarta.persistence.*
 import org.hibernate.annotations.BatchSize
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 @Entity
 @BatchSize(size = 100)
@@ -10,7 +12,7 @@ class Image(
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long? = null,
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val originalUrl: String? = null,
 
     val type: ImageType,

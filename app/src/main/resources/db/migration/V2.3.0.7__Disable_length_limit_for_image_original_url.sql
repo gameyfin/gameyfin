@@ -1,8 +1,9 @@
--- Flyway Migration: V2.2.0.7
+-- Flyway Migration: V2.3.0.7
 -- Purpose: Make IMAGE.ORIGINAL_URL column unbounded to avoid length errors when storing large encrypted values.
--- Context: Previously defined as CHARACTER VARYING(255); H2 raised 22001 (value too long).
--- Strategy: Alter column type to CLOB (unlimited length in H2). This matches other large text usages (e.g., COMMENT, SUMMARY) which use CHARACTER LARGE OBJECT.
+-- Compatibility: H2 2.2+ and PostgreSQL 13+
+--   - CLOB does not exist in PostgreSQL. The equivalent is TEXT (unlimited length).
+--   - ALTER TABLE ... ALTER COLUMN ... TYPE TEXT is valid PostgreSQL syntax.
+--   - USING clause is added to handle the implicit cast from VARCHAR(255) to TEXT.
 
 ALTER TABLE IMAGE
-    ALTER COLUMN ORIGINAL_URL CLOB;
-
+    ALTER COLUMN ORIGINAL_URL TYPE TEXT;

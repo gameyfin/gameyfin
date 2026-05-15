@@ -1,5 +1,6 @@
--- Flyway Migration: V2.2.0
+-- Flyway Migration: V2.2.0.1
 -- Purpose: Remove obsolete LIBRARY_GAMES join table and backfill GAME.LIBRARY_ID if needed.
+-- Compatibility: H2 2.2+ and PostgreSQL 13+ Fully compatible. Standard UPDATE/subquery and DROP TABLE IF EXISTS syntax.
 
 -- 1) Backfill GAME.LIBRARY_ID from LIBRARY_GAMES when null (safety for older data)
 UPDATE GAME

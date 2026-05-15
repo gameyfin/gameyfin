@@ -1,17 +1,14 @@
 -- Flyway Migration: V2.3.0.6
--- Purpose: Add blurhash support to images for improved UI performance
+-- Purpose: Add blurhash support to images for improved UI performance.
+-- Compatibility: H2 2.2+ and PostgreSQL 13+
+--   - Removed H2-specific CREATE ALIAS / CALL / DROP ALIAS blocks entirely.
+--     PostgreSQL has no CREATE ALIAS mechanism and cannot call Java methods from SQL.
+--   - The blurhash calculation for existing images CANNOT be performed in SQL on
+--     PostgreSQL. This must be handled at the application layer.
+--   - Recommended approach: After this migration runs, implement a one-time data
+--     migration in the application startup (e.g., a Spring ApplicationRunner or
+--     CommandLineRunner) that reads each IMAGE row, computes the blurhash in Java,
+--     and writes it back. The BLURHASH column is nullable so existing rows without
+--     a blurhash will simply return null until populated.
 
--- Add blurhash column to IMAGE table
 ALTER TABLE IMAGE ADD COLUMN BLURHASH VARCHAR(255);
-
--- Create alias for blurhash calculation helper
-CREATE ALIAS IF NOT EXISTS CALCULATE_BLURHASHES_FOR_ALL_IMAGES FOR "org.gameyfin.db.h2.BlurhashMigration.calculateBlurhashesForAllImages";
-
--- Calculate blurhashes for all existing images
--- The data path is typically 'data' in the application root
--- Note: H2 automatically provides the Connection parameter to the Java method
-CALL CALCULATE_BLURHASHES_FOR_ALL_IMAGES('data');
-
--- Drop the alias after use
-DROP ALIAS IF EXISTS CALCULATE_BLURHASHES_FOR_ALL_IMAGES;
-

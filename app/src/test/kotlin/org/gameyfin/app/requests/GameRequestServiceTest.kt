@@ -114,6 +114,7 @@ class GameRequestServiceTest {
     @Test
     fun `createRequest should throw exception when game already exists`() {
         val release = Instant.parse("2024-01-15T00:00:00Z")
+        val releaseYear = 2024
         val creationDto = GameRequestCreationDto(
             title = "Existing Game",
             platform = Platform.PC_MICROSOFT_WINDOWS,
@@ -125,7 +126,7 @@ class GameRequestServiceTest {
         every {
             gameRepository.findByTitleAndReleaseYearAndPlatform(
                 "Existing Game",
-                release,
+                releaseYear,
                 Platform.PC_MICROSOFT_WINDOWS
             )
         } returns listOf(existingGame)
@@ -142,6 +143,7 @@ class GameRequestServiceTest {
     @Test
     fun `createRequest should throw exception when request already exists`() {
         val release = Instant.parse("2024-01-15T00:00:00Z")
+        val releaseYear = 2024
         val creationDto = GameRequestCreationDto(
             title = "Requested Game",
             platform = Platform.PC_MICROSOFT_WINDOWS,
@@ -153,14 +155,14 @@ class GameRequestServiceTest {
         every {
             gameRepository.findByTitleAndReleaseYearAndPlatform(
                 "Requested Game",
-                release,
+                releaseYear,
                 Platform.PC_MICROSOFT_WINDOWS
             )
         } returns emptyList()
         every {
             gameRequestRepository.findByTitleAndReleaseYearAndPlatform(
                 "Requested Game",
-                release,
+                releaseYear,
                 Platform.PC_MICROSOFT_WINDOWS
             )
         } returns listOf(existingRequest)
@@ -639,6 +641,7 @@ class GameRequestServiceTest {
     @Test
     fun `onGameCreated should complete matching requests`() {
         val game = createTestGame(1L, "Test Game")
+        val releaseYear = 2024
         game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
         val request1 = createTestGameRequest(1L, "Test Game")
         request1.status = GameRequestStatus.PENDING
@@ -649,12 +652,12 @@ class GameRequestServiceTest {
         every { GameRequestService.emit(any()) } just Runs
         every {
             gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
-                "Test Game", game.release, Platform.PC_MICROSOFT_WINDOWS, listOf(GameRequestStatus.FULFILLED)
+                "Test Game", releaseYear, Platform.PC_MICROSOFT_WINDOWS, listOf(GameRequestStatus.FULFILLED)
             )
         } returns listOf(request1, request2)
         every {
             gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
-                "Test Game", game.release, Platform.PLAYSTATION_5, listOf(GameRequestStatus.FULFILLED)
+                "Test Game", releaseYear, Platform.PLAYSTATION_5, listOf(GameRequestStatus.FULFILLED)
             )
         } returns emptyList()
         every { gameRequestRepository.save(any()) } answers { firstArg() }
@@ -691,6 +694,7 @@ class GameRequestServiceTest {
     @Test
     fun `onGameCreated should handle multiple platforms`() {
         val game = createTestGame(1L, "Multi Platform Game")
+        val releaseYear = 2024
         game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5, Platform.XBOX_SERIES_X_S)
         val request1 = createTestGameRequest(1L, "Multi Platform Game")
         val request2 = createTestGameRequest(2L, "Multi Platform Game")
@@ -700,17 +704,17 @@ class GameRequestServiceTest {
         every { GameRequestService.emit(any()) } just Runs
         every {
             gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
-                "Multi Platform Game", game.release, Platform.PC_MICROSOFT_WINDOWS, listOf(GameRequestStatus.FULFILLED)
+                "Multi Platform Game", releaseYear, Platform.PC_MICROSOFT_WINDOWS, listOf(GameRequestStatus.FULFILLED)
             )
         } returns listOf(request1)
         every {
             gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
-                "Multi Platform Game", game.release, Platform.PLAYSTATION_5, listOf(GameRequestStatus.FULFILLED)
+                "Multi Platform Game", releaseYear, Platform.PLAYSTATION_5, listOf(GameRequestStatus.FULFILLED)
             )
         } returns listOf(request2)
         every {
             gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
-                "Multi Platform Game", game.release, Platform.XBOX_SERIES_X_S, listOf(GameRequestStatus.FULFILLED)
+                "Multi Platform Game", releaseYear, Platform.XBOX_SERIES_X_S, listOf(GameRequestStatus.FULFILLED)
             )
         } returns listOf(request3)
         every { gameRequestRepository.save(any()) } answers { firstArg() }
@@ -727,6 +731,7 @@ class GameRequestServiceTest {
     @Test
     fun `onGameUpdated should complete matching requests`() {
         val game = createTestGame(1L, "Updated Game")
+        val releaseYear = 2024
         game.platforms = mutableListOf(Platform.NINTENDO_SWITCH)
         val request = createTestGameRequest(1L, "Updated Game")
         request.status = GameRequestStatus.PENDING
@@ -735,7 +740,7 @@ class GameRequestServiceTest {
         every { GameRequestService.emit(any()) } just Runs
         every {
             gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
-                "Updated Game", game.release, Platform.NINTENDO_SWITCH, listOf(GameRequestStatus.FULFILLED)
+                "Updated Game", releaseYear, Platform.NINTENDO_SWITCH, listOf(GameRequestStatus.FULFILLED)
             )
         } returns listOf(request)
         every { gameRequestRepository.save(any()) } answers { firstArg() }
@@ -751,13 +756,14 @@ class GameRequestServiceTest {
     @Test
     fun `onGameCreated should not update already fulfilled requests`() {
         val game = createTestGame(1L, "Test Game")
+        val releaseYear = 2024
         game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
         val request = createTestGameRequest(1L, "Test Game")
         request.status = GameRequestStatus.FULFILLED
 
         every {
             gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
-                "Test Game", game.release, Platform.PC_MICROSOFT_WINDOWS, listOf(GameRequestStatus.FULFILLED)
+                "Test Game", releaseYear, Platform.PC_MICROSOFT_WINDOWS, listOf(GameRequestStatus.FULFILLED)
             )
         } returns emptyList()
 
@@ -856,4 +862,3 @@ class GameRequestServiceTest {
         every { authentication.authorities } returns authorities
     }
 }
-

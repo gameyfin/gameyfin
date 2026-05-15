@@ -318,18 +318,12 @@ class LibraryWatcherService(
 
     private fun handleCreates(library: Library, events: List<WatchEvent<*>>) {
         log.debug { "Handling ${events.size} create events for library ${library.id}" }
-
-        // Trigger a quick scan to add new games
-        // The scan service will handle the actual game creation
-        libraryScanService.triggerScan(ScanType.QUICK, listOf(library.id!!))
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
     }
 
     private fun handleDeletes(library: Library, events: List<WatchEvent<*>>) {
         log.debug { "Handling ${events.size} delete events for library ${library.id}" }
-
-        // Trigger a quick scan to remove deleted games
-        // The scan service will handle the actual game deletion
-        libraryScanService.triggerScan(ScanType.QUICK, listOf(library.id!!))
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
     }
 
     private fun handleModifies(library: Library, watchInfo: LibraryWatchInfo, events: List<WatchEvent<*>>) {
