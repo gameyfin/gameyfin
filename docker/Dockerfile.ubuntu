@@ -43,7 +43,7 @@ COPY --from=extractor /builder/plugins ./plugins
 # On x86-64, the script passes UseAVX=0 to restrict generated code to baseline
 # SSE2 so the cache is portable across all amd64 CPUs (skipped on aarch64).
 COPY --link ./docker/aot-training.sh ./aot-training.sh
-RUN chmod +x aot-training.sh && ./aot-training.sh
+RUN sed -i 's/\r//' aot-training.sh && chmod +x aot-training.sh && ./aot-training.sh
 
 # ── Stage 3: runtime image ───────────────────────────────────────────────
 FROM eclipse-temurin:25-jre
@@ -61,9 +61,10 @@ LABEL maintainer="grimsi" \
 # Indicate docker runtime environment
 ENV RUNTIME_ENV=docker
 
-# Install necessary packages
+# Install necessary packages + update CA certificates
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini gosu && \
+    apt-get install -y --no-install-recommends tini gosu ca-certificates && \
+    update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Fixed runtime user/group
@@ -81,6 +82,7 @@ RUN groupadd -g "$GID" "$USER" && \
 
 # Copy entrypoint script with proper perms and ownership
 COPY --link --chown=${UID}:${GID} --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
+RUN sed -i 's/\r//' /entrypoint.sh
 
 # Copy application layers from extractor stage
 COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/dependencies/ ./
