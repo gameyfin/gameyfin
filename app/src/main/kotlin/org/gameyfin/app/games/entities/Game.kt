@@ -55,10 +55,10 @@ class Game(
 
     var criticRating: Int? = null,
 
-    @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    @ManyToMany(cascade = [MERGE, REFRESH], fetch = FetchType.EAGER)
     var publishers: MutableList<Company> = mutableListOf(),
 
-    @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    @ManyToMany(cascade = [MERGE, REFRESH], fetch = FetchType.EAGER)
     var developers: MutableList<Company> = mutableListOf(),
 
     @ElementCollection(targetClass = Genre::class, fetch = FetchType.EAGER)
