@@ -37,10 +37,10 @@ class Game(
 
     var title: String? = null,
 
-    @ManyToOne(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    @ManyToOne(cascade = [MERGE, REFRESH], fetch = FetchType.EAGER)
     var coverImage: Image? = null,
 
-    @ManyToOne(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    @ManyToOne(cascade = [MERGE, REFRESH], fetch = FetchType.EAGER)
     var headerImage: Image? = null,
 
     @Lob
@@ -76,7 +76,7 @@ class Game(
     @ElementCollection(targetClass = PlayerPerspective::class, fetch = FetchType.EAGER)
     var perspectives: List<PlayerPerspective> = emptyList(),
 
-    @ManyToMany(cascade = [PERSIST, MERGE, REFRESH], fetch = FetchType.EAGER)
+    @ManyToMany(cascade = [MERGE, REFRESH], fetch = FetchType.EAGER)
     var images: MutableList<Image> = mutableListOf(),
 
     @ElementCollection(fetch = FetchType.EAGER)
