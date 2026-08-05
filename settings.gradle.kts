@@ -15,6 +15,7 @@ pluginManagement {
         kotlin("plugin.spring") version extra["kotlinVersion"] as String
         kotlin("plugin.jpa") version extra["kotlinVersion"] as String
         kotlin("plugin.serialization") version extra["kotlinVersion"] as String
+        kotlin("kapt") version "2.4.10"
     }
 }
 
