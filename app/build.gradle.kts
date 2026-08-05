@@ -65,7 +65,7 @@ dependencies {
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("org.liquibase:liquibase-core")
     implementation("commons-io:commons-io:${rootProject.extra["commonsIoVersion"]}")
     implementation("com.google.guava:guava:${rootProject.extra["guavaVersion"]}")
 
@@ -95,7 +95,6 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
-    runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     // Testing
@@ -106,6 +105,9 @@ dependencies {
     testImplementation("io.mockk:mockk:${rootProject.extra["mockkVersion"]}")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("io.projectreactor:reactor-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter:1.20.1")
+    testImplementation("org.testcontainers:postgresql:1.20.1")
 }
 
 dependencyManagement {
