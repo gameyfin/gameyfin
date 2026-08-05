@@ -28,6 +28,7 @@ import org.springframework.transaction.event.TransactionalEventListener
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
 
@@ -42,7 +43,6 @@ class GameRequestService(
     companion object {
         private val log = KotlinLogging.logger {}
 
-        /* Websockets */
         private val gameRequestEvents = Sinks.many().multicast().onBackpressureBuffer<GameRequestEvent>(1024, false)
 
         fun subscribe(): Flux<List<GameRequestEvent>> {
@@ -83,16 +83,15 @@ class GameRequestService(
     }
 
     fun createRequest(gameRequest: GameRequestCreationDto) {
-
-        // Check if requests are enabled
         if (config.get(ConfigProperties.Requests.Games.Enabled) != true) {
             throw EndpointException("Game requests are disabled")
         }
 
-        // Check if game is already available
+        val requestReleaseYear = gameRequest.release?.atZone(ZoneOffset.UTC)?.year
+
         val existingGames = gameRepository.findByTitleAndReleaseYearAndPlatform(
             gameRequest.title,
-            gameRequest.release,
+            requestReleaseYear,
             gameRequest.platform
         )
         if (existingGames.isNotEmpty()) {
@@ -101,10 +100,9 @@ class GameRequestService(
             )
         }
 
-        // Check if a request with the same title, release year, and platform already exists
         val existingRequests = gameRequestRepository.findByTitleAndReleaseYearAndPlatform(
             gameRequest.title,
-            gameRequest.release,
+            requestReleaseYear,
             gameRequest.platform
         )
         if (existingRequests.isNotEmpty()) {
@@ -114,14 +112,10 @@ class GameRequestService(
         val auth = getCurrentAuth()
         val currentUser = auth?.let { userService.getByUsername(it.name) }
 
-        // Check if guests are allowed to create requests
         if (config.get(ConfigProperties.Requests.Games.AllowGuestsToRequestGames) != true && currentUser == null) {
             throw EndpointException("Only registered users can submit game requests")
         }
 
-        // Check if user has too many open requests (0 means no limit per user)
-        // Note: All guests are treated as a single user with null ID and thus share their request limit
-        // Note: Admins are exempt from this limit
         val pendingRequestsForUser = gameRequestRepository.findRequestsByRequesterIdAndStatusIn(
             currentUser?.id,
             listOf(GameRequestStatus.PENDING)
@@ -153,8 +147,6 @@ class GameRequestService(
         val currentUser = auth?.let { userService.getByUsername(it.name) }
         val requester = gameRequest.requester
 
-        // Check if the current user is the requester or an admin
-        // Note: Requests submitted by guests (request is null) can only be deleted by an admin
         if (auth?.isAdmin() != true && (requester == null || requester.id != currentUser?.id)) {
             throw EndpointException("Only the requester or an admin can delete a game request")
         }
@@ -178,12 +170,10 @@ class GameRequestService(
     @Transactional
     fun toggleRequestVote(id: Long) {
         val auth = getCurrentAuth() ?: error("No authentication found")
-        val currentUser =
-            userService.getByUsername(auth.name) ?: error("Current user not found")
+        val currentUser = userService.getByUsername(auth.name) ?: error("Current user not found")
         val gameRequest = gameRequestRepository.findById(id)
             .orElseThrow { NoSuchElementException("No game request found with id $id") }
 
-        // Replace the voters collection to ensure Hibernate detects the change
         val updatedVoters = gameRequest.voters.toMutableSet()
         if (updatedVoters.contains(currentUser)) {
             updatedVoters.remove(currentUser)
@@ -192,13 +182,12 @@ class GameRequestService(
         }
         gameRequest.voters = updatedVoters
 
-
         gameRequestRepository.save(gameRequest)
     }
 
     private fun completeMatchingRequests(game: Game) {
         val gameTitle = game.title
-        val gameRelease = game.release
+        val gameReleaseYear = game.release?.atZone(ZoneOffset.UTC)?.year
         val gamePlatforms = game.platforms.toList()
 
         if (gameTitle == null) {
@@ -206,11 +195,10 @@ class GameRequestService(
             return
         }
 
-        // Check each platform of the game for matching requests
         gamePlatforms.forEach { platform ->
             val matchingRequests = gameRequestRepository.findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
                 gameTitle,
-                gameRelease,
+                gameReleaseYear,
                 platform,
                 listOf(GameRequestStatus.FULFILLED)
             )

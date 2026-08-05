@@ -2,9 +2,7 @@ logging.level:
   root: warn
   org.atmosphere: warn
   org.gameyfin: info
-  org.flywaydb.core.internal.command: info
-  org.flywaydb.core.internal.sqlscript: warn
-  org.flywaydb.core.internal.database.base: error
+  liquibase: info
   org.gameyfin.app.GameyfinApplicationKt: warn
   # Suppress false positive warnings from Spring Security 6
   org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
@@ -61,9 +59,8 @@ spring:
     hikari:
       maximum-pool-size: 10
       connection-timeout: 60_000
-  flyway:
-    baseline-on-migrate: true
-    baseline-version: 2.0.0
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
   jpa:
     hibernate:
       ddl-auto: validate

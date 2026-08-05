@@ -1,6 +1,5 @@
 package org.gameyfin.app.core.plugins.management
 
-import java.io.InputStream
 import java.nio.file.Path
 import java.security.CodeSigner
 import java.security.PublicKey
@@ -15,22 +14,24 @@ import java.util.jar.JarFile
 class PluginSignatureVerifier(private val publicKey: PublicKey) {
 
     fun verifyPluginSignature(pluginPath: Path): PluginTrustLevel {
-        val jarFile = JarFile(pluginPath.toFile(), true)
-        val entries = jarFile.entries()
+        JarFile(pluginPath.toFile(), true).use { jarFile ->
+            val entries = jarFile.entries()
 
-        while (entries.hasMoreElements()) {
-            val entry = entries.nextElement()
-            if (entry.isDirectory || entry.name.startsWith("META-INF/")) continue
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement()
+                if (entry.isDirectory || entry.name.startsWith("META-INF/")) continue
 
-            if (!verifyEntryDigest(jarFile, entry)) return PluginTrustLevel.UNTRUSTED
+                if (!verifyEntryDigest(jarFile, entry)) return PluginTrustLevel.UNTRUSTED
 
-            val codeSigners = entry.codeSigners
-            if (codeSigners.isNullOrEmpty()) return PluginTrustLevel.THIRD_PARTY
+                val codeSigners = entry.codeSigners
+                if (codeSigners.isNullOrEmpty()) return PluginTrustLevel.THIRD_PARTY
 
-            val signersTrustLevel = verifyCodeSigners(codeSigners)
-            if (signersTrustLevel != PluginTrustLevel.OFFICIAL) return signersTrustLevel
+                val signersTrustLevel = verifyCodeSigners(codeSigners)
+                if (signersTrustLevel != PluginTrustLevel.OFFICIAL) return signersTrustLevel
+            }
+
+            return PluginTrustLevel.OFFICIAL
         }
-        return PluginTrustLevel.OFFICIAL
     }
 
     /**
@@ -40,10 +41,13 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
     fun verifyEntryDigest(jarFile: JarFile, entry: JarEntry): Boolean {
         return try {
             val buffer = ByteArray(8192)
-            val entryInputStream: InputStream = jarFile.getInputStream(entry)
-            while (entryInputStream.read(buffer, 0, buffer.size) != -1) {
-                // Reading to trigger SecurityException on digest mismatch
+
+            jarFile.getInputStream(entry).use { entryInputStream ->
+                while (entryInputStream.read(buffer, 0, buffer.size) != -1) {
+                    // Reading to trigger SecurityException on digest mismatch
+                }
             }
+
             true
         } catch (_: SecurityException) {
             false
@@ -74,4 +78,3 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
         return PluginTrustLevel.OFFICIAL
     }
 }
-

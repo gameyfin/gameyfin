@@ -1,0 +1,1264 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2.4.1-baseline
+      author: grimsi
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: APP_CONFIG
+      changes:
+        - createSequence:
+            sequenceName: COMPANY_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: DIRECTORY_MAPPING_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: GAME_FIELD_METADATA_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: GAME_FIELD_SOURCE_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: GAME_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: IMAGE_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: LIBRARY_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: USERS_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: GAME_REQUEST_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: COLLECTION_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: IGNORED_PATH_SEQ
+            incrementBy: 50
+        - createSequence:
+            sequenceName: IGNORED_PATH_SOURCE_SEQ
+            incrementBy: 50
+
+        - createTable:
+            tableName: APP_CONFIG
+            columns:
+              - column:
+                  name: key
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: value
+                  type: text
+
+        - createTable:
+            tableName: COMPANY
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: NAME
+                  type: varchar(255)
+              - column:
+                  name: TYPE
+                  type: tinyint
+
+        - addUniqueConstraint:
+            tableName: COMPANY
+            columnNames: NAME, TYPE
+            constraintName: UQ_COMPANY_NAME_TYPE
+
+        - createTable:
+            tableName: DIRECTORY_MAPPING
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: EXTERNAL_PATH
+                  type: varchar(255)
+              - column:
+                  name: INTERNAL_PATH
+                  type: varchar(255)
+
+        - addUniqueConstraint:
+            tableName: DIRECTORY_MAPPING
+            columnNames: INTERNAL_PATH
+            constraintName: UQ_DIRECTORY_MAPPING_INTERNAL_PATH
+
+        - createTable:
+            tableName: IMAGE
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CONTENT_ID
+                  type: varchar(255)
+              - column:
+                  name: CONTENT_LENGTH
+                  type: bigint
+              - column:
+                  name: MIME_TYPE
+                  type: varchar(255)
+              - column:
+                  name: ORIGINAL_URL
+                  type: text
+              - column:
+                  name: TYPE
+                  type: tinyint
+              - column:
+                  name: BLURHASH
+                  type: varchar(255)
+
+        - createTable:
+            tableName: LIBRARY
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: NAME
+                  type: varchar(255)
+              - column:
+                  name: UPDATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: DISPLAY_ON_HOMEPAGE
+                  type: boolean
+                  defaultValueBoolean: true
+              - column:
+                  name: DISPLAY_ORDER
+                  type: int
+                  defaultValueNumeric: "-1"
+
+        - createTable:
+            tableName: GAME
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: COMMENT
+                  type: text
+              - column:
+                  name: CREATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CRITIC_RATING
+                  type: int
+              - column:
+                  name: DOWNLOAD_COUNT
+                  type: int
+              - column:
+                  name: FILE_SIZE
+                  type: bigint
+              - column:
+                  name: MATCH_CONFIRMED
+                  type: boolean
+              - column:
+                  name: PATH
+                  type: varchar(255)
+              - column:
+                  name: RELEASE
+                  type: timestamp
+              - column:
+                  name: SUMMARY
+                  type: text
+              - column:
+                  name: TITLE
+                  type: varchar(255)
+              - column:
+                  name: UPDATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: USER_RATING
+                  type: int
+              - column:
+                  name: COVER_IMAGE_ID
+                  type: bigint
+              - column:
+                  name: HEADER_IMAGE_ID
+                  type: bigint
+              - column:
+                  name: LIBRARY_ID
+                  type: bigint
+
+        - addUniqueConstraint:
+            tableName: GAME
+            columnNames: PATH
+            constraintName: UQ_GAME_PATH
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME
+            baseColumnNames: COVER_IMAGE_ID
+            referencedTableName: IMAGE
+            referencedColumnNames: ID
+            constraintName: FK_GAME_COVER_IMAGE
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME
+            baseColumnNames: HEADER_IMAGE_ID
+            referencedTableName: IMAGE
+            referencedColumnNames: ID
+            constraintName: FK_GAME_HEADER_IMAGE
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME
+            baseColumnNames: LIBRARY_ID
+            referencedTableName: LIBRARY
+            referencedColumnNames: ID
+            constraintName: FK_GAME_LIBRARY
+
+        - createIndex:
+            tableName: GAME
+            indexName: IDX_GAME_COVER_IMAGE
+            columns:
+              - column:
+                  name: COVER_IMAGE_ID
+        - createIndex:
+            tableName: GAME
+            indexName: IDX_GAME_HEADER_IMAGE
+            columns:
+              - column:
+                  name: HEADER_IMAGE_ID
+        - createIndex:
+            tableName: GAME
+            indexName: IDX_GAME_LIBRARY_ID
+            columns:
+              - column:
+                  name: LIBRARY_ID
+
+        - createTable:
+            tableName: GAME_DEVELOPERS
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: DEVELOPERS_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_DEVELOPERS
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_DEVELOPERS_GAME
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_DEVELOPERS
+            baseColumnNames: DEVELOPERS_ID
+            referencedTableName: COMPANY
+            referencedColumnNames: ID
+            constraintName: FK_GAME_DEVELOPERS_COMPANY
+
+        - createTable:
+            tableName: GAME_FEATURES
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: FEATURES
+                  type: tinyint
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_FEATURES
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_FEATURES_GAME
+
+        - createTable:
+            tableName: GAME_GENRES
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: GENRES
+                  type: tinyint
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_GENRES
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_GENRES_GAME
+
+        - createTable:
+            tableName: GAME_IMAGES
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: IMAGES_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: GAME_IMAGES
+            columnNames: GAME_ID, IMAGES_ID
+            constraintName: UX_GAME_IMAGES_GAME_IMAGE
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_IMAGES
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_IMAGES_GAME
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_IMAGES
+            baseColumnNames: IMAGES_ID
+            referencedTableName: IMAGE
+            referencedColumnNames: ID
+            constraintName: FK_GAME_IMAGES_IMAGE
+
+        - createTable:
+            tableName: GAME_KEYWORDS
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: KEYWORDS
+                  type: varchar(255)
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_KEYWORDS
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_KEYWORDS_GAME
+
+        - createTable:
+            tableName: GAME_PERSPECTIVES
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PERSPECTIVES
+                  type: tinyint
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_PERSPECTIVES
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_PERSPECTIVES_GAME
+
+        - createTable:
+            tableName: GAME_PUBLISHERS
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PUBLISHERS_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_PUBLISHERS
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_PUBLISHERS_GAME
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_PUBLISHERS
+            baseColumnNames: PUBLISHERS_ID
+            referencedTableName: COMPANY
+            referencedColumnNames: ID
+            constraintName: FK_GAME_PUBLISHERS_COMPANY
+
+        - createTable:
+            tableName: GAME_THEMES
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: THEMES
+                  type: tinyint
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_THEMES
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_THEMES_GAME
+
+        - createTable:
+            tableName: GAME_VIDEO_URLS
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VIDEO_URLS
+                  type: blob
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_VIDEO_URLS
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_VIDEO_URLS_GAME
+
+        - createTable:
+            tableName: LIBRARY_DIRECTORIES
+            columns:
+              - column:
+                  name: LIBRARY_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: DIRECTORIES_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: LIBRARY_DIRECTORIES
+            columnNames: DIRECTORIES_ID
+            constraintName: UQ_LIBRARY_DIRECTORIES_DIRECTORY_ID
+
+        - addForeignKeyConstraint:
+            baseTableName: LIBRARY_DIRECTORIES
+            baseColumnNames: LIBRARY_ID
+            referencedTableName: LIBRARY
+            referencedColumnNames: ID
+            constraintName: FK_LIBRARY_DIRECTORIES_LIBRARY
+
+        - addForeignKeyConstraint:
+            baseTableName: LIBRARY_DIRECTORIES
+            baseColumnNames: DIRECTORIES_ID
+            referencedTableName: DIRECTORY_MAPPING
+            referencedColumnNames: ID
+            constraintName: FK_LIBRARY_DIRECTORIES_DIRECTORY_MAPPING
+
+        - createTable:
+            tableName: PLUGIN_CONFIG
+            columns:
+              - column:
+                  name: key
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PLUGIN_ID
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: text
+
+        - addPrimaryKey:
+            tableName: PLUGIN_CONFIG
+            columnNames: key, PLUGIN_ID
+
+        - createTable:
+            tableName: PLUGIN_MANAGEMENT_ENTRY
+            columns:
+              - column:
+                  name: PLUGIN_ID
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: ENABLED
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PRIORITY
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: TRUST_LEVEL
+                  type: tinyint
+
+        - createTable:
+            tableName: GAME_ORIGINAL_IDS
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ORIGINAL_IDS
+                  type: varchar(255)
+              - column:
+                  name: ORIGINAL_IDS_KEY
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: GAME_ORIGINAL_IDS
+            columnNames: GAME_ID, ORIGINAL_IDS_KEY
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_ORIGINAL_IDS
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_ORIGINAL_IDS_GAME
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_ORIGINAL_IDS
+            baseColumnNames: ORIGINAL_IDS_KEY
+            referencedTableName: PLUGIN_MANAGEMENT_ENTRY
+            referencedColumnNames: PLUGIN_ID
+            constraintName: FK_GAME_ORIGINAL_IDS_PLUGIN
+
+        - createTable:
+            tableName: USERS
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: EMAIL
+                  type: varchar(255)
+              - column:
+                  name: EMAIL_CONFIRMED
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ENABLED
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: OIDC_PROVIDER_ID
+                  type: varchar(255)
+              - column:
+                  name: PASSWORD
+                  type: varchar(255)
+              - column:
+                  name: USERNAME
+                  type: varchar(255)
+              - column:
+                  name: AVATAR_ID
+                  type: bigint
+
+        - addUniqueConstraint:
+            tableName: USERS
+            columnNames: EMAIL
+            constraintName: UQ_USERS_EMAIL
+        - addUniqueConstraint:
+            tableName: USERS
+            columnNames: USERNAME
+            constraintName: UQ_USERS_USERNAME
+        - addUniqueConstraint:
+            tableName: USERS
+            columnNames: AVATAR_ID
+            constraintName: UQ_USERS_AVATAR_ID
+
+        - addForeignKeyConstraint:
+            baseTableName: USERS
+            baseColumnNames: AVATAR_ID
+            referencedTableName: IMAGE
+            referencedColumnNames: ID
+            constraintName: FK_USERS_AVATAR_IMAGE
+
+        - createTable:
+            tableName: GAME_FIELD_SOURCE
+            columns:
+              - column:
+                  name: DTYPE
+                  type: varchar(31)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: PLUGIN_PLUGIN_ID
+                  type: varchar(255)
+              - column:
+                  name: USER_ID
+                  type: bigint
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_FIELD_SOURCE
+            baseColumnNames: PLUGIN_PLUGIN_ID
+            referencedTableName: PLUGIN_MANAGEMENT_ENTRY
+            referencedColumnNames: PLUGIN_ID
+            constraintName: FK_GAME_FIELD_SOURCE_PLUGIN
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_FIELD_SOURCE
+            baseColumnNames: USER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_GAME_FIELD_SOURCE_USER
+
+        - createTable:
+            tableName: GAME_FIELD_METADATA
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: UPDATED_AT
+                  type: timestamp
+              - column:
+                  name: SOURCE_ID
+                  type: bigint
+
+        - addUniqueConstraint:
+            tableName: GAME_FIELD_METADATA
+            columnNames: SOURCE_ID
+            constraintName: UQ_GAME_FIELD_METADATA_SOURCE_ID
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_FIELD_METADATA
+            baseColumnNames: SOURCE_ID
+            referencedTableName: GAME_FIELD_SOURCE
+            referencedColumnNames: ID
+            constraintName: FK_GAME_FIELD_METADATA_SOURCE
+
+        - createTable:
+            tableName: GAME_FIELDS
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: FIELDS_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: FIELDS_KEY
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: GAME_FIELDS
+            columnNames: GAME_ID, FIELDS_KEY
+
+        - addUniqueConstraint:
+            tableName: GAME_FIELDS
+            columnNames: FIELDS_ID
+            constraintName: UQ_GAME_FIELDS_FIELD_METADATA_ID
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_FIELDS
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_FIELDS_GAME
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_FIELDS
+            baseColumnNames: FIELDS_ID
+            referencedTableName: GAME_FIELD_METADATA
+            referencedColumnNames: ID
+            constraintName: FK_GAME_FIELDS_METADATA
+
+        - createTable:
+            tableName: TOKEN
+            columns:
+              - column:
+                  name: ID
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: SECRET
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: CREATED_ON
+                  type: timestamp
+              - column:
+                  name: PAYLOAD
+                  type: varchar(255)
+              - column:
+                  name: TYPE
+                  type: varchar(255)
+              - column:
+                  name: CREATOR_ID
+                  type: bigint
+
+        - addForeignKeyConstraint:
+            baseTableName: TOKEN
+            baseColumnNames: CREATOR_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_TOKEN_CREATOR_USER
+            onDelete: CASCADE
+
+        - createTable:
+            tableName: USER_PREFERENCE
+            columns:
+              - column:
+                  name: key
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: USER_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: varchar(255)
+
+        - addPrimaryKey:
+            tableName: USER_PREFERENCE
+            columnNames: key, USER_ID
+
+        - createTable:
+            tableName: USER_ROLES
+            columns:
+              - column:
+                  name: USER_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ROLES
+                  type: varchar(255)
+
+        - addForeignKeyConstraint:
+            baseTableName: USER_ROLES
+            baseColumnNames: USER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_USER_ROLES_USER
+
+        - createTable:
+            tableName: JOB_RUN_RESULT
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: JOB_NAME
+                  type: varchar(255)
+              - column:
+                  name: STARTED_AT
+                  type: timestamp
+              - column:
+                  name: FINISHED_AT
+                  type: timestamp
+              - column:
+                  name: STATUS
+                  type: varchar(255)
+              - column:
+                  name: MESSAGE
+                  type: varchar(255)
+
+        - createTable:
+            tableName: GAME_REQUEST
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: TITLE
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RELEASE
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STATUS
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: REQUESTER_ID
+                  type: bigint
+              - column:
+                  name: LINKED_GAME_ID
+                  type: bigint
+              - column:
+                  name: CREATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: UPDATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PLATFORM
+                  type: varchar(255)
+                  defaultValue: PC_MICROSOFT_WINDOWS
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_REQUEST
+            baseColumnNames: REQUESTER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_GAMEREQUEST_ON_REQUESTER
+            onDelete: SET NULL
+
+        - createTable:
+            tableName: GAME_REQUEST_VOTERS
+            columns:
+              - column:
+                  name: GAME_REQUEST_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VOTERS_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: GAME_REQUEST_VOTERS
+            columnNames: GAME_REQUEST_ID, VOTERS_ID
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_REQUEST_VOTERS
+            baseColumnNames: GAME_REQUEST_ID
+            referencedTableName: GAME_REQUEST
+            referencedColumnNames: ID
+            constraintName: FK_GAMREQVOT_ON_GAME_REQUEST
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_REQUEST_VOTERS
+            baseColumnNames: VOTERS_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_GAMREQVOT_ON_USER
+
+        - createTable:
+            tableName: LIBRARY_PLATFORMS
+            columns:
+              - column:
+                  name: LIBRARY_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PLATFORMS
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: LIBRARY_PLATFORMS
+            columnNames: LIBRARY_ID, PLATFORMS
+
+        - addForeignKeyConstraint:
+            baseTableName: LIBRARY_PLATFORMS
+            baseColumnNames: LIBRARY_ID
+            referencedTableName: LIBRARY
+            referencedColumnNames: ID
+            constraintName: FK_LIBRARY_PLATFORMS_LIBRARY
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: LIBRARY_PLATFORMS
+            indexName: IDX_LIBRARY_PLATFORMS_LIBRARY_ID
+            columns:
+              - column:
+                  name: LIBRARY_ID
+
+        - createTable:
+            tableName: GAME_PLATFORMS
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PLATFORMS
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addPrimaryKey:
+            tableName: GAME_PLATFORMS
+            columnNames: GAME_ID, PLATFORMS
+
+        - addForeignKeyConstraint:
+            baseTableName: GAME_PLATFORMS
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_PLATFORMS_GAME
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: GAME_PLATFORMS
+            indexName: IDX_GAME_PLATFORMS_GAME_ID
+            columns:
+              - column:
+                  name: GAME_ID
+
+        - createTable:
+            tableName: IGNORED_PATH_SOURCE
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: DTYPE
+                  type: varchar(31)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: USER_ID
+                  type: bigint
+
+        - addForeignKeyConstraint:
+            baseTableName: IGNORED_PATH_SOURCE
+            baseColumnNames: USER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_IGNORED_PATH_SOURCE_USER
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: IGNORED_PATH_SOURCE
+            indexName: IDX_IGNORED_PATH_SOURCE_USER_ID
+            columns:
+              - column:
+                  name: USER_ID
+
+        - createTable:
+            tableName: IGNORED_PATH_SOURCE_PLUGINS
+            columns:
+              - column:
+                  name: IGNORED_PATH_PLUGIN_SOURCE_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PLUGINS_PLUGIN_ID
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: IGNORED_PATH_SOURCE_PLUGINS
+            baseColumnNames: IGNORED_PATH_PLUGIN_SOURCE_ID
+            referencedTableName: IGNORED_PATH_SOURCE
+            referencedColumnNames: ID
+            constraintName: FK_IGNORED_PATH_SOURCE_PLUGINS_SOURCE
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: IGNORED_PATH_SOURCE_PLUGINS
+            baseColumnNames: PLUGINS_PLUGIN_ID
+            referencedTableName: PLUGIN_MANAGEMENT_ENTRY
+            referencedColumnNames: PLUGIN_ID
+            constraintName: FK_IGNORED_PATH_SOURCE_PLUGINS_PLUGIN
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: IGNORED_PATH_SOURCE_PLUGINS
+            indexName: IDX_IGNORED_PATH_SOURCE_PLUGINS
+            columns:
+              - column:
+                  name: IGNORED_PATH_PLUGIN_SOURCE_ID
+
+        - createTable:
+            tableName: IGNORED_PATH
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: PATH
+                  type: varchar(1024)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: SOURCE_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: IGNORED_PATH
+            baseColumnNames: SOURCE_ID
+            referencedTableName: IGNORED_PATH_SOURCE
+            referencedColumnNames: ID
+            constraintName: FK_IGNORED_PATH_SOURCE
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: IGNORED_PATH
+            indexName: IDX_IGNORED_PATH_SOURCE_ID
+            columns:
+              - column:
+                  name: SOURCE_ID
+
+        - createTable:
+            tableName: LIBRARY_IGNORED_PATHS
+            columns:
+              - column:
+                  name: LIBRARY_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: IGNORED_PATHS_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: LIBRARY_IGNORED_PATHS
+            columnNames: LIBRARY_ID, IGNORED_PATHS_ID
+            constraintName: UK_LIBRARY_IGNORED_PATHS_COMPOSITE
+
+        - addForeignKeyConstraint:
+            baseTableName: LIBRARY_IGNORED_PATHS
+            baseColumnNames: LIBRARY_ID
+            referencedTableName: LIBRARY
+            referencedColumnNames: ID
+            constraintName: FK_LIBRARY_IGNORED_PATHS_LIBRARY
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: LIBRARY_IGNORED_PATHS
+            baseColumnNames: IGNORED_PATHS_ID
+            referencedTableName: IGNORED_PATH
+            referencedColumnNames: ID
+            constraintName: FK_LIBRARY_IGNORED_PATHS_IGNORED_PATH
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: LIBRARY_IGNORED_PATHS
+            indexName: IDX_LIBRARY_IGNORED_PATHS_LIBRARY_ID
+            columns:
+              - column:
+                  name: LIBRARY_ID
+
+        - createTable:
+            tableName: COLLECTION
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: UPDATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: NAME
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: DESCRIPTION
+                  type: text
+              - column:
+                  name: DISPLAY_ON_HOMEPAGE
+                  type: boolean
+                  defaultValueBoolean: true
+              - column:
+                  name: DISPLAY_ORDER
+                  type: int
+                  defaultValueNumeric: "-1"
+
+        - createTable:
+            tableName: COLLECTION_GAMES
+            columns:
+              - column:
+                  name: COLLECTIONS_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: GAMES_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: COLLECTION_GAMES
+            columnNames: COLLECTIONS_ID, GAMES_ID
+
+        - addForeignKeyConstraint:
+            baseTableName: COLLECTION_GAMES
+            baseColumnNames: COLLECTIONS_ID
+            referencedTableName: COLLECTION
+            referencedColumnNames: ID
+            constraintName: FK_COLLECTION_GAMES_COLLECTION
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: COLLECTION_GAMES
+            baseColumnNames: GAMES_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_COLLECTION_GAMES_GAME
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: COLLECTION_GAMES
+            indexName: IDX_COLLECTION_GAMES_GAME_ID
+            columns:
+              - column:
+                  name: GAMES_ID
+        - createIndex:
+            tableName: COLLECTION_GAMES
+            indexName: IDX_COLLECTION_GAMES_COLLECTION_ID
+            columns:
+              - column:
+                  name: COLLECTIONS_ID
+
+        - createTable:
+            tableName: COLLECTION_GAMES_ADDED_AT
+            columns:
+              - column:
+                  name: COLLECTION_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: GAMES_ADDED_AT_KEY
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: GAMES_ADDED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: COLLECTION_GAMES_ADDED_AT
+            columnNames: COLLECTION_ID, GAMES_ADDED_AT_KEY
+
+        - addForeignKeyConstraint:
+            baseTableName: COLLECTION_GAMES_ADDED_AT
+            baseColumnNames: COLLECTION_ID
+            referencedTableName: COLLECTION
+            referencedColumnNames: ID
+            constraintName: FK_COLLECTION_GAMES_ADDED_AT_COLLECTION
+            onDelete: CASCADE
+
+        - createIndex:
+            tableName: COLLECTION_GAMES_ADDED_AT
+            indexName: IDX_COLLECTION_GAMES_ADDED_AT_COLLECTION_ID
+            columns:
+              - column:
+                  name: COLLECTION_ID
+
