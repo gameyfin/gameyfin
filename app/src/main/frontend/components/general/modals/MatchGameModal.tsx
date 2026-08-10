@@ -2,14 +2,7 @@ import {
     Button,
     Input,
     Modal,
-    ModalBody,
-    ModalContent,
     Table,
-    TableBody,
-    TableCell,
-    TableColumn,
-    TableHeader,
-    TableRow,
     Tooltip
 } from "@heroui/react";
 import React, {useEffect, useState} from "react";
@@ -28,7 +21,7 @@ interface MatchGameModalProps {
     replaceGameId?: number;
     initialSearchTerm: string;
     isOpen: boolean;
-    onOpenChange: () => void;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
 export default function MatchGameModal({
@@ -64,97 +57,102 @@ export default function MatchGameModal({
     }
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange}
-               hideCloseButton
-               isDismissable={!isSearching && !isMatching}
-               isKeyboardDismissDisabled={!isSearching && !isMatching}
-               backdrop="opaque" size="5xl">
-            <ModalContent>
-                {(onClose) => (
-                    <ModalBody className="my-4">
-                        <div className="flex flex-col items-center">
-                            <pre>{path}</pre>
-                        </div>
-                        <div className="flex flex-row gap-2 mb-4">
-                            <Input value={searchTerm}
-                                   onValueChange={setSearchTerm}
-                                   onKeyDown={async (e) => {
-                                       if (e.key === "Enter") {
-                                           e.preventDefault();
-                                           await search();
-                                       }
-                                   }}
-                            />
-                            <Button isIconOnly onPress={search} color="primary" isLoading={isSearching}>
-                                <MagnifyingGlassIcon/>
-                            </Button>
-                        </div>
+        <Modal>
+            <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}
+                             isDismissable={!isSearching && !isMatching}>
+                <Modal.Container size="lg" className="max-w-5xl">
+                    <Modal.Dialog>
+                        {({close}) => (
+                            <Modal.Body className="my-4">
+                                <div className="flex flex-col items-center">
+                                    <pre>{path}</pre>
+                                </div>
+                                <div className="flex flex-row gap-2 mb-4">
+                                    <Input value={searchTerm}
+                                           onChange={(e) => setSearchTerm(e.target.value)}
+                                           onKeyDown={async (e) => {
+                                               if (e.key === "Enter") {
+                                                   e.preventDefault();
+                                                   await search();
+                                               }
+                                           }}
+                                    />
+                                    <Button isIconOnly onPress={search} variant="primary" isPending={isSearching}>
+                                        <MagnifyingGlassIcon/>
+                                    </Button>
+                                </div>
 
-                        <div>
-                            <Table removeWrapper isStriped isHeaderSticky
-                                   classNames={{
-                                       base: "h-80 overflow-y-auto",
-                                   }}
-                            >
-                                <TableHeader>
-                                    <TableColumn>Title & Release</TableColumn>
-                                    <TableColumn>Developer(s)</TableColumn>
-                                    <TableColumn>Publisher(s)</TableColumn>
-                                    {/* width={1} keeps the column as far to the right as possible*/}
-                                    <TableColumn>Sources</TableColumn>
-                                    <TableColumn width={1}> </TableColumn>
-                                </TableHeader>
-                                <TableBody emptyContent="Your filter did not match any games." items={searchResults}>
-                                    {(item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>
-                                                {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    {item.developers ? item.developers.map(
-                                                        developer => <p>{developer}</p>
-                                                    ) : "unknown"}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    {item.publishers ? item.publishers.map(
-                                                        publisher => <p>{publisher}</p>
-                                                    ) : "unknown"}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-row gap-2">
-                                                    {Object.values(item.originalIds).map(
-                                                        originalId => <PluginIcon
-                                                            plugin={state[originalId.pluginId]}/>
+                                <div>
+                                    <Table className="h-80">
+                                        <Table.ScrollContainer className="h-80">
+                                            <Table.Content>
+                                                <Table.Header>
+                                                    <Table.Column id="title">Title & Release</Table.Column>
+                                                    <Table.Column id="developers">Developer(s)</Table.Column>
+                                                    <Table.Column id="publishers">Publisher(s)</Table.Column>
+                                                    <Table.Column id="sources">Sources</Table.Column>
+                                                    <Table.Column id="actions"> </Table.Column>
+                                                </Table.Header>
+                                                <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">Your filter did not match any games.</p>}
+                                                            items={searchResults}>
+                                                    {(item) => (
+                                                        <Table.Row key={item.id}>
+                                                            <Table.Cell>
+                                                                {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                                                            </Table.Cell>
+                                                            <Table.Cell>
+                                                                <div className="flex flex-col">
+                                                                    {item.developers ? item.developers.map(
+                                                                        developer => <p>{developer}</p>
+                                                                    ) : "unknown"}
+                                                                </div>
+                                                            </Table.Cell>
+                                                            <Table.Cell>
+                                                                <div className="flex flex-col">
+                                                                    {item.publishers ? item.publishers.map(
+                                                                        publisher => <p>{publisher}</p>
+                                                                    ) : "unknown"}
+                                                                </div>
+                                                            </Table.Cell>
+                                                            <Table.Cell>
+                                                                <div className="flex flex-row gap-2">
+                                                                    {Object.values(item.originalIds).map(
+                                                                        originalId => <PluginIcon
+                                                                            plugin={state[originalId.pluginId]}/>
+                                                                    )}
+                                                                </div>
+                                                            </Table.Cell>
+                                                            <Table.Cell>
+                                                                <Tooltip>
+                                                                    <Tooltip.Trigger>
+                                                                        <Button isIconOnly size="sm"
+                                                                                isDisabled={isMatching !== null}
+                                                                                isPending={isMatching === item.id}
+                                                                                onPress={async () => {
+                                                                                    setIsMatching(item.id);
+                                                                                    await matchGame(item);
+                                                                                    setIsMatching(null);
+                                                                                    close();
+                                                                                }}>
+                                                                            <ArrowRightIcon/>
+                                                                        </Button>
+                                                                    </Tooltip.Trigger>
+                                                                    <Tooltip.Content placement="bottom">Pick this
+                                                                        result</Tooltip.Content>
+                                                                </Tooltip>
+                                                            </Table.Cell>
+                                                        </Table.Row>
                                                     )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Tooltip content="Pick this result">
-                                                    <Button isIconOnly size="sm"
-                                                            isDisabled={isMatching !== null}
-                                                            isLoading={isMatching === item.id}
-                                                            onPress={async () => {
-                                                                setIsMatching(item.id);
-                                                                await matchGame(item);
-                                                                setIsMatching(null);
-                                                                onClose();
-                                                            }}>
-                                                        <ArrowRightIcon/>
-                                                    </Button>
-                                                </Tooltip>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </ModalBody>
-                )}
-            </ModalContent>
+                                                </Table.Body>
+                                            </Table.Content>
+                                        </Table.ScrollContainer>
+                                    </Table>
+                                </div>
+                            </Modal.Body>
+                        )}
+                    </Modal.Dialog>
+                </Modal.Container>
+            </Modal.Backdrop>
         </Modal>
     );
 }

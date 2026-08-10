@@ -1,4 +1,4 @@
-import {addToast, Button, Card, CardBody, CardHeader} from "@heroui/react";
+import {toast, Button, Card} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
@@ -24,42 +24,36 @@ export default function PasswordResetView() {
 
         switch (result) {
             case TokenValidationResult.VALID:
-                addToast({
-                    title: "Password reset",
+                toast.success("Password reset", {
                     description: "Password reset successfully",
-                    color: "success"
-                })
+                });
                 navigate("/", {replace: true});
                 break;
             case TokenValidationResult.EXPIRED:
-                addToast({
-                    title: "Token expired",
+                toast.warning("Token expired", {
                     description: "Token is expired",
-                    color: "warning"
-                })
+                });
                 break;
             case TokenValidationResult.INVALID:
             default:
-                addToast({
-                    title: "Invalid token",
+                toast.danger("Invalid token", {
                     description: "Token is invalid",
-                    color: "danger"
-                })
-                break
+                });
+                break;
         }
     }
 
     return (
         <div className="flex flex-row grow items-center justify-center size-full gradient-primary">
             <Card className="p-4 min-w-[468px]">
-                <CardHeader className="mb-4">
+                <Card.Header className="mb-4">
                     <img
                         className="h-28 w-full content-center"
                         src="/images/Logo.svg"
                         alt="Gameyfin Logo"
                     />
-                </CardHeader>
-                <CardBody>
+                </Card.Header>
+                <Card.Content>
                     {token ?
                         <Formik
                             initialValues={{
@@ -75,16 +69,16 @@ export default function PasswordResetView() {
                                     .required('Required')
                             })}
                             onSubmit={resetPassword}>
-                            {(formik: { values: any; isSubmitting: any; isValid: boolean; }) => (
+                            {(formik: { isSubmitting: any; isValid: boolean; }) => (
                                 <Form>
                                     <p className="text-xl text-center mb-8">Reset your password</p>
                                     <Input label="Password" name="password" type="password"
                                            autoComplete="new-password"/>
                                     <Input label="Password (repeat)" name="passwordRepeat" type="password"
                                            autoComplete="new-password"/>
-                                    <Button type="submit" className="w-full mt-4" color="primary"
+                                    <Button type="submit" className="w-full mt-4" variant="primary"
                                             isDisabled={!formik.isValid || formik.isSubmitting}
-                                            isLoading={formik.isSubmitting}>
+                                            isPending={formik.isSubmitting}>
                                         {formik.isSubmitting ? "" : "Reset password"}
                                     </Button>
                                 </Form>
@@ -96,7 +90,7 @@ export default function PasswordResetView() {
                             Invalid token
                         </p>
                     }
-                </CardBody>
+                </Card.Content>
             </Card>
         </div>
     );

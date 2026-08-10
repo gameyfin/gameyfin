@@ -1,10 +1,10 @@
-import {Button, Input, Select, SelectedItems, SelectItem, Tooltip} from "@heroui/react";
+import {Button, Input, ListBox, Select, Tooltip} from "@heroui/react";
 import {
     FunnelSimpleIcon,
     FunnelSimpleXIcon,
     MagnifyingGlassIcon,
     SortAscendingIcon,
-    StarIcon
+    StarIcon,
 } from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
@@ -32,7 +32,6 @@ export default function SearchView() {
     const [showFilters, setShowFilters] = useState(false);
     const [sortBy, setSortBy] = useState("title_asc");
 
-    // State to track selected filter values
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [selectedLibraries, setSelectedLibraries] = useState<Set<string>>(new Set());
     const [selectedDevelopers, setSelectedDevelopers] = useState<Set<string>>(new Set());
@@ -41,14 +40,11 @@ export default function SearchView() {
     const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(new Set());
     const [selectedPerspectives, setSelectedPerspectives] = useState<Set<string>>(new Set());
     const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
-    const [minRating, setMinRating] = useState<number>(1); // Minimum rating filter
+    const [minRating, setMinRating] = useState<number>(1);
 
-    // Load initial filter values from URL parameters on component mount
     useEffect(() => {
-        // Scroll to top on load
-        window.scrollTo(0, 0)
+        window.scrollTo(0, 0);
 
-        // Get all parameters from the URL
         const term = searchParams.get("term") || "";
         const libs = searchParams.getAll("lib");
         const devs = searchParams.getAll("dev");
@@ -76,18 +72,15 @@ export default function SearchView() {
         setInitialLoadComplete(true);
     }, []);
 
-    // Update search parameters whenever the filters or sort change
     useEffect(() => {
         if (!initialLoadComplete) return;
 
         const newParams = new URLSearchParams();
 
-        // Preserve search term if exists
         if (searchTerm && searchTerm.trim() !== "") {
             newParams.set("term", searchTerm);
         }
 
-        // Only add parameters for non-empty filters
         if (selectedLibraries.size > 0) {
             selectedLibraries.forEach(lib => {
                 newParams.append("lib", lib.toString());
@@ -123,15 +116,12 @@ export default function SearchView() {
                 newParams.append("keyword", keyword);
             });
         }
-        // Add minRating param if not default
         if (minRating > 1) {
             newParams.set("minRating", minRating.toString());
         }
-        // Add sort param
         if (sortBy && sortBy !== "title_asc") {
             newParams.set("sort", sortBy);
         }
-        // Add showFilters param
         if (showFilters) {
             newParams.set("filters", "1");
         }
@@ -140,7 +130,6 @@ export default function SearchView() {
     }, [searchTerm, selectedLibraries, selectedDevelopers, selectedGenres,
         selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating, showFilters]);
 
-    // Sorting function (refactored to use sortKey and sortDirection)
     function sortGames(games: GameDto[]): GameDto[] {
         if (!sortBy) return games;
 
@@ -169,7 +158,7 @@ export default function SearchView() {
                     cmp = 0;
             }
             if (sortDirection === "desc") {
-                cmp *= -1; // Reverse the comparison if sorting in descending order
+                cmp *= -1;
             }
             return cmp;
         });
@@ -179,13 +168,12 @@ export default function SearchView() {
         games, searchTerm,
         selectedLibraries, selectedDevelopers,
         selectedGenres, selectedThemes,
-        selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating
+        selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating,
     ]);
 
     function filterGames(): GameDto[] {
         let filtered = games;
 
-        // Apply text search filter if term exists
         if (searchTerm !== "") {
             const fzf = new Fzf(filtered, {
                 selector: (game: GameDto) => game.title
@@ -193,54 +181,46 @@ export default function SearchView() {
             filtered = fzf.find(searchTerm).map(result => result.item);
         }
 
-        // Apply library filter
         if (selectedLibraries.size > 0) {
             filtered = filtered.filter(game => selectedLibraries.has(game.libraryId.toString()));
         }
 
-        // Apply developer filter
         if (selectedDevelopers.size > 0) {
             filtered = filtered.filter(game =>
                 game.developers?.some(developer => selectedDevelopers.has(developer))
             );
         }
 
-        // Apply genre filter
         if (selectedGenres.size > 0) {
             filtered = filtered.filter(game =>
                 game.genres?.some(genre => selectedGenres.has(genre))
             );
         }
 
-        // Apply theme filter
         if (selectedThemes.size > 0) {
             filtered = filtered.filter(game =>
                 game.themes?.some(theme => selectedThemes.has(theme))
             );
         }
 
-        // Apply feature filter
         if (selectedFeatures.size > 0) {
             filtered = filtered.filter(game =>
                 game.features?.some(feature => selectedFeatures.has(feature))
             );
         }
 
-        // Apply perspective filter
         if (selectedPerspectives.size > 0) {
             filtered = filtered.filter(game =>
                 game.perspectives?.some(perspective => selectedPerspectives.has(perspective))
             );
         }
 
-        // Apply keyword filter
         if (selectedKeywords.size > 0) {
             filtered = filtered.filter(game =>
                 game.keywords?.some(keyword => selectedKeywords.has(keyword))
             );
         }
 
-        // Apply minimum rating filter
         if (minRating > 1) {
             filtered = filtered.filter(game => {
                 const starRating = compoundRating(game, [1, 5]);
@@ -265,69 +245,124 @@ export default function SearchView() {
         </div>;
     }
 
+    function ratingLabel(value: number) {
+        return "★".repeat(value) + "☆".repeat(5 - value);
+    }
+
+    function renderItems(options: string[]) {
+        return options.map((option) => (
+            <ListBox.Item key={option} id={option} textValue={option}>
+                {option}
+                <ListBox.ItemIndicator/>
+            </ListBox.Item>
+        ));
+    }
+
+    function renderSelect(
+        label: string,
+        value: string | string[],
+        onChange: (value: any) => void,
+        children: React.ReactNode,
+        selectionMode: "single" | "multiple" = "multiple",
+        placeholder?: string,
+        className?: string,
+        disallowEmptySelection?: boolean,
+        triggerPrefix?: React.ReactNode,
+    ) {
+        return (
+            <Select
+                value={value}
+                onChange={onChange}
+                selectionMode={selectionMode}
+                placeholder={placeholder}
+                className={className}
+            >
+                <span className="text-sm text-muted">{label}</span>
+                <Select.Trigger className="flex items-center gap-2">
+                    {triggerPrefix}
+                    <Select.Value/>
+                    <Select.Indicator/>
+                </Select.Trigger>
+                <Select.Popover>
+                    <ListBox>
+                        {children}
+                    </ListBox>
+                </Select.Popover>
+            </Select>
+        );
+    }
+
     return <div className="flex flex-col gap-4 items-center w-full">
         <div className="flex w-full justify-between px-12 gap-4 flex-col lg:flex-row">
-            <Input
-                classNames={{
-                    base: "w-full lg:w-96 shrink-0",
-                    mainWrapper: "h-full",
-                    inputWrapper:
-                        "h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
-                }}
-                placeholder="Type to search..."
-                startContent={<MagnifyingGlassIcon/>}
-                type="search"
-                value={searchTerm}
-                isClearable
-                onChange={(event) => setSearchTerm(event.target.value)}
-                onClear={() => setSearchTerm("")}
-            />
+            <div className="flex h-full w-full lg:w-96 shrink-0 items-center gap-2 rounded-lg border border-border bg-default/20 px-3 py-2 text-muted dark:bg-default/20">
+                <MagnifyingGlassIcon/>
+                <Input
+                    className="grow"
+                    placeholder="Type to search..."
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                />
+                {searchTerm && (
+                    <button className="text-muted" onClick={() => setSearchTerm("")} type="button">
+                        ×
+                    </button>
+                )}
+            </div>
             <div className="flex flex-row gap-2">
-                <Select
-                    startContent={<SortAscendingIcon/>}
-                    selectedKeys={[sortBy]}
-                    disallowEmptySelection
-                    selectionMode="single"
-                    onSelectionChange={keys => setSortBy(Array.from(keys)[0] as any)}
-                    className="w-full lg:w-64"
-                >
-                    <SelectItem key="title_asc">Title (A-Z)</SelectItem>
-                    <SelectItem key="title_desc">Title (Z-A)</SelectItem>
-                    <SelectItem key="release_desc">Release Date (Newest)</SelectItem>
-                    <SelectItem key="release_asc">Release Date (Oldest)</SelectItem>
-                    <SelectItem key="rating_desc">Rating (Highest)</SelectItem>
-                    <SelectItem key="rating_asc">Rating (Lowest)</SelectItem>
-                    <SelectItem key="added_desc">Date Added (Newest)</SelectItem>
-                    <SelectItem key="added_asc">Date Added (Oldest)</SelectItem>
-                    <SelectItem key="updated_desc">Last Updated (Newest)</SelectItem>
-                    <SelectItem key="updated_asc">Last Updated (Oldest)</SelectItem>
-                </Select>
-                <Tooltip content={showFilters ? "Hide Filters" : "Show Filters"}>
-                    <Button isIconOnly
-                            variant={showFilters ? "solid" : "bordered"}
-                            color={showFilters ? "primary" : "default"}
-                            onPress={() => setShowFilters(!showFilters)}
-                            aria-label="Toggle Filters"
-                    >
-                        <FunnelSimpleIcon/>
-                    </Button>
+                {renderSelect(
+                    "Sort",
+                    sortBy,
+                    (value) => setSortBy(value as string),
+                    <>
+                        <ListBox.Item id="title_asc" key="title_asc" textValue="Title (A-Z)">Title (A-Z)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="title_desc" key="title_desc" textValue="Title (Z-A)">Title (Z-A)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="release_desc" key="release_desc" textValue="Release Date (Newest)">Release Date (Newest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="release_asc" key="release_asc" textValue="Release Date (Oldest)">Release Date (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="rating_desc" key="rating_desc" textValue="Rating (Highest)">Rating (Highest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="rating_asc" key="rating_asc" textValue="Rating (Lowest)">Rating (Lowest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="added_desc" key="added_desc" textValue="Date Added (Newest)">Date Added (Newest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="added_asc" key="added_asc" textValue="Date Added (Oldest)">Date Added (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="updated_desc" key="updated_desc" textValue="Last Updated (Newest)">Last Updated (Newest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="updated_asc" key="updated_asc" textValue="Last Updated (Oldest)">Last Updated (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
+                    </>,
+                    "single",
+                    undefined,
+                    "w-full lg:w-64",
+                    true,
+                    <SortAscendingIcon/>,
+                )}
+                <Tooltip>
+                    <Tooltip.Trigger>
+                        <Button isIconOnly
+                                variant={showFilters ? "primary" : "outline"}
+                                onPress={() => setShowFilters(!showFilters)}
+                                aria-label="Toggle Filters"
+                        >
+                            <FunnelSimpleIcon/>
+                        </Button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>{showFilters ? "Hide Filters" : "Show Filters"}</Tooltip.Content>
                 </Tooltip>
-                <Tooltip content="Clear All Filters">
-                    <Button isIconOnly
-                            onPress={() => {
-                                setSelectedLibraries(new Set());
-                                setSelectedDevelopers(new Set());
-                                setSelectedGenres(new Set());
-                                setSelectedThemes(new Set());
-                                setSelectedFeatures(new Set());
-                                setSelectedPerspectives(new Set());
-                                setSelectedKeywords(new Set());
-                                setMinRating(1);
-                            }}
-                            aria-label="Clear All Filters"
-                    >
-                        <FunnelSimpleXIcon/>
-                    </Button>
+                <Tooltip>
+                    <Tooltip.Trigger>
+                        <Button isIconOnly
+                                onPress={() => {
+                                    setSelectedLibraries(new Set());
+                                    setSelectedDevelopers(new Set());
+                                    setSelectedGenres(new Set());
+                                    setSelectedThemes(new Set());
+                                    setSelectedFeatures(new Set());
+                                    setSelectedPerspectives(new Set());
+                                    setSelectedKeywords(new Set());
+                                    setMinRating(1);
+                                }}
+                                aria-label="Clear All Filters"
+                        >
+                            <FunnelSimpleXIcon/>
+                        </Button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>Clear All Filters</Tooltip.Content>
                 </Tooltip>
             </div>
         </div>
@@ -337,127 +372,96 @@ export default function SearchView() {
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "0.5rem",
-                margin: "0 auto"
+                margin: "0 auto",
             }}
         >
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Libraries"
-                placeholder="Filter by library"
-                selectedKeys={selectedLibraries}
-                //@ts-ignore
-                onSelectionChange={setSelectedLibraries}
-            >
-                {libraries.map((library) => (
-                    <SelectItem key={library.id}>{library.name}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="single"
-                label="Minimum Rating"
-                placeholder="Minimum rating"
-                disallowEmptySelection
-                selectedKeys={[minRating.toString()]}
-                onSelectionChange={keys => setMinRating(parseInt(Array.from(keys)[0] as string, 10))}
-                renderValue={(items: SelectedItems<any>) => {
-                    return items.map((item) => stars(parseInt(item.key as string)));
-                }}
-            >
-                <SelectItem key="1">{stars(1)}</SelectItem>
-                <SelectItem key="2">{stars(2)}</SelectItem>
-                <SelectItem key="3">{stars(3)}</SelectItem>
-                <SelectItem key="4">{stars(4)}</SelectItem>
-                <SelectItem key="5">{stars(5)}</SelectItem>
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Developers"
-                placeholder="Filter by developer"
-                selectedKeys={selectedDevelopers}
-                //@ts-ignore
-                onSelectionChange={setSelectedDevelopers}
-            >
-                {Array.from(knownDevelopers).map((developer) => (
-                    <SelectItem key={developer}>{developer}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Genres"
-                placeholder="Filter by genre"
-                selectedKeys={selectedGenres}
-                //@ts-ignore
-                onSelectionChange={setSelectedGenres}
-            >
-                {Array.from(knownGenres).map((genre) => (
-                    <SelectItem key={genre}>{genre}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Themes"
-                placeholder="Filter by theme"
-                selectedKeys={selectedThemes}
-                //@ts-ignore
-                onSelectionChange={setSelectedThemes}
-            >
-                {Array.from(knownThemes).map((theme) => (
-                    <SelectItem key={theme}>{theme}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Features"
-                placeholder="Filter by feature"
-                selectedKeys={selectedFeatures}
-                //@ts-ignore
-                onSelectionChange={setSelectedFeatures}
-            >
-                {Array.from(knownFeatures).map((feature) => (
-                    <SelectItem key={feature}>{feature}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Perspectives"
-                placeholder="Filter by perspective"
-                selectedKeys={selectedPerspectives}
-                //@ts-ignore
-                onSelectionChange={setSelectedPerspectives}
-            >
-                {Array.from(knownPerspectives).map((perspective) => (
-                    <SelectItem key={perspective}>{perspective}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Keywords"
-                placeholder="Filter by keyword"
-                selectedKeys={selectedKeywords}
-                //@ts-ignore
-                onSelectionChange={setSelectedKeywords}
-            >
-                {Array.from(knownKeywords).map((keyword) => (
-                    <SelectItem key={keyword}>{keyword}</SelectItem>
-                ))}
-            </Select>
+            {renderSelect(
+                "Libraries",
+                Array.from(selectedLibraries),
+                (value) => setSelectedLibraries(new Set((value as string[]) ?? [])),
+                <>{libraries.map((library) => (
+                    <ListBox.Item key={library.id} id={library.id.toString()} textValue={library.name}>
+                        {library.name}
+                        <ListBox.ItemIndicator/>
+                    </ListBox.Item>
+                ))}</>,
+                "multiple",
+                "Filter by library",
+            )}
+            {renderSelect(
+                "Minimum Rating",
+                minRating.toString(),
+                (value) => setMinRating(parseInt(value as string, 10)),
+                <>
+                    {[1, 2, 3, 4, 5].map((value) => (
+                        <ListBox.Item key={value} id={value.toString()} textValue={ratingLabel(value)}>
+                            {stars(value)}
+                            <ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                    ))}
+                </>,
+                "single",
+                "Minimum rating",
+                undefined,
+                true,
+            )}
+            {renderSelect(
+                "Developers",
+                Array.from(selectedDevelopers),
+                (value) => setSelectedDevelopers(new Set((value as string[]) ?? [])),
+                <>{renderItems(Array.from(knownDevelopers))}</>,
+                "multiple",
+                "Filter by developer",
+            )}
+            {renderSelect(
+                "Genres",
+                Array.from(selectedGenres),
+                (value) => setSelectedGenres(new Set((value as string[]) ?? [])),
+                <>{renderItems(Array.from(knownGenres))}</>,
+                "multiple",
+                "Filter by genre",
+            )}
+            {renderSelect(
+                "Themes",
+                Array.from(selectedThemes),
+                (value) => setSelectedThemes(new Set((value as string[]) ?? [])),
+                <>{renderItems(Array.from(knownThemes))}</>,
+                "multiple",
+                "Filter by theme",
+            )}
+            {renderSelect(
+                "Features",
+                Array.from(selectedFeatures),
+                (value) => setSelectedFeatures(new Set((value as string[]) ?? [])),
+                <>{renderItems(Array.from(knownFeatures))}</>,
+                "multiple",
+                "Filter by feature",
+            )}
+            {renderSelect(
+                "Perspectives",
+                Array.from(selectedPerspectives),
+                (value) => setSelectedPerspectives(new Set((value as string[]) ?? [])),
+                <>{renderItems(Array.from(knownPerspectives))}</>,
+                "multiple",
+                "Filter by perspective",
+            )}
+            {renderSelect(
+                "Keywords",
+                Array.from(selectedKeywords),
+                (value) => setSelectedKeywords(new Set((value as string[]) ?? [])),
+                <>{renderItems(Array.from(knownKeywords))}</>,
+                "multiple",
+                "Filter by keyword",
+            )}
         </div>
         }
         <div className="mt-4 w-full select-none">
             <CoverGrid games={filteredAndSortedGames}/>
             {filteredAndSortedGames.length === 0 && (
-                <div className="text-center mt-8 text-default-500">
+                <div className="text-center mt-8 text-muted">
                     No games found matching your filters
                 </div>
             )}
         </div>
-    </div>
+    </div>;
 }

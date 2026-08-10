@@ -4,7 +4,7 @@ import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
-import {Accordion, AccordionItem, addToast, Button, Chip, Link, Tooltip, useDisclosure} from "@heroui/react";
+import {Accordion, Button, Chip, Link, Tooltip, toast, useOverlayState} from "@heroui/react";
 import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
@@ -16,7 +16,7 @@ import {
     PencilIcon,
     StarIcon,
     TrashIcon,
-    TriangleDashedIcon
+    TriangleDashedIcon,
 } from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
@@ -34,8 +34,8 @@ export default function GameView() {
     const navigate = useNavigate();
     const auth = useAuth();
 
-    const editGameModal = useDisclosure();
-    const matchGameModal = useDisclosure();
+    const editGameModal = useOverlayState();
+    const matchGameModal = useOverlayState();
 
     const state = useSnapshot(gameState);
     const game = gameId ? state.state[parseInt(gameId)] : undefined;
@@ -73,16 +73,14 @@ export default function GameView() {
                 id: game.id,
                 metadata: {matchConfirmed: !(game.metadata as GameMetadataAdminDto).matchConfirmed}
             } as GameUpdateDto
-        )
+        );
     }
 
     async function deleteGame() {
         if (!game) return;
         await GameEndpoint.deleteGame(game.id);
-        addToast({
-            title: "Game deleted",
+        toast.success("Game deleted", {
             description: `${game.title} removed from Gameyfin!`,
-            color: "success"
         });
     }
 
@@ -102,7 +100,7 @@ export default function GameView() {
                         src={`/images/screenshot/${game.images[0].id}`}
                     />
                 ) : (
-                    <div className="w-full h-96 bg-secondary relative"/>
+                    <div className="w-full h-96 bg-default relative"/>
                 )}
                 <div className="absolute inset-0 bg-linear-to-b from-transparent to-background"/>
             </div>
@@ -117,54 +115,68 @@ export default function GameView() {
                                 <p className="font-semibold text-3xl">
                                     {game.title}
                                 </p>
-                                <div className="flex flex-row gap-1 mb-0.5 text-default-500">
+                                <div className="flex flex-row gap-1 mb-0.5 text-muted">
                                     <StarIcon weight="fill"/>
                                     {starRatingAsString(game)}
                                 </div>
                             </div>
                             <div className="flex flex-row items-center gap-2">
-                                <p className="text-default-500">
+                                <p className="text-muted">
                                     {game.release !== undefined ? new Date(game.release).getFullYear() :
-                                        <p className="text-default-500">no data</p>}
+                                        <span className="text-muted">no data</span>}
                                 </p>
                                 <ChipList items={game.platforms} maxVisible={1}/>
-                                <Tooltip
-                                    content={`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
-                                    placement="right">
-                                    <InfoIcon/>
+                                <Tooltip>
+                                    <Tooltip.Trigger>
+                                        <InfoIcon/>
+                                    </Tooltip.Trigger>
+                                    <Tooltip.Content placement="right">
+                                        {`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
+                                    </Tooltip.Content>
                                 </Tooltip>
                             </div>
                         </div>
                     </div>
                     <div className="flex flex-row items-center gap-8">
                         {isAdmin(auth) && <div className="flex flex-row gap-2">
-                            <Button isIconOnly onPress={toggleMatchConfirmed}>
-                                {(game.metadata as GameMetadataAdminDto).matchConfirmed ?
-                                    <Tooltip content="Unconfirm match">
-                                        <CheckCircleIcon weight="fill" className="fill-success"/>
-                                    </Tooltip> :
-                                    <Tooltip content="Confirm match">
-                                        <CheckCircleIcon/>
-                                    </Tooltip>}
-                            </Button>
-                            <Tooltip content="Edit metadata">
-                                <Button isIconOnly onPress={editGameModal.onOpenChange}>
-                                    <PencilIcon/>
-                                </Button>
+                            <Tooltip>
+                                <Tooltip.Trigger>
+                                    <Button isIconOnly variant="tertiary" onPress={toggleMatchConfirmed}>
+                                        {(game.metadata as GameMetadataAdminDto).matchConfirmed ?
+                                            <CheckCircleIcon weight="fill" className="fill-success"/> :
+                                            <CheckCircleIcon/>}
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>
+                                    {(game.metadata as GameMetadataAdminDto).matchConfirmed ? "Unconfirm match" : "Confirm match"}
+                                </Tooltip.Content>
                             </Tooltip>
-                            <Tooltip content="Search for metadata">
-                                <Button isIconOnly onPress={matchGameModal.onOpenChange}>
-                                    <MagnifyingGlassIcon/>
-                                </Button>
+                            <Tooltip>
+                                <Tooltip.Trigger>
+                                    <Button isIconOnly variant="tertiary" onPress={editGameModal.open}>
+                                        <PencilIcon/>
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>Edit metadata</Tooltip.Content>
                             </Tooltip>
-                            <Tooltip content="Remove from library">
-                                <Button isIconOnly color="danger"
-                                        onPress={async () => {
-                                            await deleteGame();
-                                            navigate("/");
-                                        }}>
-                                    <TrashIcon/>
-                                </Button>
+                            <Tooltip>
+                                <Tooltip.Trigger>
+                                    <Button isIconOnly variant="tertiary" onPress={matchGameModal.open}>
+                                        <MagnifyingGlassIcon/>
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>Search for metadata</Tooltip.Content>
+                            </Tooltip>
+                            <Tooltip>
+                                <Tooltip.Trigger>
+                                    <Button isIconOnly variant="danger" onPress={async () => {
+                                        await deleteGame();
+                                        navigate("/");
+                                    }}>
+                                        <TrashIcon/>
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>Remove from library</Tooltip.Content>
                             </Tooltip>
                         </div>}
                         {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
@@ -175,143 +187,159 @@ export default function GameView() {
                 </div>
                 <div className="flex flex-col gap-8">
                     {game.comment &&
-                        <Accordion variant="splitted"
-                                   itemClasses={{base: "-mx-2", content: "mx-8 mb-4", heading: "font-bold"}}>
-                            <AccordionItem key="information"
-                                           aria-label="Information"
-                                           title="Information"
-                                           startContent={<InfoIcon weight="fill"/>}>
-                                <Markdown
-                                    remarkPlugins={[remarkBreaks]}
-                                    components={{
-                                        a(props) {
-                                            return <Link isExternal
-                                                         showAnchorIcon
-                                                         color="foreground"
-                                                         underline="always"
-                                                         href={props.href}
-                                                         size="sm">
-                                                {props.children}
-                                            </Link>
-                                        }
-                                    }}
-                                >{game.comment}</Markdown>
-                            </AccordionItem>
+                        <Accordion variant="default" className="space-y-2">
+                            <Accordion.Item id="information" className="-mx-2 rounded-lg bg-surface-secondary">
+                                <Accordion.Heading>
+                                    <Accordion.Trigger className="flex items-center justify-between font-bold">
+                                        <span className="flex items-center gap-2">
+                                            <InfoIcon weight="fill"/>
+                                            Information
+                                        </span>
+                                        <Accordion.Indicator/>
+                                    </Accordion.Trigger>
+                                </Accordion.Heading>
+                                <Accordion.Panel>
+                                    <Accordion.Body className="mx-8 mb-4">
+                                        <Markdown
+                                            remarkPlugins={[remarkBreaks]}
+                                            components={{
+                                                a(props) {
+                                                    return <Link href={props.href}
+                                                                 target="_blank"
+                                                                 rel="noopener noreferrer"
+                                                                 className="text-foreground underline text-sm inline-flex items-center gap-1">
+                                                        {props.children}
+                                                        <Link.Icon/>
+                                                    </Link>;
+                                                }
+                                            }}
+                                        >{game.comment}</Markdown>
+                                    </Accordion.Body>
+                                </Accordion.Panel>
+                            </Accordion.Item>
                         </Accordion>
                     }
                     <div className="flex flex-row gap-12">
                         <div className="flex flex-col flex-1 gap-2">
-                            <p className="text-default-500">Summary</p>
+                            <p className="text-muted">Summary</p>
                             {game.summary ?
                                 <div className="text-justify" dangerouslySetInnerHTML={{__html: game.summary}}/> :
                                 <p>No summary available</p>
                             }
                         </div>
                         <div className="flex flex-col flex-1">
-                            <p className="text-default-500">Details</p>
-                            <table
-                                className="text-left w-full table-auto border-separate border-spacing-y-1">
+                            <p className="text-muted">Details</p>
+                            <table className="text-left w-full table-auto border-separate border-spacing-y-1">
                                 <tbody>
                                 <tr>
-                                    <td className="text-default-500 w-0 min-w-32">Developed by</td>
+                                    <td className="text-muted w-0 min-w-32">Developed by</td>
                                     <td className="flex flex-row gap-1">
                                         {game.developers && game.developers.length > 0
                                             ? [...game.developers].sort().map((dev, index) =>
-                                                <>
-                                                    <Link key={dev} href={`/search?dev=${encodeURIComponent(dev)}`}
-                                                          color="foreground" underline="hover">
+                                                <React.Fragment key={dev}>
+                                                    <Link href={`/search?dev=${encodeURIComponent(dev)}`} className="text-foreground hover:underline">
                                                         {dev}
                                                     </Link>
                                                     {index !== game.developers!.length - 1 && <p>/</p>}
-                                                </>
+                                                </React.Fragment>
                                             )
-                                            : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
+                                            : <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td className="text-default-500 w-0 min-w-32">Published by</td>
+                                    <td className="text-muted w-0 min-w-32">Published by</td>
                                     <td className="flex flex-row gap-1">
                                         {game.publishers && game.publishers.length > 0
                                             ? [...game.publishers].sort().join(" / ")
-                                            : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
+                                            : <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td className="text-default-500 w-0 min-w-32">Genres</td>
+                                    <td className="text-muted w-0 min-w-32">Genres</td>
                                     <td className="flex flex-row gap-1">
                                         {game.genres && game.genres.length > 0
-                                            ? [...game.genres].sort().map(genre =>
+                                            ? [...game.genres].sort().map((genre) =>
                                                 <Link key={genre} href={`/search?genre=${encodeURIComponent(genre)}`}>
-                                                    <Chip radius="sm" size="sm"
-                                                          className="text-sm">
+                                                    <Chip size="sm" className="text-sm">
                                                         {genre}
                                                     </Chip>
                                                 </Link>
                                             )
-                                            : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
+                                            : <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td className="text-default-500 w-0 min-w-32">Themes</td>
+                                    <td className="text-muted w-0 min-w-32">Themes</td>
                                     <td className="flex flex-row gap-1">
                                         {game.themes && game.themes.length > 0
-                                            ? [...game.themes].sort().map(theme =>
+                                            ? [...game.themes].sort().map((theme) =>
                                                 <Link key={theme} href={`/search?theme=${encodeURIComponent(theme)}`}>
-                                                    <Chip radius="sm" size="sm"
-                                                          className="text-sm">
+                                                    <Chip size="sm" className="text-sm">
                                                         {theme}
                                                     </Chip>
                                                 </Link>
                                             )
-                                            : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
+                                            : <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td className="text-default-500 w-0 min-w-32">Features</td>
+                                    <td className="text-muted w-0 min-w-32">Features</td>
                                     <td className="flex flex-row gap-1">
                                         {game.features && game.features.length > 0
-                                            ? [...game.features].sort().map(feature =>
-                                                <Link key={feature}
-                                                      href={`/search?feature=${encodeURIComponent(feature)}`}>
-                                                    <Chip radius="sm" size="sm"
-                                                          className="text-sm">
+                                            ? [...game.features].sort().map((feature) =>
+                                                <Link key={feature} href={`/search?feature=${encodeURIComponent(feature)}`}>
+                                                    <Chip size="sm" className="text-sm">
                                                         {feature}
                                                     </Chip>
                                                 </Link>
                                             )
-                                            : <Tooltip content="Missing data" color="foreground" placement="right">
-                                                <TriangleDashedIcon className="fill-default-500 h-6 bottom-0"/>
+                                            : <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
                                             </Tooltip>
                                         }
                                     </td>
                                 </tr>
                                 {game.collectionIds.length > 0 &&
                                     <tr>
-                                        <td className="text-default-500 w-0 min-w-32">Collections</td>
+                                        <td className="text-muted w-0 min-w-32">Collections</td>
                                         <td className="flex flex-row gap-1">
                                             {[...game.collectionIds]
                                                 .map((collectionId) => collections[collectionId])
                                                 .sort((a, b) => a.id - b.id)
                                                 .map((collection, index) =>
-                                                    <>
-                                                        <Link key={collection.id} href={`/collection/${collection.id}`}
-                                                              color="foreground" underline="hover">
+                                                    <React.Fragment key={collection.id}>
+                                                        <Link href={`/collection/${collection.id}`} className="text-foreground hover:underline">
                                                             {collection.name}
                                                         </Link>
                                                         {index !== game.collectionIds!.length - 1 && <p>/</p>}
-                                                    </>
+                                                    </React.Fragment>
                                                 )}
                                         </td>
                                     </tr>
@@ -321,7 +349,7 @@ export default function GameView() {
                         </div>
                     </div>
                     <div className="flex flex-col gap-4">
-                        <p className="text-default-500">Media</p>
+                        <p className="text-muted">Media</p>
                         <ImageCarousel
                             imageUrls={game.images?.map(image => `/images/screenshot/${image.id}`)}
                             videosUrls={game.videoUrls}
@@ -333,13 +361,13 @@ export default function GameView() {
             {isAdmin(auth) && <>
                 <EditGameMetadataModal game={game}
                                        isOpen={editGameModal.isOpen}
-                                       onOpenChange={editGameModal.onOpenChange}/>
+                                       onOpenChange={editGameModal.setOpen}/>
                 <MatchGameModal path={(game.metadata as GameMetadataAdminDto).path!}
                                 libraryId={game.libraryId}
                                 replaceGameId={game.id}
                                 initialSearchTerm={game.title}
                                 isOpen={matchGameModal.isOpen}
-                                onOpenChange={matchGameModal.onOpenChange}/>
+                                onOpenChange={matchGameModal.setOpen}/>
             </>}
         </div>
     );

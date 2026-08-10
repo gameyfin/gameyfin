@@ -108,8 +108,8 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<Con
                                                                         className="text-warning"/>}
 
                                         <Button
-                                            color="primary"
-                                            isLoading={formik.isSubmitting}
+                                            variant="primary"
+                                            isPending={formik.isSubmitting}
                                             isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
                                             type="submit"
                                         >

@@ -1,5 +1,5 @@
 import React from "react";
-import {Button, Code, useDisclosure} from "@heroui/react";
+import {Button, useOverlayState} from "@heroui/react";
 import { ArrowRightIcon, MinusIcon, PlusIcon, XCircleIcon } from "@phosphor-icons/react";
 import PathPickerModal from "Frontend/components/general/modals/PathPickerModal";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
@@ -11,7 +11,7 @@ interface DirectoryMappingInputProps {
 }
 
 export default function DirectoryMappingInput({name}: DirectoryMappingInputProps) {
-    const pathPickerModal = useDisclosure();
+    const pathPickerModal = useOverlayState();
     const [field, meta, helpers] = useField<DirectoryMappingDto[]>({name});
 
     function addDirectoryMapping(directory: DirectoryMappingDto) {
@@ -26,14 +26,14 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
         <div className="flex flex-col gap-2">
             <div className="flex flex-row justify-between items-center">
                 <p className="font-bold">Directories</p>
-                <Button isIconOnly variant="light" size="sm" color="default"
-                        onPress={pathPickerModal.onOpen}>
+                <Button isIconOnly variant="tertiary" size="sm"
+                        onPress={pathPickerModal.open}>
                     <PlusIcon/>
                 </Button>
             </div>
             {(field.value || []).map((directory) => (
-                <Code
-                    className="w-full flex items-center gap-2 overflow-hidden px-2 py-1"
+                <code
+                    className="w-full flex items-center gap-2 overflow-hidden px-2 py-1 h-fit font-mono font-normal rounded-sm bg-default/40 text-default-foreground"
                     key={directory.internalPath}>
                     <input
                         type="text"
@@ -56,15 +56,14 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
                     )}
                     <Button
                         isIconOnly
-                        variant="light"
+                        variant="tertiary"
                         size="sm"
-                        color="default"
                         onPress={() => removeDirectoryMapping(directory)}
                         className="ml-2"
                     >
                         <MinusIcon/>
                     </Button>
-                </Code>
+                </code>
             ))}
             <div className="min-h-6 text-danger">
                 {meta.touched && meta.error && (
@@ -73,7 +72,7 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
             </div>
             <PathPickerModal returnSelectedPath={addDirectoryMapping}
                              isOpen={pathPickerModal.isOpen}
-                             onOpenChange={pathPickerModal.onOpenChange}/>
+                             onOpenChange={pathPickerModal.setOpen}/>
         </div>
     );
 }

@@ -21,34 +21,32 @@ export default function HomeView() {
     const gamesByCollection = gamesState.gamesByCollectionId;
 
     const filteredAndSortedLibraries = useMemo(() =>
-        librariesState.sorted
-            .filter(library => library.metadata!.displayOnHomepage)
-            .filter(library =>
-                gamesByLibrary[library.id] && gamesByLibrary[library.id].length > 0
-            ),
+            librariesState.sorted
+                .filter(library => library.metadata!.displayOnHomepage)
+                .filter(library =>
+                    gamesByLibrary[library.id] && gamesByLibrary[library.id].length > 0
+                ),
         [librariesState.sorted, gamesByLibrary]
     );
 
     const filteredAndSortedCollections = useMemo(() =>
-        collectionsState.sorted
-            .filter(collection => collection.metadata!.displayOnHomepage)
-            .filter(collection =>
-                gamesByCollection[collection.id] && gamesByCollection[collection.id].length > 0
-            ),
+            collectionsState.sorted
+                .filter(collection => collection.metadata!.displayOnHomepage)
+                .filter(collection =>
+                    gamesByCollection[collection.id] && gamesByCollection[collection.id].length > 0
+                ),
         [collectionsState.sorted, gamesByCollection]
     );
 
-    // Sort games by date added (newest first) for libraries
     const getSortedLibraryGames = (libraryId: number) => {
         const games = gamesByLibrary[libraryId] || [];
         return [...games].sort((a, b) => {
             const dateA = new Date(a.createdAt).getTime();
             const dateB = new Date(b.createdAt).getTime();
-            return dateB - dateA; // Descending order (newest first)
+            return dateB - dateA;
         });
     };
 
-    // Sort games by date added (newest first) for collections
     const getSortedCollectionGames = (collection: CollectionDto) => {
         const games = gamesByCollection[collection.id] || [];
         const gamesAddedAt = collection.metadata?.gamesAddedAt || {};
@@ -60,7 +58,7 @@ export default function HomeView() {
             const dateB = gamesAddedAt[b.id.toString()]
                 ? new Date(gamesAddedAt[b.id.toString()]).getTime()
                 : 0;
-            return dateB - dateA; // Descending order (newest first)
+            return dateB - dateA;
         });
     };
 
@@ -71,7 +69,7 @@ export default function HomeView() {
         return (
             <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-4">
                 <Spinner size="lg"/>
-                <p className="text-xl font-semibold text-default-600">Loading...</p>
+                <p className="text-xl font-semibold text-muted">Loading...</p>
             </div>
         );
     }
@@ -79,20 +77,20 @@ export default function HomeView() {
     if (hasNoContent) {
         return (
             <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-4">
-                <FolderOpenIcon size={64} className="text-default-300"/>
-                <p className="text-xl font-semibold text-default-600">Nothing here yet</p>
+                <FolderOpenIcon size={64} className="text-muted"/>
+                <p className="text-xl font-semibold text-muted">Nothing here yet</p>
                 {isAdmin(auth) ? (
                     <>
-                        <p className="text-default-400 max-w-lg">
+                        <p className="text-muted max-w-lg">
                             Get started by adding libraries and games in the{" "}
-                            <Link href="/administration/games" underline="always">
+                            <Link href="/administration/games" className="underline">
                                 administration panel
                             </Link>.
                         </p>
                     </>
                 ) : (
                     <>
-                        <p className="text-default-400 max-w-md">
+                        <p className="text-muted max-w-md">
                             There is currently no content available. Check back later!
                         </p>
                     </>
@@ -106,8 +104,7 @@ export default function HomeView() {
             <div className="flex flex-col gap-4">
                 {(filteredAndSortedLibraries.length + filteredAndSortedCollections.length > 0) &&
                     <div className="flex flex-col gap-2">
-                        <Link href="/search" className="flex flex-row gap-1 w-fit items-baseline" color="foreground"
-                              underline="hover">
+                        <Link href="/search" className="flex flex-row gap-1 w-fit items-baseline text-foreground hover:underline">
                             <p className="text-2xl font-bold mb-4">Your games</p>
                             <CaretRightIcon weight="bold" size={16}/>
                         </Link>

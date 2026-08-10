@@ -2,7 +2,7 @@ import {useSnapshot} from "valtio/react";
 import {downloadSessionState} from "Frontend/state/DownloadSessionState";
 import {Card, Chip, Tooltip} from "@heroui/react";
 import {InfoIcon} from "@phosphor-icons/react";
-import {convertBpsToMbps, hslToHex, humanFileSize, timeUntil} from "Frontend/util/utils";
+import {convertBpsToMbps, cssColorToHex, humanFileSize, timeUntil} from "Frontend/util/utils";
 import {gameState} from "Frontend/state/GameState";
 import RealtimeChart, {RealtimeChartData, RealtimeChartOptions} from "react-realtime-chart";
 import {useEffect, useState} from "react";
@@ -22,9 +22,9 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
 
     // Get theme colors from CSS variables
     useEffect(() => {
-        const chartColor = window.getComputedStyle(document.body).getPropertyValue('--heroui-foreground');
+        const chartColor = window.getComputedStyle(document.body).getPropertyValue('--foreground');
         if (chartColor) {
-            setForegroundColor(hslToHex(chartColor.trim()));
+            setForegroundColor(cssColorToHex(chartColor.trim()));
         }
     }, []);
 
@@ -82,26 +82,30 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
     return (session &&
         <Card
             className={`flex flex-col gap-2 m-0.5 p-4 border-2
-            ${(session.currentBytesPerSecond > 0) ? "border-primary bg-primary/10" : "border-default"}`}>
+            ${(session.currentBytesPerSecond > 0) ? "border-accent bg-accent/10" : "border-default"}`}>
             <div className="flex flex-row items-center">
                 <p className="flex flex-row items-center flex-1">
                     <b>User:</b>&nbsp;
                     {session.username ?? "Anonymous User"}&nbsp;
-                    <Tooltip
-                        content={<pre>Session ID: {session.sessionId}</pre>}
-                        placement="right"
-                    >
-                        <InfoIcon size={18}/>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <span className="inline-flex">
+                                <InfoIcon size={18}/>
+                            </span>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="right" className="bg-foreground text-background">
+                            <pre>Session ID: {session.sessionId}</pre>
+                        </Tooltip.Content>
                     </Tooltip>
                 </p>
                 <div className="flex-1 flex justify-center">Remote IP:&nbsp;
-                    {<Chip size="sm" radius="sm">
+                    {<Chip size="sm" className="rounded-sm">
                         <pre>{session.remoteIp}</pre>
                     </Chip>}
                 </div>
                 <div
                     className="flex-1 flex justify-end">{session.activeGameIds.length > 0 ? "Session active since" : "Session inactive since"}&nbsp;
-                    {<Chip size="sm" radius="sm">
+                    {<Chip size="sm" className="rounded-sm">
                         {timeUntil(session.startTime, undefined, true)}
                     </Chip>}
                 </div>
@@ -114,15 +118,17 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
                         {session.activeGameIds.length === 0 && <p>No active downloads</p>}
                         {session.activeGameIds.map(gameId =>
                             games[gameId] &&
-                            <Tooltip key={gameId}
-                                     size="sm"
-                                     content={`Size: ${humanFileSize(games[gameId].metadata.fileSize)} / Library: ${libraries[games[gameId].libraryId]?.name || "Unknown"}`}
-                                     placement="bottom">
-                                <Chip size="sm" radius="sm"
-                                      onClick={() => navigate(`/game/${gameId}`)}
-                                      className="cursor-pointer"
-                                >{games[gameId].title}
-                                </Chip>
+                            <Tooltip key={gameId} delay={0}>
+                                <Tooltip.Trigger>
+                                    <Chip size="sm"
+                                          onClick={() => navigate(`/game/${gameId}`)}
+                                          className="cursor-pointer rounded-sm"
+                                    >{games[gameId].title}
+                                    </Chip>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                    {`Size: ${humanFileSize(games[gameId].metadata.fileSize)} / Library: ${libraries[games[gameId].libraryId]?.name || "Unknown"}`}
+                                </Tooltip.Content>
                             </Tooltip>
                         )}
                     </div>

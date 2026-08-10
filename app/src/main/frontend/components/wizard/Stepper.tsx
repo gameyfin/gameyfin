@@ -1,8 +1,7 @@
 import type {ComponentProps} from "react";
 import React from "react";
-import type {ButtonProps} from "@heroui/react";
 import {cn} from "@heroui/react";
-import {useControlledState} from "@react-stately/utils";
+import {useControlledState} from "react-stately/useControlledState";
 import {domAnimation, LazyMotion, m} from "framer-motion"; // reintroduce LazyMotion & domAnimation
 
 export type StepDescriptor = {
@@ -11,9 +10,11 @@ export type StepDescriptor = {
     className?: string;
 };
 
+export type StepperColor = "default" | "primary" | "secondary" | "success" | "warning" | "danger";
+
 export interface StepperProps extends React.HTMLAttributes<HTMLButtonElement> {
     steps?: StepDescriptor[];
-    color?: ButtonProps["color"];
+    color?: StepperColor;
     currentStep?: number;
     defaultStep?: number;
     hideProgressBars?: boolean;
@@ -70,40 +71,40 @@ const Stepper = React.forwardRef<HTMLButtonElement, StepperProps>(
                 "[--active-color:var(--step-color)]",
                 "[--complete-background-color:var(--step-color)]",
                 "[--complete-border-color:var(--step-color)]",
-                "[--inactive-border-color:hsl(var(--heroui-default-300))]",
-                "[--inactive-color:hsl(var(--heroui-default-300))]"
+                "[--inactive-border-color:var(--border)]",
+                "[--inactive-color:var(--border)]"
             ];
             switch (color) {
                 case "secondary":
-                    userColor = "[--step-color:hsl(var(--heroui-secondary))]";
-                    fgColor = "[--step-fg-color:hsl(var(--heroui-secondary-foreground))]";
+                    userColor = "[--step-color:var(--gf-secondary)]";
+                    fgColor = "[--step-fg-color:var(--gf-secondary-foreground)]";
                     break;
                 case "success":
-                    userColor = "[--step-color:hsl(var(--heroui-success))]";
-                    fgColor = "[--step-fg-color:hsl(var(--heroui-success-foreground))]";
+                    userColor = "[--step-color:var(--success)]";
+                    fgColor = "[--step-fg-color:var(--success-foreground)]";
                     break;
                 case "warning":
-                    userColor = "[--step-color:hsl(var(--heroui-warning))]";
-                    fgColor = "[--step-fg-color:hsl(var(--heroui-warning-foreground))]";
+                    userColor = "[--step-color:var(--warning)]";
+                    fgColor = "[--step-fg-color:var(--warning-foreground)]";
                     break;
                 case "danger":
-                    userColor = "[--step-color:hsl(var(--heroui-error))]";
-                    fgColor = "[--step-fg-color:hsl(var(--heroui-error-foreground))]";
+                    userColor = "[--step-color:var(--danger)]";
+                    fgColor = "[--step-fg-color:var(--danger-foreground)]";
                     break;
                 case "default":
-                    userColor = "[--step-color:hsl(var(--heroui-default))]";
-                    fgColor = "[--step-fg-color:hsl(var(--heroui-default-foreground))]";
+                    userColor = "[--step-color:var(--default)]";
+                    fgColor = "[--step-fg-color:var(--default-foreground)]";
                     break;
                 case "primary":
                 default:
-                    userColor = "[--step-color:hsl(var(--heroui-primary))]";
-                    fgColor = "[--step-fg-color:hsl(var(--heroui-primary-foreground))]";
+                    userColor = "[--step-color:var(--accent)]";
+                    fgColor = "[--step-fg-color:var(--accent-foreground)]";
                     break;
             }
             if (!className?.includes("--step-fg-color")) colorsVars.unshift(fgColor);
             if (!className?.includes("--step-color")) colorsVars.unshift(userColor);
             if (!className?.includes("--inactive-bar-color"))
-                colorsVars.push("[--inactive-bar-color:hsl(var(--heroui-default-300))]");
+                colorsVars.push("[--inactive-bar-color:var(--border)]");
             return colorsVars;
         }, [color, className]);
 
@@ -130,7 +131,7 @@ const Stepper = React.forwardRef<HTMLButtonElement, StepperProps>(
                                         type="button"
                                         onClick={() => canNavigate && setCurrentStep(idx)}
                                         className={cn(
-                                            "group relative flex h-[38px] w-[38px] items-center justify-center rounded-full border-medium font-semibold text-large bg-content1 transition-colors duration-300",
+                                            "group relative flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 font-semibold text-lg bg-surface transition-colors duration-300",
                                             !canNavigate && "pointer-events-none opacity-60",
                                             step.className,
                                             stepClassName,
@@ -187,8 +188,8 @@ const Stepper = React.forwardRef<HTMLButtonElement, StepperProps>(
                                     {step.title && (
                                         <span
                                             className={cn(
-                                                "text-small lg:text-medium font-medium transition-[color,opacity] duration-300",
-                                                status === "inactive" ? "text-default-500" : "text-default-foreground"
+                                                "text-sm lg:text-base font-medium transition-[color,opacity] duration-300",
+                                                status === "inactive" ? "text-muted" : "text-foreground"
                                             )}
                                         >
                                             {step.title}

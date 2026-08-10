@@ -1,4 +1,4 @@
-import {Button, Card, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, useDisclosure} from "@heroui/react";
+import {Button, Card, Dropdown, Label, useOverlayState} from "@heroui/react";
 import {DotsThreeVerticalIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
 import {MessageEndpoint, PasswordResetEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
@@ -12,12 +12,12 @@ import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModa
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
 
 export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
-    const userDeletionConfirmationModal = useDisclosure();
-    const passwordResetTokenModal = useDisclosure();
-    const roleAssignmentModal = useDisclosure();
+    const userDeletionConfirmationModal = useOverlayState();
+    const passwordResetTokenModal = useOverlayState();
+    const roleAssignmentModal = useOverlayState();
     const [userEnabled, setUserEnabled] = useState(true);
     const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
-    const [dropdownItems, setDropdownItems] = useState<any[]>([]);
+    const [dropdownItems, setDropdownItems] = useState<Array<{ key: string, onPress: () => void | Promise<void>, label: string }>>([]);
     const [passwordResetToken, setPasswordResetToken] = useState<TokenDto>();
 
     useEffect(() => {
@@ -42,7 +42,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
         let token = await PasswordResetEndpoint.createPasswordResetTokenForUser(user.username);
         if (token === undefined) return;
         setPasswordResetToken(token);
-        passwordResetTokenModal.onOpen();
+        passwordResetTokenModal.open();
     }
 
     function getDropdownItems() {
@@ -83,7 +83,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                 },
                 {
                     key: "assignRole",
-                    onPress: roleAssignmentModal.onOpen,
+                    onPress: roleAssignmentModal.open,
                     label: "Assign role"
                 },
                 {
@@ -96,7 +96,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
 
         items.push({
                 key: "delete",
-                onPress: userDeletionConfirmationModal.onOpen,
+                onPress: userDeletionConfirmationModal.open,
                 label: "Delete user"
             }
         );
@@ -104,39 +104,40 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
         return items;
     }
 
+    function onDropdownAction(key: React.Key) {
+        dropdownItems.find((item) => item.key === String(key))?.onPress();
+    }
+
     return (
         <>
             <Card
                 className={`flex flex-row justify-between p-2 ${userEnabled ? "" : "bg-warning/25"} ${user.managedBySso ? "text-foreground/50" : ""}`}>
                 <div className="absolute right-0 top-0">
-                    <Dropdown placement="bottom-end" size="sm" backdrop="opaque">
-                        <DropdownTrigger>
-                            <Button isIconOnly variant="light">
+                    <Dropdown>
+                        <Dropdown.Trigger>
+                            <Button isIconOnly variant="tertiary">
                                 <DotsThreeVerticalIcon/>
                             </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label="Static Actions" items={dropdownItems} disabledKeys={disabledKeys}>
-                            {(item) => (
-                                <DropdownItem
-                                    key={item.key}
-                                    onPress={item.onPress}
-                                    color={item.key === "delete" ? "danger" : "default"}
-                                    className={item.key === "delete" ? "text-danger" : ""}
-                                >
-                                    {item.label}
-                                </DropdownItem>
-                            )}
-                        </DropdownMenu>
+                        </Dropdown.Trigger>
+                        <Dropdown.Popover placement="bottom end">
+                            <Dropdown.Menu aria-label="Static Actions" disabledKeys={disabledKeys} onAction={onDropdownAction}>
+                                {dropdownItems.map((item) => (
+                                    <Dropdown.Item
+                                        key={item.key}
+                                        id={item.key}
+                                        textValue={item.label}
+                                        variant={item.key === "delete" ? "danger" : undefined}
+                                    >
+                                        <Label>{item.label}</Label>
+                                    </Dropdown.Item>
+                                ))}
+                            </Dropdown.Menu>
+                        </Dropdown.Popover>
                     </Dropdown>
                 </div>
                 <div className="flex flex-row items-center gap-4">
                     <Avatar username={user.username}
-                            name={user.username?.charAt(0)}
-                            classNames={{
-                                base: "gradient-primary size-20",
-                                icon: "text-background/80",
-                                name: "text-background/80 text-5xl",
-                            }}/>
+                            className="gradient-primary size-20 text-background/80 text-5xl"/>
                     <div className="flex flex-col gap-1">
                         <p className="font-semibold">{user.username}</p>
                         <p className="text-sm max-w-44 truncate" title={user.email}>{user.email}</p>
@@ -147,12 +148,12 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                 </div>
             </Card>
             <ConfirmUserDeletionModal isOpen={userDeletionConfirmationModal.isOpen}
-                                      onOpenChange={userDeletionConfirmationModal.onOpenChange}
+                                     onOpenChange={userDeletionConfirmationModal.setOpen}
                                       user={user}/>
             <PasswordResetTokenModal isOpen={passwordResetTokenModal.isOpen}
-                                     onOpenChange={passwordResetTokenModal.onOpenChange}
+                                    onOpenChange={passwordResetTokenModal.setOpen}
                                      token={passwordResetToken as TokenDto}/>
-            <AssignRolesModal isOpen={roleAssignmentModal.isOpen} onOpenChange={roleAssignmentModal.onOpenChange}
+            <AssignRolesModal isOpen={roleAssignmentModal.isOpen} onOpenChange={roleAssignmentModal.setOpen}
                               user={user}/>
         </>
     )

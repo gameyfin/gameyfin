@@ -1,6 +1,23 @@
 import {Button} from "@heroui/react";
 import {useNavigate} from "react-router";
-import { AlienIcon, CompassIcon, CubeIcon, DiceFiveIcon, FlagCheckeredIcon, GameControllerIcon, GhostIcon, Icon, IconContext, JoystickIcon, MagicWandIcon, PuzzlePieceIcon, RocketLaunchIcon, SkullIcon, SmileyXEyesIcon, SwordIcon } from "@phosphor-icons/react";
+import {
+    AlienIcon,
+    CompassIcon,
+    CubeIcon,
+    DiceFiveIcon,
+    FlagCheckeredIcon,
+    GameControllerIcon,
+    GhostIcon,
+    Icon,
+    IconContext,
+    JoystickIcon,
+    MagicWandIcon,
+    PuzzlePieceIcon,
+    RocketLaunchIcon,
+    SkullIcon,
+    SmileyXEyesIcon,
+    SwordIcon,
+} from "@phosphor-icons/react";
 import React, {ReactElement, useState} from "react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
@@ -111,11 +128,13 @@ export default function ErrorView() {
             <h1 className="text-4xl font-bold">{errorText.title}</h1>
             <p className="text-lg">{errorText.subtitle}</p>
             <IconContext.Provider value={{size: 20, weight: "fill"}}>
-                <Button startContent={errorText.icon}
-                        color="primary"
-                        size="lg"
-                        className="mt-4"
-                        onPress={() => navigate('/', {replace: true})}>
+                <Button
+                    variant="primary"
+                    size="lg"
+                    className="mt-4"
+                    onPress={() => navigate('/', {replace: true})}
+                >
+                    {errorText.icon}
                     {errorText.buttonText}
                 </Button>
             </IconContext.Provider>

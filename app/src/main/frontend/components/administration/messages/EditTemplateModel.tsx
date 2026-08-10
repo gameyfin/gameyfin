@@ -1,15 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {
-    addToast,
+    toast,
     Button,
     Chip,
     Link,
     Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Textarea
+    TextArea
 } from "@heroui/react";
 import {MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
@@ -17,7 +13,7 @@ import TemplateType from "Frontend/generated/org/gameyfin/app/messages/templates
 
 interface EditTemplateModalProps {
     isOpen: boolean;
-    onOpenChange: () => void;
+    onOpenChange: (isOpen: boolean) => void;
     selectedTemplate: MessageTemplateDto | null;
 }
 
@@ -48,83 +44,93 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
     }
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="5xl">
-            <ModalContent>
-                {(onClose) => (
-                    <>
-                        <ModalHeader
-                            className="flex flex-col gap-1">Edit {selectedTemplate?.name} Template</ModalHeader>
-                        <ModalBody>
-                            <div className="flex flex-row justify-between items-end">
-                                <table cellPadding="4rem">
-                                    <tbody>
-                                    <tr>
-                                        <td>Required placeholders:</td>
-                                        <td>
-                                            <div className="flex flex-row gap-2">
-                                                {selectedTemplate?.availablePlaceholders?.map((placeholder) =>
-                                                    <Chip radius="sm"
-                                                          key={placeholder}
-                                                          color={templateContent.includes(`{${placeholder as string}}`) ? "success" : "danger"}
-                                                    >{placeholder}</Chip>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Optional placeholders:</td>
-                                        <td>
-                                            <div className="flex flex-row gap-2">
-                                                {defaultPlaceholders.map((placeholder) =>
-                                                    <Chip radius="sm"
-                                                          key={placeholder}
-                                                          color={templateContent.includes(`{${placeholder as string}}`) ? "success" : "default"}
-                                                    >{placeholder}</Chip>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                                <small className="text-right">Powered by <Link href="https://documentation.mjml.io/"
-                                                                               target="_blank">mjml.io</Link></small>
-                            </div>
-                            <Textarea
-                                size="lg"
-                                autoFocus
-                                disableAutosize
-                                value={templateContent}
-                                onChange={(e) => {
-                                    setTemplateContent(e.target.value)
-                                }}
-                                classNames={{
-                                    input: "resize-y min-h-[500px]"
-                                }}
-                            />
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button color="danger" variant="light" onPress={onClose}>
-                                Cancel
-                            </Button>
-                            <Button color="primary"
-                                    isDisabled={!templateContainsAllRequiredPlaceholders()}
-                                    onPress={async () => {
-                                        if (selectedTemplate) {
-                                            await saveTemplate(selectedTemplate);
-                                            addToast({
-                                                title: "Template saved",
-                                                description: "Template has been saved",
-                                                color: "success"
-                                            });
-                                            onClose();
-                                        }
-                                    }}>
-                                Save
-                            </Button>
-                        </ModalFooter>
-                    </>
-                )}
-            </ModalContent>
+        <Modal>
+            <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
+                <Modal.Container size="lg" className="max-w-5xl">
+                    <Modal.Dialog>
+                        {({close}) => (
+                            <>
+                                <Modal.CloseTrigger/>
+                                <Modal.Header className="flex flex-col gap-1">
+                                    <Modal.Heading>Edit {selectedTemplate?.name} Template</Modal.Heading>
+                                </Modal.Header>
+                                <Modal.Body>
+                                    <div className="flex flex-row justify-between items-end">
+                                        <table cellPadding="4rem">
+                                            <tbody>
+                                            <tr>
+                                                <td>Required placeholders:</td>
+                                                <td>
+                                                    <div className="flex flex-row gap-2">
+                                                        {selectedTemplate?.availablePlaceholders?.map((placeholder) =>
+                                                            <Chip variant="soft"
+                                                                  className="rounded-sm"
+                                                                  key={placeholder}
+                                                                  color={templateContent.includes(`{${placeholder as string}}`) ? "success" : "danger"}
+                                                            >{placeholder}</Chip>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Optional placeholders:</td>
+                                                <td>
+                                                    <div className="flex flex-row gap-2">
+                                                        {defaultPlaceholders.map((placeholder) =>
+                                                            <Chip variant="soft"
+                                                                  className="rounded-sm"
+                                                                  key={placeholder}
+                                                                  color={templateContent.includes(`{${placeholder as string}}`) ? "success" : "default"}
+                                                            >{placeholder}</Chip>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                        <small className="text-right">
+                                            Powered by{" "}
+                                            <Link href="https://documentation.mjml.io/"
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="inline-flex items-center gap-1">
+                                                mjml.io
+                                                <Link.Icon/>
+                                            </Link>
+                                        </small>
+                                    </div>
+                                    <TextArea
+                                        autoFocus
+                                        value={templateContent}
+                                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                                            setTemplateContent(e.target.value)
+                                        }}
+                                        className="resize-y min-h-[500px] w-full rounded-md border border-border bg-surface px-3 py-2"
+                                    />
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button variant="danger-soft" onPress={close}>
+                                        Cancel
+                                    </Button>
+                                    <Button variant="primary"
+                                            isDisabled={!templateContainsAllRequiredPlaceholders()}
+                                            onPress={async () => {
+                                                if (selectedTemplate) {
+                                                    await saveTemplate(selectedTemplate);
+                                                    toast.success("Template saved", {
+                                                        description: "Template has been saved"
+                                                    });
+                                                    close();
+                                                }
+                                            }}>
+                                        Save
+                                    </Button>
+                                </Modal.Footer>
+                            </>
+                        )}
+                    </Modal.Dialog>
+                </Modal.Container>
+            </Modal.Backdrop>
         </Modal>
     );
 }

@@ -1,11 +1,11 @@
-import {addToast, Button, Card, CardBody, CardHeader} from "@heroui/react";
+import {toast, Button, Card} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 import React, {useEffect, useState} from "react";
-import { WarningIcon } from "@phosphor-icons/react";
+import {WarningIcon} from "@phosphor-icons/react";
 import UserInvitationAcceptanceResult
     from "Frontend/generated/org/gameyfin/app/users/enums/UserInvitationAcceptanceResult";
 
@@ -34,10 +34,8 @@ export default function InvitationRegistrationView() {
 
         switch (result) {
             case UserInvitationAcceptanceResult.SUCCESS:
-                addToast({
-                    title: "Registration successful",
+                toast.success("Registration successful", {
                     description: "Your account has been created",
-                    color: "success"
                 });
                 navigate("/", {replace: true});
                 break;
@@ -45,18 +43,14 @@ export default function InvitationRegistrationView() {
                 formik.setFieldError("username", "Username is already taken");
                 break;
             case UserInvitationAcceptanceResult.TOKEN_EXPIRED:
-                addToast({
-                    title: "Token expired",
+                toast.warning("Token expired", {
                     description: "Token is expired",
-                    color: "warning"
                 });
                 break;
             case UserInvitationAcceptanceResult.TOKEN_INVALID:
             default:
-                addToast({
-                    title: "Invalid token",
+                toast.danger("Invalid token", {
                     description: "Token is invalid",
-                    color: "danger"
                 });
                 break;
         }
@@ -65,14 +59,14 @@ export default function InvitationRegistrationView() {
     return (
         <div className="flex flex-row grow items-center justify-center size-full gradient-primary">
             <Card className="p-4 min-w-[468px]">
-                <CardHeader className="mb-4">
+                <Card.Header className="mb-4">
                     <img
                         className="h-28 w-full content-center"
                         src="/images/Logo.svg"
                         alt="Gameyfin Logo"
                     />
-                </CardHeader>
-                <CardBody>
+                </Card.Header>
+                <Card.Content>
                     {token ?
                         <Formik
                             enableReinitialize={true}
@@ -96,18 +90,18 @@ export default function InvitationRegistrationView() {
                                     .required('Required')
                             })}
                             onSubmit={register}>
-                            {(formik: { values: any; isSubmitting: any; isValid: boolean; }) => (
+                            {(formik: { isSubmitting: any; isValid: boolean; }) => (
                                 <Form>
                                     <p className="text-xl text-center mb-8">Register a new account</p>
-                                    <Input label="Email" name="email" type="email" value={email} disabled/>
+                                    <Input label="Email" name="email" type="email" value={email} isDisabled/>
                                     <Input label="Username" name="username" autoComplete="username"/>
                                     <Input label="Password" name="password" type="password"
                                            autoComplete="new-password"/>
                                     <Input label="Password (repeat)" name="passwordRepeat" type="password"
                                            autoComplete="new-password"/>
-                                    <Button type="submit" className="w-full mt-4" color="primary"
+                                    <Button type="submit" className="w-full mt-4" variant="primary"
                                             isDisabled={!formik.isValid || formik.isSubmitting}
-                                            isLoading={formik.isSubmitting}>
+                                            isPending={formik.isSubmitting}>
                                         {formik.isSubmitting ? "" : "Create account"}
                                     </Button>
                                 </Form>
@@ -119,7 +113,7 @@ export default function InvitationRegistrationView() {
                             Invalid token
                         </p>
                     }
-                </CardBody>
+                </Card.Content>
             </Card>
         </div>
     );

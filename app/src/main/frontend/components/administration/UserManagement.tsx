@@ -5,12 +5,12 @@ import Section from "Frontend/components/general/Section";
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import {UserManagementCard} from "Frontend/components/general/cards/UserManagementCard";
 import {UserPlusIcon} from "@phosphor-icons/react";
-import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
+import {Button, Separator, Tooltip, useOverlayState} from "@heroui/react";
 import InviteUserModal from "Frontend/components/general/modals/InviteUserModal";
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
 
 function UserManagementLayout({getConfig, formik}: any) {
-    const inviteUserModal = useDisclosure();
+    const inviteUserModal = useOverlayState();
     const [users, setUsers] = useState<ExtendedUserInfoDto[]>([]);
 
     useEffect(() => {
@@ -31,17 +31,22 @@ function UserManagementLayout({getConfig, formik}: any) {
 
             <div className="flex flex-row items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Users</h2>
-                <Tooltip content="Invite new user">
-                    <Button isIconOnly variant="flat" onPress={inviteUserModal.onOpen}>
-                        <UserPlusIcon/>
-                    </Button>
+                <Tooltip delay={0}>
+                    <Tooltip.Trigger>
+                        <Button isIconOnly variant="tertiary" onPress={inviteUserModal.open}>
+                            <UserPlusIcon/>
+                        </Button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>
+                        <p>Invite new user</p>
+                    </Tooltip.Content>
                 </Tooltip>
             </div>
-            <Divider className="mb-4"/>
+            <Separator className="mb-4"/>
             <div className="grid grid-cols-300px gap-4">
                 {users.map((user) => <UserManagementCard user={user} key={user.username}/>)}
             </div>
-            <InviteUserModal isOpen={inviteUserModal.isOpen} onOpenChange={inviteUserModal.onOpenChange}/>
+            <InviteUserModal isOpen={inviteUserModal.isOpen} onOpenChange={inviteUserModal.toggle}/>
         </div>
     );
 }

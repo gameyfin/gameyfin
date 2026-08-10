@@ -1,36 +1,34 @@
 import {useAuth} from "Frontend/util/auth";
-import {Avatar as NextUiAvatar} from "@heroui/react";
+import {Avatar as HeroUiAvatar} from "@heroui/react";
 
-// @ts-ignore
-const Avatar = ({...props}) => {
+interface AvatarProps {
+    username?: string;
+    className?: string;
+}
+
+const Avatar = ({username: usernameProp, className}: AvatarProps) => {
     const auth = useAuth();
     const username = getUsername();
 
     function getUsername() {
-        if (props.username === undefined || props.username === null || props.username == "") {
+        if (usernameProp === undefined || usernameProp === null || usernameProp == "") {
             return auth.state.user?.username;
         }
 
-        return props.username;
+        return usernameProp;
     }
 
-    // TODO: Check if avatar can be loaded from SSO
-    if (auth.state.user?.hasAvatar) {
-        return (
-            <NextUiAvatar
-                showFallback
-                src={`/images/avatar?username=${username}`}
-                {...props}
-            />
-        );
-    } else {
-        return (
-            <NextUiAvatar
-                showFallback
-                {...props}
-            />
-        );
-    }
+    return (
+        <HeroUiAvatar.Root className={className}>
+            {/* TODO: Check if avatar can be loaded from SSO */}
+            {auth.state.user?.hasAvatar && (
+                <HeroUiAvatar.Image src={`/images/avatar?username=${username}`}/>
+            )}
+            <HeroUiAvatar.Fallback>
+                {username?.charAt(0).toUpperCase()}
+            </HeroUiAvatar.Fallback>
+        </HeroUiAvatar.Root>
+    );
 }
 
 export default Avatar;

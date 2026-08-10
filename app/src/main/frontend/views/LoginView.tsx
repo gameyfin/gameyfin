@@ -1,6 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
-import {Button, Card, CardBody, CardHeader, Link, useDisclosure} from "@heroui/react";
+import {Button, Card, Link, useOverlayState} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import PasswordResetModal from "Frontend/components/general/modals/PasswordResetModal";
@@ -10,8 +10,8 @@ import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 export default function LoginView() {
     const {state, login} = useAuth();
 
-    const passwordResetModal = useDisclosure();
-    const signUpModal = useDisclosure();
+    const passwordResetModal = useOverlayState();
+    const signUpModal = useOverlayState();
 
     const [signUpAllowed, setSignUpAllowed] = useState<boolean>(false);
 
@@ -26,7 +26,7 @@ export default function LoginView() {
     async function tryLogin(values: any, formik: any) {
         const {defaultUrl, error, redirectUrl} = await login(values.username, values.password);
         if (error) {
-            formik.setFieldError("username", " "); // Mark the field red, but don't show an error message
+            formik.setFieldError("username", " ");
             formik.setFieldError("password", "Invalid username and/or password.");
         } else {
             redirectAfterLogin(redirectUrl, defaultUrl);
@@ -40,14 +40,14 @@ export default function LoginView() {
     return (
         <div className="flex size-full gradient-primary">
             <Card className="m-auto p-12">
-                <CardHeader>
+                <Card.Header>
                     <img
                         className="h-28 w-full content-center"
                         src="/images/Logo.svg"
                         alt="Gameyfin Logo"
                     />
-                </CardHeader>
-                <CardBody className="mt-8 mb-2 w-80 max-w-(--breakpoint-lg) sm:w-96">
+                </Card.Header>
+                <Card.Content className="mt-8 mb-2 w-80 max-w-(--breakpoint-lg) sm:w-96">
                     <Formik
                         initialValues={{}}
                         onSubmit={tryLogin}>
@@ -65,18 +65,17 @@ export default function LoginView() {
                                     type="password"
                                 />
                                 <div className="flex justify-between items-center">
-                                    <Link color="foreground" underline="always" href="#"
-                                          onPress={passwordResetModal.onOpen}>
+                                    <Link href="#" className="text-foreground underline"
+                                          onPress={passwordResetModal.open}>
                                         Forgot password?
                                     </Link>
                                     <div className="flex flex-row gap-2">
                                         {signUpAllowed &&
-                                            <Button color="default" variant="light"
-                                                    onPress={signUpModal.onOpen}>
+                                            <Button variant="tertiary" onPress={signUpModal.open}>
                                                 Sign up
                                             </Button>
                                         }
-                                        <Button color="primary" type="submit" isLoading={formik.isSubmitting}>
+                                        <Button variant="primary" type="submit" isPending={formik.isSubmitting}>
                                             {formik.isSubmitting ? "" : "Log in"}
                                         </Button>
                                     </div>
@@ -84,11 +83,11 @@ export default function LoginView() {
                             </Form>
                         )}
                     </Formik>
-                </CardBody>
+                </Card.Content>
             </Card>
 
-            <PasswordResetModal isOpen={passwordResetModal.isOpen} onOpenChange={passwordResetModal.onOpenChange}/>
-            <SignUpModal isOpen={signUpModal.isOpen} onOpenChange={signUpModal.onOpenChange}/>
+            <PasswordResetModal isOpen={passwordResetModal.isOpen} onOpenChange={passwordResetModal.setOpen}/>
+            <SignUpModal isOpen={signUpModal.isOpen} onOpenChange={signUpModal.setOpen}/>
         </div>
     );
 }

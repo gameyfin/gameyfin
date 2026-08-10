@@ -1,9 +1,9 @@
 import {useField} from "formik";
-import {Select, SelectItem, SelectProps} from "@heroui/react";
+import {Description, FieldError, Label, ListBox, Select, SelectProps} from "@heroui/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
-interface SelectInputProps extends Omit<SelectProps, "name" | "children"> {
+interface SelectInputProps extends Omit<SelectProps<object>, "name" | "children" | "value" | "onChange"> {
     label: string;
     name: string;
     values: string[];
@@ -12,33 +12,40 @@ interface SelectInputProps extends Omit<SelectProps, "name" | "children"> {
 }
 
 export default function SelectInput({label, values, description, resetValue, ...props}: SelectInputProps) {
-    const [field, meta] = useField(props.name);
-
-    const items = values.map((v: string) => ({key: v, label: v}));
+    const [field, meta, helpers] = useField(props.name);
 
     return (
         <div className="min-h-20 grow">
             <Select
                 fullWidth={true}
-                {...field}
                 {...props}
-                label={label}
-                items={items}
-                selectedKeys={[field.value]}
-                endContent={
-                    (description || resetValue !== undefined) ? (
-                        <span className="flex items-center">
-                            {description && <InfoPopup content={description}/>}
-                            {resetValue !== undefined &&
-                                <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
-                        </span>
-                    ) : undefined
-                }
+                value={field.value}
+                onChange={(value) => helpers.setValue(value)}
                 isInvalid={!!meta.error}
-                errorMessage={meta.initialError || meta.error}
-                disallowEmptySelection
             >
-                {(item: { key: string, label: string }) => <SelectItem>{item.label}</SelectItem>}
+                <Label>{label}</Label>
+                <Select.Trigger>
+                    <Select.Value/>
+                    <Select.Indicator/>
+                </Select.Trigger>
+                {(description || resetValue !== undefined) && (
+                    <span className="flex items-center">
+                        {description && <InfoPopup content={description}/>}
+                        {resetValue !== undefined &&
+                            <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
+                    </span>
+                )}
+                <Select.Popover>
+                    <ListBox>
+                        {values.map((v) => (
+                            <ListBox.Item key={v} id={v} textValue={v}>
+                                {v}
+                                <ListBox.ItemIndicator/>
+                            </ListBox.Item>
+                        ))}
+                    </ListBox>
+                </Select.Popover>
+                <FieldError>{meta.initialError || meta.error}</FieldError>
             </Select>
         </div>
     );

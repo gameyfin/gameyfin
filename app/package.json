@@ -3,10 +3,10 @@
   "version": "2.4.1-preview",
   "type": "module",
   "dependencies": {
-    "@heroui/react": "^2.8.7",
+    "@heroui/react": "^3.2.4",
     "@phosphor-icons/react": "^2.1.10",
-    "@react-stately/data": "^3.12.2",
-    "@react-types/shared": "^3.28.0",
+    "@react-stately/data": "^3.16.1",
+    "@react-types/shared": "^3.36.1",
     "@tailwindcss/vite": "4.1.13",
     "@vaadin/aura": "25.0.4",
     "@vaadin/common-frontend": "0.0.19",
@@ -39,7 +39,7 @@
     "rand-seed": "^2.1.7",
     "react": "19.2.4",
     "react-accessible-treeview": "^2.11.1",
-    "react-aria-components": "^1.7.1",
+    "react-aria-components": "^1.20.0",
     "react-confetti-boom": "^1.0.0",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
@@ -88,7 +88,7 @@
     "workbox-build": "7.4.0"
   },
   "overrides": {
-    "@react-aria/utils": "^3.28.1",
+    "@react-aria/utils": "^3.34.1",
     "classnames": "$classnames",
     "react": "$react",
     "react-dom": "$react-dom",

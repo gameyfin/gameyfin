@@ -1,9 +1,8 @@
 import {useAuth} from "Frontend/util/auth";
 import {GearFineIcon, QuestionIcon, SignOutIcon, UserIcon} from "@phosphor-icons/react";
-import {Dropdown, DropdownItem, DropdownMenu, DropdownTrigger} from "@heroui/react";
+import {Description, Dropdown, Label} from "@heroui/react";
 import {useNavigate} from "react-router";
 import Avatar from "Frontend/components/general/Avatar";
-import {CollectionElement} from "@react-types/shared";
 import {isAdmin} from "Frontend/util/utils";
 
 export default function ProfileMenu() {
@@ -31,46 +30,39 @@ export default function ProfileMenu() {
             label: "Sign Out",
             icon: <SignOutIcon/>,
             onClick: auth.logout,
-            color: "primary"
+            color: "danger"
         },
     ];
 
-    // @ts-ignore
     return (
-        <Dropdown placement="bottom-end">
-            <DropdownTrigger>
-                {/* div is necessary so dropdown menu will appear in the correct place */}
-                <div>
-                    <Avatar radius="full"
-                            as="button"
-                            className="transition-transform size-8"
-                            classNames={{
-                                base: "gradient-primary",
-                                icon: "text-background/80"
-                            }}
-                    />
-                </div>
-            </DropdownTrigger>
-            <DropdownMenu disabledKeys={["username"]}>
-                <DropdownItem key="username" textValue={auth.state.user?.username}>
-                    <p className="font-bold">Signed in as {auth.state.user?.username}</p>
-                </DropdownItem>
-                {profileMenuItems.filter(item => item.showIf !== false).map(({label, icon, onClick, color}) => {
-                    return (
-                        <DropdownItem
-                            key={label}
-                            onPress={onClick}
-                            startContent={<div color={color}>{icon}</div>}
-                            /* @ts-ignore */
-                            color={color ? color : ""}
-                            className={`text-${color} hover:bg-primary/20`}
-                            textValue={label}
-                        >
-                            {label}
-                        </DropdownItem>
-                    );
-                }) as unknown as CollectionElement<object>}
-            </DropdownMenu>
+        <Dropdown>
+            {/* div is necessary so dropdown menu will appear in the correct place */}
+            <div>
+                <Avatar className="transition-transform size-8 gradient-primary"/>
+            </div>
+            <Dropdown.Popover placement="bottom end">
+                <Dropdown.Menu disabledKeys={["username"]} aria-label="Profile menu">
+                    <Dropdown.Item key="username" id="username" textValue={auth.state.user?.username}>
+                        <Label className="font-bold">Signed in as {auth.state.user?.username}</Label>
+                    </Dropdown.Item>
+                    {profileMenuItems.filter(item => item.showIf !== false).map(({label, icon, onClick, color}) => {
+                        return (
+                            <Dropdown.Item
+                                key={label}
+                                id={label}
+                                onAction={onClick}
+                                className={color ? `text-${color}` : ""}
+                                textValue={label}
+                            >
+                                <div className="flex items-center gap-2">
+                                    {icon}
+                                    <Label>{label}</Label>
+                                </div>
+                            </Dropdown.Item>
+                        );
+                    })}
+                </Dropdown.Menu>
+            </Dropdown.Popover>
         </Dropdown>
     );
 }

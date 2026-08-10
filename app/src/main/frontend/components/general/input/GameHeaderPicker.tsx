@@ -1,4 +1,4 @@
-import {Image, useDisclosure} from "@heroui/react";
+import {useOverlayState} from "@heroui/react";
 import React from "react";
 import {useField} from "formik";
 import {ImageBrokenIcon, PencilIcon} from "@phosphor-icons/react";
@@ -15,20 +15,17 @@ export default function GameHeaderPicker({game, showErrorUntouched = false, ...p
 
     const [field] = useField(props.name);
 
-    const gameHeaderPickerModal = useDisclosure();
+    const gameHeaderPickerModal = useOverlayState();
 
     return (<>
         <div className="relative group size-full cursor-pointer bg-background/50"
-             onClick={gameHeaderPickerModal.onOpenChange}>
+             onClick={gameHeaderPickerModal.toggle}>
             {field.value || game.header?.id ?
                 <div className="size-full overflow-hidden">
-                    <Image
+                    <img
                         alt={game.title}
-                        className="z-0 object-cover group-hover:brightness-25"
+                        className="z-0 size-full object-cover rounded-none group-hover:brightness-25"
                         src={field.value ? field.value : `images/cover/${game.header?.id}`}
-                        {...props}
-                        {...field}
-                        radius="none"
                     />
                 </div> :
                 <div
@@ -47,7 +44,7 @@ export default function GameHeaderPicker({game, showErrorUntouched = false, ...p
         <GameHeaderPickerModal
             game={game}
             isOpen={gameHeaderPickerModal.isOpen}
-            onOpenChange={gameHeaderPickerModal.onOpenChange}
+            onOpenChange={gameHeaderPickerModal.setOpen}
             setHeaderUrl={(headerUrl) => field.onChange({target: {name: field.name, value: headerUrl}})}
         />
     </>);

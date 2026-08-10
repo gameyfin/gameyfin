@@ -1,6 +1,6 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/input/Input";
-import {addToast, Button, Input as NextUiInput, Tooltip} from "@heroui/react";
+import {toast, Button, Input as HeroUiInput, Tooltip} from "@heroui/react";
 import {Form, Formik, FormikProps} from "formik";
 import {ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
@@ -54,10 +54,8 @@ export default function ProfileManagement() {
         setConfigSaved(true);
 
         if (values.newPassword.length > 0) {
-            addToast({
-                title: "Password changed",
-                description: "Please log in again",
-                color: "success"
+            toast.success("Password changed", {
+                description: "Please log in again"
             });
             setTimeout(() => {
                 auth.logout();
@@ -98,12 +96,12 @@ export default function ProfileManagement() {
                                 {formik.values.newPassword.length > 0 &&
                                     <SmallInfoField icon={InfoIcon}
                                                     message="You will be logged out of all current sessions"
-                                                    className="text-default-500"
+                                                    className="text-muted"
                                     />
                                 }
                                 <Button
-                                    color="primary"
-                                    isLoading={formik.isSubmitting}
+                                    variant="primary"
+                                    isPending={formik.isSubmitting}
                                     isDisabled={!formik.dirty || formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
                                     type="submit"
                                 >
@@ -118,13 +116,18 @@ export default function ProfileManagement() {
                                     <Avatar className="size-40 m-4 flex flex-row"/>
                                 </div>
                                 <div className="flex flex-row gap-2">
-                                    <NextUiInput type="file" accept="image/*" onChange={onFileSelected}
-                                                 isDisabled={auth.state.user?.managedBySso}/>
+                                    <HeroUiInput type="file" accept="image/*" onChange={onFileSelected}
+                                                 disabled={auth.state.user?.managedBySso}/>
                                     <Button onPress={() => uploadAvatar(avatar)} isDisabled={avatar == null}
-                                            color="success">Upload</Button>
-                                    <Tooltip content="Remove your current avatar">
-                                        <Button onPress={removeAvatar} isIconOnly color="danger"
-                                                isDisabled={auth.state.user?.managedBySso}><TrashIcon/></Button>
+                                            variant="primary">Upload</Button>
+                                    <Tooltip delay={0}>
+                                        <Tooltip.Trigger>
+                                            <Button onPress={removeAvatar} isIconOnly variant="danger"
+                                                    isDisabled={auth.state.user?.managedBySso}><TrashIcon/></Button>
+                                        </Tooltip.Trigger>
+                                        <Tooltip.Content>
+                                            <p>Remove your current avatar</p>
+                                        </Tooltip.Content>
                                     </Tooltip>
                                 </div>
                             </div>
@@ -137,23 +140,26 @@ export default function ProfileManagement() {
                                     <Input name="email" label="Email" type="email" autoComplete="email"
                                            isDisabled={auth.state.user?.managedBySso || !messagesEnabled}/>
                                     {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&
-                                        <Tooltip content="Resend email confirmation message">
-                                            <Button isIconOnly
-                                                    onPress={() => {
-                                                        EmailConfirmationEndpoint.resendEmailConfirmation().then(
-                                                            () => addToast({
-                                                                title: "Email confirmation message sent",
-                                                                description: "Please check your inbox",
-                                                                color: "success"
-                                                            })
-                                                        )
-                                                    }}
-                                                    isDisabled={!messagesEnabled}
-                                                    variant="ghost"
-                                                    className="size-14"
-                                            >
-                                                <ArrowCounterClockwiseIcon size={26}/>
-                                            </Button>
+                                        <Tooltip delay={0}>
+                                            <Tooltip.Trigger>
+                                                <Button isIconOnly
+                                                        onPress={() => {
+                                                            EmailConfirmationEndpoint.resendEmailConfirmation().then(
+                                                                () => toast.success("Email confirmation message sent", {
+                                                                    description: "Please check your inbox"
+                                                                })
+                                                            )
+                                                        }}
+                                                        isDisabled={!messagesEnabled}
+                                                        variant="ghost"
+                                                        className="size-14"
+                                                >
+                                                    <ArrowCounterClockwiseIcon size={26}/>
+                                                </Button>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content>
+                                                <p>Resend email confirmation message</p>
+                                            </Tooltip.Content>
                                         </Tooltip>
                                     }
                                 </div>
