@@ -9,10 +9,10 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, Stats 
 import { createHash } from 'crypto';
 import * as net from 'net';
 
-import { processThemeResources } from './target/plugins/application-theme-plugin/theme-handle.js';
-import { rewriteCssUrls } from './target/plugins/theme-loader/theme-loader-utils.js';
-import { addFunctionComponentSourceLocationBabel } from './target/plugins/react-function-location-plugin/react-function-location-plugin.js';
-import settings from './target/vaadin-dev-server-settings.json';
+import { processThemeResources } from './build/plugins/application-theme-plugin/theme-handle.js';
+import { rewriteCssUrls } from './build/plugins/theme-loader/theme-loader-utils.js';
+import { addFunctionComponentSourceLocationBabel } from './build/plugins/react-function-location-plugin/react-function-location-plugin.js';
+import settings from './build/vaadin-dev-server-settings.json';
 import {
   AssetInfo,
   ChunkInfo,
@@ -25,10 +25,10 @@ import {
 
 import brotli from 'rollup-plugin-brotli';
 import checker from 'vite-plugin-checker';
-import postcssLit from './target/plugins/rollup-plugin-postcss-lit-custom/rollup-plugin-postcss-lit.js';
-import vaadinI18n from './target/plugins/rollup-plugin-vaadin-i18n/rollup-plugin-vaadin-i18n.js';
+import postcssLit from './build/plugins/rollup-plugin-postcss-lit-custom/rollup-plugin-postcss-lit.js';
+import vaadinI18n from './build/plugins/rollup-plugin-vaadin-i18n/rollup-plugin-vaadin-i18n.js';
 
-export { default as useLocalWebComponents } from './target/plugins/vite-plugin-local-web-components';
+export { default as useLocalWebComponents } from './build/plugins/vite-plugin-local-web-components';
 
 import { visualizer } from 'rollup-plugin-visualizer';
 import reactPlugin from '@vitejs/plugin-react';
