@@ -1,11 +1,16 @@
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {Image} from "@heroui/react";
 import {GameCoverFallback} from "Frontend/components/general/covers/GameCoverFallback";
 import {memo, useEffect, useRef, useState} from "react";
 import {decode} from "blurhash";
 
 // Cache to track which images have been loaded across component remounts
 const loadedImagesCache = new Set<number>();
+const radiusClasses: Record<NonNullable<GameCoverProps["radius"]>, string> = {
+    none: "rounded-none",
+    sm: "rounded-sm",
+    md: "rounded-md",
+    lg: "rounded-lg",
+};
 
 interface GameCoverProps {
     game: GameDto;
@@ -20,6 +25,7 @@ const GameCoverComponent = ({game, size = 300, radius = "sm", interactive = fals
     // Check cache to see if this image has already been loaded
     const isCached = game.cover ? loadedImagesCache.has(game.cover.id) : false;
     const [isImageLoaded, setIsImageLoaded] = useState(isCached);
+    const [hasImageError, setHasImageError] = useState(false);
     const [blurhashUrl, setBlurhashUrl] = useState<string | undefined>(undefined);
     const containerRef = useRef<HTMLDivElement>(null);
     const prevCoverIdRef = useRef<number | undefined>(game.cover?.id);
@@ -31,6 +37,7 @@ const GameCoverComponent = ({game, size = 300, radius = "sm", interactive = fals
             prevCoverIdRef.current = currentCoverId;
             const newIsCached = currentCoverId ? loadedImagesCache.has(currentCoverId) : false;
             setIsImageLoaded(newIsCached);
+            setHasImageError(false);
             setBlurhashUrl(undefined);
             setShouldLoad(!lazy);
         }
@@ -98,24 +105,31 @@ const GameCoverComponent = ({game, size = 300, radius = "sm", interactive = fals
             setIsImageLoaded(true);
         };
         img.onerror = () => {
-            // If image fails to load, we'll just show the fallback
-            setIsImageLoaded(true);
+            setHasImageError(true);
         };
     }, [shouldLoad, game.cover, isImageLoaded]);
 
-    const coverContent = game.cover ? (
+    const imageSrc = (shouldLoad || isCached) && isImageLoaded ? `images/cover/${game.cover?.id}` : blurhashUrl;
+
+    const coverContent = game.cover && !hasImageError ? (
         <div
             ref={containerRef}
             className={`${interactive ? "rounded-md scale-95 hover:scale-100 shine transition-all" : ""}`}
         >
-            <Image
-                alt={game.title}
-                className="z-0 object-cover aspect-12/17"
-                src={(shouldLoad || isCached) && isImageLoaded ? `images/cover/${game.cover.id}` : blurhashUrl}
-                radius={radius}
-                height={size}
-                fallbackSrc={<GameCoverFallback title={game.title} size={size} radius={radius}/>}
-            />
+            {imageSrc ? (
+                <img
+                    alt={game.title}
+                    className={`z-0 object-cover aspect-12/17 ${radiusClasses[radius]}`}
+                    src={imageSrc}
+                    style={{height: size}}
+                    loading={lazy ? "lazy" : "eager"}
+                />
+            ) : (
+                <div
+                    className={`bg-default animate-pulse aspect-12/17 ${radiusClasses[radius]}`}
+                    style={{height: size}}
+                />
+            )}
         </div>
     ) : (
         <GameCoverFallback title={game.title} size={size} radius={radius} hover={interactive}/>

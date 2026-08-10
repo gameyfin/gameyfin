@@ -10,24 +10,26 @@ interface InfoPopupProps {
 
 export default function InfoPopup({content}: InfoPopupProps) {
     return (
-        <Tooltip placement="right" content={
-            <Markdown
-                remarkPlugins={[remarkBreaks]}
-                components={{
-                    a(props) {
-                        return <Link isExternal
-                                     showAnchorIcon
-                                     color="foreground"
-                                     underline="always"
-                                     href={props.href}
-                                     size="sm">
-                            {props.children}
-                        </Link>
-                    }
-                }}
-            >{content}</Markdown>
-        }>
-            <InfoIcon size={16} weight="fill" className="ml-1 z-50"/>
+        <Tooltip delay={0}>
+            <Tooltip.Trigger>
+                <InfoIcon size={16} weight="fill" className="ml-1 z-50"/>
+            </Tooltip.Trigger>
+            <Tooltip.Content placement="right">
+                <Markdown
+                    remarkPlugins={[remarkBreaks]}
+                    components={{
+                        a(props) {
+                            return <Link href={props.href}
+                                         target="_blank"
+                                         rel="noopener noreferrer"
+                                         className="text-foreground underline text-sm">
+                                {props.children}
+                                <Link.Icon/>
+                            </Link>
+                        }
+                    }}
+                >{content}</Markdown>
+            </Tooltip.Content>
         </Tooltip>
     )
 }

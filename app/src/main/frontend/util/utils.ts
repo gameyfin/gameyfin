@@ -343,3 +343,23 @@ export function hslToHex(hslString: string): string {
 
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
+
+/**
+ * Convert any valid CSS color string (oklch, hsl, rgb, hex, named color, ...) to a hex RGB string.
+ * Uses the browser's own color resolution via a canvas context.
+ * @param cssColor Any valid CSS color value (e.g., "oklch(0.62 0.19 253.83)")
+ * @returns Hex RGB string in the format "#RRGGBB" (e.g., "#ff0080"), or "#000000" if the color is invalid
+ */
+export function cssColorToHex(cssColor: string): string {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "#000000";
+
+    ctx.fillStyle = cssColor.trim();
+    ctx.fillRect(0, 0, 1, 1);
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+
+    const toHex = (x: number) => x.toString(16).padStart(2, "0");
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}

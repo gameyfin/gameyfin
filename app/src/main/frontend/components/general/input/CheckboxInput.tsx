@@ -1,9 +1,9 @@
 import {useField} from "formik";
-import {Checkbox, CheckboxGroup, CheckboxProps} from "@heroui/react";
+import {Checkbox, CheckboxGroup, CheckboxProps, FieldError} from "@heroui/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
-interface CheckboxInputProps extends Omit<CheckboxProps, "name"> {
+interface CheckboxInputProps extends Omit<CheckboxProps, "name" | "children"> {
     label: string;
     name: string;
     description?: string;
@@ -17,22 +17,31 @@ export default function CheckboxInput({label, description, resetValue, className
         <CheckboxGroup
             className={`flex flex-row flex-1 gap-2 ${className ?? ""}`}
             isInvalid={!!meta.error}
-            errorMessage={meta.initialError || meta.error}
             value={field.value ? [field.name] : []}
         >
             <span className="flex items-center gap-1">
                 <Checkbox
-                    {...field}
                     {...props}
-                    className="items-center"
+                    isSelected={!!field.value}
+                    onChange={(checked) => field.onChange({target: {name: field.name, checked, type: "checkbox"}})}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    id={field.name}
                     value={field.name}
+                    className="items-center"
                 >
-                    {label}
+                    <Checkbox.Content>
+                        <Checkbox.Control>
+                            <Checkbox.Indicator/>
+                        </Checkbox.Control>
+                        {label}
+                    </Checkbox.Content>
                 </Checkbox>
                 {description && <InfoPopup content={description}/>}
                 {resetValue !== undefined &&
                     <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
             </span>
+            <FieldError>{meta.initialError || meta.error}</FieldError>
         </CheckboxGroup>
     );
 }

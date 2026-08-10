@@ -75,13 +75,13 @@ const Wizard = ({children, initialValues, onSubmit}: WizardProps) => {
                     <div className="left-8 right-8 absolute bottom-8">
                         <div className="flex justify-between">
                             <Button
-                                color="primary"
+                                variant="primary"
                                 onPress={() => previous(formik.values)}
                                 isDisabled={isFirstStep || formik.isSubmitting}
                             >
                                 <ArrowLeftIcon/>
                             </Button>
-                            <Button color="primary" isLoading={formik.isSubmitting} type="submit">
+                            <Button variant="primary" isPending={formik.isSubmitting} type="submit">
                                 {formik.isSubmitting ? "" : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
                             </Button>
                         </div>

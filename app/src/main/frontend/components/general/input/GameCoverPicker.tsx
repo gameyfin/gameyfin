@@ -1,4 +1,4 @@
-import {Image, useDisclosure} from "@heroui/react";
+import {useOverlayState} from "@heroui/react";
 import React from "react";
 import {useField} from "formik";
 import {GameCoverPickerModal} from "Frontend/components/general/modals/GameCoverPickerModal";
@@ -15,20 +15,17 @@ export default function GameCoverPicker({game, showErrorUntouched = false, ...pr
 
     const [field] = useField(props.name);
 
-    const gameCoverPickerModal = useDisclosure();
+    const gameCoverPickerModal = useOverlayState();
 
     return (<>
         <div className="relative group aspect-12/17 cursor-pointer bg-background/50"
-             onClick={gameCoverPickerModal.onOpenChange}>
+             onClick={gameCoverPickerModal.toggle}>
             {field.value || game.cover?.id ?
                 <div className="size-full overflow-hidden">
-                    <Image
+                    <img
                         alt={game.title}
-                        className="z-0 object-cover group-hover:brightness-25"
+                        className="z-0 size-full object-cover rounded-none group-hover:brightness-25"
                         src={field.value ? field.value : `images/cover/${game.cover?.id}`}
-                        {...props}
-                        {...field}
-                        radius="none"
                     />
                 </div> :
                 <div
@@ -47,7 +44,7 @@ export default function GameCoverPicker({game, showErrorUntouched = false, ...pr
         <GameCoverPickerModal
             game={game}
             isOpen={gameCoverPickerModal.isOpen}
-            onOpenChange={gameCoverPickerModal.onOpenChange}
+            onOpenChange={gameCoverPickerModal.setOpen}
             setCoverUrl={(coverUrl) => field.onChange({target: {name: field.name, value: coverUrl}})}
         />
     </>);

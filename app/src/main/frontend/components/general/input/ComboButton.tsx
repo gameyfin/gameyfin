@@ -1,13 +1,5 @@
 import {useEffect, useState} from "react";
-import {
-    Button,
-    ButtonGroup,
-    Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownTrigger,
-    SharedSelection
-} from "@heroui/react";
+import {Button, ButtonGroup, Description, Dropdown, Key, Label} from "@heroui/react";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 
@@ -41,45 +33,49 @@ export default function ComboButton({options, preferredOptionKey, description}: 
         })
     }, []);
 
-    async function onSelectionChange(keys: SharedSelection) {
-        if (!keys.currentKey) return;
+    async function onSelectionChange(keys: Set<Key> | "all") {
+        if (keys === "all") return;
+        const currentKey = Array.from(keys)[0];
+        if (!currentKey) return;
 
         if (preferredOptionKey) {
-            await userPreferenceService.set(preferredOptionKey, keys.currentKey);
+            await userPreferenceService.set(preferredOptionKey, currentKey as string);
         }
 
-        setSelectedOption(new Set([keys.currentKey]));
+        setSelectedOption(new Set([currentKey as string]));
     }
 
     return options[selectedOptionValue] && (
         <ButtonGroup className="gap-px">
-            <Button color="primary" className="w-52"
+            <Button variant="primary" className="w-52"
                     onPress={options[selectedOptionValue].action}>
                 <div className="flex flex-col items-center">
                     <p className="font-semibold">{options[selectedOptionValue].label}</p>
                     <p className="text-xs font-normal opacity-70 ">{description}</p>
                 </div>
             </Button>
-            <Dropdown placement="bottom-end">
-                <DropdownTrigger>
-                    <Button isIconOnly color="primary">
-                        <CaretDownIcon/>
-                    </Button>
-                </DropdownTrigger>
-                <DropdownMenu
-                    disallowEmptySelection
-                    aria-label="Merge options"
-                    selectedKeys={selectedOption}
-                    selectionMode="single"
-                    onSelectionChange={onSelectionChange}
-                    className="w-60"
-                >
-                    {Object.entries(options).map(([key, option]) => (
-                        <DropdownItem key={key} description={option.description}>
-                            {option.label}
-                        </DropdownItem>
-                    ))}
-                </DropdownMenu>
+            <Dropdown>
+                <Button isIconOnly variant="primary">
+                    <CaretDownIcon/>
+                </Button>
+                <Dropdown.Popover placement="bottom end">
+                    <Dropdown.Menu
+                        disallowEmptySelection
+                        aria-label="Merge options"
+                        selectedKeys={selectedOption}
+                        selectionMode="single"
+                        onSelectionChange={onSelectionChange}
+                        className="w-60"
+                    >
+                        {Object.entries(options).map(([key, option]) => (
+                            <Dropdown.Item key={key} id={key} textValue={option.label}>
+                                <Label>{option.label}</Label>
+                                <Description>{option.description}</Description>
+                                <Dropdown.ItemIndicator/>
+                            </Dropdown.Item>
+                        ))}
+                    </Dropdown.Menu>
+                </Dropdown.Popover>
             </Dropdown>
         </ButtonGroup>
     );

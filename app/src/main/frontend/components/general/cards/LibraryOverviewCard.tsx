@@ -52,24 +52,39 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                 <p className="mt-6 absolute text-2xl text-center font-bold">{library.name}</p>
 
                 <div className="absolute right-0 top-0 flex flex-row">
-                    <Tooltip content="Scan library (quick)" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light"
-                                isDisabled={!hasActiveMetadataPlugins}
-                                onPress={() => triggerScan(ScanType.QUICK)}>
-                            <MagnifyingGlassIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary"
+                                    isDisabled={!hasActiveMetadataPlugins}
+                                    onPress={() => triggerScan(ScanType.QUICK)}>
+                                <MagnifyingGlassIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Scan library (quick)
+                        </Tooltip.Content>
                     </Tooltip>
-                    <Tooltip content="Scan library (full)" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light"
-                                isDisabled={!hasActiveMetadataPlugins}
-                                onPress={() => triggerScan(ScanType.FULL)}>
-                            <MagnifyingGlassPlusIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary"
+                                    isDisabled={!hasActiveMetadataPlugins}
+                                    onPress={() => triggerScan(ScanType.FULL)}>
+                                <MagnifyingGlassPlusIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Scan library (full)
+                        </Tooltip.Content>
                     </Tooltip>
-                    <Tooltip content="Configuration" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light" onPress={() => navigate('library/' + library.id)}>
-                            <SlidersHorizontalIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary" onPress={() => navigate('library/' + library.id)}>
+                                <SlidersHorizontalIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Configuration
+                        </Tooltip.Content>
                     </Tooltip>
                 </div>
             </div>

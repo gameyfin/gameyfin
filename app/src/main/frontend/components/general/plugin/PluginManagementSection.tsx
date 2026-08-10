@@ -1,4 +1,4 @@
-import {Button, Tooltip, useDisclosure} from "@heroui/react";
+import {Button, Tooltip, useOverlayState} from "@heroui/react";
 import {ListNumbersIcon} from "@phosphor-icons/react";
 import {PluginManagementCard} from "Frontend/components/general/cards/PluginManagementCard";
 import React from "react";
@@ -14,20 +14,23 @@ interface PluginManagementSectionProps {
 export function PluginManagementSection({type}: PluginManagementSectionProps) {
     const plugins = useSnapshot(pluginState).sortedByType[type];
 
-    const pluginPrioritiesModal = useDisclosure();
+    const pluginPrioritiesModal = useOverlayState();
 
     return (
         <div className="flex flex-col gap-2">
             <div className="flex flex-row grow justify-between">
                 <h2 className="text-xl font-bold">{camelCaseToTitle(type)}</h2>
 
-                <Tooltip color="foreground" placement="left" content="Change plugin order">
-                    <Button isIconOnly
-                            variant="flat"
-                            onPress={pluginPrioritiesModal.onOpen}
-                            isDisabled={plugins.length === 0}>
-                        <ListNumbersIcon/>
-                    </Button>
+                <Tooltip>
+                    <Tooltip.Trigger>
+                        <Button isIconOnly
+                                variant="tertiary"
+                                onPress={pluginPrioritiesModal.open}
+                                isDisabled={plugins.length === 0}>
+                            <ListNumbersIcon/>
+                        </Button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content placement="left">Change plugin order</Tooltip.Content>
                 </Tooltip>
             </div>
 
@@ -43,7 +46,7 @@ export function PluginManagementSection({type}: PluginManagementSectionProps) {
 
             <PluginPrioritiesModal
                 isOpen={pluginPrioritiesModal.isOpen}
-                onOpenChange={pluginPrioritiesModal.onOpenChange}
+                onOpenChange={pluginPrioritiesModal.setOpen}
                 type={type}
             />
         </div>);

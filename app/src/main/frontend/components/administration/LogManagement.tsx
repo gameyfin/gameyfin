@@ -3,8 +3,8 @@ import {LogEndpoint} from "Frontend/generated/endpoints";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
-import {addToast, Button, Code, Divider, Tooltip} from "@heroui/react";
-import { ArrowUDownLeftIcon, SortAscendingIcon } from "@phosphor-icons/react";
+import {toast, Button, Separator, Tooltip} from "@heroui/react";
+import {ArrowUDownLeftIcon, SortAscendingIcon} from "@phosphor-icons/react";
 
 function LogManagementLayout({getConfig, formik}: any) {
     const [logEntries, setLogEntries] = useState<string[]>([]);
@@ -23,10 +23,8 @@ function LogManagementLayout({getConfig, formik}: any) {
     useEffect(() => {
         if (formik.isSubmitting == false && formik.submitCount > 0) {
             LogEndpoint.reloadLogConfig()
-                .catch(() => addToast({
-                    title: "Error",
-                    description: "Failed to apply log configuration",
-                    color: "danger"
+                .catch(() => toast.danger("Error", {
+                    description: "Failed to apply log configuration"
                 }));
         }
     }, [formik.isSubmitting]);
@@ -54,31 +52,43 @@ function LogManagementLayout({getConfig, formik}: any) {
                 <div className="flex flex-row grow justify-between items-baseline">
                     <h2 className={"text-xl font-bold mt-8 mb-1"}>Application logs</h2>
                     <div className="flex flex-row gap-1">
-                        <Tooltip content="Soft-wrap" placement="bottom">
-                            <Button isIconOnly
-                                    onPress={() => setSoftWrap(!softWrap)}
-                                    variant={softWrap ? "solid" : "ghost"}
-                            >
-                                <ArrowUDownLeftIcon/>
-                            </Button>
+                        <Tooltip delay={0}>
+                            <Tooltip.Trigger>
+                                <Button isIconOnly
+                                        onPress={() => setSoftWrap(!softWrap)}
+                                        variant={softWrap ? "primary" : "ghost"}
+                                >
+                                    <ArrowUDownLeftIcon/>
+                                </Button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content placement="bottom">
+                                <p>Soft-wrap</p>
+                            </Tooltip.Content>
                         </Tooltip>
-                        <Tooltip content="Auto-scroll" placement="bottom">
-                            <Button isIconOnly
-                                    onPress={() => setAutoScroll(!autoScroll)}
-                                    variant={autoScroll ? "solid" : "ghost"}
-                            >
-                                <SortAscendingIcon/>
-                            </Button>
+                        <Tooltip delay={0}>
+                            <Tooltip.Trigger>
+                                <Button isIconOnly
+                                        onPress={() => setAutoScroll(!autoScroll)}
+                                        variant={autoScroll ? "primary" : "ghost"}
+                                >
+                                    <SortAscendingIcon/>
+                                </Button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content placement="bottom">
+                                <p>Auto-scroll</p>
+                            </Tooltip.Content>
                         </Tooltip>
                     </div>
                 </div>
-                <Divider className="mb-4"/>
+                <Separator className="mb-4"/>
             </div>
-            <Code size="sm" radius="none"
-                  className={`flex flex-col h-[50vh] max-h-[50vh] text-sm overflow-auto ${softWrap ? "whitespace-normal break-words" : "whitespace-nowrap"}`}>
-                {logEntries.map((entry, index) => <p key={index}>{entry}</p>)}
-                <div ref={logEndRef}/>
-            </Code>
+            <div
+                className="flex h-[50vh] max-h-[50vh] flex-col overflow-auto rounded-none bg-default/40 px-2 py-1 text-sm text-default-foreground">
+                <code className={`font-mono font-normal ${softWrap ? "whitespace-pre-wrap break-words" : "whitespace-pre"}`}>
+                    {logEntries.join("\n")}
+                </code>
+                <span ref={logEndRef}/>
+            </div>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {addToast, Button, Chip, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {Button, Chip, Modal, toast} from "@heroui/react";
 import {ListBox, ListBoxItem, useDragAndDrop} from "react-aria-components";
 import {CaretUpDownIcon} from "@phosphor-icons/react";
 import {useListData} from "@react-stately/data";
@@ -15,7 +15,7 @@ interface PrioritiesModalProps<T extends PrioritizableItem> {
     items: T[];
     updateItems: (items: T[]) => Promise<void>;
     isOpen: boolean;
-    onOpenChange: () => void;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
 export default function PrioritiesModal<T extends PrioritizableItem>({
@@ -65,63 +65,65 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
             // The parent component will handle the actual transformation
             await updateItems(sortedItems.items);
 
-            addToast({
-                title: "Order updated",
+            toast("Order updated", {
                 description: "Item order has been updated successfully.",
-                color: "success"
+                variant: "success"
             });
             onClose();
         } catch (e) {
-            addToast({
-                title: "Error",
+            toast("Error", {
                 description: "An error occurred while updating item order.",
-                color: "warning"
+                variant: "warning"
             });
         }
     }
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" size="lg">
-            <ModalContent>
-                {(onClose) => (
-                    <>
-                        <ModalHeader className="flex flex-col gap-1">
-                            <p>{title}</p>
-                            <p className="text-small font-normal">{subtitle}</p>
-                        </ModalHeader>
-                        <ModalBody>
-                            <ListBox items={sortedItems.items}
-                                     dragAndDropHooks={dragAndDropHooks}
-                                     className="flex flex-col gap-2"
-                                     key={orderVersion}>
-                                {(item: T) => (
-                                    <ListBoxItem
-                                        key={item.id}
-                                        className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5">
-                                        <div className="flex flex-row gap-2 items-center">
-                                            <Chip size="sm" color="primary">
-                                                {sortedItems.items.findIndex(p => p.id === item.id) + 1}
-                                            </Chip>
-                                            <p className="font-normal text-small">{item.name}</p>
-                                        </div>
-                                        <CaretUpDownIcon/>
-                                    </ListBoxItem>
-                                )}
-                            </ListBox>
+        <Modal>
+            <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque">
+                <Modal.Container size="lg">
+                    <Modal.Dialog>
+                        {({close}) => (
+                            <>
+                                <Modal.CloseTrigger/>
+                                <Modal.Header className="flex flex-col gap-1">
+                                    <Modal.Heading>{title}</Modal.Heading>
+                                    <p className="text-small font-normal">{subtitle}</p>
+                                </Modal.Header>
+                                <Modal.Body>
+                                    <ListBox items={sortedItems.items}
+                                             dragAndDropHooks={dragAndDropHooks}
+                                             className="flex flex-col gap-2"
+                                             key={orderVersion}>
+                                        {(item: T) => (
+                                            <ListBoxItem
+                                                key={item.id}
+                                                className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5">
+                                                <div className="flex flex-row gap-2 items-center">
+                                                    <Chip size="sm" variant="soft" color="accent">
+                                                        {sortedItems.items.findIndex(p => p.id === item.id) + 1}
+                                                    </Chip>
+                                                    <p className="font-normal text-small">{item.name}</p>
+                                                </div>
+                                                <CaretUpDownIcon/>
+                                            </ListBoxItem>
+                                        )}
+                                    </ListBox>
 
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button variant="light" onPress={onClose}>
-                                Cancel
-                            </Button>
-                            <Button color="primary" onPress={() => updateItemOrder(onClose)}>
-                                Save
-                            </Button>
-                        </ModalFooter>
-                    </>
-                )}
-            </ModalContent>
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button variant="tertiary" onPress={close}>
+                                        Cancel
+                                    </Button>
+                                    <Button variant="primary" onPress={() => updateItemOrder(close)}>
+                                        Save
+                                    </Button>
+                                </Modal.Footer>
+                            </>
+                        )}
+                    </Modal.Dialog>
+                </Modal.Container>
+            </Modal.Backdrop>
         </Modal>
     );
 }
-

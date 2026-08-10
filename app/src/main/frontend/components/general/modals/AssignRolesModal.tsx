@@ -1,15 +1,9 @@
 import React, {useEffect, useState} from "react";
 import {
     Button,
+    ListBox,
     Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
     Select,
-    SelectedItems,
-    Selection,
-    SelectItem
 } from "@heroui/react";
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import RoleChip from "Frontend/components/general/RoleChip";
@@ -18,7 +12,7 @@ import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/E
 
 interface AssignRolesModalProps {
     isOpen: boolean;
-    onOpenChange: () => void;
+    onOpenChange: (isOpen: boolean) => void;
     user: ExtendedUserInfoDto;
 }
 
@@ -28,25 +22,24 @@ interface Role {
 
 export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRolesModalProps) {
     const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
-    const [selectedRole, setSelectedRole] = useState<Selection>();
+    const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
     const [error, setError] = useState<string>();
 
     useEffect(() => {
-        setSelectedRole(rolesToSelection(user.roles));
+        setSelectedRoles(rolesToSelection(user.roles));
         UserEndpoint.getRolesBelow().then((availableRoles) => {
             setAvailableRoles(availableRoles.map((role) => ({id: role.toString()})));
         });
     }, []);
 
-    function rolesToSelection(roles: Array<string>): Selection {
-        return new Set(roles.map((role) => role.toString()));
+    function rolesToSelection(roles: Array<string>): string[] {
+        return roles.map((role) => role.toString());
     }
 
     async function assignRoles() {
-        if (!selectedRole) return;
+        if (selectedRoles.length === 0) return;
 
-        let selectedRolesArray = Array.from(selectedRole).map((role) => role.toString());
-        let result = await UserEndpoint.assignRoles(user.username, selectedRolesArray);
+        let result = await UserEndpoint.assignRoles(user.username, selectedRoles);
         switch (result) {
             case RoleAssignmentResult.SUCCESS:
                 window.location.reload();
@@ -67,51 +60,59 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
     }
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="opaque" isDismissable={false}
-               hideCloseButton={true} size="lg">
-            <ModalContent>
-                {(onClose) => (
-                    <>
-                        <ModalHeader className="flex flex-col gap-1">Assign roles to {user.username}</ModalHeader>
-                        <ModalBody className="flex flex-col gap-2">
-                            <Select
-                                items={availableRoles}
-                                selectionMode="single"
-                                disallowEmptySelection={true}
-                                selectedKeys={selectedRole}
-                                onSelectionChange={setSelectedRole}
-                                placeholder="Select roles"
-                                renderValue={(items: SelectedItems<Role>) => {
-                                    return (
-                                        <div className="flex grow flex-wrap gap-2">
-                                            {items.map((item) => (
-                                                <RoleChip key={item.key} role={item.textValue as string}/>
-                                            ))}
-                                        </div>
-                                    );
-                                }}
-                            >
-                                {(role) => (
-                                    <SelectItem key={role.id} textValue={role.id}>
-                                        <RoleChip key={role.id} role={role.id}/>
-                                    </SelectItem>
-                                )}
-                            </Select>
-                            {error &&
-                                <small className="text-danger">{error}</small>
-                            }
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button variant="light" onPress={onClose}>
-                                Cancel
-                            </Button>
-                            <Button color="primary" onPress={assignRoles} isDisabled={!selectedRole}>
-                                Assign roles
-                            </Button>
-                        </ModalFooter>
-                    </>
-                )}
-            </ModalContent>
+        <Modal>
+            <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque" isDismissable={false}>
+                <Modal.Container size="lg">
+                    <Modal.Dialog>
+                        {({close}) => (
+                            <>
+                                <Modal.Header className="flex flex-col gap-1">
+                                    <Modal.Heading>Assign roles to {user.username}</Modal.Heading>
+                                </Modal.Header>
+                                <Modal.Body className="flex flex-col gap-2">
+                                    <Select
+                                        selectionMode="multiple"
+                                        value={selectedRoles}
+                                        onChange={(value) => setSelectedRoles((value as string[]) ?? [])}
+                                        placeholder="Select roles"
+                                    >
+                                        <Select.Trigger>
+                                            <Select.Value/>
+                                            <Select.Indicator/>
+                                        </Select.Trigger>
+                                        <Select.Popover>
+                                            <ListBox>
+                                                {availableRoles.map((role) => (
+                                                    <ListBox.Item key={role.id} id={role.id} textValue={role.id}>
+                                                        <RoleChip role={role.id}/>
+                                                        <ListBox.ItemIndicator/>
+                                                    </ListBox.Item>
+                                                ))}
+                                            </ListBox>
+                                        </Select.Popover>
+                                    </Select>
+                                    <div className="flex grow flex-wrap gap-2">
+                                        {selectedRoles.map((role) => (
+                                            <RoleChip key={role} role={role}/>
+                                        ))}
+                                    </div>
+                                    {error &&
+                                        <small className="text-danger">{error}</small>
+                                    }
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button variant="tertiary" onPress={close}>
+                                        Cancel
+                                    </Button>
+                                    <Button variant="primary" onPress={assignRoles} isDisabled={selectedRoles.length === 0}>
+                                        Assign roles
+                                    </Button>
+                                </Modal.Footer>
+                            </>
+                        )}
+                    </Modal.Dialog>
+                </Modal.Container>
+            </Modal.Backdrop>
         </Modal>
     );
 }

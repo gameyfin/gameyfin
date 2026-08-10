@@ -1,12 +1,17 @@
 import {useField} from "formik";
-import {Input as HeroUiInput, InputProps} from "@heroui/react";
+import {Description, FieldError, Input as HeroUiInput, Label, TextField, TextFieldProps} from "@heroui/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
-interface CustomInputProps extends Omit<InputProps, "name"> {
+interface CustomInputProps extends Omit<TextFieldProps, "name" | "children"> {
     name: string;
+    label?: string;
     showErrorUntouched?: boolean;
     resetValue?: unknown;
+    description?: string;
+    type?: string;
+    autoComplete?: string;
+    placeholder?: string;
 }
 
 export default function Input({
@@ -15,29 +20,34 @@ export default function Input({
                                   description,
                                   className,
                                   resetValue,
+                                  type,
+                                  autoComplete,
+                                  placeholder,
                                   ...props
                               }: CustomInputProps) {
     const [field, meta] = useField(props.name);
 
     return (
-        <HeroUiInput
+        <TextField
             fullWidth={false}
             {...props}
             {...field}
             className={`min-h-20 grow ${className ?? ""}`}
-            id={label as string}
-            label={label}
-            endContent={
-                (description || resetValue !== undefined) ? (
+            isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
+        >
+            {label && <Label>{label}</Label>}
+            <div className="flex items-center gap-1">
+                <HeroUiInput className="grow" type={type} autoComplete={autoComplete} placeholder={placeholder}/>
+                {(description || resetValue !== undefined) && (
                     <span className="flex items-center gap-1">
                         {description && <InfoPopup content={description as string}/>}
                         {resetValue !== undefined &&
                             <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
                     </span>
-                ) : undefined
-            }
-            isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
-            errorMessage={meta.initialError || meta.error}
-        />
+                )}
+            </div>
+            {description && <Description className="sr-only">{description as string}</Description>}
+            <FieldError>{meta.initialError || meta.error}</FieldError>
+        </TextField>
     );
 }

@@ -2,21 +2,16 @@ import {
     Button,
     Chip,
     Input,
-    Pagination,
+    ListBox,
     Select,
-    SelectItem,
     SortDescriptor,
     Table,
-    TableBody,
-    TableCell,
-    TableColumn,
-    TableHeader,
-    TableRow,
     Tooltip,
-    useDisclosure
+    useOverlayState,
 } from "@heroui/react";
 import RequestGameModal from "Frontend/components/general/modals/RequestGameModal";
 import {ArrowUpIcon, CheckIcon, InfoIcon, PlusCircleIcon, TrashIcon, XIcon} from "@phosphor-icons/react";
+import SimplePagination from "Frontend/components/general/SimplePagination";
 import React, {useEffect, useMemo, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import {ConfigEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
@@ -31,7 +26,7 @@ export default function GameRequestView() {
     const rowsPerPage = 25;
 
     const auth = useAuth();
-    const requestGameModal = useDisclosure();
+    const requestGameModal = useOverlayState();
     const gameRequests = useSnapshot(gameRequestState).gameRequests;
 
     const [areGameRequestsEnabled, setAreGameRequestsEnabled] = useState(false);
@@ -43,13 +38,17 @@ export default function GameRequestView() {
     }, []);
 
     const [searchTerm, setSearchTerm] = useState("");
-    const [filters, setFilters] = useState<"all" | GameRequestStatus[]>([GameRequestStatus.PENDING, GameRequestStatus.APPROVED, GameRequestStatus.REJECTED]);
+    const [filters, setFilters] = useState<GameRequestStatus[]>([
+        GameRequestStatus.PENDING,
+        GameRequestStatus.APPROVED,
+        GameRequestStatus.REJECTED,
+    ]);
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "votes", direction: "descending"});
 
     const [page, setPage] = useState(1);
     const pages = useMemo(() => {
         return Math.ceil(getFilteredRequests().length / rowsPerPage);
-    }, [gameRequests, filters]);
+    }, [gameRequests, filters, searchTerm]);
 
     const filteredItems = useMemo(() => {
         return getFilteredRequests();
@@ -66,7 +65,6 @@ export default function GameRequestView() {
                 case "votes":
                     cmp = a.voters.length - b.voters.length;
                     if (cmp === 0) {
-                        // If votes are equal, sort by creation date (newest first)
                         cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
                     }
                     break;
@@ -75,7 +73,7 @@ export default function GameRequestView() {
                         [GameRequestStatus.PENDING]: 1,
                         [GameRequestStatus.APPROVED]: 2,
                         [GameRequestStatus.REJECTED]: 3,
-                        [GameRequestStatus.FULFILLED]: 4
+                        [GameRequestStatus.FULFILLED]: 4,
                     };
                     cmp = (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
                     break;
@@ -86,11 +84,11 @@ export default function GameRequestView() {
                     cmp = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
                     break;
                 default:
-                    return 0; // No sorting if the column is not recognized
+                    return 0;
             }
 
             if (sortDescriptor.direction === "descending") {
-                cmp *= -1; // Reverse the comparison if sorting in descending order
+                cmp *= -1;
             }
 
             return cmp;
@@ -144,17 +142,14 @@ export default function GameRequestView() {
     function statusToBadge(status: GameRequestStatus) {
         switch (status) {
             case GameRequestStatus.APPROVED:
-                return <Chip size="sm" radius="sm"
-                             className="text-xs bg-success text-success-foreground">Approved</Chip>;
+                return <Chip size="sm" className="text-xs bg-success text-success-foreground">Approved</Chip>;
             case GameRequestStatus.FULFILLED:
-                return <Chip size="sm" radius="sm"
-                             className="text-xs bg-success-100 text-success-foreground">Fulfilled</Chip>;
+                return <Chip size="sm" className="text-xs bg-success/20 text-success-foreground">Fulfilled</Chip>;
             case GameRequestStatus.REJECTED:
-                return <Chip size="sm" radius="sm"
-                             className="text-xs bg-danger-300 text-danger-foreground">Rejected</Chip>;
+                return <Chip size="sm" className="text-xs bg-danger/30 text-danger-foreground">Rejected</Chip>;
             case GameRequestStatus.PENDING:
             default:
-                return <Chip size="sm" radius="sm" className="text-xs">Pending</Chip>;
+                return <Chip size="sm" className="text-xs">Pending</Chip>;
         }
     }
 
@@ -165,148 +160,189 @@ export default function GameRequestView() {
                 {!areGameRequestsEnabled &&
                     <SmallInfoField icon={InfoIcon}
                                     message="Request submission is disabled"
-                                    className="text-default-500"/>
+                                    className="text-muted"/>
                 }
-                <Button className="w-fit"
-                        color="primary"
-                        startContent={<PlusCircleIcon weight="fill"/>}
-                        onPress={requestGameModal.onOpen}
-                        isDisabled={!areGameRequestsEnabled || (!auth.state.user && !areGuestsAllowedToRequestGames)}>
+                <Button
+                    className="w-fit"
+                    variant="primary"
+                    onPress={requestGameModal.open}
+                    isDisabled={!areGameRequestsEnabled || (!auth.state.user && !areGuestsAllowedToRequestGames)}
+                >
+                    <PlusCircleIcon weight="fill"/>
                     Request a Game
                 </Button>
             </div>
         </div>
 
-
         <div className="flex flex-row gap-2 justify-between mb-4">
-            <Input
-                className="w-96"
-                isClearable
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onClear={() => setSearchTerm("")}
-            />
+            <div className="flex w-96 items-center gap-2 rounded-lg border border-border px-3 py-2">
+                <Input
+                    className="grow"
+                    placeholder="Search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                    <button className="text-muted" onClick={() => setSearchTerm("")} type="button">
+                        ×
+                    </button>
+                )}
+            </div>
             <Select
-                selectedKeys={filters}
-                onSelectionChange={keys => setFilters(Array.from(keys) as any)}
+                value={filters}
+                onChange={(value) => setFilters(value as GameRequestStatus[])}
                 selectionMode="multiple"
                 className="w-64"
             >
-                <SelectItem key={GameRequestStatus.PENDING}>Pending</SelectItem>
-                <SelectItem key={GameRequestStatus.APPROVED}>Approved</SelectItem>
-                <SelectItem key={GameRequestStatus.REJECTED}>Rejected</SelectItem>
-                <SelectItem key={GameRequestStatus.FULFILLED}>Fulfilled</SelectItem>
+                <Select.Trigger>
+                    <Select.Value/>
+                    <Select.Indicator/>
+                </Select.Trigger>
+                <Select.Popover>
+                    <ListBox>
+                        <ListBox.Item id={GameRequestStatus.PENDING} key={GameRequestStatus.PENDING} textValue="Pending">
+                            Pending
+                            <ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                        <ListBox.Item id={GameRequestStatus.APPROVED} key={GameRequestStatus.APPROVED} textValue="Approved">
+                            Approved
+                            <ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                        <ListBox.Item id={GameRequestStatus.REJECTED} key={GameRequestStatus.REJECTED} textValue="Rejected">
+                            Rejected
+                            <ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                        <ListBox.Item id={GameRequestStatus.FULFILLED} key={GameRequestStatus.FULFILLED} textValue="Fulfilled">
+                            Fulfilled
+                            <ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                    </ListBox>
+                </Select.Popover>
             </Select>
         </div>
 
-        <Table removeWrapper isStriped
-               sortDescriptor={sortDescriptor}
-               onSortChange={setSortDescriptor}
-               bottomContent={
-                   <div className="flex w-full justify-center sticky">
-                       {pagedItems.length > 0 &&
-                           <Pagination
-                               isCompact
-                               showControls
-                               showShadow
-                               color="primary"
-                               page={page}
-                               total={pages}
-                               onChange={(page) => setPage(page)}
-                           />}
-                   </div>
-               }
-        >
-            <TableHeader>
-                <TableColumn key="title" allowsSorting>Title & Release</TableColumn>
-                <TableColumn key="platform">Platform</TableColumn>
-                <TableColumn>Submitted by</TableColumn>
-                <TableColumn key="createdAt" allowsSorting>Submitted</TableColumn>
-                <TableColumn key="updatedAt" allowsSorting>Updated</TableColumn>
-                <TableColumn key="status" allowsSorting>Status</TableColumn>
-                {/* width={1} keeps the column as far to the right as possible*/}
-                <TableColumn key="votes" allowsSorting width={1}>Votes</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="Your search did not match any requests." items={pagedItems}>
-                {(item) => (
-                    <TableRow key={item.id}>
-                        <TableCell>
-                            {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
-                        </TableCell>
-                        <TableCell>
-                            <Chip size="sm" radius="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
-                        </TableCell>
-                        <TableCell>
-                            <p className="text-default-500">
-                                {item.requester ?
-                                    item.requester.username :
-                                    "Guest"
-                                }
-                            </p>
-                        </TableCell>
-                        <TableCell>
-                            {new Date(item.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                            {new Date(item.updatedAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="min-w-24">
-                            {statusToBadge(item.status)}
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex flex-row gap-2">
-                                <Tooltip
-                                    content={auth.state.user ? (item.status === GameRequestStatus.FULFILLED ? "You cannot vote on closed requests" : "Vote for this request") : "You must be logged in to vote"}
-                                    placement="left">
-                                    <div>
-                                        <Button size="sm"
-                                                variant={hasUserVotedForRequest(item as GameRequestDto) ? "solid" : "bordered"}
-                                                color={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "default"}
-                                                isDisabled={!auth.state.user || item.status === GameRequestStatus.FULFILLED}
-                                                startContent={<ArrowUpIcon/>}
-                                                onPress={async () => await toggleVote(item.id)}>
-                                            {item.voters.length}
-                                        </Button>
+        <Table>
+            <Table.ScrollContainer>
+                <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
+                    <Table.Header>
+                        <Table.Column id="title" allowsSorting>Title & Release</Table.Column>
+                        <Table.Column id="platform">Platform</Table.Column>
+                        <Table.Column id="requester">Submitted by</Table.Column>
+                        <Table.Column id="createdAt" allowsSorting>Submitted</Table.Column>
+                        <Table.Column id="updatedAt" allowsSorting>Updated</Table.Column>
+                        <Table.Column id="status" allowsSorting>Status</Table.Column>
+                        <Table.Column id="votes" allowsSorting width={1}>Votes</Table.Column>
+                    </Table.Header>
+                    <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match any requests.</p>} items={pagedItems}>
+                        {(item) => (
+                            <Table.Row key={item.id}>
+                                <Table.Cell>
+                                    {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <Chip size="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <p className="text-muted">
+                                        {item.requester ?
+                                            item.requester.username :
+                                            "Guest"
+                                        }
+                                    </p>
+                                </Table.Cell>
+                                <Table.Cell>
+                                    {new Date(item.createdAt).toLocaleDateString()}
+                                </Table.Cell>
+                                <Table.Cell>
+                                    {new Date(item.updatedAt).toLocaleDateString()}
+                                </Table.Cell>
+                                <Table.Cell className="min-w-24">
+                                    {statusToBadge(item.status)}
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <div className="flex flex-row gap-2">
+                                        <Tooltip>
+                                            <Tooltip.Trigger>
+                                                <div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "outline"}
+                                                        isDisabled={!auth.state.user || item.status === GameRequestStatus.FULFILLED}
+                                                        onPress={async () => await toggleVote(item.id)}
+                                                    >
+                                                        <ArrowUpIcon/>
+                                                        {item.voters.length}
+                                                    </Button>
+                                                </div>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content placement="left">
+                                                {auth.state.user
+                                                    ? (item.status === GameRequestStatus.FULFILLED ? "You cannot vote on closed requests" : "Vote for this request")
+                                                    : "You must be logged in to vote"}
+                                            </Tooltip.Content>
+                                        </Tooltip>
+                                        {isAdmin(auth) && <div className="flex flex-row gap-2">
+                                            <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <div>
+                                                        <Button
+                                                            size="sm"
+                                                            isIconOnly
+                                                            variant={item.status === GameRequestStatus.APPROVED ? "primary" : "outline"}
+                                                            isDisabled={item.status === GameRequestStatus.FULFILLED}
+                                                            onPress={async () => await toggleApprove(item as GameRequestDto)}
+                                                        >
+                                                            <CheckIcon/>
+                                                        </Button>
+                                                    </div>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>Approve this request</Tooltip.Content>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <div>
+                                                        <Button
+                                                            size="sm"
+                                                            isIconOnly
+                                                            variant={item.status === GameRequestStatus.REJECTED ? "primary" : "outline"}
+                                                            isDisabled={item.status === GameRequestStatus.FULFILLED}
+                                                            onPress={async () => await toggleReject(item as GameRequestDto)}
+                                                        >
+                                                            <XIcon/>
+                                                        </Button>
+                                                    </div>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>Reject this request</Tooltip.Content>
+                                            </Tooltip>
+                                        </div>}
+                                        {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
+                                            <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <Button size="sm" isIconOnly variant="danger" onPress={async () => await deleteRequest(item.id)}>
+                                                        <TrashIcon/>
+                                                    </Button>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>Delete this request</Tooltip.Content>
+                                            </Tooltip>
+                                        }
                                     </div>
-                                </Tooltip>
-                                {isAdmin(auth) && <div className="flex flex-row gap-2">
-                                    <Tooltip content="Approve this request">
-                                        <Button size="sm" isIconOnly
-                                                variant={item.status === GameRequestStatus.APPROVED ? "solid" : "bordered"}
-                                                color={item.status === GameRequestStatus.APPROVED ? "primary" : "default"}
-                                                isDisabled={item.status === GameRequestStatus.FULFILLED}
-                                                onPress={async () => await toggleApprove(item as GameRequestDto)}>
-                                            <CheckIcon/>
-                                        </Button>
-                                    </Tooltip>
-                                    <Tooltip content="Reject this request">
-                                        <Button size="sm" isIconOnly
-                                                variant={item.status === GameRequestStatus.REJECTED ? "solid" : "bordered"}
-                                                color={item.status === GameRequestStatus.REJECTED ? "primary" : "default"}
-                                                isDisabled={item.status === GameRequestStatus.FULFILLED}
-                                                onPress={async () => await toggleReject(item as GameRequestDto)}>
-                                            <XIcon/>
-                                        </Button>
-                                    </Tooltip>
-                                </div>}
-                                {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
-                                    <Tooltip content="Delete this request">
-                                        <Button size="sm" isIconOnly
-                                                color="danger"
-                                                onPress={async () => await deleteRequest(item.id)}>
-                                            <TrashIcon/>
-                                        </Button>
-                                    </Tooltip>
-                                }
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                )}
-            </TableBody>
+                                </Table.Cell>
+                            </Table.Row>
+                        )}
+                    </Table.Body>
+                </Table.Content>
+            </Table.ScrollContainer>
         </Table>
+        {pagedItems.length > 0 &&
+            <div className="flex w-full justify-center sticky">
+                <SimplePagination
+                    page={page}
+                    total={pages}
+                    onChange={(page) => setPage(page)}
+                />
+            </div>}
 
         <RequestGameModal isOpen={requestGameModal.isOpen}
-                          onOpenChange={requestGameModal.onOpenChange}/>
-    </>)
+                          onOpenChange={requestGameModal.setOpen}/>
+    </>);
 }

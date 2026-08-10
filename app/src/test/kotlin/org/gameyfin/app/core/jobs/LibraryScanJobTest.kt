@@ -90,7 +90,7 @@ class LibraryScanJobTest {
 
         assertNotNull(result.startedAt)
         assertNotNull(result.finishedAt)
-        assert(result.finishedAt >= result.startedAt)
+        assert(result.finishedAt!! >= result.startedAt)
     }
 
     @Test
@@ -123,7 +123,7 @@ class LibraryScanJobTest {
 
         assertNotNull(result.startedAt)
         assertNotNull(result.finishedAt)
-        assert(result.finishedAt >= result.startedAt)
+        assert(result.finishedAt!! >= result.startedAt)
     }
 
     @Test

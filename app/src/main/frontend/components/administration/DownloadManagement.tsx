@@ -3,7 +3,7 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import * as Yup from "yup";
-import {Alert, Button, Divider, Tooltip} from "@heroui/react";
+import {Alert, Button, Separator, Tooltip} from "@heroui/react";
 import {FlaskIcon, SigmaIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {downloadSessionState} from "Frontend/state/DownloadSessionState";
@@ -22,25 +22,23 @@ function DownloadManagementLayout({getConfig, formik}: any) {
 
     return (
         <div className="flex flex-col">
-            <Alert
-                title="Experimental Feature"
-                description="Bandwidth limiting is an experimental feature and may not work as expected. Please report any issues you encounter."
-                variant="solid"
-                hideIconWrapper={true}
-                icon={<FlaskIcon size={24}/>}
-                endContent={
-                    <Button variant="flat"
-                            className="bg-default-400"
-                            onPress={() => window.open("https://github.com/gameyfin/gameyfin/issues", "_blank")}>
-                        Open Issues
-                    </Button>
-
-                }
-                classNames={{
-                    title: "font-bold",
-                    base: "mt-6"
-                }}
-            />
+            <Alert status="warning" className="mt-6">
+                <Alert.Indicator>
+                    <FlaskIcon size={24}/>
+                </Alert.Indicator>
+                <Alert.Content>
+                    <Alert.Title className="font-bold">Experimental Feature</Alert.Title>
+                    <Alert.Description>
+                        Bandwidth limiting is an experimental feature and may not work as expected. Please report
+                        any issues you encounter.
+                    </Alert.Description>
+                </Alert.Content>
+                <Button variant="tertiary"
+                        className="bg-default"
+                        onPress={() => window.open("https://github.com/gameyfin/gameyfin/issues", "_blank")}>
+                    Open Issues
+                </Button>
+            </Alert>
             <Section title="Bandwidth limiting"/>
             <div className="flex flex-col gap-4">
                 <div className="flex flex-row items-baseline gap-4">
@@ -51,16 +49,21 @@ function DownloadManagementLayout({getConfig, formik}: any) {
             </div>
             <div className="flex flex-row justify-between items-end">
                 <h2 className="text-xl font-bold mt-8 mb-1">Live View</h2>
-                <Tooltip content="Sum over the last 24 hours" placement="left">
-                    <div className="flex flex-row gap-1">
-                        <SigmaIcon size={26} weight="bold"/>
-                        <p className="font-semibold">{humanFileSize(lastDaySum)}</p>
-                    </div>
+                <Tooltip delay={0}>
+                    <Tooltip.Trigger>
+                        <div className="flex flex-row gap-1">
+                            <SigmaIcon size={26} weight="bold"/>
+                            <p className="font-semibold">{humanFileSize(lastDaySum)}</p>
+                        </div>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content placement="left">
+                        <p>Sum over the last 24 hours</p>
+                    </Tooltip.Content>
                 </Tooltip>
             </div>
-            <Divider className="mb-4"/>
+            <Separator className="mb-4"/>
             {sessions.length === 0 &&
-                <p className="text-center text-default-500">No active download sessions.</p>
+                <p className="text-center text-muted">No active download sessions.</p>
             }
             <div className="flex flex-col gap-2">
                 {sessions.map((session: SessionStatsDto) =>

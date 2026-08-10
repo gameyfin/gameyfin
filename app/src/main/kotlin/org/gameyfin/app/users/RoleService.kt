@@ -68,8 +68,8 @@ class RoleService(
         val mappedAuthorities = authorities.asSequence()
             .filterIsInstance<OidcUserAuthority>()
             .flatMap { oidcUserAuthority ->
-                val userInfo = oidcUserAuthority.userInfo
-                val rolesClaim = configService.get(ConfigProperties.SSO.OIDC.RolesClaim)
+                val userInfo = oidcUserAuthority.userInfo ?: return@flatMap emptySequence()
+                val rolesClaim = configService.get(ConfigProperties.SSO.OIDC.RolesClaim) ?: return@flatMap emptySequence()
                 val roles = userInfo.getClaim<List<String>>(rolesClaim) ?: return@flatMap emptySequence()
                 roles.asSequence().mapNotNull {
                     if (it.startsWith(SSO_ROLE_PREFIX)) SimpleGrantedAuthority(

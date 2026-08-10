@@ -51,10 +51,15 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
                 <p className="absolute text-2xl font-bold">{collection.name}</p>
 
                 <div className="absolute right-0 top-0 flex flex-row">
-                    <Tooltip content="Configuration" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light" onPress={() => navigate('collection/' + collection.id)}>
-                            <SlidersHorizontalIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary" onPress={() => navigate('collection/' + collection.id)}>
+                                <SlidersHorizontalIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Configuration
+                        </Tooltip.Content>
                     </Tooltip>
                 </div>
             </div>

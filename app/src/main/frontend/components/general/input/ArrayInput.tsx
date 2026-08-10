@@ -1,5 +1,5 @@
 import {FieldArray, useField} from "formik";
-import {Button, Chip, Input, Popover, PopoverContent, PopoverTrigger} from "@heroui/react";
+import {Button, Chip, CloseButton, FieldError, Input, Label, Popover, TextField} from "@heroui/react";
 import {KeyboardEvent, useState} from "react";
 import {PlusIcon} from "@phosphor-icons/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
@@ -49,33 +49,39 @@ export default function ArrayInput({label, description, resetValue, ...props}: A
 
                                 <div className="flex flex-row flex-wrap gap-2 items-center">
                                     {field.value.map((element: string, index: number) => (
-                                        <Chip key={index}
-                                              onClose={() => arrayHelpers.remove(index)}
-                                              isDisabled={props.isDisabled}
-                                        >
+                                        <Chip key={index} className={props.isDisabled ? "opacity-50" : ""}>
                                             {element}
+                                            {!props.isDisabled &&
+                                                <CloseButton
+                                                    aria-label="Remove"
+                                                    onPress={() => arrayHelpers.remove(index)}
+                                                />}
                                         </Chip>
                                     ))}
-                                    <Popover placement="bottom" showArrow={true}>
-                                        <PopoverTrigger>
-                                            <Button isIconOnly
-                                                    size="sm"
-                                                    variant="light"
-                                                    radius="full"
-                                                    isDisabled={props.isDisabled}
-                                            >
-                                                <PlusIcon/>
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent>
-                                            <Input
-                                                value={newElementValue}
-                                                onChange={(e) => setNewElementValue(e.target.value)}
-                                                onKeyDown={handleKeyDown}
-                                                placeholder="New element..."
-                                                variant="bordered"
-                                            />
-                                        </PopoverContent>
+                                    <Popover>
+                                        <Button isIconOnly
+                                                size="sm"
+                                                variant="tertiary"
+                                                className="rounded-full"
+                                                isDisabled={props.isDisabled}
+                                        >
+                                            <PlusIcon/>
+                                        </Button>
+                                        <Popover.Content placement="bottom">
+                                            <Popover.Dialog>
+                                                <Popover.Arrow/>
+                                                <TextField>
+                                                    <Label className="sr-only">New element</Label>
+                                                    <Input
+                                                        value={newElementValue}
+                                                        onChange={(e) => setNewElementValue(e.target.value)}
+                                                        onKeyDown={handleKeyDown}
+                                                        placeholder="New element..."
+                                                    />
+                                                    <FieldError/>
+                                                </TextField>
+                                            </Popover.Dialog>
+                                        </Popover.Content>
                                     </Popover>
                                 </div>
 

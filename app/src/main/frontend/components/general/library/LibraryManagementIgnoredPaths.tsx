@@ -1,16 +1,10 @@
 import {
     Button,
     Input,
-    Pagination,
     SortDescriptor,
     Table,
-    TableBody,
-    TableCell,
-    TableColumn,
-    TableHeader,
-    TableRow,
     Tooltip,
-    useDisclosure
+    useOverlayState
 } from "@heroui/react";
 import {MagnifyingGlassIcon, TrashIcon} from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
@@ -26,6 +20,7 @@ import {pluginState} from "Frontend/state/PluginState";
 import {userState} from "Frontend/state/UserState";
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
+import SimplePagination from "Frontend/components/general/SimplePagination";
 
 interface LibraryManagementIgnoredPathsProps {
     library: LibraryAdminDto;
@@ -35,7 +30,7 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
     const plugins = useSnapshot(pluginState).state;
     const users = useSnapshot(userState).state;
 
-    const matchGameModal = useDisclosure();
+    const matchGameModal = useOverlayState();
     const [page, setPage] = useState(1);
     const rowsPerPage = 25;
 
@@ -116,72 +111,69 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
         <h1 className="text-2xl font-bold">Manage ignored paths</h1>
         <Input
             className="w-96"
-            isClearable
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onClear={() => setSearchTerm("")}
         />
-        <Table removeWrapper isStriped isHeaderSticky
-               sortDescriptor={sortDescriptor}
-               onSortChange={setSortDescriptor}
-               bottomContent={
-                   <div className="flex w-full justify-center">
-                       {pagedPaths.length > 0 &&
-                           <Pagination
-                               isCompact
-                               showControls
-                               showShadow
-                               color="primary"
-                               page={page}
-                               total={pages}
-                               onChange={(page) => setPage(page)}
-                           />}
-                   </div>
-               }>
-            <TableHeader>
-                <TableColumn key="path" allowsSorting>Path</TableColumn>
-                <TableColumn key="source">Source</TableColumn>
-                <TableColumn width={1}>Actions</TableColumn>
-            </TableHeader>
-            <TableBody emptyContent="This library has no ignored paths." items={pagedPaths}>
-                {(item) => (
-                    <TableRow key={item.key}>
-                        <TableCell>
-                            {item.path.path}
-                        </TableCell>
-                        <TableCell>
-                            {renderSource(item.path)}
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex flex-row gap-2">
-                                <Tooltip content="Match game">
-                                    <Button isIconOnly size="sm" onPress={() => {
-                                        setSelectedPath(item.path);
-                                        matchGameModal.onOpenChange();
-                                    }}>
-                                        <MagnifyingGlassIcon/>
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Remove entry from list">
-                                    <Button isIconOnly size="sm" color="danger"
-                                            onPress={() => deleteIgnoredPath(item.path)}
-                                            isDisabled={item.path.sourceType !== IgnoredPathSourceTypeDto.USER}
-                                    >
-                                        <TrashIcon/>
-                                    </Button>
-                                </Tooltip>
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                )}
-            </TableBody>
+        <Table className="h-[35rem]">
+            <Table.ScrollContainer className="h-[35rem]">
+                <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
+                    <Table.Header>
+                        <Table.Column id="path" allowsSorting>Path</Table.Column>
+                        <Table.Column id="source">Source</Table.Column>
+                        <Table.Column id="actions">Actions</Table.Column>
+                    </Table.Header>
+                    <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">This library has no ignored paths.</p>} items={pagedPaths}>
+                        {(item) => (
+                            <Table.Row key={item.key}>
+                                <Table.Cell>
+                                    {item.path.path}
+                                </Table.Cell>
+                                <Table.Cell>
+                                    {renderSource(item.path)}
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <div className="flex flex-row gap-2">
+                                        <Tooltip>
+                                            <Tooltip.Trigger>
+                                                <Button isIconOnly size="sm" onPress={() => {
+                                                    setSelectedPath(item.path);
+                                                    matchGameModal.open();
+                                                }}>
+                                                    <MagnifyingGlassIcon/>
+                                                </Button>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content>Match game</Tooltip.Content>
+                                        </Tooltip>
+                                        <Tooltip>
+                                            <Tooltip.Trigger>
+                                                <Button isIconOnly size="sm" variant="danger"
+                                                        onPress={() => deleteIgnoredPath(item.path)}
+                                                        isDisabled={item.path.sourceType !== IgnoredPathSourceTypeDto.USER}
+                                                >
+                                                    <TrashIcon/>
+                                                </Button>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content>Remove entry from list</Tooltip.Content>
+                                        </Tooltip>
+                                    </div>
+                                </Table.Cell>
+                            </Table.Row>
+                        )}
+                    </Table.Body>
+                </Table.Content>
+            </Table.ScrollContainer>
         </Table>
+        {pagedPaths.length > 0 &&
+            <div className="flex w-full justify-center">
+                <SimplePagination page={page} total={pages} onChange={setPage}/>
+            </div>
+        }
         {selectedPath && <MatchGameModal path={selectedPath.path}
                                          libraryId={library.id}
                                          initialSearchTerm={fileNameFromPath(selectedPath.path, false)}
                                          isOpen={matchGameModal.isOpen}
-                                         onOpenChange={matchGameModal.onOpenChange}/>
+                                         onOpenChange={matchGameModal.setOpen}/>
         }
     </div>;
 }

@@ -1,12 +1,10 @@
 import {
     Button,
-    Divider,
     Link,
     Popover,
-    PopoverContent,
-    PopoverTrigger,
-    Progress,
+    ProgressBar,
     ScrollShadow,
+    Separator,
     Spinner
 } from "@heroui/react";
 import {useSnapshot} from "valtio/react";
@@ -76,42 +74,37 @@ export default function ScanProgressPopover() {
     }
 
     return (
-        <Popover placement="bottom-end" showArrow={true}>
-            <PopoverTrigger>
-                <Button isIconOnly variant="light">
-                    {scanInProgress ?
-                        <Spinner size="sm" color="default" variant="spinner"
-                                 classNames={{
-                                     spinnerBars: "bg-foreground-500",
-                                 }}/> :
-                        <TargetIcon className="fill-foreground-500"/>
-                    }
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent>
-                <div className="flex flex-col gap-2 m-2 min-w-md">
+        <Popover>
+            <Button isIconOnly variant="tertiary">
+                {scanInProgress ?
+                    <Spinner size="sm" color="current"/> :
+                    <TargetIcon className="fill-muted"/>
+                }
+            </Button>
+            <Popover.Content placement="bottom end">
+                <Popover.Dialog>
+                    <Popover.Arrow/>
+                    <div className="flex flex-col gap-2 m-2 min-w-md">
                     {scans.length === 0 ?
-                        <p className="flex h-12 items-center justify-center text-sm text-default-500">
+                        <p className="flex h-12 items-center justify-center text-sm text-muted">
                             No scans in progress or in history.
                         </p> :
                         <ScrollShadow hideScrollBar className="max-h-96">
                             {scans.map((scan, index) =>
                                 <div className="flex flex-col" key={scan.scanId}>
                                     <div
-                                        className="flex flex-row gap-4 justify-between items-center text-default-500 mb-1">
+                                        className="flex flex-row gap-4 justify-between items-center text-muted mb-1">
                                         <p>{toTitleCase(scan.type)} scan for library&nbsp;
-                                            <Link underline="always"
-                                                  color="foreground"
-                                                  size="sm"
+                                            <Link className="underline text-sm"
                                                   href={`/administration/games/library/${scan.libraryId}`}>
                                                 {libraries[scan.libraryId].name}
                                             </Link>
                                         </p>
                                         {scan.finishedAt ?
-                                            <p className="text-default-500">
+                                            <p className="text-muted">
                                                 Finished {timeUntil(scan.finishedAt)}
                                             </p> :
-                                            <p className="text-default-500">
+                                            <p className="text-muted">
                                                 Started {timeUntil(scan.startedAt)}
                                             </p>
                                         }
@@ -120,20 +113,28 @@ export default function ScanProgressPopover() {
                                         (scan.currentStep.current && scan.currentStep.total ?
                                                 <div className="flex flex-col gap-1">
                                                     <div className="flex flex-row justify-between">
-                                                        <p className="text-default-500">
+                                                        <p className="text-muted">
                                                             {`${scan.currentStep.description} (${scan.currentStep.current}/${scan.currentStep.total})`}
                                                         </p>
-                                                        <p className="text-default-500">
+                                                        <p className="text-muted">
                                                             {estimateTimeLeft(scan)}
                                                         </p>
                                                     </div>
-                                                    <Progress
+                                                    <ProgressBar
                                                         value={scan.currentStep.current / scan.currentStep.total * 100}
-                                                        size="sm"/>
+                                                        size="sm">
+                                                        <ProgressBar.Track>
+                                                            <ProgressBar.Fill/>
+                                                        </ProgressBar.Track>
+                                                    </ProgressBar>
                                                 </div> :
                                                 <div className="flex flex-col gap-1">
-                                                    <p className="text-default-500">{scan.currentStep.description}</p>
-                                                    <Progress isIndeterminate size="sm"/>
+                                                    <p className="text-muted">{scan.currentStep.description}</p>
+                                                    <ProgressBar isIndeterminate size="sm">
+                                                        <ProgressBar.Track>
+                                                            <ProgressBar.Fill/>
+                                                        </ProgressBar.Track>
+                                                    </ProgressBar>
                                                 </div>
                                         )
                                     }
@@ -151,13 +152,14 @@ export default function ScanProgressPopover() {
                                             Scan failed (check logs for details)
                                         </p>
                                     }
-                                    {scans.length > 1 && index < (scans.length - 1) && <Divider className="my-2"/>}
+                                    {scans.length > 1 && index < (scans.length - 1) && <Separator className="my-2"/>}
                                 </div>
                             )}
                         </ScrollShadow>
                     }
-                </div>
-            </PopoverContent>
+                    </div>
+                </Popover.Dialog>
+            </Popover.Content>
         </Popover>
     );
 }

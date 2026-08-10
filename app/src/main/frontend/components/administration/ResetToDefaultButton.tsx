@@ -27,21 +27,22 @@ export default function ResetToDefaultButton({fieldName, defaultValue}: ResetToD
     const isDefault = valuesEqual(currentValue, defaultValue);
 
     return (
-        <Tooltip placement="right" content={
-            <span>Reset to default: <pre className="inline">{formatDefaultValue(defaultValue)}</pre></span>
-        }>
-            <Button
-                isIconOnly
-                size="sm"
-                variant="light"
-                radius="full"
-                isDisabled={isDefault}
-                className="-ml-2 z-50"
-                onPress={() => setFieldValue(fieldName, defaultValue)}
-            >
-                <ArrowUUpLeftIcon size={16}/>
-            </Button>
+        <Tooltip delay={0}>
+            <Tooltip.Trigger>
+                <Button
+                    isIconOnly
+                    size="sm"
+                    variant="tertiary"
+                    isDisabled={isDefault}
+                    className="-ml-2 z-50 rounded-full"
+                    onPress={() => setFieldValue(fieldName, defaultValue)}
+                >
+                    <ArrowUUpLeftIcon size={16}/>
+                </Button>
+            </Tooltip.Trigger>
+            <Tooltip.Content placement="right">
+                <span>Reset to default: <pre className="inline">{formatDefaultValue(defaultValue)}</pre></span>
+            </Tooltip.Content>
         </Tooltip>
     );
 }
-

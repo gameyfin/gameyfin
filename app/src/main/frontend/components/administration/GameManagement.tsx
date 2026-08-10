@@ -6,7 +6,7 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import * as Yup from 'yup';
 import "Frontend/util/yup-extensions";
-import {Button, Divider, Tooltip, useDisclosure} from "@heroui/react";
+import {Button, Separator, Tooltip, useOverlayState} from "@heroui/react";
 import {ListNumbersIcon, MagnifyingGlassIcon, MagnifyingGlassPlusIcon, PlusIcon} from "@phosphor-icons/react";
 import {LibraryOverviewCard} from "Frontend/components/general/cards/LibraryOverviewCard";
 import LibraryCreationModal from "Frontend/components/general/modals/LibraryCreationModal";
@@ -21,12 +21,12 @@ import {pluginState} from "Frontend/state/PluginState";
 
 function GameManagementLayout({getConfig, formik}: any) {
     const libraries = useSnapshot(libraryState);
-    const libraryCreationModal = useDisclosure();
-    const libraryOrderModal = useDisclosure();
+    const libraryCreationModal = useOverlayState();
+    const libraryOrderModal = useOverlayState();
 
     const collections = useSnapshot(collectionState);
-    const collectionCreationModal = useDisclosure();
-    const collectionOrderModal = useDisclosure();
+    const collectionCreationModal = useOverlayState();
+    const collectionOrderModal = useOverlayState();
 
     const hasActiveMetadataPlugins = useSnapshot(pluginState).hasActiveMetadataPlugins;
 
@@ -39,33 +39,53 @@ function GameManagementLayout({getConfig, formik}: any) {
             <div className="flex flex-row items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
                 <div className="flex flex-row gap-2">
-                    <Tooltip content="Scan all libraries (quick)">
-                        <Button isIconOnly variant="flat"
-                                isDisabled={!hasActiveMetadataPlugins}
-                                onPress={() => triggerScan(ScanType.QUICK)}>
-                            <MagnifyingGlassIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary"
+                                    isDisabled={!hasActiveMetadataPlugins}
+                                    onPress={() => triggerScan(ScanType.QUICK)}>
+                                <MagnifyingGlassIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                            <p>Scan all libraries (quick)</p>
+                        </Tooltip.Content>
                     </Tooltip>
-                    <Tooltip content="Scan all libraries (full)">
-                        <Button isIconOnly variant="flat"
-                                isDisabled={!hasActiveMetadataPlugins}
-                                onPress={() => triggerScan(ScanType.FULL)}>
-                            <MagnifyingGlassPlusIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary"
+                                    isDisabled={!hasActiveMetadataPlugins}
+                                    onPress={() => triggerScan(ScanType.FULL)}>
+                                <MagnifyingGlassPlusIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                            <p>Scan all libraries (full)</p>
+                        </Tooltip.Content>
                     </Tooltip>
-                    <Tooltip content="Change library order">
-                        <Button isIconOnly variant="flat" onPress={libraryOrderModal.onOpen}>
-                            <ListNumbersIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary" onPress={libraryOrderModal.open}>
+                                <ListNumbersIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                            <p>Change library order</p>
+                        </Tooltip.Content>
                     </Tooltip>
-                    <Tooltip content="Add new library">
-                        <Button isIconOnly variant="flat" onPress={libraryCreationModal.onOpen}>
-                            <PlusIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary" onPress={libraryCreationModal.open}>
+                                <PlusIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                            <p>Add new library</p>
+                        </Tooltip.Content>
                     </Tooltip>
                 </div>
             </div>
-            <Divider className="mb-4"/>
+            <Separator className="mb-4"/>
             {libraries.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
                 <div id="library-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
@@ -74,25 +94,35 @@ function GameManagementLayout({getConfig, formik}: any) {
                         <LibraryOverviewCard library={library} key={library.name}/>
                     )}
                 </div> :
-                <p className="mt-4 text-center text-default-500">No libraries found</p>
+                <p className="mt-4 text-center text-muted">No libraries found</p>
             }
 
             <div className="flex flex-row items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Collections</h2>
                 <div className="flex flex-row gap-2">
-                    <Tooltip content="Change collection order">
-                        <Button isIconOnly variant="flat" onPress={collectionOrderModal.onOpen}>
-                            <ListNumbersIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary" onPress={collectionOrderModal.open}>
+                                <ListNumbersIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                            <p>Change collection order</p>
+                        </Tooltip.Content>
                     </Tooltip>
-                    <Tooltip content="Create new collection">
-                        <Button isIconOnly variant="flat" onPress={collectionCreationModal.onOpen}>
-                            <PlusIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="tertiary" onPress={collectionCreationModal.open}>
+                                <PlusIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                            <p>Create new collection</p>
+                        </Tooltip.Content>
                     </Tooltip>
                 </div>
             </div>
-            <Divider className="mb-4"/>
+            <Separator className="mb-4"/>
             {collections.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
                 <div id="collection-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
@@ -101,7 +131,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                         <CollectionOverviewCard collection={collection} key={collection.name}/>
                     )}
                 </div> :
-                <p className="mt-4 text-center text-default-500">No collections found</p>
+                <p className="mt-4 text-center text-muted">No collections found</p>
             }
 
             <Section title="Scanning"/>
@@ -127,22 +157,22 @@ function GameManagementLayout({getConfig, formik}: any) {
 
             <LibraryCreationModal
                 isOpen={libraryCreationModal.isOpen}
-                onOpenChange={libraryCreationModal.onOpenChange}
+                onOpenChange={libraryCreationModal.toggle}
             />
 
             <LibraryPrioritiesModal
                 isOpen={libraryOrderModal.isOpen}
-                onOpenChange={libraryOrderModal.onOpenChange}
+                onOpenChange={libraryOrderModal.toggle}
             />
 
             <CollectionCreationModal
                 isOpen={collectionCreationModal.isOpen}
-                onOpenChange={collectionCreationModal.onOpenChange}
+                onOpenChange={collectionCreationModal.toggle}
             />
 
             <CollectionPrioritiesModal
                 isOpen={collectionOrderModal.isOpen}
-                onOpenChange={collectionOrderModal.onOpenChange}/>
+                onOpenChange={collectionOrderModal.toggle}/>
 
         </div>
     );
