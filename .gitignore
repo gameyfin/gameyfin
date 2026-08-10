@@ -7,6 +7,15 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# Root-level Vaadin artifacts generated when CWD is the project root instead of app/
+# These are incorrect and should never be committed.
+/target/
+/package.json
+/package-lock.json
+/vite.generated.ts
+/vite.config.ts
+/pnpmfile.cjs
+
 ### STS ###
 .apt_generated
 .classpath

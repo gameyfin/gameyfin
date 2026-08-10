@@ -41,7 +41,7 @@ class SsoAuthenticationSuccessHandler(
 
         // Check if user is already registered via SSO
         var matchedUser = userService.findByOidcProviderId(
-            oidcUser.subject ?: throw IllegalStateException("OIDC user has no subject claim")
+            oidcUser.subject ?: error("OIDC user has no subject claim")
         )
 
         // If user is not registered via SSO, check if user is already registered by username or email
@@ -50,7 +50,7 @@ class SsoAuthenticationSuccessHandler(
             matchedUser = when (config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy)) {
                 MatchUsersBy.username -> userService.getByUsername(resolvedUsername)
                 MatchUsersBy.email -> userService.getByEmail(
-                    oidcUser.email ?: throw IllegalStateException("OIDC user has no email claim")
+                    oidcUser.email ?: error("OIDC user has no email claim")
                 )
 
                 else -> error("Unknown 'match users by' configuration")
@@ -64,7 +64,7 @@ class SsoAuthenticationSuccessHandler(
         } else {
             // Update user with new SSO data
             matchedUser.username = resolvedUsername
-            matchedUser.email = oidcUser.email ?: throw IllegalStateException("OIDC user has no email claim")
+            matchedUser.email = oidcUser.email ?: error("OIDC user has no email claim")
             matchedUser.emailConfirmed = true
             matchedUser.oidcProviderId = oidcUser.subject
         }

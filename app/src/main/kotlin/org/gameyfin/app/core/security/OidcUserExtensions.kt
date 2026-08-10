@@ -20,6 +20,6 @@ fun OidcUser.resolvedUsername(attributeName: String = "preferred_username"): Str
         if (!value.isNullOrBlank()) return value
     }
     // `sub` is mandatory in OIDC and always present
-    return subject ?: throw IllegalStateException("OIDC user has no subject claim")
+    return subject ?: error("OIDC user has no subject claim")
 }
 

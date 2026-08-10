@@ -132,7 +132,7 @@ class SecurityConfig(
         val clientRegistration = ClientRegistration.withRegistrationId(SSO_PROVIDER_KEY)
             .clientId(
                 config.get(ConfigProperties.SSO.OIDC.ClientId)
-                    ?: throw IllegalStateException("SSO client ID is not configured")
+                    ?: error("SSO client ID is not configured")
             )
             .clientSecret(config.get(ConfigProperties.SSO.OIDC.ClientSecret))
             .scope(config.get(ConfigProperties.SSO.OIDC.OAuthScopes)?.toList())
@@ -142,7 +142,7 @@ class SecurityConfig(
             .authorizationUri(config.get(ConfigProperties.SSO.OIDC.AuthorizeUrl))
             .tokenUri(
                 config.get(ConfigProperties.SSO.OIDC.TokenUrl)
-                    ?: throw IllegalStateException("Token URL is not configured")
+                    ?: error("Token URL is not configured")
             )
             .userInfoUri(config.get(ConfigProperties.SSO.OIDC.UserInfoUrl))
             .jwkSetUri(config.get(ConfigProperties.SSO.OIDC.JwksUrl))
