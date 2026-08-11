@@ -119,7 +119,7 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
             <Table.ScrollContainer className="h-[35rem]">
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                     <Table.Header>
-                        <Table.Column id="path" allowsSorting>Path</Table.Column>
+                        <Table.Column id="path" allowsSorting isRowHeader>Path</Table.Column>
                         <Table.Column id="source">Source</Table.Column>
                         <Table.Column id="actions">Actions</Table.Column>
                     </Table.Header>

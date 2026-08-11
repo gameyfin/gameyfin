@@ -128,7 +128,7 @@ export default function RequestGameModal({
                                         <Table.ScrollContainer className="h-80">
                                             <Table.Content>
                                                 <Table.Header>
-                                                    <Table.Column id="title">Title & Release</Table.Column>
+                                                    <Table.Column id="title" isRowHeader>Title & Release</Table.Column>
                                                     <Table.Column id="developers">Developer(s)</Table.Column>
                                                     <Table.Column id="publishers">Publisher(s)</Table.Column>
                                                     <Table.Column id="sources">Sources</Table.Column>

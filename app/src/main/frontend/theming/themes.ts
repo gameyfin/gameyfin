@@ -15,9 +15,14 @@ import {Theme} from "./theme";
 
 /**
  * v3 has no Tailwind plugin (unlike v2's `heroui()`), so themes can no longer be compiled into a
- * Tailwind config object. Instead, this generates a plain CSS string with one rule per theme/mode
- * combination that overrides HeroUI's CSS custom properties (`--accent`, `--accent-foreground`, ...).
+ * Tailwind config object. Instead, this generates a plain CSS string with one rule per theme
+ * that overrides HeroUI's CSS custom properties (`--accent`, `--accent-foreground`, ...).
  * The generated CSS is injected into the document via `injectThemeStyles()` (see below).
+ *
+ * Note: light/dark mode itself is handled separately by HeroUI's own `.dark`/`.light` classes
+ * (toggled via `next-themes`, see App.tsx). The accent color classes generated here are applied
+ * *in addition to* the mode class (see `applyAccentTheme()`) and are mode-independent, since our
+ * theme presets use the same accent color in both light and dark mode.
  */
 
 /**
@@ -52,17 +57,15 @@ function themeVariables(t: Theme): string {
     return vars.join("\n        ");
 }
 
-function ruleFor(t: Theme, mode: "light" | "dark"): string {
+function ruleFor(t: Theme): string {
     return `
-    .${t.name}-${mode} {
+    .${t.name} {
         ${themeVariables(t)}
     }`;
 }
 
 export function compileThemes(themes: Theme[]): string {
-    return themes
-        .map((t) => ruleFor(t, "light") + ruleFor(t, "dark"))
-        .join("\n");
+    return themes.map(ruleFor).join("\n");
 }
 
 /**
@@ -81,7 +84,18 @@ export function injectThemeStyles(): void {
 }
 
 export function themeNames(): string[] {
-    return themes.flatMap((t) => [`${t.name}-light`, `${t.name}-dark`]);
+    return themes.map((t) => t.name!);
+}
+
+/**
+ * Applies the given accent theme (by name) to the document root, replacing any previously
+ * applied accent theme class. This is independent of light/dark mode, which is managed by
+ * `next-themes` via the standard `.dark`/`.light` classes.
+ */
+export function applyAccentTheme(name: string): void {
+    const root = document.documentElement;
+    themeNames().forEach((n) => root.classList.remove(n));
+    root.classList.add(name);
 }
 
 export const themes: Theme[] = [GameyfinBlue, GameyfinViolet, GameyfinClassic, Neutral, Slate, Red, Rose, Orange, Pink, Blue, Yellow, Violet, Colorblind];

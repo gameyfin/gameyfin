@@ -22,6 +22,7 @@ import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
 import {isAdmin} from "Frontend/util/utils";
+import {applyAccentTheme} from "Frontend/theming/themes";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -53,7 +54,11 @@ export default function MainLayout() {
     async function loadUserTheme() {
         let syncedTheme = await userPreferenceService.get("preferred-theme");
         if (syncedTheme !== undefined) {
-            setTheme(syncedTheme);
+            const separatorIndex = syncedTheme.lastIndexOf("-");
+            const accentTheme = syncedTheme.substring(0, separatorIndex);
+            const mode = syncedTheme.substring(separatorIndex + 1);
+            applyAccentTheme(accentTheme);
+            setTheme(mode);
         }
     }
 
@@ -79,10 +84,10 @@ export default function MainLayout() {
                         {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
                             <div className="flex flex-row gap-2">
                                 <Button isIconOnly onPress={() => history.back()} variant="tertiary">
-                                    <ArrowLeftIcon size={26} weight="bold"/>
+                                    <ArrowLeftIcon weight="bold"/>
                                 </Button>
                                 <Button isIconOnly onPress={() => navigate("/")} variant="tertiary">
-                                    <HouseIcon size={26} weight="fill"/>
+                                    <HouseIcon weight="fill"/>
                                 </Button>
                             </div>
                         }
@@ -181,7 +186,8 @@ export default function MainLayout() {
                         Made with
                         <HeartIcon size={16} weight="fill" className="text-accent" onClick={easterEgg}/>
                         by
-                        <Link href="https://github.com/grimsi" target="_blank" rel="noopener noreferrer" className="underline">
+                        <Link href="https://github.com/grimsi" target="_blank" rel="noopener noreferrer"
+                              className="underline">
                             grimsi
                         </Link> and
                         <Link

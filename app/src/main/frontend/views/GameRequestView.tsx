@@ -225,7 +225,7 @@ export default function GameRequestView() {
             <Table.ScrollContainer>
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                     <Table.Header>
-                        <Table.Column id="title" allowsSorting>Title & Release</Table.Column>
+                        <Table.Column id="title" allowsSorting isRowHeader>Title & Release</Table.Column>
                         <Table.Column id="platform">Platform</Table.Column>
                         <Table.Column id="requester">Submitted by</Table.Column>
                         <Table.Column id="createdAt" allowsSorting>Submitted</Table.Column>

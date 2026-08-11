@@ -146,7 +146,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                 <Table.ScrollContainer className="h-96">
                     <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                         <Table.Header>
-                            <Table.Column id="title" allowsSorting>Title</Table.Column>
+                            <Table.Column id="title" allowsSorting isRowHeader>Title</Table.Column>
                             <Table.Column id="library" allowsSorting>Library</Table.Column>
                             <Table.Column id="dateAdded" allowsSorting>Date added</Table.Column>
                             <Table.Column>Actions</Table.Column>

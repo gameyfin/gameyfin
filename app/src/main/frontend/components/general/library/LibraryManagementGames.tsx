@@ -155,7 +155,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
             <Table.ScrollContainer className="h-[35rem]">
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                     <Table.Header>
-                        <Table.Column id="title" allowsSorting>Game</Table.Column>
+                        <Table.Column id="title" allowsSorting isRowHeader>Game</Table.Column>
                         <Table.Column id="platforms">Platforms</Table.Column>
                         <Table.Column id="addedToLibrary" allowsSorting>Added to library</Table.Column>
                         <Table.Column id="downloadCount" allowsSorting>Download count</Table.Column>

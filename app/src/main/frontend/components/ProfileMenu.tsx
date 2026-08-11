@@ -36,10 +36,9 @@ export default function ProfileMenu() {
 
     return (
         <Dropdown>
-            {/* div is necessary so dropdown menu will appear in the correct place */}
-            <div>
+            <Dropdown.Trigger>
                 <Avatar className="transition-transform size-8 gradient-primary"/>
-            </div>
+            </Dropdown.Trigger>
             <Dropdown.Popover placement="bottom end">
                 <Dropdown.Menu disabledKeys={["username"]} aria-label="Profile menu">
                     <Dropdown.Item key="username" id="username" textValue={auth.state.user?.username}>
