@@ -1,5 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
 import {Avatar as HeroUiAvatar} from "@heroui/react";
+import {UserIcon} from "@phosphor-icons/react";
 
 interface AvatarProps {
     username?: string;
@@ -19,15 +20,19 @@ const Avatar = ({username: usernameProp, className}: AvatarProps) => {
     }
 
     return (
-        <HeroUiAvatar.Root className={className}>
+        <HeroUiAvatar className={className}>
             {/* TODO: Check if avatar can be loaded from SSO */}
             {auth.state.user?.hasAvatar && (
                 <HeroUiAvatar.Image src={`/images/avatar?username=${username}`}/>
             )}
-            <HeroUiAvatar.Fallback>
-                {username?.charAt(0).toUpperCase()}
+            {/* Fallback has its own opaque background (avatar__fallback) that fully covers the
+                root Avatar's background, so any custom background (e.g. gradient-primary) passed
+                via className must also be forwarded here to be visible. */}
+            <HeroUiAvatar.Fallback className={`bg-transparent ${className ?? ""}`}>
+                {/*{username?.charAt(0).toUpperCase()}*/}
+                <UserIcon/>
             </HeroUiAvatar.Fallback>
-        </HeroUiAvatar.Root>
+        </HeroUiAvatar>
     );
 }
 
