@@ -11,6 +11,27 @@
     --color-gf-secondary: #6441a5;
 }
 
+/*
+ * Vaadin's Aura theme (loaded globally, outside of any @layer) sets a `:where(a:any-link)` rule
+ * for anchor color. Per the CSS Cascade Layers spec, ANY unlayered style always wins over
+ * layered styles (like Tailwind's own `a { color: inherit }` preflight reset, or HeroUI's Link
+ * component styles), regardless of specificity. This left every anchor element (HeroUI's Link,
+ * but also any react-aria-components element that renders as an <a>, e.g. ListBox.Item with an
+ * href) showing Aura's default blue-ish accent instead of the surrounding text color.
+ * Re-declare the necessary overrides here, unlayered, so they consistently win over Aura's rule.
+ */
+a {
+    color: inherit;
+}
+
+a.link {
+    color: var(--link);
+}
+
+a.link.text-foreground {
+    color: var(--foreground);
+}
+
 /* Custom gridTemplateColumns */
 @utility grid-cols-300px {
     grid-template-columns: repeat(auto-fit, 300px);
