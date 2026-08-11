@@ -9,14 +9,17 @@ interface TextAreaInputProps extends Omit<TextFieldProps, "name" | "children"> {
 }
 
 export default function TextAreaInput({label, showErrorUntouched = false, placeholder, ...props}: TextAreaInputProps) {
-    const [field, meta] = useField(props.name);
+    const [field, meta, helpers] = useField(props.name);
 
     return (
         <TextField
             className={`grow ${meta.initialError || meta.error ? "" : "mb-6"}`}
             fullWidth={false}
             {...props}
-            {...field}
+            name={field.name}
+            value={field.value}
+            onChange={(value) => helpers.setValue(value)}
+            onBlur={field.onBlur}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
         >
             {label && <Label>{label}</Label>}

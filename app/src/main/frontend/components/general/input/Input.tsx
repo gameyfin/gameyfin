@@ -25,13 +25,16 @@ export default function Input({
                                   placeholder,
                                   ...props
                               }: CustomInputProps) {
-    const [field, meta] = useField(props.name);
+    const [field, meta, helpers] = useField(props.name);
 
     return (
         <TextField
             fullWidth={false}
             {...props}
-            {...field}
+            name={field.name}
+            value={field.value}
+            onChange={(value) => helpers.setValue(value)}
+            onBlur={field.onBlur}
             className={`min-h-20 grow ${className ?? ""}`}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
         >
