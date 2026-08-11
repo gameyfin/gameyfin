@@ -7,8 +7,12 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    --color-gf-primary: #2332c8;
-    --color-gf-secondary: #6441a5;
+    /* Falls back to the hardcoded values below only if the active theme doesn't define a
+       `--gf-secondary` (see theming/themes.ts) - wires the dynamic per-theme secondary color
+       into Tailwind's color utilities (e.g. `to-gf-secondary`), the same way HeroUI's own
+       `--color-accent: var(--accent)` does for the accent color. */
+    --color-gf-primary: var(--accent, #2332c8);
+    --color-gf-secondary: var(--gf-secondary, #6441a5);
 }
 
 /*
@@ -42,7 +46,7 @@ a.link.text-foreground {
 
 /* Re-added custom utilities (Tailwind v4 style) */
 @utility gradient-primary {
-    @apply bg-gradient-to-br from-accent to-accent-hover;
+    @apply bg-gradient-to-br from-accent to-gf-secondary;
 }
 @utility button-secondary {
     background-color: var(--gf-secondary, var(--accent));
