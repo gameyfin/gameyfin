@@ -2,7 +2,7 @@ import {CoverRow} from "Frontend/components/general/covers/CoverRow";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
-import React, {useMemo} from "react";
+import React, {useEffect, useMemo} from "react";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {collectionState} from "Frontend/state/CollectionState";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
@@ -11,6 +11,7 @@ import {Link, Spinner} from "@heroui/react";
 import {CaretRightIcon, FolderOpenIcon} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import {isAdmin} from "Frontend/util/utils";
+import {configState, initializeConfigState} from "Frontend/state/ConfigState";
 
 export default function HomeView() {
     const auth = useAuth();
@@ -19,6 +20,14 @@ export default function HomeView() {
     const gamesState = useSnapshot(gameState);
     const gamesByLibrary = gamesState.gamesByLibraryId;
     const gamesByCollection = gamesState.gamesByCollectionId;
+
+    const config = useSnapshot(configState);
+
+    useEffect(() => {
+        initializeConfigState();
+    }, []);
+
+    const motd = config.config.motd as string | undefined;
 
     const filteredAndSortedLibraries = useMemo(() =>
         librariesState.sorted
@@ -78,31 +87,48 @@ export default function HomeView() {
 
     if (hasNoContent) {
         return (
-            <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-4">
-                <FolderOpenIcon size={64} className="text-default-300"/>
-                <p className="text-xl font-semibold text-default-600">Nothing here yet</p>
-                {isAdmin(auth) ? (
-                    <>
-                        <p className="text-default-400 max-w-lg">
-                            Get started by adding libraries and games in the{" "}
-                            <Link href="/administration/games" underline="always">
-                                administration panel
-                            </Link>.
-                        </p>
-                    </>
-                ) : (
-                    <>
-                        <p className="text-default-400 max-w-md">
-                            There is currently no content available. Check back later!
-                        </p>
-                    </>
-                )}
-            </div>
+            <>
+                <div className="mb-4 max-w-3xl mx-auto rounded-lg border border-default-200 p-4">
+                    {motd ?
+                        <div className="text-justify" dangerouslySetInnerHTML={{__html: motd}}/> :
+                        <p>No message has been set.</p>
+                    }
+                </div>
+
+                <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-4">
+                    <FolderOpenIcon size={64} className="text-default-300"/>
+                    <p className="text-xl font-semibold text-default-600">Nothing here yet</p>
+                    {isAdmin(auth) ? (
+                        <>
+                            <p className="text-default-400 max-w-lg">
+                                Get started by adding libraries and games in the{" "}
+                                <Link href="/administration/games" underline="always">
+                                    administration panel
+                                </Link>.
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <p className="text-default-400 max-w-md">
+                                There is currently no content available. Check back later!
+                            </p>
+                        </>
+                    )}
+                </div>
+            </>
         );
     }
 
     return (
         <div className="w-full">
+
+            <div className="mb-4 max-w-3xl mx-auto rounded-lg border border-default-200 p-4">
+                {motd ?
+                    <div className="text-justify" dangerouslySetInnerHTML={{__html: motd}}/> :
+                    <p>No message has been set.</p>
+                }
+            </div>
+
             <div className="flex flex-col gap-4">
                 {(filteredAndSortedLibraries.length + filteredAndSortedCollections.length > 0) &&
                     <div className="flex flex-col gap-2">

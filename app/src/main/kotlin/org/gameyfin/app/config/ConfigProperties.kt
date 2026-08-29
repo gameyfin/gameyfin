@@ -391,6 +391,17 @@ sealed class ConfigProperties<T : Serializable>(
             )
         }
     }
+
+    /** Dashboard Server Message */
+    sealed class General {
+        data object MessageOfTheDay : ConfigProperties<String>(
+            String::class,
+            "motd",
+            "Dashboard Server Message",
+            "Message shown to all users on the dashboard.",
+            ""
+        )
+    }
 }
 
 @Suppress("EnumEntryName")
