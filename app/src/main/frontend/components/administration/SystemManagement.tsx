@@ -3,6 +3,7 @@ import {SystemEndpoint} from "Frontend/generated/endpoints";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import {addToast, Button} from "@heroui/react";
 import Section from "Frontend/components/general/Section";
+import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
 
 function SystemManagementLayout() {
 
@@ -18,6 +19,9 @@ function SystemManagementLayout() {
 
     return (
         <div className="flex flex-col mt-4">
+            <Section title="Dashboard Server Message"/>
+            <TextAreaInput key="motd" name="motd" label="Server Message (HTML)"/>
+
             <Section title="Restart Gameyfin"/>
             <Button onPress={restart}>Restart</Button>
         </div>
