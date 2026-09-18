@@ -3,6 +3,7 @@ package org.gameyfin.app.libraries
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.backup.DatabaseBackupService
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
@@ -42,7 +43,8 @@ class LibraryScanService(
     private val ignoredPathRepository: IgnoredPathRepository,
     private val pluginService: PluginService,
     private val configService: ConfigService,
-    private val scanMetrics: ScanMetrics
+    private val scanMetrics: ScanMetrics,
+    private val databaseBackupService: DatabaseBackupService
 ) {
 
     companion object {
@@ -110,6 +112,10 @@ class LibraryScanService(
 
         refreshScanSemaphore()
         evictStaleScanProgress()
+
+        // A scan is by far the heaviest write load this application produces, and the
+        // point at which the database is most exposed. Snapshot it first.
+        databaseBackupService.backup("pre-scan")
 
         val libraries =
             if (libraryIds.isNullOrEmpty()) libraryRepository.findAll().toList()
