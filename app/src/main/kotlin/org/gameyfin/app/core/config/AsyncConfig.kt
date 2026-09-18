@@ -1,16 +1,25 @@
 package org.gameyfin.app.core.config
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.scheduling.annotation.AsyncConfigurer
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import java.util.concurrent.Executor
 import java.util.concurrent.ThreadPoolExecutor
 
+private const val POOL_SIZE = 4
+private const val QUEUE_CAPACITY = 200
+private const val THREAD_NAME_PREFIX = "gf-async-"
 
 @Configuration
 @EnableAsync
-class AsyncConfig {
+class AsyncConfig : AsyncConfigurer {
+
+    companion object {
+        private val log = KotlinLogging.logger {}
+    }
 
     /**
      * Bounded executor for `@Async` listeners.
@@ -32,16 +41,37 @@ class AsyncConfig {
      * scan slows down rather than accumulating work it cannot retire.
      */
     @Bean("virtualThreadPoolTaskExecutor")
-    fun threadPoolTaskExecutor(): Executor {
+    fun threadPoolTaskExecutor(): ThreadPoolTaskExecutor {
         return ThreadPoolTaskExecutor().apply {
-            corePoolSize = 4
-            maxPoolSize = 4
-            setQueueCapacity(200)
-            setThreadNamePrefix("gf-async-")
+            corePoolSize = POOL_SIZE
+            maxPoolSize = POOL_SIZE
+            setQueueCapacity(QUEUE_CAPACITY)
+            setThreadNamePrefix(THREAD_NAME_PREFIX)
             setRejectedExecutionHandler(ThreadPoolExecutor.CallerRunsPolicy())
             setWaitForTasksToCompleteOnShutdown(true)
             setAwaitTerminationSeconds(30)
             initialize()
         }
+    }
+
+    /**
+     * Hands the bounded pool to `@Async` explicitly.
+     *
+     * Declaring the executor as a bean is not enough. `@EnableScheduling` makes Spring
+     * Boot register a `taskScheduler` bean, and a scheduler is a `TaskExecutor` too.
+     * Faced with two `TaskExecutor` beans and none named `taskExecutor`,
+     * `AsyncExecutionInterceptor` silently falls back to a fresh `SimpleAsyncTaskExecutor`
+     * — one platform thread per call, no queue, no ceiling — and only mentions it at INFO
+     * on a Spring logger this application keeps at WARN. That is what every `@Async`
+     * listener has actually been running on, with or without a custom executor bean.
+     *
+     * An `AsyncConfigurer` bypasses that lookup altogether. The log line makes the wiring
+     * verifiable from the application log instead of from a thread dump.
+     */
+    override fun getAsyncExecutor(): Executor {
+        log.info {
+            "@Async executor: $THREAD_NAME_PREFIX* (core=$POOL_SIZE, max=$POOL_SIZE, queue=$QUEUE_CAPACITY, CallerRunsPolicy)"
+        }
+        return threadPoolTaskExecutor()
     }
 }
