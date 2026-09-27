@@ -5,9 +5,11 @@ import com.frostwire.jlibtorrent.SessionParams
 import com.frostwire.jlibtorrent.SettingsPack
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
+import com.frostwire.jlibtorrent.TorrentFlags
 import com.frostwire.jlibtorrent.TorrentInfo
 import com.frostwire.jlibtorrent.swig.libtorrent.*
 import com.frostwire.jlibtorrent.swig.settings_pack.string_types
+import com.frostwire.jlibtorrent.swig.torrent_flags_t
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.nio.file.Files
@@ -26,7 +28,8 @@ class TorrentClient(
     private val performanceMode: TorrentClientPerformanceMode,
     private val dhtEnabled: Boolean,
     private val lsdEnabled: Boolean,
-    private val stopSeedingWhenComplete: Boolean
+    private val stopSeedingWhenComplete: Boolean,
+    private val diskIoMode: TorrentDiskIoMode = TorrentDiskIoMode.POSIX
 ) {
     private val log = LoggerFactory.getLogger(TorrentClient::class.java)
 
@@ -63,7 +66,14 @@ class TorrentClient(
         log.info("TorrentClient stopped")
     }
 
-    fun addTorrent(torrentFile: Path, gameFile: Path) {
+    /**
+     * Adds a torrent for seeding.
+     *
+     * @param seedMode skip the full hash check and assume all pieces are present. Pieces are
+     * then verified lazily when first requested by a peer. Only use this for torrents that were
+     * created from the files on disk, otherwise a full check is needed.
+     */
+    fun addTorrent(torrentFile: Path, gameFile: Path, seedMode: Boolean = false) {
         val ti = TorrentInfo(torrentFile.toFile())
 
         // For seeding, we need to use the parent directory as the save path
@@ -83,9 +93,11 @@ class TorrentClient(
         }
 
         try {
-            // Use SessionManager's download method - it will seed the files in the save directory
-            session?.download(ti, savePath)
-            log.info("Added torrent to session for seeding: ${ti.name()} from $savePath")
+            // Use SessionManager's download method - it will seed the files in the save directory.
+            // The flags are OR'ed with libtorrent's default add_torrent_params flags.
+            val flags = if (seedMode) TorrentFlags.SEED_MODE else torrent_flags_t()
+            session?.download(ti, savePath, null, null, null, flags)
+            log.info("Added torrent to session for seeding: ${ti.name()} from $savePath${if (seedMode) " (seed mode)" else ""}")
         } catch (e: Exception) {
             log.error("Failed to add torrent to session for seeding: ${ti.name()}", e)
             throw e
@@ -129,6 +141,11 @@ class TorrentClient(
             log.info("No external host override set; using default announce IP behavior")
         }
 
+        // Seed every torrent at once. libtorrent auto-manages torrents and by default keeps only
+        // 5 seeds (and 15 torrents) active, queueing the rest, so most games would not be seeded.
+        settingsPack.activeSeeds(-1)
+        settingsPack.activeLimit(-1)
+
         // Configure DHT
         settingsPack.isEnableDht = dhtEnabled
 
@@ -147,6 +164,19 @@ class TorrentClient(
                 log.info("Configured disk I/O for Windows (default disk I/O)")
             }
 
+            (os.contains("nix") || os.contains("nux") || os.contains("mac") || os.contains("darwin"))
+                    && diskIoMode == TorrentDiskIoMode.`Memory-mapped` -> {
+                sessionParams.setDefaultDiskIO()
+                log.info("Configured disk I/O for Unix-like system (memory-mapped disk I/O)")
+                if (!isSignalChainingActive()) {
+                    log.warn(
+                        "Memory-mapped disk I/O without JVM signal chaining: libtorrent replaces the JVM's " +
+                                "SIGSEGV handler and the JVM will crash. Set LD_PRELOAD to libjsig.so " +
+                                "(e.g. /opt/java/openjdk/lib/libjsig.so) or use POSIX disk I/O."
+                    )
+                }
+            }
+
             os.contains("nix") || os.contains("nux") || os.contains("mac") || os.contains("darwin") -> {
                 sessionParams.setPosixDiskIO()
                 log.info("Configured disk I/O for Unix-like system (POSIX disk I/O)")
@@ -163,6 +193,13 @@ class TorrentClient(
         log.info("BitTorrent client started. Listen interfaces: ${settingsPack.listenInterfaces()}")
 
         return sessionManager
+    }
+
+    /** True if HotSpot's signal-chaining library (libjsig) is loaded into this process. */
+    private fun isSignalChainingActive(): Boolean = try {
+        Files.readAllLines(Path.of("/proc/self/maps")).any { it.contains("libjsig") }
+    } catch (_: Exception) {
+        System.getenv("LD_PRELOAD")?.contains("libjsig") == true
     }
 
     private fun startMonitoringTask() {

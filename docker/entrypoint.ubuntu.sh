@@ -48,7 +48,10 @@ DEFAULT_JVM_OPTS="\
   -XX:+UseCompactObjectHeaders \
   -XX:MaxMetaspaceSize=192m \
   -XX:MaxDirectMemorySize=64m \
-  -Xss512k"
+  -Xss512k \
+  -XX:ErrorFile=/opt/gameyfin/logs/hs_err_pid%p.log"
+# ErrorFile            – the working directory (/opt/gameyfin) is not writable by the
+#                        runtime user, so JVM crash reports were silently lost.
 
 # Append AOT Cache flag if a non-empty training cache file exists
 if [ -s /opt/gameyfin/app.aot ]; then
@@ -64,6 +67,15 @@ if [ -n "${JAVA_OPTS_OVERRIDE:-}" ]; then
   export JDK_JAVA_OPTIONS="${JAVA_OPTS_OVERRIDE}"
 else
   export JDK_JAVA_OPTIONS="${DEFAULT_JVM_OPTS} ${JAVA_OPTS:-}"
+fi
+
+# Signal chaining: native libraries (libtorrent's try_signal in the torrent plugin) install
+# process-wide SIGSEGV/SIGBUS handlers that replace the JVM's own. The JVM uses SIGSEGV
+# internally (implicit null checks, safepoints), so without chaining it dies with exit 139
+# and no crash report. libjsig makes such handlers chain behind the JVM's handler.
+JSIG="${JAVA_HOME:-/opt/java/openjdk}/lib/libjsig.so"
+if [ -z "${LD_PRELOAD:-}" ] && [ -f "${JSIG}" ]; then
+  export LD_PRELOAD="${JSIG}"
 fi
 
 exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true -jar application.jar
