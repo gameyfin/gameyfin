@@ -56,6 +56,14 @@ h1, h2, h3, h4, h5, h6 {
     --aura-app-background: var(--background);
 }
 
+/* In production builds Aura's (nested, conditional) gradient variants can still win the cascade,
+   so paint the page background explicitly as well. */
+html:root,
+html:root body {
+    background: var(--background) !important;
+    background-image: none !important;
+}
+
 /* Custom gridTemplateColumns */
 @utility grid-cols-300px {
     grid-template-columns: repeat(auto-fit, 300px);
