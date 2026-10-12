@@ -1,19 +1,59 @@
 @import "tailwindcss";
-
-@plugin './heroui.ts';
+@import "@heroui/styles";
 
 @source "./index.html";
 @source "./**/*.{js,ts,jsx,tsx}";
-@source "../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
-
-/* Prevent TailwindCSS from purging the custom themes (since they are not referenced at compile-time) */
-@source inline("{gameyfin-blue,gameyfin-violet,gameyfin-classic,neutral,slate,red,rose,orange,pink,blue,yellow,violet,colorblind}-{light,dark}");
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    --color-gf-primary: #2332c8;
-    --color-gf-secondary: #6441a5;
+    /* Falls back to the hardcoded values below only if the active theme doesn't define a
+       `--gf-secondary` (see theming/themes.ts) - wires the dynamic per-theme secondary color
+       into Tailwind's color utilities (e.g. `to-gf-secondary`), the same way HeroUI's own
+       `--color-accent: var(--accent)` does for the accent color. */
+    --color-gf-primary: var(--accent, #2332c8);
+    --color-gf-secondary: var(--gf-secondary, #6441a5);
+}
+
+/*
+ * Vaadin's Aura theme (loaded globally, outside of any @layer) sets a `:where(a:any-link)` rule
+ * for anchor color. Per the CSS Cascade Layers spec, ANY unlayered style always wins over
+ * layered styles (like Tailwind's own `a { color: inherit }` preflight reset, or HeroUI's Link
+ * component styles), regardless of specificity. This left every anchor element (HeroUI's Link,
+ * but also any react-aria-components element that renders as an <a>, e.g. ListBox.Item with an
+ * href) showing Aura's default blue-ish accent instead of the surrounding text color.
+ * Re-declare the necessary overrides here, unlayered, so they consistently win over Aura's rule.
+ */
+a {
+    color: inherit;
+}
+
+a.link {
+    color: var(--link);
+}
+
+a.link.text-foreground {
+    color: var(--foreground);
+}
+
+/*
+ * Aura also ships an unlayered `:where(h1..h6) { margin: 0 }`, which beats Tailwind's layered
+ * margin utilities (mt-8, mb-1, ...) on every heading, e.g. the admin page section titles.
+ * `revert-layer` drops Aura's unlayered reset so the layered styles apply again.
+ */
+h1, h2, h3, h4, h5, h6 {
+    margin: revert-layer;
+}
+
+/* HeroUI v3's dark background is a dark gray (oklch 12%); Gameyfin uses pure black */
+.dark {
+    --background: #000000;
+}
+
+/* Vaadin Aura paints the page via an unlayered `:root { background: var(--aura-app-background) }`
+   (dark gray), which hides HeroUI's --background. Make it follow HeroUI's background instead. */
+:root {
+    --aura-app-background: var(--background);
 }
 
 /* Custom gridTemplateColumns */
@@ -26,10 +66,12 @@
 
 /* Re-added custom utilities (Tailwind v4 style) */
 @utility gradient-primary {
-    @apply bg-gradient-to-br from-primary-400 to-primary-700;
+    @apply bg-gradient-to-br from-accent;
+    --tw-gradient-to: color-mix(in oklab, var(--accent) 70%, black);
 }
 @utility button-secondary {
-    @apply bg-primary-300 text-background/80;
+    background-color: var(--gf-secondary, var(--accent));
+    color: var(--gf-secondary-foreground, var(--accent-foreground));
 }
 
 /* Shine animation for game covers */
@@ -73,22 +115,54 @@
 }
 
 .react-aria-DropIndicator[data-drop-target] {
-    outline: 1px solid hsl(var(--heroui-primary));
+    outline: 1px solid var(--accent);
 }
 
 /* Root variable overrides */
 :root {
     /* Overwrite default Hilla styles (e.g. loading indicator) */
-    --lumo-primary-color: hsl(var(--heroui-primary));
+    --lumo-primary-color: var(--accent);
 
     /* Overwrite SwiperJS styles */
-    --swiper-theme-color: hsl(var(--heroui-primary));
-    --swiper-navigation-color: hsl(var(--heroui-primary));
-    --swiper-pagination-color: hsl(var(--heroui-primary));
+    --swiper-theme-color: var(--accent);
+    --swiper-navigation-color: var(--accent);
+    --swiper-pagination-color: var(--accent);
 
     /* Overwrite SwiperJS styles */
 
     .swiper-pagination-bullet {
-        background-color: hsl(var(--heroui-primary));
+        background-color: var(--accent);
+    }
+
+    --radius: 0.25rem;
+}
+
+/* Inputs inside modals would blend into the overlay background, so use the "default" surface instead */
+.modal__dialog {
+    --field-background: var(--default);
+    --field-hover: var(--default-hover);
+    --field-focus: var(--default);
+}
+
+/* Modal size "lg" is twice as wide as the HeroUI default (32rem) */
+.modal__dialog--lg {
+    max-width: 64rem;
+}
+
+.modal__container:has(.modal__dialog--lg) {
+    max-width: none;
+}
+
+.modal__dialog--md {
+    max-width: 32rem;
+}
+
+
+@utility scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
     }
 }

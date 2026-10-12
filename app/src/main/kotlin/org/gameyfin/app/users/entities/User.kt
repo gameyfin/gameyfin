@@ -40,8 +40,8 @@ class User(
 ) {
 
     constructor(oidcUser: OidcUser) : this(
-        username = oidcUser.preferredUsername,
-        email = oidcUser.email,
+        username = oidcUser.preferredUsername ?: error("OidcUser has no preferred username"),
+        email = oidcUser.email ?: error("OidcUser has no email"),
         emailConfirmed = true,
         enabled = true,
         oidcProviderId = oidcUser.subject
@@ -49,7 +49,7 @@ class User(
 
     constructor(oidcUser: OidcUser, resolvedUsername: String) : this(
         username = resolvedUsername,
-        email = oidcUser.email,
+        email = oidcUser.email ?: error("OidcUser has no email"),
         emailConfirmed = true,
         enabled = true,
         oidcProviderId = oidcUser.subject

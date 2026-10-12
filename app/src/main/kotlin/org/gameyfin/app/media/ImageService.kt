@@ -156,10 +156,10 @@ class ImageService(
     }
 
     fun downloadIfNew(image: Image) {
-        requireNotNull(image.originalUrl) { "Image must have an original URL" }
+        val originalUrl = requireNotNull(image.originalUrl) { "Image must have an original URL" }
 
         // Always try to get existing image first to avoid detached entity issues and duplicate lookups
-        val existingImage = imageRepository.findAllByOriginalUrl(image.originalUrl).firstOrNull()
+        val existingImage = imageRepository.findAllByOriginalUrl(originalUrl).firstOrNull()
 
         // Check if the existing image has valid content
         val existingImageHasValidContent = (existingImage != null && imageHasValidContent(existingImage))
@@ -174,7 +174,7 @@ class ImageService(
         }
 
         // If no existing image or existing image has no valid content, download it
-        TikaInputStream.get { URI.create(image.originalUrl).toURL().openStream() }.use { input ->
+        TikaInputStream.get { URI.create(originalUrl).toURL().openStream() }.use { input ->
             image.mimeType = tika.detect(input)
             processImageContent(image, input)
         }

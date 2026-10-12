@@ -1,15 +1,17 @@
 import {Autoplay, Navigation, Pagination} from 'swiper/modules';
 import {Swiper, SwiperSlide} from "swiper/react";
-import {Card, Image, Modal, ModalContent, useDisclosure} from "@heroui/react";
-import ReactPlayer from 'react-player';
+import {Card, Modal, useOverlayState} from "@heroui/react";
+import ReactPlayerModule from 'react-player';
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useEffect, useState} from "react";
-import { CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon } from "@phosphor-icons/react";
+import {CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon} from "@phosphor-icons/react";
 
+// react-player v2 is CJS; depending on the bundler interop the default import may be the module namespace
+const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
 
 interface ImageCarouselProps {
     imageUrls?: string[];
@@ -35,7 +37,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
 
     const [elements, setElements] = useState<CarouselElement[]>();
     const [selectedImageUrl, setSelectedImageUrl] = useState<string>();
-    const imagePopup = useDisclosure();
+    const imagePopup = useOverlayState();
 
     useEffect(() => {
         const images = imageUrls?.map((imageUrl) => ({
@@ -52,7 +54,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
 
     function showImagePopup(imageUrl: string) {
         setSelectedImageUrl(imageUrl);
-        imagePopup.onOpen();
+        imagePopup.open();
     }
 
     return (
@@ -61,7 +63,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                 <div className="w-full flex flex-col gap-2 items-center">
                     <div className="w-full flex flex-row items-center">
                         <IconContext.Provider value={{size: 50}}>
-                            <CaretLeftIcon className="swiper-custom-button-prev cursor-pointer fill-primary"/>
+                            <CaretLeftIcon className="swiper-custom-button-prev cursor-pointer fill-accent"/>
                             <Swiper
                                 modules={[Pagination, Navigation, Autoplay]}
                                 slidesPerView={DEFAULT_SLIDES_PER_VIEW > elements.length ? elements.length : DEFAULT_SLIDES_PER_VIEW}
@@ -87,17 +89,18 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                         {({isActive}: SlideData) => {
                                             if (e.type === "image") {
                                                 return (
-                                                    <Image
+                                                    <img
                                                         src={e.url}
                                                         alt={`Game screenshot slide ${index}`}
-                                                        className={`w-full h-full object-cover aspect-video cursor-zoom-in ${!isActive ? "scale-90" : ""}`}
+                                                        className={`w-full h-full object-cover aspect-video rounded-xl cursor-zoom-in transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}
                                                         onClick={() => showImagePopup(e.url)}
+                                                        loading="lazy"
                                                     />
                                                 )
                                             }
                                             return (
                                                 <Card
-                                                    className={`w-full h-full aspect-video ${!isActive ? "scale-90" : ""}`}>
+                                                    className={`w-full h-full aspect-video p-0 rounded-xl overflow-hidden transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}>
                                                     <ReactPlayer
                                                         url={e.url}
                                                         width="100%"
@@ -112,10 +115,12 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                         }}
                                     </SwiperSlide>
                                 ))}
-                                <ImagePopup imageUrl={selectedImageUrl} isOpen={imagePopup.isOpen}
-                                            onOpenChange={imagePopup.onOpenChange}/>
+                                <ImagePopup imageUrl={selectedImageUrl}
+                                            isOpen={imagePopup.isOpen}
+                                            onOpenChange={imagePopup.setOpen}
+                                            onClose={imagePopup.close}/>
                             </Swiper>
-                            <CaretRightIcon className="swiper-custom-button-next cursor-pointer fill-primary"/>
+                            <CaretRightIcon className="swiper-custom-button-next cursor-pointer fill-accent"/>
                         </IconContext.Provider>
                     </div>
                     <div>
@@ -128,25 +133,30 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
     );
 }
 
-function ImagePopup({imageUrl, isOpen, onOpenChange}: {
+function ImagePopup({imageUrl, isOpen, onOpenChange, onClose}: {
     imageUrl?: string,
     isOpen: boolean,
-    onOpenChange: (isOpen: boolean) => void
+    onOpenChange: (isOpen: boolean) => void,
+    onClose: () => void
 }) {
     return (imageUrl &&
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} hideCloseButton size="full" backdrop="blur">
-            <ModalContent className="bg-transparent">
-                {(onClose) => (
-                    <div className="flex grow items-center justify-center cursor-zoom-out"
-                         onClick={onClose}>
-                        <Image
-                            src={imageUrl}
-                            alt="Game screenshot"
-                            className="max-w-[80vw] max-h-[80vh] object-contain"
-                        />
-                    </div>
-                )}
-            </ModalContent>
+        <Modal>
+            <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="blur">
+                <Modal.Container size="full">
+                    <Modal.Dialog className="bg-transparent shadow-none max-w-none">
+                        {() => (
+                            <div className="flex grow items-center justify-center cursor-zoom-out"
+                                 onClick={onClose}>
+                                <img
+                                    src={imageUrl}
+                                    alt="Game screenshot"
+                                    className="max-w-[80vw] max-h-[80vh] object-contain rounded-xl"
+                                />
+                            </div>
+                        )}
+                    </Modal.Dialog>
+                </Modal.Container>
+            </Modal.Backdrop>
         </Modal>
     )
 }

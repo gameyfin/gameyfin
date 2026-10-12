@@ -3,8 +3,8 @@ import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/general/input/Input";
-import { HandWavingIcon, PaletteIcon, UserIcon } from "@phosphor-icons/react";
-import {addToast, Card} from "@heroui/react";
+import {HandWavingIcon, PaletteIcon, UserIcon} from "@phosphor-icons/react";
+import {Card, toast} from "@heroui/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import {useNavigate} from "react-router";
@@ -81,58 +81,56 @@ function SetupView() {
     return (
         <div className="flex flex-row size-full items-center justify-center gradient-primary">
             <Card className="w-3/4 h-3/4 min-w-[500px] p-8">
-                <Wizard
-                    initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}
-                    onSubmit={
-                        async (values: any) => {
-                            try {
-                                await SetupEndpoint.registerSuperAdmin({
-                                    username: values.username,
-                                    password: values.password,
-                                    email: values.email
-                                });
-                                addToast({
-                                    title: "Setup finished",
-                                    description: "Have fun with Gameyfin!",
-                                    color: "success"
-                                });
-                            } catch (e) {
-                                addToast({
-                                    title: "Could not register super admin user",
-                                    description: "Maybe Gameyfin is already set up?",
-                                    color: "warning"
-                                });
-                            } finally {
-                                navigate('/login');
+                <Card.Content className="h-full">
+                    <Wizard
+                        initialValues={{username: '', email: '', password: '', passwordRepeat: ''}}
+                        onSubmit={
+                            async (values: any) => {
+                                try {
+                                    await SetupEndpoint.registerSuperAdmin({
+                                        username: values.username,
+                                        password: values.password,
+                                        email: values.email
+                                    });
+                                    toast.success("Setup finished", {
+                                        description: "Have fun with Gameyfin!",
+                                    });
+                                } catch (e) {
+                                    toast.warning("Could not register super admin user", {
+                                        description: "Maybe Gameyfin is already set up?",
+                                    });
+                                } finally {
+                                    navigate('/login');
+                                }
                             }
                         }
-                    }
-                >
-                    <WizardStep icon={<HandWavingIcon/>}>
-                        <WelcomeStep/>
-                    </WizardStep>
-                    <WizardStep icon={<PaletteIcon/>}>
-                        <ThemeStep/>
-                    </WizardStep>
-                    <WizardStep
-                        validationSchema={Yup.object({
-                            username: Yup.string()
-                                .required('Required'),
-                            password: Yup.string()
-                                .min(8, 'Password must be at least 8 characters long')
-                                .required('Required'),
-                            email: Yup.string()
-                                .email()
-                                .required('Required'),
-                            passwordRepeat: Yup.string()
-                                .equals([Yup.ref('password')], 'Passwords do not match')
-                                .required('Required')
-                        })}
-                        icon={<UserIcon/>}
                     >
-                        <UserStep/>
-                    </WizardStep>
-                </Wizard>
+                        <WizardStep icon={<HandWavingIcon/>}>
+                            <WelcomeStep/>
+                        </WizardStep>
+                        <WizardStep icon={<PaletteIcon/>}>
+                            <ThemeStep/>
+                        </WizardStep>
+                        <WizardStep
+                            validationSchema={Yup.object({
+                                username: Yup.string()
+                                    .required('Required'),
+                                password: Yup.string()
+                                    .min(8, 'Password must be at least 8 characters long')
+                                    .required('Required'),
+                                email: Yup.string()
+                                    .email()
+                                    .required('Required'),
+                                passwordRepeat: Yup.string()
+                                    .equals([Yup.ref('password')], 'Passwords do not match')
+                                    .required('Required')
+                            })}
+                            icon={<UserIcon/>}
+                        >
+                            <UserStep/>
+                        </WizardStep>
+                    </Wizard>
+                </Card.Content>
             </Card>
         </div>
     );

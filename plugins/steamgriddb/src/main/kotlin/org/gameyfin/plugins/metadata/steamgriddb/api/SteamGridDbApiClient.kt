@@ -28,6 +28,8 @@ class SteamGridDbApiClient(private val apiKey: String) {
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
             json(json)
+            // The API sometimes returns JSON bodies labeled as text/html
+            json(json, contentType = ContentType.Text.Html)
         }
     }
 
@@ -41,7 +43,7 @@ class SteamGridDbApiClient(private val apiKey: String) {
     }
 
     suspend fun search(term: String, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbSearchResult {
-        return get("search/autocomplete/${term.encodeURLPath(encodeSlash = true, encodeEncoded = false)}", block).body()
+        return get("search/autocomplete/${term.encodeURLPathPart()}", block).body()
     }
 
     suspend fun game(gameId: Int, block: HttpRequestBuilder.() -> Unit = {}): SteamGridDbGameResult {
@@ -68,7 +70,7 @@ class SteamGridDbApiClient(private val apiKey: String) {
     }
 
     private suspend fun get(endpoint: String, block: HttpRequestBuilder.() -> Unit = {}): HttpResponse {
-        return client.get("$BASE_URL/$endpoint".encodeURLPath(encodeEncoded = false)) {
+        return client.get("$BASE_URL/$endpoint") {
             bearerAuth(apiKey)
             block()
         }

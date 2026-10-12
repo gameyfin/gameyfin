@@ -155,7 +155,7 @@ class GameService(
 
         val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
-            is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername)
+            is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername ?: error("OidcUser has no preferred username"))
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
