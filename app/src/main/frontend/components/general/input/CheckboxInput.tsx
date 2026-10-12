@@ -15,7 +15,7 @@ export default function CheckboxInput({label, description, resetValue, className
 
     return (
         <CheckboxGroup
-            className={`flex flex-row flex-1 gap-2 ${className ?? ""}`}
+            className={`flex flex-row flex-1 items-center gap-2 ${className ?? ""}`}
             isInvalid={!!meta.error}
             value={field.value ? [field.name] : []}
         >
@@ -28,7 +28,7 @@ export default function CheckboxInput({label, description, resetValue, className
                     name={field.name}
                     id={field.name}
                     value={field.name}
-                    className="items-center"
+                    className="flex-row items-center gap-0 mt-0!"
                 >
                     <Checkbox.Content>
                         <Checkbox.Control>

@@ -51,17 +51,19 @@ export default function LoginView() {
                     <Formik
                         initialValues={{}}
                         onSubmit={tryLogin}>
-                        {(formik: { isSubmitting: any; }) => (
+                        {(formik: { isSubmitting: boolean; }) => (
                             <Form className="mb-1 flex flex-col gap-6">
                                 <Input
                                     name="username"
                                     label="Username"
                                     autoComplete="username"
+                                    variant="secondary"
                                 />
                                 <Input
                                     name="password"
                                     label="Password"
                                     autoComplete="current-password"
+                                    variant="secondary"
                                     type="password"
                                 />
                                 <div className="flex justify-between items-center">
@@ -76,7 +78,7 @@ export default function LoginView() {
                                             </Button>
                                         }
                                         <Button variant="primary" type="submit" isPending={formik.isSubmitting}>
-                                            {formik.isSubmitting ? "" : "Log in"}
+                                            Log in
                                         </Button>
                                     </div>
                                 </div>

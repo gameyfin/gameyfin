@@ -21,12 +21,6 @@ export default function NumberInput({
                                     }: CustomNumberInputProps) {
     const [field, meta, helpers] = useField<number>(props.name);
 
-    // NOTE: NumberField provides its "increment"/"decrement" button slots to *every* descendant
-    // Button (not just those inside NumberField.Group), so any unrelated Button (e.g. the
-    // ResetToDefaultButton below) must be rendered as a sibling *outside* the NumberField tree,
-    // otherwise it throws "A slot prop is required. Valid slot names are increment and decrement."
-    // We use `display:contents` on NumberField so its children still participate in this
-    // component's own grid layout as if NumberField wasn't there.
     return (
         <div className={`min-h-20 grid grid-cols-[1fr_auto] items-center gap-1 ${className ?? ""}`}>
             <NumberField

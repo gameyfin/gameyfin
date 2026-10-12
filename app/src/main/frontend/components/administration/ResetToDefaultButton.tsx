@@ -32,9 +32,9 @@ export default function ResetToDefaultButton({fieldName, defaultValue}: ResetToD
                 <Button
                     isIconOnly
                     size="sm"
-                    variant="tertiary"
+                    variant="ghost"
                     isDisabled={isDefault}
-                    className="-ml-2 z-50 rounded-full"
+                    className="-ml-2 rounded-full"
                     onPress={() => setFieldValue(fieldName, defaultValue)}
                 >
                     <ArrowUUpLeftIcon size={16}/>

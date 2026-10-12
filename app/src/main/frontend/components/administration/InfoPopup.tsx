@@ -12,7 +12,7 @@ export default function InfoPopup({content}: InfoPopupProps) {
     return (
         <Tooltip delay={0}>
             <Tooltip.Trigger>
-                <InfoIcon size={16} weight="fill" className="ml-1 z-50"/>
+                <InfoIcon size={16} weight="fill" className="ml-1 relative z-50 block"/>
             </Tooltip.Trigger>
             <Tooltip.Content placement="right">
                 <Markdown

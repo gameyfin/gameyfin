@@ -1,6 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
 import {GearFineIcon, QuestionIcon, SignOutIcon, UserIcon} from "@phosphor-icons/react";
-import {Description, Dropdown, Label} from "@heroui/react";
+import {Dropdown, Label} from "@heroui/react";
 import {useNavigate} from "react-router";
 import Avatar from "Frontend/components/general/Avatar";
 import {isAdmin} from "Frontend/util/utils";
