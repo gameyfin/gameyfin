@@ -9,6 +9,10 @@ group = "org.gameyfin"
 version = "2.4.1-preview"
 
 allprojects {
+    dependencyLocking {
+        lockAllConfigurations()
+    }
+
     repositories {
         mavenCentral()
         mavenLocal()
