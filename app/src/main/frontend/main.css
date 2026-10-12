@@ -41,6 +41,12 @@ a.link.text-foreground {
     --background: #000000;
 }
 
+/* Vaadin Aura paints the page via an unlayered `:root { background: var(--aura-app-background) }`
+   (dark gray), which hides HeroUI's --background. Make it follow HeroUI's background instead. */
+:root {
+    --aura-app-background: var(--background);
+}
+
 /* Custom gridTemplateColumns */
 @utility grid-cols-300px {
     grid-template-columns: repeat(auto-fit, 300px);
