@@ -1,7 +1,7 @@
 import {useTheme} from "next-themes";
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Button, Card, ColorSwatchPicker, Label, ListBox, Select, Separator} from "@heroui/react";
-import {themes, applyAccentTheme} from "Frontend/theming/themes";
+import {themes, themeNames, applyAccentTheme} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
 import {toTitleCase} from "Frontend/util/utils";
@@ -11,7 +11,14 @@ import type {Color} from "@heroui/react";
 export function ThemeSelector() {
 
     const {theme: mode, setTheme: setMode} = useTheme();
-    const [selectedTheme, setSelectedTheme] = useState(themes[0].name!);
+    // Start from the accent theme that is currently applied, not themes[0], so opening this view
+    // doesn't reset the user's theme.
+    const [selectedTheme, setSelectedTheme] = useState(
+        () => themeNames().find((n) => document.documentElement.classList.contains(n)) ?? themes[0].name!
+    );
+    // Don't persist anything until the stored preference has been loaded, otherwise the initial
+    // state would overwrite it.
+    const preferenceLoaded = useRef(false);
     const userPreferenceService = useUserPreferenceService();
 
     const selectedThemeAccent = useMemo(
@@ -25,7 +32,9 @@ export function ThemeSelector() {
                 const separatorIndex = syncedTheme.lastIndexOf("-");
                 setSelectedTheme(syncedTheme.substring(0, separatorIndex));
             }
-        }).catch(console.error);
+        }).catch(console.error).finally(() => {
+            preferenceLoaded.current = true;
+        });
     }, []);
 
     useEffect(() => {
@@ -34,7 +43,7 @@ export function ThemeSelector() {
     }, [selectedTheme, mode]);
 
     function updateTheme() {
-        if (mode) {
+        if (mode && preferenceLoaded.current) {
             let theme = `${selectedTheme}-${mode}`;
             userPreferenceService.set("preferred-theme", theme).catch(console.error);
         }
