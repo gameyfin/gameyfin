@@ -12,6 +12,8 @@ interface CustomInputProps extends Omit<TextFieldProps, "name" | "children"> {
     type?: string;
     autoComplete?: string;
     placeholder?: string;
+    /** Use "secondary" when the input sits on a card/surface background. */
+    variant?: "primary" | "secondary";
 }
 
 export default function Input({
@@ -23,6 +25,7 @@ export default function Input({
                                   type,
                                   autoComplete,
                                   placeholder,
+                                  variant,
                                   ...props
                               }: CustomInputProps) {
     const [field, meta, helpers] = useField(props.name);
@@ -40,7 +43,7 @@ export default function Input({
         >
             {label && <Label>{label}</Label>}
             <div className="flex items-center gap-1">
-                <HeroUiInput className="grow" type={type} autoComplete={autoComplete} placeholder={placeholder}/>
+                <HeroUiInput className="grow" variant={variant} type={type} autoComplete={autoComplete} placeholder={placeholder}/>
                 {(description || resetValue !== undefined) && (
                     <span className="flex items-center gap-1">
                         {description && <InfoPopup content={description as string}/>}
