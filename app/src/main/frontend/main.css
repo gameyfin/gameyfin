@@ -36,6 +36,15 @@ a.link.text-foreground {
     color: var(--foreground);
 }
 
+/*
+ * Aura also ships an unlayered `:where(h1..h6) { margin: 0 }`, which beats Tailwind's layered
+ * margin utilities (mt-8, mb-1, ...) on every heading, e.g. the admin page section titles.
+ * `revert-layer` drops Aura's unlayered reset so the layered styles apply again.
+ */
+h1, h2, h3, h4, h5, h6 {
+    margin: revert-layer;
+}
+
 /* HeroUI v3's dark background is a dark gray (oklch 12%); Gameyfin uses pure black */
 .dark {
     --background: #000000;
