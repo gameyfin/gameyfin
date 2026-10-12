@@ -24,7 +24,7 @@ export default function LibraryManagementView() {
 
     return libraryId && state.state[parseInt(libraryId)] && <div className="flex flex-col gap-4">
         <div className="flex flex-row gap-4 items-center">
-            <Button isIconOnly variant="tertiary" onPress={() => history.back()}>
+            <Button isIconOnly variant="ghost" onPress={() => history.back()}>
                 <ArrowLeftIcon/>
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>

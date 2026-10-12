@@ -33,7 +33,7 @@ function UserManagementLayout({getConfig, formik}: any) {
                 <h2 className="text-xl font-bold mt-8 mb-1">Users</h2>
                 <Tooltip delay={0}>
                     <Tooltip.Trigger>
-                        <Button isIconOnly variant="tertiary" onPress={inviteUserModal.open}>
+                        <Button isIconOnly variant="ghost" onPress={inviteUserModal.open}>
                             <UserPlusIcon/>
                         </Button>
                     </Tooltip.Trigger>

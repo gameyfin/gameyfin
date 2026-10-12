@@ -121,7 +121,8 @@ export function CoverRow({games, title, link}: CoverRowProps) {
     return (
         <div className="flex flex-col mb-4">
             <div className="flex flex-row justify-between items-baseline mb-4">
-                <Link href={link} className="flex flex-row gap-1 w-fit items-baseline text-foreground hover:underline underline-offset-2">
+                <Link href={link}
+                      className="flex flex-row gap-1 w-fit items-baseline text-foreground hover:underline underline-offset-2">
                     <p className="text-2xl font-bold">{title}</p>
                     <CaretRightIcon weight="bold" size={16}/>
                 </Link>
@@ -129,7 +130,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
                     <Button
                         isIconOnly
                         size="sm"
-                        variant="tertiary"
+                        variant="ghost"
                         onPress={scrollLeft}
                         isDisabled={!canScrollLeft}
                         aria-label="Scroll left"
@@ -139,7 +140,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
                     <Button
                         isIconOnly
                         size="sm"
-                        variant="tertiary"
+                        variant="ghost"
                         onPress={scrollRight}
                         isDisabled={!canScrollRight}
                         aria-label="Scroll right"

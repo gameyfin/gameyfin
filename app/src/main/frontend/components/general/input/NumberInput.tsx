@@ -22,7 +22,7 @@ export default function NumberInput({
     const [field, meta, helpers] = useField<number>(props.name);
 
     return (
-        <div className={`min-h-20 grid grid-cols-[1fr_auto] items-center gap-1 ${className ?? ""}`}>
+        <div className={`min-h-20 grid grid-cols-[1fr_auto] content-start items-center gap-x-1 gap-y-1 ${className ?? ""}`}>
             <NumberField
                 fullWidth={false}
                 {...props}

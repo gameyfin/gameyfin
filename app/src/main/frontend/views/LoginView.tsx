@@ -73,7 +73,7 @@ export default function LoginView() {
                                     </Link>
                                     <div className="flex flex-row gap-2">
                                         {signUpAllowed &&
-                                            <Button variant="tertiary" onPress={signUpModal.open}>
+                                            <Button variant="ghost" onPress={signUpModal.open}>
                                                 Sign up
                                             </Button>
                                         }

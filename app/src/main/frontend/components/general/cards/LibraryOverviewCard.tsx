@@ -54,7 +54,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary"
+                            <Button isIconOnly variant="ghost"
                                     isDisabled={!hasActiveMetadataPlugins}
                                     onPress={() => triggerScan(ScanType.QUICK)}>
                                 <MagnifyingGlassIcon/>
@@ -66,7 +66,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                     </Tooltip>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary"
+                            <Button isIconOnly variant="ghost"
                                     isDisabled={!hasActiveMetadataPlugins}
                                     onPress={() => triggerScan(ScanType.FULL)}>
                                 <MagnifyingGlassPlusIcon/>
@@ -78,7 +78,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                     </Tooltip>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary" onPress={() => navigate('library/' + library.id)}>
+                            <Button isIconOnly variant="ghost" onPress={() => navigate('library/' + library.id)}>
                                 <SlidersHorizontalIcon/>
                             </Button>
                         </Tooltip.Trigger>

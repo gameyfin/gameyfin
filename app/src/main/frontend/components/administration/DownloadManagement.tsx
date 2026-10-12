@@ -33,7 +33,7 @@ function DownloadManagementLayout({getConfig, formik}: any) {
                         any issues you encounter.
                     </Alert.Description>
                 </Alert.Content>
-                <Button variant="tertiary"
+                <Button variant="ghost"
                         className="bg-default"
                         onPress={() => window.open("https://github.com/gameyfin/gameyfin/issues", "_blank")}>
                     Open Issues
@@ -41,8 +41,8 @@ function DownloadManagementLayout({getConfig, formik}: any) {
             </Alert>
             <Section title="Bandwidth limiting"/>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-row items-baseline gap-4">
-                    <ConfigFormField configElement={getConfig("downloads.bandwidth-limit.enabled")}/>
+                <div className="flex flex-row items-start gap-4">
+                    <ConfigFormField className="pt-8" configElement={getConfig("downloads.bandwidth-limit.enabled")}/>
                     <ConfigFormField configElement={getConfig("downloads.bandwidth-limit.mbps")}
                                      isDisabled={!formik.values.downloads["bandwidth-limit"].enabled}/>
                 </div>

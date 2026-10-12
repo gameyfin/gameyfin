@@ -24,7 +24,7 @@ export function PluginManagementSection({type}: PluginManagementSectionProps) {
                 <Tooltip>
                     <Tooltip.Trigger>
                         <Button isIconOnly
-                                variant="tertiary"
+                                variant="ghost"
                                 onPress={pluginPrioritiesModal.open}
                                 isDisabled={plugins.length === 0}>
                             <ListNumbersIcon/>

@@ -79,14 +79,14 @@ export default function MainLayout() {
             {isExploding ? <Confetti {...confettiProps}/> : <></>}
 
             <header className="2xl:px-[12.5%]">
-                <nav className="flex flex-wrap items-center justify-between gap-4 px-4 py-4">
+                <nav className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 [&_button>svg]:size-5">
                     <div className="flex items-center gap-2">
                         {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
                             <div className="flex flex-row gap-2">
-                                <Button isIconOnly onPress={() => history.back()} variant="tertiary">
+                                <Button isIconOnly onPress={() => history.back()} variant="ghost">
                                     <ArrowLeftIcon weight="bold"/>
                                 </Button>
-                                <Button isIconOnly onPress={() => navigate("/")} variant="tertiary">
+                                <Button isIconOnly onPress={() => navigate("/")} variant="ghost">
                                     <HouseIcon weight="fill"/>
                                 </Button>
                             </div>
@@ -99,7 +99,7 @@ export default function MainLayout() {
                                 <Tooltip.Trigger>
                                     <Button
                                         isIconOnly
-                                        variant="tertiary"
+                                        variant="ghost"
                                         onPress={() => navigate("/game/" + getRandomGameId())}
                                         isDisabled={gameState.games.length === 0}
                                     >
@@ -111,7 +111,7 @@ export default function MainLayout() {
                             <SearchBar/>
                             <Tooltip>
                                 <Tooltip.Trigger>
-                                    <Button isIconOnly variant="tertiary" onPress={() => navigate("/search")}>
+                                    <Button isIconOnly variant="ghost" onPress={() => navigate("/search")}>
                                         <ListMagnifyingGlassIcon/>
                                     </Button>
                                 </Tooltip.Trigger>

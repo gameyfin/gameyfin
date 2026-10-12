@@ -17,7 +17,11 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
     const roleAssignmentModal = useOverlayState();
     const [userEnabled, setUserEnabled] = useState(true);
     const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
-    const [dropdownItems, setDropdownItems] = useState<Array<{ key: string, onPress: () => void | Promise<void>, label: string }>>([]);
+    const [dropdownItems, setDropdownItems] = useState<Array<{
+        key: string,
+        onPress: () => void | Promise<void>,
+        label: string
+    }>>([]);
     const [passwordResetToken, setPasswordResetToken] = useState<TokenDto>();
 
     useEffect(() => {
@@ -115,12 +119,13 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                 <div className="absolute right-0 top-0">
                     <Dropdown>
                         <Dropdown.Trigger>
-                            <Button isIconOnly variant="tertiary">
+                            <Button isIconOnly variant="ghost">
                                 <DotsThreeVerticalIcon/>
                             </Button>
                         </Dropdown.Trigger>
                         <Dropdown.Popover placement="bottom end">
-                            <Dropdown.Menu aria-label="Static Actions" disabledKeys={disabledKeys} onAction={onDropdownAction}>
+                            <Dropdown.Menu aria-label="Static Actions" disabledKeys={disabledKeys}
+                                           onAction={onDropdownAction}>
                                 {dropdownItems.map((item) => (
                                     <Dropdown.Item
                                         key={item.key}
@@ -148,10 +153,10 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                 </div>
             </Card>
             <ConfirmUserDeletionModal isOpen={userDeletionConfirmationModal.isOpen}
-                                     onOpenChange={userDeletionConfirmationModal.setOpen}
+                                      onOpenChange={userDeletionConfirmationModal.setOpen}
                                       user={user}/>
             <PasswordResetTokenModal isOpen={passwordResetTokenModal.isOpen}
-                                    onOpenChange={passwordResetTokenModal.setOpen}
+                                     onOpenChange={passwordResetTokenModal.setOpen}
                                      token={passwordResetToken as TokenDto}/>
             <AssignRolesModal isOpen={roleAssignmentModal.isOpen} onOpenChange={roleAssignmentModal.setOpen}
                               user={user}/>

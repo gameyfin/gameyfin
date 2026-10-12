@@ -24,17 +24,19 @@ export default function SelectInput({label, values, description, resetValue, ...
                 isInvalid={!!meta.error}
             >
                 <Label>{label}</Label>
-                <Select.Trigger>
-                    <Select.Value/>
-                    <Select.Indicator/>
-                </Select.Trigger>
-                {(description || resetValue !== undefined) && (
-                    <span className="flex items-center">
-                        {description && <InfoPopup content={description}/>}
-                        {resetValue !== undefined &&
-                            <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
-                    </span>
-                )}
+                <div className="flex items-center gap-1">
+                    <Select.Trigger className="grow">
+                        <Select.Value/>
+                        <Select.Indicator/>
+                    </Select.Trigger>
+                    {(description || resetValue !== undefined) && (
+                        <span className="flex items-center gap-1">
+                            {description && <InfoPopup content={description}/>}
+                            {resetValue !== undefined &&
+                                <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
+                        </span>
+                    )}
+                </div>
                 <Select.Popover>
                     <ListBox>
                         {values.map((v) => (

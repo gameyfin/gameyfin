@@ -53,7 +53,7 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary" onPress={() => navigate('collection/' + collection.id)}>
+                            <Button isIconOnly variant="ghost" onPress={() => navigate('collection/' + collection.id)}>
                                 <SlidersHorizontalIcon/>
                             </Button>
                         </Tooltip.Trigger>

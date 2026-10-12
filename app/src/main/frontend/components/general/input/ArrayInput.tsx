@@ -1,7 +1,7 @@
 import {FieldArray, useField} from "formik";
 import {Button, Chip, CloseButton, FieldError, Input, Label, Popover, TextField} from "@heroui/react";
 import {KeyboardEvent, useState} from "react";
-import {PlusIcon} from "@phosphor-icons/react";
+import {CheckIcon, PlusIcon} from "@phosphor-icons/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
@@ -17,21 +17,25 @@ interface ArrayInputProps {
 export default function ArrayInput({label, description, resetValue, ...props}: ArrayInputProps) {
     const [field, meta] = useField<string[]>(props.name);
     const [newElementValue, setNewElementValue] = useState<string>("");
+    const [isPopoverOpen, setPopoverOpen] = useState(false);
 
     return (
         <FieldArray name={field.name}
                     render={arrayHelpers => {
+                        function addElements() {
+                            newElementValue
+                                .split(",")
+                                .map((value) => value.trim())
+                                .filter((value) => value !== "")
+                                .forEach((value) => arrayHelpers.push(value));
+
+                            setNewElementValue("");
+                        }
+
                         function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
                             if (event.key === "Enter" || event.key == "Tab" || event.key === ",") {
                                 event.preventDefault();
-
-                                newElementValue
-                                    .split(",")
-                                    .map((value) => value.trim())
-                                    .filter((value) => value !== "")
-                                    .forEach((value) => arrayHelpers.push(value));
-
-                                setNewElementValue("");
+                                addElements();
                             }
                         }
 
@@ -49,16 +53,17 @@ export default function ArrayInput({label, description, resetValue, ...props}: A
 
                                 <div className="flex flex-row flex-wrap gap-2 items-center">
                                     {field.value.map((element: string, index: number) => (
-                                        <Chip key={index} className={props.isDisabled ? "opacity-50" : ""}>
+                                        <Chip key={index} className={`items-center ${props.isDisabled ? "opacity-50" : "pr-0"}`}>
                                             {element}
                                             {!props.isDisabled &&
                                                 <CloseButton
                                                     aria-label="Remove"
+                                                    className="size-5 -my-1"
                                                     onPress={() => arrayHelpers.remove(index)}
                                                 />}
                                         </Chip>
                                     ))}
-                                    <Popover>
+                                    <Popover isOpen={isPopoverOpen} onOpenChange={setPopoverOpen}>
                                         <Button isIconOnly
                                                 size="sm"
                                                 variant="ghost"
@@ -70,17 +75,30 @@ export default function ArrayInput({label, description, resetValue, ...props}: A
                                         <Popover.Content placement="bottom">
                                             <Popover.Dialog>
                                                 <Popover.Arrow/>
-                                                <TextField>
-                                                    <Label className="sr-only">New element</Label>
-                                                    <Input
-                                                        variant="secondary"
-                                                        value={newElementValue}
-                                                        onChange={(e) => setNewElementValue(e.target.value)}
-                                                        onKeyDown={handleKeyDown}
-                                                        placeholder="New element..."
-                                                    />
-                                                    <FieldError/>
-                                                </TextField>
+                                                <div className="flex flex-row items-center gap-2">
+                                                    <TextField>
+                                                        <Label className="sr-only">New element</Label>
+                                                        <Input
+                                                            variant="secondary"
+                                                            value={newElementValue}
+                                                            onChange={(e) => setNewElementValue(e.target.value)}
+                                                            onKeyDown={handleKeyDown}
+                                                            placeholder="New element..."
+                                                        />
+                                                        <FieldError/>
+                                                    </TextField>
+                                                    <Button isIconOnly
+                                                            size="sm"
+                                                            variant="tertiary"
+                                                            aria-label="Add element"
+                                                            onPress={() => {
+                                                                addElements();
+                                                                setPopoverOpen(false);
+                                                            }}
+                                                    >
+                                                        <CheckIcon/>
+                                                    </Button>
+                                                </div>
                                             </Popover.Dialog>
                                         </Popover.Content>
                                     </Popover>

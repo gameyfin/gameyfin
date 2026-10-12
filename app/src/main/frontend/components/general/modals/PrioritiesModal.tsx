@@ -112,7 +112,7 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
 
                                 </Modal.Body>
                                 <Modal.Footer>
-                                    <Button variant="tertiary" onPress={close}>
+                                    <Button variant="ghost" onPress={close}>
                                         Cancel
                                     </Button>
                                     <Button variant="primary" onPress={() => updateItemOrder(close)}>

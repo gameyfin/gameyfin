@@ -101,10 +101,11 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
                                     }
                                 </Modal.Body>
                                 <Modal.Footer>
-                                    <Button variant="tertiary" onPress={close}>
+                                    <Button variant="ghost" onPress={close}>
                                         Cancel
                                     </Button>
-                                    <Button variant="primary" onPress={assignRoles} isDisabled={selectedRoles.length === 0}>
+                                    <Button variant="primary" onPress={assignRoles}
+                                            isDisabled={selectedRoles.length === 0}>
                                         Assign roles
                                     </Button>
                                 </Modal.Footer>

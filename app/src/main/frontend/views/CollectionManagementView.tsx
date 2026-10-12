@@ -1,4 +1,4 @@
-import {toast, Button} from "@heroui/react";
+import {Button, toast} from "@heroui/react";
 import {useNavigate, useParams} from "react-router";
 import React, {useEffect} from "react";
 import {ArrowLeftIcon, CheckIcon} from "@phosphor-icons/react";
@@ -67,7 +67,7 @@ export default function CollectionManagementView() {
     return collection && (
         <div className="flex flex-col gap-4">
             <div className="flex flex-row gap-4 items-center">
-                <Button isIconOnly variant="tertiary" onPress={() => history.back()}>
+                <Button isIconOnly variant="ghost" onPress={() => history.back()}>
                     <ArrowLeftIcon/>
                 </Button>
                 <h1 className="text-2xl font-bold">Manage Collection</h1>

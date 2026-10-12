@@ -49,7 +49,8 @@ export default function CollectionCreationModal({
                                 >
                                     {(formik) =>
                                         <Form>
-                                            <Modal.Header><Modal.Heading>Create a new collection</Modal.Heading></Modal.Header>
+                                            <Modal.Header><Modal.Heading>Create a new
+                                                collection</Modal.Heading></Modal.Header>
                                             <Modal.Body>
                                                 <div className="flex flex-col gap-2">
                                                     <Input
@@ -68,7 +69,7 @@ export default function CollectionCreationModal({
                                                 </div>
                                             </Modal.Body>
                                             <Modal.Footer className="flex flex-row justify-end">
-                                                <Button variant="tertiary" onPress={close}>
+                                                <Button variant="ghost" onPress={close}>
                                                     Cancel
                                                 </Button>
                                                 <Button variant="primary"

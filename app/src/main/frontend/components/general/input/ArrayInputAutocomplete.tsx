@@ -1,5 +1,5 @@
 import React, {Key, useEffect, useState} from "react";
-import {Chip, CloseButton, ComboBox, Input, Label, ListBox} from "@heroui/react";
+import {Chip, CloseButton, ComboBox, Input, ListBox} from "@heroui/react";
 import {FieldArray, useField} from "formik";
 
 type ArrayInputAutocompleteProps = {

@@ -4,7 +4,7 @@ import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
-import {Accordion, Button, Chip, Link, Tooltip, toast, useOverlayState} from "@heroui/react";
+import {Accordion, Button, Chip, Link, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
@@ -141,7 +141,7 @@ export default function GameView() {
                         {isAdmin(auth) && <div className="flex flex-row gap-2">
                             <Tooltip>
                                 <Tooltip.Trigger>
-                                    <Button isIconOnly variant="tertiary" onPress={toggleMatchConfirmed}>
+                                    <Button isIconOnly variant="ghost" onPress={toggleMatchConfirmed}>
                                         {(game.metadata as GameMetadataAdminDto).matchConfirmed ?
                                             <CheckCircleIcon weight="fill" className="fill-success"/> :
                                             <CheckCircleIcon/>}
@@ -153,7 +153,7 @@ export default function GameView() {
                             </Tooltip>
                             <Tooltip>
                                 <Tooltip.Trigger>
-                                    <Button isIconOnly variant="tertiary" onPress={editGameModal.open}>
+                                    <Button isIconOnly variant="ghost" onPress={editGameModal.open}>
                                         <PencilIcon/>
                                     </Button>
                                 </Tooltip.Trigger>
@@ -161,7 +161,7 @@ export default function GameView() {
                             </Tooltip>
                             <Tooltip>
                                 <Tooltip.Trigger>
-                                    <Button isIconOnly variant="tertiary" onPress={matchGameModal.open}>
+                                    <Button isIconOnly variant="ghost" onPress={matchGameModal.open}>
                                         <MagnifyingGlassIcon/>
                                     </Button>
                                 </Tooltip.Trigger>
@@ -237,7 +237,8 @@ export default function GameView() {
                                         {game.developers && game.developers.length > 0
                                             ? [...game.developers].sort().map((dev, index) =>
                                                 <React.Fragment key={dev}>
-                                                    <Link href={`/search?dev=${encodeURIComponent(dev)}`} className="text-foreground hover:underline">
+                                                    <Link href={`/search?dev=${encodeURIComponent(dev)}`}
+                                                          className="text-foreground hover:underline">
                                                         {dev}
                                                     </Link>
                                                     {index !== game.developers!.length - 1 && <p>/</p>}
@@ -311,7 +312,8 @@ export default function GameView() {
                                     <td className="flex flex-row gap-1">
                                         {game.features && game.features.length > 0
                                             ? [...game.features].sort().map((feature) =>
-                                                <Link key={feature} href={`/search?feature=${encodeURIComponent(feature)}`}>
+                                                <Link key={feature}
+                                                      href={`/search?feature=${encodeURIComponent(feature)}`}>
                                                     <Chip size="sm" className="text-sm">
                                                         {feature}
                                                     </Chip>
@@ -335,7 +337,8 @@ export default function GameView() {
                                                 .sort((a, b) => a.id - b.id)
                                                 .map((collection, index) =>
                                                     <React.Fragment key={collection.id}>
-                                                        <Link href={`/collection/${collection.id}`} className="text-foreground hover:underline">
+                                                        <Link href={`/collection/${collection.id}`}
+                                                              className="text-foreground hover:underline">
                                                             {collection.name}
                                                         </Link>
                                                         {index !== game.collectionIds!.length - 1 && <p>/</p>}

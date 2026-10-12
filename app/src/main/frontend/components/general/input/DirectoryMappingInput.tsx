@@ -1,6 +1,6 @@
 import React from "react";
 import {Button, useOverlayState} from "@heroui/react";
-import { ArrowRightIcon, MinusIcon, PlusIcon, XCircleIcon } from "@phosphor-icons/react";
+import {ArrowRightIcon, MinusIcon, PlusIcon, XCircleIcon} from "@phosphor-icons/react";
 import PathPickerModal from "Frontend/components/general/modals/PathPickerModal";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import DirectoryMappingDto from "Frontend/generated/org/gameyfin/app/libraries/dto/DirectoryMappingDto";
@@ -26,7 +26,7 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
         <div className="flex flex-col gap-2">
             <div className="flex flex-row justify-between items-center">
                 <p className="font-bold">Directories</p>
-                <Button isIconOnly variant="tertiary" size="sm"
+                <Button isIconOnly variant="ghost" size="sm"
                         onPress={pathPickerModal.open}>
                     <PlusIcon/>
                 </Button>
@@ -56,7 +56,7 @@ export default function DirectoryMappingInput({name}: DirectoryMappingInputProps
                     )}
                     <Button
                         isIconOnly
-                        variant="tertiary"
+                        variant="ghost"
                         size="sm"
                         onPress={() => removeDirectoryMapping(directory)}
                         className="ml-2"

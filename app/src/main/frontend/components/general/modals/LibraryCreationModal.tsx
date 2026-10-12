@@ -1,12 +1,5 @@
 import React, {useState} from "react";
-import {
-    Alert,
-    Button,
-    Checkbox,
-    Link,
-    Modal,
-    toast
-} from "@heroui/react";
+import {Alert, Button, Checkbox, Link, Modal, toast} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
@@ -69,7 +62,8 @@ export default function LibraryCreationModal({
                                 >
                                     {(formik) =>
                                         <Form>
-                                            <Modal.Header><Modal.Heading>Add a new library</Modal.Heading></Modal.Header>
+                                            <Modal.Header><Modal.Heading>Add a new
+                                                library</Modal.Heading></Modal.Header>
                                             <Modal.Body>
                                                 <div className="flex flex-col gap-2">
                                                     <Input
@@ -94,7 +88,8 @@ export default function LibraryCreationModal({
                                                                 <p>Go to <Link className="underline"
                                                                                href="/administration/plugins">Plugins</Link> and
                                                                     enable
-                                                                    at least one metadata plugin in order to scan your library.</p>
+                                                                    at least one metadata plugin in order to scan your
+                                                                    library.</p>
                                                             </Alert.Description>
                                                         </Alert.Content>
                                                     </Alert>
@@ -114,7 +109,7 @@ export default function LibraryCreationModal({
                                                     </Checkbox.Content>
                                                 </Checkbox>
                                                 <div className="flex flex-row">
-                                                    <Button variant="tertiary" onPress={close}>
+                                                    <Button variant="ghost" onPress={close}>
                                                         Cancel
                                                     </Button>
                                                     <Button variant="primary"

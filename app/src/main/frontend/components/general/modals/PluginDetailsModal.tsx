@@ -143,7 +143,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                         })()}
                                                         <Tooltip>
                                                             <Tooltip.Trigger>
-                                                                <Button isIconOnly variant="tertiary" size="sm"
+                                                                <Button isIconOnly variant="ghost" size="sm"
                                                                         isPending={configValidated === ValidationState.IN_PROGRESS}
                                                                         onPress={async () => {
                                                                             setConfigValidated(ValidationState.IN_PROGRESS);
@@ -169,12 +169,13 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                         <PluginConfigFormField
                                                             key={entry.key}
                                                             pluginConfigMetadata={entry}
+                                                            variant="secondary"
                                                             showErrorUntouched={true}/>
                                                     )) : "This plugin has no configuration options."
                                                 }
                                             </Modal.Body>
                                             <Modal.Footer>
-                                                <Button variant="tertiary" onPress={close}>
+                                                <Button variant="ghost" onPress={close}>
                                                     Cancel
                                                 </Button>
                                                 {(plugin.configMetadata && plugin.configMetadata?.length > 0) ?

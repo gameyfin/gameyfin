@@ -41,7 +41,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <div className="flex flex-row gap-2">
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary"
+                            <Button isIconOnly variant="ghost"
                                     isDisabled={!hasActiveMetadataPlugins}
                                     onPress={() => triggerScan(ScanType.QUICK)}>
                                 <MagnifyingGlassIcon/>
@@ -53,7 +53,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                     </Tooltip>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary"
+                            <Button isIconOnly variant="ghost"
                                     isDisabled={!hasActiveMetadataPlugins}
                                     onPress={() => triggerScan(ScanType.FULL)}>
                                 <MagnifyingGlassPlusIcon/>
@@ -65,7 +65,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                     </Tooltip>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary" onPress={libraryOrderModal.open}>
+                            <Button isIconOnly variant="ghost" onPress={libraryOrderModal.open}>
                                 <ListNumbersIcon/>
                             </Button>
                         </Tooltip.Trigger>
@@ -75,7 +75,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                     </Tooltip>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary" onPress={libraryCreationModal.open}>
+                            <Button isIconOnly variant="ghost" onPress={libraryCreationModal.open}>
                                 <PlusIcon/>
                             </Button>
                         </Tooltip.Trigger>
@@ -102,7 +102,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <div className="flex flex-row gap-2">
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary" onPress={collectionOrderModal.open}>
+                            <Button isIconOnly variant="ghost" onPress={collectionOrderModal.open}>
                                 <ListNumbersIcon/>
                             </Button>
                         </Tooltip.Trigger>
@@ -112,7 +112,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                     </Tooltip>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
-                            <Button isIconOnly variant="tertiary" onPress={collectionCreationModal.open}>
+                            <Button isIconOnly variant="ghost" onPress={collectionCreationModal.open}>
                                 <PlusIcon/>
                             </Button>
                         </Tooltip.Trigger>
@@ -138,8 +138,9 @@ function GameManagementLayout({getConfig, formik}: any) {
             <div className="flex flex-col gap-4">
                 <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
                 <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
-                <div className="flex flex-row gap-4 items-baseline">
-                    <ConfigFormField configElement={getConfig("library.scan.extract-title-using-regex")}/>
+                <div className="flex flex-row gap-4 items-start">
+                    <ConfigFormField className="pt-8"
+                                     configElement={getConfig("library.scan.extract-title-using-regex")}/>
                     <ConfigFormField configElement={getConfig("library.scan.title-extraction-regex")}
                                      isDisabled={!formik.values.library.scan["extract-title-using-regex"]}/>
                 </div>
@@ -149,8 +150,8 @@ function GameManagementLayout({getConfig, formik}: any) {
             </div>
 
             <Section title="Metadata"/>
-            <div className="flex flex-row items-baseline">
-                <ConfigFormField configElement={getConfig("library.metadata.update.enabled")}/>
+            <div className="flex flex-row items-start">
+                <ConfigFormField className="pt-8" configElement={getConfig("library.metadata.update.enabled")}/>
                 <ConfigFormField configElement={getConfig("library.metadata.update.schedule")}
                                  isDisabled={!formik.values.library.metadata.update.enabled}/>
             </div>
@@ -172,7 +173,8 @@ function GameManagementLayout({getConfig, formik}: any) {
 
             <CollectionPrioritiesModal
                 isOpen={collectionOrderModal.isOpen}
-                onOpenChange={collectionOrderModal.toggle}/>
+                onOpenChange={collectionOrderModal.toggle}
+            />
 
         </div>
     );

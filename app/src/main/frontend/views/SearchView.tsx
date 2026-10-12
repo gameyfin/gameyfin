@@ -293,8 +293,9 @@ export default function SearchView() {
     }
 
     return <div className="flex flex-col gap-4 items-center w-full">
-        <div className="flex w-full justify-between px-12 gap-4 flex-col lg:flex-row">
-            <div className="flex h-full w-full lg:w-96 shrink-0 items-center gap-2 rounded-lg border border-border bg-default/20 px-3 py-2 text-muted dark:bg-default/20">
+        <div className="flex w-full justify-between px-4 gap-4 flex-col lg:flex-row">
+            <div
+                className="flex h-full w-full lg:w-96 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-muted">
                 <MagnifyingGlassIcon/>
                 <Input
                     className="grow"
@@ -309,22 +310,31 @@ export default function SearchView() {
                     </button>
                 )}
             </div>
-            <div className="flex flex-row gap-2">
+            <div className="flex flex-row items-end gap-2">
                 {renderSelect(
                     "Sort",
                     sortBy,
                     (value) => setSortBy(value as string),
                     <>
-                        <ListBox.Item id="title_asc" key="title_asc" textValue="Title (A-Z)">Title (A-Z)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="title_desc" key="title_desc" textValue="Title (Z-A)">Title (Z-A)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="release_desc" key="release_desc" textValue="Release Date (Newest)">Release Date (Newest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="release_asc" key="release_asc" textValue="Release Date (Oldest)">Release Date (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="rating_desc" key="rating_desc" textValue="Rating (Highest)">Rating (Highest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="rating_asc" key="rating_asc" textValue="Rating (Lowest)">Rating (Lowest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="added_desc" key="added_desc" textValue="Date Added (Newest)">Date Added (Newest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="title_asc" key="title_asc" textValue="Title (A-Z)">Title
+                            (A-Z)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="title_desc" key="title_desc" textValue="Title (Z-A)">Title
+                            (Z-A)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="release_desc" key="release_desc" textValue="Release Date (Newest)">Release
+                            Date (Newest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="release_asc" key="release_asc" textValue="Release Date (Oldest)">Release Date
+                            (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="rating_desc" key="rating_desc" textValue="Rating (Highest)">Rating
+                            (Highest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="rating_asc" key="rating_asc" textValue="Rating (Lowest)">Rating
+                            (Lowest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="added_desc" key="added_desc" textValue="Date Added (Newest)">Date Added
+                            (Newest)<ListBox.ItemIndicator/></ListBox.Item>
                         <ListBox.Item id="added_asc" key="added_asc" textValue="Date Added (Oldest)">Date Added (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="updated_desc" key="updated_desc" textValue="Last Updated (Newest)">Last Updated (Newest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="updated_asc" key="updated_asc" textValue="Last Updated (Oldest)">Last Updated (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="updated_desc" key="updated_desc" textValue="Last Updated (Newest)">Last
+                            Updated (Newest)<ListBox.ItemIndicator/></ListBox.Item>
+                        <ListBox.Item id="updated_asc" key="updated_asc" textValue="Last Updated (Oldest)">Last Updated
+                            (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
                     </>,
                     "single",
                     undefined,

@@ -89,9 +89,12 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
 
                                                     {token && (
                                                         <div className="flex flex-col gap-2">
-                                                            <p>The user can accept the invitation using the following link:</p>
-                                                            <div className="flex items-start gap-2 rounded-lg bg-surface-secondary p-3">
-                                                                <pre className="m-0 flex-1 overflow-x-auto text-sm font-mono">
+                                                            <p>The user can accept the invitation using the following
+                                                                link:</p>
+                                                            <div
+                                                                className="flex items-start gap-2 rounded-lg bg-surface-secondary p-3">
+                                                                <pre
+                                                                    className="m-0 flex-1 overflow-x-auto text-sm font-mono">
                                                                     <code>{invitationLink}</code>
                                                                 </pre>
                                                                 <Button
@@ -105,13 +108,14 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
                                                                 </Button>
                                                             </div>
                                                             {copied && (
-                                                                <small className="text-success">Invitation link copied.</small>
+                                                                <small className="text-success">Invitation link
+                                                                    copied.</small>
                                                             )}
                                                         </div>
                                                     )}
                                                 </Modal.Body>
                                                 <Modal.Footer>
-                                                    <Button variant="tertiary" onPress={close}>
+                                                    <Button variant="ghost" onPress={close}>
                                                         Cancel
                                                     </Button>
                                                     <Button

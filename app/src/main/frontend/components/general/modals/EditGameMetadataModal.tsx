@@ -1,9 +1,5 @@
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {
-    Accordion,
-    Button,
-    Modal
-} from "@heroui/react";
+import {Accordion, Button, Modal} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import React, {useEffect, useState} from "react";
@@ -82,42 +78,51 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                     <ArrayInputAutocomplete options={Array.from(availablePlatforms)}
                                                                             name="platforms" label="Platforms"/>
                                                     <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
-                                                    <TextAreaInput key="comment" name="comment" label="Comment (Markdown)"/>
+                                                    <TextAreaInput key="comment" name="comment"
+                                                                   label="Comment (Markdown)"/>
                                                     <Accordion variant="default" className="space-y-2">
                                                         <Accordion.Item id="additional-metadata"
                                                                         className="-mx-2 rounded-lg bg-surface-secondary">
                                                             <Accordion.Heading>
-                                                                <Accordion.Trigger className="flex items-center justify-between">
+                                                                <Accordion.Trigger
+                                                                    className="flex items-center justify-between">
                                                                     <span>Additional Metadata</span>
                                                                     <Accordion.Indicator/>
                                                                 </Accordion.Trigger>
                                                             </Accordion.Heading>
                                                             <Accordion.Panel>
                                                                 <Accordion.Body className="max-h-80 overflow-y-auto">
-                                                                    <ArrayInput key="developers" name="developers" label="Developers"/>
-                                                                    <ArrayInput key="publishers" name="publishers" label="Publishers"/>
-                                                                    <ArrayInputAutocomplete options={propertyEnumValues.genres}
-                                                                                            defaultSelected={game.genres}
-                                                                                            key="genres" name="genres" label="Genres"/>
-                                                                    <ArrayInputAutocomplete options={propertyEnumValues.themes}
-                                                                                            defaultSelected={game.themes}
-                                                                                            key="themes" name="themes" label="Themes"/>
-                                                                    <ArrayInputAutocomplete options={propertyEnumValues.features}
-                                                                                            defaultSelected={game.features}
-                                                                                            key="features" name="features"
-                                                                                            label="Features"/>
-                                                                    <ArrayInputAutocomplete options={propertyEnumValues.perspectives}
-                                                                                            defaultSelected={game.perspectives}
-                                                                                            key="perspectives" name="perspectives"
-                                                                                            label="Perspectives"/>
-                                                                    <ArrayInput key="keywords" name="keywords" label="Keywords"/>
+                                                                    <ArrayInput key="developers" name="developers"
+                                                                                label="Developers"/>
+                                                                    <ArrayInput key="publishers" name="publishers"
+                                                                                label="Publishers"/>
+                                                                    <ArrayInputAutocomplete
+                                                                        options={propertyEnumValues.genres}
+                                                                        defaultSelected={game.genres}
+                                                                        key="genres" name="genres" label="Genres"/>
+                                                                    <ArrayInputAutocomplete
+                                                                        options={propertyEnumValues.themes}
+                                                                        defaultSelected={game.themes}
+                                                                        key="themes" name="themes" label="Themes"/>
+                                                                    <ArrayInputAutocomplete
+                                                                        options={propertyEnumValues.features}
+                                                                        defaultSelected={game.features}
+                                                                        key="features" name="features"
+                                                                        label="Features"/>
+                                                                    <ArrayInputAutocomplete
+                                                                        options={propertyEnumValues.perspectives}
+                                                                        defaultSelected={game.perspectives}
+                                                                        key="perspectives" name="perspectives"
+                                                                        label="Perspectives"/>
+                                                                    <ArrayInput key="keywords" name="keywords"
+                                                                                label="Keywords"/>
                                                                 </Accordion.Body>
                                                             </Accordion.Panel>
                                                         </Accordion.Item>
                                                     </Accordion>
                                                 </Modal.Body>
                                                 <Modal.Footer>
-                                                    <Button variant="tertiary" onPress={close}>
+                                                    <Button variant="ghost" onPress={close}>
                                                         Cancel
                                                     </Button>
                                                     <Button

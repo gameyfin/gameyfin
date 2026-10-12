@@ -34,7 +34,8 @@ export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: C
                                 <Modal.Body>
                                     <p>
                                         Confirm deletion of user{" "}
-                                        <code className="px-2 py-1 h-fit font-mono font-normal inline-block whitespace-nowrap rounded-sm bg-default/40 text-default-foreground text-sm">
+                                        <code
+                                            className="px-2 py-1 h-fit font-mono font-normal inline-block whitespace-nowrap rounded-sm bg-default/40 text-default-foreground text-sm">
                                             {user.username}
                                         </code>{" "}
                                         by entering the username below
@@ -42,7 +43,7 @@ export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: C
                                     <Input onChange={(e) => setConfirmUsername(e.target.value)}/>
                                 </Modal.Body>
                                 <Modal.Footer>
-                                    <Button variant="tertiary" onPress={close}>
+                                    <Button variant="ghost" onPress={close}>
                                         Cancel
                                     </Button>
                                     <Button

@@ -16,14 +16,15 @@ export default function SliderInput({
                                         showErrorUntouched = false,
                                         description,
                                         resetValue,
+                                        className,
                                         ...props
                                     }: SliderInputProps) {
     const [field, , helpers] = useField<number>(props.name);
 
     return (
         <HeroUiSlider
-            className="min-h-20 grow"
             {...props}
+            className={`min-h-20 grow overflow-x-clip px-1 ${className ?? ""}`}
             value={field.value}
             onChange={(value) => helpers.setValue(value as number)}
         >

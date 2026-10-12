@@ -4,7 +4,7 @@ import React, {useEffect, useState} from "react";
 import Input from "Frontend/components/general/input/Input";
 import FileTreeView from "Frontend/components/general/input/FileTreeView";
 import DirectoryMappingDto from "Frontend/generated/org/gameyfin/app/libraries/dto/DirectoryMappingDto";
-import { ArrowRightIcon } from "@phosphor-icons/react";
+import {ArrowRightIcon} from "@phosphor-icons/react";
 
 interface PathPickerModalProps {
     returnSelectedPath: (path: DirectoryMappingDto) => void;
@@ -64,7 +64,7 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                                                     </div>
                                                 </Modal.Body>
                                                 <Modal.Footer>
-                                                    <Button variant="tertiary" onPress={close}>
+                                                    <Button variant="ghost" onPress={close}>
                                                         Cancel
                                                     </Button>
                                                     <Button

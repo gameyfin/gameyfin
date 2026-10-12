@@ -109,6 +109,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<Con
 
                                         <Button
                                             variant="primary"
+                                            className="min-w-20"
                                             isPending={formik.isSubmitting}
                                             isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
                                             type="submit"
