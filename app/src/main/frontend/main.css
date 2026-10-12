@@ -46,7 +46,8 @@ a.link.text-foreground {
 
 /* Re-added custom utilities (Tailwind v4 style) */
 @utility gradient-primary {
-    @apply bg-gradient-to-br from-accent to-gf-secondary;
+    @apply bg-gradient-to-br from-accent;
+    --tw-gradient-to: color-mix(in oklab, var(--accent) 70%, black);
 }
 @utility button-secondary {
     background-color: var(--gf-secondary, var(--accent));
