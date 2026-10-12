@@ -37,7 +37,7 @@ export default function ProfileMenu() {
     return (
         <Dropdown>
             <Dropdown.Trigger className="rounded-full">
-                <Avatar className="transition-transform size-8 rounded-full gradient-primary"/>
+                <Avatar className="transition-transform size-8 rounded-full gradient-primary text-accent-foreground"/>
             </Dropdown.Trigger>
             <Dropdown.Popover placement="bottom end">
                 <Dropdown.Menu disabledKeys={["username"]} aria-label="Profile menu">

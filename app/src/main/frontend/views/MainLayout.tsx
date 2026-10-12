@@ -163,7 +163,7 @@ export default function MainLayout() {
                                             className="gradient-primary rounded-full"
                                             onPress={() => window.location.href = "/loginredirect"}
                                         >
-                                            <SignInIcon className="text-background/80"/>
+                                            <SignInIcon className="text-accent-foreground"/>
                                         </Button>
                                     </Tooltip.Trigger>
                                     <Tooltip.Content placement="bottom">Sign in to your account</Tooltip.Content>

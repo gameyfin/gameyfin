@@ -136,3 +136,33 @@ h1, h2, h3, h4, h5, h6 {
 
     --radius: 0.25rem;
 }
+
+/* Inputs inside modals would blend into the overlay background, so use the "default" surface instead */
+.modal__dialog {
+    --field-background: var(--default);
+    --field-hover: var(--default-hover);
+    --field-focus: var(--default);
+}
+
+/* Modal size "lg" is twice as wide as the HeroUI default (32rem) */
+.modal__dialog--lg {
+    max-width: 64rem;
+}
+
+.modal__container:has(.modal__dialog--lg) {
+    max-width: none;
+}
+
+.modal__dialog--md {
+    max-width: 32rem;
+}
+
+
+@utility scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

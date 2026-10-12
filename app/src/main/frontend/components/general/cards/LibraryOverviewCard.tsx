@@ -36,7 +36,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     }
 
     return (
-        <Card className="flex flex-col justify-between w-[353px]">
+        <Card className="flex flex-col justify-between w-[353px] p-0 overflow-hidden">
             <div className="flex flex-1 justify-center items-center">
                 <div className="flex flex-1 opacity-10 min-h-[100px]">
                     <IconBackgroundPattern/>
@@ -90,7 +90,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
             </div>
 
             {library.stats &&
-                <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4">
+                <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
                     <p>Games</p>
                     <p>Downloads</p>
                     <p>Platforms</p>

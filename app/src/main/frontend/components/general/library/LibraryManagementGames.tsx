@@ -1,16 +1,6 @@
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {
-    Button,
-    Input,
-    Link,
-    ListBox,
-    Select,
-    SortDescriptor,
-    Table,
-    Tooltip,
-    useOverlayState
-} from "@heroui/react";
+import {Button, Input, Link, ListBox, Select, SortDescriptor, Table, Tooltip, useOverlayState} from "@heroui/react";
 import {CheckCircleIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
@@ -151,19 +141,41 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 </Select.Popover>
             </Select>
         </div>
-        <Table className="h-[35rem]">
+        <Table variant="secondary" className="h-[35rem]">
             <Table.ScrollContainer className="h-[35rem]">
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                    <Table.Header>
-                        <Table.Column id="title" allowsSorting isRowHeader>Game</Table.Column>
+                    <Table.Header className="sticky top-0 z-10 bg-background">
+                        <Table.Column id="title" allowsSorting isRowHeader>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader
+                                    sortDirection={sortDirection}>Game</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
                         <Table.Column id="platforms">Platforms</Table.Column>
-                        <Table.Column id="addedToLibrary" allowsSorting>Added to library</Table.Column>
-                        <Table.Column id="downloadCount" allowsSorting>Download count</Table.Column>
+                        <Table.Column id="addedToLibrary" allowsSorting>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader sortDirection={sortDirection}>Added to
+                                    library</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
+                        <Table.Column id="downloadCount" allowsSorting>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader sortDirection={sortDirection}>Download
+                                    count</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
                         <Table.Column id="path">Path</Table.Column>
-                        <Table.Column id="completeness" allowsSorting>Completeness</Table.Column>
+                        <Table.Column id="completeness" allowsSorting>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader
+                                    sortDirection={sortDirection}>Completeness</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
                         <Table.Column id="actions">Actions</Table.Column>
                     </Table.Header>
-                    <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">Your filter did not match any games.</p>} items={pagedItems}>
+                    <Table.Body
+                        renderEmptyState={() => <p className="text-center text-muted p-4">Your filter did not match any
+                            games.</p>} items={pagedItems}>
                         {(item: GameAdminDto) => (
                             <Table.Row key={item.id}>
                                 <Table.Cell>
@@ -191,7 +203,8 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                     <div className="flex flex-row gap-2">
                                         <Tooltip>
                                             <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" onPress={() => toggleMatchConfirmed(item)}>
+                                                <Button isIconOnly size="sm" variant="tertiary"
+                                                        onPress={() => toggleMatchConfirmed(item)}>
                                                     {item.metadata.matchConfirmed ?
                                                         <CheckCircleIcon weight="fill" className="fill-success"/> :
                                                         <CheckCircleIcon/>}
@@ -203,10 +216,11 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                         </Tooltip>
                                         <Tooltip>
                                             <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" onPress={() => {
-                                                    setSelectedGame(item);
-                                                    editGameModal.open();
-                                                }}>
+                                                <Button isIconOnly size="sm" variant="tertiary"
+                                                        onPress={() => {
+                                                            setSelectedGame(item);
+                                                            editGameModal.open();
+                                                        }}>
                                                     <PencilIcon/>
                                                 </Button>
                                             </Tooltip.Trigger>
@@ -214,10 +228,11 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                         </Tooltip>
                                         <Tooltip>
                                             <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" onPress={() => {
-                                                    setSelectedGame(item);
-                                                    matchGameModal.open();
-                                                }}>
+                                                <Button isIconOnly size="sm" variant="tertiary"
+                                                        onPress={() => {
+                                                            setSelectedGame(item);
+                                                            matchGameModal.open();
+                                                        }}>
                                                     <MagnifyingGlassIcon/>
                                                 </Button>
                                             </Tooltip.Trigger>

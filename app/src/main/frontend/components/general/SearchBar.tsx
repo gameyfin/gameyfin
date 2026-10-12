@@ -14,16 +14,16 @@ export default function SearchBar() {
 
     return <ComboBox
         aria-label="Search for games"
-        items={games}
+        defaultItems={games}
         allowsCustomValue={false}
-        onSelectionChange={(id) => id && navigate("/game/" + id)}
+        onChange={(id) => id && navigate("/game/" + id)}
     >
         <ComboBox.InputGroup>
             <MagnifyingGlassIcon className="mx-2 text-muted"/>
             <Input placeholder="Type to search..." className="w-96"/>
         </ComboBox.InputGroup>
-        <ComboBox.Popover>
-            <ListBox>
+        <ComboBox.Popover className="max-w-(--trigger-width)">
+            <ListBox className="max-h-[66vh] overflow-y-auto">
                 {(item: GameDto) => (
                     <ListBox.Item key={item.id} id={item.id} textValue={item.title}>
                         <div className="flex flex-row gap-4 items-center">

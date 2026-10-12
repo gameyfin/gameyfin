@@ -1,13 +1,4 @@
-import {
-    Button,
-    ComboBox,
-    Input,
-    ListBox,
-    Modal,
-    Table,
-    toast,
-    Tooltip
-} from "@heroui/react";
+import {Button, ComboBox, Input, ListBox, Modal, Table, toast, Tooltip} from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import {GameEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
@@ -76,7 +67,7 @@ export default function RequestGameModal({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}
-                             isDismissable={!isSearching && !isRequesting}>
+                            isDismissable={!isSearching && !isRequesting}>
                 <Modal.Container size="lg" className="max-w-5xl">
                     <Modal.Dialog>
                         {({close}) => (
@@ -87,8 +78,8 @@ export default function RequestGameModal({
                                 <ComboBox
                                     aria-label="Platform"
                                     allowsCustomValue={false}
-                                    selectedKey={selectedPlatform}
-                                    onSelectionChange={(newSelection) => newSelection && setSelectedPlatform(newSelection as string)}
+                                    value={selectedPlatform}
+                                    onChange={(newSelection) => newSelection && setSelectedPlatform(newSelection as string)}
                                 >
                                     <ComboBox.InputGroup>
                                         <Input placeholder="Platform"/>
@@ -105,8 +96,9 @@ export default function RequestGameModal({
                                         </ListBox>
                                     </ComboBox.Popover>
                                 </ComboBox>
-                                <div className="flex flex-row gap-2 mb-4">
+                                <div className="flex flex-row gap-2 my-4">
                                     <Input value={searchTerm}
+                                           className="flex-1"
                                            onChange={(e) => setSearchTerm(e.target.value)}
                                            onKeyDown={async (e) => {
                                                if (e.key === "Enter") {
@@ -124,17 +116,19 @@ export default function RequestGameModal({
                                 </div>
 
                                 <div>
-                                    <Table className="h-80">
+                                    <Table variant="secondary" className="h-80">
                                         <Table.ScrollContainer className="h-80">
                                             <Table.Content>
-                                                <Table.Header>
+                                                <Table.Header className="sticky top-0 z-10 bg-background">
                                                     <Table.Column id="title" isRowHeader>Title & Release</Table.Column>
                                                     <Table.Column id="developers">Developer(s)</Table.Column>
                                                     <Table.Column id="publishers">Publisher(s)</Table.Column>
                                                     <Table.Column id="sources">Sources</Table.Column>
                                                     <Table.Column id="actions"> </Table.Column>
                                                 </Table.Header>
-                                                <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match any games.</p>}
+                                                <Table.Body renderEmptyState={() => <p
+                                                    className="text-center text-muted p-4">Your search did not match any
+                                                    games.</p>}
                                                             items={searchResults}>
                                                     {(item) => (
                                                         <Table.Row key={item.id}>

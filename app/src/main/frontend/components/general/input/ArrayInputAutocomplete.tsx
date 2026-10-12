@@ -63,7 +63,7 @@ export default function ArrayInputAutocomplete({
                                     aria-labelledby="search"
                                     inputValue={search}
                                     onInputChange={(value) => setSearch(value)}
-                                    onSelectionChange={(value: Key | null) => {
+                                    onChange={(value: Key | Key[] | null) => {
                                         const item = options.find((option) => option === value);
                                         if (item) handleSelect(item);
                                         setSearch("");
@@ -87,7 +87,7 @@ export default function ArrayInputAutocomplete({
 
                                 <div className="flex flex-wrap gap-2">
                                     {selectedValues.map((item: string, index: number) => (
-                                        <Chip key={index} variant="tertiary">
+                                        <Chip key={index} variant="secondary" className="pr-0">
                                             {item}
                                             <CloseButton aria-label="Remove" onPress={() => handleRemove(index)}/>
                                         </Chip>

@@ -45,7 +45,7 @@ class ArrayDeserializerTest {
 
         val arrayNode = mockk<JsonNode>()
         every { arrayNode.isArray } returns true
-        every { arrayNode.iterator() } returns mutableListOf(textNode1, textNode2, textNode3).iterator()
+        every { arrayNode.values() } returns mutableListOf(textNode1, textNode2, textNode3)
         every { jsonParser.objectReadContext() } returns objectReadContext
         every { objectReadContext.readTree<JsonNode>(jsonParser) } returns arrayNode
 
@@ -62,7 +62,7 @@ class ArrayDeserializerTest {
     fun `deserialize should convert empty JSON array to empty String array`() {
         val arrayNode = mockk<JsonNode>()
         every { arrayNode.isArray } returns true
-        every { arrayNode.iterator() } returns mutableListOf<JsonNode>().iterator()
+        every { arrayNode.values() } returns mutableListOf<JsonNode>()
         every { jsonParser.objectReadContext() } returns objectReadContext
         every { objectReadContext.readTree<JsonNode>(jsonParser) } returns arrayNode
 
@@ -93,7 +93,7 @@ class ArrayDeserializerTest {
 
         val arrayNode = mockk<JsonNode>()
         every { arrayNode.isArray } returns true
-        every { arrayNode.iterator() } returns mutableListOf(textNode).iterator()
+        every { arrayNode.values() } returns mutableListOf(textNode)
         every { jsonParser.objectReadContext() } returns objectReadContext
         every { objectReadContext.readTree<JsonNode>(jsonParser) } returns arrayNode
 

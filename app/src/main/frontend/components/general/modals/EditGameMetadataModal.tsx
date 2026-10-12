@@ -81,11 +81,10 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                     <TextAreaInput key="comment" name="comment"
                                                                    label="Comment (Markdown)"/>
                                                     <Accordion variant="default" className="space-y-2">
-                                                        <Accordion.Item id="additional-metadata"
-                                                                        className="-mx-2 rounded-lg bg-surface-secondary">
+                                                        <Accordion.Item id="additional-metadata">
                                                             <Accordion.Heading>
                                                                 <Accordion.Trigger
-                                                                    className="flex items-center justify-between">
+                                                                    className="flex items-center justify-between rounded-xl">
                                                                     <span>Additional Metadata</span>
                                                                     <Accordion.Indicator/>
                                                                 </Accordion.Trigger>

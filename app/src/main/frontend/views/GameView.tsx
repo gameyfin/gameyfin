@@ -16,7 +16,6 @@ import {
     PencilIcon,
     StarIcon,
     TrashIcon,
-    TriangleDashedIcon,
 } from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
@@ -86,7 +85,7 @@ export default function GameView() {
 
     return game && (
         <div className="flex flex-col gap-4">
-            <div className="overflow-hidden relative rounded-t-lg">
+            <div className="overflow-hidden relative rounded-t-xl">
                 {game.header?.id ? (
                     <img
                         className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
@@ -107,7 +106,7 @@ export default function GameView() {
             <div className="flex flex-col gap-4 mx-24">
                 <div className="flex flex-row justify-between">
                     <div className="flex flex-row gap-4">
-                        <div className="-mt-65">
+                        <div className="-mt-65 relative z-10">
                             <GameCover game={game} size={320} radius="none"/>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -141,7 +140,7 @@ export default function GameView() {
                         {isAdmin(auth) && <div className="flex flex-row gap-2">
                             <Tooltip>
                                 <Tooltip.Trigger>
-                                    <Button isIconOnly variant="ghost" onPress={toggleMatchConfirmed}>
+                                    <Button isIconOnly variant="tertiary" onPress={toggleMatchConfirmed}>
                                         {(game.metadata as GameMetadataAdminDto).matchConfirmed ?
                                             <CheckCircleIcon weight="fill" className="fill-success"/> :
                                             <CheckCircleIcon/>}
@@ -153,7 +152,7 @@ export default function GameView() {
                             </Tooltip>
                             <Tooltip>
                                 <Tooltip.Trigger>
-                                    <Button isIconOnly variant="ghost" onPress={editGameModal.open}>
+                                    <Button isIconOnly variant="tertiary" onPress={editGameModal.open}>
                                         <PencilIcon/>
                                     </Button>
                                 </Tooltip.Trigger>
@@ -161,7 +160,7 @@ export default function GameView() {
                             </Tooltip>
                             <Tooltip>
                                 <Tooltip.Trigger>
-                                    <Button isIconOnly variant="ghost" onPress={matchGameModal.open}>
+                                    <Button isIconOnly variant="tertiary" onPress={matchGameModal.open}>
                                         <MagnifyingGlassIcon/>
                                     </Button>
                                 </Tooltip.Trigger>
@@ -231,11 +230,12 @@ export default function GameView() {
                             <p className="text-muted">Details</p>
                             <table className="text-left w-full table-auto border-separate border-spacing-y-1">
                                 <tbody>
-                                <tr>
+                                {game.developers && game.developers.length > 0 &&
+                                    <tr>
                                     <td className="text-muted w-0 min-w-32">Developed by</td>
                                     <td className="flex flex-row gap-1">
-                                        {game.developers && game.developers.length > 0
-                                            ? [...game.developers].sort().map((dev, index) =>
+                                        {
+                                            [...game.developers].sort().map((dev, index) =>
                                                 <React.Fragment key={dev}>
                                                     <Link href={`/search?dev=${encodeURIComponent(dev)}`}
                                                           className="text-foreground hover:underline">
@@ -244,74 +244,54 @@ export default function GameView() {
                                                     {index !== game.developers!.length - 1 && <p>/</p>}
                                                 </React.Fragment>
                                             )
-                                            : <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
-                                            </Tooltip>
                                         }
                                     </td>
-                                </tr>
-                                <tr>
+                                </tr>}
+                                {game.publishers && game.publishers.length > 0 &&
+                                    <tr>
                                     <td className="text-muted w-0 min-w-32">Published by</td>
                                     <td className="flex flex-row gap-1">
-                                        {game.publishers && game.publishers.length > 0
-                                            ? [...game.publishers].sort().join(" / ")
-                                            : <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
-                                            </Tooltip>
+                                        {
+                                            [...game.publishers].sort().join(" / ")
                                         }
                                     </td>
-                                </tr>
-                                <tr>
+                                </tr>}
+                                {game.genres && game.genres.length > 0 &&
+                                    <tr>
                                     <td className="text-muted w-0 min-w-32">Genres</td>
                                     <td className="flex flex-row gap-1">
-                                        {game.genres && game.genres.length > 0
-                                            ? [...game.genres].sort().map((genre) =>
+                                        {
+                                            [...game.genres].sort().map((genre) =>
                                                 <Link key={genre} href={`/search?genre=${encodeURIComponent(genre)}`}>
                                                     <Chip size="sm" className="text-sm">
                                                         {genre}
                                                     </Chip>
                                                 </Link>
                                             )
-                                            : <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
-                                            </Tooltip>
                                         }
                                     </td>
-                                </tr>
-                                <tr>
+                                </tr>}
+                                {game.themes && game.themes.length > 0 &&
+                                    <tr>
                                     <td className="text-muted w-0 min-w-32">Themes</td>
                                     <td className="flex flex-row gap-1">
-                                        {game.themes && game.themes.length > 0
-                                            ? [...game.themes].sort().map((theme) =>
+                                        {
+                                            [...game.themes].sort().map((theme) =>
                                                 <Link key={theme} href={`/search?theme=${encodeURIComponent(theme)}`}>
                                                     <Chip size="sm" className="text-sm">
                                                         {theme}
                                                     </Chip>
                                                 </Link>
                                             )
-                                            : <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
-                                            </Tooltip>
                                         }
                                     </td>
-                                </tr>
-                                <tr>
+                                </tr>}
+                                {game.features && game.features.length > 0 &&
+                                    <tr>
                                     <td className="text-muted w-0 min-w-32">Features</td>
                                     <td className="flex flex-row gap-1">
-                                        {game.features && game.features.length > 0
-                                            ? [...game.features].sort().map((feature) =>
+                                        {
+                                            [...game.features].sort().map((feature) =>
                                                 <Link key={feature}
                                                       href={`/search?feature=${encodeURIComponent(feature)}`}>
                                                     <Chip size="sm" className="text-sm">
@@ -319,15 +299,9 @@ export default function GameView() {
                                                     </Chip>
                                                 </Link>
                                             )
-                                            : <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <TriangleDashedIcon className="fill-muted h-6 bottom-0"/>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content placement="right">Missing data</Tooltip.Content>
-                                            </Tooltip>
                                         }
                                     </td>
-                                </tr>
+                                </tr>}
                                 {game.collectionIds.length > 0 &&
                                     <tr>
                                         <td className="text-muted w-0 min-w-32">Collections</td>

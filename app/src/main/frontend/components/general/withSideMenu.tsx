@@ -42,8 +42,8 @@ export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
 
         return (
             <div className="flex flex-row">
-                <div className="flex flex-col pr-8">
-                    <ListBox className="w-60 fixed">
+                <div className="flex flex-col shrink-0 pr-8">
+                    <ListBox className="w-60">
                         {menuItems.map((i) => (
                             <ListBox.Item key={key(i.url)} id={key(i.url)} href={link(i.url)}
                                           onPress={() => setSelectedItem(i.url)}
@@ -56,7 +56,7 @@ export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
                         ))}
                     </ListBox>
                 </div>
-                <div className="ml-60 flex-1 overflow-auto">
+                <div className="flex-1 min-w-0 overflow-auto">
                     <Outlet/>
                 </div>
             </div>

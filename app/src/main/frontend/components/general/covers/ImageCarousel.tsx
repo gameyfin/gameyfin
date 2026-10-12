@@ -1,15 +1,17 @@
 import {Autoplay, Navigation, Pagination} from 'swiper/modules';
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Card, Modal, useOverlayState} from "@heroui/react";
-import ReactPlayer from 'react-player';
+import ReactPlayerModule from 'react-player';
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useEffect, useState} from "react";
-import { CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon } from "@phosphor-icons/react";
+import {CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon} from "@phosphor-icons/react";
 
+// react-player v2 is CJS; depending on the bundler interop the default import may be the module namespace
+const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
 
 interface ImageCarouselProps {
     imageUrls?: string[];
@@ -90,7 +92,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                                     <img
                                                         src={e.url}
                                                         alt={`Game screenshot slide ${index}`}
-                                                        className={`w-full h-full object-cover aspect-video cursor-zoom-in ${!isActive ? "scale-90" : ""}`}
+                                                        className={`w-full h-full object-cover aspect-video rounded-xl cursor-zoom-in transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}
                                                         onClick={() => showImagePopup(e.url)}
                                                         loading="lazy"
                                                     />
@@ -98,7 +100,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                             }
                                             return (
                                                 <Card
-                                                    className={`w-full h-full aspect-video ${!isActive ? "scale-90" : ""}`}>
+                                                    className={`w-full h-full aspect-video p-0 rounded-xl overflow-hidden transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}>
                                                     <ReactPlayer
                                                         url={e.url}
                                                         width="100%"
@@ -148,7 +150,7 @@ function ImagePopup({imageUrl, isOpen, onOpenChange, onClose}: {
                                 <img
                                     src={imageUrl}
                                     alt="Game screenshot"
-                                    className="max-w-[80vw] max-h-[80vh] object-contain"
+                                    className="max-w-[80vw] max-h-[80vh] object-contain rounded-xl"
                                 />
                             </div>
                         )}

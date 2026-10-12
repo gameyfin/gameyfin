@@ -1,14 +1,5 @@
 import {useSnapshot} from "valtio/react";
-import {
-    Button,
-    Input,
-    ListBox,
-    Link,
-    Select,
-    SortDescriptor,
-    Table,
-    Tooltip
-} from "@heroui/react";
+import {Button, Input, Link, ListBox, Select, SortDescriptor, Table, Tooltip} from "@heroui/react";
 import React, {useMemo, useState} from "react";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
@@ -142,17 +133,33 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                     </Select.Popover>
                 </Select>
             </div>
-            <Table className="h-96">
+            <Table variant="secondary" className="h-96">
                 <Table.ScrollContainer className="h-96">
                     <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                        <Table.Header>
-                            <Table.Column id="title" allowsSorting isRowHeader>Title</Table.Column>
-                            <Table.Column id="library" allowsSorting>Library</Table.Column>
-                            <Table.Column id="dateAdded" allowsSorting>Date added</Table.Column>
+                        <Table.Header className="sticky top-0 z-10 bg-background">
+                            <Table.Column id="title" allowsSorting isRowHeader>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Title</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="library" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Library</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="dateAdded" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader sortDirection={sortDirection}>Date
+                                        added</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
                             <Table.Column>Actions</Table.Column>
                         </Table.Header>
                         <Table.Body
-                            renderEmptyState={() => <p className="text-center text-muted p-4">Your filters did not match any games.</p>}
+                            renderEmptyState={() => <p className="text-center text-muted p-4">Your filters did not match
+                                any games.</p>}
                             items={sortedGames}>
                             {(game) => (
                                 <Table.Row key={`${game.id}-${game._inCollection}`}>
@@ -176,7 +183,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                             <Tooltip delay={0}>
                                                 <Tooltip.Trigger>
                                                     <span className="inline-flex">
-                                                        <Button isIconOnly size="sm"
+                                                        <Button isIconOnly size="sm" variant="tertiary"
                                                                 onPress={() => addGameToCollection(game)}
                                                                 isDisabled={game._inCollection}>
                                                             <PlusIcon/>
@@ -188,7 +195,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                             <Tooltip delay={0}>
                                                 <Tooltip.Trigger>
                                                     <span className="inline-flex">
-                                                        <Button isIconOnly size="sm"
+                                                        <Button isIconOnly size="sm" variant="tertiary"
                                                                 onPress={() => removeGameFromCollection(game)}
                                                                 isDisabled={!game._inCollection}>
                                                             <MinusIcon/>

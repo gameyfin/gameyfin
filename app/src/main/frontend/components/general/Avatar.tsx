@@ -25,11 +25,7 @@ const Avatar = ({username: usernameProp, className}: AvatarProps) => {
             {auth.state.user?.hasAvatar && (
                 <HeroUiAvatar.Image src={`/images/avatar?username=${username}`}/>
             )}
-            {/* Fallback has its own opaque background (avatar__fallback) that fully covers the
-                root Avatar's background, so any custom background (e.g. gradient-primary) passed
-                via className must also be forwarded here to be visible. */}
             <HeroUiAvatar.Fallback className={`bg-transparent ${className ?? ""}`}>
-                {/*{username?.charAt(0).toUpperCase()}*/}
                 <UserIcon/>
             </HeroUiAvatar.Fallback>
         </HeroUiAvatar>

@@ -61,7 +61,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg">
+                <Modal.Container>
                     <Modal.Dialog>
                         {({close}) => {
 
@@ -108,7 +108,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                             </tbody>
                                                         </table>
                                                     </div>
-                                                    <p className="text-muted">Description</p>
+                                                    <b>Description</b>
                                                     <Markdown
                                                         remarkPlugins={[remarkBreaks]}
                                                         components={{

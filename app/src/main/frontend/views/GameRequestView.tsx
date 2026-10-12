@@ -1,14 +1,4 @@
-import {
-    Button,
-    Chip,
-    Input,
-    ListBox,
-    Select,
-    SortDescriptor,
-    Table,
-    Tooltip,
-    useOverlayState,
-} from "@heroui/react";
+import {Button, Chip, Input, ListBox, Select, SortDescriptor, Table, Tooltip, useOverlayState,} from "@heroui/react";
 import RequestGameModal from "Frontend/components/general/modals/RequestGameModal";
 import {ArrowUpIcon, CheckIcon, InfoIcon, PlusCircleIcon, TrashIcon, XIcon} from "@phosphor-icons/react";
 import SimplePagination from "Frontend/components/general/SimplePagination";
@@ -175,7 +165,7 @@ export default function GameRequestView() {
         </div>
 
         <div className="flex flex-row gap-2 justify-between mb-4">
-            <div className="flex w-96 items-center gap-2 rounded-lg border border-border px-3 py-2">
+            <div className="flex w-96 items-center gap-2 rounded-lg">
                 <Input
                     className="grow"
                     placeholder="Search"
@@ -192,7 +182,7 @@ export default function GameRequestView() {
                 value={filters}
                 onChange={(value) => setFilters(value as GameRequestStatus[])}
                 selectionMode="multiple"
-                className="w-64"
+                className="w-80"
             >
                 <Select.Trigger>
                     <Select.Value/>
@@ -200,19 +190,23 @@ export default function GameRequestView() {
                 </Select.Trigger>
                 <Select.Popover>
                     <ListBox>
-                        <ListBox.Item id={GameRequestStatus.PENDING} key={GameRequestStatus.PENDING} textValue="Pending">
+                        <ListBox.Item id={GameRequestStatus.PENDING} key={GameRequestStatus.PENDING}
+                                      textValue="Pending">
                             Pending
                             <ListBox.ItemIndicator/>
                         </ListBox.Item>
-                        <ListBox.Item id={GameRequestStatus.APPROVED} key={GameRequestStatus.APPROVED} textValue="Approved">
+                        <ListBox.Item id={GameRequestStatus.APPROVED} key={GameRequestStatus.APPROVED}
+                                      textValue="Approved">
                             Approved
                             <ListBox.ItemIndicator/>
                         </ListBox.Item>
-                        <ListBox.Item id={GameRequestStatus.REJECTED} key={GameRequestStatus.REJECTED} textValue="Rejected">
+                        <ListBox.Item id={GameRequestStatus.REJECTED} key={GameRequestStatus.REJECTED}
+                                      textValue="Rejected">
                             Rejected
                             <ListBox.ItemIndicator/>
                         </ListBox.Item>
-                        <ListBox.Item id={GameRequestStatus.FULFILLED} key={GameRequestStatus.FULFILLED} textValue="Fulfilled">
+                        <ListBox.Item id={GameRequestStatus.FULFILLED} key={GameRequestStatus.FULFILLED}
+                                      textValue="Fulfilled">
                             Fulfilled
                             <ListBox.ItemIndicator/>
                         </ListBox.Item>
@@ -221,19 +215,46 @@ export default function GameRequestView() {
             </Select>
         </div>
 
-        <Table>
+        <Table variant="secondary">
             <Table.ScrollContainer>
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                    <Table.Header>
-                        <Table.Column id="title" allowsSorting isRowHeader>Title & Release</Table.Column>
+                    <Table.Header className="sticky top-0 z-10 bg-background">
+                        <Table.Column id="title" allowsSorting isRowHeader>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader sortDirection={sortDirection}>Title &
+                                    Release</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
                         <Table.Column id="platform">Platform</Table.Column>
                         <Table.Column id="requester">Submitted by</Table.Column>
-                        <Table.Column id="createdAt" allowsSorting>Submitted</Table.Column>
-                        <Table.Column id="updatedAt" allowsSorting>Updated</Table.Column>
-                        <Table.Column id="status" allowsSorting>Status</Table.Column>
-                        <Table.Column id="votes" allowsSorting width={1}>Votes</Table.Column>
+                        <Table.Column id="createdAt" allowsSorting>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader
+                                    sortDirection={sortDirection}>Submitted</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
+                        <Table.Column id="updatedAt" allowsSorting>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader
+                                    sortDirection={sortDirection}>Updated</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
+                        <Table.Column id="status" allowsSorting>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader
+                                    sortDirection={sortDirection}>Status</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
+                        <Table.Column id="votes" allowsSorting width={1}>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader
+                                    sortDirection={sortDirection}>Votes</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
                     </Table.Header>
-                    <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match any requests.</p>} items={pagedItems}>
+                    <Table.Body
+                        renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match any
+                            requests.</p>} items={pagedItems}>
                         {(item) => (
                             <Table.Row key={item.id}>
                                 <Table.Cell>
@@ -318,7 +339,8 @@ export default function GameRequestView() {
                                         {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
                                             <Tooltip>
                                                 <Tooltip.Trigger>
-                                                    <Button size="sm" isIconOnly variant="danger" onPress={async () => await deleteRequest(item.id)}>
+                                                    <Button size="sm" isIconOnly variant="danger"
+                                                            onPress={async () => await deleteRequest(item.id)}>
                                                         <TrashIcon/>
                                                     </Button>
                                                 </Tooltip.Trigger>

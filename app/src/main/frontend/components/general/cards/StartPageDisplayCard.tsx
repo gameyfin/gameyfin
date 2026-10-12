@@ -65,7 +65,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     }
 
     return randomImageId && (
-        <Card className="h-48 w-96 relative overflow-hidden scale-95 hover:scale-100 shine transition-all select-none">
+        <Card className="h-48 w-96 relative overflow-hidden p-0 scale-95 hover:scale-100 shine transition-all select-none">
             <button
                 type="button"
                 onClick={() => navigate(link)}

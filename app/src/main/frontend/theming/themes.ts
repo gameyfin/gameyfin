@@ -96,6 +96,27 @@ export function applyAccentTheme(name: string): void {
     const root = document.documentElement;
     themeNames().forEach((n) => root.classList.remove(n));
     root.classList.add(name);
+    try {
+        localStorage.setItem(ACCENT_THEME_STORAGE_KEY, name);
+    } catch {
+        // storage unavailable, the theme just won't be remembered
+    }
+}
+
+const ACCENT_THEME_STORAGE_KEY = "accent-theme";
+
+/**
+ * The accent theme last applied in this browser. Used for views without a logged-in user
+ * (e.g. the login page), where the server-side preference cannot be loaded.
+ */
+export function getStoredAccentTheme(fallback: string): string {
+    try {
+        const stored = localStorage.getItem(ACCENT_THEME_STORAGE_KEY);
+        if (stored && themeNames().includes(stored)) return stored;
+    } catch {
+        // ignore
+    }
+    return fallback;
 }
 
 export const themes: Theme[] = [GameyfinBlue, GameyfinViolet, GameyfinClassic, Neutral, Slate, Red, Rose, Orange, Pink, Blue, Yellow, Violet, Colorblind];

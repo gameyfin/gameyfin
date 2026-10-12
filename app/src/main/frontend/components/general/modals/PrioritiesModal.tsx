@@ -81,7 +81,7 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque">
-                <Modal.Container size="lg">
+                <Modal.Container>
                     <Modal.Dialog>
                         {({close}) => (
                             <>

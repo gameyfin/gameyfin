@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {Button, ButtonGroup, Description, Dropdown, Key, Label} from "@heroui/react";
-import { CaretDownIcon } from "@phosphor-icons/react";
+import {CaretDownIcon} from "@phosphor-icons/react";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 
 export interface ComboButtonOption {
@@ -46,16 +46,16 @@ export default function ComboButton({options, preferredOptionKey, description}: 
     }
 
     return options[selectedOptionValue] && (
-        <ButtonGroup className="gap-px">
-            <Button variant="primary" className="w-52"
+        <ButtonGroup className="gap-px items-stretch">
+            <Button variant="primary" className="w-52 h-auto"
                     onPress={options[selectedOptionValue].action}>
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center py-1">
                     <p className="font-semibold">{options[selectedOptionValue].label}</p>
                     <p className="text-xs font-normal opacity-70 ">{description}</p>
                 </div>
             </Button>
             <Dropdown>
-                <Button isIconOnly variant="primary">
+                <Button isIconOnly variant="primary" className="h-auto self-stretch">
                     <CaretDownIcon/>
                 </Button>
                 <Dropdown.Popover placement="bottom end">
@@ -68,7 +68,8 @@ export default function ComboButton({options, preferredOptionKey, description}: 
                         className="w-60"
                     >
                         {Object.entries(options).map(([key, option]) => (
-                            <Dropdown.Item key={key} id={key} textValue={option.label}>
+                            <Dropdown.Item key={key} id={key} textValue={option.label}
+                                           className="flex flex-col items-start gap-0">
                                 <Label>{option.label}</Label>
                                 <Description>{option.description}</Description>
                                 <Dropdown.ItemIndicator/>

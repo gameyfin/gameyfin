@@ -115,11 +115,15 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <Table className="h-[35rem]">
+        <Table variant="secondary" className="h-[35rem]">
             <Table.ScrollContainer className="h-[35rem]">
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                    <Table.Header>
-                        <Table.Column id="path" allowsSorting isRowHeader>Path</Table.Column>
+                    <Table.Header className="sticky top-0 z-10 bg-background">
+                        <Table.Column id="path" allowsSorting isRowHeader>
+                            {({sortDirection}) => (
+                                <Table.SortableColumnHeader sortDirection={sortDirection}>Path</Table.SortableColumnHeader>
+                            )}
+                        </Table.Column>
                         <Table.Column id="source">Source</Table.Column>
                         <Table.Column id="actions">Actions</Table.Column>
                     </Table.Header>

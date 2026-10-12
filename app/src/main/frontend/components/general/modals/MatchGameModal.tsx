@@ -83,10 +83,10 @@ export default function MatchGameModal({
                                 </div>
 
                                 <div>
-                                    <Table className="h-80">
+                                    <Table variant="secondary" className="h-80">
                                         <Table.ScrollContainer className="h-80">
                                             <Table.Content>
-                                                <Table.Header>
+                                                <Table.Header className="sticky top-0 z-10 bg-background">
                                                     <Table.Column id="title" isRowHeader>Title & Release</Table.Column>
                                                     <Table.Column id="developers">Developer(s)</Table.Column>
                                                     <Table.Column id="publishers">Publisher(s)</Table.Column>

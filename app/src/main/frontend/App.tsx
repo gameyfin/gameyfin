@@ -2,7 +2,7 @@ import {Outlet, useHref, useNavigate} from 'react-router';
 import "./main.css";
 import {RouterProvider, Toast} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
-import {applyAccentTheme, injectThemeStyles} from "Frontend/theming/themes";
+import {applyAccentTheme, getStoredAccentTheme, injectThemeStyles} from "Frontend/theming/themes";
 import {AuthProvider, useAuth} from "Frontend/util/auth";
 import {IconContext} from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
@@ -22,9 +22,10 @@ import {initializeCollectionState} from "Frontend/state/CollectionState";
 
 // Generate & inject the per-theme CSS custom property overrides once, before first render
 injectThemeStyles();
-// Apply a default accent theme immediately to avoid an unstyled flash; MainLayout will override
-// this with the user's persisted preference once loaded.
-applyAccentTheme("gameyfin-violet");
+// Apply the last used accent theme (or the default) immediately to avoid an unstyled flash and to
+// keep the theme on logged-out views; MainLayout will override this with the user's persisted
+// preference once loaded.
+applyAccentTheme(getStoredAccentTheme("gameyfin-violet"));
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];

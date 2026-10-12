@@ -69,3 +69,4 @@ out/
 /plugins/**/*.jar
 /plugindata/
 /docker-debug/
+/app/target/
