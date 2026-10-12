@@ -61,7 +61,7 @@ export default function ArrayInput({label, description, resetValue, ...props}: A
                                     <Popover>
                                         <Button isIconOnly
                                                 size="sm"
-                                                variant="tertiary"
+                                                variant="ghost"
                                                 className="rounded-full"
                                                 isDisabled={props.isDisabled}
                                         >
@@ -73,6 +73,7 @@ export default function ArrayInput({label, description, resetValue, ...props}: A
                                                 <TextField>
                                                     <Label className="sr-only">New element</Label>
                                                     <Input
+                                                        variant="secondary"
                                                         value={newElementValue}
                                                         onChange={(e) => setNewElementValue(e.target.value)}
                                                         onKeyDown={handleKeyDown}
