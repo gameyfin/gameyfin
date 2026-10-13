@@ -1,5 +1,6 @@
 package org.gameyfin.app.core.config
 
+import com.vaadin.flow.spring.annotation.VaadinTaskExecutor
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -30,6 +31,7 @@ const val BOUNDED_EXECUTOR = "boundedTaskExecutor"
 class AsyncConfig : AsyncConfigurer {
 
     @Bean(VIRTUAL_THREAD_EXECUTOR)
+    @VaadinTaskExecutor
     fun virtualThreadTaskExecutor(): Executor = VirtualThreadTaskExecutor("async-virtual-")
 
     @Bean(BOUNDED_EXECUTOR)
