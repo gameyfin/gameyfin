@@ -175,14 +175,16 @@ class LibraryService(
             ?.let { dtos ->
                 val currentUser = getCurrentAuth()?.let { auth -> userService.getByUsername(auth.name) }
 
-                // Remove existing USER-sourced ignored paths, keep PLUGIN-sourced ones intact
-                library.ignoredPaths.removeIf { it.getType() == IgnoredPathSourceType.USER }
-
-                // Recreate user-sourced paths (reuse existing entity if same path already present globally)
-                val pathsToAdd = dtos.map { dto ->
-                    val existingPath = ignoredPathRepository.findByPath(dto.path)
-                    existingPath ?: dto.toEntity(currentUser)
+                // Diff against the current state instead of clearing and re-adding, which conflicts with orphanRemoval
+                val requestedPaths = dtos.map { it.path }.toSet()
+                library.ignoredPaths.removeIf {
+                    it.getType() == IgnoredPathSourceType.USER && it.path !in requestedPaths
                 }
+
+                val currentPaths = library.ignoredPaths.map { it.path }.toSet()
+                val pathsToAdd = dtos
+                    .filter { it.path !in currentPaths }
+                    .map { dto -> ignoredPathRepository.findByPath(dto.path) ?: dto.toEntity(currentUser) }
 
                 library.ignoredPaths.addAll(pathsToAdd)
             }
