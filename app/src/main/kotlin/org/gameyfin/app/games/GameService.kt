@@ -278,7 +278,7 @@ class GameService(
             // Hibernate collections are of type "PersistentBag" which does not implement equals() properly when comparing with ArrayList
             fun areEqual(a: Any?, b: Any?): Boolean {
                 return when {
-                    a is Collection<*> && b is Collection<*> -> a.toList() == b.toList()
+                    a is Collection<*> && b is Collection<*> -> a.toSet() == b.toSet()
                     else -> a == b
                 }
             }
@@ -372,7 +372,7 @@ class GameService(
             "publishers",
             game.publishers,
             updatedGame.publishers,
-            { game.publishers = it ?: mutableListOf() },
+            { game.publishers = (it ?: emptyList()).map { c -> companyService.createOrGet(c) }.toMutableList() },
             updatedGame.metadata.fields["publishers"]
         )
 
@@ -381,7 +381,7 @@ class GameService(
             "developers",
             game.developers,
             updatedGame.developers,
-            { game.developers = it ?: mutableListOf() },
+            { game.developers = (it ?: emptyList()).map { c -> companyService.createOrGet(c) }.toMutableList() },
             updatedGame.metadata.fields["developers"]
         )
 

@@ -1,5 +1,6 @@
 package org.gameyfin.app.media
 
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import com.github.benmanes.caffeine.cache.Cache
 import com.vanniktech.blurhash.BlurHash
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -85,7 +86,7 @@ class ImageService(
         log.debug { "Pre-populated image cache with ${images.size} entries" }
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @TransactionalEventListener(
         classes = [GameDeletedEvent::class],
         phase = TransactionPhase.AFTER_COMPLETION

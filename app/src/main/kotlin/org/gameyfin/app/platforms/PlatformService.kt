@@ -1,6 +1,7 @@
 package org.gameyfin.app.platforms
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import org.gameyfin.app.core.events.*
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.repositories.GameRepository
@@ -78,14 +79,14 @@ class PlatformService(
         calculateAvailablePlatforms()
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @EventListener(classes = [GameCreatedEvent::class, GameUpdatedEvent::class, GameDeletedEvent::class])
     fun onGameChange() {
         log.debug { "Game data changed, recalculating platforms in use by games" }
         calculatePlatformsInUseByGames()
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @EventListener(classes = [LibraryCreatedEvent::class, LibraryUpdatedEvent::class, LibraryDeletedEvent::class])
     fun onLibraryChange() {
         log.debug { "Library data changed, recalculating platforms in use by libraries" }
