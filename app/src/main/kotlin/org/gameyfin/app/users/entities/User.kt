@@ -39,14 +39,6 @@ class User(
     var roles: List<Role> = emptyList()
 ) {
 
-    constructor(oidcUser: OidcUser) : this(
-        username = oidcUser.preferredUsername ?: error("OidcUser has no preferred username"),
-        email = oidcUser.email ?: error("OidcUser has no email"),
-        emailConfirmed = true,
-        enabled = true,
-        oidcProviderId = oidcUser.subject
-    )
-
     constructor(oidcUser: OidcUser, resolvedUsername: String) : this(
         username = resolvedUsername,
         email = oidcUser.email ?: error("OidcUser has no email"),
