@@ -1440,12 +1440,12 @@ class GameServiceTest {
         val gameId = 1L
         val existingGame = createTestGame(gameId)
         val oidcUser = mockk<OidcUser> {
-            every { preferredUsername } returns "oidcuser"
+            every { subject } returns "oidc-sub"
         }
 
         every { authentication.principal } returns oidcUser
         every { gameRepository.findByIdOrNull(gameId) } returns existingGame
-        every { userService.getByUsernameNonNull("oidcuser") } returns mockUser
+        every { userService.findByOidcProviderId("oidc-sub") } returns mockUser
         every { gameRepository.save(existingGame) } returns existingGame
 
         val updateDto = GameUpdateDto(
@@ -1470,7 +1470,7 @@ class GameServiceTest {
         gameService.edit(updateDto)
 
         assertEquals("OIDC Updated Title", existingGame.title)
-        verify(exactly = 1) { userService.getByUsernameNonNull("oidcuser") }
+        verify(exactly = 1) { userService.findByOidcProviderId("oidc-sub") }
     }
 
     @Test
