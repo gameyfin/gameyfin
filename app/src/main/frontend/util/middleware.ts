@@ -14,6 +14,14 @@ export const ErrorHandlingMiddleware: Middleware = async function (
         // @see https://developer.mozilla.org/en-US/docs/Web/API/Response/clone
         let response: Response = originalResponse.clone();
 
+        // Session expired: reload to the login page
+        if (originalResponse.status == 401 || (originalResponse.status == 403 && !(await isJson(response)))) {
+            if (window.location.pathname !== "/login") {
+                window.location.href = "/login";
+            }
+            return originalResponse;
+        }
+
         //Ignore calls to UserEndpoint.getUserInfo since they are managed by Hilla and called on initial load
         if (endpoint == "UserEndpoint" && method == "getUserInfo") return originalResponse;
 
@@ -31,4 +39,13 @@ export const ErrorHandlingMiddleware: Middleware = async function (
     }
 
     return originalResponse;
+}
+
+async function isJson(response: Response): Promise<boolean> {
+    try {
+        await response.clone().json();
+        return true;
+    } catch {
+        return false;
+    }
 }
