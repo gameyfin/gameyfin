@@ -30,6 +30,7 @@ import org.gameyfin.app.users.UserService
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -155,7 +156,11 @@ class GameService(
 
         val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
-            is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername ?: error("OidcUser has no preferred username"))
+            is OidcUser -> {
+                val subject = userDetails.subject ?: error("OidcUser has no subject claim")
+                userService.findByOidcProviderId(subject)
+                    ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
+            }
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
