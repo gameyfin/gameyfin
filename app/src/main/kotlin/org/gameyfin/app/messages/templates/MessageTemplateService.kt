@@ -5,7 +5,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Service
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -36,7 +35,9 @@ class MessageTemplateService {
 
     fun getMessageTemplateContent(key: String, type: TemplateType): String {
         log.debug { "Reading message template content for '$key.${type.extension}'" }
-        return getTemplateFile(key, type).readText()
+        val path = Path.of("./", TEMPLATE_PATH, "$key.${type.extension}")
+        if (Files.exists(path)) return path.readText()
+        return getDefaultTemplateContent(key, type)
     }
 
     fun fillMessageTemplate(template: MessageTemplates, type: TemplateType, placeholders: Map<String, String>): String {
@@ -64,12 +65,6 @@ class MessageTemplateService {
         }
     }
 
-    private fun getTemplateFile(key: String, type: TemplateType): Path {
-        val path = Path.of("./", TEMPLATE_PATH, "$key.${type.extension}")
-        if (Files.notExists(path)) return getDefaultTemplateFile(key, type)
-        return path
-    }
-
     private fun getOrCreateTemplateFile(key: String, type: TemplateType): Path {
         val path = Path.of("./", TEMPLATE_PATH, "$key.${type.extension}")
         if (Files.notExists(path)) {
@@ -79,11 +74,11 @@ class MessageTemplateService {
         return path
     }
 
-    private fun getDefaultTemplateFile(key: String, type: TemplateType): Path {
+    private fun getDefaultTemplateContent(key: String, type: TemplateType): String {
         log.debug { "No custom message template found for '$key.${type.extension}', returning default" }
-        val resourceUrl = javaClass.classLoader.getResource("$DEFAULT_TEMPLATE_PATH/$key.${type.extension}")
+        val stream = javaClass.classLoader.getResourceAsStream("$DEFAULT_TEMPLATE_PATH/$key.${type.extension}")
             ?: error("Default template file not found for '$key.${type.extension}'")
-        return Paths.get(resourceUrl.toURI())
+        return stream.use { it.readBytes().toString(Charsets.UTF_8) }
     }
 
     private fun fillTextTemplate(content: String, placeholders: Map<String, String>): String {
