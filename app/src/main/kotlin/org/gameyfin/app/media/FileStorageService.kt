@@ -74,8 +74,7 @@ class FileStorageService(
         if (contentId == null) return
 
         val filePath = rootPath.resolve(contentId)
-        if (filePath.exists()) {
-            filePath.deleteExisting()
+        if (Files.deleteIfExists(filePath)) {
             logger.debug { "Deleted file with contentId: $contentId" }
         }
     }
