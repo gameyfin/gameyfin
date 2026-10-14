@@ -73,9 +73,26 @@ fi
 # process-wide SIGSEGV/SIGBUS handlers that replace the JVM's own. The JVM uses SIGSEGV
 # internally (implicit null checks, safepoints), so without chaining it dies with exit 139
 # and no crash report. libjsig makes such handlers chain behind the JVM's handler.
+# jemalloc replaces glibc malloc: glibc's per-thread arenas fragment badly with many threads doing
+# native allocations (ImageIO/libjpeg, H2, Tomcat NIO) and rarely return memory to the OS, so RSS
+# creeps up even though the heap is capped. jemalloc must be preloaded *after* libjsig.
+# Set DISABLE_JEMALLOC=true to fall back to glibc malloc.
 JSIG="${JAVA_HOME:-/opt/java/openjdk}/lib/libjsig.so"
-if [ -z "${LD_PRELOAD:-}" ] && [ -f "${JSIG}" ]; then
-  export LD_PRELOAD="${JSIG}"
+JEMALLOC=""
+if [ "${DISABLE_JEMALLOC:-false}" != "true" ]; then
+  JEMALLOC="$(find /usr/lib -maxdepth 2 -name libjemalloc.so.2 -print -quit 2>/dev/null || true)"
+fi
+
+if [ -z "${LD_PRELOAD:-}" ]; then
+  PRELOAD=""
+  [ -f "${JSIG}" ] && PRELOAD="${JSIG}"
+  [ -n "${JEMALLOC}" ] && PRELOAD="${PRELOAD:+${PRELOAD}:}${JEMALLOC}"
+  [ -n "${PRELOAD}" ] && export LD_PRELOAD="${PRELOAD}"
+fi
+
+if [ -n "${JEMALLOC}" ]; then
+  # background_thread: purge unused pages in a separate thread so idle memory is returned to the OS
+  export MALLOC_CONF="${MALLOC_CONF:-background_thread:true,dirty_decay_ms:5000,muzzy_decay_ms:5000,narenas:2}"
 fi
 
 exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true -jar application.jar

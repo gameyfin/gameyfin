@@ -72,10 +72,15 @@ class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wra
         val client = SteamGridDbApiClient(apiKey)
 
         if (!client.isApiKeyValid()) {
+            // Release the HTTP client's threads and connections, otherwise every failed validation leaks one
+            client.close()
             throw PluginConfigError("Failed to authenticate on SteamGridDB API with provided credentials")
         }
 
+        // Close the previous client instead of just dropping the reference
+        val previousClient = SteamGridDbPlugin.client
         SteamGridDbPlugin.client = client
+        previousClient?.close()
         log.debug("Authentication successful")
     }
 
