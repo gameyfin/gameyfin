@@ -19,7 +19,7 @@ class CompanyServiceTest {
     @BeforeEach
     fun setup() {
         companyRepository = mockk()
-        companyService = CompanyService(companyRepository)
+        companyService = CompanyService(companyRepository, CompanyCreator(companyRepository))
     }
 
     @AfterEach
@@ -37,7 +37,7 @@ class CompanyServiceTest {
 
         assertEquals(existingCompany, result)
         verify(exactly = 1) { companyRepository.findByNameAndType("TestCompany", CompanyType.DEVELOPER) }
-        verify(exactly = 0) { companyRepository.save(any()) }
+        verify(exactly = 0) { companyRepository.saveAndFlush(any()) }
     }
 
     @Test
@@ -46,13 +46,13 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 2L, name = "NewCompany", type = CompanyType.PUBLISHER)
 
         every { companyRepository.findByNameAndType("NewCompany", CompanyType.PUBLISHER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { companyRepository.saveAndFlush(any()) } returns savedCompany
 
         val result = companyService.createOrGet(newCompany)
 
         assertEquals(savedCompany, result)
         verify(exactly = 1) { companyRepository.findByNameAndType("NewCompany", CompanyType.PUBLISHER) }
-        verify(exactly = 1) { companyRepository.save(match { it.name == "NewCompany" && it.type == CompanyType.PUBLISHER }) }
+        verify(exactly = 1) { companyRepository.saveAndFlush(match { it.name == "NewCompany" && it.type == CompanyType.PUBLISHER }) }
     }
 
     @Test
@@ -64,13 +64,13 @@ class CompanyServiceTest {
             null,
             existingCompany
         )
-        every { companyRepository.save(any()) } throws DataIntegrityViolationException("Duplicate key")
+        every { companyRepository.saveAndFlush(any()) } throws DataIntegrityViolationException("Duplicate key")
 
         val result = companyService.createOrGet(company)
 
         assertEquals(existingCompany, result)
         verify(exactly = 2) { companyRepository.findByNameAndType("ConcurrentCompany", CompanyType.DEVELOPER) }
-        verify(exactly = 1) { companyRepository.save(any()) }
+        verify(exactly = 1) { companyRepository.saveAndFlush(any()) }
     }
 
     @Test
@@ -79,7 +79,7 @@ class CompanyServiceTest {
         val exception = DataIntegrityViolationException("Database error")
 
         every { companyRepository.findByNameAndType("FailedCompany", CompanyType.PUBLISHER) } returns null
-        every { companyRepository.save(any()) } throws exception
+        every { companyRepository.saveAndFlush(any()) } throws exception
 
         try {
             companyService.createOrGet(company)
@@ -89,7 +89,7 @@ class CompanyServiceTest {
         }
 
         verify(exactly = 2) { companyRepository.findByNameAndType("FailedCompany", CompanyType.PUBLISHER) }
-        verify(exactly = 1) { companyRepository.save(any()) }
+        verify(exactly = 1) { companyRepository.saveAndFlush(any()) }
     }
 
     @Test
@@ -101,8 +101,8 @@ class CompanyServiceTest {
 
         every { companyRepository.findByNameAndType("SameCompany", CompanyType.DEVELOPER) } returns null
         every { companyRepository.findByNameAndType("SameCompany", CompanyType.PUBLISHER) } returns null
-        every { companyRepository.save(match { it.type == CompanyType.DEVELOPER }) } returns savedDeveloper
-        every { companyRepository.save(match { it.type == CompanyType.PUBLISHER }) } returns savedPublisher
+        every { companyRepository.saveAndFlush(match { it.type == CompanyType.DEVELOPER }) } returns savedDeveloper
+        every { companyRepository.saveAndFlush(match { it.type == CompanyType.PUBLISHER }) } returns savedPublisher
 
         val resultDeveloper = companyService.createOrGet(developer)
         val resultPublisher = companyService.createOrGet(publisher)
@@ -120,14 +120,14 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 6L, name = companyName, type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType(companyName, CompanyType.DEVELOPER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { companyRepository.saveAndFlush(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
         assertNotNull(result)
         assertEquals(companyName, result.name)
         verify(exactly = 1) {
-            companyRepository.save(match { it.name == companyName && it.type == CompanyType.DEVELOPER })
+            companyRepository.saveAndFlush(match { it.name == companyName && it.type == CompanyType.DEVELOPER })
         }
     }
 
@@ -137,7 +137,7 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 7L, name = "", type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType("", CompanyType.DEVELOPER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { companyRepository.saveAndFlush(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
@@ -151,13 +151,13 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 8L, name = "TestCompany", type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType("TestCompany", CompanyType.DEVELOPER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { companyRepository.saveAndFlush(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
         assertEquals(8L, result.id)
         verify(exactly = 1) {
-            companyRepository.save(match { it.id == null && it.name == "TestCompany" })
+            companyRepository.saveAndFlush(match { it.id == null && it.name == "TestCompany" })
         }
     }
 }

@@ -4,23 +4,31 @@ import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.repositories.CompanyRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class CompanyService(
-    private val companyRepository: CompanyRepository
+    private val companyRepository: CompanyRepository,
+    private val companyCreator: CompanyCreator
 ) {
-    @Transactional
     fun createOrGet(company: Company): Company {
         companyRepository.findByNameAndType(company.name, company.type)?.let { return it }
 
         return try {
             val toSave = Company(name = company.name, type = company.type)
-            companyRepository.save(toSave)
+            companyCreator.create(toSave)
         } catch (e: DataIntegrityViolationException) {
-            // Another transaction may have inserted the same unique (name,type) concurrently; fetch and return
+            // The failed insert has rolled back separately, leaving the caller free to read the winner.
             companyRepository.findByNameAndType(company.name, company.type)
                 ?: throw e
         }
     }
+}
+
+@Service
+class CompanyCreator(private val companyRepository: CompanyRepository) {
+    // Use a separate bean so Spring applies the transaction boundary before the caller catches a duplicate.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    fun create(company: Company): Company = companyRepository.saveAndFlush(company)
 }
