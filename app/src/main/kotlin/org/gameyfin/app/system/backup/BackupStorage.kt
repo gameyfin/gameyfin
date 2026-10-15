@@ -56,10 +56,8 @@ class BackupStorage(directory: Path) {
      */
     fun resolve(name: String): Path {
         require(isValidName(name)) { "Invalid backup name" }
-        val path = root.resolve(name).normalize()
-        require(path.parent == root) { "Invalid backup name" }
-        require(path.isRegularFile()) { "Backup '$name' does not exist" }
-        return path
+        // Pick the path from the directory listing instead of building it from user input
+        return requireNotNull(list().firstOrNull { it.name == name }) { "Invalid backup name" }
     }
 
     fun list(): List<Path> {

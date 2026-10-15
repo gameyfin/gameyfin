@@ -37,7 +37,7 @@ class BackupController(
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("application/zip"))
             .contentLength(file.fileSize())
-            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(name).build().toString())
+            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file.fileName.toString()).build().toString())
             .body(FileSystemResource(file))
     }
 
