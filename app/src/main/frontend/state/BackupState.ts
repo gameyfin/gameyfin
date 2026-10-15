@@ -2,10 +2,10 @@ import {proxy} from 'valtio';
 import {toast} from "@heroui/react";
 import {Subscription} from "@vaadin/hilla-frontend";
 import {BackupEndpoint} from "Frontend/generated/endpoints";
-import type BackupProgress from "Frontend/generated/org/gameyfin/app/system/backup/BackupProgress";
-import BackupTaskStatus from "Frontend/generated/org/gameyfin/app/system/backup/BackupTaskStatus";
-import BackupTrigger from "Frontend/generated/org/gameyfin/app/system/backup/BackupTrigger";
-import type ImageRecoveryProgress from "Frontend/generated/org/gameyfin/app/system/backup/ImageRecoveryProgress";
+import type BackupProgress from "Frontend/generated/org/gameyfin/app/core/backup/BackupProgress";
+import BackupTaskStatus from "Frontend/generated/org/gameyfin/app/core/backup/BackupTaskStatus";
+import BackupTrigger from "Frontend/generated/org/gameyfin/app/core/backup/BackupTrigger";
+import type ImageRecoveryProgress from "Frontend/generated/org/gameyfin/app/core/backup/ImageRecoveryProgress";
 
 type BackupState = {
     subscription?: Subscription<BackupProgress[]>;

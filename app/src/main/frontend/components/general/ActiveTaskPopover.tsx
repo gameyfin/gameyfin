@@ -8,10 +8,10 @@ import {humanFileSize, timeBetween, timeUntil, toTitleCase} from "Frontend/util/
 import LibraryScanStatus from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanStatus";
 import type LibraryScanProgress from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryScanProgress";
 import type LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
-import BackupTaskStatus from "Frontend/generated/org/gameyfin/app/system/backup/BackupTaskStatus";
-import BackupTrigger from "Frontend/generated/org/gameyfin/app/system/backup/BackupTrigger";
-import type BackupProgress from "Frontend/generated/org/gameyfin/app/system/backup/BackupProgress";
-import type ImageRecoveryProgress from "Frontend/generated/org/gameyfin/app/system/backup/ImageRecoveryProgress";
+import BackupTaskStatus from "Frontend/generated/org/gameyfin/app/core/backup/BackupTaskStatus";
+import BackupTrigger from "Frontend/generated/org/gameyfin/app/core/backup/BackupTrigger";
+import type BackupProgress from "Frontend/generated/org/gameyfin/app/core/backup/BackupProgress";
+import type ImageRecoveryProgress from "Frontend/generated/org/gameyfin/app/core/backup/ImageRecoveryProgress";
 import {ReactNode, useEffect, useRef, useState} from "react";
 
 type TaskStatus = "IN_PROGRESS" | "COMPLETED" | "FAILED";

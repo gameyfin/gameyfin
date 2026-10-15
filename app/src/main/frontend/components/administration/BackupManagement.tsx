@@ -8,8 +8,8 @@ import {
     UploadSimpleIcon
 } from "@phosphor-icons/react";
 import {BackupEndpoint} from "Frontend/generated/endpoints";
-import BackupDto from "Frontend/generated/org/gameyfin/app/system/backup/BackupDto";
-import RestoreStatusDto from "Frontend/generated/org/gameyfin/app/system/backup/RestoreStatusDto";
+import BackupDto from "Frontend/generated/org/gameyfin/app/core/backup/BackupDto";
+import RestoreStatusDto from "Frontend/generated/org/gameyfin/app/core/backup/RestoreStatusDto";
 import Section from "Frontend/components/general/Section";
 import {humanFileSize} from "Frontend/util/utils";
 import {uploadFile, waitForRestart} from "Frontend/util/restart";
