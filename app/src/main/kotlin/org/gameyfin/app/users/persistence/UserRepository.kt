@@ -16,4 +16,7 @@ interface UserRepository : JpaRepository<User, Long> {
 
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.avatar.id = :imageId")
     fun existsByAvatar(@Param("imageId") imageId: Long): Boolean
+
+    @Query("SELECT u FROM User u WHERE u.avatar.id = :imageId")
+    fun findAllByAvatar(@Param("imageId") imageId: Long): List<User>
 }

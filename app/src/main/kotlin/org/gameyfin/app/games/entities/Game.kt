@@ -7,7 +7,9 @@ import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.UpdateTimestamp
+import org.hibernate.type.SqlTypes
 import java.net.URI
 import java.nio.file.Path
 import java.time.Instant
@@ -43,10 +45,10 @@ class Game(
     @ManyToOne(cascade = [MERGE, REFRESH], fetch = FetchType.EAGER)
     var headerImage: Image? = null,
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     var comment: String? = null,
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     var summary: String? = null,
 
     var release: Instant? = null,

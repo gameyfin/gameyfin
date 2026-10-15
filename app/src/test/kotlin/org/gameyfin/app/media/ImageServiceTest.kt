@@ -372,14 +372,16 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.delete(image) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.deleteImageIfUnused(image)
 
         verify(exactly = 1) { gameRepository.existsByImage(1L) }
         verify(exactly = 1) { userRepository.existsByAvatar(1L) }
-        verify(exactly = 1) { imageRepository.delete(image) }
+        verify(exactly = 1) { imageRepository.existsById(1L) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 
@@ -474,14 +476,19 @@ class ImageServiceTest {
         every { userRepository.existsByAvatar(2L) } returns false
         every { gameRepository.existsByImage(3L) } returns false
         every { userRepository.existsByAvatar(3L) } returns false
-        every { imageRepository.delete(any()) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.existsById(2L) } returns true
+        every { imageRepository.existsById(3L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
+        every { imageRepository.deleteById(2L) } just Runs
+        every { imageRepository.deleteById(3L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onGameDeleted(event)
 
-        verify(exactly = 1) { imageRepository.delete(coverImage) }
-        verify(exactly = 1) { imageRepository.delete(headerImage) }
-        verify(exactly = 1) { imageRepository.delete(screenshot) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
+        verify(exactly = 1) { imageRepository.deleteById(2L) }
+        verify(exactly = 1) { imageRepository.deleteById(3L) }
     }
 
     @Test
@@ -496,12 +503,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.delete(screenshot) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onGameDeleted(event)
 
-        verify(exactly = 1) { imageRepository.delete(screenshot) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 
@@ -528,15 +536,18 @@ class ImageServiceTest {
         every { userRepository.existsByAvatar(1L) } returns false
         every { gameRepository.existsByImage(3L) } returns false
         every { userRepository.existsByAvatar(3L) } returns false
-        every { imageRepository.delete(any()) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.existsById(3L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
+        every { imageRepository.deleteById(3L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onGameUpdated(event)
 
-        verify(exactly = 1) { imageRepository.delete(oldCover) }
-        verify(exactly = 1) { imageRepository.delete(oldScreenshot) }
-        verify(exactly = 0) { imageRepository.delete(newCover) }
-        verify(exactly = 0) { imageRepository.delete(newScreenshot) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
+        verify(exactly = 1) { imageRepository.deleteById(3L) }
+        verify(exactly = 0) { imageRepository.deleteById(2L) }
+        verify(exactly = 0) { imageRepository.deleteById(4L) }
     }
 
     @Test
@@ -572,12 +583,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.delete(avatar) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onAccountDeleted(event)
 
-        verify(exactly = 1) { imageRepository.delete(avatar) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 
@@ -608,12 +620,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.delete(oldAvatar) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onUserUpdated(event)
 
-        verify(exactly = 1) { imageRepository.delete(oldAvatar) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 
@@ -664,12 +677,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.delete(oldAvatar) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onUserUpdated(event)
 
-        verify(exactly = 1) { imageRepository.delete(oldAvatar) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/org/gameyfin/app/config/dto/ConfigEntryDto";
 import {Form, Formik, FormikProps} from "formik";
-import {Button, Skeleton} from "@heroui/react";
+import {Button, Skeleton, Spinner} from "@heroui/react";
 import {CheckIcon, InfoIcon} from "@phosphor-icons/react";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {configState, initializeConfigState, NestedConfig} from "Frontend/state/ConfigState";
@@ -114,7 +114,7 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<Con
                                             isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
                                             type="submit"
                                         >
-                                            {formik.isSubmitting ? "" : configSaved ? <CheckIcon/> : "Save"}
+                                            {formik.isSubmitting ? <Spinner size="sm" color="current"/> : configSaved ? <CheckIcon/> : "Save"}
                                         </Button>
                                     </div>
                                 </div>

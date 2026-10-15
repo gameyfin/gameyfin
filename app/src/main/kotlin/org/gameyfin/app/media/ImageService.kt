@@ -216,7 +216,14 @@ class ImageService(
 
         if (!isImageStillInUse) {
             imageCache.invalidate(imageId)
-            imageRepository.delete(image)
+            try {
+                if (imageRepository.existsById(imageId)) {
+                    imageRepository.deleteById(imageId)
+                }
+            } catch (_: org.springframework.orm.ObjectOptimisticLockingFailureException) {
+                // Image was already deleted by another concurrent async cleanup. Safe to ignore.
+                log.debug { "Image $imageId already deleted by concurrent cleanup, skipping." }
+            }
             fileStorageService.deleteFile(image.contentId)
         }
     }
@@ -235,6 +242,16 @@ class ImageService(
 
         return imageRepository.save(image)
     }
+
+    /**
+     * Replaces the content of an existing image, e.g. when the file has been lost. The MIME type is detected.
+     */
+    fun restoreContent(image: Image, content: InputStream): Image =
+        TikaInputStream.get(content).use { input ->
+            updateFileContent(image, input, tika.detect(input))
+        }
+
+    fun hasContent(image: Image): Boolean = fileStorageService.fileExists(image.contentId)
 
     private fun imageHasValidContent(image: Image): Boolean {
         return image.contentId != null

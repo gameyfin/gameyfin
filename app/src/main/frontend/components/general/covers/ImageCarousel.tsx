@@ -9,12 +9,19 @@ import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useEffect, useState} from "react";
 import {CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon} from "@phosphor-icons/react";
+import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 
 // react-player v2 is CJS; depending on the bundler interop the default import may be the module namespace
 const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
 
+export interface CarouselImage {
+    url: string;
+    /** Shown while the image is loading or not available */
+    blurhash?: string;
+}
+
 interface ImageCarouselProps {
-    imageUrls?: string[];
+    images?: CarouselImage[];
     videosUrls?: string[];
     className?: string;
 }
@@ -26,34 +33,36 @@ interface SlideData {
     isNext: boolean;
 }
 
-export default function ImageCarousel({imageUrls, videosUrls, className}: ImageCarouselProps) {
+export default function ImageCarousel({images, videosUrls, className}: ImageCarouselProps) {
 
     interface CarouselElement {
         type: "image" | "video";
         url: string;
+        blurhash?: string;
     }
 
     const DEFAULT_SLIDES_PER_VIEW = 3;
 
     const [elements, setElements] = useState<CarouselElement[]>();
-    const [selectedImageUrl, setSelectedImageUrl] = useState<string>();
+    const [selectedImage, setSelectedImage] = useState<CarouselImage>();
     const imagePopup = useOverlayState();
 
     useEffect(() => {
-        const images = imageUrls?.map((imageUrl) => ({
+        const imageElements = images?.map((image) => ({
             type: "image" as const,
-            url: imageUrl
+            url: image.url,
+            blurhash: image.blurhash
         })) || [];
         const videos = videosUrls?.map((videoUrl) => ({
             type: "video" as const,
             url: videoUrl
         })) || [];
 
-        setElements([...images, ...videos]);
-    }, [imageUrls, videosUrls])
+        setElements([...imageElements, ...videos]);
+    }, [images, videosUrls])
 
-    function showImagePopup(imageUrl: string) {
-        setSelectedImageUrl(imageUrl);
+    function showImagePopup(image: CarouselImage) {
+        setSelectedImage(image);
         imagePopup.open();
     }
 
@@ -89,11 +98,12 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                         {({isActive}: SlideData) => {
                                             if (e.type === "image") {
                                                 return (
-                                                    <img
+                                                    <BlurhashImage
                                                         src={e.url}
+                                                        blurhash={e.blurhash}
                                                         alt={`Game screenshot slide ${index}`}
                                                         className={`w-full h-full object-cover aspect-video rounded-xl cursor-zoom-in transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}
-                                                        onClick={() => showImagePopup(e.url)}
+                                                        onClick={() => showImagePopup(e)}
                                                         loading="lazy"
                                                     />
                                                 )
@@ -115,7 +125,7 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
                                         }}
                                     </SwiperSlide>
                                 ))}
-                                <ImagePopup imageUrl={selectedImageUrl}
+                                <ImagePopup image={selectedImage}
                                             isOpen={imagePopup.isOpen}
                                             onOpenChange={imagePopup.setOpen}
                                             onClose={imagePopup.close}/>
@@ -133,13 +143,13 @@ export default function ImageCarousel({imageUrls, videosUrls, className}: ImageC
     );
 }
 
-function ImagePopup({imageUrl, isOpen, onOpenChange, onClose}: {
-    imageUrl?: string,
+function ImagePopup({image, isOpen, onOpenChange, onClose}: {
+    image?: CarouselImage,
     isOpen: boolean,
     onOpenChange: (isOpen: boolean) => void,
     onClose: () => void
 }) {
-    return (imageUrl &&
+    return (image &&
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="blur">
                 <Modal.Container size="full">
@@ -147,8 +157,9 @@ function ImagePopup({imageUrl, isOpen, onOpenChange, onClose}: {
                         {() => (
                             <div className="flex grow items-center justify-center cursor-zoom-out"
                                  onClick={onClose}>
-                                <img
-                                    src={imageUrl}
+                                <BlurhashImage
+                                    src={image.url}
+                                    blurhash={image.blurhash}
                                     alt="Game screenshot"
                                     className="max-w-[80vw] max-h-[80vh] object-contain rounded-xl"
                                 />

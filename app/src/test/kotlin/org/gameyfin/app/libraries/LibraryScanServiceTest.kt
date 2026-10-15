@@ -13,11 +13,15 @@ import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
+import org.gameyfin.app.libraries.entities.IgnoredPathUserSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.LibraryGameProcessor
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -116,9 +120,30 @@ class LibraryScanServiceTest {
         libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
         Thread.sleep(50)
         libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
 
-        Thread.sleep(200)
+        // First scan runs immediately (150ms), follow-up is debounced 30s so it won't
+        // fire within this window — verify exactly 1 scan ran, not 2 or 3
+        Thread.sleep(300)
         verify(exactly = 1) { filesystemService.scanLibraryForGamefiles(library) }
+    }
+
+    @Test
+    fun `triggerScan multiple triggers while scan running should only queue one follow-up`() {
+        val library = createTestLibrary(1L)
+
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        setupDelayedQuickScan(library)
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        Thread.sleep(50)
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+
+        Thread.sleep(300)
+        verify(atLeast = 1) { filesystemService.scanLibraryForGamefiles(library) }
+        verify(atMost = 1) { filesystemService.scanLibraryForGamefiles(library) }
     }
 
     @Test
@@ -287,6 +312,109 @@ class LibraryScanServiceTest {
         verify(atLeast = 1) { libraryCoreService.addGamesToLibrary(any(), library, false) }
     }
 
+    @Test
+    fun `scheduleScan should ignore libraries without id`() {
+        libraryScanService.debounceDelayMillis = 20
+        libraryScanService.scheduleScan(ScanType.QUICK, mockk<Library>(relaxed = true) { every { id } returns null })
+
+        Thread.sleep(150)
+        verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
+    }
+
+    @Test
+    fun `scheduleScan should debounce bursts into a single scan for each scan type`() {
+        libraryScanService.debounceDelayMillis = 100
+        ScanType.entries.forEachIndexed { index, type ->
+            val libraryId = 10L + index
+            val library = createTestLibrary(libraryId)
+            every { libraryRepository.findAllById(listOf(libraryId)) } returns listOf(library)
+            setupSuccessfulFullScan(library)
+
+            repeat(3) {
+                libraryScanService.scheduleScan(type, library)
+                Thread.sleep(20)
+            }
+
+            Thread.sleep(500)
+            verify(exactly = 1) { filesystemService.scanLibraryForGamefiles(library) }
+        }
+    }
+
+    @Test
+    fun `scheduleScan should skip when library no longer exists`() {
+        libraryScanService.debounceDelayMillis = 20
+        val library = createTestLibrary(1L)
+        every { libraryRepository.findAllById(listOf(1L)) } returns emptyList()
+
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
+
+        Thread.sleep(200)
+        verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
+    }
+
+    @Test
+    fun `scheduleScan should run follow-up scan after a running scan finishes`() {
+        libraryScanService.debounceDelayMillis = 50
+        val library = createTestLibrary(1L)
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        setupDelayedQuickScan(library)
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        Thread.sleep(20)
+        // debounce fires while the first scan is still running
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
+
+        Thread.sleep(1000)
+        verify(exactly = 2) { filesystemService.scanLibraryForGamefiles(library) }
+    }
+
+    @Test
+    fun `triggerScan should run queued follow-up after cooldown`() {
+        libraryScanService.debounceDelayMillis = 50
+        val library = createTestLibrary(1L)
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        setupDelayedQuickScan(library)
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        Thread.sleep(30)
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+
+        Thread.sleep(1000)
+        verify(exactly = 2) { filesystemService.scanLibraryForGamefiles(library) }
+    }
+
+    @Test
+    fun `scan should not re-process plugin ignored paths which were removed from the filesystem`() {
+        val keptPath = IgnoredPath(1L, "/path/kept", IgnoredPathPluginSource(mutableListOf()))
+        val removedPath = IgnoredPath(2L, "/path/gone", IgnoredPathPluginSource(mutableListOf()))
+        val userPath = IgnoredPath(3L, "/path/user", IgnoredPathUserSource(mockk()))
+        val ignored = mutableListOf(keptPath, removedPath, userPath)
+        val library = createTestLibrary(1L, ignoredPaths = ignored)
+
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
+            newPaths = emptyList(),
+            removedGamePaths = emptyList(),
+            removedIgnoredPaths = listOf(removedPath)
+        )
+        every { libraryGameProcessor.processNewGame(any(), library) } returns null
+        every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
+        every { libraryCoreService.addGamesToLibrary(any(), library, false) } returns library
+        every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
+        every { pluginService.getPluginManagementEntries(any()) } returns emptyList()
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+
+        Thread.sleep(400)
+        verify(exactly = 1) { libraryGameProcessor.processNewGame(Path("/path/kept"), library) }
+        verify(exactly = 0) { libraryGameProcessor.processNewGame(Path("/path/gone"), library) }
+        verify(exactly = 0) { libraryGameProcessor.processNewGame(Path("/path/user"), library) }
+        assertFalse(ignored.contains(removedPath))
+        assertTrue(ignored.contains(userPath))
+    }
+
     private fun createTestLibrary(
         id: Long,
         games: MutableList<Game> = mutableListOf(),
@@ -321,6 +449,7 @@ class LibraryScanServiceTest {
         every { libraryRepository.save(library) } returns library
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
         every { libraryCoreService.addGamesToLibrary(any(), library, false) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
     }
 
     private fun setupDelayedQuickScan(library: Library) {
@@ -335,6 +464,7 @@ class LibraryScanServiceTest {
         every { libraryRepository.save(library) } returns library
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
         every { libraryCoreService.addGamesToLibrary(any(), library, false) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
     }
 
     private fun setupSuccessfulFullScan(library: Library) {
@@ -347,6 +477,7 @@ class LibraryScanServiceTest {
         every { libraryRepository.save(library) } returns library
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
         every { libraryCoreService.addGamesToLibrary(any(), library, false) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
     }
 
     private fun setupQuickScanWithNewGames(library: Library, newPaths: List<Path>, newGame: Game) {
@@ -359,6 +490,7 @@ class LibraryScanServiceTest {
         every { gameRepository.findAllById(listOf(newGame.id!!)) } returns listOf(newGame)
         every { libraryCoreService.addGamesToLibrary(listOf(newGame), library, false) } returns library
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
     }
 
     private fun setupQuickScanWithUnmatchedGames(library: Library, unmatchedPaths: List<Path>) {
@@ -371,6 +503,8 @@ class LibraryScanServiceTest {
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
         every { libraryCoreService.addGamesToLibrary(emptyList(), library, false) } returns library
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
+        every { pluginService.getPluginManagementEntries(any()) } returns emptyList()
     }
 
     private fun setupFullScanWithExistingGames(library: Library, existingGame: Game) {
@@ -383,6 +517,7 @@ class LibraryScanServiceTest {
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
         every { libraryCoreService.addGamesToLibrary(emptyList(), library, false) } returns library
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
     }
 
     private fun setupQuickScanWithRemovedGames(library: Library, removedPaths: List<Path>) {
@@ -394,6 +529,7 @@ class LibraryScanServiceTest {
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
         every { libraryCoreService.addGamesToLibrary(emptyList(), library, false) } returns library
         every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath(any()) } returns null
     }
 }
 

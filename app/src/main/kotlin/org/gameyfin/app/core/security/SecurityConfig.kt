@@ -88,6 +88,10 @@ class SecurityConfig(
                     "/favicon.ico",
                     "/favicon.svg"
                 ).permitAll()
+                // Restoring a backup is allowed during the initial setup (checked in BackupController)
+                .requestMatchers("/backups/setup/**").permitAll()
+                // Backup downloads/uploads (admin role is checked in BackupController)
+                .requestMatchers("/backups/**").authenticated()
                 // Client-side SPA routes - these need to pass through to serve index.html
                 // Authentication will be handled by Hilla on the client side
                 .requestMatchers(

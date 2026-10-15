@@ -14,12 +14,16 @@ import kotlin.test.assertNotNull
 class CompanyServiceTest {
 
     private lateinit var companyRepository: CompanyRepository
+    private lateinit var self: CompanyService
     private lateinit var companyService: CompanyService
 
     @BeforeEach
     fun setup() {
         companyRepository = mockk()
-        companyService = CompanyService(companyRepository)
+        // self is a mockk of CompanyService so we can stub trySave independently
+        // of the real transaction proxy (which doesn't exist in unit tests)
+        self = mockk()
+        companyService = CompanyService(companyRepository, self)
     }
 
     @AfterEach
@@ -37,7 +41,7 @@ class CompanyServiceTest {
 
         assertEquals(existingCompany, result)
         verify(exactly = 1) { companyRepository.findByNameAndType("TestCompany", CompanyType.DEVELOPER) }
-        verify(exactly = 0) { companyRepository.save(any()) }
+        verify(exactly = 0) { self.trySave(any()) }
     }
 
     @Test
@@ -46,13 +50,15 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 2L, name = "NewCompany", type = CompanyType.PUBLISHER)
 
         every { companyRepository.findByNameAndType("NewCompany", CompanyType.PUBLISHER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(newCompany)
 
         assertEquals(savedCompany, result)
         verify(exactly = 1) { companyRepository.findByNameAndType("NewCompany", CompanyType.PUBLISHER) }
-        verify(exactly = 1) { companyRepository.save(match { it.name == "NewCompany" && it.type == CompanyType.PUBLISHER }) }
+        verify(exactly = 1) {
+            self.trySave(match { it.name == "NewCompany" && it.type == CompanyType.PUBLISHER })
+        }
     }
 
     @Test
@@ -64,13 +70,13 @@ class CompanyServiceTest {
             null,
             existingCompany
         )
-        every { companyRepository.save(any()) } throws DataIntegrityViolationException("Duplicate key")
+        every { self.trySave(any()) } throws DataIntegrityViolationException("Duplicate key")
 
         val result = companyService.createOrGet(company)
 
         assertEquals(existingCompany, result)
         verify(exactly = 2) { companyRepository.findByNameAndType("ConcurrentCompany", CompanyType.DEVELOPER) }
-        verify(exactly = 1) { companyRepository.save(any()) }
+        verify(exactly = 1) { self.trySave(any()) }
     }
 
     @Test
@@ -79,7 +85,7 @@ class CompanyServiceTest {
         val exception = DataIntegrityViolationException("Database error")
 
         every { companyRepository.findByNameAndType("FailedCompany", CompanyType.PUBLISHER) } returns null
-        every { companyRepository.save(any()) } throws exception
+        every { self.trySave(any()) } throws exception
 
         try {
             companyService.createOrGet(company)
@@ -89,7 +95,7 @@ class CompanyServiceTest {
         }
 
         verify(exactly = 2) { companyRepository.findByNameAndType("FailedCompany", CompanyType.PUBLISHER) }
-        verify(exactly = 1) { companyRepository.save(any()) }
+        verify(exactly = 1) { self.trySave(any()) }
     }
 
     @Test
@@ -101,8 +107,8 @@ class CompanyServiceTest {
 
         every { companyRepository.findByNameAndType("SameCompany", CompanyType.DEVELOPER) } returns null
         every { companyRepository.findByNameAndType("SameCompany", CompanyType.PUBLISHER) } returns null
-        every { companyRepository.save(match { it.type == CompanyType.DEVELOPER }) } returns savedDeveloper
-        every { companyRepository.save(match { it.type == CompanyType.PUBLISHER }) } returns savedPublisher
+        every { self.trySave(match { it.type == CompanyType.DEVELOPER }) } returns savedDeveloper
+        every { self.trySave(match { it.type == CompanyType.PUBLISHER }) } returns savedPublisher
 
         val resultDeveloper = companyService.createOrGet(developer)
         val resultPublisher = companyService.createOrGet(publisher)
@@ -120,14 +126,14 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 6L, name = companyName, type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType(companyName, CompanyType.DEVELOPER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
         assertNotNull(result)
         assertEquals(companyName, result.name)
         verify(exactly = 1) {
-            companyRepository.save(match { it.name == companyName && it.type == CompanyType.DEVELOPER })
+            self.trySave(match { it.name == companyName && it.type == CompanyType.DEVELOPER })
         }
     }
 
@@ -137,7 +143,7 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 7L, name = "", type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType("", CompanyType.DEVELOPER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
@@ -151,14 +157,28 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 8L, name = "TestCompany", type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType("TestCompany", CompanyType.DEVELOPER) } returns null
-        every { companyRepository.save(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
         assertEquals(8L, result.id)
         verify(exactly = 1) {
-            companyRepository.save(match { it.id == null && it.name == "TestCompany" })
+            self.trySave(match { it.id == null && it.name == "TestCompany" })
         }
     }
-}
 
+    @Test
+    fun `trySave should delegate directly to repository saveAndFlush`() {
+        val company = Company(name = "DirectSave", type = CompanyType.DEVELOPER)
+        val savedCompany = Company(id = 9L, name = "DirectSave", type = CompanyType.DEVELOPER)
+
+        every { companyRepository.saveAndFlush(company) } returns savedCompany
+
+        // Call trySave directly on the real service (bypassing the self mock)
+        val realService = CompanyService(companyRepository, mockk())
+        val result = realService.trySave(company)
+
+        assertEquals(savedCompany, result)
+        verify(exactly = 1) { companyRepository.saveAndFlush(company) }
+    }
+}

@@ -54,6 +54,7 @@ out/
 /generated
 /db
 /data
+/backups
 /packaged_plugins
 /logs
 /templates
@@ -70,3 +71,4 @@ out/
 /plugindata/
 /docker-debug/
 /app/target/
+**/*.trace.db

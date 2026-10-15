@@ -1,5 +1,5 @@
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {Button, Input, Modal, ScrollShadow} from "@heroui/react";
+import {Button, Input, Modal, ScrollShadow, Spinner} from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
 import {GameEndpoint} from "Frontend/generated/endpoints";
@@ -83,7 +83,7 @@ export function GameHeaderPickerModal({game, isOpen, onOpenChange, setHeaderUrl}
                                            }}
                                     />
                                     <Button isIconOnly onPress={search} variant="primary" isPending={isSearching}>
-                                        <MagnifyingGlassIcon/>
+                                        {isSearching ? <Spinner size="sm" color="current"/> : <MagnifyingGlassIcon/>}
                                     </Button>
                                 </div>
                                 {searchResults.length === 0 && !isSearching &&

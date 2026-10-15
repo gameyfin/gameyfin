@@ -27,7 +27,7 @@ export default function SearchBar() {
                 {(item: GameDto) => (
                     <ListBox.Item key={item.id} id={item.id} textValue={item.title}>
                         <div className="flex flex-row gap-4 items-center">
-                            <GameCover game={item} size={75}/>
+                            <GameCover game={item} size={75} showTitle={false}/>
                             <div className="flex flex-col flex-1 gap-2">
                                 <p><b>{item.title}</b> ({item.release && new Date(item.release).getFullYear()})</p>
                                 <p className="text-muted">{item.developers && [...item.developers].sort().join(" / ")}</p>

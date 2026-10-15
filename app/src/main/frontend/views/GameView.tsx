@@ -4,19 +4,13 @@ import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
+import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 import {Accordion, Button, Chip, Link, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState} from "Frontend/state/GameState";
 import {useSnapshot} from "valtio/react";
-import {
-    CheckCircleIcon,
-    InfoIcon,
-    MagnifyingGlassIcon,
-    PencilIcon,
-    StarIcon,
-    TrashIcon,
-} from "@phosphor-icons/react";
+import {CheckCircleIcon, InfoIcon, MagnifyingGlassIcon, PencilIcon, StarIcon, TrashIcon,} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
@@ -87,16 +81,18 @@ export default function GameView() {
         <div className="flex flex-col gap-4">
             <div className="overflow-hidden relative rounded-t-xl">
                 {game.header?.id ? (
-                    <img
+                    <BlurhashImage
                         className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                         alt="Game header"
-                        src={`/images/header/${game.header?.id}`}
+                        src={`/images/header/${game.header.id}`}
+                        blurhash={game.header.blurhash}
                     />
                 ) : game.images && game.images.length > 0 ? (
-                    <img
+                    <BlurhashImage
                         className="w-full h-96 object-cover brightness-50 blur-sm scale-110"
                         alt="Game screenshot"
                         src={`/images/screenshot/${game.images[0].id}`}
+                        blurhash={game.images[0].blurhash}
                     />
                 ) : (
                     <div className="w-full h-96 bg-default relative"/>
@@ -107,7 +103,7 @@ export default function GameView() {
                 <div className="flex flex-row justify-between">
                     <div className="flex flex-row gap-4">
                         <div className="-mt-65 relative z-10">
-                            <GameCover game={game} size={320} radius="none"/>
+                            <GameCover game={game} size={320} radius="none" showTitle={false}/>
                         </div>
                         <div className="flex flex-col gap-1">
                             <div className="flex flex-row gap-4 items-end">
@@ -232,76 +228,78 @@ export default function GameView() {
                                 <tbody>
                                 {game.developers && game.developers.length > 0 &&
                                     <tr>
-                                    <td className="text-muted w-0 min-w-32">Developed by</td>
-                                    <td className="flex flex-row gap-1">
-                                        {
-                                            [...game.developers].sort().map((dev, index) =>
-                                                <React.Fragment key={dev}>
-                                                    <Link href={`/search?dev=${encodeURIComponent(dev)}`}
-                                                          className="text-foreground hover:underline">
-                                                        {dev}
-                                                    </Link>
-                                                    {index !== game.developers!.length - 1 && <p>/</p>}
-                                                </React.Fragment>
-                                            )
-                                        }
-                                    </td>
-                                </tr>}
+                                        <td className="text-muted w-0 min-w-32">Developed by</td>
+                                        <td className="flex flex-row gap-1">
+                                            {
+                                                [...game.developers].sort().map((dev, index) =>
+                                                    <React.Fragment key={dev}>
+                                                        <Link href={`/search?dev=${encodeURIComponent(dev)}`}
+                                                              className="text-foreground hover:underline">
+                                                            {dev}
+                                                        </Link>
+                                                        {index !== game.developers!.length - 1 && <p>/</p>}
+                                                    </React.Fragment>
+                                                )
+                                            }
+                                        </td>
+                                    </tr>}
                                 {game.publishers && game.publishers.length > 0 &&
                                     <tr>
-                                    <td className="text-muted w-0 min-w-32">Published by</td>
-                                    <td className="flex flex-row gap-1">
-                                        {
-                                            [...game.publishers].sort().join(" / ")
-                                        }
-                                    </td>
-                                </tr>}
+                                        <td className="text-muted w-0 min-w-32">Published by</td>
+                                        <td className="flex flex-row gap-1">
+                                            {
+                                                [...game.publishers].sort().join(" / ")
+                                            }
+                                        </td>
+                                    </tr>}
                                 {game.genres && game.genres.length > 0 &&
                                     <tr>
-                                    <td className="text-muted w-0 min-w-32">Genres</td>
-                                    <td className="flex flex-row gap-1">
-                                        {
-                                            [...game.genres].sort().map((genre) =>
-                                                <Link key={genre} href={`/search?genre=${encodeURIComponent(genre)}`}>
-                                                    <Chip size="sm" className="text-sm">
-                                                        {genre}
-                                                    </Chip>
-                                                </Link>
-                                            )
-                                        }
-                                    </td>
-                                </tr>}
+                                        <td className="text-muted w-0 min-w-32">Genres</td>
+                                        <td className="flex flex-row gap-1">
+                                            {
+                                                [...game.genres].sort().map((genre) =>
+                                                    <Link key={genre}
+                                                          href={`/search?genre=${encodeURIComponent(genre)}`}>
+                                                        <Chip size="sm" className="text-sm">
+                                                            {genre}
+                                                        </Chip>
+                                                    </Link>
+                                                )
+                                            }
+                                        </td>
+                                    </tr>}
                                 {game.themes && game.themes.length > 0 &&
                                     <tr>
-                                    <td className="text-muted w-0 min-w-32">Themes</td>
-                                    <td className="flex flex-row gap-1">
-                                        {
-                                            [...game.themes].sort().map((theme) =>
-                                                <Link key={theme} href={`/search?theme=${encodeURIComponent(theme)}`}>
-                                                    <Chip size="sm" className="text-sm">
-                                                        {theme}
-                                                    </Chip>
-                                                </Link>
-                                            )
-                                        }
-                                    </td>
-                                </tr>}
+                                        <td className="text-muted w-0 min-w-32">Themes</td>
+                                        <td className="flex flex-row gap-1">
+                                            {
+                                                [...game.themes].sort().map((theme) =>
+                                                    <Link key={theme}
+                                                          href={`/search?theme=${encodeURIComponent(theme)}`}>
+                                                        <Chip size="sm" className="text-sm">
+                                                            {theme}
+                                                        </Chip>
+                                                    </Link>
+                                                )
+                                            }
+                                        </td>
+                                    </tr>}
                                 {game.features && game.features.length > 0 &&
                                     <tr>
-                                    <td className="text-muted w-0 min-w-32">Features</td>
-                                    <td className="flex flex-row gap-1">
-                                        {
-                                            [...game.features].sort().map((feature) =>
-                                                <Link key={feature}
-                                                      href={`/search?feature=${encodeURIComponent(feature)}`}>
-                                                    <Chip size="sm" className="text-sm">
-                                                        {feature}
-                                                    </Chip>
-                                                </Link>
-                                            )
-                                        }
-                                    </td>
-                                </tr>}
+                                        <td className="text-muted w-0 min-w-32">Features</td>
+                                        <td className="flex flex-row gap-1">
+                                            {
+                                                [...game.features].sort().map((feature) =>
+                                                    <Link key={feature}
+                                                          href={`/search?feature=${encodeURIComponent(feature)}`}>
+                                                        <Chip size="sm" className="text-sm">
+                                                            {feature}
+                                                        </Chip>
+                                                    </Link>
+                                                )
+                                            }
+                                        </td>
+                                    </tr>}
                                 {game.collectionIds.length > 0 &&
                                     <tr>
                                         <td className="text-muted w-0 min-w-32">Collections</td>
@@ -328,7 +326,10 @@ export default function GameView() {
                     <div className="flex flex-col gap-4">
                         <p className="text-muted">Media</p>
                         <ImageCarousel
-                            imageUrls={game.images?.map(image => `/images/screenshot/${image.id}`)}
+                            images={game.images?.map(image => ({
+                                url: `/images/screenshot/${image.id}`,
+                                blurhash: image.blurhash
+                            }))}
                             videosUrls={game.videoUrls}
                             className="-mx-24"
                         />

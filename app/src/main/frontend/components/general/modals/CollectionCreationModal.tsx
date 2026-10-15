@@ -1,5 +1,5 @@
 import React from "react";
-import {Button, Modal, toast} from "@heroui/react";
+import {Button, Modal, toast, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
@@ -77,7 +77,7 @@ export default function CollectionCreationModal({
                                                         isDisabled={formik.isSubmitting}
                                                         type="submit"
                                                 >
-                                                    {formik.isSubmitting ? "" : "Add"}
+                                                    {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Add"}
                                                 </Button>
                                             </Modal.Footer>
                                         </Form>

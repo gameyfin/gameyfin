@@ -3,6 +3,7 @@ import React from "react";
 import {useField} from "formik";
 import {GameCoverPickerModal} from "Frontend/components/general/modals/GameCoverPickerModal";
 import {ImageBrokenIcon, PencilIcon} from "@phosphor-icons/react";
+import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 
 interface GameCoverPickerProps {
@@ -22,11 +23,19 @@ export default function GameCoverPicker({game, showErrorUntouched = false, ...pr
              onClick={gameCoverPickerModal.toggle}>
             {field.value || game.cover?.id ?
                 <div className="size-full overflow-hidden">
-                    <img
-                        alt={game.title}
-                        className="z-0 size-full object-cover rounded-none group-hover:brightness-25"
-                        src={field.value ? field.value : `images/cover/${game.cover?.id}`}
-                    />
+                    {field.value ?
+                        <img
+                            alt={game.title}
+                            className="z-0 size-full object-cover rounded-none group-hover:brightness-25"
+                            src={field.value}
+                        /> :
+                        <BlurhashImage
+                            alt={game.title}
+                            className="z-0 size-full object-cover rounded-none group-hover:brightness-25"
+                            src={`images/cover/${game.cover?.id}`}
+                            blurhash={game.cover?.blurhash}
+                            placeholderSize={{width: 32, height: 45}}
+                        />}
                 </div> :
                 <div
                     className="absolute inset-0 flex flex-col text-center items-center justify-center group-hover:opacity-0"

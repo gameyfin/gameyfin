@@ -14,10 +14,10 @@ export const ErrorHandlingMiddleware: Middleware = async function (
         // @see https://developer.mozilla.org/en-US/docs/Web/API/Response/clone
         let response: Response = originalResponse.clone();
 
-        // Session expired: reload to the login page
+        // Session expired: redirect to the login page (or the SSO provider if SSO is enabled)
         if (originalResponse.status == 401 || (originalResponse.status == 403 && !(await isJson(response)))) {
             if (window.location.pathname !== "/login") {
-                window.location.href = "/login";
+                window.location.href = "/loginredirect";
             }
             return originalResponse;
         }
