@@ -10,7 +10,7 @@ import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
 import {initializeScanState} from "Frontend/state/ScanState";
-import {initializeBackupState} from "Frontend/state/BackupState";
+import {initializeBackupState, initializeImageRecoveryState} from "Frontend/state/BackupState";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
@@ -73,6 +73,7 @@ function ViewWithAuth() {
         if (isAdmin(auth)) {
             initializeScanState();
             initializeBackupState();
+            initializeImageRecoveryState();
             initializeDownloadSessionState();
             initializeUserState();
         }

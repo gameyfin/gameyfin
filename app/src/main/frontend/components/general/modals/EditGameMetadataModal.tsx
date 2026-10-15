@@ -59,7 +59,7 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                             })}
                                     >
                                         {(formik: any) => (
-                                            <Form>
+                                            <Form className="flex flex-col flex-1 min-h-0">
                                                 <Modal.Header className="flex flex-col gap-1">
                                                     <Modal.Heading>Update game metadata</Modal.Heading>
                                                 </Modal.Header>
@@ -70,7 +70,7 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                         <GameCoverPicker key="coverUrl" name="coverUrl" game={game}/>
                                                         <GameHeaderPicker key="headerUrl" name="headerUrl" game={game}/>
                                                     </div>
-                                                    <div className="flex flex-row gap-4">
+                                                    <div className="flex flex-row gap-4 mt-4">
                                                         <Input key="title" name="title" label="Title" isRequired/>
                                                         <DatePickerInput key="release" name="release" label="Release"
                                                                          className="w-fit"/>
@@ -130,7 +130,8 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                         isDisabled={formik.isSubmitting || !formik.dirty}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Save"}
+                                                        {formik.isSubmitting ?
+                                                            <Spinner size="sm" color="current"/> : "Save"}
                                                     </Button>
                                                 </Modal.Footer>
                                             </Form>

@@ -24,6 +24,9 @@ interface GameRepository : JpaRepository<Game, Long> {
     @Query("SELECT CASE WHEN COUNT(g) > 0 THEN true ELSE false END FROM Game g WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR :imageId IN (SELECT i.id FROM g.images i)")
     fun existsByImage(@Param("imageId") imageId: Long): Boolean
 
+    @Query("SELECT DISTINCT g FROM Game g LEFT JOIN g.images i WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR i.id = :imageId")
+    fun findAllByImage(@Param("imageId") imageId: Long): List<Game>
+
     @Query("SELECT DISTINCT p FROM Game g JOIN g.platforms p")
     fun findAllDistinctPlatforms(): Set<Platform>
 }

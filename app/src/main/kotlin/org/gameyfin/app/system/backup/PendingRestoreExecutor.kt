@@ -20,6 +20,7 @@ import java.time.Instant
  * can safely be replaced. This includes conditions which are evaluated while the configuration is parsed and read the
  * database directly (e.g. [org.gameyfin.app.core.security.SsoEnabledCondition]), so they already see the restored data.
  * Afterward Liquibase applies any changesets that are newer than the backup.
+ * Once Gameyfin has started, images missing after the restore are recovered in the background ([ImageRecoveryService]).
  *
  * If the restore fails, the error is recorded in the restore status and Gameyfin continues to start
  * (a backup of the previous database state is created before an admin-triggered restore).
@@ -64,6 +65,12 @@ class PendingRestoreExecutor : ApplicationContextInitializer<ConfigurableApplica
 
             val mediaRoot = Path.of(environment.getProperty("spring.content.fs.filesystem-root", "./data/"))
             val summary = restorer.restore(storage.resolve(backupName), AppKeyFingerprint.current(), mediaRoot)
+            // Images which are not part of the backup are downloaded again once Gameyfin has started
+            try {
+                storage.scheduleImageRecovery()
+            } catch (e: Exception) {
+                log.warn(e) { "Could not schedule the recovery of missing images" }
+            }
 
             RestoreStatusDto(
                 backupName = backupName,

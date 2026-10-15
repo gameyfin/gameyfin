@@ -11,6 +11,7 @@ import type LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/L
 import BackupTaskStatus from "Frontend/generated/org/gameyfin/app/system/backup/BackupTaskStatus";
 import BackupTrigger from "Frontend/generated/org/gameyfin/app/system/backup/BackupTrigger";
 import type BackupProgress from "Frontend/generated/org/gameyfin/app/system/backup/BackupProgress";
+import type ImageRecoveryProgress from "Frontend/generated/org/gameyfin/app/system/backup/ImageRecoveryProgress";
 import {ReactNode, useEffect, useRef, useState} from "react";
 
 type TaskStatus = "IN_PROGRESS" | "COMPLETED" | "FAILED";
@@ -76,6 +77,22 @@ function backupToTask(backup: BackupProgress): ActiveTask {
     };
 }
 
+function imageRecoveryToTask(recovery: ImageRecoveryProgress): ActiveTask {
+    return {
+        id: `image-recovery-${recovery.taskId}`,
+        title: "Recovering missing images after restore",
+        status: toTaskStatus(recovery.status),
+        step: recovery.currentStep,
+        startedAt: recovery.startedAt,
+        finishedAt: recovery.finishedAt,
+        result: recovery.finishedAt && <>
+            {recovery.restored} restored / {recovery.removed} removed / {recovery.failed} failed&nbsp;
+            (in {timeBetween(recovery.startedAt, recovery.finishedAt)})
+        </>,
+        failure: `Restoring images failed: ${recovery.errorMessage ?? "check logs for details"}`
+    };
+}
+
 function toTaskStatus(status: LibraryScanStatus | BackupTaskStatus): TaskStatus {
     switch (status) {
         case LibraryScanStatus.COMPLETED:
@@ -95,10 +112,13 @@ export default function ActiveTaskPopover() {
     const scanInProgress = useSnapshot(scanState).isScanning;
     const backups = useSnapshot(backupState).sortedByStartTime;
     const backupInProgress = useSnapshot(backupState).isRunning;
+    const imageRecoveries = useSnapshot(backupState).imageRecovery;
+    const imageRecoveryInProgress = useSnapshot(backupState).isImageRecoveryRunning;
 
     const tasks: ActiveTask[] = [
         ...scans.map(scan => scanToTask(scan as LibraryScanProgress, libraries as Record<number, LibraryDto>)),
-        ...backups.map(backup => backupToTask(backup as BackupProgress))
+        ...backups.map(backup => backupToTask(backup as BackupProgress)),
+        ...Object.values(imageRecoveries).map(recovery => imageRecoveryToTask(recovery as ImageRecoveryProgress))
     ].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
 
     // Add state to track current time and force re-renders
@@ -156,7 +176,7 @@ export default function ActiveTaskPopover() {
     return (
         <Popover>
             <Button isIconOnly variant="ghost" aria-label="Active tasks">
-                {scanInProgress || backupInProgress ?
+                {scanInProgress || backupInProgress || imageRecoveryInProgress ?
                     <Spinner size="sm" color="current"/> :
                     <ListChecksIcon className="fill-muted"/>
                 }

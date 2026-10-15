@@ -8,7 +8,8 @@ import reactor.core.publisher.Flux
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
 class BackupEndpoint(
-    private val backupService: BackupService
+    private val backupService: BackupService,
+    private val imageRecoveryService: ImageRecoveryService
 ) {
     fun getBackups(): List<BackupDto> = backupService.getBackups()
 
@@ -18,6 +19,12 @@ class BackupEndpoint(
     fun createBackup(includeMedia: Boolean): BackupProgress = backupService.createBackup(includeMedia)
 
     fun subscribeToBackupProgressEvents(): Flux<List<BackupProgress>> = backupService.subscribeToProgressEvents()
+
+    /**
+     * Progress of the recovery of images which are missing after a restore (see [ImageRecoveryService]).
+     */
+    fun subscribeToImageRecoveryEvents(): Flux<List<ImageRecoveryProgress>> =
+        imageRecoveryService.subscribeToProgressEvents()
 
     fun deleteBackup(name: String) = backupService.deleteBackup(name)
 

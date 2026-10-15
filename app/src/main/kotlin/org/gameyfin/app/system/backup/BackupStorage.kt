@@ -13,6 +13,7 @@ import kotlin.io.path.*
  * - the backup archives themselves
  * - a marker file for a restore which should be executed on the next startup
  * - a status file with the result of the last restore
+ * - a marker file indicating that missing images should be restored after a restore (see [ImageRecoveryService])
  */
 class BackupStorage(directory: Path) {
 
@@ -22,6 +23,7 @@ class BackupStorage(directory: Path) {
             DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC)
         private const val PENDING_RESTORE_FILE = ".pending-restore"
         private const val RESTORE_STATUS_FILE = ".last-restore.json"
+        private const val PENDING_IMAGE_RECOVERY_FILE = ".pending-image-recovery"
         private const val TEMP_PREFIX = ".tmp-"
     }
 
@@ -29,6 +31,7 @@ class BackupStorage(directory: Path) {
 
     private val pendingRestoreFile: Path get() = root.resolve(PENDING_RESTORE_FILE)
     private val restoreStatusFile: Path get() = root.resolve(RESTORE_STATUS_FILE)
+    private val pendingImageRecoveryFile: Path get() = root.resolve(PENDING_IMAGE_RECOVERY_FILE)
 
     fun ensureExists() {
         root.createDirectories()
@@ -103,6 +106,17 @@ class BackupStorage(directory: Path) {
 
     fun clearPendingRestore() {
         pendingRestoreFile.deleteIfExists()
+    }
+
+    fun scheduleImageRecovery() {
+        ensureExists()
+        pendingImageRecoveryFile.writeText(Instant.now().toString())
+    }
+
+    fun isImageRecoveryPending(): Boolean = pendingImageRecoveryFile.isRegularFile()
+
+    fun clearPendingImageRecovery() {
+        pendingImageRecoveryFile.deleteIfExists()
     }
 
     fun writeRestoreStatus(status: RestoreStatusDto) {

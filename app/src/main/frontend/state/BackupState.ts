@@ -5,6 +5,7 @@ import {BackupEndpoint} from "Frontend/generated/endpoints";
 import type BackupProgress from "Frontend/generated/org/gameyfin/app/system/backup/BackupProgress";
 import BackupTaskStatus from "Frontend/generated/org/gameyfin/app/system/backup/BackupTaskStatus";
 import BackupTrigger from "Frontend/generated/org/gameyfin/app/system/backup/BackupTrigger";
+import type ImageRecoveryProgress from "Frontend/generated/org/gameyfin/app/system/backup/ImageRecoveryProgress";
 
 type BackupState = {
     subscription?: Subscription<BackupProgress[]>;
@@ -13,11 +14,20 @@ type BackupState = {
     completedCount: number;
     isRunning: boolean;
     sortedByStartTime: BackupProgress[];
+    imageRecoverySubscription?: Subscription<ImageRecoveryProgress[]>;
+    /** Recovery of images which are missing after a restore */
+    imageRecovery: Record<string, ImageRecoveryProgress>;
+    isImageRecoveryRunning: boolean;
 };
 
 export const backupState = proxy<BackupState>({
     state: {},
     completedCount: 0,
+    imageRecovery: {},
+    get isImageRecoveryRunning(): boolean {
+        return Object.values(this.imageRecovery)
+            .some((progress: ImageRecoveryProgress) => progress.status === BackupTaskStatus.IN_PROGRESS);
+    },
     get isRunning(): boolean {
         return Object.values(this.state)
             .some((progress: BackupProgress) => progress.status === BackupTaskStatus.IN_PROGRESS);
@@ -49,6 +59,28 @@ export function initializeBackupState() {
                 toast.success("Backup created", {description: progress.backupName});
             } else if (progress.status === BackupTaskStatus.FAILED) {
                 toast.danger("Could not create backup", {description: progress.errorMessage});
+            }
+        });
+    });
+}
+
+/** Subscribe to the progress of the recovery of images which are missing after a restore **/
+export function initializeImageRecoveryState() {
+    if (backupState.imageRecoverySubscription) return;
+
+    backupState.imageRecoverySubscription = BackupEndpoint.subscribeToImageRecoveryEvents().onNext((progresses: ImageRecoveryProgress[]) => {
+        progresses.forEach((progress: ImageRecoveryProgress) => {
+            const previous = backupState.imageRecovery[progress.taskId];
+            if (previous && previous.status !== BackupTaskStatus.IN_PROGRESS && progress.status === BackupTaskStatus.IN_PROGRESS) return;
+            backupState.imageRecovery[progress.taskId] = progress;
+
+            if (previous?.status !== BackupTaskStatus.IN_PROGRESS || progress.status === BackupTaskStatus.IN_PROGRESS) return;
+            if (progress.status === BackupTaskStatus.COMPLETED) {
+                toast.success("Images restored", {
+                    description: `${progress.restored} restored, ${progress.removed} removed, ${progress.failed} failed`
+                });
+            } else if (progress.status === BackupTaskStatus.FAILED) {
+                toast.danger("Could not restore images", {description: progress.errorMessage});
             }
         });
     });

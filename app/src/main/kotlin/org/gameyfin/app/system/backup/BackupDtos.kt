@@ -45,6 +45,25 @@ data class BackupStep(
     val total: Int? = null
 )
 
+/**
+ * Progress of the recovery of images which are missing after a backup has been restored,
+ * published to admins via [BackupEndpoint.subscribeToImageRecoveryEvents].
+ */
+data class ImageRecoveryProgress(
+    val taskId: UUID = UUID.randomUUID(),
+    val status: BackupTaskStatus = BackupTaskStatus.IN_PROGRESS,
+    val currentStep: BackupStep,
+    val startedAt: Instant = Instant.now(),
+    val finishedAt: Instant? = null,
+    /** Number of images which could be downloaded again from their original URL */
+    val restored: Int = 0,
+    /** Number of images which are no longer available and have been removed (including all references) */
+    val removed: Int = 0,
+    /** Number of images which could not be downloaded due to a (possibly temporary) error and have been kept */
+    val failed: Int = 0,
+    val errorMessage: String? = null
+)
+
 enum class BackupTrigger {
     /** Backup created by an admin */
     MANUAL,
