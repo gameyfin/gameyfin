@@ -4,10 +4,12 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
+import java.io.ByteArrayInputStream
 import java.security.CodeSigner
 import java.security.KeyPairGenerator
 import java.security.PublicKey
@@ -20,6 +22,7 @@ import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 class PluginSignatureVerifierTest {
 
@@ -75,12 +78,42 @@ class PluginSignatureVerifierTest {
     @Test
     fun `verifyEntryDigest should return true for valid JAR entry`() {
         val jarPath = createUnsignedJar("valid-entry.jar", mapOf("test.txt" to "hello world"))
-        val jarFile = JarFile(jarPath.toFile())
-        val entry = jarFile.getJarEntry("test.txt")
+        JarFile(jarPath.toFile()).use { jarFile ->
+            assertTrue(verifier.verifyEntryDigest(jarFile, jarFile.getJarEntry("test.txt")))
+        }
+    }
 
-        val result = verifier.verifyEntryDigest(jarFile, entry)
+    @Test
+    fun `verifyPluginSignature closes JAR after early return`() {
+        val jarPath = createUnsignedJar("closed-plugin.jar", mapOf("test.txt" to "content"))
 
-        assertTrue(result)
+        assertEquals(PluginTrustLevel.THIRD_PARTY, verifier.verifyPluginSignature(jarPath))
+        // Windows refuses deletion while a JarFile still holds the file open.
+        java.nio.file.Files.delete(jarPath)
+        assertFalse(java.nio.file.Files.exists(jarPath))
+    }
+
+    @Test
+    fun `verifyEntryDigest closes stream after successful read and signature failure`() {
+        for (invalidSignature in listOf(false, true)) {
+            var closed = false
+            val stream = object : ByteArrayInputStream("content".toByteArray()) {
+                override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+                    if (invalidSignature) throw SecurityException("Invalid digest")
+                    return super.read(buffer, offset, length)
+                }
+
+                override fun close() { closed = true }
+            }
+            val jarFile = mockk<JarFile>()
+            val entry = JarEntry("test.txt")
+            every { jarFile.getInputStream(entry) } returns stream
+
+            assertEquals(!invalidSignature, verifier.verifyEntryDigest(jarFile, entry))
+            assertTrue(closed)
+            // The caller retains ownership of the JAR itself.
+            verify(exactly = 0) { jarFile.close() }
+        }
     }
 
     // ========================================================================================
