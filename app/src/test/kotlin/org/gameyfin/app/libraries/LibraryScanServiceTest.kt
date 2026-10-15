@@ -27,6 +27,7 @@ import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.io.path.Path
 
@@ -363,6 +364,53 @@ class LibraryScanServiceTest {
 
         verify(timeout = 5000, exactly = 2) { libraryRepository.findAllById(listOf(1L)) }
         verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
+    }
+
+    @Test
+    fun `concurrent libraries share the configured processing limit`() {
+        val firstLibrary = createTestLibrary(1L)
+        val secondLibrary = createTestLibrary(2L)
+        val firstPath = Path("/path/first")
+        val secondPath = Path("/path/second")
+        val firstGame = createTestGame(1L, firstPath.toString())
+        val secondGame = createTestGame(2L, secondPath.toString())
+        val firstStarted = CountDownLatch(1)
+        val secondStarted = CountDownLatch(1)
+        val secondFilesystemScanned = CountDownLatch(1)
+        val releaseFirst = CountDownLatch(1)
+        val saved = CountDownLatch(2)
+        every { configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency) } returns 1
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(firstLibrary)
+        every { libraryRepository.findAllById(listOf(2L)) } returns listOf(secondLibrary)
+        setupQuickScanWithNewGames(firstLibrary, listOf(firstPath), firstGame)
+        setupQuickScanWithNewGames(secondLibrary, listOf(secondPath), secondGame)
+        every { filesystemService.scanLibraryForGamefiles(secondLibrary) } answers {
+            secondFilesystemScanned.countDown()
+            FilesystemScanResult(listOf(secondPath), emptyList(), emptyList())
+        }
+        every { libraryGameProcessor.processNewGame(firstPath, firstLibrary) } answers {
+            firstStarted.countDown()
+            check(releaseFirst.await(5, TimeUnit.SECONDS))
+            firstGame
+        }
+        every { libraryGameProcessor.processNewGame(secondPath, secondLibrary) } answers {
+            secondStarted.countDown()
+            secondGame
+        }
+        every { libraryRepository.save(any<Library>()) } answers { saved.countDown(); firstArg() }
+
+        try {
+            libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+            assertTrue(firstStarted.await(5, TimeUnit.SECONDS))
+            libraryScanService.triggerScan(ScanType.QUICK, listOf(2L))
+            assertTrue(secondFilesystemScanned.await(5, TimeUnit.SECONDS))
+            assertFalse(secondStarted.await(250, TimeUnit.MILLISECONDS), "Second library exceeded concurrency=1")
+        } finally {
+            releaseFirst.countDown()
+        }
+
+        assertTrue(saved.await(5, TimeUnit.SECONDS))
+        assertTrue(secondStarted.await(5, TimeUnit.SECONDS))
     }
 
     private fun createTestLibrary(

@@ -85,8 +85,9 @@ class LibraryScanService(
             latestProgressPerScan.values.removeIf { it.finishedAt?.isBefore(cutoff) == true }
         }
 
+        private var scanConcurrency = ConfigProperties.Libraries.Scan.MaxConcurrency.default!!
         @Volatile
-        private var scanSemaphore = Semaphore(ConfigProperties.Libraries.Scan.MaxConcurrency.default!!)
+        private var scanSemaphore = Semaphore(scanConcurrency)
         private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
     }
 
@@ -103,13 +104,18 @@ class LibraryScanService(
     }
 
     /**
-     * Re-creates the concurrency semaphore from the current config value.
-     * Called once at the start of each scan so that config changes take
-     * effect without restarting the application.
+     * Updates the concurrency semaphore when the configured limit changes.
+     * Reuse the current semaphore across libraries so starting another scan
+     * does not bypass permits already held by running game tasks.
      */
     private fun refreshScanSemaphore() {
         val permits = configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency)!!
-        scanSemaphore = Semaphore(permits)
+        synchronized(Companion) {
+            if (permits != scanConcurrency) {
+                scanSemaphore = Semaphore(permits)
+                scanConcurrency = permits
+            }
+        }
     }
 
     /**
