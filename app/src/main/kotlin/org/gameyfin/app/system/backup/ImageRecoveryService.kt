@@ -127,13 +127,22 @@ class ImageRecoveryService(
                 return
             }
             log.error(e) { "Recovery of missing images failed, it will be retried on the next start" }
-            update(force = true) {
-                it.copy(
+            val failure = { progress: ImageRecoveryProgress ->
+                progress.copy(
                     status = BackupTaskStatus.FAILED,
                     currentStep = BackupStep("Restoring images failed"),
                     finishedAt = Instant.now(),
                     errorMessage = e.message ?: e.javaClass.simpleName
                 )
+            }
+            synchronized(progressLock) {
+                // The failure may occur before any progress has been published
+                val current = latestProgress
+                if (current == null) {
+                    publish(failure(ImageRecoveryProgress(currentStep = BackupStep("Restoring images failed"))))
+                } else {
+                    update(force = true, transform = failure)
+                }
             }
         }
     }

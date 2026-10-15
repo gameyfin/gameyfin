@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -171,6 +172,58 @@ class ImageRecoveryServiceTest {
 
         TimeUnit.MILLISECONDS.sleep(200)
         verify(exactly = 0) { imageRepository.findAll() }
+    }
+
+    @Test
+    fun `reports failure and keeps marker when recovery fails`() {
+        every { imageRepository.findAll() } throws IllegalStateException("db down")
+
+        BackupStorage(backupDirectory).scheduleImageRecovery()
+        service.onApplicationReady()
+        val result = awaitFinished()
+
+        assertEquals(BackupTaskStatus.FAILED, result.status)
+        assertEquals("db down", result.errorMessage)
+        assertNotNull(result.finishedAt)
+        assertTrue(BackupStorage(backupDirectory).isImageRecoveryPending())
+    }
+
+    @Test
+    fun `restores images from local files and handles invalid urls and removal errors`() {
+        val file = backupDirectory.resolve("image.png").also { it.toFile().writeBytes(IMAGE_CONTENT) }
+        val local = Image(id = 1, originalUrl = file.toUri().toString(), type = ImageType.COVER)
+        val missingFile = Image(id = 2, originalUrl = backupDirectory.resolve("none.png").toUri().toString(), type = ImageType.COVER)
+        val invalidUrl = Image(id = 3, originalUrl = "not a url", type = ImageType.COVER)
+        val blankUrl = Image(id = 4, originalUrl = " ", type = ImageType.COVER)
+        val unreachable = Image(id = 5, originalUrl = "http://127.0.0.1:1/x.png", type = ImageType.COVER)
+
+        every { imageRepository.findAll() } returns listOf(local, missingFile, invalidUrl, blankUrl, unreachable)
+        every { imageService.hasContent(any()) } returns false
+        every { imageService.restoreContent(local, any()) } answers { local }
+        every { imageService.deleteImageIfUnused(missingFile) } throws IllegalStateException("cannot delete")
+
+        BackupStorage(backupDirectory).scheduleImageRecovery()
+        service.onApplicationReady()
+        val result = awaitFinished()
+
+        assertEquals(BackupTaskStatus.COMPLETED, result.status)
+        assertEquals(1, result.restored)
+        assertEquals(2, result.removed)
+        assertEquals(2, result.failed)
+        awaitMarkerCleared()
+    }
+
+    @Test
+    fun `start is ignored while running and after shutdown`() {
+        every { imageRepository.findAll() } returns emptyList()
+
+        service.start()
+        service.start()
+        service.shutdown()
+        service.start()
+
+        TimeUnit.MILLISECONDS.sleep(200)
+        verify(atMost = 1) { imageRepository.findAll() }
     }
 
     private fun awaitMarkerCleared() {

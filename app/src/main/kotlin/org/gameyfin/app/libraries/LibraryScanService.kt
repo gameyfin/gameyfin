@@ -96,6 +96,9 @@ class LibraryScanService(
     private val debounceScheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
     private val debounceJobs = ConcurrentHashMap<Long, ScheduledFuture<*>>()
 
+    /** Quiet period before a debounced scan starts; adjustable for tests */
+    internal var debounceDelayMillis: Long = 30_000L
+
     /**
      * Re-creates the concurrency semaphore from the current config value.
      * Called once at the start of each scan so that config changes take
@@ -122,7 +125,7 @@ class LibraryScanService(
         debounceJobs[libraryId]?.cancel(false)
         debounceJobs[libraryId] = debounceScheduler.schedule({
             startPendingScan(libraryId, scanType)
-        }, 30, TimeUnit.SECONDS)
+        }, debounceDelayMillis, TimeUnit.MILLISECONDS)
 
         log.debug { "Scan for library $libraryId debounced (30s quiet period)." }
     }
@@ -157,7 +160,7 @@ class LibraryScanService(
                 if (pendingScans.contains(libraryId)) {
                     debounceJobs[libraryId] = debounceScheduler.schedule({
                         startPendingScan(libraryId, scanType)
-                    }, 30, TimeUnit.SECONDS)
+                    }, debounceDelayMillis, TimeUnit.MILLISECONDS)
                 }
             }
         }
@@ -198,7 +201,7 @@ class LibraryScanService(
                             debounceJobs[libraryId]?.cancel(false)
                             debounceJobs[libraryId] = debounceScheduler.schedule({
                                 startPendingScan(libraryId, scanType)
-                            }, 30, TimeUnit.SECONDS)
+                            }, debounceDelayMillis, TimeUnit.MILLISECONDS)
                         }
                     }
                 }
