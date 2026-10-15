@@ -72,6 +72,7 @@ class LibraryScanServiceTest {
 
     @AfterEach
     fun tearDown() {
+        libraryScanService.stop()
         unmockkAll()
         clearAllMocks()
     }
@@ -82,6 +83,8 @@ class LibraryScanServiceTest {
         val library2 = createTestLibrary(2L)
 
         every { libraryRepository.findAll() } returns listOf(library1, library2)
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library1)
+        every { libraryRepository.findAllById(listOf(2L)) } returns listOf(library2)
         setupSuccessfulQuickScan(library1)
         setupSuccessfulQuickScan(library2)
 

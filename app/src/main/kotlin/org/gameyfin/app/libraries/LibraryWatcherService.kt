@@ -322,7 +322,7 @@ class LibraryWatcherService(
 
         // Trigger a quick scan to add new games
         // The scan service will handle the actual game creation
-        libraryScanService.triggerScan(ScanType.QUICK, listOf(library.id!!))
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
     }
 
     private fun handleDeletes(library: Library, events: List<WatchEvent<*>>) {
@@ -330,7 +330,7 @@ class LibraryWatcherService(
 
         // Trigger a quick scan to remove deleted games
         // The scan service will handle the actual game deletion
-        libraryScanService.triggerScan(ScanType.QUICK, listOf(library.id!!))
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
     }
 
     private fun handleModifies(library: Library, watchInfo: LibraryWatchInfo, events: List<WatchEvent<*>>) {

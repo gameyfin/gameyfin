@@ -1,6 +1,7 @@
 package org.gameyfin.app.libraries
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.annotation.PreDestroy
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemService
@@ -87,7 +88,18 @@ class LibraryScanService(
         @Volatile
         private var scanSemaphore = Semaphore(ConfigProperties.Libraries.Scan.MaxConcurrency.default!!)
         private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
-        private val scansInProgress = ConcurrentHashMap<Long, Boolean>()
+    }
+
+    private val scanQueue = LibraryScanQueue(scan = ::runQueuedScan)
+
+    @PreDestroy
+    fun stop() {
+        scanQueue.close()
+    }
+
+    /** Watcher bursts collapse into a single scan after 30 seconds of quiet. */
+    fun scheduleScan(scanType: ScanType, library: Library) {
+        library.id?.let { scanQueue.request(it, scanType, debounce = true) }
     }
 
     /**
@@ -108,30 +120,27 @@ class LibraryScanService(
             "At least one metadata plugin must be enabled to perform a scan."
         }
 
-        refreshScanSemaphore()
-        evictStaleScanProgress()
-
         val libraries =
             if (libraryIds.isNullOrEmpty()) libraryRepository.findAll().toList()
             else libraryRepository.findAllById(libraryIds).toList()
 
         libraries.forEach { library ->
-            val libraryId = library.id!!
-            if (scansInProgress.putIfAbsent(libraryId, true) == null) {
-                executor.submit {
-                    try {
-                        when (scanType) {
-                            ScanType.QUICK -> quickScan(library)
-                            ScanType.FULL -> fullScan(library, false)
-                            ScanType.SCHEDULED -> fullScan(library, true)
-                        }
-                    } finally {
-                        scansInProgress.remove(libraryId)
-                    }
-                }
-            } else {
-                log.info { "Scan already in progress for library $libraryId, skipping." }
-            }
+            scanQueue.request(library.id!!, scanType, debounce = false)
+        }
+    }
+
+    private fun runQueuedScan(libraryId: Long, scanType: ScanType) {
+        check(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isNotEmpty()) {
+            "At least one metadata plugin must be enabled to perform a scan."
+        }
+        refreshScanSemaphore()
+        evictStaleScanProgress()
+        // Follow-up scans must use current library contents, not the previous scan's entity graph.
+        val library = libraryRepository.findAllById(listOf(libraryId)).firstOrNull() ?: return
+        when (scanType) {
+            ScanType.QUICK -> quickScan(library)
+            ScanType.FULL -> fullScan(library, false)
+            ScanType.SCHEDULED -> fullScan(library, true)
         }
     }
 
