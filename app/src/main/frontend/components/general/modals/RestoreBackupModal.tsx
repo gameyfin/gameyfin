@@ -1,5 +1,6 @@
-import React, {useState} from "react";
+import React, {useRef, useState} from "react";
 import {Alert, Button, Modal, Spinner} from "@heroui/react";
+import {UploadSimpleIcon} from "@phosphor-icons/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {uploadFile, waitForRestart} from "Frontend/util/restart";
 
@@ -14,6 +15,7 @@ interface RestoreBackupModalProps {
  */
 export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: RestoreBackupModalProps) {
     const [file, setFile] = useState<File>();
+    const fileInput = useRef<HTMLInputElement>(null);
     const [state, setState] = useState<"idle" | "uploading" | "restoring">("idle");
     const [error, setError] = useState<string>();
 
@@ -81,9 +83,19 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                                         the backup was created on. Gameyfin restarts to restore the backup, after which
                                         you can log in with your existing account.
                                     </p>
-                                    <input type="file"
+                                    <div className="flex flex-row items-center gap-4">
+                                        <Button variant="ghost"
+                                                onPress={() => fileInput.current?.click()}
+                                                isDisabled={busy}>
+                                            <UploadSimpleIcon/>
+                                            Upload backup
+                                        </Button>
+                                        {file && <span className="truncate">{file.name}</span>}
+                                    </div>
+                                    <input ref={fileInput}
+                                           type="file"
                                            accept=".zip,application/zip"
-                                           disabled={busy}
+                                           className="hidden"
                                            onChange={(e) => setFile(e.target.files?.[0])}
                                     />
                                     {error &&
