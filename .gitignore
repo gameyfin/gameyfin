@@ -71,3 +71,4 @@ out/
 /plugindata/
 /docker-debug/
 /app/target/
+**/*.trace.db

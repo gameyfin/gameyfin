@@ -1,6 +1,7 @@
 package org.gameyfin.app.db
 
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBean
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 import org.springframework.context.annotation.Configuration
@@ -36,7 +37,7 @@ class MigrationIntegrationTest {
         ).run { context ->
             assertTrue(context.isRunning)
             require(context.startupFailure == null) { "Context failed to start: ${context.startupFailure}" }
-            assertKeyValueColumnsMatchEntities(context.getBean(DataSource::class.java))
+            assertKeyValueColumnsMatchEntities(context.getBean<DataSource>())
         }
 
         postgres.stop()
@@ -55,7 +56,7 @@ class MigrationIntegrationTest {
         ).run { context ->
             assertTrue(context.isRunning)
             require(context.startupFailure == null) { "Context failed to start: ${context.startupFailure}" }
-            assertKeyValueColumnsMatchEntities(context.getBean(DataSource::class.java))
+            assertKeyValueColumnsMatchEntities(context.getBean<DataSource>())
         }
     }
 
