@@ -1,4 +1,4 @@
-import {Card, CardBody, CardHeader} from "@heroui/react";
+import {Card} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router";
 import React, {useEffect, useState} from "react";
 import {CheckCircleIcon, WarningCircleIcon, WarningIcon} from "@phosphor-icons/react";
@@ -36,14 +36,14 @@ export default function EmailConfirmationView() {
     return (
         <div className="flex flex-row grow items-center justify-center size-full gradient-primary">
             <Card className="p-4 min-w-[468px]">
-                <CardHeader className="mb-4">
+                <Card.Header className="mb-4">
                     <img
                         className="h-28 w-full content-center"
                         src="/images/Logo.svg"
                         alt="Gameyfin Logo"
                     />
-                </CardHeader>
-                <CardBody className="flex flex-row justify-center">
+                </Card.Header>
+                <Card.Content className="flex flex-row justify-center">
                     {validationResult === TokenValidationResult.VALID ?
                         <div className="flex flex-row items-center gap-4 text-success">
                             <CheckCircleIcon size={40}/>
@@ -69,7 +69,7 @@ export default function EmailConfirmationView() {
                                 </p>
                             </div>
                     }
-                </CardBody>
+                </Card.Content>
             </Card>
         </div>
     );

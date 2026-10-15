@@ -349,8 +349,10 @@ class LibraryScanService(
         val removedIgnoredPaths = scanResult.removedIgnoredPaths
 
         // Get plugin-generated (system) ignored paths to re-scan
+        // Skip paths that no longer exist on the filesystem, otherwise they get re-added as unmatched
+        val removedIgnoredPathIds = removedIgnoredPaths.map { it.path }.toSet()
         val pluginIgnoredPathsToRescan = library.ignoredPaths
-            .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+            .filter { it.getType() == IgnoredPathSourceType.PLUGIN && it.path !in removedIgnoredPathIds }
             .map { Path.of(it.path) }
 
         val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan

@@ -7,6 +7,13 @@ logging.level:
   # Suppress false positive warnings from Spring Security 6
   org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
 
+gameyfin:
+  async:
+    bounded:
+      core-pool-size: 4
+      max-pool-size: 16
+      queue-capacity: 100
+
 server:
   port: 8080
   servlet:

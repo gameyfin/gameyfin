@@ -1,9 +1,7 @@
-val jacksonVersion = "3.0.4"
-
 plugins {
     kotlin("jvm")
     `java-library`
-    id("com.vanniktech.maven.publish") version "0.34.0"
+    id("com.vanniktech.maven.publish") version "0.37.0"
 }
 
 group = "org.gameyfin"
@@ -13,11 +11,11 @@ dependencies {
     api("org.pf4j:pf4j:${rootProject.extra["pf4jVersion"]}")
 
     // Logging
-    implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
+    implementation("io.github.oshai:kotlin-logging-jvm:${rootProject.extra["kotlinLoggingVersion"]}")
 
     // JSON serialization
-    compileOnly("tools.jackson.core:jackson-databind:$jacksonVersion")
-    implementation("tools.jackson.module:jackson-module-kotlin:$jacksonVersion")
+    implementation("tools.jackson.module:jackson-module-kotlin:${rootProject.extra["jacksonVersion"]}")
+    compileOnly("tools.jackson.core:jackson-databind:${rootProject.extra["jacksonVersion"]}")
 }
 
 mavenPublishing {

@@ -15,8 +15,9 @@ jobs:
     steps:
       - name: Extract tag from branch name
         id: extract_branch
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          BRANCH="${{ github.event.pull_request.head.ref }}"
           if [[ "$BRANCH" == fix/* ]]; then
             TAG=${BRANCH#fix/}
           elif [[ "$BRANCH" == release/* ]]; then

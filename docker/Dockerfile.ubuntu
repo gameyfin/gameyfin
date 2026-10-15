@@ -63,7 +63,7 @@ ENV RUNTIME_ENV=docker
 
 # Install necessary packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini gosu && \
+    apt-get install -y --no-install-recommends tini gosu libjemalloc2 && \
     rm -rf /var/lib/apt/lists/*
 
 # Fixed runtime user/group

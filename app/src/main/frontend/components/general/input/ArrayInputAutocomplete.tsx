@@ -1,5 +1,5 @@
 import React, {Key, useEffect, useState} from "react";
-import {Autocomplete, AutocompleteItem, Chip} from "@heroui/react";
+import {Chip, CloseButton, ComboBox, Input, ListBox} from "@heroui/react";
 import {FieldArray, useField} from "formik";
 
 type ArrayInputAutocompleteProps = {
@@ -58,31 +58,38 @@ export default function ArrayInputAutocomplete({
                                     </div>
                                 )}
 
-                                <Autocomplete
+                                <ComboBox
                                     {...props}
                                     aria-labelledby="search"
-                                    shouldCloseOnBlur={false}
-                                    placeholder={placeholder}
                                     inputValue={search}
                                     onInputChange={(value) => setSearch(value)}
-                                    onSelectionChange={(value: Key | null) => {
+                                    onChange={(value: Key | Key[] | null) => {
                                         const item = options.find((option) => option === value);
                                         if (item) handleSelect(item);
                                         setSearch("");
                                     }}
                                 >
-                                    {filteredOptions.map((option) => (
-                                        <AutocompleteItem key={option} data-selected="true">
-                                            {option}
-                                        </AutocompleteItem>
-                                    ))}
-                                </Autocomplete>
+                                    <ComboBox.InputGroup>
+                                        <Input placeholder={placeholder}/>
+                                        <ComboBox.Trigger/>
+                                    </ComboBox.InputGroup>
+                                    <ComboBox.Popover>
+                                        <ListBox>
+                                            {filteredOptions.map((option) => (
+                                                <ListBox.Item key={option} id={option} textValue={option}>
+                                                    {option}
+                                                    <ListBox.ItemIndicator/>
+                                                </ListBox.Item>
+                                            ))}
+                                        </ListBox>
+                                    </ComboBox.Popover>
+                                </ComboBox>
 
                                 <div className="flex flex-wrap gap-2">
                                     {selectedValues.map((item: string, index: number) => (
-                                        <Chip key={index} variant="flat"
-                                              onClose={() => handleRemove(index)}>
+                                        <Chip key={index} variant="secondary" className="pr-0">
                                             {item}
+                                            <CloseButton aria-label="Remove" onPress={() => handleRemove(index)}/>
                                         </Chip>
                                     ))}
                                 </div>

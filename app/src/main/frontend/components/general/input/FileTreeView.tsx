@@ -137,7 +137,7 @@ export default function FileTreeView({onPathChange}: { onPathChange: (file: stri
                              className={`
                              flex flex-row items-center gap-2 w-full
                              rounded-md cursor-pointer
-                             ${isSelected ? 'bg-primary' : 'hover:bg-primary/20'}`
+                             ${isSelected ? 'bg-accent' : 'hover:bg-accent/20'}`
                              }
                              style={{paddingLeft: 10 * (level - 1)}}>
                             {isBranch ? <FolderIcon isOpen={isExpanded}/> : <FileIcon fileName={element.name}/>}

@@ -30,6 +30,7 @@ import org.gameyfin.app.users.UserService
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -155,7 +156,11 @@ class GameService(
 
         val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
-            is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername)
+            is OidcUser -> {
+                val subject = userDetails.subject ?: error("OidcUser has no subject claim")
+                userService.findByOidcProviderId(subject)
+                    ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
+            }
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
@@ -278,7 +283,7 @@ class GameService(
             // Hibernate collections are of type "PersistentBag" which does not implement equals() properly when comparing with ArrayList
             fun areEqual(a: Any?, b: Any?): Boolean {
                 return when {
-                    a is Collection<*> && b is Collection<*> -> a.toList() == b.toList()
+                    a is Collection<*> && b is Collection<*> -> a.toSet() == b.toSet()
                     else -> a == b
                 }
             }
@@ -372,7 +377,7 @@ class GameService(
             "publishers",
             game.publishers,
             updatedGame.publishers,
-            { game.publishers = it ?: mutableListOf() },
+            { game.publishers = (it ?: emptyList()).map { c -> companyService.createOrGet(c) }.toMutableList() },
             updatedGame.metadata.fields["publishers"]
         )
 
@@ -381,7 +386,7 @@ class GameService(
             "developers",
             game.developers,
             updatedGame.developers,
-            { game.developers = it ?: mutableListOf() },
+            { game.developers = (it ?: emptyList()).map { c -> companyService.createOrGet(c) }.toMutableList() },
             updatedGame.metadata.fields["developers"]
         )
 

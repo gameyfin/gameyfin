@@ -4,6 +4,7 @@ import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import org.gameyfin.app.core.events.GameCreatedEvent
 import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.security.getCurrentAuth
@@ -62,13 +63,13 @@ class GameRequestService(
         }
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @EventListener(GameCreatedEvent::class)
     fun onGameCreated(gameCreatedEvent: GameCreatedEvent) {
         completeMatchingRequests(gameCreatedEvent.game)
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @TransactionalEventListener(
         classes = [GameUpdatedEvent::class],
         phase = TransactionPhase.AFTER_COMPLETION

@@ -7,7 +7,7 @@ import {pluginState} from "Frontend/state/PluginState";
 
 interface PluginPrioritiesModalProps {
     isOpen: boolean;
-    onOpenChange: () => void;
+    onOpenChange: (isOpen: boolean) => void;
     type: string;
 }
 
