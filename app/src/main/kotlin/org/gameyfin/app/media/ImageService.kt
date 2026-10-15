@@ -216,7 +216,13 @@ class ImageService(
 
         if (!isImageStillInUse) {
             imageCache.invalidate(imageId)
-            imageRepository.delete(image)
+            try {
+                if (imageRepository.existsById(imageId)) {
+                    imageRepository.deleteById(imageId)
+                }
+            } catch (_: org.springframework.orm.ObjectOptimisticLockingFailureException) {
+                log.debug { "Image $imageId already deleted by concurrent cleanup, skipping." }
+            }
             fileStorageService.deleteFile(image.contentId)
         }
     }
