@@ -13,6 +13,7 @@ import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.IgnoredPath
+import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.scan.LibraryGameProcessor
@@ -24,6 +25,9 @@ import org.junit.jupiter.api.assertThrows
 import org.pf4j.PluginState
 import java.nio.file.Path
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertTrue
 import kotlin.io.path.Path
 
 class LibraryScanServiceTest {
@@ -48,6 +52,8 @@ class LibraryScanServiceTest {
         ignoredPathRepository = mockk()
         pluginService = mockk()
         configService = mockk()
+        every { pluginService.getPluginManagementEntries(GameMetadataProvider::class.java) } returns emptyList()
+        every { ignoredPathRepository.findByPath(any()) } returns null
 
         // By default, at least one GameMetadataProvider is started so scans are allowed
         every { pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED) } returns listOf(
@@ -290,6 +296,75 @@ class LibraryScanServiceTest {
         verify(atLeast = 1) { libraryCoreService.addGamesToLibrary(any(), library, false) }
     }
 
+    @Test
+    fun `task failure does not discard successfully processed games`() {
+        val library = createTestLibrary(1L)
+        val failedPath = Path("/path/failed")
+        val goodPath = Path("/path/good")
+        val game = createTestGame(2L, goodPath.toString())
+        val saved = CountDownLatch(1)
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        setupQuickScanWithNewGames(library, listOf(failedPath, goodPath), game)
+        // Escape the per-game Exception handler to exercise Future.get's ExecutionException.
+        every { libraryGameProcessor.processNewGame(failedPath, library) } throws AssertionError("Plugin failed")
+        every { libraryRepository.save(library) } answers { saved.countDown(); library }
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+
+        assertTrue(saved.await(5, TimeUnit.SECONDS))
+        verify(exactly = 1) { libraryCoreService.addGamesToLibrary(listOf(game), library, false) }
+    }
+
+    @Test
+    fun `existing game failure does not discard successful updates`() {
+        val badGame = createTestGame(1L, "/path/bad")
+        val goodGame = createTestGame(2L, "/path/good")
+        val library = createTestLibrary(1L, games = mutableListOf(badGame, goodGame))
+        val saved = CountDownLatch(1)
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        setupSuccessfulFullScan(library)
+        every { libraryGameProcessor.processExistingGame(badGame) } throws AssertionError("Plugin failed")
+        every { libraryGameProcessor.processExistingGame(goodGame) } returns goodGame
+        every { libraryRepository.save(library) } answers { saved.countDown(); library }
+
+        libraryScanService.triggerScan(ScanType.FULL, listOf(1L))
+
+        assertTrue(saved.await(5, TimeUnit.SECONDS))
+        verify(exactly = 1) { libraryGameProcessor.processExistingGame(goodGame) }
+    }
+
+    @Test
+    fun `removed ignored paths are matched by id across different entity instances`() {
+        val retained = IgnoredPath(1L, "/path/removed", IgnoredPathPluginSource(mutableListOf()))
+        val removed = IgnoredPath(1L, "/path/removed", IgnoredPathPluginSource(mutableListOf()))
+        val library = createTestLibrary(1L, ignoredPaths = mutableListOf(retained))
+        val saved = CountDownLatch(1)
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        setupSuccessfulQuickScan(library)
+        every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
+            newPaths = emptyList(), removedGamePaths = emptyList(), removedIgnoredPaths = listOf(removed)
+        )
+        every { libraryRepository.save(library) } answers { saved.countDown(); library }
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+
+        assertTrue(saved.await(5, TimeUnit.SECONDS))
+        assertTrue(library.ignoredPaths.isEmpty())
+        // Retain upstream's fix preventing a removed path being processed again.
+        verify(exactly = 0) { libraryGameProcessor.processNewGame(any(), any()) }
+    }
+
+    @Test
+    fun `queued scan skips library removed before execution`() {
+        val library = createTestLibrary(1L)
+        every { libraryRepository.findAllById(listOf(1L)) } returnsMany listOf(listOf(library), emptyList())
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+
+        verify(timeout = 5000, exactly = 2) { libraryRepository.findAllById(listOf(1L)) }
+        verify(exactly = 0) { filesystemService.scanLibraryForGamefiles(any()) }
+    }
+
     private fun createTestLibrary(
         id: Long,
         games: MutableList<Game> = mutableListOf(),
@@ -353,13 +428,14 @@ class LibraryScanServiceTest {
     }
 
     private fun setupQuickScanWithNewGames(library: Library, newPaths: List<Path>, newGame: Game) {
+        val newGameId = newGame.id!!
         every { filesystemService.scanLibraryForGamefiles(library) } returns FilesystemScanResult(
             newPaths = newPaths,
             removedGamePaths = emptyList(),
             removedIgnoredPaths = emptyList()
         )
         every { libraryGameProcessor.processNewGame(any(), library) } returns newGame
-        every { gameRepository.findAllById(listOf(newGame.id!!)) } returns listOf(newGame)
+        every { gameRepository.findAllById(listOf(newGameId)) } returns listOf(newGame)
         every { libraryCoreService.addGamesToLibrary(listOf(newGame), library, false) } returns library
         every { libraryRepository.save(library) } returns library
     }
