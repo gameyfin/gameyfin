@@ -8,6 +8,8 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.File
 import java.nio.file.Files
+import javax.sql.DataSource
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @Testcontainers
@@ -34,6 +36,7 @@ class MigrationIntegrationTest {
         ).run { context ->
             assertTrue(context.isRunning)
             require(context.startupFailure == null) { "Context failed to start: ${context.startupFailure}" }
+            assertKeyValueColumnsMatchEntities(context.getBean(DataSource::class.java))
         }
 
         postgres.stop()
@@ -52,6 +55,7 @@ class MigrationIntegrationTest {
         ).run { context ->
             assertTrue(context.isRunning)
             require(context.startupFailure == null) { "Context failed to start: ${context.startupFailure}" }
+            assertKeyValueColumnsMatchEntities(context.getBean(DataSource::class.java))
         }
     }
 
@@ -80,6 +84,29 @@ class MigrationIntegrationTest {
             require(context.startupFailure == null) { "Context failed to start: ${context.startupFailure}" }
         }
     }
+
+    /**
+     * The JPA entities reference these reserved-word columns as quoted lowercase identifiers,
+     * so they must exist with exactly that (case-sensitive) name on every database.
+     */
+    private fun assertKeyValueColumnsMatchEntities(dataSource: DataSource) {
+        val tables = setOf("APP_CONFIG", "PLUGIN_CONFIG", "USER_PREFERENCE")
+        val columns = mutableMapOf<String, MutableSet<String>>()
+        dataSource.connection.use { connection ->
+            connection.metaData.getColumns(null, null, "%", "%").use { rs ->
+                while (rs.next()) {
+                    val table = rs.getString("TABLE_NAME").uppercase()
+                    if (table in tables) columns.getOrPut(table) { mutableSetOf() }.add(rs.getString("COLUMN_NAME"))
+                }
+            }
+        }
+        for (table in tables) {
+            val names = columns[table].orEmpty()
+            assertEquals(
+                setOf("key", "value"),
+                names.filter { it.equals("key", true) || it.equals("value", true) }.toSet(),
+                "Unexpected key/value column names in $table: $names"
+            )
+        }
+    }
 }
-
-

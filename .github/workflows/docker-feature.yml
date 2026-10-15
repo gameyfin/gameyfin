@@ -1,0 +1,106 @@
+name: Build and Push Docker Image (feat/*, feature/*)
+
+on:
+  push:
+    branches:
+      - 'feat/**'
+      - 'feature/**'
+
+# Only the latest push of a branch is relevant, so older runs must not overwrite its image tag
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      checks: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - name: Run production build
+        env:
+          GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
+        run: ./gradlew clean build -Pvaadin.productionMode=true
+
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v6
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
+
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-outputs
+          path: |
+            app/build/libs/**
+            plugins/**/build/libs/**/*.jar
+
+  docker-build:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Download build outputs
+        uses: actions/download-artifact@v8
+        with:
+          name: build-outputs
+          path: .
+
+      - name: Build platform image
+        uses: ./.github/actions/docker-build-platform
+        with:
+          ghcr_username: ${{ github.actor }}
+          ghcr_token: ${{ secrets.GITHUB_TOKEN }}
+          context: .
+          file: docker/Dockerfile.ubuntu
+          platform: ${{ matrix.platform }}
+          image_name: ghcr.io/gameyfin/gameyfin
+
+  docker-merge:
+    needs: [ build, docker-build ]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Extract tag from branch name
+        id: extract_tag
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          # Docker tags may only contain [A-Za-z0-9_.-] and must not start with "." or "-"
+          TAG=$(echo "$BRANCH_NAME" | sed -e 's/[^A-Za-z0-9_.-]/-/g' -e 's/^[.-]*//' | cut -c1-120)
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create and push manifest
+        uses: ./.github/actions/docker-create-manifest
+        with:
+          ghcr_username: ${{ github.actor }}
+          ghcr_token: ${{ secrets.GITHUB_TOKEN }}
+          tags: ghcr.io/gameyfin/gameyfin:${{ steps.extract_tag.outputs.tag }}
+          image_name: ghcr.io/gameyfin/gameyfin

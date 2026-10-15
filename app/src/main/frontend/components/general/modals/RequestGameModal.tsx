@@ -1,4 +1,4 @@
-import {Button, ComboBox, Input, ListBox, Modal, Table, toast, Tooltip} from "@heroui/react";
+import {Button, ComboBox, Input, ListBox, Modal, Table, toast, Tooltip, Spinner} from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import {GameEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
@@ -111,7 +111,7 @@ export default function RequestGameModal({
                                             variant="primary"
                                             onPress={search}
                                             isPending={isSearching}>
-                                        <MagnifyingGlassIcon/>
+                                        {isSearching ? <Spinner size="sm" color="current"/> : <MagnifyingGlassIcon/>}
                                     </Button>
                                 </div>
 
@@ -169,7 +169,7 @@ export default function RequestGameModal({
                                                                                     setIsRequesting(null);
                                                                                     close();
                                                                                 }}>
-                                                                            <ArrowRightIcon/>
+                                                                            {isRequesting === item.id ? <Spinner size="sm" color="current"/> : <ArrowRightIcon/>}
                                                                         </Button>
                                                                     </Tooltip.Trigger>
                                                                     <Tooltip.Content placement="bottom">Pick this

@@ -1,4 +1,4 @@
-import {toast, Button, Card} from "@heroui/react";
+import {toast, Button, Card, Spinner} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
@@ -102,7 +102,7 @@ export default function InvitationRegistrationView() {
                                     <Button type="submit" className="w-full mt-4" variant="primary"
                                             isDisabled={!formik.isValid || formik.isSubmitting}
                                             isPending={formik.isSubmitting}>
-                                        {formik.isSubmitting ? "" : "Create account"}
+                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Create account"}
                                     </Button>
                                 </Form>
                             )}

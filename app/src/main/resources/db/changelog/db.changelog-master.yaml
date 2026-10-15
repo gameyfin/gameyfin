@@ -2,6 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: 2.4.1-baseline
       author: grimsi
+      validCheckSum: 9:708354a2ed9315e4a393c046caeeb912
       preConditions:
         - onFail: MARK_RAN
           not:
@@ -457,7 +458,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: VIDEO_URLS
-                  type: blob
+                  type: varbinary(255)
 
         - addForeignKeyConstraint:
             baseTableName: GAME_VIDEO_URLS
@@ -1262,3 +1263,60 @@ databaseChangeLog:
               - column:
                   name: COLLECTION_ID
 
+  - changeSet:
+      id: 2.4.1-video-urls-varbinary
+      author: grimsi
+      comment: >
+        Databases created by the initial version of the baseline changeset store GAME_VIDEO_URLS.VIDEO_URLS
+        as blob (H2) instead of varbinary as expected by Hibernate (and used by the Flyway migrations).
+      changes:
+        - modifyDataType:
+            tableName: GAME_VIDEO_URLS
+            columnName: VIDEO_URLS
+            newDataType: varbinary(255)
+
+  - changeSet:
+      id: 2.4.1-lowercase-key-value-columns
+      author: grimsi
+      comment: >
+        The JPA entities reference the reserved-word columns "key" and "value" as quoted lowercase identifiers
+        (as created by the Flyway migrations). On databases that store unquoted identifiers in uppercase (H2),
+        the initial baseline changeset created them as "KEY" and "VALUE" instead, so they are renamed here.
+        The precondition only matches on such databases; everywhere else the changeset is marked as ran.
+      objectQuotingStrategy: QUOTE_ALL_OBJECTS
+      preConditions:
+        - onFail: MARK_RAN
+          sqlCheck:
+            expectedResult: 1
+            sql: SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'APP_CONFIG' AND COLUMN_NAME = 'KEY'
+      changes:
+        - renameColumn:
+            tableName: APP_CONFIG
+            oldColumnName: KEY
+            newColumnName: key
+            columnDataType: varchar(255)
+        - renameColumn:
+            tableName: APP_CONFIG
+            oldColumnName: VALUE
+            newColumnName: value
+            columnDataType: text
+        - renameColumn:
+            tableName: PLUGIN_CONFIG
+            oldColumnName: KEY
+            newColumnName: key
+            columnDataType: varchar(255)
+        - renameColumn:
+            tableName: PLUGIN_CONFIG
+            oldColumnName: VALUE
+            newColumnName: value
+            columnDataType: text
+        - renameColumn:
+            tableName: USER_PREFERENCE
+            oldColumnName: KEY
+            newColumnName: key
+            columnDataType: varchar(255)
+        - renameColumn:
+            tableName: USER_PREFERENCE
+            oldColumnName: VALUE
+            newColumnName: value
+            columnDataType: varchar(255)

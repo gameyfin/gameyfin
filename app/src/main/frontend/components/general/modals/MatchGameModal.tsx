@@ -2,6 +2,7 @@ import {
     Button,
     Input,
     Modal,
+    Spinner,
     Table,
     Tooltip
 } from "@heroui/react";
@@ -78,7 +79,7 @@ export default function MatchGameModal({
                                            }}
                                     />
                                     <Button isIconOnly onPress={search} variant="primary" isPending={isSearching}>
-                                        <MagnifyingGlassIcon/>
+                                        {isSearching ? <Spinner size="sm" color="current"/> : <MagnifyingGlassIcon/>}
                                     </Button>
                                 </div>
 
@@ -134,7 +135,7 @@ export default function MatchGameModal({
                                                                                     setIsMatching(null);
                                                                                     close();
                                                                                 }}>
-                                                                            <ArrowRightIcon/>
+                                                                            {isMatching === item.id ? <Spinner size="sm" color="current"/> : <ArrowRightIcon/>}
                                                                         </Button>
                                                                     </Tooltip.Trigger>
                                                                     <Tooltip.Content placement="bottom">Pick this

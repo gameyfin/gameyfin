@@ -1,5 +1,5 @@
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {Accordion, Button, Modal} from "@heroui/react";
+import {Accordion, Button, Modal, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import React, {useEffect, useState} from "react";
@@ -130,7 +130,7 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                         isDisabled={formik.isSubmitting || !formik.dirty}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? "" : "Save"}
+                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Save"}
                                                     </Button>
                                                 </Modal.Footer>
                                             </Form>

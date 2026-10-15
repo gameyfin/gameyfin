@@ -3,13 +3,17 @@ import * as Yup from 'yup';
 import Wizard from "Frontend/components/wizard/Wizard";
 import WizardStep from "Frontend/components/wizard/WizardStep";
 import Input from "Frontend/components/general/input/Input";
-import {HandWavingIcon, PaletteIcon, UserIcon} from "@phosphor-icons/react";
-import {Card, toast} from "@heroui/react";
+import {ArrowCounterClockwiseIcon, HandWavingIcon, PaletteIcon, UserIcon} from "@phosphor-icons/react";
+import {Button, Card, toast, useOverlayState} from "@heroui/react";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
 import {useNavigate} from "react-router";
+import RestoreBackupModal from "Frontend/components/general/modals/RestoreBackupModal";
 
 function WelcomeStep() {
+    const navigate = useNavigate();
+    const restoreModal = useOverlayState();
+
     return (
         <div className="flex flex-col size-full items-center">
             <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
@@ -28,7 +32,23 @@ function WelcomeStep() {
                     design and adaptability, offering ample customization options to meet diverse user preferences.
                 </p>
                 <h5>Let's get started!</h5>
+                <div className="flex flex-col items-center gap-2">
+                    <p className="text-sm text-muted">Moving an existing Gameyfin instance?</p>
+                    <Button variant="ghost" onPress={restoreModal.open}>
+                        <ArrowCounterClockwiseIcon/>
+                        Restore from backup
+                    </Button>
+                </div>
             </div>
+            <RestoreBackupModal isOpen={restoreModal.isOpen}
+                                onOpenChange={restoreModal.setOpen}
+                                onRestored={() => {
+                                    toast.success("Backup restored", {
+                                        description: "You can now log in with your existing account.",
+                                    });
+                                    navigate('/login');
+                                }}
+            />
         </div>
     );
 }

@@ -67,7 +67,7 @@ dependencies {
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.liquibase:liquibase-core")
+    implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("commons-io:commons-io:${rootProject.extra["commonsIoVersion"]}")
     implementation("com.google.guava:guava:${rootProject.extra["guavaVersion"]}")
 

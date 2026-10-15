@@ -8,6 +8,9 @@ logging.level:
   org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
 
 gameyfin:
+  backup:
+    # Directory where database backups are stored
+    directory: ./backups
   async:
     bounded:
       core-pool-size: 4

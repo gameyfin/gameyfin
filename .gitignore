@@ -54,6 +54,7 @@ out/
 /generated
 /db
 /data
+/backups
 /packaged_plugins
 /logs
 /templates

@@ -1,6 +1,6 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/input/Input";
-import {toast, Button, Input as HeroUiInput, Tooltip} from "@heroui/react";
+import {toast, Button, Input as HeroUiInput, Tooltip, Spinner} from "@heroui/react";
 import {Form, Formik, FormikProps} from "formik";
 import {ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
@@ -105,7 +105,7 @@ export default function ProfileManagement() {
                                     isDisabled={!formik.dirty || formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
                                     type="submit"
                                 >
-                                    {formik.isSubmitting ? "" : configSaved ? <CheckIcon/> : "Save"}
+                                    {formik.isSubmitting ? <Spinner size="sm" color="current"/> : configSaved ? <CheckIcon/> : "Save"}
                                 </Button>
                             </div>
                         </div>
