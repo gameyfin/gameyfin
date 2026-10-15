@@ -1,4 +1,4 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.servlet.http.HttpServletRequest
@@ -6,11 +6,7 @@ import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.setup.SetupService
 import org.springframework.core.io.FileSystemResource
 import org.springframework.core.io.Resource
-import org.springframework.http.ContentDisposition
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import kotlin.io.path.fileSize
@@ -37,7 +33,10 @@ class BackupController(
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("application/zip"))
             .contentLength(file.fileSize())
-            .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file.fileName.toString()).build().toString())
+            .header(
+                HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment().filename(file.fileName.toString()).build().toString()
+            )
             .body(FileSystemResource(file))
     }
 

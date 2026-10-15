@@ -2,11 +2,8 @@ package org.gameyfin.app.system.backup
 
 import liquibase.integration.spring.SpringLiquibase
 import liquibase.integration.spring.SpringResourceAccessor
-import org.junit.jupiter.api.AfterAll
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import org.junit.jupiter.api.assertThrows
+import org.gameyfin.app.core.backup.*
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
@@ -40,7 +37,8 @@ class DatabaseBackupIntegrationTest {
 
     companion object {
         private const val CHANGELOG = "classpath:/db/changelog/db.changelog-master.yaml"
-        private val APP_KEY_FINGERPRINT = AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
+        private val APP_KEY_FINGERPRINT =
+            AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
         private val BLOB_CONTENT = byteArrayOf(0, 1, 2, -1, 127, -128)
         private const val UNICODE_TEXT = "Ünïcødé 🎮\nwith 'quotes' and \"double quotes\""
     }
@@ -166,7 +164,9 @@ class DatabaseBackupIntegrationTest {
     }
 
     private fun Connection.changeLogRows(): Int =
-        createStatement().use { s -> s.executeQuery("SELECT COUNT(*) FROM DATABASECHANGELOG").use { it.next(); it.getInt(1) } }
+        createStatement().use { s ->
+            s.executeQuery("SELECT COUNT(*) FROM DATABASECHANGELOG").use { it.next(); it.getInt(1) }
+        }
 
     @Test
     fun `backup of H2 database can be restored on Postgres and back on H2`() {
@@ -195,9 +195,10 @@ class DatabaseBackupIntegrationTest {
 
         val game = roundTrip.connection.use { c ->
             c.createStatement().use { s ->
-                s.executeQuery("SELECT g.SUMMARY, v.VIDEO_URLS FROM GAME g JOIN GAME_VIDEO_URLS v ON v.GAME_ID = g.ID").use {
-                    it.next(); it.getString(1) to it.getBytes(2)
-                }
+                s.executeQuery("SELECT g.SUMMARY, v.VIDEO_URLS FROM GAME g JOIN GAME_VIDEO_URLS v ON v.GAME_ID = g.ID")
+                    .use {
+                        it.next(); it.getString(1) to it.getBytes(2)
+                    }
             }
         }
         assertEquals(UNICODE_TEXT, game.first)
@@ -240,7 +241,14 @@ class DatabaseBackupIntegrationTest {
         migrate(target)
         target.connection.use { c ->
             c.createStatement().use {
-                it.execute("INSERT INTO APP_CONFIG (${keyValueColumns(c, "APP_CONFIG")}) VALUES ('only.in.target', 'x')")
+                it.execute(
+                    "INSERT INTO APP_CONFIG (${
+                        keyValueColumns(
+                            c,
+                            "APP_CONFIG"
+                        )
+                    }) VALUES ('only.in.target', 'x')"
+                )
                 it.execute("INSERT INTO IMAGE (ID, CONTENT_ID) VALUES (1, 'conflicting')")
             }
         }
@@ -288,7 +296,10 @@ class DatabaseBackupIntegrationTest {
 
         assertThrows<InvalidBackupException> { restorer(source).validate(newer, APP_KEY_FINGERPRINT) }
         assertThrows<InvalidBackupException> {
-            restorer(source).validate(manifest.copy(formatVersion = BackupFormat.FORMAT_VERSION + 1), APP_KEY_FINGERPRINT)
+            restorer(source).validate(
+                manifest.copy(formatVersion = BackupFormat.FORMAT_VERSION + 1),
+                APP_KEY_FINGERPRINT
+            )
         }
     }
 

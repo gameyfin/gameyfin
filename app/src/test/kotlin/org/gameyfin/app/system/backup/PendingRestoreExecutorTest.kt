@@ -5,6 +5,10 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import liquibase.integration.spring.SpringLiquibase
+import org.gameyfin.app.core.backup.AppKeyFingerprint
+import org.gameyfin.app.core.backup.BackupStorage
+import org.gameyfin.app.core.backup.DatabaseExporter
+import org.gameyfin.app.core.backup.PendingRestoreExecutor
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -18,13 +22,14 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.*
-import kotlin.io.path.*
+import kotlin.io.path.div
 
 class PendingRestoreExecutorTest {
 
     companion object {
         private const val CHANGELOG = "classpath:/db/changelog/db.changelog-master.yaml"
-        private val FINGERPRINT = AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
+        private val FINGERPRINT =
+            AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
     }
 
     @TempDir
@@ -114,7 +119,9 @@ class PendingRestoreExecutorTest {
     fun `records failure and clears marker when restore fails`() {
         createBackup("a.zip")
         storage.schedulePendingRestore("a.zip")
-        every { AppKeyFingerprint.current() } returns AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16)))
+        every { AppKeyFingerprint.current() } returns AppKeyFingerprint.of(
+            Base64.getEncoder().encodeToString(ByteArray(16))
+        )
 
         run()
 

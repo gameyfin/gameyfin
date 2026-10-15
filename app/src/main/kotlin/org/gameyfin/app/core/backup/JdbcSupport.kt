@@ -1,4 +1,4 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
 import tools.jackson.core.JsonGenerator
 import tools.jackson.databind.JsonNode
@@ -41,7 +41,9 @@ internal object JdbcValues {
             ValueKind.INTEGER -> rs.getLong(index).let { if (rs.wasNull()) gen.writeNull() else gen.writeNumber(it) }
             ValueKind.DECIMAL -> rs.getBigDecimal(index)?.let { gen.writeNumber(it) } ?: gen.writeNull()
             ValueKind.FLOAT -> rs.getDouble(index).let { if (rs.wasNull()) gen.writeNull() else gen.writeNumber(it) }
-            ValueKind.BOOLEAN -> rs.getBoolean(index).let { if (rs.wasNull()) gen.writeNull() else gen.writeBoolean(it) }
+            ValueKind.BOOLEAN -> rs.getBoolean(index)
+                .let { if (rs.wasNull()) gen.writeNull() else gen.writeBoolean(it) }
+
             ValueKind.DATE -> writeString(gen, rs.getObject(index, LocalDate::class.java))
             ValueKind.TIME -> writeString(gen, rs.getObject(index, LocalTime::class.java))
             ValueKind.TIMESTAMP -> writeString(gen, rs.getObject(index, LocalDateTime::class.java))
@@ -126,7 +128,8 @@ internal class SchemaInspector(private val connection: Connection) {
 
     /** Escapes wildcards (e.g. `_`) in a name used as metadata search pattern */
     private fun pattern(name: String) =
-        if (escape.isEmpty()) name else name.replace(escape, escape + escape).replace("_", "${escape}_").replace("%", "$escape%")
+        if (escape.isEmpty()) name else name.replace(escape, escape + escape).replace("_", "${escape}_")
+            .replace("%", "$escape%")
 
     /** All application tables of the current schema (migration bookkeeping tables are excluded) */
     fun tables(): List<String> =

@@ -1,5 +1,6 @@
 package org.gameyfin.app.system.backup
 
+import org.gameyfin.app.core.backup.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import reactor.test.StepVerifier
@@ -62,7 +63,12 @@ class BackupProgressTrackerTest {
 
         // Step changes and the last update of a step (current == total) are always emitted
         assertEquals(
-            listOf("Preparing backup" to null, "Exporting images" to 1, "Exporting images" to 100, "Finishing backup" to null),
+            listOf(
+                "Preparing backup" to null,
+                "Exporting images" to 1,
+                "Exporting images" to 100,
+                "Finishing backup" to null
+            ),
             emitted.map { it.currentStep.description to it.currentStep.current }
         )
         // The latest state is always kept, even if it has not been emitted

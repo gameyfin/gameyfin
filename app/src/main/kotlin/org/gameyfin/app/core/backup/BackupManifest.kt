@@ -1,4 +1,4 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.json.JsonMapper

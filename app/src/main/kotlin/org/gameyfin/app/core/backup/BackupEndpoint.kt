@@ -1,4 +1,4 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
 import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.RolesAllowed

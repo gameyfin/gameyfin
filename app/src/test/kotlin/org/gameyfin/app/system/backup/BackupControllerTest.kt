@@ -1,6 +1,10 @@
 package org.gameyfin.app.system.backup
 
 import io.mockk.*
+import org.gameyfin.app.core.backup.BackupController
+import org.gameyfin.app.core.backup.BackupDto
+import org.gameyfin.app.core.backup.BackupService
+import org.gameyfin.app.core.backup.InvalidBackupException
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.setup.SetupService
 import org.junit.jupiter.api.AfterEach
@@ -93,7 +97,8 @@ class BackupControllerTest {
     fun `setup restore is forbidden after setup completed`() {
         every { setupService.isSetupCompleted() } returns true
 
-        val e = assertThrows(ResponseStatusException::class.java) { controller.restoreDuringSetup(requestWith(ByteArray(0))) }
+        val e =
+            assertThrows(ResponseStatusException::class.java) { controller.restoreDuringSetup(requestWith(ByteArray(0))) }
         assertEquals(HttpStatus.FORBIDDEN, e.statusCode)
     }
 

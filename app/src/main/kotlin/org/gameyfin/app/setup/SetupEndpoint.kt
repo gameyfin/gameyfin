@@ -3,8 +3,8 @@ package org.gameyfin.app.setup
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import com.vaadin.hilla.exception.EndpointException
-import org.gameyfin.app.system.backup.BackupService
-import org.gameyfin.app.system.backup.RestoreStatusDto
+import org.gameyfin.app.core.backup.BackupService
+import org.gameyfin.app.core.backup.RestoreStatusDto
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserRegistrationDto
 

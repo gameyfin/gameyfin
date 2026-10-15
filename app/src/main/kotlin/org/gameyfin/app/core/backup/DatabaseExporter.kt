@@ -1,4 +1,4 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.commons.io.output.CloseShieldOutputStream
@@ -13,9 +13,9 @@ import java.time.Instant
 import java.util.zip.Deflater
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import javax.sql.DataSource
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
-import javax.sql.DataSource
 
 /**
  * Writes the content of a Gameyfin database (and optionally the media files) into a backup archive.
@@ -50,7 +50,11 @@ class DatabaseExporter {
         ZipOutputStream(BufferedOutputStream(output)).use { zip ->
             val (databaseProduct, changeSets, tables) = dataSource.connection.use { connection ->
                 inSnapshotTransaction(connection) {
-                    Triple(connection.metaData.databaseProductName, readChangeSets(connection), exportTables(connection, zip, progress))
+                    Triple(
+                        connection.metaData.databaseProductName,
+                        readChangeSets(connection),
+                        exportTables(connection, zip, progress)
+                    )
                 }
             }
 

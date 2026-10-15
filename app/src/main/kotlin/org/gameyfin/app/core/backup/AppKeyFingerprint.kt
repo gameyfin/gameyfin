@@ -1,4 +1,4 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
 import org.gameyfin.app.core.security.EncryptionUtils
 import java.security.MessageDigest

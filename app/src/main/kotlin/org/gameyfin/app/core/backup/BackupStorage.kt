@@ -1,5 +1,6 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -81,7 +82,7 @@ class BackupStorage(directory: Path) {
         val target = root.resolve(name)
         try {
             Files.move(tempFile, target, StandardCopyOption.ATOMIC_MOVE)
-        } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+        } catch (_: AtomicMoveNotSupportedException) {
             Files.move(tempFile, target)
         }
         return target

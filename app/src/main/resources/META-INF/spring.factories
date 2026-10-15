@@ -1,2 +1,2 @@
 org.springframework.context.ApplicationContextInitializer=\
-  org.gameyfin.app.system.backup.PendingRestoreExecutor
+  org.gameyfin.app.core.backup.PendingRestoreExecutor

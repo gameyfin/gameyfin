@@ -2,6 +2,10 @@ package org.gameyfin.app.system.backup
 
 import com.sun.net.httpserver.HttpServer
 import io.mockk.*
+import org.gameyfin.app.core.backup.BackupStorage
+import org.gameyfin.app.core.backup.BackupTaskStatus
+import org.gameyfin.app.core.backup.ImageRecoveryProgress
+import org.gameyfin.app.core.backup.ImageRecoveryService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameFieldMetadata
 import org.gameyfin.app.games.entities.GameMetadata
@@ -22,12 +26,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-import kotlin.test.assertContentEquals
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ImageRecoveryServiceTest {
 
@@ -192,7 +191,8 @@ class ImageRecoveryServiceTest {
     fun `restores images from local files and handles invalid urls and removal errors`() {
         val file = backupDirectory.resolve("image.png").also { it.toFile().writeBytes(IMAGE_CONTENT) }
         val local = Image(id = 1, originalUrl = file.toUri().toString(), type = ImageType.COVER)
-        val missingFile = Image(id = 2, originalUrl = backupDirectory.resolve("none.png").toUri().toString(), type = ImageType.COVER)
+        val missingFile =
+            Image(id = 2, originalUrl = backupDirectory.resolve("none.png").toUri().toString(), type = ImageType.COVER)
         val invalidUrl = Image(id = 3, originalUrl = "not a url", type = ImageType.COVER)
         val blankUrl = Image(id = 4, originalUrl = " ", type = ImageType.COVER)
         val unreachable = Image(id = 5, originalUrl = "http://127.0.0.1:1/x.png", type = ImageType.COVER)

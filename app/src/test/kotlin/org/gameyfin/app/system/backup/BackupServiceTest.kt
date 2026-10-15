@@ -2,6 +2,10 @@ package org.gameyfin.app.system.backup
 
 import io.mockk.*
 import liquibase.integration.spring.SpringLiquibase
+import org.gameyfin.app.core.backup.AppKeyFingerprint
+import org.gameyfin.app.core.backup.BackupDto
+import org.gameyfin.app.core.backup.BackupService
+import org.gameyfin.app.core.backup.InvalidBackupException
 import org.gameyfin.app.system.SystemService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
@@ -22,7 +26,8 @@ class BackupServiceTest {
 
     companion object {
         private const val CHANGELOG = "classpath:/db/changelog/db.changelog-master.yaml"
-        private val FINGERPRINT = AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
+        private val FINGERPRINT =
+            AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
     }
 
     @TempDir
@@ -143,7 +148,9 @@ class BackupServiceTest {
         val backup = createBackupAndWait()
         (backupDir / "corrupt.zip").writeText("not a zip")
 
-        every { AppKeyFingerprint.current() } returns AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16)))
+        every { AppKeyFingerprint.current() } returns AppKeyFingerprint.of(
+            Base64.getEncoder().encodeToString(ByteArray(16))
+        )
         val backups = service.getBackups().associateBy { it.name }
 
         assertFalse(backups.getValue("corrupt.zip").restorable)
@@ -177,7 +184,9 @@ class BackupServiceTest {
     @Test
     fun `restoreBackup rejects backups of a different app key`() {
         val backup = createBackupAndWait()
-        every { AppKeyFingerprint.current() } returns AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16)))
+        every { AppKeyFingerprint.current() } returns AppKeyFingerprint.of(
+            Base64.getEncoder().encodeToString(ByteArray(16))
+        )
 
         assertThrows(InvalidBackupException::class.java) { service.restoreBackup(backup.name, false) }
         verify(exactly = 0) { systemService.restart() }

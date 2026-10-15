@@ -1,5 +1,7 @@
 package org.gameyfin.app.system.backup
 
+import org.gameyfin.app.core.backup.BackupStorage
+import org.gameyfin.app.core.backup.RestoreStatusDto
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

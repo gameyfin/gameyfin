@@ -1,4 +1,4 @@
-package org.gameyfin.app.system.backup
+package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import reactor.core.publisher.Flux
@@ -24,6 +24,7 @@ class BackupProgressTracker(
     /** Keeps only the most recent progress per backup task */
     private val latestProgress = ConcurrentHashMap<UUID, BackupProgress>()
     private val lastEmittedAt = ConcurrentHashMap<UUID, Long>()
+
     // Events are not buffered while nobody is subscribed, new subscribers receive the current snapshot instead
     private val progressEvents = Sinks.many().multicast().directBestEffort<BackupProgress>()
 

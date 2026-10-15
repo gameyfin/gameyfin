@@ -2,6 +2,7 @@ package org.gameyfin.app.system.backup
 
 import liquibase.integration.spring.SpringLiquibase
 import liquibase.integration.spring.SpringResourceAccessor
+import org.gameyfin.app.core.backup.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -25,7 +26,8 @@ class DatabaseRestorerTest {
 
     companion object {
         private const val CHANGELOG = "classpath:/db/changelog/db.changelog-master.yaml"
-        private val FINGERPRINT = AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
+        private val FINGERPRINT =
+            AppKeyFingerprint.of(Base64.getEncoder().encodeToString(ByteArray(16) { it.toByte() }))
     }
 
     @TempDir
@@ -161,7 +163,10 @@ class DatabaseRestorerTest {
             restorer.validate(manifest.copy(changeSets = emptyList()), FINGERPRINT)
         }.message!!.contains("migration history"))
         assertTrue(assertThrows(InvalidBackupException::class.java) {
-            restorer.validate(manifest.copy(changeSets = manifest.changeSets + BackupChangeSet("future", "me")), FINGERPRINT)
+            restorer.validate(
+                manifest.copy(changeSets = manifest.changeSets + BackupChangeSet("future", "me")),
+                FINGERPRINT
+            )
         }.message!!.contains("incompatible"))
     }
 
@@ -183,7 +188,8 @@ class DatabaseRestorerTest {
         val notObject = rewrite("not-object.zip", entries = mapOf("database/IMAGE.json" to "[]"))
         assertTrue(assertThrows(InvalidBackupException::class.java) { restoreInto(notObject) }.message!!.contains("malformed"))
 
-        val rowsFirst = rewrite("rows-first.zip", entries = mapOf("database/IMAGE.json" to """{"rows": [[1]], "columns": []}"""))
+        val rowsFirst =
+            rewrite("rows-first.zip", entries = mapOf("database/IMAGE.json" to """{"rows": [[1]], "columns": []}"""))
         assertThrows(InvalidBackupException::class.java) { restoreInto(rowsFirst) }
 
         val badValue = rewrite(
