@@ -603,9 +603,7 @@ class GameServiceTest {
         every { gameRepository.findByIdOrNull(1L) } returns game
         every { pluginManager.getExtensions("test-plugin") } returns emptyList<Any>()
 
-        assertThrows(NoSuchElementException::class.java) {
-            gameService.updateMetadata(game)
-        }
+        assertNull(gameService.updateMetadata(game))
     }
 
     @Test

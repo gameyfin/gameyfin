@@ -1,6 +1,7 @@
 package org.gameyfin.app.libraries
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.annotation.PreDestroy
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemService
@@ -84,134 +85,68 @@ class LibraryScanService(
             latestProgressPerScan.values.removeIf { it.finishedAt?.isBefore(cutoff) == true }
         }
 
+        private var scanConcurrency = ConfigProperties.Libraries.Scan.MaxConcurrency.default!!
         @Volatile
-        private var scanSemaphore = Semaphore(ConfigProperties.Libraries.Scan.MaxConcurrency.default!!)
+        private var scanSemaphore = Semaphore(scanConcurrency)
         private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
     }
 
-    private val scansInProgress = ConcurrentHashMap<Long, Boolean>()
+    private val scanQueue = LibraryScanQueue(scan = ::runQueuedScan)
 
-    private val pendingScans = ConcurrentHashMap.newKeySet<Long>()
+    @PreDestroy
+    fun stop() {
+        scanQueue.close()
+    }
 
-    private val debounceScheduler: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
-    private val debounceJobs = ConcurrentHashMap<Long, ScheduledFuture<*>>()
-
-    /** Quiet period before a debounced scan starts; adjustable for tests */
-    internal var debounceDelayMillis: Long = 30_000L
+    /** Watcher bursts collapse into a single scan after 30 seconds of quiet. */
+    fun scheduleScan(scanType: ScanType, library: Library) {
+        library.id?.let { scanQueue.request(it, scanType, debounce = true) }
+    }
 
     /**
-     * Re-creates the concurrency semaphore from the current config value.
-     * Called once at the start of each scan so that config changes take
-     * effect without restarting the application.
+     * Updates the concurrency semaphore when the configured limit changes.
+     * Reuse the current semaphore across libraries so starting another scan
+     * does not bypass permits already held by running game tasks.
      */
     private fun refreshScanSemaphore() {
         val permits = configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency)!!
-        scanSemaphore = Semaphore(permits)
-    }
-
-    /**
-     * Called by the filesystem watcher on every file-system change event.
-     * Debounces the event: resets a 30-second timer each call so that a burst
-     * of rapid events (e.g. Nextcloud moving 200 folders one-at-a-time) collapses
-     * into a single scan that starts only after the activity calms down.
-     */
-    fun scheduleScan(scanType: ScanType, library: Library) {
-        val libraryId = library.id ?: return
-
-        // Mark the library dirty (idempotent — Set.add is a no-op if already present)
-        pendingScans.add(libraryId)
-
-        // Cancel any existing debounce timer and start a fresh one
-        debounceJobs[libraryId]?.cancel(false)
-        debounceJobs[libraryId] = debounceScheduler.schedule({
-            startPendingScan(libraryId, scanType)
-        }, debounceDelayMillis, TimeUnit.MILLISECONDS)
-
-        log.debug { "Scan for library $libraryId debounced (30s quiet period)." }
-    }
-
-    /**
-     * Consumes the pending-scan flag for a library and runs a scan, unless one is
-     * already in progress (in which case the flag is left set so the running scan's
-     * finally block will schedule a follow-up after it finishes).
-     */
-    private fun startPendingScan(libraryId: Long, scanType: ScanType) {
-        if (!pendingScans.remove(libraryId)) return  // already consumed by another thread
-
-        val library = libraryRepository.findAllById(listOf(libraryId)).firstOrNull() ?: return
-
-        if (scansInProgress.putIfAbsent(libraryId, true) != null) {
-            // A scan is running — put the flag back so the finally block picks it up
-            pendingScans.add(libraryId)
-            log.debug { "Scan already in progress for library $libraryId; follow-up will run after current scan." }
-            return
-        }
-
-        executor.submit {
-            try {
-                when (scanType) {
-                    ScanType.QUICK     -> quickScan(library)
-                    ScanType.FULL      -> fullScan(library, false)
-                    ScanType.SCHEDULED -> fullScan(library, true)
-                }
-            } finally {
-                scansInProgress.remove(libraryId)
-                // If watcher events dirtied the library while we were scanning, schedule follow-up
-                if (pendingScans.contains(libraryId)) {
-                    debounceJobs[libraryId] = debounceScheduler.schedule({
-                        startPendingScan(libraryId, scanType)
-                    }, debounceDelayMillis, TimeUnit.MILLISECONDS)
-                }
+        synchronized(Companion) {
+            if (permits != scanConcurrency) {
+                scanSemaphore = Semaphore(permits)
+                scanConcurrency = permits
             }
         }
     }
 
     /**
-     * Wrapper function to trigger a scan for a list of libraries immediately
-     * (called from the admin UI / API, not the filesystem watcher).
+     * Wrapper function to trigger a scan for a list of libraries.
      */
     fun triggerScan(scanType: ScanType, libraryIds: Collection<Long>?) {
         check(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isNotEmpty()) {
             "At least one metadata plugin must be enabled to perform a scan."
         }
 
-        refreshScanSemaphore()
-        evictStaleScanProgress()
-
         val libraries =
             if (libraryIds.isNullOrEmpty()) libraryRepository.findAll().toList()
             else libraryRepository.findAllById(libraryIds).toList()
 
         libraries.forEach { library ->
-            val libraryId = library.id!!
+            scanQueue.request(library.id!!, scanType, debounce = false)
+        }
+    }
 
-            if (scansInProgress.putIfAbsent(libraryId, true) == null) {
-                executor.submit {
-                    try {
-                        when (scanType) {
-                            ScanType.QUICK     -> quickScan(library)
-                            ScanType.FULL      -> fullScan(library, false)
-                            ScanType.SCHEDULED -> fullScan(library, true)
-                        }
-                    } finally {
-                        scansInProgress.remove(libraryId)
-
-                        if (pendingScans.contains(libraryId)) {
-                            log.info { "Follow-up scan queued for library $libraryId, scheduling after cooldown." }
-                            debounceJobs[libraryId]?.cancel(false)
-                            debounceJobs[libraryId] = debounceScheduler.schedule({
-                                startPendingScan(libraryId, scanType)
-                            }, debounceDelayMillis, TimeUnit.MILLISECONDS)
-                        }
-                    }
-                }
-            } else {
-                if (pendingScans.add(libraryId)) {
-                    log.info { "Scan already in progress for library $libraryId, queued follow-up scan." }
-                } else {
-                    log.debug { "Scan already in progress for library $libraryId, follow-up scan already queued." }
-                }
-            }
+    private fun runQueuedScan(libraryId: Long, scanType: ScanType) {
+        check(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isNotEmpty()) {
+            "At least one metadata plugin must be enabled to perform a scan."
+        }
+        refreshScanSemaphore()
+        evictStaleScanProgress()
+        // Follow-up scans must use current library contents, not the previous scan's entity graph.
+        val library = libraryRepository.findAllById(listOf(libraryId)).firstOrNull() ?: return
+        when (scanType) {
+            ScanType.QUICK -> quickScan(library)
+            ScanType.FULL -> fullScan(library, false)
+            ScanType.SCHEDULED -> fullScan(library, true)
         }
     }
 
@@ -420,24 +355,14 @@ class LibraryScanService(
     ): MatchNewGamesResult {
         val completed = AtomicInteger(0)
         val newUnmatchedPaths = ConcurrentHashMap.newKeySet<IgnoredPath>()
+        val semaphore = scanSemaphore
 
         val tasks = gamePaths.map { path ->
             Callable<Game?> {
-                scanSemaphore.acquire()
+                semaphore.acquire()
                 try {
-                    val persisted = run {
-                        val startedAt = System.currentTimeMillis()
-                        log.debug { "Processing new game: '${path.fileName}'" }
-                        try {
-                            libraryGameProcessor.processNewGame(path, library)
-                        } finally {
-                            val elapsed = (System.currentTimeMillis() - startedAt) / 1000
-                            if (elapsed > 60) {
-                                log.warn { "Processing new game '${path.fileName}' took ${elapsed}s — possible hang" }
-                            } else {
-                                log.debug { "Finished processing new game '${path.fileName}' in ${elapsed}s" }
-                            }
-                        }
+                    val persisted = logProcessingTime("new game '${path.fileName}'") {
+                        libraryGameProcessor.processNewGame(path, library)
                     }
 
                     if (persisted == null) {
@@ -469,24 +394,14 @@ class LibraryScanService(
 
                     return@Callable null
                 } finally {
-                    scanSemaphore.release()
+                    semaphore.release()
                     progress.currentStep.current = completed.incrementAndGet()
                     emit(progress)
                 }
             }
         }
 
-        val persistedGames = executor
-            .invokeAll(tasks)
-            .mapNotNull { future ->
-                try {
-                    future.get()
-                } catch (e: Exception) {
-                    log.warn { "New game processing task failed after completion: ${e.message}" }
-                    log.debug(e) {}
-                    null
-                }
-            }
+        val persistedGames = collectTaskResults(tasks)
 
         return MatchNewGamesResult(
             unmatchedPaths = newUnmatchedPaths.toList(),
@@ -501,13 +416,8 @@ class LibraryScanService(
         removedGamePaths: List<String>
     ): UpdateLibraryResult {
         // 1.2 Remove old ignored paths from the library
-        val removedIgnoredPathIds = removedIgnoredPaths
-            .mapNotNull { it.id }
-            .toSet()
-
-        library.ignoredPaths.removeIf { ignoredPath ->
-            ignoredPath.id != null && ignoredPath.id in removedIgnoredPathIds
-        }
+        val removedIgnoredPathIds = removedIgnoredPaths.mapNotNull { it.id }.toSet()
+        library.ignoredPaths.removeIf { it.id != null && it.id in removedIgnoredPathIds }
 
         // Add new unmatched paths to the library, but check if they already exist
         val pathsToAdd = mutableListOf<IgnoredPath>()
@@ -552,24 +462,14 @@ class LibraryScanService(
         progress: LibraryScanProgress
     ): UpdateExistingGamesResult {
         val completedUpdates = AtomicInteger(0)
+        val semaphore = scanSemaphore
 
         val updateTasks = games.map { game ->
             Callable<Game?> {
-                scanSemaphore.acquire()
+                semaphore.acquire()
                 try {
-                    val updated = run {
-                        val startedAt = System.currentTimeMillis()
-                        log.debug { "Updating existing game: '${game.title}' (id=${game.id})" }
-                        try {
-                            libraryGameProcessor.processExistingGame(game)
-                        } finally {
-                            val elapsed = (System.currentTimeMillis() - startedAt) / 1000
-                            if (elapsed > 60) {
-                                log.warn { "Updating existing game '${game.title}' (id=${game.id}) took ${elapsed}s — possible hang" }
-                            } else {
-                                log.debug { "Finished updating existing game '${game.title}' (id=${game.id}) in ${elapsed}s" }
-                            }
-                        }
+                    val updated = logProcessingTime("existing game '${game.title}' (id=${game.id})") {
+                        libraryGameProcessor.processExistingGame(game)
                     }
                     return@Callable updated
                 } catch (e: Exception) {
@@ -577,25 +477,43 @@ class LibraryScanService(
                     log.debug(e) {}
                     return@Callable null
                 } finally {
-                    scanSemaphore.release()
+                    semaphore.release()
                     progress.currentStep.current = completedUpdates.incrementAndGet()
                     emit(progress)
                 }
             }
         }
 
-        val updatedGames = executor
-            .invokeAll(updateTasks)
-            .mapNotNull { future ->
-                try {
-                    future.get()
-                } catch (e: Exception) {
-                    log.warn { "Existing game update task failed after completion: ${e.message}" }
-                    log.debug(e) {}
-                    null
-                }
-            }
-
+        val updatedGames = collectTaskResults(updateTasks)
         return UpdateExistingGamesResult(updatedGames = updatedGames)
+    }
+
+    private fun <T : Any> collectTaskResults(tasks: List<Callable<T?>>): List<T> {
+        return executor.invokeAll(tasks).mapNotNull { future ->
+            try {
+                future.get()
+            } catch (e: ExecutionException) {
+                log.warn(e.cause ?: e) { "Game processing task failed after completion" }
+                null
+            } catch (_: CancellationException) {
+                log.warn { "Game processing task was cancelled" }
+                null
+            }
+        }
+    }
+
+    private fun <T> logProcessingTime(description: String, process: () -> T): T {
+        val startedAt = System.nanoTime()
+        log.debug { "Processing $description" }
+        try {
+            return process()
+        } finally {
+            val elapsed = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startedAt)
+            if (elapsed > 60) {
+                log.warn { "Processing $description took ${elapsed}s" }
+            } else {
+                log.debug { "Finished processing $description in ${elapsed}s" }
+            }
+        }
     }
 }

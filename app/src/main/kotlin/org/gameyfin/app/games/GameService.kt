@@ -251,26 +251,29 @@ class GameService(
         val game = getById(game.id!!)
 
         val originalIds: Map<String, ExternalProviderIdDto> = game.metadata.originalIds
-            .map { (provider, originalId) ->
-                val providerId = pluginManager.getExtensions(provider.pluginId).first()?.javaClass?.name ?: return null
+            .mapNotNull { (provider, originalId) ->
+                val providerId = pluginManager.getExtensions(provider.pluginId)
+                    .filterIsInstance<GameMetadataProvider>().firstOrNull()?.javaClass?.name
+                if (providerId == null) {
+                    log.debug { "Skipping unavailable metadata provider ${provider.pluginId} for game ${game.id}" }
+                    return@mapNotNull null
+                }
                 val pluginId = provider.pluginId
                 val originalId = originalId
                 providerId to ExternalProviderIdDto(pluginId, originalId)
             }
             .toMap()
 
-        val updatedGame = matchManually(
+        if (originalIds.isEmpty()) return null
+
+        val updatedGame = matchByOriginalIds(
             originalIds = originalIds,
             path = Path.of(game.metadata.path),
             library = game.library,
             replaceGameId = game.id,
-            persist = false
-        )
-
-        if (updatedGame == null) {
-            log.warn { "Failed to update game with ID ${game.id}" }
-            return null
-        }
+            persist = false,
+            refreshGame = game
+        ) ?: return null
 
 
         fun <T> updateField(
@@ -597,6 +600,15 @@ class GameService(
         library: Library,
         replaceGameId: Long? = null,
         persist: Boolean = true
+    ): Game? = matchByOriginalIds(originalIds, path, library, replaceGameId, persist)
+
+    private fun matchByOriginalIds(
+        originalIds: Map<String, ExternalProviderIdDto>,
+        path: Path,
+        library: Library,
+        replaceGameId: Long?,
+        persist: Boolean,
+        refreshGame: Game? = null
     ): Game? {
         // Step 0: Query all metadata plugins for metadata on the provided originalIds
         val metadataResults = runBlocking {
@@ -605,7 +617,18 @@ class GameService(
                     async {
                         val originalId = originalIds[plugin.javaClass.name]?.externalProviderId ?: return@async null
                         try {
-                            return@async plugin.fetchById(originalId)
+                            val metadata = plugin.fetchById(originalId)
+                            if (metadata != null || refreshGame == null) return@async metadata
+
+                            // Some providers can search IDs that their direct lookup only serves from a memory cache.
+                            // Recover the saved identity after cache eviction/restart without choosing another edition.
+                            val title = refreshGame.title?.takeIf { it.isNotBlank() } ?: return@async null
+                            val recovered = plugin.fetchByTitle(title, refreshGame.platforms.toSet(), 10)
+                                .firstOrNull { it.originalId == originalId }
+                            if (recovered != null) {
+                                log.debug { "Recovered metadata for game ${refreshGame.id} by title with original ID $originalId" }
+                            }
+                            return@async recovered
                         } catch (e: Exception) {
                             val pluginWrapper = pluginManager.getPluginForExtension(plugin::class)
                             log.warn { "Error fetching metadata for game [id: $originalId] with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
@@ -621,7 +644,11 @@ class GameService(
         // In theory all results should be valid
         val validResults = metadataResults.filterValuesNotNull()
         if (validResults.isEmpty()) {
-            log.error { "No results found for originalIds: $originalIds" }
+            if (refreshGame != null) {
+                log.warn { "No metadata returned for game ${refreshGame.id} from its saved providers; keeping existing metadata" }
+            } else {
+                log.error { "No results found for originalIds: $originalIds" }
+            }
             return null
         }
 
