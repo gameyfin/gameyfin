@@ -2,10 +2,13 @@ package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import liquibase.integration.spring.SpringResourceAccessor
+import org.gameyfin.app.core.database.*
 import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.core.Ordered
+import org.springframework.core.env.ConfigurableEnvironment
 import org.springframework.core.env.Environment
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
@@ -24,20 +27,38 @@ import java.time.Instant
  *
  * If the restore fails, the error is recorded in the restore status and Gameyfin continues to start
  * (a backup of the previous database state is created before an admin-triggered restore).
+ *
+ * The restore is also used to switch to a different database ([PendingDatabaseSwitch]): it runs after the
+ * [DatabaseSettingsInitializer], so the data is restored into the new database. If this fails, Gameyfin reverts to
+ * the previous database, which has not been modified.
  */
-class PendingRestoreExecutor : ApplicationContextInitializer<ConfigurableApplicationContext> {
+class PendingRestoreExecutor : ApplicationContextInitializer<ConfigurableApplicationContext>, Ordered {
 
     companion object {
         private val log = KotlinLogging.logger {}
     }
 
+    override fun getOrder(): Int = DatabaseSettingsInitializer.ORDER + 10
+
     override fun initialize(context: ConfigurableApplicationContext) {
         executePendingRestore(context.environment, context.classLoader)
     }
 
-    private fun executePendingRestore(environment: Environment, classLoader: ClassLoader?) {
+    private fun executePendingRestore(environment: ConfigurableEnvironment, classLoader: ClassLoader?) {
         val storage = BackupStorage(Path.of(environment.getProperty("gameyfin.backup.directory", "./backups")))
-        val backupName = storage.pendingRestore() ?: return
+        val databaseStore = DatabaseSettingsInitializer.store(environment)
+        val pendingSwitch = pendingDatabaseSwitch(databaseStore)
+        val backupName = storage.pendingRestore()
+        if (backupName == null) {
+            // The data has never been transferred to the new database
+            pendingSwitch?.let {
+                finishDatabaseSwitch(
+                    environment, databaseStore, it,
+                    success = false, message = "The data could not be transferred to the new database"
+                )
+            }
+            return
+        }
 
         val liquibase = Binder.get(environment).bindOrCreate("spring.liquibase", LiquibaseProperties::class.java)
         if (!liquibase.isEnabled) {
@@ -45,8 +66,9 @@ class PendingRestoreExecutor : ApplicationContextInitializer<ConfigurableApplica
             return
         }
 
-        // Remove the marker first, so a failing restore is never retried on every startup
+        // Remove the markers first, so a failing restore is never retried on every startup
         storage.clearPendingRestore()
+        databaseStore.clearPendingSwitch()
 
         val status = try {
             val restorer = DatabaseRestorer(
@@ -93,6 +115,60 @@ class PendingRestoreExecutor : ApplicationContextInitializer<ConfigurableApplica
             storage.writeRestoreStatus(status)
         } catch (e: Exception) {
             log.warn(e) { "Could not write restore status" }
+        }
+
+        pendingSwitch?.let { finishDatabaseSwitch(environment, databaseStore, it, status.success, status.message) }
+    }
+
+    private fun pendingDatabaseSwitch(store: DatabaseSettingsStore): PendingDatabaseSwitch? = try {
+        store.pendingSwitch()
+    } catch (e: Exception) {
+        log.error(e) { "Could not read the pending database switch" }
+        store.clearPendingSwitch()
+        null
+    }
+
+    /**
+     * Records the result of a database switch. If the data could not be transferred, the previous database
+     * (which has not been modified) is used again.
+     */
+    private fun finishDatabaseSwitch(
+        environment: ConfigurableEnvironment,
+        store: DatabaseSettingsStore,
+        pendingSwitch: PendingDatabaseSwitch,
+        success: Boolean,
+        message: String
+    ) {
+        store.clearPendingSwitch()
+        val previous = pendingSwitch.previous
+        val target = pendingSwitch.target
+
+        val statusMessage = if (success) {
+            log.info { "Switched database from ${previous.describe()} to ${target.describe()}" }
+            "Switched from ${previous.describe()} to ${target.describe()}: $message"
+        } else {
+            log.error { "Switching to ${target.describe()} failed, reverting to ${previous.describe()}" }
+            try {
+                store.save(previous)
+            } catch (e: Exception) {
+                log.error(e) { "Could not restore the previous database settings in ${store.settingsFile}" }
+            }
+            DatabaseSettingsInitializer.apply(environment, previous)
+            "Switching to ${target.describe()} failed, ${previous.describe()} is still used: $message"
+        }
+
+        try {
+            store.writeSwitchStatus(
+                DatabaseSwitchStatusDto(
+                    success = success,
+                    message = statusMessage,
+                    previousType = previous.type,
+                    newType = target.type,
+                    finishedAt = Instant.now()
+                )
+            )
+        } catch (e: Exception) {
+            log.warn(e) { "Could not write database switch status" }
         }
     }
 

@@ -12,13 +12,6 @@ services:
       # Generate a new APP_KEY using the command "openssl rand -base64 32" or similar.
       APP_KEY: <your app key here>
 
-      # Database connection (external PostgreSQL instead of the embedded H2 database).
-      # If you change the credentials below, change them in the "db" service as well.
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/gameyfin_db
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
-      SPRING_DATASOURCE_USERNAME: gfadmin
-      SPRING_DATASOURCE_PASSWORD: <your database password here>
-
       # (optional) Set the URL of your Gameyfin instance if you are using a reverse proxy.
       # Currently, this is only used for generating links in notification emails and the log line at first run.
       #  APP_URL: https://gameyfin.example.com

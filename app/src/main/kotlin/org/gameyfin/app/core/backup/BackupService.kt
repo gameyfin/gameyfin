@@ -41,6 +41,7 @@ class BackupService(
 
         private const val PRE_RESTORE_SUFFIX = "pre-restore"
         private const val UPLOADED_SUFFIX = "uploaded"
+        private const val DATABASE_SWITCH_SUFFIX = "database-switch"
     }
 
     private val storage = BackupStorage(Path.of(backupDirectory))
@@ -151,6 +152,35 @@ class BackupService(
         }
 
         log.info { "Restarting Gameyfin to restore backup $name" }
+        systemService.restart()
+    }
+
+    /**
+     * Transfers all data to a different database: creates a backup of the current database, schedules it to be
+     * restored on the next startup and restarts Gameyfin.
+     *
+     * @param switchDatabase called once the backup has been created; changes the database connection settings
+     * used after the restart, so the backup is restored into the new database (see [PendingRestoreExecutor])
+     */
+    fun transferDatabase(switchDatabase: (backupName: String) -> Unit) {
+        exclusive {
+            val backup = writeBackup(
+                progressTracker.start(BackupTrigger.DATABASE_SWITCH, includesMedia = false),
+                suffix = DATABASE_SWITCH_SUFFIX
+            )
+            log.info { "Created backup ${backup.name} to transfer the data to the new database" }
+
+            storage.schedulePendingRestore(backup.name)
+            try {
+                switchDatabase(backup.name)
+            } catch (e: Exception) {
+                storage.clearPendingRestore()
+                throw e
+            }
+            restartPending = true
+        }
+
+        log.info { "Restarting Gameyfin to switch the database" }
         systemService.restart()
     }
 

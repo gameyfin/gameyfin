@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from "react";
-import {Alert, Button, Checkbox, Modal, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
+import {Alert, Button, Checkbox, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {
     ArrowCounterClockwiseIcon,
     DatabaseIcon,
@@ -15,6 +15,7 @@ import {humanFileSize} from "Frontend/util/utils";
 import {uploadFile, waitForRestart} from "Frontend/util/restart";
 import {useSnapshot} from "valtio/react";
 import {backupState, trackBackup} from "Frontend/state/BackupState";
+import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 
 export default function BackupManagement() {
     const [backups, setBackups] = useState<BackupDto[]>([]);
@@ -107,8 +108,7 @@ export default function BackupManagement() {
         <div className="flex flex-col">
             <Section title="Backup & restore"/>
             <p className="text-sm text-muted mb-4">
-                Backups contain all data stored in the database and can be restored on any supported database
-                (e.g. a backup of the embedded H2 database can be restored on PostgreSQL).
+                Backups contain all data stored in the database and can be restored on any supported database.
                 Images can optionally be included. Restoring a backup requires Gameyfin to use the same
                 {" "}<code>APP_KEY</code> as when the backup was created.
             </p>
@@ -271,50 +271,5 @@ export default function BackupManagement() {
                 </ConfirmModal>
             }
         </div>
-    );
-}
-
-interface ConfirmModalProps {
-    isOpen: boolean;
-    onOpenChange: (isOpen: boolean) => void;
-    title: string;
-    confirmLabel: string;
-    isPending?: boolean;
-    onConfirm: () => void;
-    children: React.ReactNode;
-}
-
-function ConfirmModal({isOpen, onOpenChange, title, confirmLabel, isPending, onConfirm, children}: ConfirmModalProps) {
-    return (
-        <Modal>
-            <Modal.Backdrop isOpen={isOpen}
-                            onOpenChange={(open) => !isPending && onOpenChange(open)}
-                            variant="opaque"
-                            isDismissable={!isPending}>
-                <Modal.Container size="lg">
-                    <Modal.Dialog>
-                        {({close}) => (
-                            <>
-                                <Modal.Header>
-                                    <Modal.Heading>{title}</Modal.Heading>
-                                </Modal.Header>
-                                <Modal.Body className="flex flex-col gap-2">
-                                    {children}
-                                </Modal.Body>
-                                <Modal.Footer>
-                                    <Button variant="ghost" onPress={close} isDisabled={isPending}>
-                                        Cancel
-                                    </Button>
-                                    <Button variant="danger" onPress={onConfirm} isPending={isPending}>
-                                        {isPending && <Spinner size="sm" color="current"/>}
-                                        {confirmLabel}
-                                    </Button>
-                                </Modal.Footer>
-                            </>
-                        )}
-                    </Modal.Dialog>
-                </Modal.Container>
-            </Modal.Backdrop>
-        </Modal>
     );
 }

@@ -69,7 +69,10 @@ enum class BackupTrigger {
     MANUAL,
 
     /** Backup of the current database created automatically before a backup is restored */
-    PRE_RESTORE
+    PRE_RESTORE,
+
+    /** Backup created automatically to transfer the data to a different database */
+    DATABASE_SWITCH
 }
 
 enum class BackupTaskStatus {
