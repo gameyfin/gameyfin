@@ -108,8 +108,7 @@ export default function BackupManagement() {
         <div className="flex flex-col">
             <Section title="Backup & restore"/>
             <p className="text-sm text-muted mb-4">
-                Backups contain all data stored in the database and can be restored on any supported database
-                (e.g. a backup of the embedded H2 database can be restored on PostgreSQL).
+                Backups contain all data stored in the database and can be restored on any supported database.
                 Images can optionally be included. Restoring a backup requires Gameyfin to use the same
                 {" "}<code>APP_KEY</code> as when the backup was created.
             </p>

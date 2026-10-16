@@ -88,9 +88,10 @@ interface DatabaseStepProps {
     info?: DatabaseInfoDto;
     testResult?: DatabaseConnectionTestResultDto;
     onTest: (values: any) => Promise<unknown>;
+    onDatabaseTypeChange: () => void;
 }
 
-function DatabaseStep({info, testResult, onTest}: DatabaseStepProps) {
+function DatabaseStep({info, testResult, onTest, onDatabaseTypeChange}: DatabaseStepProps) {
     const formik = useFormikContext<any>();
     const [testing, setTesting] = useState(false);
 
@@ -123,7 +124,11 @@ function DatabaseStep({info, testResult, onTest}: DatabaseStepProps) {
                             You can switch to a different database later in the administration area, all data is
                             transferred automatically.
                         </p>
-                        <DatabaseSettingsFields name="database"/>
+                        <DatabaseSettingsFields name="database"
+                                               onTypeChange={() => {
+                                                   onDatabaseTypeChange();
+                                                   formik.setFieldValue("overwriteDatabase", false);
+                                               }}/>
                         {formik.values.database?.type !== info?.type &&
                             <div className="flex flex-col gap-4">
                                 <Button variant="ghost" className="self-start" onPress={test} isPending={testing}>
@@ -276,7 +281,8 @@ function SetupView() {
                         >
                             <DatabaseStep info={databaseInfo}
                                           testResult={databaseTestResult}
-                                          onTest={testDatabase}/>
+                                           onTest={testDatabase}
+                                           onDatabaseTypeChange={() => setDatabaseTestResult(undefined)}/>
                         </WizardStep>
                         <WizardStep
                             validationSchema={Yup.object({

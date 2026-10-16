@@ -14,8 +14,8 @@ import {
     ConnectionTestResult,
     databaseFormValues,
     DatabaseFormValues,
-    databaseTypeNames,
     DatabaseSettingsFields,
+    databaseTypeNames,
     databaseValidationSchema,
     isCurrentDatabase,
     isSameDatabase,
@@ -35,6 +35,21 @@ export default function DatabaseManagement() {
     const [testResult, setTestResult] = useState<DatabaseConnectionTestResultDto>();
     const [switching, setSwitching] = useState(false);
     const confirmModal = useOverlayState();
+
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "hidden") {
+                setTestResult(undefined);
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            setTestResult(undefined);
+        };
+    }, []);
 
     useEffect(() => {
         DatabaseEndpoint.getDatabaseInfo().then(setInfo);
@@ -142,14 +157,15 @@ export default function DatabaseManagement() {
                                         <p className="text-sm text-muted">
                                             When switching to a different database, all data is transferred
                                             automatically: a backup of the current database is created and
-                                            restored into the new database while Gameyfin restarts.
-                                            If this fails, Gameyfin continues to use the current database.
-                                            The settings are stored in <code>{info.settingsFile}</code>, make sure
-                                            this directory is persisted (e.g. mounted as a volume).
+                                            restored into the new database while Gameyfin restarts.<br/>
+                                            The database connection settings are stored
+                                            in <code>{info.settingsFile}</code>, make sure this file is persisted
+                                            (e.g. mounted as a volume).
                                         </p>
                                         <DatabaseSettingsFields name="database"
                                                                 passwordSet={info.passwordSet}
-                                                                isDisabled={switching}/>
+                                                                 isDisabled={switching}
+                                                                 onTypeChange={() => setTestResult(undefined)}/>
                                         {testResult && <ConnectionTestResult result={testResult}/>}
                                         <div className="flex flex-row gap-4">
                                             <Button variant="ghost"

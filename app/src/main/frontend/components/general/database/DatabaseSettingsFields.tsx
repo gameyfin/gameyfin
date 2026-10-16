@@ -1,7 +1,7 @@
 import React from "react";
 import * as Yup from "yup";
 import {useField} from "formik";
-import {Alert, Description, Label, Radio, RadioGroup} from "@heroui/react";
+import {Alert, Description, Label, Tabs} from "@heroui/react";
 import Input from "Frontend/components/general/input/Input";
 import NumberInput from "Frontend/components/general/input/NumberInput";
 import DatabaseType from "Frontend/generated/org/gameyfin/app/core/database/DatabaseType";
@@ -92,39 +92,49 @@ interface DatabaseSettingsFieldsProps {
     /** Whether a password is stored for the current database (an empty password then keeps it) */
     passwordSet?: boolean;
     isDisabled?: boolean;
+    /** Called when the selected database type tab changes */
+    onTypeChange?: (type: DatabaseType) => void;
 }
 
-export function DatabaseSettingsFields({name, passwordSet, isDisabled}: DatabaseSettingsFieldsProps) {
+export function DatabaseSettingsFields({name, passwordSet, isDisabled, onTypeChange}: DatabaseSettingsFieldsProps) {
     const [typeField, , typeHelpers] = useField<DatabaseType>(`${name}.type`);
 
     return (
         <div className="flex flex-col gap-4">
-            <RadioGroup value={typeField.value}
-                        onChange={(value) => typeHelpers.setValue(value as DatabaseType)}
-                        isDisabled={isDisabled}
-                        name={typeField.name}>
+            <Tabs
+                selectedKey={typeField.value}
+                onSelectionChange={(newKey) => {
+                    const newType = newKey as DatabaseType;
+                    if (newType === typeField.value) return;
+                    typeHelpers.setValue(newType);
+                    onTypeChange?.(newType);
+                }}
+                isDisabled={isDisabled}
+                className="w-full"
+            >
                 <Label>Database</Label>
-                <Radio value={DatabaseType.H2}>
-                    <Radio.Content>
-                        <Radio.Control>
-                            <Radio.Indicator/>
-                        </Radio.Control>
-                        {databaseTypeNames[DatabaseType.H2]}
-                    </Radio.Content>
+                <Tabs.ListContainer>
+                    <Tabs.List aria-label="Database type" className="w-full">
+                        <Tabs.Tab id={DatabaseType.H2} className="flex-1">
+                            {databaseTypeNames[DatabaseType.H2]}
+                            <Tabs.Indicator/>
+                        </Tabs.Tab>
+                        <Tabs.Tab id={DatabaseType.POSTGRESQL} className="flex-1">
+                            {databaseTypeNames[DatabaseType.POSTGRESQL]}
+                            <Tabs.Indicator/>
+                        </Tabs.Tab>
+                    </Tabs.List>
+                </Tabs.ListContainer>
+
+                <Tabs.Panel id={DatabaseType.H2}>
                     <Description>
-                        Stored in a file next to Gameyfin. No additional setup required, recommended for most users.
+                        Stored in a file, no additional setup required. Recommended for most users.
                     </Description>
-                </Radio>
-                <Radio value={DatabaseType.POSTGRESQL}>
-                    <Radio.Content>
-                        <Radio.Control>
-                            <Radio.Indicator/>
-                        </Radio.Control>
-                        {databaseTypeNames[DatabaseType.POSTGRESQL]}
-                    </Radio.Content>
-                    <Description>Use an existing PostgreSQL server.</Description>
-                </Radio>
-            </RadioGroup>
+                </Tabs.Panel>
+                <Tabs.Panel id={DatabaseType.POSTGRESQL}>
+                    <Description>Uses an existing PostgreSQL server.</Description>
+                </Tabs.Panel>
+            </Tabs>
 
             {typeField.value === DatabaseType.POSTGRESQL &&
                 <div className="flex flex-col">
@@ -165,7 +175,7 @@ export function ConnectionTestResult({result}: { result: DatabaseConnectionTestR
                         <>
                             <br/>
                             The database already contains {result.existingTables} table(s).
-                            All existing data in this database will be deleted when switching to it.
+                            All existing data in this database will be overwritten when switching to it.
                         </>
                     }
                 </Alert.Description>
