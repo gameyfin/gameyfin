@@ -4,6 +4,7 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import {toast, Button} from "@heroui/react";
 import Section from "Frontend/components/general/Section";
 import BackupManagement from "Frontend/components/administration/BackupManagement";
+import DatabaseManagement from "Frontend/components/administration/DatabaseManagement";
 
 function SystemManagementLayout() {
 
@@ -20,6 +21,7 @@ function SystemManagementLayout() {
             <Section title="Restart Gameyfin"/>
             <Button onPress={restart}>Restart</Button>
             <BackupManagement/>
+            <DatabaseManagement/>
         </div>
     );
 }

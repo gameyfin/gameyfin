@@ -1,2 +1,3 @@
 org.springframework.context.ApplicationContextInitializer=\
+  org.gameyfin.app.core.database.DatabaseSettingsInitializer,\
   org.gameyfin.app.core.backup.PendingRestoreExecutor

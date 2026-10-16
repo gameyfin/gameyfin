@@ -9,6 +9,8 @@ import org.gameyfin.app.core.backup.AppKeyFingerprint
 import org.gameyfin.app.core.backup.BackupStorage
 import org.gameyfin.app.core.backup.DatabaseExporter
 import org.gameyfin.app.core.backup.PendingRestoreExecutor
+import org.gameyfin.app.core.database.*
+import org.gameyfin.app.core.security.EncryptionUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -39,11 +41,17 @@ class PendingRestoreExecutorTest {
     private lateinit var storage: BackupStorage
     private lateinit var environment: MockEnvironment
     private lateinit var url: String
+    private lateinit var databaseStore: DatabaseSettingsStore
+
+    private val postgres = DatabaseSettings.of(DatabaseType.POSTGRESQL, "localhost", 1, "gameyfin", "user", "secret")
 
     @BeforeEach
     fun setUp() {
         mockkObject(AppKeyFingerprint)
         every { AppKeyFingerprint.current() } returns FINGERPRINT
+        mockkObject(EncryptionUtils)
+        every { EncryptionUtils.encrypt(any()) } answers { "enc:" + firstArg<String>() }
+        every { EncryptionUtils.decrypt(any()) } answers { firstArg<String>().removePrefix("enc:") }
 
         backupDir = tempDir / "backups"
         storage = BackupStorage(backupDir).also { it.ensureExists() }
@@ -55,6 +63,8 @@ class PendingRestoreExecutorTest {
             .withProperty("spring.datasource.username", "sa")
             .withProperty("spring.datasource.password", "")
             .withProperty("spring.liquibase.change-log", CHANGELOG)
+            .withProperty(DatabaseSettingsInitializer.SETTINGS_FILE_PROPERTY, (tempDir / "db" / "database.json").toString())
+        databaseStore = DatabaseSettingsInitializer.store(environment)
     }
 
     @AfterEach
@@ -145,5 +155,58 @@ class PendingRestoreExecutorTest {
         run()
 
         assertTrue(storage.readRestoreStatus()!!.success)
+    }
+
+    @Test
+    fun `completes a database switch`() {
+        createBackup("a.zip")
+        storage.schedulePendingRestore("a.zip")
+        // Switching from PostgreSQL to the embedded database (which is configured in the environment)
+        databaseStore.schedulePendingSwitch(PendingDatabaseSwitch(postgres, DatabaseSettings.EMBEDDED, "a.zip"))
+        databaseStore.save(DatabaseSettings.EMBEDDED)
+
+        run()
+
+        assertTrue(storage.readRestoreStatus()!!.success)
+        assertNull(databaseStore.pendingSwitch())
+        assertEquals(DatabaseSettings.EMBEDDED, databaseStore.load())
+        val status = databaseStore.readSwitchStatus()!!
+        assertTrue(status.success, status.message)
+        assertEquals(DatabaseType.POSTGRESQL, status.previousType)
+        assertEquals(DatabaseType.H2, status.newType)
+    }
+
+    @Test
+    fun `reverts to the previous database when the data can not be transferred`() {
+        createBackup("a.zip")
+        storage.schedulePendingRestore("a.zip")
+        databaseStore.schedulePendingSwitch(PendingDatabaseSwitch(DatabaseSettings.EMBEDDED, postgres, "a.zip"))
+        databaseStore.save(postgres)
+        DatabaseSettingsInitializer.apply(environment, postgres)
+        assertEquals(postgres.jdbcUrl(), environment.getProperty("spring.datasource.url"))
+
+        run()
+
+        assertFalse(storage.readRestoreStatus()!!.success)
+        assertNull(databaseStore.pendingSwitch())
+        assertEquals(DatabaseSettings.EMBEDDED, databaseStore.load())
+        assertEquals(url, environment.getProperty("spring.datasource.url"))
+        val status = databaseStore.readSwitchStatus()!!
+        assertFalse(status.success)
+        assertTrue(status.message.contains("still used"), status.message)
+    }
+
+    @Test
+    fun `reverts a database switch without pending restore`() {
+        databaseStore.schedulePendingSwitch(PendingDatabaseSwitch(DatabaseSettings.EMBEDDED, postgres, "a.zip"))
+        databaseStore.save(postgres)
+        DatabaseSettingsInitializer.apply(environment, postgres)
+
+        run()
+
+        assertNull(databaseStore.pendingSwitch())
+        assertEquals(DatabaseSettings.EMBEDDED, databaseStore.load())
+        assertEquals(url, environment.getProperty("spring.datasource.url"))
+        assertFalse(databaseStore.readSwitchStatus()!!.success)
     }
 }

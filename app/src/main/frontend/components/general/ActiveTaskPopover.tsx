@@ -54,11 +54,16 @@ function scanToTask(scan: LibraryScanProgress, libraries: Record<number, Library
     };
 }
 
+const backupTitles: Partial<Record<BackupTrigger, string>> = {
+    [BackupTrigger.PRE_RESTORE]: "Backup before restore",
+    [BackupTrigger.DATABASE_SWITCH]: "Backup to switch the database"
+};
+
 function backupToTask(backup: BackupProgress): ActiveTask {
     return {
         id: `backup-${backup.backupId}`,
         title: <>
-            {backup.trigger === BackupTrigger.PRE_RESTORE ? "Backup before restore" : "Backup"}
+            {backupTitles[backup.trigger] ?? "Backup"}
             {backup.includesMedia ? " (including images)" : ""}&nbsp;
             <Link className="underline text-sm" href="/administration/system">
                 (show backups)

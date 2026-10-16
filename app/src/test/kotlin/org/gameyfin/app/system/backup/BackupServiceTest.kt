@@ -193,6 +193,33 @@ class BackupServiceTest {
     }
 
     @Test
+    fun `transferDatabase creates backup, schedules its restore and restarts`() {
+        var switchedWith: String? = null
+
+        service.transferDatabase { switchedWith = it }
+
+        verify { systemService.restart() }
+        val backup = service.getBackups().single()
+        assertTrue(backup.name.contains("database-switch"))
+        assertFalse(backup.includesMedia)
+        assertEquals(backup.name, switchedWith)
+        assertEquals(backup.name, (backupDir / ".pending-restore").readText())
+        val e = assertThrows(IllegalStateException::class.java) { service.createBackup(includeMedia = false) }
+        assertTrue(e.message!!.contains("restore is pending"))
+    }
+
+    @Test
+    fun `transferDatabase does not restart when switching the database fails`() {
+        assertThrows(IllegalStateException::class.java) {
+            service.transferDatabase { throw IllegalStateException("failed") }
+        }
+
+        verify(exactly = 0) { systemService.restart() }
+        assertFalse((backupDir / ".pending-restore").exists())
+        assertTrue(permitFree())
+    }
+
+    @Test
     fun `getLastRestoreStatus is empty without a restore`() {
         assertNull(service.getLastRestoreStatus())
     }
