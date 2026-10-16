@@ -1,5 +1,16 @@
 import {useSnapshot} from "valtio/react";
-import {Button, Input, Link, ListBox, Select, SortDescriptor, Table, Tooltip} from "@heroui/react";
+import {
+    Button,
+    Input,
+    Link,
+    ListBox,
+    Select,
+    SortDescriptor,
+    Table,
+    TableLayout,
+    Tooltip,
+    Virtualizer
+} from "@heroui/react";
 import React, {useMemo, useState} from "react";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
@@ -30,9 +41,10 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
     }
 
     const gameInCollectionMap = useMemo(() => {
+        const gameIds = new Set(collection.gameIds);
         const map = new Map<number, boolean>();
         games.forEach(game => {
-            map.set(game.id, collection.gameIds!.includes(game.id));
+            map.set(game.id, gameIds.has(game.id));
         });
         return map;
     }, [games, collection.gameIds]);
@@ -133,55 +145,61 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                     </Select.Popover>
                 </Select>
             </div>
-            <Table variant="secondary" className="h-96">
-                <Table.ScrollContainer className="h-96">
-                    <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                        <Table.Header className="sticky top-0 z-10 bg-background">
-                            <Table.Column id="title" allowsSorting isRowHeader>
-                                {({sortDirection}) => (
-                                    <Table.SortableColumnHeader
-                                        sortDirection={sortDirection}>Title</Table.SortableColumnHeader>
-                                )}
-                            </Table.Column>
-                            <Table.Column id="library" allowsSorting>
-                                {({sortDirection}) => (
-                                    <Table.SortableColumnHeader
-                                        sortDirection={sortDirection}>Library</Table.SortableColumnHeader>
-                                )}
-                            </Table.Column>
-                            <Table.Column id="dateAdded" allowsSorting>
-                                {({sortDirection}) => (
-                                    <Table.SortableColumnHeader sortDirection={sortDirection}>Date
-                                        added</Table.SortableColumnHeader>
-                                )}
-                            </Table.Column>
-                            <Table.Column>Actions</Table.Column>
-                        </Table.Header>
-                        <Table.Body
-                            renderEmptyState={() => <p className="text-center text-muted p-4">Your filters did not match
-                                any games.</p>}
-                            items={sortedGames}>
-                            {(game) => (
-                                <Table.Row key={`${game.id}-${game._inCollection}`}>
-                                    <Table.Cell>
-                                        <Link href={`/game/${game.id}`}
-                                              className="text-sm text-foreground hover:underline">
-                                            {game.title} ({game.release ? new Date(game.release).getFullYear() : "unknown"})
-                                        </Link>
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <Link href={`/administration/games/library/${game.libraryId}`}
-                                              className="text-sm text-foreground hover:underline">
-                                            {libraryName(game)}
-                                        </Link>
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        {new Date(game.createdAt).toLocaleString()}
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <div className="flex flex-row gap-2">
-                                            <Tooltip delay={0}>
-                                                <Tooltip.Trigger>
+            {/* Virtualized, so that only the visible rows are rendered (collections can contain thousands of games) */}
+            <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 52}}>
+                <Table variant="secondary">
+                    <Table.ScrollContainer>
+                        <Table.Content aria-label="Games in collection"
+                                       className="h-96 overflow-auto"
+                                       sortDescriptor={sortDescriptor}
+                                       onSortChange={setSortDescriptor}>
+                            <Table.Header className="z-10 bg-background">
+                                <Table.Column id="title" allowsSorting isRowHeader>
+                                    {({sortDirection}) => (
+                                        <Table.SortableColumnHeader
+                                            sortDirection={sortDirection}>Title</Table.SortableColumnHeader>
+                                    )}
+                                </Table.Column>
+                                <Table.Column id="library" allowsSorting>
+                                    {({sortDirection}) => (
+                                        <Table.SortableColumnHeader
+                                            sortDirection={sortDirection}>Library</Table.SortableColumnHeader>
+                                    )}
+                                </Table.Column>
+                                <Table.Column id="dateAdded" allowsSorting>
+                                    {({sortDirection}) => (
+                                        <Table.SortableColumnHeader sortDirection={sortDirection}>Date
+                                            added</Table.SortableColumnHeader>
+                                    )}
+                                </Table.Column>
+                                <Table.Column>Actions</Table.Column>
+                            </Table.Header>
+                            <Table.Body
+                                renderEmptyState={() => <p className="text-center text-muted p-4">Your filters did not
+                                    match
+                                    any games.</p>}
+                                items={sortedGames}>
+                                {(game) => (
+                                    <Table.Row key={`${game.id}-${game._inCollection}`}>
+                                        <Table.Cell>
+                                            <Link href={`/game/${game.id}`}
+                                                  className="text-sm text-foreground hover:underline">
+                                                {game.title} ({game.release ? new Date(game.release).getFullYear() : "unknown"})
+                                            </Link>
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            <Link href={`/administration/games/library/${game.libraryId}`}
+                                                  className="text-sm text-foreground hover:underline">
+                                                {libraryName(game)}
+                                            </Link>
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {new Date(game.createdAt).toLocaleString()}
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            <div className="flex flex-row gap-2">
+                                                <Tooltip delay={0}>
+                                                    <Tooltip.Trigger>
                                                     <span className="inline-flex">
                                                         <Button isIconOnly size="sm" variant="tertiary"
                                                                 onPress={() => addGameToCollection(game)}
@@ -189,11 +207,11 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                                             <PlusIcon/>
                                                         </Button>
                                                     </span>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Add game to collection</Tooltip.Content>
-                                            </Tooltip>
-                                            <Tooltip delay={0}>
-                                                <Tooltip.Trigger>
+                                                    </Tooltip.Trigger>
+                                                    <Tooltip.Content>Add game to collection</Tooltip.Content>
+                                                </Tooltip>
+                                                <Tooltip delay={0}>
+                                                    <Tooltip.Trigger>
                                                     <span className="inline-flex">
                                                         <Button isIconOnly size="sm" variant="tertiary"
                                                                 onPress={() => removeGameFromCollection(game)}
@@ -201,17 +219,18 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                                             <MinusIcon/>
                                                         </Button>
                                                     </span>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Remove game from collection</Tooltip.Content>
-                                            </Tooltip>
-                                        </div>
-                                    </Table.Cell>
-                                </Table.Row>
-                            )}
-                        </Table.Body>
-                    </Table.Content>
-                </Table.ScrollContainer>
-            </Table>
+                                                    </Tooltip.Trigger>
+                                                    <Tooltip.Content>Remove game from collection</Tooltip.Content>
+                                                </Tooltip>
+                                            </div>
+                                        </Table.Cell>
+                                    </Table.Row>
+                                )}
+                            </Table.Body>
+                        </Table.Content>
+                    </Table.ScrollContainer>
+                </Table>
+            </Virtualizer>
         </div>
     );
 }

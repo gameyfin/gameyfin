@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {Button, Link, Modal, toast, Tooltip} from "@heroui/react";
+import {Button, Link, Modal, toast, Tooltip, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import PluginLogo from "Frontend/components/general/plugin/PluginLogo";
 import Markdown from "react-markdown";
@@ -156,7 +156,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                                             }
                                                                             setTimeout(() => setConfigValidated(ValidationState.UNCHECKED), 5000);
                                                                         }}>
-                                                                    <ArrowClockwiseIcon/>
+                                                                    {configValidated === ValidationState.IN_PROGRESS ? <Spinner size="sm" color="current"/> : <ArrowClockwiseIcon/>}
                                                                 </Button>
                                                             </Tooltip.Trigger>
                                                             <Tooltip.Content placement="bottom">Re-validate
@@ -185,7 +185,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                         isDisabled={formik.isSubmitting || !formik.dirty}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? "" : "Save"}
+                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Save"}
                                                     </Button> : ""}
                                             </Modal.Footer>
                                         </Form>

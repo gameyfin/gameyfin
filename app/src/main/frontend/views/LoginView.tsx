@@ -1,6 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
-import {Button, Card, Link, useOverlayState} from "@heroui/react";
+import {Button, Card, Link, useOverlayState, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import PasswordResetModal from "Frontend/components/general/modals/PasswordResetModal";
@@ -78,6 +78,7 @@ export default function LoginView() {
                                             </Button>
                                         }
                                         <Button variant="primary" type="submit" isPending={formik.isSubmitting}>
+                                            {formik.isSubmitting && <Spinner size="sm" color="current"/>}
                                             Log in
                                         </Button>
                                     </div>

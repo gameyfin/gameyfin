@@ -140,7 +140,7 @@ class CompanyServiceIntegrationTest {
         basePackageClasses = [CompanyRepository::class],
         includeFilters = [ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = [CompanyRepository::class])]
     )
-    @Import(CompanyService::class, CompanyCreator::class)
+    @Import(CompanyService::class)
     class Config {
         @Bean(destroyMethod = "close")
         fun dataSource() = HikariDataSource().apply {

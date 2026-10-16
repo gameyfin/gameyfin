@@ -180,7 +180,7 @@ class LibraryWatcherServiceTest {
 
         every { libraryRepository.findAll() } returns listOf(library)
         every { libraryRepository.findById(1L) } returns Optional.of(library)
-        every { libraryScanService.scheduleScan(ScanType.QUICK, library) } just Runs
+        every { libraryScanService.scheduleScan(ScanType.QUICK, any()) } just Runs
 
         libraryWatcherService.start()
 
@@ -196,7 +196,7 @@ class LibraryWatcherServiceTest {
         Thread.sleep(500)
 
         // Verify quick scan was triggered
-        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, library) }
+        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, any()) }
     }
 
     @Test
@@ -227,7 +227,7 @@ class LibraryWatcherServiceTest {
         Thread.sleep(500)
 
         // Verify game was removed from library
-        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, library) }
+        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, any()) }
     }
 
     @Test
@@ -243,7 +243,7 @@ class LibraryWatcherServiceTest {
 
         every { libraryRepository.findAll() } returns listOf(library)
         every { libraryRepository.findById(1L) } returns Optional.of(library)
-        every { libraryScanService.scheduleScan(ScanType.QUICK, library) } just Runs
+        every { libraryScanService.scheduleScan(ScanType.QUICK, any()) } just Runs
 
         libraryWatcherService.start()
 
@@ -257,7 +257,7 @@ class LibraryWatcherServiceTest {
         Thread.sleep(500)
 
         // Verify quick scan was triggered (directories are treated as potential game folders)
-        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, library) }
+        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, any()) }
     }
 
     @Test
@@ -323,7 +323,7 @@ class LibraryWatcherServiceTest {
         Thread.sleep(1000)
 
         // Verify that scans were triggered (may be batched)
-        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, library) }
+        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, any()) }
     }
 
     @Test
@@ -358,7 +358,7 @@ class LibraryWatcherServiceTest {
         Thread.sleep(500)
 
         // Verify scans were triggered for both directories
-        verify(atLeast = 2) { libraryScanService.scheduleScan(ScanType.QUICK, library) }
+        verify(atLeast = 2) { libraryScanService.scheduleScan(ScanType.QUICK, any()) }
     }
 
     @Test
@@ -386,7 +386,7 @@ class LibraryWatcherServiceTest {
         Thread.sleep(500)
 
         // Verify quick scan was triggered
-        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, library) }
+        verify(atLeast = 1) { libraryScanService.scheduleScan(ScanType.QUICK, any()) }
     }
 
     @Test

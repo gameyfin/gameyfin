@@ -20,7 +20,7 @@ import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 import SearchBar from "Frontend/components/general/SearchBar";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
-import ScanProgressPopover from "Frontend/components/general/ScanProgressPopover";
+import ActiveTaskPopover from "Frontend/components/general/ActiveTaskPopover";
 import {isAdmin} from "Frontend/util/utils";
 import {applyAccentTheme} from "Frontend/theming/themes";
 
@@ -141,10 +141,10 @@ export default function MainLayout() {
                                 <Tooltip>
                                     <Tooltip.Trigger>
                                         <div>
-                                            <ScanProgressPopover/>
+                                            <ActiveTaskPopover/>
                                         </div>
                                     </Tooltip.Trigger>
-                                    <Tooltip.Content placement="bottom">View library scan results</Tooltip.Content>
+                                    <Tooltip.Content placement="bottom">View library scans and backups</Tooltip.Content>
                                 </Tooltip>
                             </li>
                         )}

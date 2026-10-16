@@ -22,10 +22,14 @@ class SteamDateSerializer : KSerializer<Instant?> {
 
         const val COMING_SOON_TEXT = "Coming Soon"
         const val TO_BE_ANNOUNCED_TEXT = "To be announced"
+
         val FALLBACK_DATE: LocalDate = LocalDate.parse("2999-12-31")
 
-        val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM, uuuu", Locale.ENGLISH)
-        val steamFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)
+        val formatter: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("d MMM, uuuu", Locale.ENGLISH)
+
+        val steamFormatter: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("MMM d, uuuu", Locale.ENGLISH)
     }
 
     override fun serialize(encoder: Encoder, value: Instant?) {
@@ -50,22 +54,30 @@ class SteamDateSerializer : KSerializer<Instant?> {
     }
 
     private fun fromString(dateString: String): Instant? {
-        val normalizedDateString = dateString.trim().replace('\u00A0', ' ').replace(Regex("\\s+"), " ")
+        val normalizedDateString = dateString
+            .trim()
+            .replace('\u00A0', ' ')
+            .replace(Regex("\\s+"), " ")
+
         return try {
-            // Return null for empty strings
             if (normalizedDateString.isBlank()) {
                 return null
             }
 
-            // Match "Coming Soon" and return a fallback date
-            if (normalizedDateString.equals(COMING_SOON_TEXT, true) || normalizedDateString.equals(TO_BE_ANNOUNCED_TEXT, true)) {
-                return FALLBACK_DATE.atStartOfDay().toInstant(ZoneOffset.UTC)
+            if (
+                normalizedDateString.equals(COMING_SOON_TEXT, true) ||
+                normalizedDateString.equals(TO_BE_ANNOUNCED_TEXT, true)
+            ) {
+                return FALLBACK_DATE
+                    .atStartOfDay()
+                    .toInstant(ZoneOffset.UTC)
             }
 
-            // Match quarters like "Q1 2023", "Q2 2023", etc.
             val quarterMatch = Regex("""Q([1-4]) (\d{4})""").matchEntire(normalizedDateString)
+
             if (quarterMatch != null) {
                 val (qStr, yearStr) = quarterMatch.destructured
+
                 val month = when (qStr.toInt()) {
                     1 -> 1
                     2 -> 4
@@ -73,15 +85,17 @@ class SteamDateSerializer : KSerializer<Instant?> {
                     4 -> 10
                     else -> 1
                 }
+
                 return LocalDate.of(yearStr.toInt(), month, 1)
                     .atStartOfDay()
                     .toInstant(ZoneOffset.UTC)
             }
 
-            // Match year only
             val yearMatch = Regex("""^(\d{4})$""").matchEntire(normalizedDateString)
+
             if (yearMatch != null) {
                 val (yearStr) = yearMatch.destructured
+
                 return LocalDate.of(yearStr.toInt(), 1, 1)
                     .atStartOfDay()
                     .toInstant(ZoneOffset.UTC)
@@ -89,13 +103,17 @@ class SteamDateSerializer : KSerializer<Instant?> {
 
             val localDate = try {
                 LocalDate.parse(normalizedDateString, steamFormatter)
-            } catch (_: java.time.format.DateTimeParseException) {
+            } catch (_: Exception) {
                 LocalDate.parse(normalizedDateString, formatter)
             }
-            return localDate.atStartOfDay().toInstant(ZoneOffset.UTC)
-        } catch (_: Exception) {
-            log.warn("Couldn't parse date string: '$dateString'")
-            null // Return null if parsing fails
+
+            localDate
+                .atStartOfDay()
+                .toInstant(ZoneOffset.UTC)
+
+        } catch (e: Exception) {
+            log.warn("Couldn't parse date string: '$dateString' normalized='$normalizedDateString'", e)
+            null
         }
     }
 }

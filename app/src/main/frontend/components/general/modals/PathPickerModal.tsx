@@ -1,4 +1,4 @@
-import {Button, Modal} from "@heroui/react";
+import {Button, Modal, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import React, {useEffect, useState} from "react";
 import Input from "Frontend/components/general/input/Input";
@@ -73,7 +73,7 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                                                         isDisabled={formik.isSubmitting}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? "" : "Select"}
+                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Select"}
                                                     </Button>
                                                 </Modal.Footer>
                                             </Form>

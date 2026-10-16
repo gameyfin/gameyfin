@@ -29,6 +29,7 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
                 val signersTrustLevel = verifyCodeSigners(codeSigners)
                 if (signersTrustLevel != PluginTrustLevel.OFFICIAL) return signersTrustLevel
             }
+
             return PluginTrustLevel.OFFICIAL
         }
     }
@@ -40,11 +41,13 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
     fun verifyEntryDigest(jarFile: JarFile, entry: JarEntry): Boolean {
         return try {
             val buffer = ByteArray(8192)
+
             jarFile.getInputStream(entry).use { entryInputStream ->
                 while (entryInputStream.read(buffer, 0, buffer.size) != -1) {
                     // Reading to trigger SecurityException on digest mismatch
                 }
             }
+
             true
         } catch (_: SecurityException) {
             false
@@ -75,4 +78,3 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
         return PluginTrustLevel.OFFICIAL
     }
 }
-

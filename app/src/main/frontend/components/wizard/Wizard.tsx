@@ -1,7 +1,7 @@
 import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
 import {ArrowLeftIcon, ArrowRightIcon, CheckIcon} from "@phosphor-icons/react";
-import {Button} from "@heroui/react";
+import {Button, Spinner} from "@heroui/react";
 import Stepper from "./Stepper";
 
 type WizardProps = {
@@ -82,7 +82,7 @@ const Wizard = ({children, initialValues, onSubmit}: WizardProps) => {
                                 <ArrowLeftIcon/>
                             </Button>
                             <Button variant="primary" isPending={formik.isSubmitting} type="submit">
-                                {formik.isSubmitting ? "" : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
+                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
                             </Button>
                         </div>
                     </div>

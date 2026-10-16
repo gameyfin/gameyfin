@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Button, Modal, toast} from "@heroui/react";
+import {Button, Modal, toast, Spinner} from "@heroui/react";
 import {MessageEndpoint, RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import {Form, Formik, FormikErrors} from "formik";
@@ -124,6 +124,7 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
                                                         isPending={formik.isSubmitting}
                                                         isDisabled={!formik.isValid || token !== null}
                                                     >
+                                                        {formik.isSubmitting && <Spinner size="sm" color="current"/>}
                                                         {isMessageServiceEnabled ?
                                                             <p>Send invitation</p> :
                                                             <p>Generate invitation link</p>

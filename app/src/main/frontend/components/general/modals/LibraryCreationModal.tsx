@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {Alert, Button, Checkbox, Link, Modal, toast} from "@heroui/react";
+import {Alert, Button, Checkbox, Link, Modal, toast, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
@@ -117,7 +117,7 @@ export default function LibraryCreationModal({
                                                             isDisabled={formik.isSubmitting}
                                                             type="submit"
                                                     >
-                                                        {formik.isSubmitting ? "" : "Add"}
+                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Add"}
                                                     </Button>
                                                 </div>
                                             </Modal.Footer>

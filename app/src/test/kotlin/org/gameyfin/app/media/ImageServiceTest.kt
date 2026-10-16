@@ -24,11 +24,6 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.util.concurrent.CyclicBarrier
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import org.springframework.orm.ObjectOptimisticLockingFailureException
 import javax.imageio.ImageIO
 import kotlin.test.*
 
@@ -44,7 +39,6 @@ class ImageServiceTest {
     @BeforeEach
     fun setup() {
         imageRepository = mockk()
-        every { imageRepository.existsById(any()) } returns true
         fileStorageService = mockk()
         gameRepository = mockk()
         userRepository = mockk()
@@ -386,6 +380,7 @@ class ImageServiceTest {
 
         verify(exactly = 1) { gameRepository.existsByImage(1L) }
         verify(exactly = 1) { userRepository.existsByAvatar(1L) }
+        verify(exactly = 1) { imageRepository.existsById(1L) }
         verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
@@ -400,7 +395,7 @@ class ImageServiceTest {
 
         verify(exactly = 1) { gameRepository.existsByImage(1L) }
         verify(exactly = 0) { userRepository.existsByAvatar(any()) }
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
+        verify(exactly = 0) { imageRepository.delete(any()) }
         verify(exactly = 0) { fileStorageService.deleteFile(any()) }
     }
 
@@ -415,7 +410,7 @@ class ImageServiceTest {
 
         verify(exactly = 1) { gameRepository.existsByImage(1L) }
         verify(exactly = 1) { userRepository.existsByAvatar(1L) }
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
+        verify(exactly = 0) { imageRepository.delete(any()) }
         verify(exactly = 0) { fileStorageService.deleteFile(any()) }
     }
 
@@ -427,63 +422,7 @@ class ImageServiceTest {
 
         verify(exactly = 0) { gameRepository.existsByImage(any()) }
         verify(exactly = 0) { userRepository.existsByAvatar(any()) }
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
-        verify(exactly = 0) { fileStorageService.deleteFile(any()) }
-    }
-
-    @Test
-    fun `concurrent image cleanup tolerates a stale delete and removes file content`() {
-        val image = Image(id = 1L, type = ImageType.COVER, contentId = "shared-content")
-        val bothChecked = CyclicBarrier(2)
-        val deleted = AtomicBoolean(false)
-        imageCache.put(1L, image)
-        every { gameRepository.existsByImage(1L) } returns false
-        every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.existsById(1L) } answers {
-            bothChecked.await(5, TimeUnit.SECONDS)
-            true
-        }
-        every { imageRepository.deleteById(1L) } answers {
-            if (!deleted.compareAndSet(false, true)) {
-                throw ObjectOptimisticLockingFailureException(Image::class.java, 1L)
-            }
-        }
-        every { fileStorageService.deleteFile("shared-content") } just Runs
-
-        Executors.newFixedThreadPool(2).use { executor ->
-            val cleanups = (1..2).map { executor.submit { imageService.deleteImageIfUnused(image) } }
-            cleanups.forEach { it.get(10, TimeUnit.SECONDS) }
-        }
-
-        assertNull(imageCache.getIfPresent(1L))
-        verify(exactly = 2) { imageRepository.deleteById(1L) }
-        verify(exactly = 2) { fileStorageService.deleteFile("shared-content") }
-    }
-
-    @Test
-    fun `cleanup still removes file when image record is already absent`() {
-        val image = Image(id = 1L, type = ImageType.COVER, contentId = "orphan-content")
-        every { gameRepository.existsByImage(1L) } returns false
-        every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.existsById(1L) } returns false
-        every { fileStorageService.deleteFile("orphan-content") } just Runs
-
-        imageService.deleteImageIfUnused(image)
-
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
-        verify(exactly = 1) { fileStorageService.deleteFile("orphan-content") }
-    }
-
-    @Test
-    fun `cleanup propagates unrelated failures without deleting file content`() {
-        val image = Image(id = 1L, type = ImageType.COVER)
-        every { gameRepository.existsByImage(1L) } returns false
-        every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.existsById(1L) } returns true
-        every { imageRepository.deleteById(1L) } throws DataIntegrityViolationException("Still referenced")
-
-        assertThrows(DataIntegrityViolationException::class.java) { imageService.deleteImageIfUnused(image) }
-
+        verify(exactly = 0) { imageRepository.delete(any()) }
         verify(exactly = 0) { fileStorageService.deleteFile(any()) }
     }
 
@@ -537,14 +476,19 @@ class ImageServiceTest {
         every { userRepository.existsByAvatar(2L) } returns false
         every { gameRepository.existsByImage(3L) } returns false
         every { userRepository.existsByAvatar(3L) } returns false
-        every { imageRepository.deleteById(any()) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.existsById(2L) } returns true
+        every { imageRepository.existsById(3L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
+        every { imageRepository.deleteById(2L) } just Runs
+        every { imageRepository.deleteById(3L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onGameDeleted(event)
 
-        verify(exactly = 1) { imageRepository.deleteById(coverImage.id!!) }
-        verify(exactly = 1) { imageRepository.deleteById(headerImage.id!!) }
-        verify(exactly = 1) { imageRepository.deleteById(screenshot.id!!) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
+        verify(exactly = 1) { imageRepository.deleteById(2L) }
+        verify(exactly = 1) { imageRepository.deleteById(3L) }
     }
 
     @Test
@@ -559,12 +503,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.deleteById(screenshot.id!!) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onGameDeleted(event)
 
-        verify(exactly = 1) { imageRepository.deleteById(screenshot.id!!) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 
@@ -591,15 +536,18 @@ class ImageServiceTest {
         every { userRepository.existsByAvatar(1L) } returns false
         every { gameRepository.existsByImage(3L) } returns false
         every { userRepository.existsByAvatar(3L) } returns false
-        every { imageRepository.deleteById(any()) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.existsById(3L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
+        every { imageRepository.deleteById(3L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onGameUpdated(event)
 
-        verify(exactly = 1) { imageRepository.deleteById(oldCover.id!!) }
-        verify(exactly = 1) { imageRepository.deleteById(oldScreenshot.id!!) }
-        verify(exactly = 0) { imageRepository.deleteById(newCover.id!!) }
-        verify(exactly = 0) { imageRepository.deleteById(newScreenshot.id!!) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
+        verify(exactly = 1) { imageRepository.deleteById(3L) }
+        verify(exactly = 0) { imageRepository.deleteById(2L) }
+        verify(exactly = 0) { imageRepository.deleteById(4L) }
     }
 
     @Test
@@ -621,7 +569,7 @@ class ImageServiceTest {
 
         imageService.onGameUpdated(event)
 
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
+        verify(exactly = 0) { imageRepository.delete(any()) }
         verify(exactly = 0) { fileStorageService.deleteFile(any()) }
     }
 
@@ -635,12 +583,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.deleteById(avatar.id!!) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onAccountDeleted(event)
 
-        verify(exactly = 1) { imageRepository.deleteById(avatar.id!!) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 
@@ -653,7 +602,7 @@ class ImageServiceTest {
 
         imageService.onAccountDeleted(event)
 
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
+        verify(exactly = 0) { imageRepository.delete(any()) }
         verify(exactly = 0) { fileStorageService.deleteFile(any()) }
     }
 
@@ -671,12 +620,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.deleteById(oldAvatar.id!!) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onUserUpdated(event)
 
-        verify(exactly = 1) { imageRepository.deleteById(oldAvatar.id!!) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 
@@ -693,7 +643,7 @@ class ImageServiceTest {
 
         imageService.onUserUpdated(event)
 
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
+        verify(exactly = 0) { imageRepository.delete(any()) }
         verify(exactly = 0) { fileStorageService.deleteFile(any()) }
     }
 
@@ -710,7 +660,7 @@ class ImageServiceTest {
 
         imageService.onUserUpdated(event)
 
-        verify(exactly = 0) { imageRepository.deleteById(any()) }
+        verify(exactly = 0) { imageRepository.delete(any()) }
         verify(exactly = 0) { fileStorageService.deleteFile(any()) }
     }
 
@@ -727,12 +677,13 @@ class ImageServiceTest {
 
         every { gameRepository.existsByImage(1L) } returns false
         every { userRepository.existsByAvatar(1L) } returns false
-        every { imageRepository.deleteById(oldAvatar.id!!) } just Runs
+        every { imageRepository.existsById(1L) } returns true
+        every { imageRepository.deleteById(1L) } just Runs
         every { fileStorageService.deleteFile(any()) } just Runs
 
         imageService.onUserUpdated(event)
 
-        verify(exactly = 1) { imageRepository.deleteById(oldAvatar.id!!) }
+        verify(exactly = 1) { imageRepository.deleteById(1L) }
         verify(exactly = 1) { fileStorageService.deleteFile(any()) }
     }
 

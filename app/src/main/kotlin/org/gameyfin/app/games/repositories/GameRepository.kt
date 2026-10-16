@@ -8,15 +8,24 @@ import org.springframework.data.repository.query.Param
 import java.time.Instant
 
 interface GameRepository : JpaRepository<Game, Long> {
-    @Query("SELECT g FROM Game g JOIN g.platforms p WHERE g.title = :title AND YEAR(g.release) = YEAR(:release) AND p = :platform")
+    @Query("""
+        SELECT g FROM Game g JOIN g.platforms p
+        WHERE g.title = :title
+        AND :releaseYear IS NOT NULL
+        AND EXTRACT(YEAR FROM g.release) = :releaseYear
+        AND p = :platform
+    """)
     fun findByTitleAndReleaseYearAndPlatform(
         @Param("title") title: String,
-        @Param("release") release: Instant?,
+        @Param("releaseYear") releaseYear: Int?,
         @Param("platform") platform: Platform
     ): List<Game>
 
     @Query("SELECT CASE WHEN COUNT(g) > 0 THEN true ELSE false END FROM Game g WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR :imageId IN (SELECT i.id FROM g.images i)")
     fun existsByImage(@Param("imageId") imageId: Long): Boolean
+
+    @Query("SELECT DISTINCT g FROM Game g LEFT JOIN g.images i WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR i.id = :imageId")
+    fun findAllByImage(@Param("imageId") imageId: Long): List<Game>
 
     @Query("SELECT DISTINCT p FROM Game g JOIN g.platforms p")
     fun findAllDistinctPlatforms(): Set<Platform>

@@ -1,4 +1,4 @@
-import {Button, toast} from "@heroui/react";
+import {Button, toast, Spinner} from "@heroui/react";
 import {useNavigate, useParams} from "react-router";
 import React, {useEffect} from "react";
 import {ArrowLeftIcon, CheckIcon} from "@phosphor-icons/react";
@@ -93,7 +93,7 @@ export default function CollectionManagementView() {
                                 isDisabled={formik.isSubmitting || collectionSaved || !formik.dirty}
                                 type="submit"
                             >
-                                {formik.isSubmitting ? "" : collectionSaved ? <CheckIcon/> : "Save"}
+                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : collectionSaved ? <CheckIcon/> : "Save"}
                             </Button>
                         </div>
 
