@@ -28,6 +28,7 @@ services:
       # JAVA_OPTS_OVERRIDE – *replaces* all built-in defaults entirely:
       # JAVA_OPTS_OVERRIDE: -Xmx512m -XX:+UseG1GC
     volumes:
+      - "./db:/opt/gameyfin/db"
       - "./data:/opt/gameyfin/data"
       - "./backups:/opt/gameyfin/backups"
       - "./plugindata:/opt/gameyfin/plugindata"
