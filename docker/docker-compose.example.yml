@@ -27,6 +27,7 @@ services:
     volumes:
       - "./db:/opt/gameyfin/db"
       - "./data:/opt/gameyfin/data"
+      - "./backups:/opt/gameyfin/backups"
       - "./plugindata:/opt/gameyfin/plugindata"
       - "./logs:/opt/gameyfin/logs"
       - <mount your library folder(s) here>

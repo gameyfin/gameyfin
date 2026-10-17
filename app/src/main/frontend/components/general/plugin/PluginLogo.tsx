@@ -4,8 +4,9 @@ import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/Plug
 
 interface PluginLogoProps {
     plugin: PluginDto;
+    glow?: boolean;
 }
 
-export default function PluginLogo({plugin}: PluginLogoProps) {
-    return <PluginIcon plugin={plugin} size={64} blurred={true} showTooltip={false}/>
+export default function PluginLogo({plugin, glow}: PluginLogoProps) {
+    return <PluginIcon plugin={plugin} size={64} blurred={glow} showTooltip={false}/>
 }

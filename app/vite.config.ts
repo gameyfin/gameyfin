@@ -1,5 +1,5 @@
 import type {UserConfigFn} from 'vite';
-import {overrideVaadinConfig} from './vite.generated';
+import {overrideVaadinConfig} from './vite.generated.ts';
 import tailwindcss from "@tailwindcss/vite";
 
 const customConfig: UserConfigFn = (env) => ({

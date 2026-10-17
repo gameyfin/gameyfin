@@ -1,8 +1,9 @@
-import {Image, useDisclosure} from "@heroui/react";
+import {useOverlayState} from "@heroui/react";
 import React from "react";
 import {useField} from "formik";
 import {ImageBrokenIcon, PencilIcon} from "@phosphor-icons/react";
 import {GameHeaderPickerModal} from "Frontend/components/general/modals/GameHeaderPickerModal";
+import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 
 interface GameHeaderPickerProps {
@@ -15,21 +16,25 @@ export default function GameHeaderPicker({game, showErrorUntouched = false, ...p
 
     const [field] = useField(props.name);
 
-    const gameHeaderPickerModal = useDisclosure();
+    const gameHeaderPickerModal = useOverlayState();
 
     return (<>
         <div className="relative group size-full cursor-pointer bg-background/50"
-             onClick={gameHeaderPickerModal.onOpenChange}>
+             onClick={gameHeaderPickerModal.toggle}>
             {field.value || game.header?.id ?
                 <div className="size-full overflow-hidden">
-                    <Image
-                        alt={game.title}
-                        className="z-0 object-cover group-hover:brightness-25"
-                        src={field.value ? field.value : `images/cover/${game.header?.id}`}
-                        {...props}
-                        {...field}
-                        radius="none"
-                    />
+                    {field.value ?
+                        <img
+                            alt={game.title}
+                            className="z-0 size-full object-cover rounded-none group-hover:brightness-25"
+                            src={field.value}
+                        /> :
+                        <BlurhashImage
+                            alt={game.title}
+                            className="z-0 size-full object-cover rounded-none group-hover:brightness-25"
+                            src={`images/header/${game.header?.id}`}
+                            blurhash={game.header?.blurhash}
+                        />}
                 </div> :
                 <div
                     className="absolute inset-0 flex flex-col text-center items-center justify-center group-hover:opacity-0"
@@ -47,7 +52,7 @@ export default function GameHeaderPicker({game, showErrorUntouched = false, ...p
         <GameHeaderPickerModal
             game={game}
             isOpen={gameHeaderPickerModal.isOpen}
-            onOpenChange={gameHeaderPickerModal.onOpenChange}
+            onOpenChange={gameHeaderPickerModal.setOpen}
             setHeaderUrl={(headerUrl) => field.onChange({target: {name: field.name, value: headerUrl}})}
         />
     </>);

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {addToast, Button, Card, Tooltip, useDisclosure} from "@heroui/react";
+import {toast, Button, Card, Tooltip, useOverlayState} from "@heroui/react";
 import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import {PaperPlaneRightIcon, PencilIcon} from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
@@ -12,8 +12,8 @@ import * as Yup from "yup";
 
 function MessageManagementLayout({getConfig, formik}: any) {
 
-    const editorModal = useDisclosure();
-    const testNotificationModal = useDisclosure();
+    const editorModal = useOverlayState();
+    const testNotificationModal = useOverlayState();
     const [availableTemplates, setAvailableTemplates] = useState<MessageTemplateDto[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<MessageTemplateDto>();
 
@@ -40,26 +40,20 @@ function MessageManagementLayout({getConfig, formik}: any) {
         }
 
         if (areCredentialsValid) {
-            addToast({
-                title: "Credentials are valid",
-                color: "success"
-            });
+            toast.success("Credentials are valid");
         } else {
-            addToast({
-                title: "Credentials are invalid",
-                color: "warning"
-            });
+            toast.warning("Credentials are invalid");
         }
     }
 
     async function openEditor(template: MessageTemplateDto) {
         setSelectedTemplate(template);
-        editorModal.onOpen();
+        editorModal.open();
     }
 
     function openTestNotification(template: MessageTemplateDto) {
         setSelectedTemplate(template);
-        testNotificationModal.onOpen();
+        testNotificationModal.open();
     }
 
     return (
@@ -92,22 +86,32 @@ function MessageManagementLayout({getConfig, formik}: any) {
                             <div className="flex flex-col gap-4">
                                 {availableTemplates.map((template: MessageTemplateDto) =>
                                     <Card className="flex flex-row items-center gap-2 p-4" key={template.key}>
-                                        <Tooltip content="Edit template">
-                                            <Button isIconOnly
-                                                    size="sm"
-                                                    onPress={() => openEditor(template)}
-                                            >
-                                                <PencilIcon/>
-                                            </Button>
+                                        <Tooltip delay={0}>
+                                            <Tooltip.Trigger>
+                                                <Button isIconOnly
+                                                        size="sm"
+                                                        onPress={() => openEditor(template)}
+                                                >
+                                                    <PencilIcon/>
+                                                </Button>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content>
+                                                <p>Edit template</p>
+                                            </Tooltip.Content>
                                         </Tooltip>
-                                        <Tooltip content="Send test notification">
-                                            <Button isIconOnly
-                                                    size="sm"
-                                                    onPress={() => openTestNotification(template)}
-                                                    isDisabled={!formik.values.messages.providers.email.enabled}
-                                            >
-                                                <PaperPlaneRightIcon/>
-                                            </Button>
+                                        <Tooltip delay={0}>
+                                            <Tooltip.Trigger>
+                                                <Button isIconOnly
+                                                        size="sm"
+                                                        onPress={() => openTestNotification(template)}
+                                                        isDisabled={!formik.values.messages.providers.email.enabled}
+                                                >
+                                                    <PaperPlaneRightIcon/>
+                                                </Button>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content>
+                                                <p>Send test notification</p>
+                                            </Tooltip.Content>
                                         </Tooltip>
                                         <p className="text-lg">{template.description}</p>
                                     </Card>
@@ -120,13 +124,13 @@ function MessageManagementLayout({getConfig, formik}: any) {
 
             <EditTemplateModal
                 isOpen={editorModal.isOpen}
-                onOpenChange={editorModal.onOpenChange}
+                onOpenChange={editorModal.setOpen}
                 selectedTemplate={selectedTemplate!}
             />
 
             <SendTestNotificationModal
                 isOpen={testNotificationModal.isOpen}
-                onOpenChange={testNotificationModal.onOpenChange}
+                onOpenChange={testNotificationModal.setOpen}
                 selectedTemplate={selectedTemplate!}
             />
         </div>

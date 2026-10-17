@@ -1,6 +1,6 @@
 import {Outlet} from "react-router";
 import {Icon} from "@phosphor-icons/react";
-import {Listbox, ListboxItem} from "@heroui/react";
+import {ListBox} from "@heroui/react";
 import {ReactElement, useState} from "react";
 
 export type MenuItem = {
@@ -42,18 +42,21 @@ export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
 
         return (
             <div className="flex flex-row">
-                <div className="flex flex-col pr-8">
-                    <Listbox className="w-60 fixed" color="primary">
+                <div className="flex flex-col shrink-0 pr-8">
+                    <ListBox className="w-60">
                         {menuItems.map((i) => (
-                            <ListboxItem key={key(i.url)} startContent={i.icon} href={link(i.url)}
-                                         onPress={() => setSelectedItem(i.url)}
-                                         className={`h-12 ${key(i.url) === selectedItem ? "bg-primary" : ""}`}>
-                                <p>{i.title}</p>
-                            </ListboxItem>
+                            <ListBox.Item key={key(i.url)} id={key(i.url)} href={link(i.url)}
+                                          onPress={() => setSelectedItem(i.url)}
+                                          className={`h-12 ${key(i.url) === selectedItem ? "bg-accent" : ""}`}>
+                                <div className="flex flex-row gap-2 items-center">
+                                    {i.icon}
+                                    <p>{i.title}</p>
+                                </div>
+                            </ListBox.Item>
                         ))}
-                    </Listbox>
+                    </ListBox>
                 </div>
-                <div className="ml-60 flex-1 overflow-auto">
+                <div className="flex-1 min-w-0 overflow-auto">
                     <Outlet/>
                 </div>
             </div>

@@ -30,6 +30,7 @@ import org.gameyfin.app.users.UserService
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -155,7 +156,11 @@ class GameService(
 
         val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
-            is OidcUser -> userService.getByUsernameNonNull(userDetails.preferredUsername)
+            is OidcUser -> {
+                val subject = userDetails.subject ?: error("OidcUser has no subject claim")
+                userService.findByOidcProviderId(subject)
+                    ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
+            }
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
@@ -246,26 +251,29 @@ class GameService(
         val game = getById(game.id!!)
 
         val originalIds: Map<String, ExternalProviderIdDto> = game.metadata.originalIds
-            .map { (provider, originalId) ->
-                val providerId = pluginManager.getExtensions(provider.pluginId).first()?.javaClass?.name ?: return null
+            .mapNotNull { (provider, originalId) ->
+                val providerId = pluginManager.getExtensions(provider.pluginId)
+                    .filterIsInstance<GameMetadataProvider>().firstOrNull()?.javaClass?.name
+                if (providerId == null) {
+                    log.debug { "Skipping unavailable metadata provider ${provider.pluginId} for game ${game.id}" }
+                    return@mapNotNull null
+                }
                 val pluginId = provider.pluginId
                 val originalId = originalId
                 providerId to ExternalProviderIdDto(pluginId, originalId)
             }
             .toMap()
 
-        val updatedGame = matchManually(
+        if (originalIds.isEmpty()) return null
+
+        val updatedGame = matchByOriginalIds(
             originalIds = originalIds,
             path = Path.of(game.metadata.path),
             library = game.library,
             replaceGameId = game.id,
-            persist = false
-        )
-
-        if (updatedGame == null) {
-            log.warn { "Failed to update game with ID ${game.id}" }
-            return null
-        }
+            persist = false,
+            refreshGame = game
+        ) ?: return null
 
 
         fun <T> updateField(
@@ -278,7 +286,7 @@ class GameService(
             // Hibernate collections are of type "PersistentBag" which does not implement equals() properly when comparing with ArrayList
             fun areEqual(a: Any?, b: Any?): Boolean {
                 return when {
-                    a is Collection<*> && b is Collection<*> -> a.toList() == b.toList()
+                    a is Collection<*> && b is Collection<*> -> a.toSet() == b.toSet()
                     else -> a == b
                 }
             }
@@ -372,7 +380,7 @@ class GameService(
             "publishers",
             game.publishers,
             updatedGame.publishers,
-            { game.publishers = it ?: mutableListOf() },
+            { game.publishers = (it ?: emptyList()).map { c -> companyService.createOrGet(c) }.toMutableList() },
             updatedGame.metadata.fields["publishers"]
         )
 
@@ -381,7 +389,7 @@ class GameService(
             "developers",
             game.developers,
             updatedGame.developers,
-            { game.developers = it ?: mutableListOf() },
+            { game.developers = (it ?: emptyList()).map { c -> companyService.createOrGet(c) }.toMutableList() },
             updatedGame.metadata.fields["developers"]
         )
 
@@ -592,6 +600,15 @@ class GameService(
         library: Library,
         replaceGameId: Long? = null,
         persist: Boolean = true
+    ): Game? = matchByOriginalIds(originalIds, path, library, replaceGameId, persist)
+
+    private fun matchByOriginalIds(
+        originalIds: Map<String, ExternalProviderIdDto>,
+        path: Path,
+        library: Library,
+        replaceGameId: Long?,
+        persist: Boolean,
+        refreshGame: Game? = null
     ): Game? {
         // Step 0: Query all metadata plugins for metadata on the provided originalIds
         val metadataResults = runBlocking {
@@ -600,7 +617,18 @@ class GameService(
                     async {
                         val originalId = originalIds[plugin.javaClass.name]?.externalProviderId ?: return@async null
                         try {
-                            return@async plugin.fetchById(originalId)
+                            val metadata = plugin.fetchById(originalId)
+                            if (metadata != null || refreshGame == null) return@async metadata
+
+                            // Some providers can search IDs that their direct lookup only serves from a memory cache.
+                            // Recover the saved identity after cache eviction/restart without choosing another edition.
+                            val title = refreshGame.title?.takeIf { it.isNotBlank() } ?: return@async null
+                            val recovered = plugin.fetchByTitle(title, refreshGame.platforms.toSet(), 10)
+                                .firstOrNull { it.originalId == originalId }
+                            if (recovered != null) {
+                                log.debug { "Recovered metadata for game ${refreshGame.id} by title with original ID $originalId" }
+                            }
+                            return@async recovered
                         } catch (e: Exception) {
                             val pluginWrapper = pluginManager.getPluginForExtension(plugin::class)
                             log.warn { "Error fetching metadata for game [id: $originalId] with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
@@ -616,7 +644,11 @@ class GameService(
         // In theory all results should be valid
         val validResults = metadataResults.filterValuesNotNull()
         if (validResults.isEmpty()) {
-            log.error { "No results found for originalIds: $originalIds" }
+            if (refreshGame != null) {
+                log.warn { "No metadata returned for game ${refreshGame.id} from its saved providers; keeping existing metadata" }
+            } else {
+                log.error { "No results found for originalIds: $originalIds" }
+            }
             return null
         }
 
@@ -876,11 +908,19 @@ class GameService(
         }
         setFieldIfAbsent("publishers", metadata.publishedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.publishers =
-                it.map { name -> Company(name = name, type = CompanyType.PUBLISHER) }.toMutableList()
+                it.map { name ->
+                    companyService.createOrGet(
+                        Company(name = name, type = CompanyType.PUBLISHER)
+                    )
+                }.toMutableList()
         }
         setFieldIfAbsent("developers", metadata.developedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.developers =
-                it.map { name -> Company(name = name, type = CompanyType.DEVELOPER) }.toMutableList()
+                it.map { name ->
+                    companyService.createOrGet(
+                        Company(name = name, type = CompanyType.DEVELOPER)
+                    )
+                }.toMutableList()
         }
         setFieldIfAbsent("genres", metadata.genres?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.genres = it.toList()

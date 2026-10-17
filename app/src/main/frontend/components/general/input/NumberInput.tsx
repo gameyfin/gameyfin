@@ -1,12 +1,14 @@
 import {useField} from "formik";
-import {NumberInput as HeroUiNumberInput, NumberInputProps} from "@heroui/react";
+import {Description, FieldError, Label, NumberField, NumberFieldProps} from "@heroui/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
-interface CustomNumberInputProps extends Omit<NumberInputProps, "name"> {
+interface CustomNumberInputProps extends Omit<NumberFieldProps, "name" | "children"> {
     name: string;
+    label?: string;
     showErrorUntouched?: boolean;
     resetValue?: unknown;
+    description?: string;
 }
 
 export default function NumberInput({
@@ -20,27 +22,33 @@ export default function NumberInput({
     const [field, meta, helpers] = useField<number>(props.name);
 
     return (
-        <HeroUiNumberInput
-            fullWidth={false}
-            {...props}
-            className={`min-h-20 grow ${className ?? ""}`}
-            value={field.value}
-            onValueChange={(value) => helpers.setValue(value)}
-            onBlur={field.onBlur}
-            name={field.name}
-            id={label as string}
-            label={label}
-            endContent={
-                (description || resetValue !== undefined) ? (
-                    <span className="flex items-center gap-1">
-                        {description && <InfoPopup content={description as string}/>}
-                        {resetValue !== undefined &&
-                            <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
-                    </span>
-                ) : undefined
-            }
-            isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
-            errorMessage={meta.initialError || meta.error}
-        />
+        <div className={`min-h-20 grid grid-cols-[1fr_auto] content-start items-center gap-x-1 gap-y-1 ${className ?? ""}`}>
+            <NumberField
+                fullWidth={false}
+                {...props}
+                className="contents"
+                value={field.value}
+                onChange={(value) => helpers.setValue(value)}
+                onBlur={field.onBlur}
+                name={field.name}
+                isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
+            >
+                {label && <Label className="col-span-2">{label}</Label>}
+                <NumberField.Group className="grow">
+                    <NumberField.DecrementButton/>
+                    <NumberField.Input/>
+                    <NumberField.IncrementButton/>
+                </NumberField.Group>
+                {description && <Description className="sr-only">{description as string}</Description>}
+                <FieldError className="col-span-2">{meta.initialError || meta.error}</FieldError>
+            </NumberField>
+            {(description || resetValue !== undefined) && (
+                <span className="flex items-center gap-1">
+                    {description && <InfoPopup content={description as string}/>}
+                    {resetValue !== undefined &&
+                        <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
+                </span>
+            )}
+        </div>
     );
 }

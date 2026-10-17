@@ -8,7 +8,7 @@ import PrioritiesModal from "./PrioritiesModal";
 
 interface CollectionPrioritiesModalProps {
     isOpen: boolean;
-    onOpenChange: () => void;
+    onOpenChange: (isOpen: boolean) => void;
 }
 
 export default function CollectionPrioritiesModal({isOpen, onOpenChange}: CollectionPrioritiesModalProps) {

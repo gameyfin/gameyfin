@@ -88,6 +88,10 @@ class SecurityConfig(
                     "/favicon.ico",
                     "/favicon.svg"
                 ).permitAll()
+                // Restoring a backup is allowed during the initial setup (checked in BackupController)
+                .requestMatchers("/backups/setup/**").permitAll()
+                // Backup downloads/uploads (admin role is checked in BackupController)
+                .requestMatchers("/backups/**").authenticated()
                 // Client-side SPA routes - these need to pass through to serve index.html
                 // Authentication will be handled by Hilla on the client side
                 .requestMatchers(
@@ -125,18 +129,25 @@ class SecurityConfig(
         return http.build()
     }
 
+    @Suppress("kotlin:S6518")
     @Bean
     @Conditional(SsoEnabledCondition::class)
     fun clientRegistrationRepository(): ClientRegistrationRepository? {
         val clientRegistration = ClientRegistration.withRegistrationId(SSO_PROVIDER_KEY)
-            .clientId(config.get(ConfigProperties.SSO.OIDC.ClientId))
+            .clientId(
+                config.get(ConfigProperties.SSO.OIDC.ClientId)
+                    ?: error("SSO client ID is not configured")
+            )
             .clientSecret(config.get(ConfigProperties.SSO.OIDC.ClientSecret))
             .scope(config.get(ConfigProperties.SSO.OIDC.OAuthScopes)?.toList())
             .userNameAttributeName(config.get(ConfigProperties.SSO.OIDC.UsernameClaim))
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
             .issuerUri(config.get(ConfigProperties.SSO.OIDC.IssuerUrl))
             .authorizationUri(config.get(ConfigProperties.SSO.OIDC.AuthorizeUrl))
-            .tokenUri(config.get(ConfigProperties.SSO.OIDC.TokenUrl))
+            .tokenUri(
+                config.get(ConfigProperties.SSO.OIDC.TokenUrl)
+                    ?: error("Token URL is not configured")
+            )
             .userInfoUri(config.get(ConfigProperties.SSO.OIDC.UserInfoUrl))
             .jwkSetUri(config.get(ConfigProperties.SSO.OIDC.JwksUrl))
             .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")

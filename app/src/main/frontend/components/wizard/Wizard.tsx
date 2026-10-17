@@ -1,7 +1,7 @@
 import React, {ReactNode, useState} from "react";
 import {Form, Formik, FormikBag, FormikHelpers} from "formik";
 import {ArrowLeftIcon, ArrowRightIcon, CheckIcon} from "@phosphor-icons/react";
-import {Button} from "@heroui/react";
+import {Button, Spinner} from "@heroui/react";
 import Stepper from "./Stepper";
 
 type WizardProps = {
@@ -75,14 +75,14 @@ const Wizard = ({children, initialValues, onSubmit}: WizardProps) => {
                     <div className="left-8 right-8 absolute bottom-8">
                         <div className="flex justify-between">
                             <Button
-                                color="primary"
+                                variant="primary"
                                 onPress={() => previous(formik.values)}
                                 isDisabled={isFirstStep || formik.isSubmitting}
                             >
                                 <ArrowLeftIcon/>
                             </Button>
-                            <Button color="primary" isLoading={formik.isSubmitting} type="submit">
-                                {formik.isSubmitting ? "" : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
+                            <Button variant="primary" isPending={formik.isSubmitting} type="submit">
+                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
                             </Button>
                         </div>
                     </div>

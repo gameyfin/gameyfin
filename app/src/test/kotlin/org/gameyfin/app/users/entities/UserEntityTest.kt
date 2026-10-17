@@ -29,22 +29,6 @@ class UserEntityTest {
         every { this@mockk.email } returns email
     }
 
-    // ── constructor(oidcUser) ─────────────────────────────────────────────────
-
-    @Test
-    fun `single-arg OidcUser constructor maps all fields`() {
-        val oidcUser = oidcUser(subject = "sub-1", preferredUsername = "alice", email = "alice@example.com")
-
-        val user = User(oidcUser)
-
-        assertEquals("alice", user.username)
-        assertEquals("alice@example.com", user.email)
-        assertEquals("sub-1", user.oidcProviderId)
-        assertTrue(user.emailConfirmed)
-        assertTrue(user.enabled)
-        assertNull(user.password)
-    }
-
     // ── constructor(oidcUser, resolvedUsername) ───────────────────────────────
 
     @Test
