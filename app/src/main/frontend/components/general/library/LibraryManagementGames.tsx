@@ -1,6 +1,18 @@
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {Button, Input, Link, ListBox, Select, SortDescriptor, Table, Tooltip, useOverlayState} from "@heroui/react";
+import {
+    Button,
+    Input,
+    Link,
+    ListBox,
+    Select,
+    SortDescriptor,
+    Table,
+    TableLayout,
+    Tooltip,
+    useOverlayState,
+    Virtualizer
+} from "@heroui/react";
 import {CheckCircleIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
@@ -13,29 +25,21 @@ import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
 import {metadataCompleteness} from "Frontend/util/utils";
 import ChipList from "Frontend/components/general/ChipList";
-import SimplePagination from "Frontend/components/general/SimplePagination";
 
 interface LibraryManagementGamesProps {
     library: LibraryDto;
 }
 
 export default function LibraryManagementGames({library}: LibraryManagementGamesProps) {
-    const rowsPerPage = 25;
-
     const state = useSnapshot(gameState);
     const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] : [];
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "title", direction: "ascending"});
 
-    const [selectedGame, setSelectedGame] = useState<GameAdminDto>(games[0] as GameAdminDto);
+    const [selectedGame, setSelectedGame] = useState<GameAdminDto | undefined>(undefined);
     const editGameModal = useOverlayState();
     const matchGameModal = useOverlayState();
-
-    const [page, setPage] = useState(1);
-    const pages = useMemo(() => {
-        return Math.ceil(getFilteredGames().length / rowsPerPage);
-    }, [games, filter]);
 
     const filteredItems = useMemo(() => {
         return getFilteredGames();
@@ -70,13 +74,6 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         });
     }, [filteredItems, sortDescriptor]);
 
-    const pagedItems = useMemo(() => {
-        const start = (page - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        return sortedItems.slice(start, end);
-    }, [page, sortedItems]);
-
-
     function getFilteredGames() {
         let filteredGames = (games as GameAdminDto[]).filter((game) =>
             game.metadata.path!.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,7 +104,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         await GameEndpoint.deleteGame(game.id);
     }
 
-    return selectedGame && <div className="flex flex-col gap-4">
+    return <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Manage games in library</h1>
         <div className="flex flex-row gap-2 justify-between">
             <Input
@@ -141,133 +138,137 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 </Select.Popover>
             </Select>
         </div>
-        <Table variant="secondary" className="h-[35rem]">
-            <Table.ScrollContainer className="h-[35rem]">
-                <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                    <Table.Header className="sticky top-0 z-10 bg-background">
-                        <Table.Column id="title" allowsSorting isRowHeader>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Game</Table.SortableColumnHeader>
+        <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 56}}>
+            <Table variant="secondary">
+                <Table.ScrollContainer>
+                    <Table.Content aria-label="Games in library" className="h-[35rem] min-w-[1100px] overflow-auto"
+                                   sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
+                        <Table.Header className="h-full w-full">
+                            <Table.Column id="title" allowsSorting isRowHeader>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Game</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="platforms">Platforms</Table.Column>
+                            <Table.Column id="addedToLibrary" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader sortDirection={sortDirection}>Added to
+                                        library</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="downloadCount" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader sortDirection={sortDirection}>Download
+                                        count</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="path" minWidth={200}>Path</Table.Column>
+                            <Table.Column id="completeness" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Completeness</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="actions">Actions</Table.Column>
+                        </Table.Header>
+                        <Table.Body
+                            renderEmptyState={() => <p className="text-center text-muted p-4">Your filter did not match
+                                any
+                                games.</p>} items={sortedItems}>
+                            {(item: GameAdminDto) => (
+                                <Table.Row key={item.id}>
+                                    <Table.Cell>
+                                        <Link href={`/game/${item.id}`}
+                                              className="text-sm text-foreground hover:underline">
+                                            {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                                        </Link>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <ChipList items={item.platforms} maxVisible={1} defaultContent="Unspecified"/>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        {new Date(item.createdAt).toLocaleString()}
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        {item.metadata.downloadCount}
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <p className="truncate max-w-[16rem] text-left" dir="rtl"
+                                           title={item.metadata.path ?? undefined}>
+                                            <bdi>{item.metadata.path}</bdi>
+                                        </p>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <MetadataCompletenessIndicator game={item}/>
+                                    </Table.Cell>
+                                    <Table.Cell>
+                                        <div className="flex flex-row gap-2">
+                                            <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <Button isIconOnly size="sm" variant="tertiary"
+                                                            onPress={() => toggleMatchConfirmed(item)}>
+                                                        {item.metadata.matchConfirmed ?
+                                                            <CheckCircleIcon weight="fill" className="fill-success"/> :
+                                                            <CheckCircleIcon/>}
+                                                    </Button>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>
+                                                    {item.metadata.matchConfirmed ? "Unconfirm match" : "Confirm match"}
+                                                </Tooltip.Content>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <Button isIconOnly size="sm" variant="tertiary"
+                                                            onPress={() => {
+                                                                setSelectedGame(item);
+                                                                editGameModal.open();
+                                                            }}>
+                                                        <PencilIcon/>
+                                                    </Button>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>Edit metadata</Tooltip.Content>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <Button isIconOnly size="sm" variant="tertiary"
+                                                            onPress={() => {
+                                                                setSelectedGame(item);
+                                                                matchGameModal.open();
+                                                            }}>
+                                                        <MagnifyingGlassIcon/>
+                                                    </Button>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>Match game</Tooltip.Content>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <Tooltip.Trigger>
+                                                    <Button isIconOnly size="sm" variant="danger"
+                                                            onPress={() => deleteGame(item)}>
+                                                        <TrashIcon/>
+                                                    </Button>
+                                                </Tooltip.Trigger>
+                                                <Tooltip.Content>Remove from library</Tooltip.Content>
+                                            </Tooltip>
+                                        </div>
+                                    </Table.Cell>
+                                </Table.Row>
                             )}
-                        </Table.Column>
-                        <Table.Column id="platforms">Platforms</Table.Column>
-                        <Table.Column id="addedToLibrary" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader sortDirection={sortDirection}>Added to
-                                    library</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="downloadCount" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader sortDirection={sortDirection}>Download
-                                    count</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="path">Path</Table.Column>
-                        <Table.Column id="completeness" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Completeness</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="actions">Actions</Table.Column>
-                    </Table.Header>
-                    <Table.Body
-                        renderEmptyState={() => <p className="text-center text-muted p-4">Your filter did not match any
-                            games.</p>} items={pagedItems}>
-                        {(item: GameAdminDto) => (
-                            <Table.Row key={item.id}>
-                                <Table.Cell>
-                                    <Link href={`/game/${item.id}`}
-                                          className="text-sm text-foreground hover:underline">
-                                        {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
-                                    </Link>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <ChipList items={item.platforms} maxVisible={1} defaultContent="Unspecified"/>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {new Date(item.createdAt).toLocaleString()}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {item.metadata.downloadCount}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {item.metadata.path}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <MetadataCompletenessIndicator game={item}/>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <div className="flex flex-row gap-2">
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" variant="tertiary"
-                                                        onPress={() => toggleMatchConfirmed(item)}>
-                                                    {item.metadata.matchConfirmed ?
-                                                        <CheckCircleIcon weight="fill" className="fill-success"/> :
-                                                        <CheckCircleIcon/>}
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>
-                                                {item.metadata.matchConfirmed ? "Unconfirm match" : "Confirm match"}
-                                            </Tooltip.Content>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" variant="tertiary"
-                                                        onPress={() => {
-                                                            setSelectedGame(item);
-                                                            editGameModal.open();
-                                                        }}>
-                                                    <PencilIcon/>
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>Edit metadata</Tooltip.Content>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" variant="tertiary"
-                                                        onPress={() => {
-                                                            setSelectedGame(item);
-                                                            matchGameModal.open();
-                                                        }}>
-                                                    <MagnifyingGlassIcon/>
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>Match game</Tooltip.Content>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" variant="danger"
-                                                        onPress={() => deleteGame(item)}>
-                                                    <TrashIcon/>
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>Remove from library</Tooltip.Content>
-                                        </Tooltip>
-                                    </div>
-                                </Table.Cell>
-                            </Table.Row>
-                        )}
-                    </Table.Body>
-                </Table.Content>
-            </Table.ScrollContainer>
-        </Table>
-        {pagedItems.length > 0 &&
-            <div className="flex w-full justify-center sticky">
-                <SimplePagination page={page} total={pages} onChange={setPage}/>
-            </div>
-        }
-        <EditGameMetadataModal game={selectedGame}
-                               isOpen={editGameModal.isOpen}
-                               onOpenChange={editGameModal.setOpen}/>
-        <MatchGameModal path={selectedGame.metadata.path!}
-                        libraryId={library.id}
-                        replaceGameId={selectedGame.id}
-                        initialSearchTerm={selectedGame.title}
-                        isOpen={matchGameModal.isOpen}
-                        onOpenChange={matchGameModal.setOpen}/>
+                        </Table.Body>
+                    </Table.Content>
+                </Table.ScrollContainer>
+            </Table>
+        </Virtualizer>
+        {selectedGame && <>
+            <EditGameMetadataModal game={selectedGame}
+                                   isOpen={editGameModal.isOpen}
+                                   onOpenChange={editGameModal.setOpen}/>
+            <MatchGameModal path={selectedGame.metadata.path!}
+                            libraryId={library.id}
+                            replaceGameId={selectedGame.id}
+                            initialSearchTerm={selectedGame.title}
+                            isOpen={matchGameModal.isOpen}
+                            onOpenChange={matchGameModal.setOpen}/>
+        </>}
     </div>;
 }
