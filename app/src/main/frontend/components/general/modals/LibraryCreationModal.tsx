@@ -1,11 +1,11 @@
 import React, {useState} from "react";
-import {Alert, Button, Checkbox, Link, Modal, toast, Spinner} from "@heroui/react";
+import {Alert, Button, Checkbox, Link, Modal, Spinner, toast} from "@heroui/react";
 import {Form, Formik} from "formik";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMappingInput";
-import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput.tsx";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
@@ -73,10 +73,10 @@ export default function LibraryCreationModal({
                                                         value={formik.values.name}
                                                         isRequired
                                                     />
-                                                    <ArrayInputAutocomplete options={Array.from(availablePlatforms)}
-                                                                            name="platforms"
-                                                                            label="Platforms"
-                                                                            placeholder="Platform(s) of the games in this library (leave empty for all platforms)"
+                                                    <AutocompleteInput options={Array.from(availablePlatforms)}
+                                                                       name="platforms"
+                                                                       label="Platforms"
+                                                                       placeholder="Platform(s) of the games in this library (leave empty for all platforms)"
                                                     />
                                                     <DirectoryMappingInput name="directories"/>
                                                 </div>
@@ -117,7 +117,8 @@ export default function LibraryCreationModal({
                                                             isDisabled={formik.isSubmitting}
                                                             type="submit"
                                                     >
-                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Add"}
+                                                        {formik.isSubmitting ?
+                                                            <Spinner size="sm" color="current"/> : "Add"}
                                                     </Button>
                                                 </div>
                                             </Modal.Footer>

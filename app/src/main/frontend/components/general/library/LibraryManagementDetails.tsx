@@ -1,6 +1,6 @@
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {CheckIcon} from "@phosphor-icons/react";
-import {Button, toast, Spinner} from "@heroui/react";
+import {Button, Spinner, toast} from "@heroui/react";
 import React from "react";
 import {Form, Formik} from "formik";
 import {deepDiff} from "Frontend/util/utils";
@@ -11,7 +11,7 @@ import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMa
 import Section from "Frontend/components/general/Section";
 import {useNavigate} from "react-router";
 import * as Yup from "yup";
-import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput.tsx";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
@@ -75,7 +75,8 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                         isDisabled={formik.isSubmitting || librarySaved || !formik.dirty}
                         type="submit"
                     >
-                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : librarySaved ? <CheckIcon/> : "Save"}
+                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : librarySaved ?
+                            <CheckIcon/> : "Save"}
                     </Button>
                 </div>
 
@@ -83,7 +84,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
 
                 <CheckboxInput label="Display on homepage" name="metadata.displayOnHomepage" className="mb-4"/>
 
-                <ArrayInputAutocomplete options={Array.from(availablePlatforms)} name="platforms" label="Platforms"/>
+                <AutocompleteInput options={Array.from(availablePlatforms)} name="platforms" label="Platforms"/>
 
                 <DirectoryMappingInput name="directories"/>
 

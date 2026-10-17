@@ -13,7 +13,7 @@ import GameCoverPicker from "Frontend/components/general/input/GameCoverPicker";
 import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
 import ArrayInput from "Frontend/components/general/input/ArrayInput";
 import GameHeaderPicker from "Frontend/components/general/input/GameHeaderPicker";
-import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput.tsx";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 
@@ -75,8 +75,8 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                         <DatePickerInput key="release" name="release" label="Release"
                                                                          className="w-fit"/>
                                                     </div>
-                                                    <ArrayInputAutocomplete options={Array.from(availablePlatforms)}
-                                                                            name="platforms" label="Platforms"/>
+                                                    <AutocompleteInput options={Array.from(availablePlatforms)}
+                                                                       name="platforms" label="Platforms"/>
                                                     <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
                                                     <TextAreaInput key="comment" name="comment"
                                                                    label="Comment (Markdown)"/>
@@ -95,20 +95,20 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                                                                                 label="Developers"/>
                                                                     <ArrayInput key="publishers" name="publishers"
                                                                                 label="Publishers"/>
-                                                                    <ArrayInputAutocomplete
+                                                                    <AutocompleteInput
                                                                         options={propertyEnumValues.genres}
                                                                         defaultSelected={game.genres}
                                                                         key="genres" name="genres" label="Genres"/>
-                                                                    <ArrayInputAutocomplete
+                                                                    <AutocompleteInput
                                                                         options={propertyEnumValues.themes}
                                                                         defaultSelected={game.themes}
                                                                         key="themes" name="themes" label="Themes"/>
-                                                                    <ArrayInputAutocomplete
+                                                                    <AutocompleteInput
                                                                         options={propertyEnumValues.features}
                                                                         defaultSelected={game.features}
                                                                         key="features" name="features"
                                                                         label="Features"/>
-                                                                    <ArrayInputAutocomplete
+                                                                    <AutocompleteInput
                                                                         options={propertyEnumValues.perspectives}
                                                                         defaultSelected={game.perspectives}
                                                                         key="perspectives" name="perspectives"

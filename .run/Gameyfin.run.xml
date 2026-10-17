@@ -1,5 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Gameyfin" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <option name="ACTIVE_PROFILES" value="dev" />
     <option name="ALTERNATIVE_JRE_PATH" value="BUNDLED" />
     <envs>
       <env name="APP_KEY" value="8ODYedBBEA6qTd2Z/dZiWA==" />
