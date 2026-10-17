@@ -6,6 +6,7 @@ import {
     LockKeyIcon,
     LogIcon,
     PlugIcon,
+    TimerIcon,
     UsersIcon,
     WrenchIcon
 } from "@phosphor-icons/react";
@@ -46,6 +47,11 @@ const menuItems: MenuItem[] = [
         title: "Plugins",
         url: "plugins",
         icon: <PlugIcon/>
+    },
+    {
+        title: "Tasks",
+        url: "tasks",
+        icon: <TimerIcon/>
     },
     {
         title: "Logs",

@@ -1,23 +1,28 @@
 package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.annotation.PreDestroy
+import jakarta.annotation.PostConstruct
 import liquibase.integration.spring.SpringResourceAccessor
+import org.gameyfin.app.core.tasks.TaskAction
+import org.gameyfin.app.core.tasks.TaskDefinition
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
+import org.gameyfin.app.core.tasks.dto.TaskRunDto
 import org.gameyfin.app.system.SystemService
+import org.gameyfin.pluginapi.core.config.ConfigMetadata
+import org.gameyfin.pluginapi.tasks.TaskContext
+import org.gameyfin.pluginapi.tasks.TaskResult
+import org.gameyfin.pluginapi.tasks.TaskTrigger
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.info.BuildProperties
 import org.springframework.core.io.ResourceLoader
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Instant
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.Semaphore
 import javax.sql.DataSource
 import kotlin.io.path.deleteIfExists
@@ -30,6 +35,8 @@ class BackupService(
     private val dataSource: DataSource,
     private val systemService: SystemService,
     private val buildProperties: ObjectProvider<BuildProperties>,
+    private val taskRegistry: TaskRegistry,
+    private val taskRunService: TaskRunService,
     resourceLoader: ResourceLoader,
     @Value($$"${gameyfin.backup.directory:./backups}") backupDirectory: String,
     @Value($$"${spring.content.fs.filesystem-root:./data/}") mediaDirectory: String,
@@ -42,14 +49,18 @@ class BackupService(
         private const val PRE_RESTORE_SUFFIX = "pre-restore"
         private const val UPLOADED_SUFFIX = "uploaded"
         private const val DATABASE_SWITCH_SUFFIX = "database-switch"
+        private const val SCHEDULED_SUFFIX = "scheduled"
+        private val SCHEDULED_BACKUP_NAME = Regex("^gameyfin-backup-\\d{8}-\\d{6}-$SCHEDULED_SUFFIX(-\\d+)?\\.zip$")
+
+        const val TASK_KEY = "backup"
+        const val INCLUDE_MEDIA_SETTING = "includeMedia"
+        const val RETENTION_COUNT_SETTING = "retentionCount"
     }
 
     private val storage = BackupStorage(Path.of(backupDirectory))
     private val mediaRoot: Path = Path.of(mediaDirectory)
     private val exporter = DatabaseExporter()
     private val restorer = DatabaseRestorer(dataSource, changeLog, SpringResourceAccessor(resourceLoader))
-    private val progressTracker = BackupProgressTracker()
-    private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
 
     /** Only one backup operation may run at a time; a semaphore is used as backups are created asynchronously */
     private val operationPermit = Semaphore(1)
@@ -66,41 +77,117 @@ class BackupService(
         }
     }
 
+    @PostConstruct
+    fun registerTask() {
+        taskRegistry.register(
+            TaskDefinition(
+                key = TASK_KEY,
+                name = "Backup",
+                description = "Creates a backup of the database and optionally of the media files. " +
+                        "Only backups created by this task are deleted according to the retention.",
+                defaultSchedule = "0 0 3 * * *",
+                scheduledByDefault = false,
+                settings = listOf(
+                    ConfigMetadata(
+                        key = INCLUDE_MEDIA_SETTING,
+                        type = Boolean::class.javaObjectType,
+                        label = "Include media files",
+                        description = "Whether to include media files (cover images, screenshots, etc.)",
+                        default = false
+                    ),
+                    ConfigMetadata(
+                        key = RETENTION_COUNT_SETTING,
+                        type = Int::class.javaObjectType,
+                        label = "Backups to keep",
+                        description = "Number of backups created by this task to keep (0 = keep all)",
+                        default = 7
+                    )
+                ),
+                action = TaskAction.Run { createScheduledBackup(it) }
+            )
+        )
+    }
+
     fun getBackups(): List<BackupDto> =
         storage.list().map { toDto(it) }.sortedByDescending { it.createdAt }
 
-    @PreDestroy
-    fun shutdown() {
-        executor.shutdownNow()
-    }
-
-    fun subscribeToProgressEvents(): Flux<List<BackupProgress>> = progressTracker.subscribe()
-
     /**
      * Starts the creation of a backup in the background.
-     * The progress is published via [subscribeToProgressEvents].
      *
-     * @return the initial progress of the backup
+     * @return the run of the backup task creating the backup
      */
-    fun createBackup(includeMedia: Boolean): BackupProgress {
+    fun createBackup(includeMedia: Boolean): TaskRunDto {
         acquireOperationPermit()
-        val progress = progressTracker.start(BackupTrigger.MANUAL, includeMedia)
         try {
-            executor.execute {
+            return taskRunService.start(
+                taskKey = TASK_KEY,
+                trigger = TaskTrigger.MANUAL,
+                displayName = "Backup${if (includeMedia) " (including media)" else ""}"
+            ) { context ->
                 try {
-                    writeBackup(progress, suffix = null)
-                } catch (e: Exception) {
-                    log.error(e) { "Could not create backup" }
+                    TaskResult(describe(writeBackup(context, includeMedia, suffix = null)))
                 } finally {
                     operationPermit.release()
                 }
             }
-        } catch (e: RejectedExecutionException) {
-            progressTracker.fail(progress.backupId, "Gameyfin is shutting down")
+        } catch (e: Exception) {
             operationPermit.release()
-            throw IllegalStateException("Gameyfin is shutting down", e)
+            throw e
         }
-        return progress
+    }
+
+    /**
+     * Creates a backup using the settings of the backup task and deletes old backups created by the task.
+     */
+    private fun createScheduledBackup(context: TaskContext): TaskResult {
+        val includeMedia = context.setting<Boolean>(INCLUDE_MEDIA_SETTING) ?: false
+        val retentionCount = context.setting<Int>(RETENTION_COUNT_SETTING) ?: 0
+        val path = exclusive { writeBackup(context, includeMedia, SCHEDULED_SUFFIX) }
+        val deleted = if (retentionCount > 0) deleteOldScheduledBackups(retentionCount) else 0
+        return TaskResult(describe(path) + if (deleted > 0) ", $deleted old backup(s) deleted" else "")
+    }
+
+    private fun deleteOldScheduledBackups(retentionCount: Int): Int = exclusive {
+        val outdated = storage.list()
+            .filter { SCHEDULED_BACKUP_NAME.matches(it.name) }
+            .sortedByDescending { it.name }
+            .drop(retentionCount)
+        outdated.forEach {
+            storage.delete(it.name)
+            log.info { "Deleted outdated backup ${it.name}" }
+        }
+        outdated.size
+    }
+
+    private fun describe(path: Path) = "${path.name} (${formatSize(path.fileSize())})"
+
+    private fun formatSize(bytes: Long): String {
+        if (bytes < 1024) return "$bytes B"
+        val units = listOf("KB", "MB", "GB", "TB")
+        var value = bytes / 1024.0
+        var unit = 0
+        while (value >= 1024 && unit < units.lastIndex) {
+            value /= 1024
+            unit++
+        }
+        return "%.1f %s".format(java.util.Locale.ROOT, value, units[unit])
+    }
+
+    /**
+     * Creates a backup as part of another operation (e.g. before a restore), tracked as run of the backup task.
+     */
+    private fun writeSystemBackup(displayName: String, suffix: String): Path {
+        var path: Path? = null
+        taskRunService.runBlocking(
+            taskKey = TASK_KEY,
+            trigger = TaskTrigger.SYSTEM,
+            displayName = displayName,
+            cancellable = false
+        ) { context ->
+            path = writeBackup(context, includeMedia = false, suffix = suffix)
+            TaskResult(describe(path))
+        }
+        return path!!
     }
 
     fun deleteBackup(name: String) = exclusive {
@@ -140,10 +227,7 @@ class BackupService(
             restorer.validate(DatabaseRestorer.readManifest(path), AppKeyFingerprint.current())
 
             if (createSafetyBackup) {
-                val safetyBackup = writeBackup(
-                    progressTracker.start(BackupTrigger.PRE_RESTORE, includesMedia = false),
-                    suffix = PRE_RESTORE_SUFFIX
-                )
+                val safetyBackup = writeSystemBackup("Backup before restoring $name", PRE_RESTORE_SUFFIX)
                 log.info { "Created backup ${safetyBackup.name} of the current database before restoring" }
             }
 
@@ -164,10 +248,7 @@ class BackupService(
      */
     fun transferDatabase(switchDatabase: (backupName: String) -> Unit) {
         exclusive {
-            val backup = writeBackup(
-                progressTracker.start(BackupTrigger.DATABASE_SWITCH, includesMedia = false),
-                suffix = DATABASE_SWITCH_SUFFIX
-            )
+            val backup = writeSystemBackup("Backup for the database transfer", DATABASE_SWITCH_SUFFIX)
             log.info { "Created backup ${backup.name} to transfer the data to the new database" }
 
             storage.schedulePendingRestore(backup.name)
@@ -205,18 +286,12 @@ class BackupService(
         }
     }
 
-    private fun writeBackup(progress: BackupProgress, suffix: String?): Path {
-        val includeMedia = progress.includesMedia
+    private fun writeBackup(context: TaskContext, includeMedia: Boolean, suffix: String?): Path {
         val createdAt = Instant.now()
         log.info { "Creating backup (media files ${if (includeMedia) "included" else "excluded"})" }
+        context.progress("Preparing backup")
 
-        val tempFile = try {
-            storage.createTempFile()
-        } catch (e: Exception) {
-            progressTracker.fail(progress.backupId, e.message)
-            throw e
-        }
-
+        val tempFile = storage.createTempFile()
         try {
             Files.newOutputStream(tempFile).use { output ->
                 exporter.writeArchive(
@@ -226,17 +301,19 @@ class BackupService(
                     appKeyFingerprint = AppKeyFingerprint.current(),
                     gameyfinVersion = buildProperties.ifAvailable?.version,
                     mediaRoot = if (includeMedia) mediaRoot else null,
-                    progress = { step -> progressTracker.update(progress.backupId, step) }
+                    progress = { step ->
+                        context.throwIfCancelled()
+                        context.progress(step.description, step.current, step.total)
+                    }
                 )
             }
+            context.throwIfCancelled()
 
             val path = storage.publish(tempFile, storage.newBackupName(createdAt, suffix))
             log.info { "Created backup ${path.name}" }
-            progressTracker.complete(progress.backupId, path.name, path.fileSize())
             return path
         } catch (e: Exception) {
             tempFile.deleteIfExists()
-            progressTracker.fail(progress.backupId, e.message)
             throw e
         }
     }

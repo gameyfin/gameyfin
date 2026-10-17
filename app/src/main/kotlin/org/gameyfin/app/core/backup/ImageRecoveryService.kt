@@ -1,21 +1,27 @@
 package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.annotation.PreDestroy
+import jakarta.annotation.PostConstruct
+import org.gameyfin.app.core.tasks.TaskAction
+import org.gameyfin.app.core.tasks.TaskAlreadyRunningException
+import org.gameyfin.app.core.tasks.TaskDefinition
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
 import org.gameyfin.app.users.persistence.UserRepository
+import org.gameyfin.pluginapi.tasks.TaskCancelledException
+import org.gameyfin.pluginapi.tasks.TaskContext
+import org.gameyfin.pluginapi.tasks.TaskResult
+import org.gameyfin.pluginapi.tasks.TaskTrigger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.core.publisher.Sinks
 import java.io.FileNotFoundException
 import java.net.URI
 import java.net.http.HttpClient
@@ -25,8 +31,9 @@ import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.*
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -35,8 +42,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * Images which are no longer available are removed, including all references to them (game covers, headers,
  * screenshots and user avatars).
  *
- * The recovery runs in the background after startup if it has been scheduled by [PendingRestoreExecutor].
- * If Gameyfin is stopped in the meantime, it is resumed on the next startup.
+ * The recovery runs in the background (as run of the image recovery task) after startup if it has been scheduled by
+ * [PendingRestoreExecutor]. If Gameyfin is stopped or the run is cancelled in the meantime, it is resumed on the
+ * next startup.
  */
 @Service
 class ImageRecoveryService(
@@ -44,6 +52,8 @@ class ImageRecoveryService(
     private val imageService: ImageService,
     private val gameRepository: GameRepository,
     private val userRepository: UserRepository,
+    private val taskRegistry: TaskRegistry,
+    private val taskRunService: TaskRunService,
     transactionManager: PlatformTransactionManager,
     @Value($$"${gameyfin.backup.directory:./backups}") backupDirectory: String,
 ) {
@@ -51,8 +61,8 @@ class ImageRecoveryService(
     companion object {
         private val log = KotlinLogging.logger {}
 
+        const val TASK_KEY = "image-recovery"
         private const val PARALLEL_DOWNLOADS = 4
-        private val MIN_EMIT_INTERVAL: Duration = Duration.ofMillis(250)
 
         /** HTTP status codes indicating that an image does not exist anymore */
         private val UNAVAILABLE_STATUS_CODES = setOf(404, 410)
@@ -62,24 +72,25 @@ class ImageRecoveryService(
 
     private val storage = BackupStorage(Path.of(backupDirectory))
     private val transactionTemplate = TransactionTemplate(transactionManager)
-    private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
     private val httpClient: HttpClient = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)
         .connectTimeout(Duration.ofSeconds(15))
         .build()
-    private val running = AtomicBoolean(false)
 
-    private val progressLock = Any()
-    private var latestProgress: ImageRecoveryProgress? = null
-    private var lastEmittedAt = 0L
-
-    // Events are not buffered while nobody is subscribed, new subscribers receive the current snapshot instead
-    private val progressEvents = Sinks.many().multicast().directBestEffort<ImageRecoveryProgress>()
-
-    fun subscribeToProgressEvents(): Flux<List<ImageRecoveryProgress>> {
-        // Subscribe to live updates before taking the snapshot, so no update can get lost in between
-        val snapshot = Mono.defer { Mono.justOrEmpty(synchronized(progressLock) { latestProgress }) }
-        return Flux.merge(progressEvents.asFlux(), snapshot).buffer(Duration.ofSeconds(1))
+    @PostConstruct
+    fun registerTask() {
+        taskRegistry.register(
+            TaskDefinition(
+                key = TASK_KEY,
+                name = "Image recovery",
+                description = "Restores images which are missing after a backup has been restored by downloading " +
+                        "them again. Runs automatically after a restore and is resumed on the next start if it " +
+                        "has been interrupted.",
+                schedulable = false,
+                manuallyTriggerable = false,
+                action = TaskAction.Run { recoverMissingImages(it) }
+            )
+        )
     }
 
     @EventListener(ApplicationReadyEvent::class)
@@ -87,71 +98,33 @@ class ImageRecoveryService(
         if (storage.isImageRecoveryPending()) start()
     }
 
-    @PreDestroy
-    fun shutdown() {
-        executor.shutdownNow()
-    }
-
     /**
      * Starts the recovery of missing images in the background, unless it is already running.
      */
     fun start() {
-        if (!running.compareAndSet(false, true)) return
         try {
-            executor.execute {
-                try {
-                    run()
-                } finally {
-                    running.set(false)
-                }
+            taskRunService.start(TASK_KEY, TaskTrigger.SYSTEM, displayName = "Restoring missing images", exclusive = true) {
+                val result = recoverMissingImages(it)
+                storage.clearPendingImageRecovery()
+                result
             }
-        } catch (_: RejectedExecutionException) {
-            running.set(false)
+        } catch (_: TaskAlreadyRunningException) {
+            log.debug { "Recovery of missing images is already running" }
+        } catch (e: IllegalStateException) {
+            log.warn { "Could not start the recovery of missing images: ${e.message}" }
         }
     }
 
-    private fun run() {
-        synchronized(progressLock) { latestProgress = null }
-        try {
-            recoverMissingImages()
-            storage.clearPendingImageRecovery()
-        } catch (_: InterruptedException) {
-            log.info { "Recovery of missing images has been interrupted, it will be resumed on the next start" }
-        } catch (e: Exception) {
-            if (Thread.currentThread().isInterrupted) {
-                log.info { "Recovery of missing images has been interrupted, it will be resumed on the next start" }
-                return
-            }
-            log.error(e) { "Recovery of missing images failed, it will be retried on the next start" }
-            val failure = { progress: ImageRecoveryProgress ->
-                progress.copy(
-                    status = BackupTaskStatus.FAILED,
-                    currentStep = BackupStep("Restoring images failed"),
-                    finishedAt = Instant.now(),
-                    errorMessage = e.message ?: e.javaClass.simpleName
-                )
-            }
-            synchronized(progressLock) {
-                // The failure may occur before any progress has been published
-                val current = latestProgress
-                if (current == null) {
-                    publish(failure(ImageRecoveryProgress(currentStep = BackupStep("Restoring images failed"))))
-                } else {
-                    update(force = true, transform = failure)
-                }
-            }
-        }
-    }
-
-    private fun recoverMissingImages() {
+    private fun recoverMissingImages(context: TaskContext): TaskResult {
+        context.progress("Searching for missing images")
         val missing = imageRepository.findAll().filterNot { imageService.hasContent(it) }
         if (missing.isEmpty()) {
-            log.info { "No images are missing after the restore" }
-            return
+            log.info { "No images are missing" }
+            return TaskResult("No images are missing")
         }
 
         log.info { "Restoring ${missing.size} missing images" }
-        publish(ImageRecoveryProgress(currentStep = BackupStep("Downloading images", 0, missing.size)))
+        context.progress("Downloading images", 0, missing.size)
 
         val restored = AtomicInteger()
         val failed = AtomicInteger()
@@ -161,8 +134,9 @@ class ImageRecoveryService(
         val permits = Semaphore(PARALLEL_DOWNLOADS)
         Executors.newVirtualThreadPerTaskExecutor().use { downloads ->
             for (image in missing) {
+                if (context.isCancellationRequested) break
                 permits.acquire()
-                downloads.execute {
+                downloads.execute(context.wrap(Runnable {
                     try {
                         when (recover(image)) {
                             RecoveryResult.RESTORED -> restored.incrementAndGet()
@@ -171,26 +145,20 @@ class ImageRecoveryService(
                         }
                     } finally {
                         permits.release()
-                        val done = processed.incrementAndGet()
-                        update(force = done == missing.size) {
-                            it.copy(
-                                currentStep = BackupStep("Downloading images", done, missing.size),
-                                restored = restored.get(),
-                                failed = failed.get()
-                            )
-                        }
+                        context.progress("Downloading images", processed.incrementAndGet(), missing.size)
                     }
-                }
+                }))
             }
         }
         if (Thread.interrupted()) throw InterruptedException()
 
         var removed = 0
-        if (unavailable.isNotEmpty()) {
+        if (unavailable.isNotEmpty() && !context.isCancellationRequested) {
             log.info { "Removing ${unavailable.size} images which are not available anymore" }
             // Removed sequentially, as several images may be referenced by the same game
-            unavailable.forEachIndexed { index, image ->
+            for ((index, image) in unavailable.withIndex()) {
                 if (Thread.interrupted()) throw InterruptedException()
+                if (context.isCancellationRequested) break
                 try {
                     removeImageAndReferences(image)
                     removed++
@@ -198,29 +166,17 @@ class ImageRecoveryService(
                     log.warn(e) { "Could not remove unavailable image ${image.id}" }
                     failed.incrementAndGet()
                 }
-                update(force = index == 0) {
-                    it.copy(
-                        currentStep = BackupStep("Removing unavailable images", index + 1, unavailable.size),
-                        removed = removed,
-                        failed = failed.get()
-                    )
-                }
+                context.progress("Removing unavailable images", index + 1, unavailable.size)
             }
         }
 
-        update(force = true) {
-            it.copy(
-                status = BackupTaskStatus.COMPLETED,
-                currentStep = BackupStep("Images restored"),
-                finishedAt = Instant.now(),
-                restored = restored.get(),
-                removed = removed,
-                failed = failed.get()
-            )
+        val summary = "${restored.get()} restored, $removed removed, ${failed.get()} failed"
+        if (context.isCancellationRequested) {
+            log.info { "Recovery of missing images has been cancelled, it will be resumed on the next start" }
+            throw TaskCancelledException(summary)
         }
-        log.info {
-            "Recovery of missing images finished: ${restored.get()} restored, $removed removed, ${failed.get()} failed"
-        }
+        log.info { "Recovery of missing images finished: $summary" }
+        return TaskResult(summary)
     }
 
     private fun recover(image: Image): RecoveryResult {
@@ -300,26 +256,5 @@ class ImageRecoveryService(
             userRepository.findAllByAvatar(imageId).forEach { it.avatar = null }
         }
         imageService.deleteImageIfUnused(image)
-    }
-
-    private fun publish(progress: ImageRecoveryProgress) {
-        synchronized(progressLock) {
-            latestProgress = progress
-            lastEmittedAt = System.nanoTime()
-            progressEvents.tryEmitNext(progress)
-        }
-    }
-
-    /** Updates the current progress. Updates are rate-limited unless [force] is set. */
-    private fun update(force: Boolean, transform: (ImageRecoveryProgress) -> ImageRecoveryProgress) {
-        synchronized(progressLock) {
-            val updated = transform(latestProgress ?: return)
-            latestProgress = updated
-            val now = System.nanoTime()
-            if (force || now - lastEmittedAt >= MIN_EMIT_INTERVAL.toNanos()) {
-                lastEmittedAt = now
-                progressEvents.tryEmitNext(updated)
-            }
-        }
     }
 }

@@ -12,6 +12,7 @@ import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
 import {MessageManagement} from "Frontend/components/administration/MessageManagement";
 import {LogManagement} from "Frontend/components/administration/LogManagement";
+import {TaskManagement} from "Frontend/components/administration/TaskManagement";
 import PasswordResetView from "Frontend/views/PasswordResetView";
 import EmailConfirmationView from "Frontend/views/EmailConfirmationView";
 import InvitationRegistrationView from "Frontend/views/InvitationRegistrationView";
@@ -129,6 +130,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'plugins',
                                     element: <PluginManagement/>,
                                     handle: {title: 'Administration - Plugins'}
+                                },
+                                {
+                                    path: 'tasks',
+                                    element: <TaskManagement/>,
+                                    handle: {title: 'Administration - Tasks'}
                                 },
                                 {
                                     path: 'logs',

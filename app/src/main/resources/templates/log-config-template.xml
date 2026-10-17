@@ -15,10 +15,29 @@
         </encoder>
     </appender>
 
+    <!-- One log file per task run, see org.gameyfin.app.core.tasks.logging -->
+    <appender name="TASK_RUNS" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <filter class="org.gameyfin.app.core.tasks.logging.TaskRunLogFilter"/>
+        <discriminator>
+            <key>taskRunId</key>
+            <defaultValue>unknown</defaultValue>
+        </discriminator>
+        <timeout>5 minutes</timeout>
+        <sift>
+            <appender name="TASK_RUN-${taskRunId}" class="ch.qos.logback.core.FileAppender">
+                <file>{LOG_FOLDER}/tasks/${taskRunId}.log</file>
+                <encoder>
+                    <pattern>%d{yyy-MM-dd'T'HH:mm:ss.SSS} %-5level %-40.40logger{39} : %m%n</pattern>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
     <logger name="org.gameyfin" level="{LOG_LEVEL_GAMEYFIN}"/>
 
     <root level="{LOG_LEVEL_ROOT}">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
+        <appender-ref ref="TASK_RUNS"/>
     </root>
 </configuration>

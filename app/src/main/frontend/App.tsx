@@ -9,8 +9,7 @@ import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
-import {initializeScanState} from "Frontend/state/ScanState";
-import {initializeBackupState, initializeImageRecoveryState} from "Frontend/state/BackupState";
+import {initializeTaskState} from "Frontend/state/TaskState";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
@@ -71,9 +70,7 @@ function ViewWithAuth() {
         initializeGameState();
 
         if (isAdmin(auth)) {
-            initializeScanState();
-            initializeBackupState();
-            initializeImageRecoveryState();
+            initializeTaskState();
             initializeDownloadSessionState();
             initializeUserState();
         }

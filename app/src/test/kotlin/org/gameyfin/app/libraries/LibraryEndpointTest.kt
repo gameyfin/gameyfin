@@ -108,30 +108,6 @@ class LibraryEndpointTest {
     }
 
     @Test
-    fun `subscribeToScanProgressEvents should return flux when user is admin`() {
-        mockkObject(LibraryScanService.Companion)
-        every { isCurrentUserAdmin() } returns true
-        val scanProgress = mockk<LibraryScanProgress>(relaxed = true)
-        val flux: Flux<List<LibraryScanProgress>> = Flux.just(listOf(scanProgress))
-        every { LibraryScanService.subscribeToScanProgressEvents() } returns flux
-
-        val result = libraryEndpoint.subscribeToScanProgressEvents()
-
-        assertEquals(flux, result)
-        unmockkObject(LibraryScanService.Companion)
-    }
-
-    @Test
-    fun `subscribeToScanProgressEvents should return empty flux when user is not admin`() {
-        every { isCurrentUserAdmin() } returns false
-
-        val result = libraryEndpoint.subscribeToScanProgressEvents()
-
-        StepVerifier.create(result)
-            .verifyComplete()
-    }
-
-    @Test
     fun `triggerScan should call scan service with default parameters`() {
         every { libraryScanService.triggerScan(ScanType.QUICK, null) } just Runs
 

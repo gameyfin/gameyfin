@@ -109,8 +109,13 @@ class DatabaseRestorerTest {
     @Test
     fun `restore roundtrip imports rows in batches and resets sequences`() {
         source.connection.use { c ->
-            c.prepareStatement("INSERT INTO JOB_RUN_RESULT (JOB_NAME, STARTED_AT, STATUS) VALUES ('scan', TIMESTAMP '2024-01-01 00:00:00', 'SUCCESS')")
-                .use { ps -> repeat(1200) { ps.addBatch() }; ps.executeBatch() }
+            c.prepareStatement(
+                "INSERT INTO TASK_RUN (ID, TASK_KEY, DISPLAY_NAME, TRIGGER_TYPE, STATUS, STARTED_AT) " +
+                        "VALUES (?, 'library-scan', 'Scan', 'SCHEDULE', 'COMPLETED', TIMESTAMP '2024-01-01 00:00:00')"
+            ).use { ps ->
+                repeat(1200) { ps.setString(1, UUID.randomUUID().toString()); ps.addBatch() }
+                ps.executeBatch()
+            }
         }
         Files.newOutputStream(archive).use {
             DatabaseExporter().writeArchive(source, it, Instant.now(), FINGERPRINT, "test", null)
@@ -120,7 +125,7 @@ class DatabaseRestorerTest {
         val summary = restoreInto(archive, target)
 
         assertTrue(summary.rows >= 1201)
-        assertEquals(1200, count(target, "JOB_RUN_RESULT"))
+        assertEquals(1200, count(target, "TASK_RUN"))
         assertEquals(1, count(target, "IMAGE"))
     }
 
