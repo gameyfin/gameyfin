@@ -11,12 +11,67 @@ import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";
 import {useSearchParams} from "react-router";
 import React, {useEffect, useMemo, useState} from "react";
+import {Form, Formik, useFormikContext} from "formik";
 import {Fzf} from "fzf";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
+import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput";
 import {compoundRating} from "Frontend/util/utils";
 
+type SearchFormValues = {
+    searchTerm: string;
+    sortBy: string;
+    libraries: string[];
+    developers: string[];
+    genres: string[];
+    themes: string[];
+    features: string[];
+    perspectives: string[];
+    keywords: string[];
+    minRating: number;
+};
+
+const SORT_OPTIONS = [
+    {id: "title_asc", label: "Title (A-Z)"},
+    {id: "title_desc", label: "Title (Z-A)"},
+    {id: "release_desc", label: "Release Date (Newest)"},
+    {id: "release_asc", label: "Release Date (Oldest)"},
+    {id: "rating_desc", label: "Rating (Highest)"},
+    {id: "rating_asc", label: "Rating (Lowest)"},
+    {id: "added_desc", label: "Date Added (Newest)"},
+    {id: "added_asc", label: "Date Added (Oldest)"},
+    {id: "updated_desc", label: "Last Updated (Newest)"},
+    {id: "updated_asc", label: "Last Updated (Oldest)"},
+];
+
 export default function SearchView() {
+    const [searchParams] = useSearchParams();
+
+    const [initialValues] = useState<SearchFormValues>(() => {
+        const minRatingParam = parseInt(searchParams.get("minRating") || "1", 10);
+        return {
+            searchTerm: searchParams.get("term") || "",
+            sortBy: searchParams.get("sort") || "title_asc",
+            libraries: searchParams.getAll("lib"),
+            developers: searchParams.getAll("dev"),
+            genres: searchParams.getAll("genre"),
+            themes: searchParams.getAll("theme"),
+            features: searchParams.getAll("feature"),
+            perspectives: searchParams.getAll("perspective"),
+            keywords: searchParams.getAll("keyword"),
+            minRating: isNaN(minRatingParam) ? 1 : minRatingParam,
+        };
+    });
+
+    return (
+        <Formik initialValues={initialValues} onSubmit={() => {
+        }}>
+            <SearchViewContent/>
+        </Formik>
+    );
+}
+
+function SearchViewContent() {
     const games = useSnapshot(gameState).sortedAlphabetically;
     const knownDevelopers = useSnapshot(gameState).knownDevelopers;
     const knownGenres = useSnapshot(gameState).knownGenres;
@@ -27,95 +82,37 @@ export default function SearchView() {
     const libraries = useSnapshot(libraryState).libraries;
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+    const {values, setFieldValue, setValues} = useFormikContext<SearchFormValues>();
+    const {
+        searchTerm, sortBy, minRating,
+        libraries: selectedLibraries,
+        developers: selectedDevelopers,
+        genres: selectedGenres,
+        themes: selectedThemes,
+        features: selectedFeatures,
+        perspectives: selectedPerspectives,
+        keywords: selectedKeywords,
+    } = values;
 
-    const [showFilters, setShowFilters] = useState(false);
-    const [sortBy, setSortBy] = useState("title_asc");
-
-    const [searchTerm, setSearchTerm] = useState<string>("");
-    const [selectedLibraries, setSelectedLibraries] = useState<Set<string>>(new Set());
-    const [selectedDevelopers, setSelectedDevelopers] = useState<Set<string>>(new Set());
-    const [selectedGenres, setSelectedGenres] = useState<Set<string>>(new Set());
-    const [selectedThemes, setSelectedThemes] = useState<Set<string>>(new Set());
-    const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(new Set());
-    const [selectedPerspectives, setSelectedPerspectives] = useState<Set<string>>(new Set());
-    const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
-    const [minRating, setMinRating] = useState<number>(1);
+    const [showFilters, setShowFilters] = useState(() => searchParams.get("filters") === "1");
 
     useEffect(() => {
         window.scrollTo(0, 0);
-
-        const term = searchParams.get("term") || "";
-        const libs = searchParams.getAll("lib");
-        const devs = searchParams.getAll("dev");
-        const genres = searchParams.getAll("genre");
-        const themes = searchParams.getAll("theme");
-        const features = searchParams.getAll("feature");
-        const perspectives = searchParams.getAll("perspective");
-        const keywords = searchParams.getAll("keyword");
-        const sort = searchParams.get("sort") || "title_asc";
-        const minRatingParam = parseInt(searchParams.get("minRating") || "1", 10);
-        const filtersParam = searchParams.get("filters");
-
-        setSearchTerm(term);
-        setSelectedLibraries(new Set(libs));
-        setSelectedDevelopers(new Set(devs));
-        setSelectedGenres(new Set(genres));
-        setSelectedThemes(new Set(themes));
-        setSelectedFeatures(new Set(features));
-        setSelectedPerspectives(new Set(perspectives));
-        setSelectedKeywords(new Set(keywords));
-        setSortBy(sort);
-        setMinRating(isNaN(minRatingParam) ? 1 : minRatingParam);
-        setShowFilters(filtersParam === "1");
-
-        setInitialLoadComplete(true);
     }, []);
 
     useEffect(() => {
-        if (!initialLoadComplete) return;
-
         const newParams = new URLSearchParams();
 
         if (searchTerm && searchTerm.trim() !== "") {
             newParams.set("term", searchTerm);
         }
-
-        if (selectedLibraries.size > 0) {
-            selectedLibraries.forEach(lib => {
-                newParams.append("lib", lib.toString());
-            });
-        }
-        if (selectedDevelopers.size > 0) {
-            selectedDevelopers.forEach(dev => {
-                newParams.append("dev", dev);
-            });
-        }
-        if (selectedGenres.size > 0) {
-            selectedGenres.forEach(genre => {
-                newParams.append("genre", genre);
-            });
-        }
-        if (selectedThemes.size > 0) {
-            selectedThemes.forEach(theme => {
-                newParams.append("theme", theme);
-            });
-        }
-        if (selectedFeatures.size > 0) {
-            selectedFeatures.forEach(feature => {
-                newParams.append("feature", feature);
-            });
-        }
-        if (selectedPerspectives.size > 0) {
-            selectedPerspectives.forEach(perspective => {
-                newParams.append("perspective", perspective);
-            });
-        }
-        if (selectedKeywords.size > 0) {
-            selectedKeywords.forEach(keyword => {
-                newParams.append("keyword", keyword);
-            });
-        }
+        selectedLibraries.forEach(lib => newParams.append("lib", lib));
+        selectedDevelopers.forEach(dev => newParams.append("dev", dev));
+        selectedGenres.forEach(genre => newParams.append("genre", genre));
+        selectedThemes.forEach(theme => newParams.append("theme", theme));
+        selectedFeatures.forEach(feature => newParams.append("feature", feature));
+        selectedPerspectives.forEach(perspective => newParams.append("perspective", perspective));
+        selectedKeywords.forEach(keyword => newParams.append("keyword", keyword));
         if (minRating > 1) {
             newParams.set("minRating", minRating.toString());
         }
@@ -127,8 +124,7 @@ export default function SearchView() {
         }
 
         setSearchParams(newParams, {replace: true});
-    }, [searchTerm, selectedLibraries, selectedDevelopers, selectedGenres,
-        selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating, showFilters]);
+    }, [values, showFilters]);
 
     function sortGames(games: GameDto[]): GameDto[] {
         if (!sortBy) return games;
@@ -181,43 +177,43 @@ export default function SearchView() {
             filtered = fzf.find(searchTerm).map(result => result.item);
         }
 
-        if (selectedLibraries.size > 0) {
-            filtered = filtered.filter(game => selectedLibraries.has(game.libraryId.toString()));
+        if (selectedLibraries.length > 0) {
+            filtered = filtered.filter(game => selectedLibraries.includes(game.libraryId.toString()));
         }
 
-        if (selectedDevelopers.size > 0) {
+        if (selectedDevelopers.length > 0) {
             filtered = filtered.filter(game =>
-                game.developers?.some(developer => selectedDevelopers.has(developer))
+                game.developers?.some(developer => selectedDevelopers.includes(developer))
             );
         }
 
-        if (selectedGenres.size > 0) {
+        if (selectedGenres.length > 0) {
             filtered = filtered.filter(game =>
-                game.genres?.some(genre => selectedGenres.has(genre))
+                game.genres?.some(genre => selectedGenres.includes(genre))
             );
         }
 
-        if (selectedThemes.size > 0) {
+        if (selectedThemes.length > 0) {
             filtered = filtered.filter(game =>
-                game.themes?.some(theme => selectedThemes.has(theme))
+                game.themes?.some(theme => selectedThemes.includes(theme))
             );
         }
 
-        if (selectedFeatures.size > 0) {
+        if (selectedFeatures.length > 0) {
             filtered = filtered.filter(game =>
-                game.features?.some(feature => selectedFeatures.has(feature))
+                game.features?.some(feature => selectedFeatures.includes(feature))
             );
         }
 
-        if (selectedPerspectives.size > 0) {
+        if (selectedPerspectives.length > 0) {
             filtered = filtered.filter(game =>
-                game.perspectives?.some(perspective => selectedPerspectives.has(perspective))
+                game.perspectives?.some(perspective => selectedPerspectives.includes(perspective))
             );
         }
 
-        if (selectedKeywords.size > 0) {
+        if (selectedKeywords.length > 0) {
             filtered = filtered.filter(game =>
-                game.keywords?.some(keyword => selectedKeywords.has(keyword))
+                game.keywords?.some(keyword => selectedKeywords.includes(keyword))
             );
         }
 
@@ -249,13 +245,8 @@ export default function SearchView() {
         return "★".repeat(value) + "☆".repeat(5 - value);
     }
 
-    function renderItems(options: string[]) {
-        return options.map((option) => (
-            <ListBox.Item key={option} id={option} textValue={option}>
-                {option}
-                <ListBox.ItemIndicator/>
-            </ListBox.Item>
-        ));
+    function toOptions(options: Iterable<string>): string[] {
+        return Array.from(options);
     }
 
     function renderSelect(
@@ -292,7 +283,7 @@ export default function SearchView() {
         );
     }
 
-    return <div className="flex flex-col gap-4 items-center w-full">
+    return <Form className="flex flex-col gap-4 items-center w-full">
         <div className="flex w-full justify-between px-4 gap-4 flex-col lg:flex-row">
             <div
                 className="flex h-full w-full lg:w-96 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-muted">
@@ -302,46 +293,24 @@ export default function SearchView() {
                     placeholder="Type to search..."
                     type="search"
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onChange={(event) => setFieldValue("searchTerm", event.target.value)}
                 />
                 {searchTerm && (
-                    <button className="text-muted" onClick={() => setSearchTerm("")} type="button">
+                    <button className="text-muted" onClick={() => setFieldValue("searchTerm", "")} type="button">
                         ×
                     </button>
                 )}
             </div>
             <div className="flex flex-row items-end gap-2">
-                {renderSelect(
-                    "Sort",
-                    sortBy,
-                    (value) => setSortBy(value as string),
-                    <>
-                        <ListBox.Item id="title_asc" key="title_asc" textValue="Title (A-Z)">Title
-                            (A-Z)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="title_desc" key="title_desc" textValue="Title (Z-A)">Title
-                            (Z-A)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="release_desc" key="release_desc" textValue="Release Date (Newest)">Release
-                            Date (Newest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="release_asc" key="release_asc" textValue="Release Date (Oldest)">Release Date
-                            (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="rating_desc" key="rating_desc" textValue="Rating (Highest)">Rating
-                            (Highest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="rating_asc" key="rating_asc" textValue="Rating (Lowest)">Rating
-                            (Lowest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="added_desc" key="added_desc" textValue="Date Added (Newest)">Date Added
-                            (Newest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="added_asc" key="added_asc" textValue="Date Added (Oldest)">Date Added (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="updated_desc" key="updated_desc" textValue="Last Updated (Newest)">Last
-                            Updated (Newest)<ListBox.ItemIndicator/></ListBox.Item>
-                        <ListBox.Item id="updated_asc" key="updated_asc" textValue="Last Updated (Oldest)">Last Updated
-                            (Oldest)<ListBox.ItemIndicator/></ListBox.Item>
-                    </>,
-                    "single",
-                    undefined,
-                    "w-full lg:w-64",
-                    true,
-                    <SortAscendingIcon/>,
-                )}
+                <AutocompleteInput
+                    name="sortBy"
+                    label="Sort"
+                    options={SORT_OPTIONS}
+                    selectionMode="single"
+                    className="flex flex-col gap-1 w-full lg:w-64"
+                    triggerPrefix={<SortAscendingIcon/>}
+                    showError={false}
+                />
                 <Tooltip>
                     <Tooltip.Trigger>
                         <Button isIconOnly
@@ -357,16 +326,17 @@ export default function SearchView() {
                 <Tooltip>
                     <Tooltip.Trigger>
                         <Button isIconOnly
-                                onPress={() => {
-                                    setSelectedLibraries(new Set());
-                                    setSelectedDevelopers(new Set());
-                                    setSelectedGenres(new Set());
-                                    setSelectedThemes(new Set());
-                                    setSelectedFeatures(new Set());
-                                    setSelectedPerspectives(new Set());
-                                    setSelectedKeywords(new Set());
-                                    setMinRating(1);
-                                }}
+                                onPress={() => setValues({
+                                    ...values,
+                                    libraries: [],
+                                    developers: [],
+                                    genres: [],
+                                    themes: [],
+                                    features: [],
+                                    perspectives: [],
+                                    keywords: [],
+                                    minRating: 1,
+                                })}
                                 aria-label="Clear All Filters"
                         >
                             <FunnelSimpleXIcon/>
@@ -385,23 +355,13 @@ export default function SearchView() {
                 margin: "0 auto",
             }}
         >
-            {renderSelect(
-                "Libraries",
-                Array.from(selectedLibraries),
-                (value) => setSelectedLibraries(new Set((value as string[]) ?? [])),
-                <>{libraries.map((library) => (
-                    <ListBox.Item key={library.id} id={library.id.toString()} textValue={library.name}>
-                        {library.name}
-                        <ListBox.ItemIndicator/>
-                    </ListBox.Item>
-                ))}</>,
-                "multiple",
-                "Filter by library",
-            )}
+            <AutocompleteInput name="libraries" label="Libraries" placeholder="Filter by library"
+                               options={libraries.map((library) => ({id: library.id.toString(), label: library.name}))}
+                               className="flex flex-col gap-1" showError={false}/>
             {renderSelect(
                 "Minimum Rating",
                 minRating.toString(),
-                (value) => setMinRating(parseInt(value as string, 10)),
+                (value) => setFieldValue("minRating", parseInt(value as string, 10)),
                 <>
                     {[1, 2, 3, 4, 5].map((value) => (
                         <ListBox.Item key={value} id={value.toString()} textValue={ratingLabel(value)}>
@@ -415,54 +375,18 @@ export default function SearchView() {
                 undefined,
                 true,
             )}
-            {renderSelect(
-                "Developers",
-                Array.from(selectedDevelopers),
-                (value) => setSelectedDevelopers(new Set((value as string[]) ?? [])),
-                <>{renderItems(Array.from(knownDevelopers))}</>,
-                "multiple",
-                "Filter by developer",
-            )}
-            {renderSelect(
-                "Genres",
-                Array.from(selectedGenres),
-                (value) => setSelectedGenres(new Set((value as string[]) ?? [])),
-                <>{renderItems(Array.from(knownGenres))}</>,
-                "multiple",
-                "Filter by genre",
-            )}
-            {renderSelect(
-                "Themes",
-                Array.from(selectedThemes),
-                (value) => setSelectedThemes(new Set((value as string[]) ?? [])),
-                <>{renderItems(Array.from(knownThemes))}</>,
-                "multiple",
-                "Filter by theme",
-            )}
-            {renderSelect(
-                "Features",
-                Array.from(selectedFeatures),
-                (value) => setSelectedFeatures(new Set((value as string[]) ?? [])),
-                <>{renderItems(Array.from(knownFeatures))}</>,
-                "multiple",
-                "Filter by feature",
-            )}
-            {renderSelect(
-                "Perspectives",
-                Array.from(selectedPerspectives),
-                (value) => setSelectedPerspectives(new Set((value as string[]) ?? [])),
-                <>{renderItems(Array.from(knownPerspectives))}</>,
-                "multiple",
-                "Filter by perspective",
-            )}
-            {renderSelect(
-                "Keywords",
-                Array.from(selectedKeywords),
-                (value) => setSelectedKeywords(new Set((value as string[]) ?? [])),
-                <>{renderItems(Array.from(knownKeywords))}</>,
-                "multiple",
-                "Filter by keyword",
-            )}
+            <AutocompleteInput name="developers" label="Developers" placeholder="Filter by developer"
+                               options={toOptions(knownDevelopers)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="genres" label="Genres" placeholder="Filter by genre"
+                               options={toOptions(knownGenres)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="themes" label="Themes" placeholder="Filter by theme"
+                               options={toOptions(knownThemes)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="features" label="Features" placeholder="Filter by feature"
+                               options={toOptions(knownFeatures)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="perspectives" label="Perspectives" placeholder="Filter by perspective"
+                               options={toOptions(knownPerspectives)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="keywords" label="Keywords" placeholder="Filter by keyword"
+                               options={toOptions(knownKeywords)} className="flex flex-col gap-1" showError={false}/>
         </div>
         }
         <div className="mt-4 w-full select-none">
@@ -473,5 +397,5 @@ export default function SearchView() {
                 </div>
             )}
         </div>
-    </div>;
+    </Form>;
 }
