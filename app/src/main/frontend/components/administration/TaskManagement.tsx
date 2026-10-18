@@ -1,12 +1,6 @@
 import React, {useEffect, useMemo, useState} from "react";
 import {Button, Chip, Label, ListBox, Select, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
-import {
-    ClockCounterClockwiseIcon,
-    FileTextIcon,
-    GearIcon,
-    PlayIcon,
-    StopIcon
-} from "@phosphor-icons/react";
+import {ClockCounterClockwiseIcon, FileTextIcon, GearIcon, PlayIcon, StopIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {TaskEndpoint} from "Frontend/generated/endpoints";
 import type TaskDto from "Frontend/generated/org/gameyfin/app/core/tasks/dto/TaskDto";
@@ -14,11 +8,7 @@ import type TaskRunDto from "Frontend/generated/org/gameyfin/app/core/tasks/dto/
 import TaskSource from "Frontend/generated/org/gameyfin/app/core/tasks/TaskSource";
 import {isRunActive, taskState, trackRun} from "Frontend/state/TaskState";
 import {timeBetween, timeUntil} from "Frontend/util/utils";
-import {
-    TaskRunProgress,
-    TaskRunStatusChip,
-    triggerLabel
-} from "Frontend/components/general/tasks/TaskRunComponents";
+import {TaskRunProgress, TaskRunStatusChip, triggerLabel} from "Frontend/components/general/tasks/TaskRunComponents";
 import TaskEditModal from "Frontend/components/general/modals/TaskEditModal";
 import TaskRunLogModal from "Frontend/components/general/modals/TaskRunLogModal";
 
@@ -153,8 +143,8 @@ export function TaskManagement() {
                                             <span className="text-sm text-muted">{task.description}</span>
                                         </div>
                                     </Table.Cell>
-                                    <Table.Cell>{scheduleDescription(task)}</Table.Cell>
-                                    <Table.Cell>
+                                    <Table.Cell className="whitespace-nowrap">{scheduleDescription(task)}</Table.Cell>
+                                    <Table.Cell className="whitespace-nowrap">
                                         {task.nextExecution ?
                                             <Tooltip delay={500}>
                                                 <Tooltip.Trigger>
@@ -166,7 +156,7 @@ export function TaskManagement() {
                                             </Tooltip> :
                                             <span className="text-muted">-</span>}
                                     </Table.Cell>
-                                    <Table.Cell>
+                                    <Table.Cell className="whitespace-nowrap">
                                         {task.lastRun ?
                                             <div className="flex flex-row items-center gap-2">
                                                 <TaskRunStatusChip run={liveRuns[task.lastRun.id] ?? task.lastRun}/>

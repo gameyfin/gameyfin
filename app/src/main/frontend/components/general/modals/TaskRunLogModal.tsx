@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from "react";
 import {Button, Modal, Spinner, Tooltip} from "@heroui/react";
-import {ArrowUDownLeftIcon} from "@phosphor-icons/react";
+import {ArrowUDownLeftIcon, DownloadSimpleIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {TaskEndpoint} from "Frontend/generated/endpoints";
 import type TaskRunDto from "Frontend/generated/org/gameyfin/app/core/tasks/dto/TaskRunDto";
@@ -57,6 +57,17 @@ export default function TaskRunLogModal({run, isOpen, onOpenChange}: TaskRunLogM
         logEndRef.current?.scrollIntoView({block: "nearest"});
     }, [log]);
 
+    // Downloads the complete log file, the dialog only shows the end of very large logs
+    function downloadLog() {
+        if (!run) return;
+        const link = document.createElement("a");
+        link.href = `/task-runs/${encodeURIComponent(run.id)}/log`;
+        link.download = `task-run-${run.id}.log`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -69,6 +80,20 @@ export default function TaskRunLogModal({run, isOpen, onOpenChange}: TaskRunLogM
                                         <Modal.Heading>{currentRun?.displayName ?? "Task log"}</Modal.Heading>
                                         {currentRun && <TaskRunStatusChip run={currentRun}/>}
                                         <div className="grow"/>
+                                        <Tooltip delay={0}>
+                                            <Tooltip.Trigger>
+                                                {/* Wrapper keeps the tooltip working for disabled buttons */}
+                                                <span>
+                                                    <Button isIconOnly size="sm" variant="ghost"
+                                                            aria-label="Download log"
+                                                            isDisabled={loading || !log}
+                                                            onPress={downloadLog}>
+                                                        <DownloadSimpleIcon/>
+                                                    </Button>
+                                                </span>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content placement="bottom">Download log</Tooltip.Content>
+                                        </Tooltip>
                                         <Tooltip delay={0}>
                                             <Tooltip.Trigger>
                                                 <Button isIconOnly size="sm"

@@ -92,6 +92,8 @@ class SecurityConfig(
                 .requestMatchers("/backups/setup/**").permitAll()
                 // Backup downloads/uploads (admin role is checked in BackupController)
                 .requestMatchers("/backups/**").authenticated()
+                // Task run log downloads (admin role is checked in TaskRunLogController)
+                .requestMatchers("/task-runs/**").authenticated()
                 // Client-side SPA routes - these need to pass through to serve index.html
                 // Authentication will be handled by Hilla on the client side
                 .requestMatchers(
