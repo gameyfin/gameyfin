@@ -128,13 +128,48 @@ class GameyfinPluginManagerTest {
 
         every { pluginWrapper.pluginId } returns "test-plugin"
         every { pluginWrapper.plugin } returns configurablePlugin
-        every { configurablePlugin.validateConfig() } returns expectedResult
+        every { pluginConfigRepository.findAllByPluginId("test-plugin") } returns listOf(
+            PluginConfigEntry(PluginConfigEntryKey("test-plugin", "key1"), "value1")
+        )
+        every { configurablePlugin.validateConfig(any()) } returns expectedResult
         every { pluginManager.getPlugin("test-plugin") } returns pluginWrapper
 
         val result = pluginManager.validatePluginConfig("test-plugin")
 
         assertEquals(expectedResult, result)
-        verify(exactly = 1) { configurablePlugin.validateConfig() }
+        verify(exactly = 1) { configurablePlugin.validateConfig(mapOf("key1" to "value1")) }
+    }
+
+    @Test
+    fun `validatePluginConfig should not pass stored config to untrusted plugin`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository,
+                pluginDataService
+            )
+        )
+
+        val configurablePlugin = mockk<TestConfigurablePlugin>(relaxed = true)
+        val pluginWrapper = mockk<PluginWrapper>()
+        val untrustedEntry = PluginManagementEntry("test-plugin", enabled = false, priority = 1)
+        untrustedEntry.trustLevel = PluginTrustLevel.UNTRUSTED
+
+        every { pluginWrapper.pluginId } returns "test-plugin"
+        every { pluginWrapper.plugin } returns configurablePlugin
+        every { pluginManagementRepository.findByIdOrNull("test-plugin") } returns untrustedEntry
+        every { pluginConfigRepository.findAllByPluginId("test-plugin") } returns listOf(
+            PluginConfigEntry(PluginConfigEntryKey("test-plugin", "secret"), "value")
+        )
+        every { pluginManager.getPlugin("test-plugin") } returns pluginWrapper
+
+        pluginManager.validatePluginConfig("test-plugin")
+
+        verify(exactly = 1) { configurablePlugin.validateConfig(emptyMap()) }
     }
 
     @Test

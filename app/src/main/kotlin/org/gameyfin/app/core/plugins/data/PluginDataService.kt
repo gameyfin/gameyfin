@@ -12,7 +12,7 @@ import java.time.Instant
 
 /**
  * Read-only access to games, libraries and collections for plugins (see [GameyfinDataService]).
- * Injected into every plugin by the [org.gameyfin.app.core.plugins.management.GameyfinPluginManager].
+ * Provided to every plugin via its [org.gameyfin.app.core.plugins.management.GameyfinPluginContext].
  */
 @Service
 @Transactional(readOnly = true)

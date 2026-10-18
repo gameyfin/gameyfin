@@ -7,8 +7,8 @@ import java.time.Instant
 /**
  * Read-only access to the most important data of Gameyfin (games, libraries and collections).
  *
- * Available to every plugin via [org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin.dataService] once the plugin
- * has been started. All methods return snapshots, changes made by Gameyfin afterward are not reflected.
+ * Available to every plugin via [org.gameyfin.pluginapi.core.wrapper.PluginContext.dataService]
+ * (or [org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin.dataService]). All methods return snapshots, changes made by Gameyfin afterward are not reflected.
  */
 interface GameyfinDataService {
 

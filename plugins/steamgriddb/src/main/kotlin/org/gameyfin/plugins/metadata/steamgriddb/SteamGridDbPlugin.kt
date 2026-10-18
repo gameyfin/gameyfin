@@ -6,6 +6,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
 import org.gameyfin.pluginapi.core.config.*
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
+import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.gameyfin.pluginapi.gamemetadata.Platform
@@ -14,10 +15,9 @@ import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGame
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbGrid
 import org.gameyfin.plugins.metadata.steamgriddb.dto.SteamGridDbHero
 import org.pf4j.Extension
-import org.pf4j.PluginWrapper
 import java.net.URI
 
-class SteamGridDbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
+class SteamGridDbPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(context) {
 
     companion object {
         private var client: SteamGridDbApiClient? = null

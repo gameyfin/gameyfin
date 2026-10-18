@@ -8,11 +8,11 @@ import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
+import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.FileDownload
 import org.pf4j.Extension
-import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.net.URI
@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.*
 import kotlin.time.measureTimedValue
 
-class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
+class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(context) {
 
     companion object {
         internal lateinit var plugin: TorrentDownloadPlugin
@@ -408,7 +408,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         }
 
         val builder = torrentBuilder.path(gameFilesPath.toFile())
-            .creator("Gameyfin Torrent plugin v${wrapper.descriptor.version}")
+            .creator("Gameyfin Torrent plugin v${context.pluginVersion}")
             .addTracker(trackerUrl)
             .setPrivate(isPrivate)
 

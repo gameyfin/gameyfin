@@ -3,11 +3,11 @@ package org.gameyfin.plugins.download.direct
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
+import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.FileDownload
 import org.pf4j.Extension
-import org.pf4j.PluginWrapper
 import java.io.IOException
 import java.io.InputStream
 import java.io.PipedInputStream
@@ -20,7 +20,7 @@ import kotlin.io.path.extension
 import kotlin.io.path.fileSize
 import kotlin.io.path.isDirectory
 
-class DirectDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
+class DirectDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(context) {
 
     companion object {
         lateinit var plugin: DirectDownloadPlugin
