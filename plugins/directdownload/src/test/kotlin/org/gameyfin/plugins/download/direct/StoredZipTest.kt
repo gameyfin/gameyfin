@@ -4,7 +4,6 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipFile
-import java.util.zip.ZipInputStream
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeBytes
 import kotlin.test.Test
@@ -22,6 +21,12 @@ class StoredZipTest {
         root.resolve("café").createDirectories()            // non-ASCII path component
         root.resolve("café/naïve.sav").writeBytes(ByteArray(123) { 7 })
         return root
+    }
+
+    private fun streamToTempFile(root: Path): Path {
+        val tmp = Files.createTempFile("gf-zip-", ".zip")
+        StoredZip.stream(root).use { input -> Files.newOutputStream(tmp).use { input.copyTo(it) } }
+        return tmp
     }
 
     private fun countBytes(input: InputStream): Long {
@@ -50,11 +55,13 @@ class StoredZipTest {
             "café/naïve.sav" to ByteArray(123) { 7 },
         )
         val seen = HashMap<String, ByteArray>()
-        ZipInputStream(StoredZip.stream(root)).use { zis ->
-            while (true) {
-                val e = zis.nextEntry ?: break
+        // ZipInputStream can't read STORED entries with a data descriptor; use random access.
+        ZipFile(streamToTempFile(root).toFile()).use { zf ->
+            for (e in zf.entries()) {
                 if (e.isDirectory) continue
-                seen[e.name] = zis.readBytes()
+                val bytes = zf.getInputStream(e).readBytes()
+                assertEquals(java.util.zip.CRC32().apply { update(bytes) }.value, e.crc, "crc for ${e.name}")
+                seen[e.name] = bytes
             }
         }
         assertEquals(expected.keys, seen.keys)
@@ -65,9 +72,7 @@ class StoredZipTest {
     @Test
     fun `archive parses via random-access ZipFile`() {
         val root = sampleTree()
-        val tmp = Files.createTempFile("gf-zip-", ".zip")
-        StoredZip.stream(root).use { input -> Files.newOutputStream(tmp).use { input.copyTo(it) } }
-        ZipFile(tmp.toFile()).use { zf ->
+        ZipFile(streamToTempFile(root).toFile()).use { zf ->
             val files = zf.entries().toList().filter { !it.isDirectory }
             assertEquals(4, files.size)
         }
@@ -83,21 +88,21 @@ class StoredZipTest {
 
     @Test
     fun `planned size, no zip64`() {
-        // one entry: local(30+5+0+100) + central(46+5+0) + eocd(22)
-        assertEquals(208L, StoredZip.plannedSize(listOf(5), listOf(100L)))
+        // one entry: local(30+5+0+100) + descriptor16 + central(46+5+0) + eocd(22)
+        assertEquals(224L, StoredZip.plannedSize(listOf(5), listOf(100L)))
     }
 
     @Test
     fun `planned size, single file over 4GB triggers zip64 on size and end records`() {
-        // local 30+5+20+5e9 ; cd 46+5+20 ; +zip64eocd56 +loc20 +eocd22
-        assertEquals(5_000_000_224L, StoredZip.plannedSize(listOf(5), listOf(5_000_000_000L)))
+        // local 30+5+20+5e9 + descriptor24 ; cd 46+5+20 ; +zip64eocd56 +loc20 +eocd22
+        assertEquals(5_000_000_248L, StoredZip.plannedSize(listOf(5), listOf(5_000_000_000L)))
     }
 
     @Test
     fun `planned size, small file after 4GB gets zip64 offset field only`() {
         // big(name5,5e9) then small(name5,10): the small entry's local offset > 4GB
         // → central zip64 holds only the 8-byte offset (size fits in 32 bits).
-        assertEquals(5_000_000_332L, StoredZip.plannedSize(listOf(5, 5), listOf(5_000_000_000L, 10L)))
+        assertEquals(5_000_000_372L, StoredZip.plannedSize(listOf(5, 5), listOf(5_000_000_000L, 10L)))
     }
 
     /**
@@ -114,18 +119,9 @@ class StoredZipTest {
 
         assertEquals(countBytes(StoredZip.stream(root)), StoredZip.computeSize(root))
 
-        var seenBig = false
-        var seenAfter = false
-        ZipInputStream(StoredZip.stream(root)).use { zis ->
-            while (true) {
-                val e = zis.nextEntry ?: break
-                when (e.name) {
-                    "big.bin" -> seenBig = true
-                    "after.txt" -> seenAfter = true
-                }
-                zis.closeEntry()
-            }
-        }
+        val names = ZipFile(streamToTempFile(root).toFile()).use { zf -> zf.entries().toList().map { it.name } }
+        val seenBig = "big.bin" in names
+        val seenAfter = "after.txt" in names
         assertTrue(seenBig && seenAfter, "both entries present in the >4GB archive")
     }
 }
