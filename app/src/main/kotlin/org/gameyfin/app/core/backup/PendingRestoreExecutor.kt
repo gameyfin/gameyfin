@@ -2,7 +2,10 @@ package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import liquibase.integration.spring.SpringResourceAccessor
-import org.gameyfin.app.core.database.*
+import org.gameyfin.app.core.database.DatabaseSettingsInitializer
+import org.gameyfin.app.core.database.DatabaseSettingsStore
+import org.gameyfin.app.core.database.DatabaseSwitchStatusDto
+import org.gameyfin.app.core.database.PendingDatabaseSwitch
 import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties
 import org.springframework.context.ApplicationContextInitializer
@@ -81,8 +84,8 @@ class PendingRestoreExecutor : ApplicationContextInitializer<ConfigurableApplica
                 liquibase.defaultSchema?.let { database.defaultSchemaName = it }
                 liquibase.liquibaseSchema?.let { database.liquibaseSchemaName = it }
                 liquibase.liquibaseTablespace?.let { database.liquibaseTablespaceName = it }
-                liquibase.databaseChangeLogTable?.let { database.databaseChangeLogTableName = it }
-                liquibase.databaseChangeLogLockTable?.let { database.databaseChangeLogLockTableName = it }
+                liquibase.databaseChangeLogTable.let { database.databaseChangeLogTableName = it }
+                liquibase.databaseChangeLogLockTable.let { database.databaseChangeLogLockTableName = it }
             }
 
             val mediaRoot = Path.of(environment.getProperty("spring.content.fs.filesystem-root", "./data/"))

@@ -5,7 +5,10 @@ import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
+import org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
+import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.pf4j.*
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import java.nio.file.Path
@@ -25,7 +28,8 @@ class GameyfinPluginManager(
     forwardingPluginStateListener: SpringPluginStateListener,
     private val dbPluginStatusProvider: DatabasePluginStatusProvider,
     private val pluginConfigRepository: PluginConfigRepository,
-    private val pluginManagementRepository: PluginManagementRepository
+    private val pluginManagementRepository: PluginManagementRepository,
+    private val pluginDataService: ObjectProvider<GameyfinDataService>
 ) : DefaultPluginManager(Path(System.getProperty("pf4j.pluginsDir", "plugins"))) {
 
     companion object {
@@ -193,7 +197,14 @@ class GameyfinPluginManager(
             return pluginWrapper.pluginState
         }
 
+        injectHostServices(pluginId)
+
         return super.startPlugin(pluginId)
+    }
+
+    private fun injectHostServices(pluginId: String) {
+        val plugin = getPlugin(pluginId)?.plugin as? GameyfinPlugin ?: return
+        plugin.injectDataService(pluginDataService.getObject())
     }
 
     override fun startPlugins() {

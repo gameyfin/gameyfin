@@ -22,7 +22,8 @@ class TaskEndpoint(
 
     fun updateTask(update: TaskUpdateDto): TaskDto = taskService.updateTask(update)
 
-    fun runNow(taskKey: String): TaskRunDto? = taskService.runNow(taskKey)
+    fun runNow(taskKey: String, parameters: Map<String, String?>?): TaskRunDto? =
+        taskService.runNow(taskKey, parameters.orEmpty())
 
     fun cancelRun(runId: String) = taskService.cancelRun(runId)
 

@@ -2,6 +2,8 @@ package org.gameyfin.app.core.tasks
 
 import io.mockk.*
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
+import org.gameyfin.pluginapi.core.config.ConfigMetadata
+import org.gameyfin.pluginapi.tasks.GameSelection
 import org.gameyfin.pluginapi.tasks.GameyfinTask
 import org.gameyfin.pluginapi.tasks.TaskContext
 import org.gameyfin.pluginapi.tasks.TaskResult
@@ -22,6 +24,7 @@ class PluginTaskRegistrarTest {
         override val description = "Synchronizes something"
         override val defaultSchedule = "0 0 3 * * *"
         override val cancellable = false
+        override val parameters = listOf(ConfigMetadata("games", GameSelection::class.java, "Games", "", isRequired = false))
         var executions = 0
 
         override fun execute(context: TaskContext): TaskResult {
@@ -73,6 +76,7 @@ class PluginTaskRegistrarTest {
         assertEquals("0 0 3 * * *", definition.defaultSchedule)
         assertTrue(definition.scheduledByDefault)
         assertFalse(definition.cancellable)
+        assertEquals(listOf("games"), definition.parameters.map { it.key })
 
         val result = (definition.action as TaskAction.Run).execute(mockk())
         assertEquals("Synced", result?.summary)

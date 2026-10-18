@@ -55,12 +55,13 @@ class TaskService(
 
     /**
      * Starts the task immediately.
+     * @param parameters raw values of the parameters declared by the task
      * @return the started run, or `null` if the task creates its runs itself (e.g. library scans)
      */
-    fun runNow(key: String): TaskRunDto? {
+    fun runNow(key: String, parameters: Map<String, String?> = emptyMap()): TaskRunDto? {
         val definition = registry.require(key)
         require(definition.manuallyTriggerable) { "${definition.name} can not be started manually" }
-        return runService.trigger(key, TaskTrigger.MANUAL)
+        return runService.trigger(key, TaskTrigger.MANUAL, parameters)
     }
 
     fun cancelRun(runId: String) {
@@ -100,6 +101,7 @@ class TaskService(
             nextExecution = schedulerService.nextExecution(definition),
             settingsMetadata = definition.settings.map { TaskSettingsService.toDto(it) },
             settings = settingsService.getRaw(definition),
+            parametersMetadata = definition.parameters.map { TaskSettingsService.toDto(it) },
             lastRun = lastRun,
             running = runService.isRunning(definition.key)
         )

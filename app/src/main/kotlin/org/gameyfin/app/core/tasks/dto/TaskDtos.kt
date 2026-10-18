@@ -23,6 +23,8 @@ data class TaskDto(
     val nextExecution: Instant?,
     val settingsMetadata: List<PluginConfigMetadataDto>,
     val settings: Map<String, String?>,
+    /** Parameters which can be specified when starting the task manually */
+    val parametersMetadata: List<PluginConfigMetadataDto>,
     val lastRun: TaskRunDto?,
     val running: Boolean
 )

@@ -48,6 +48,12 @@ interface TaskContext {
     fun <T : Serializable> setting(key: String): T?
 
     /**
+     * Returns the value of a parameter declared in [GameyfinTask.parameters] for the current run,
+     * or its default value if it has not been specified (e.g. for scheduled runs).
+     */
+    fun <T : Serializable> parameter(key: String): T?
+
+    /**
      * Wraps a [Runnable] which is executed on a different thread, so everything it logs is included in the log
      * of the current run.
      */

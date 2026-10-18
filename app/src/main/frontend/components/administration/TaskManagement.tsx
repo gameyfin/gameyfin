@@ -11,6 +11,7 @@ import {timeBetween, timeUntil} from "Frontend/util/utils";
 import {TaskRunProgress, TaskRunStatusChip, triggerLabel} from "Frontend/components/general/tasks/TaskRunComponents";
 import TaskEditModal from "Frontend/components/general/modals/TaskEditModal";
 import TaskRunLogModal from "Frontend/components/general/modals/TaskRunLogModal";
+import TaskRunParametersModal from "Frontend/components/general/modals/TaskRunParametersModal";
 
 const PAGE_SIZE = 25;
 const ALL_TASKS = "__all__";
@@ -25,7 +26,9 @@ export function TaskManagement() {
     const [starting, setStarting] = useState<Record<string, boolean>>({});
     const [selectedTask, setSelectedTask] = useState<TaskDto>();
     const [selectedRun, setSelectedRun] = useState<TaskRunDto>();
+    const [parameterTask, setParameterTask] = useState<TaskDto>();
     const editModal = useOverlayState();
+    const parametersModal = useOverlayState();
     const logModal = useOverlayState();
 
     const liveState = useSnapshot(taskState);
@@ -70,10 +73,19 @@ export function TaskManagement() {
             .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
     }, [history, liveRuns, filter, hasMore]);
 
-    async function runNow(task: TaskDto) {
+    function requestRun(task: TaskDto) {
+        if (task.parametersMetadata.length > 0) {
+            setParameterTask(task);
+            parametersModal.open();
+        } else {
+            runNow(task);
+        }
+    }
+
+    async function runNow(task: TaskDto, parameters?: Record<string, string | undefined>) {
         setStarting(current => ({...current, [task.key]: true}));
         try {
-            const run = await TaskEndpoint.runNow(task.key);
+            const run = await TaskEndpoint.runNow(task.key, parameters);
             if (run) {
                 trackRun(run);
                 toast.info(`${task.name} started`, {description: "The progress is shown in the task overview at the top"});
@@ -174,7 +186,7 @@ export function TaskManagement() {
                                                         <Button isIconOnly size="sm" variant="ghost"
                                                                 aria-label="Run now"
                                                                 isPending={starting[task.key]}
-                                                                onPress={() => runNow(task)}>
+                                                                onPress={() => requestRun(task)}>
                                                             {starting[task.key] ?
                                                                 <Spinner size="sm" color="current"/> :
                                                                 <PlayIcon/>}
@@ -330,6 +342,11 @@ export function TaskManagement() {
                                onOpenChange={editModal.setOpen}
                                onSaved={updated =>
                                    setTasks(current => current?.map(task => task.key === updated.key ? updated : task))}/>}
+            {parameterTask &&
+                <TaskRunParametersModal task={parameterTask}
+                                        isOpen={parametersModal.isOpen}
+                                        onOpenChange={parametersModal.setOpen}
+                                        onRun={runNow}/>}
             <TaskRunLogModal run={selectedRun}
                              isOpen={logModal.isOpen}
                              onOpenChange={logModal.setOpen}/>

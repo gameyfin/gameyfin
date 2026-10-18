@@ -5,10 +5,12 @@ import * as Yup from "yup";
 import "Frontend/util/yup-extensions";
 import {TaskEndpoint} from "Frontend/generated/endpoints";
 import type TaskDto from "Frontend/generated/org/gameyfin/app/core/tasks/dto/TaskDto";
-import type PluginConfigMetadataDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginConfigMetadataDto";
 import Input from "Frontend/components/general/input/Input";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
-import PluginConfigFormField from "Frontend/components/general/plugin/PluginConfigFormField";
+import TaskConfigFormField, {
+    fromTaskFieldValue,
+    toTaskFieldValue
+} from "Frontend/components/general/tasks/TaskConfigFormField";
 
 interface TaskEditModalProps {
     task: TaskDto;
@@ -32,19 +34,6 @@ function settingFieldName(key: string) {
     return `settings.${key}`;
 }
 
-function toFormValue(meta: PluginConfigMetadataDto, value: unknown): unknown {
-    if (value == null) return meta.type.toLowerCase() === "boolean" ? false : "";
-    switch (meta.type.toLowerCase()) {
-        case "float":
-        case "int":
-            return Number(value);
-        case "boolean":
-            return value === true || value === "true";
-        default:
-            return value.toString();
-    }
-}
-
 export default function TaskEditModal({task, isOpen, onOpenChange, onSaved}: TaskEditModalProps) {
 
     function initialValues(): TaskFormValues {
@@ -54,7 +43,7 @@ export default function TaskEditModal({task, isOpen, onOpenChange, onSaved}: Tas
             settings: {}
         };
         for (const meta of task.settingsMetadata) {
-            values = setIn(values, settingFieldName(meta.key), toFormValue(meta, task.settings[meta.key] ?? meta.default));
+            values = setIn(values, settingFieldName(meta.key), toTaskFieldValue(meta, task.settings[meta.key] ?? meta.default));
         }
         return values;
     }
@@ -70,8 +59,7 @@ export default function TaskEditModal({task, isOpen, onOpenChange, onSaved}: Tas
     async function save(values: TaskFormValues, close: () => void) {
         const settings: Record<string, string | undefined> = {};
         for (const meta of task.settingsMetadata) {
-            const value = getIn(values, settingFieldName(meta.key));
-            settings[meta.key] = value == null || value === "" ? undefined : String(value);
+            settings[meta.key] = fromTaskFieldValue(meta, getIn(values, settingFieldName(meta.key)));
         }
 
         try {
@@ -121,12 +109,9 @@ export default function TaskEditModal({task, isOpen, onOpenChange, onSaved}: Tas
                                             {task.settingsMetadata.length > 0 && <>
                                                 <h4 className="text-l font-bold mt-2">Settings</h4>
                                                 {task.settingsMetadata.map(meta => (
-                                                    <PluginConfigFormField
-                                                        key={meta.key}
-                                                        pluginConfigMetadata={meta}
-                                                        name={settingFieldName(meta.key)}
-                                                        description={meta.description}
-                                                        variant="secondary"/>
+                                                    <TaskConfigFormField key={meta.key}
+                                                                         meta={meta}
+                                                                         name={settingFieldName(meta.key)}/>
                                                 ))}
                                             </>}
                                         </Modal.Body>

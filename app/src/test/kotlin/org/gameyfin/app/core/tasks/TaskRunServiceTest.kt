@@ -5,6 +5,8 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.gameyfin.app.core.tasks.dto.TaskStepDto
 import org.gameyfin.app.core.tasks.persistence.TaskRunEntry
+import org.gameyfin.pluginapi.core.config.ConfigMetadata
+import org.gameyfin.pluginapi.tasks.GameSelection
 import org.gameyfin.pluginapi.tasks.TaskCancelledException
 import org.gameyfin.pluginapi.tasks.TaskResult
 import org.gameyfin.pluginapi.tasks.TaskTrigger
@@ -331,5 +333,65 @@ class TaskRunServiceTest {
         assertEquals("removed-plugin-task", dto.taskName)
         assertFalse(dto.cancellable)
         verify(exactly = 0) { repository.save(any()) }
+    }
+
+    private fun parameterizedTask(onExecute: (GameSelection?, Int?) -> Unit) = TaskDefinition(
+        key = "test",
+        name = "Test",
+        parameters = listOf(
+            ConfigMetadata("games", GameSelection::class.java, "Games", "", isRequired = false),
+            ConfigMetadata("limit", Int::class.javaObjectType, "Limit", "", default = 5)
+        ),
+        action = TaskAction.Run { context ->
+            onExecute(context.parameter("games"), context.parameter("limit"))
+            null
+        }
+    )
+
+    @Test
+    fun `trigger should pass the parameters to the run`() {
+        var games: GameSelection? = null
+        var limit: Int? = null
+        registry.register(parameterizedTask { g, l -> games = g; limit = l })
+
+        val run = service.trigger("test", TaskTrigger.MANUAL, mapOf("games" to "1,2", "limit" to "3"))
+        assertNotNull(run)
+        awaitFinished(run.id)
+
+        assertEquals(TaskRunStatus.COMPLETED, store.getValue(run.id).status)
+        assertEquals(GameSelection(listOf(1L, 2L)), games)
+        assertEquals(3, limit)
+    }
+
+    @Test
+    fun `trigger should use the default values of missing parameters`() {
+        var games: GameSelection? = GameSelection(listOf(1L))
+        var limit: Int? = null
+        registry.register(parameterizedTask { g, l -> games = g; limit = l })
+
+        val run = service.trigger("test", TaskTrigger.SCHEDULE)
+        assertNotNull(run)
+        awaitFinished(run.id)
+
+        assertNull(games)
+        assertEquals(5, limit)
+    }
+
+    @Test
+    fun `trigger should reject invalid parameters`() {
+        registry.register(parameterizedTask { _, _ -> })
+
+        assertThrows<IllegalArgumentException> { service.trigger("test", TaskTrigger.MANUAL, mapOf("games" to "abc")) }
+        assertThrows<IllegalArgumentException> { service.trigger("test", TaskTrigger.MANUAL, mapOf("unknown" to "1")) }
+        assertTrue(store.isEmpty())
+    }
+
+    @Test
+    fun `context should reject undeclared parameters`() {
+        registry.register(taskDefinition("test"))
+
+        assertThrows<IllegalArgumentException> {
+            service.runBlocking("test", TaskTrigger.MANUAL) { context -> context.parameter<Int>("limit"); null }
+        }
     }
 }

@@ -107,13 +107,17 @@ class TaskRunService(
      *
      * @return the started run, or `null` if the task dispatches its runs itself or if a scheduled execution has
      * been skipped because the task is still running
+     * @param parameters raw values of the parameters declared by the task, missing ones use their default values
      * @throws IllegalStateException if the task is started manually while it is still running
+     * @throws IllegalArgumentException if the parameters are invalid
      */
-    fun trigger(taskKey: String, trigger: TaskTrigger): TaskRunDto? {
+    fun trigger(taskKey: String, trigger: TaskTrigger, parameters: Map<String, String?> = emptyMap()): TaskRunDto? {
         val definition = registry.require(taskKey)
         if (trigger == TaskTrigger.MANUAL && !definition.manuallyTriggerable) {
             throw IllegalStateException("Task ${definition.name} can not be started manually")
         }
+        // Scheduled runs use the default values of the parameters
+        val parameterValues = TaskSettingsService.convertValues(definition.parameters, parameters)
         return when (val action = definition.action) {
             is TaskAction.Dispatch -> {
                 action.dispatch(trigger)
@@ -121,7 +125,8 @@ class TaskRunService(
             }
 
             is TaskAction.Run -> try {
-                start(taskKey, trigger, exclusive = true) { action.execute(it) }
+                val run = begin(taskKey, trigger, null, null, null, exclusive = true, parameterValues)
+                submit(run) { action.execute(it) }
             } catch (e: TaskAlreadyRunningException) {
                 if (trigger != TaskTrigger.MANUAL) {
                     log.info { "Skipping execution of task ${definition.name}, it is still running" }
@@ -147,6 +152,10 @@ class TaskRunService(
         body: (TaskContext) -> TaskResult?
     ): TaskRunDto {
         val run = begin(taskKey, trigger, displayName, link, cancellable, exclusive)
+        return submit(run, body)
+    }
+
+    private fun submit(run: ActiveRun, body: (TaskContext) -> TaskResult?): TaskRunDto {
         try {
             executor.execute { execute(run, body, rethrow = false) }
         } catch (e: RejectedExecutionException) {
@@ -227,7 +236,8 @@ class TaskRunService(
         displayName: String?,
         link: String?,
         cancellable: Boolean?,
-        exclusive: Boolean
+        exclusive: Boolean,
+        parameters: Map<String, Serializable?> = emptyMap()
     ): ActiveRun {
         val definition = registry.require(taskKey)
         val run = ActiveRun(
@@ -235,7 +245,8 @@ class TaskRunService(
             trigger = trigger,
             displayName = displayName ?: definition.name,
             link = link,
-            cancellable = cancellable ?: definition.cancellable
+            cancellable = cancellable ?: definition.cancellable,
+            parameters = parameters
         )
         synchronized(startLock) {
             if (exclusive && isRunning(taskKey)) throw TaskAlreadyRunningException(definition.name)
@@ -264,6 +275,9 @@ class TaskRunService(
     private fun execute(run: ActiveRun, body: (TaskContext) -> TaskResult?, rethrow: Boolean) {
         MdcPropagation.withTaskRun(run.id) {
             log.info { "Started ${run.displayName} (triggered by ${run.trigger.name.lowercase()})" }
+            run.parameters.filterValues { it != null }.takeIf { it.isNotEmpty() }?.let { parameters ->
+                log.info { "Parameters: " + parameters.entries.joinToString(", ") { "${it.key}=${it.value}" } }
+            }
             try {
                 run.throwIfCancelled()
                 val result = body(run)
@@ -344,7 +358,8 @@ class TaskRunService(
         override val trigger: TaskTrigger,
         @Volatile var displayName: String,
         val link: String?,
-        val cancellable: Boolean
+        val cancellable: Boolean,
+        val parameters: Map<String, Serializable?>
     ) : TaskContext {
         val id: String = UUID.randomUUID().toString()
         val startedAt: Instant = Instant.now()
@@ -376,6 +391,14 @@ class TaskRunService(
         }
 
         override fun <T : Serializable> setting(key: String): T? = settingsService.get(definition, key)
+
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : Serializable> parameter(key: String): T? {
+            require(definition.parameters.any { it.key == key }) {
+                "Unknown parameter '$key' of task ${definition.key}"
+            }
+            return parameters[key] as T?
+        }
 
         override fun wrap(runnable: Runnable): Runnable = MdcPropagation.wrap(runnable)
 

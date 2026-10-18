@@ -7,6 +7,7 @@ import org.gameyfin.app.core.tasks.persistence.TaskSettingEntry
 import org.gameyfin.app.core.tasks.persistence.TaskSettingKey
 import org.gameyfin.app.core.tasks.persistence.TaskSettingRepository
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
+import org.gameyfin.pluginapi.tasks.GameSelection
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -27,6 +28,7 @@ class TaskSettingsServiceTest {
     private val mode = ConfigMetadata("mode", Mode::class.java, "Mode", "", default = Mode.FAST)
     private val target = ConfigMetadata("target", String::class.java, "Target", "")
     private val comment = ConfigMetadata("comment", String::class.java, "Comment", "", isRequired = false)
+    private val games = ConfigMetadata("games", GameSelection::class.java, "Games", "", isRequired = false)
 
     private val definition = TaskDefinition(
         key = "test",
@@ -135,5 +137,41 @@ class TaskSettingsServiceTest {
         assertEquals("boolean", TaskSettingsService.toDto(enabled).type)
         assertEquals("String", TaskSettingsService.toDto(target).type)
         assertEquals(listOf("FAST", "THOROUGH"), TaskSettingsService.toDto(mode).allowedValues)
+    }
+
+    @Test
+    fun `convert should parse game selections`() {
+        assertEquals(GameSelection(listOf(3L, 1L)), TaskSettingsService.convert(games, "3, 1,3"))
+        assertThrows<IllegalArgumentException> { TaskSettingsService.convert(games, "1,abc") }
+    }
+
+    @Test
+    fun `convertValues should convert values and use defaults for missing ones`() {
+        val values = TaskSettingsService.convertValues(
+            listOf(limit, enabled, games),
+            mapOf("enabled" to "true", "games" to "7")
+        )
+
+        assertEquals(mapOf("limit" to 10, "enabled" to true, "games" to GameSelection(listOf(7L))), values)
+    }
+
+    @Test
+    fun `convertValues should reject invalid, missing and unknown values`() {
+        val error = assertThrows<IllegalArgumentException> {
+            TaskSettingsService.convertValues(listOf(limit, target), mapOf("limit" to "abc", "other" to "1"))
+        }
+
+        assertTrue(error.message!!.contains("limit"))
+        assertTrue(error.message!!.contains("target"))
+        assertTrue(error.message!!.contains("other"))
+    }
+
+    @Test
+    fun `toDto should represent game selections as strings`() {
+        val withDefault = ConfigMetadata("games", GameSelection::class.java, "Games", "", default = GameSelection(listOf(1L, 2L)))
+
+        assertEquals("GameSelection", TaskSettingsService.toDto(withDefault).type)
+        assertEquals("1,2", TaskSettingsService.toDto(withDefault).default)
+        assertNull(TaskSettingsService.toDto(games).default)
     }
 }

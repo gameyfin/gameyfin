@@ -56,6 +56,15 @@ interface GameyfinTask : ExtensionPoint {
         get() = emptyList()
 
     /**
+     * Parameters of a single run, which administrators can enter when starting the task manually.
+     * Unlike [settings], they are not persisted: scheduled runs always use the default values.
+     * Use [TaskContext.parameter] to access the values of the current run.
+     * Use [GameSelection] as type to let administrators pick games.
+     */
+    val parameters: List<ConfigMetadata<*>>
+        get() = emptyList()
+
+    /**
      * Whether a run of this task can be cancelled.
      * Cancellation is cooperative, so the task must check [TaskContext.isCancellationRequested] regularly.
      */

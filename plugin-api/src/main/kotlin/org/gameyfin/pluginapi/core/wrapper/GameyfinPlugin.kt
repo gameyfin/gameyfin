@@ -1,5 +1,6 @@
 package org.gameyfin.pluginapi.core.wrapper
 
+import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.pf4j.Plugin
 import org.pf4j.PluginWrapper
 import tools.jackson.databind.ObjectMapper
@@ -21,7 +22,6 @@ import kotlin.io.path.fileSize
  * @constructor Creates a Gameyfin plugin with the given [PluginWrapper].
  * @param wrapper The plugin wrapper provided by the Gameyfin application.
  */
-@Suppress("DEPRECATION")
 abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
 
     companion object {
@@ -45,6 +45,25 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
      * Plugin data directory for storing plugin-specific files.
      */
     val dataDirectory: Path = Path.of("plugindata/${wrapper.pluginId}")
+
+    @Volatile
+    private var injectedDataService: GameyfinDataService? = null
+
+    /**
+     * Read-only access to games, libraries and collections of Gameyfin.
+     *
+     * @throws IllegalStateException if accessed before the plugin has been started by Gameyfin
+     */
+    val dataService: GameyfinDataService
+        get() = injectedDataService
+            ?: throw IllegalStateException("The data service is not available before the plugin has been started")
+
+    /**
+     * Called by Gameyfin before the plugin is started. Must not be called by plugins.
+     */
+    fun injectDataService(dataService: GameyfinDataService) {
+        injectedDataService = dataService
+    }
 
     /**
      * JSON serializer for serializing and deserializing plugin state.

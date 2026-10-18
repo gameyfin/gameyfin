@@ -40,6 +40,7 @@ class TaskDefinition(
     /** Whether runs of this task can be cancelled (cooperatively) */
     val cancellable: Boolean = true,
     val settings: List<ConfigMetadata<*>> = emptyList(),
+    val parameters: List<ConfigMetadata<*>> = emptyList(),
     val action: TaskAction
 )
 

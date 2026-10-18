@@ -5,6 +5,7 @@ import org.gameyfin.app.core.tasks.persistence.TaskSettingEntry
 import org.gameyfin.app.core.tasks.persistence.TaskSettingKey
 import org.gameyfin.app.core.tasks.persistence.TaskSettingRepository
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
+import org.gameyfin.pluginapi.tasks.GameSelection
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.io.Serializable
@@ -22,7 +23,8 @@ class TaskSettingsService(private val settingRepository: TaskSettingRepository) 
             type = meta.type.kotlin.javaPrimitiveType?.simpleName ?: meta.type.simpleName ?: "Unknown",
             label = meta.label,
             description = meta.description,
-            default = meta.default,
+            // Values without a native UI representation are sent in their string representation (e.g. "1,2,3")
+            default = (meta.default as? GameSelection)?.toString() ?: meta.default,
             secret = meta.isSecret,
             required = meta.isRequired,
             allowedValues = meta.allowedValues?.map { it.toString() }
@@ -48,10 +50,48 @@ class TaskSettingsService(private val settingRepository: TaskSettingRepository) 
                     java.lang.Double::class.java -> value.trim().toDouble()
                     java.lang.Boolean::class.java -> value.trim().toBooleanStrict()
                     String::class.java -> value
+                    GameSelection::class.java -> GameSelection.parse(value)
                     else -> throw IllegalArgumentException("Unsupported type ${type.simpleName}")
                 }
             } catch (_: Exception) {
                 throw IllegalArgumentException("${meta.label} must be of type ${meta.type.simpleName}")
+            }
+        }
+
+        /**
+         * Validates values (settings or parameters) against their declarations.
+         * @return the validation errors per key, empty if all values are valid
+         */
+        fun validateValues(declarations: List<ConfigMetadata<*>>, values: Map<String, String?>): Map<String, String> {
+            val errors = mutableMapOf<String, String>()
+            values.keys.filter { key -> declarations.none { it.key == key } }
+                .forEach { errors[it] = "Unknown key" }
+            for (meta in declarations) {
+                val value = values[meta.key]
+                if (value.isNullOrEmpty()) {
+                    if (meta.isRequired && meta.default == null) errors[meta.key] = "${meta.label} is required"
+                    continue
+                }
+                try {
+                    convert(meta, value)
+                } catch (e: IllegalArgumentException) {
+                    errors[meta.key] = e.message ?: "Invalid value"
+                }
+            }
+            return errors
+        }
+
+        /**
+         * Converts values (settings or parameters) to their declared types, using the default values for
+         * missing ones.
+         * @throws IllegalArgumentException if any value is invalid
+         */
+        fun convertValues(declarations: List<ConfigMetadata<*>>, values: Map<String, String?>): Map<String, Serializable?> {
+            val errors = validateValues(declarations, values)
+            require(errors.isEmpty()) { errors.entries.joinToString("; ") { "${it.key}: ${it.value}" } }
+            return declarations.associate { meta ->
+                val value = values[meta.key]
+                meta.key to (if (value.isNullOrEmpty()) meta.default else convert(meta, value))
             }
         }
     }
@@ -79,24 +119,8 @@ class TaskSettingsService(private val settingRepository: TaskSettingRepository) 
      * Validates the given settings.
      * @return the validation errors per setting, empty if all settings are valid
      */
-    fun validate(definition: TaskDefinition, settings: Map<String, String?>): Map<String, String> {
-        val errors = mutableMapOf<String, String>()
-        settings.keys.filter { key -> definition.settings.none { it.key == key } }
-            .forEach { errors[it] = "Unknown setting" }
-        for (meta in definition.settings) {
-            val value = settings[meta.key]
-            if (value.isNullOrEmpty()) {
-                if (meta.isRequired && meta.default == null) errors[meta.key] = "${meta.label} is required"
-                continue
-            }
-            try {
-                convert(meta, value)
-            } catch (e: IllegalArgumentException) {
-                errors[meta.key] = e.message ?: "Invalid value"
-            }
-        }
-        return errors
-    }
+    fun validate(definition: TaskDefinition, settings: Map<String, String?>): Map<String, String> =
+        validateValues(definition.settings, settings)
 
     @Transactional
     fun update(definition: TaskDefinition, settings: Map<String, String?>) {

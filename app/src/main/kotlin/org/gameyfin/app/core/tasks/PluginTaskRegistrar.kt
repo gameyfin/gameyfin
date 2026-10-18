@@ -66,6 +66,7 @@ class PluginTaskRegistrar(
                         scheduledByDefault = task.scheduledByDefault,
                         cancellable = task.cancellable,
                         settings = task.settings,
+                        parameters = task.parameters,
                         action = TaskAction.Run { context -> task.execute(context) }
                     )
                 )
