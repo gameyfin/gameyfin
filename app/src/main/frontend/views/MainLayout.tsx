@@ -144,7 +144,7 @@ export default function MainLayout() {
                                             <ActiveTaskPopover/>
                                         </div>
                                     </Tooltip.Trigger>
-                                    <Tooltip.Content placement="bottom">View library scans and backups</Tooltip.Content>
+                                    <Tooltip.Content placement="bottom">View tasks</Tooltip.Content>
                                 </Tooltip>
                             </li>
                         )}

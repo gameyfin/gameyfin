@@ -99,8 +99,6 @@ class DatabaseBackupIntegrationTest {
             s.execute("INSERT INTO USERS (ID, EMAIL, EMAIL_CONFIRMED, ENABLED, PASSWORD, USERNAME, AVATAR_ID) VALUES (1, 'admin@example.org', TRUE, TRUE, 'hash', 'admin', 51)")
             s.execute("INSERT INTO USER_ROLES (USER_ID, ROLES) VALUES (1, 'ROLE_SUPERADMIN')")
             s.execute("INSERT INTO USER_PREFERENCE ($userPreference, USER_ID) VALUES ('preferred-theme', 'dark', 1)")
-            s.execute("INSERT INTO JOB_RUN_RESULT (JOB_NAME, STARTED_AT, STATUS) VALUES ('scan', TIMESTAMP '2024-01-01 00:00:00', 'SUCCESS')")
-            s.execute("INSERT INTO JOB_RUN_RESULT (JOB_NAME, STARTED_AT, STATUS) VALUES ('scan', TIMESTAMP '2024-01-02 00:00:00', 'FAILED')")
         }
         c.prepareStatement(
             "INSERT INTO GAME (ID, CREATED_AT, UPDATED_AT, TITLE, PATH, SUMMARY, FILE_SIZE, MATCH_CONFIRMED, COVER_IMAGE_ID, LIBRARY_ID) " +
@@ -149,18 +147,11 @@ class DatabaseBackupIntegrationTest {
         c.createStatement().use { s -> s.executeQuery(sql).use { rs -> rs.next(); rs.getLong(1) } }
     }
 
-    private fun assertSequencesAndIdentitiesWork(dataSource: DataSource, nextValueSql: (String) -> String) {
+    private fun assertSequencesWork(dataSource: DataSource, nextValueSql: (String) -> String) {
         // Hibernate's pooled optimizer uses the IDs (value - 49, value], which must not collide with restored IDs
         assertTrue(query(dataSource, nextValueSql("GAME_SEQ")) - 49 > 101)
         assertTrue(query(dataSource, nextValueSql("IMAGE_SEQ")) - 49 > 51)
         assertTrue(query(dataSource, nextValueSql("USERS_SEQ")) - 49 > 1)
-
-        dataSource.connection.use { c ->
-            c.createStatement().use {
-                it.execute("INSERT INTO JOB_RUN_RESULT (JOB_NAME, STATUS) VALUES ('new', 'SUCCESS')")
-            }
-        }
-        assertEquals(3, query(dataSource, "SELECT MAX(ID) FROM JOB_RUN_RESULT"))
     }
 
     private fun Connection.changeLogRows(): Int =
@@ -182,16 +173,15 @@ class DatabaseBackupIntegrationTest {
 
         assertEquals(expected, dump(target))
         assertEquals(restorer(target).currentChangeSets().size, target.connection.use { it.changeLogRows() })
-        assertSequencesAndIdentitiesWork(target) { "SELECT nextval('${it.lowercase()}')" }
+        assertSequencesWork(target) { "SELECT nextval('${it.lowercase()}')" }
 
-        // Postgres -> H2 (without the row inserted by the identity check)
-        target.connection.use { c -> c.createStatement().use { it.execute("DELETE FROM JOB_RUN_RESULT WHERE ID = 3") } }
+        // Postgres -> H2
         val roundTrip = h2("round-trip")
         restorer(roundTrip).restore(backup(target), APP_KEY_FINGERPRINT, null)
         migrate(roundTrip)
 
         assertEquals(expected, dump(roundTrip))
-        assertSequencesAndIdentitiesWork(roundTrip) { "SELECT NEXT VALUE FOR $it" }
+        assertSequencesWork(roundTrip) { "SELECT NEXT VALUE FOR $it" }
 
         val game = roundTrip.connection.use { c ->
             c.createStatement().use { s ->

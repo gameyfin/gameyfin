@@ -8,38 +8,45 @@ import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
+import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.FileDownload
 import org.pf4j.Extension
-import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.*
 import kotlin.time.measureTimedValue
 
-class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
+class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(context) {
 
     companion object {
-        private lateinit var plugin: TorrentDownloadPlugin
-        private lateinit var state: TorrentDownloadPluginState
+        internal lateinit var plugin: TorrentDownloadPlugin
+        internal lateinit var state: TorrentDownloadPluginState
 
-        private var client: TorrentClient? = null
+        internal var client: TorrentClient? = null
         private var tracker: TorrentTracker? = null
 
         private val creationLocks = ConcurrentHashMap<Path, Any>()
+
+        /**
+         * Lock for all operations on a torrent file: concurrent requests wait for a running creation
+         * instead of receiving a half-written (empty) torrent file.
+         */
+        internal fun lockFor(torrentFile: Path): Any = creationLocks.computeIfAbsent(torrentFile) { Any() }
 
         /**
          * A cached .torrent file can be reused if it is non-empty, parses, and (if given) announces
          * to the currently configured tracker. Interrupted creations leave empty files, and changing
          * the tracker host/port would otherwise keep serving torrents with the old announce URL.
          */
-        private fun isUsableTorrentFile(torrentFile: Path, expectedTrackerUrl: String? = null): Boolean {
+        internal fun isUsableTorrentFile(torrentFile: Path, expectedTrackerUrl: String? = null): Boolean {
             if (!Files.exists(torrentFile) || Files.size(torrentFile) == 0L) return false
             return try {
                 val info = TorrentInfo(torrentFile.toFile())
@@ -278,7 +285,7 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
         }
     }
 
-    private fun getTrackerUri(): URI {
+    internal fun getTrackerUri(): URI {
         val protocol = "http"
         val host = optionalConfig("externalHost") ?: InetAddress.getLocalHost().hostAddress
         val port = config<Int>("trackerPort")
@@ -288,18 +295,148 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
     }
 
 
+    /**
+     * Path of the torrent file of the given game files.
+     */
+    internal fun torrentFileFor(gameFilesPath: Path): Path =
+        dataDirectory.resolve("${gameFilesPath.nameWithoutExtension}-${gameFilesPath.hashCode()}.torrent")
+
+    /**
+     * Makes sure an up-to-date torrent file exists for the given game files and that it is seeded.
+     *
+     * @param regenerateOutdated also regenerate the torrent file if the game files have been modified after it was
+     * created. This requires walking the whole directory tree of the game, so it is only done on request.
+     */
+    internal fun ensureTorrent(gameFilesPath: Path, regenerateOutdated: Boolean = false): TorrentGenerationResult {
+        val torrentFile = torrentFileFor(gameFilesPath)
+
+        synchronized(lockFor(torrentFile)) {
+            val trackerUrl = getTrackerUri().toString()
+            val result = when {
+                !Files.exists(torrentFile) -> TorrentGenerationResult.CREATED
+                !isUsableTorrentFile(torrentFile, expectedTrackerUrl = trackerUrl) -> {
+                    log.info("Regenerating torrent '${torrentFile.name}' (empty, unreadable or outdated tracker URL)")
+                    TorrentGenerationResult.UPDATED
+                }
+
+                regenerateOutdated && isOutdated(gameFilesPath, torrentFile) -> {
+                    log.info("Regenerating torrent '${torrentFile.name}' (game files have been modified)")
+                    TorrentGenerationResult.UPDATED
+                }
+
+                else -> TorrentGenerationResult.UP_TO_DATE
+            }
+
+            if (result == TorrentGenerationResult.UPDATED) {
+                // The old torrent might have a different info hash, stop seeding it
+                removeFromSession(torrentFile)
+            }
+
+            if (result != TorrentGenerationResult.UP_TO_DATE) {
+                // Write to a temporary file and move it into place atomically, so a crash or
+                // restart during creation never leaves an empty/partial .torrent behind.
+                val tempFile = torrentFile.resolveSibling("${torrentFile.name}.tmp")
+                try {
+                    Files.write(tempFile, torrentFileContent(gameFilesPath, trackerUrl))
+                    Files.move(
+                        tempFile, torrentFile,
+                        StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+                    )
+                } finally {
+                    tempFile.deleteIfExists()
+                }
+            }
+
+            synchronized(state) {
+                if (state.torrentFilesMetadata.none { it.torrentFile == torrentFile }) {
+                    state.torrentFilesMetadata.add(TorrentFileMetadata(torrentFile = torrentFile, gameFile = gameFilesPath))
+                    saveState(state)
+                }
+            }
+
+            // Add the torrent to the session for seeding. The torrent was just created from (or
+            // matches) the files on disk, so skip the full hash check (seed mode).
+            // This prevents crashes if there are permission issues or other errors
+            try {
+                client?.addTorrent(torrentFile, gameFilesPath, seedMode = true)
+            } catch (e: Exception) {
+                log.error("Failed to add torrent to seeding session - torrent file created but won't be seeded", e)
+                // Don't rethrow - the torrent file was created successfully, seeding is optional
+            }
+
+            return result
+        }
+    }
+
+    /**
+     * Stops seeding the given torrent file, if it is currently seeded.
+     */
+    internal fun removeFromSession(torrentFile: Path) {
+        try {
+            client?.removeTorrent(torrentFile)
+        } catch (e: Exception) {
+            log.warn("Failed to remove torrent '${torrentFile.name}' from the seeding session", e)
+        }
+    }
+
+    /**
+     * Whether the game files (or anything within their directory) have been modified after the torrent file was created.
+     */
+    internal fun isOutdated(gameFilesPath: Path, torrentFile: Path): Boolean =
+        latestModification(gameFilesPath).isAfter(torrentFile.getLastModifiedTime().toInstant())
+
+    private fun latestModification(path: Path): Instant {
+        if (!path.isDirectory()) return path.getLastModifiedTime().toInstant()
+        return Files.walk(path).use { paths ->
+            Instant.ofEpochMilli(paths.mapToLong { Files.getLastModifiedTime(it).toMillis() }.max().orElse(0))
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun torrentFileContent(gameFilesPath: Path, trackerUrl: String): ByteArray {
+        val torrentBuilder = TorrentBuilder()
+
+        val isPrivate = config<Boolean>("privateMode")
+        val torrentVersions = config<TorrentVersion>("torrentVersions")
+
+        log.info("Creating ${if (isPrivate) "private" else "public"} ${if (torrentVersions !== TorrentVersion.`V1 and V2`) torrentVersions else ""} torrent with announce URL '$trackerUrl'")
+
+        val flags = when (torrentVersions) {
+            TorrentVersion.`V1 only` -> v1_only
+            TorrentVersion.`V2 only` -> v2_only
+            TorrentVersion.`V1 and V2` -> null
+        }
+
+        val builder = torrentBuilder.path(gameFilesPath.toFile())
+            .creator("Gameyfin Torrent plugin v${context.pluginVersion}")
+            .addTracker(trackerUrl)
+            .setPrivate(isPrivate)
+
+        if (flags != null) {
+            builder.flags(flags)
+        }
+
+        val builderResult = builder.generate()
+
+        return builderResult.entry().bencode()
+    }
+
     @Extension(ordinal = 2)
     class TorrentDownloadProvider : DownloadProvider {
         private val log = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
 
         override fun download(path: Path): Download {
-            log.info("Creating torrent for '${path.name}'...")
+            log.info("Providing torrent for '${path.name}'...")
 
-            val (torrentFile, timeTaken) = measureTimedValue {
-                initNewTorrent(path)
+            val (result, timeTaken) = measureTimedValue {
+                plugin.ensureTorrent(path)
             }
+            val torrentFile = plugin.torrentFileFor(path)
 
-            log.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
+            when (result) {
+                TorrentGenerationResult.UP_TO_DATE -> log.info("Using existing torrent '${torrentFile.name}'")
+                else -> log.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
+            }
 
             return FileDownload(
                 data = torrentFile.inputStream(),
@@ -307,89 +444,11 @@ class TorrentDownloadPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin
                 size = torrentFile.fileSize()
             )
         }
-
-        private fun initNewTorrent(gameFilesPath: Path): Path {
-            val torrentFile = plugin.dataDirectory
-                .resolve("${gameFilesPath.nameWithoutExtension}-${gameFilesPath.hashCode()}.torrent")
-
-            // One creation per game at a time: concurrent requests wait for the running creation
-            // instead of receiving a half-written (empty) torrent file.
-            synchronized(creationLocks.computeIfAbsent(torrentFile) { Any() }) {
-                val trackerUrl = plugin.getTrackerUri().toString()
-                val needsCreation = !isUsableTorrentFile(torrentFile, expectedTrackerUrl = trackerUrl)
-
-                if (needsCreation) {
-                    if (Files.exists(torrentFile)) {
-                        log.info("Regenerating torrent '${torrentFile.name}' (empty, unreadable or outdated tracker URL)")
-                    }
-
-                    // Write to a temporary file and move it into place atomically, so a crash or
-                    // restart during creation never leaves an empty/partial .torrent behind.
-                    val tempFile = torrentFile.resolveSibling("${torrentFile.name}.tmp")
-                    try {
-                        Files.write(tempFile, torrentFileContent(gameFilesPath, trackerUrl))
-                        Files.move(
-                            tempFile, torrentFile,
-                            StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
-                        )
-                    } finally {
-                        tempFile.deleteIfExists()
-                    }
-
-                    synchronized(state) {
-                        if (state.torrentFilesMetadata.none { it.torrentFile == torrentFile }) {
-                            state.torrentFilesMetadata.add(
-                                TorrentFileMetadata(
-                                    torrentFile = torrentFile,
-                                    gameFile = gameFilesPath
-                                )
-                            )
-                            plugin.saveState(state)
-                        }
-                    }
-                }
-
-                // Add the torrent to the session for seeding. The torrent was just created from (or
-                // matches) the files on disk, so skip the full hash check (seed mode).
-                // This prevents crashes if there are permission issues or other errors
-                try {
-                    client?.addTorrent(torrentFile, gameFilesPath, seedMode = true)
-                } catch (e: Exception) {
-                    log.error("Failed to add torrent to seeding session - torrent file created but won't be seeded", e)
-                    // Don't rethrow - the torrent file was created successfully, seeding is optional
-                }
-            }
-
-            return torrentFile
-        }
-
-        @Suppress("DEPRECATION")
-        private fun torrentFileContent(gameFilesPath: Path, trackerUrl: String): ByteArray {
-            val torrentBuilder = TorrentBuilder()
-
-            val isPrivate = plugin.config<Boolean>("privateMode")
-            val torrentVersions = plugin.config<TorrentVersion>("torrentVersions")
-
-            log.info("Creating ${if (isPrivate) "private" else "public"} ${if (torrentVersions !== TorrentVersion.`V1 and V2`) torrentVersions else ""} torrent with announce URL '$trackerUrl'")
-
-            val flags = when (torrentVersions) {
-                TorrentVersion.`V1 only` -> v1_only
-                TorrentVersion.`V2 only` -> v2_only
-                TorrentVersion.`V1 and V2` -> null
-            }
-
-            val builder = torrentBuilder.path(gameFilesPath.toFile())
-                .creator("Gameyfin Torrent plugin v${plugin.wrapper.descriptor.version}")
-                .addTracker(trackerUrl)
-                .setPrivate(isPrivate)
-
-            if (flags != null) {
-                builder.flags(flags)
-            }
-
-            val builderResult = builder.generate()
-
-            return builderResult.entry().bencode()
-        }
     }
+}
+
+enum class TorrentGenerationResult {
+    CREATED,
+    UPDATED,
+    UP_TO_DATE
 }

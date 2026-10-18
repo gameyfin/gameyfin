@@ -19,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
+import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.gameyfin.pluginapi.gamemetadata.Platform
@@ -30,13 +31,12 @@ import org.gameyfin.plugins.metadata.steam.mapper.Mapper
 import org.gameyfin.plugins.metadata.steam.util.SteamDateSerializer
 import org.jsoup.Jsoup
 import org.pf4j.Extension
-import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
 
-class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
+class SteamPlugin(context: PluginContext) : GameyfinPlugin(context) {
 
     companion object {
         val json = Json {

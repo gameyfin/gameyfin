@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from "react";
-import {Alert, Button, Checkbox, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
+import {Alert, Button, Checkbox, Link, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {
     ArrowCounterClockwiseIcon,
     DatabaseIcon,
@@ -14,16 +14,20 @@ import Section from "Frontend/components/general/Section";
 import {humanFileSize} from "Frontend/util/utils";
 import {uploadFile, waitForRestart} from "Frontend/util/restart";
 import {useSnapshot} from "valtio/react";
-import {backupState, trackBackup} from "Frontend/state/BackupState";
+import {isRunActive, taskState, trackRun} from "Frontend/state/TaskState";
 import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
+
+const BACKUP_TASK_KEY = "backup";
 
 export default function BackupManagement() {
     const [backups, setBackups] = useState<BackupDto[]>([]);
     const [lastRestore, setLastRestore] = useState<RestoreStatusDto>();
     const [includeMedia, setIncludeMedia] = useState(false);
     const [starting, setStarting] = useState(false);
-    const backupRunning = useSnapshot(backupState).isRunning;
-    const completedBackups = useSnapshot(backupState).completedCount;
+    const tasks = useSnapshot(taskState);
+    const backupRunning = Object.values(tasks.runs)
+        .some(run => run.taskKey === BACKUP_TASK_KEY && isRunActive(run));
+    const completedBackups = tasks.finishedCount[BACKUP_TASK_KEY] ?? 0;
     const creating = starting || backupRunning;
     const [uploading, setUploading] = useState(false);
     const [restoring, setRestoring] = useState(false);
@@ -48,7 +52,7 @@ export default function BackupManagement() {
     async function createBackup() {
         setStarting(true);
         try {
-            trackBackup(await BackupEndpoint.createBackup(includeMedia));
+            trackRun(await BackupEndpoint.createBackup(includeMedia));
             toast.info("Backup started", {description: "The progress is shown in the task overview at the top"});
         } catch (e: any) {
             toast.danger("Could not create backup", {description: e?.message});
@@ -111,6 +115,7 @@ export default function BackupManagement() {
                 Backups contain all data stored in the database and can be restored on any supported database.
                 Images can optionally be included. Restoring a backup requires Gameyfin to use the same
                 {" "}<code>APP_KEY</code> as when the backup was created.
+                Backups can be created automatically using the <Link className="underline text-sm" href="/administration/tasks">backup task</Link>.
             </p>
 
             {lastRestore &&

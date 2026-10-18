@@ -6,6 +6,10 @@ import org.gameyfin.app.core.backup.AppKeyFingerprint
 import org.gameyfin.app.core.backup.BackupDto
 import org.gameyfin.app.core.backup.BackupService
 import org.gameyfin.app.core.backup.InvalidBackupException
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
+import org.gameyfin.app.core.tasks.TaskSettingsService
+import org.gameyfin.app.core.tasks.persistence.TaskRunRepository
 import org.gameyfin.app.system.SystemService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
@@ -14,6 +18,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.info.BuildProperties
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import java.io.ByteArrayInputStream
@@ -35,6 +40,7 @@ class BackupServiceTest {
 
     private val systemService = mockk<SystemService>(relaxed = true)
     private lateinit var service: BackupService
+    private lateinit var taskRunService: TaskRunService
     private lateinit var backupDir: Path
 
     @BeforeEach
@@ -53,15 +59,21 @@ class BackupServiceTest {
         backupDir = tempDir / "backups"
         val buildProperties = mockk<ObjectProvider<BuildProperties>>()
         every { buildProperties.ifAvailable } returns null
+        val runRepository = mockk<TaskRunRepository>(relaxed = true)
+        every { runRepository.save(any()) } answers { firstArg() }
+        every { runRepository.findById(any()) } returns Optional.empty()
+        val taskRegistry = TaskRegistry(mockk<ApplicationEventPublisher>(relaxed = true))
+        taskRunService = TaskRunService(taskRegistry, runRepository, mockk<TaskSettingsService>(relaxed = true))
         service = BackupService(
-            dataSource, systemService, buildProperties, DefaultResourceLoader(),
+            dataSource, systemService, buildProperties, taskRegistry, taskRunService, DefaultResourceLoader(),
             backupDir.toString(), (tempDir / "media").toString(), CHANGELOG
         )
+        service.registerTask()
     }
 
     @AfterEach
     fun tearDown() {
-        service.shutdown()
+        taskRunService.shutdown()
         unmockkAll()
     }
 
@@ -226,7 +238,7 @@ class BackupServiceTest {
 
     @Test
     fun `createBackup fails when shutting down`() {
-        service.shutdown()
+        taskRunService.shutdown()
 
         assertThrows(IllegalStateException::class.java) { service.createBackup(includeMedia = false) }
         // permit was released again

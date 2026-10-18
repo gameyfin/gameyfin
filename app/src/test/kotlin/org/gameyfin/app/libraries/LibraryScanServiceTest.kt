@@ -8,6 +8,10 @@ import org.gameyfin.app.core.filesystem.FilesystemScanResult
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
+import org.gameyfin.app.core.tasks.TaskSettingsService
+import org.gameyfin.app.core.tasks.persistence.TaskRunRepository
 import org.gameyfin.app.core.plugins.dto.PluginDto
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
@@ -23,8 +27,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.pf4j.PluginState
+import org.springframework.context.ApplicationEventPublisher
 import java.nio.file.Path
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertFalse
@@ -42,6 +48,8 @@ class LibraryScanServiceTest {
     private lateinit var ignoredPathRepository: IgnoredPathRepository
     private lateinit var pluginService: PluginService
     private lateinit var configService: ConfigService
+    private lateinit var taskRegistry: TaskRegistry
+    private lateinit var taskRunService: TaskRunService
 
     @BeforeEach
     fun setup() {
@@ -64,6 +72,12 @@ class LibraryScanServiceTest {
         // Return default max-concurrency value
         every { configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency) } returns ConfigProperties.Libraries.Scan.MaxConcurrency.default
 
+        val runRepository = mockk<TaskRunRepository>(relaxed = true)
+        every { runRepository.save(any()) } answers { firstArg() }
+        every { runRepository.findById(any()) } returns Optional.empty()
+        taskRegistry = TaskRegistry(mockk<ApplicationEventPublisher>(relaxed = true))
+        taskRunService = TaskRunService(taskRegistry, runRepository, mockk<TaskSettingsService>(relaxed = true))
+
         libraryScanService = LibraryScanService(
             libraryRepository,
             filesystemService,
@@ -73,13 +87,17 @@ class LibraryScanServiceTest {
             ignoredPathRepository,
             pluginService,
             configService,
-            ScanMetrics(SimpleMeterRegistry())
+            ScanMetrics(SimpleMeterRegistry()),
+            taskRegistry,
+            taskRunService
         )
+        libraryScanService.registerTask()
     }
 
     @AfterEach
     fun tearDown() {
         libraryScanService.stop()
+        taskRunService.shutdown()
         unmockkAll()
         clearAllMocks()
     }

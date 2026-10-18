@@ -1,12 +1,8 @@
 package org.gameyfin.plugins.download.torrent
 
-import com.frostwire.jlibtorrent.SessionManager
-import com.frostwire.jlibtorrent.SessionParams
-import com.frostwire.jlibtorrent.SettingsPack
+import com.frostwire.jlibtorrent.*
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_DISTRIBUTED_COPIES
 import com.frostwire.jlibtorrent.TorrentHandle.QUERY_NAME
-import com.frostwire.jlibtorrent.TorrentFlags
-import com.frostwire.jlibtorrent.TorrentInfo
 import com.frostwire.jlibtorrent.swig.libtorrent.*
 import com.frostwire.jlibtorrent.swig.settings_pack.string_types
 import com.frostwire.jlibtorrent.swig.torrent_flags_t
@@ -29,7 +25,7 @@ class TorrentClient(
     private val dhtEnabled: Boolean,
     private val lsdEnabled: Boolean,
     private val stopSeedingWhenComplete: Boolean,
-    private val diskIoMode: TorrentDiskIoMode = TorrentDiskIoMode.POSIX
+    private val diskIoMode: TorrentDiskIoMode = TorrentDiskIoMode.`Memory-mapped`
 ) {
     private val log = LoggerFactory.getLogger(TorrentClient::class.java)
 
@@ -102,6 +98,21 @@ class TorrentClient(
             log.error("Failed to add torrent to session for seeding: ${ti.name()}", e)
             throw e
         }
+    }
+
+    /**
+     * Removes the torrent from the session, so it is no longer seeded. The game files are not touched.
+     *
+     * @return whether the torrent has been part of the session
+     */
+    fun removeTorrent(torrentFile: Path): Boolean {
+        val ti = TorrentInfo(torrentFile.toFile())
+        val handle = session?.find(ti) ?: return false
+        if (!handle.isValid) return false
+
+        session?.remove(handle)
+        log.info("Removed torrent from session: ${ti.name()}")
+        return true
     }
 
     private fun initSession(): SessionManager {

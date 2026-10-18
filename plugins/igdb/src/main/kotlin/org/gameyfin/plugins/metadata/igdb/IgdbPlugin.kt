@@ -15,17 +15,17 @@ import org.gameyfin.pluginapi.core.config.PluginConfigError
 import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
+import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.gameyfin.plugins.metadata.igdb.mapper.*
 import org.pf4j.Extension
-import org.pf4j.PluginWrapper
 import proto.Game
 import java.time.Duration
 import java.time.Instant
 
-class IgdbPlugin(wrapper: PluginWrapper) : ConfigurableGameyfinPlugin(wrapper) {
+class IgdbPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(context) {
 
     override val configMetadata: PluginConfigMetadata = listOf(
         ConfigMetadata(

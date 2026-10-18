@@ -5,8 +5,7 @@ import ConfigFormField from "Frontend/components/administration/ConfigFormField"
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import Section from "Frontend/components/general/Section";
 import * as Yup from 'yup';
-import "Frontend/util/yup-extensions";
-import {Button, Separator, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Link, Separator, Tooltip, useOverlayState} from "@heroui/react";
 import {ListNumbersIcon, MagnifyingGlassIcon, MagnifyingGlassPlusIcon, PlusIcon} from "@phosphor-icons/react";
 import {LibraryOverviewCard} from "Frontend/components/general/cards/LibraryOverviewCard";
 import LibraryCreationModal from "Frontend/components/general/modals/LibraryCreationModal";
@@ -149,12 +148,10 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <ConfigFormField configElement={getConfig("library.scan.max-concurrency")}/>
             </div>
 
-            <Section title="Metadata"/>
-            <div className="flex flex-row items-start">
-                <ConfigFormField className="pt-8" configElement={getConfig("library.metadata.update.enabled")}/>
-                <ConfigFormField configElement={getConfig("library.metadata.update.schedule")}
-                                 isDisabled={!formik.values.library.metadata.update.enabled}/>
-            </div>
+            <p className="text-sm text-muted mt-2">
+                Scheduled scans of all libraries can be configured on the{" "}
+                <Link className="underline text-sm" href="/administration/tasks">tasks page</Link>.
+            </p>
 
             <LibraryCreationModal
                 isOpen={libraryCreationModal.isOpen}
@@ -182,15 +179,6 @@ function GameManagementLayout({getConfig, formik}: any) {
 
 const validationSchema = Yup.object({
     library: Yup.object({
-        metadata: Yup.object({
-            update: Yup.object({
-                enabled: Yup.boolean(),
-                schedule: Yup.string().when("enabled", {
-                    is: true,
-                    then: (schema) => schema.cron()
-                }),
-            })
-        }),
         scan: Yup.object({
             "extract-title-using-regex": Yup.boolean(),
             "title-extraction-regex": Yup.string().when("extract-title-using-regex", {

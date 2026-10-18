@@ -3,28 +3,20 @@ package org.gameyfin.app.core.backup
 import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
-import reactor.core.publisher.Flux
+import org.gameyfin.app.core.tasks.dto.TaskRunDto
 
 @Endpoint
 @RolesAllowed(Role.Names.ADMIN)
 class BackupEndpoint(
-    private val backupService: BackupService,
-    private val imageRecoveryService: ImageRecoveryService
+    private val backupService: BackupService
 ) {
     fun getBackups(): List<BackupDto> = backupService.getBackups()
 
     /**
-     * Starts creating a backup in the background. The progress is published via [subscribeToBackupProgressEvents].
+     * Starts creating a backup in the background. The progress is published as run of the backup task
+     * (see [org.gameyfin.app.core.tasks.TaskEndpoint.subscribeToTaskRuns]).
      */
-    fun createBackup(includeMedia: Boolean): BackupProgress = backupService.createBackup(includeMedia)
-
-    fun subscribeToBackupProgressEvents(): Flux<List<BackupProgress>> = backupService.subscribeToProgressEvents()
-
-    /**
-     * Progress of the recovery of images which are missing after a restore (see [ImageRecoveryService]).
-     */
-    fun subscribeToImageRecoveryEvents(): Flux<List<ImageRecoveryProgress>> =
-        imageRecoveryService.subscribeToProgressEvents()
+    fun createBackup(includeMedia: Boolean): TaskRunDto = backupService.createBackup(includeMedia)
 
     fun deleteBackup(name: String) = backupService.deleteBackup(name)
 

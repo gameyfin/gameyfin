@@ -3,9 +3,13 @@ package org.gameyfin.app.system.backup
 import com.sun.net.httpserver.HttpServer
 import io.mockk.*
 import org.gameyfin.app.core.backup.BackupStorage
-import org.gameyfin.app.core.backup.BackupTaskStatus
-import org.gameyfin.app.core.backup.ImageRecoveryProgress
 import org.gameyfin.app.core.backup.ImageRecoveryService
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
+import org.gameyfin.app.core.tasks.TaskRunStatus
+import org.gameyfin.app.core.tasks.TaskSettingsService
+import org.gameyfin.app.core.tasks.dto.TaskRunDto
+import org.gameyfin.app.core.tasks.persistence.TaskRunRepository
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameFieldMetadata
 import org.gameyfin.app.games.entities.GameMetadata
@@ -20,11 +24,13 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.transaction.PlatformTransactionManager
 import java.io.InputStream
 import java.net.InetSocketAddress
 import java.nio.file.Path
 import java.time.Duration
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.test.*
 
@@ -42,6 +48,7 @@ class ImageRecoveryServiceTest {
     private lateinit var imageService: ImageService
     private lateinit var gameRepository: GameRepository
     private lateinit var userRepository: UserRepository
+    private lateinit var taskRunService: TaskRunService
     private lateinit var service: ImageRecoveryService
 
     @BeforeEach
@@ -70,29 +77,38 @@ class ImageRecoveryServiceTest {
         every { gameRepository.findAllByImage(any()) } returns emptyList()
         every { userRepository.findAllByAvatar(any()) } returns emptyList()
 
+        val runRepository = mockk<TaskRunRepository>(relaxed = true)
+        every { runRepository.save(any()) } answers { firstArg() }
+        every { runRepository.findById(any()) } returns Optional.empty()
+        val taskRegistry = TaskRegistry(mockk<ApplicationEventPublisher>(relaxed = true))
+        taskRunService = TaskRunService(taskRegistry, runRepository, mockk<TaskSettingsService>(relaxed = true))
+
         service = ImageRecoveryService(
             imageRepository,
             imageService,
             gameRepository,
             userRepository,
+            taskRegistry,
+            taskRunService,
             mockk<PlatformTransactionManager>(relaxed = true),
             backupDirectory.toString()
         )
+        service.registerTask()
     }
 
     @AfterEach
     fun tearDown() {
-        service.shutdown()
+        taskRunService.shutdown()
         server.stop(0)
         clearAllMocks()
     }
 
     private fun url(path: String) = "http://127.0.0.1:${server.address.port}$path"
 
-    private fun awaitFinished(): ImageRecoveryProgress =
-        service.subscribeToProgressEvents()
+    private fun awaitFinished(): TaskRunDto =
+        taskRunService.subscribe()
             .flatMapIterable { it }
-            .filter { it.status != BackupTaskStatus.IN_PROGRESS }
+            .filter { it.taskKey == ImageRecoveryService.TASK_KEY && it.status != TaskRunStatus.IN_PROGRESS }
             .blockFirst(Duration.ofSeconds(20))!!
 
     @Test
@@ -131,10 +147,8 @@ class ImageRecoveryServiceTest {
         service.onApplicationReady()
         val result = awaitFinished()
 
-        assertEquals(BackupTaskStatus.COMPLETED, result.status)
-        assertEquals(1, result.restored)
-        assertEquals(3, result.removed)
-        assertEquals(1, result.failed)
+        assertEquals(TaskRunStatus.COMPLETED, result.status)
+        assertEquals("1 restored, 3 removed, 1 failed", result.summary)
         assertContentEquals(IMAGE_CONTENT, restoredContent.single())
 
         assertEquals(available, game.coverImage)
@@ -153,16 +167,18 @@ class ImageRecoveryServiceTest {
     }
 
     @Test
-    fun `does not publish a task if no images are missing`() {
+    fun `completes immediately if no images are missing`() {
         every { imageRepository.findAll() } returns listOf(Image(id = 1, type = ImageType.COVER))
         every { imageService.hasContent(any()) } returns true
 
         BackupStorage(backupDirectory).scheduleImageRecovery()
         service.onApplicationReady()
+        val result = awaitFinished()
 
+        assertEquals(TaskRunStatus.COMPLETED, result.status)
+        assertEquals("No images are missing", result.summary)
         awaitMarkerCleared()
-        val events = service.subscribeToProgressEvents().take(Duration.ofMillis(1500)).collectList().block()!!
-        assertTrue(events.flatten().isEmpty())
+        verify(exactly = 0) { imageService.restoreContent(any(), any()) }
     }
 
     @Test
@@ -181,7 +197,7 @@ class ImageRecoveryServiceTest {
         service.onApplicationReady()
         val result = awaitFinished()
 
-        assertEquals(BackupTaskStatus.FAILED, result.status)
+        assertEquals(TaskRunStatus.FAILED, result.status)
         assertEquals("db down", result.errorMessage)
         assertNotNull(result.finishedAt)
         assertTrue(BackupStorage(backupDirectory).isImageRecoveryPending())
@@ -206,24 +222,30 @@ class ImageRecoveryServiceTest {
         service.onApplicationReady()
         val result = awaitFinished()
 
-        assertEquals(BackupTaskStatus.COMPLETED, result.status)
-        assertEquals(1, result.restored)
-        assertEquals(2, result.removed)
-        assertEquals(2, result.failed)
+        assertEquals(TaskRunStatus.COMPLETED, result.status)
+        assertEquals("1 restored, 2 removed, 2 failed", result.summary)
         awaitMarkerCleared()
     }
 
     @Test
     fun `start is ignored while running and after shutdown`() {
-        every { imageRepository.findAll() } returns emptyList()
+        val release = java.util.concurrent.CountDownLatch(1)
+        every { imageRepository.findAll() } answers {
+            release.await(10, TimeUnit.SECONDS)
+            emptyList()
+        }
 
         service.start()
         service.start()
-        service.shutdown()
+        release.countDown()
+        verify(timeout = 5000, exactly = 1) { imageRepository.findAll() }
+        awaitFinished()
+
+        taskRunService.shutdown()
         service.start()
 
         TimeUnit.MILLISECONDS.sleep(200)
-        verify(atMost = 1) { imageRepository.findAll() }
+        verify(exactly = 1) { imageRepository.findAll() }
     }
 
     private fun awaitMarkerCleared() {
