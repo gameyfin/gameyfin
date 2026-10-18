@@ -19,6 +19,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import me.xdrop.fuzzywuzzy.FuzzySearch
 import org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
+import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
 import org.gameyfin.pluginapi.gamemetadata.Platform
@@ -30,13 +31,12 @@ import org.gameyfin.plugins.metadata.steam.mapper.Mapper
 import org.gameyfin.plugins.metadata.steam.util.SteamDateSerializer
 import org.jsoup.Jsoup
 import org.pf4j.Extension
-import org.pf4j.PluginWrapper
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
 
-class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
+class SteamPlugin(context: PluginContext) : GameyfinPlugin(context) {
 
     companion object {
         val json = Json {
@@ -45,21 +45,38 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         }
 
         val dateSerializer = SteamDateSerializer()
-    }
 
-    @Suppress("Unused")
-    @Extension(ordinal = 3)
-    class SteamMetadataProvider : GameMetadataProvider {
-        private val log = LoggerFactory.getLogger(javaClass)
+        private var httpClient: HttpClient? = null
 
-        private val client = HttpClient(CIO) {
+        /**
+         * Shared HTTP client, (re)created on demand and closed in [stop] so that its threads and
+         * connections don't outlive the plugin when it is stopped or reloaded.
+         */
+        @Synchronized
+        fun client(): HttpClient = httpClient ?: HttpClient(CIO) {
             // Use a fake browser user agent to avoid being blocked by Steam
             BrowserUserAgent()
 
             install(ContentNegotiation) {
                 json(json)
             }
+        }.also { httpClient = it }
+
+        @Synchronized
+        private fun closeClient() {
+            httpClient?.close()
+            httpClient = null
         }
+    }
+
+    override fun stop() {
+        closeClient()
+    }
+
+    @Suppress("Unused")
+    @Extension(ordinal = 3)
+    class SteamMetadataProvider : GameMetadataProvider {
+        private val log = LoggerFactory.getLogger(javaClass)
 
         companion object {
             private val rateLimiter: RateLimiter = RateLimiter.of(
@@ -143,7 +160,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         }
 
         private suspend fun searchStore(title: String, platformFilter: Set<Platform>): List<SteamGame> {
-            val response = client.get("https://store.steampowered.com/api/storesearch") {
+            val response = client().get("https://store.steampowered.com/api/storesearch") {
                 parameter("term", title)
                 parameter("cc", "en")
                 parameter("l", "en")
@@ -174,7 +191,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
         }
 
         private suspend fun getGameDetails(id: Int, platformFilter: Set<Platform> = emptySet()): GameMetadata? {
-            val response = client.get("https://store.steampowered.com/api/appdetails") {
+            val response = client().get("https://store.steampowered.com/api/appdetails") {
                 parameter("appids", id)
                 parameter("cc", "en")
                 parameter("l", "en")
@@ -231,7 +248,7 @@ class SteamPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper) {
          * However, it is possible to get the original release date from the Steam store page.
          */
         private suspend fun parseOriginalReleaseDateFromStorePage(appId: Int): Instant? {
-            val response = client.get("https://store.steampowered.com/app/$appId") {
+            val response = client().get("https://store.steampowered.com/app/$appId") {
                 // Set language to English to avoid issues with different languages
                 cookie("Steam_Language", "english")
                 // Skip Steam age check

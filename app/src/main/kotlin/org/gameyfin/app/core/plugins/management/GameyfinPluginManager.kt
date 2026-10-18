@@ -5,7 +5,9 @@ import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
+import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.pf4j.*
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import java.nio.file.Path
@@ -25,7 +27,8 @@ class GameyfinPluginManager(
     forwardingPluginStateListener: SpringPluginStateListener,
     private val dbPluginStatusProvider: DatabasePluginStatusProvider,
     private val pluginConfigRepository: PluginConfigRepository,
-    private val pluginManagementRepository: PluginManagementRepository
+    private val pluginManagementRepository: PluginManagementRepository,
+    private val pluginDataService: ObjectProvider<GameyfinDataService>
 ) : DefaultPluginManager(Path(System.getProperty("pf4j.pluginsDir", "plugins"))) {
 
     companion object {
@@ -76,6 +79,23 @@ class GameyfinPluginManager(
             .add(JarPluginRepository(getPluginsRoots()))
             .add(DefaultPluginRepository(getPluginsRoots()))
             .add(DevelopmentPluginRepository(getPluginsRoots())) { this.isDevelopment }
+    }
+
+    /**
+     * Note: Called from the constructor of the superclass, so the properties of this class are not initialized yet.
+     * They must only be accessed lazily, i.e. when a plugin is instantiated.
+     */
+    override fun createPluginFactory(): PluginFactory {
+        return GameyfinPluginFactory(::createPluginContext)
+    }
+
+    private fun createPluginContext(pluginWrapper: PluginWrapper): GameyfinPluginContext {
+        return GameyfinPluginContext(
+            pluginId = pluginWrapper.pluginId,
+            pluginVersion = pluginWrapper.descriptor.version,
+            dataDirectory = GameyfinPluginContext.dataDirectoryOf(pluginWrapper.pluginId),
+            dataServiceProvider = { pluginDataService.getObject() }
+        )
     }
 
     override fun createPluginStatusProvider(): PluginStatusProvider {
@@ -208,7 +228,14 @@ class GameyfinPluginManager(
         startPlugin(pluginId)
     }
 
-    fun validatePluginConfig(pluginId: String): PluginConfigValidationResult {
+    /**
+     * Validates [configToValidate] or, if not given, the stored config of the plugin.
+     * Untrusted plugins never receive their stored config (same as in [loadPluginFromPath]).
+     */
+    fun validatePluginConfig(
+        pluginId: String,
+        configToValidate: Map<String, String?>? = null
+    ): PluginConfigValidationResult {
         val plugin = try {
             getPlugin(pluginId)?.plugin
         } catch (_: NoClassDefFoundError) {
@@ -219,21 +246,12 @@ class GameyfinPluginManager(
             return PluginConfigValidationResult(PluginConfigValidationResultType.VALID)
         }
 
-        return plugin.validateConfig()
-    }
-
-    fun validatePluginConfig(pluginId: String, configToValidate: Map<String, String>): PluginConfigValidationResult {
-        val plugin = try {
-            getPlugin(pluginId)?.plugin
-        } catch (_: NoClassDefFoundError) {
-            return PluginConfigValidationResult(PluginConfigValidationResultType.UNKNWOWN)
+        val config = configToValidate ?: when (pluginManagementRepository.findByIdOrNull(pluginId)?.trustLevel) {
+            PluginTrustLevel.UNTRUSTED -> emptyMap()
+            else -> getConfig(pluginId)
         }
 
-        if (plugin !is Configurable) {
-            return PluginConfigValidationResult(PluginConfigValidationResultType.VALID)
-        }
-
-        return plugin.validateConfig(configToValidate)
+        return plugin.validateConfig(config)
     }
 
     fun supportsExtensionType(pluginId: String, extensionType: KClass<out ExtensionPoint>): Boolean {

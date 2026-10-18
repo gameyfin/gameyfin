@@ -603,9 +603,7 @@ class GameServiceTest {
         every { gameRepository.findByIdOrNull(1L) } returns game
         every { pluginManager.getExtensions("test-plugin") } returns emptyList<Any>()
 
-        assertThrows(NoSuchElementException::class.java) {
-            gameService.updateMetadata(game)
-        }
+        assertNull(gameService.updateMetadata(game))
     }
 
     @Test
@@ -812,6 +810,7 @@ class GameServiceTest {
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider1, provider2)
         every { pluginService.getPluginManagementEntry(provider1.javaClass) } returns pluginEntry1
         every { pluginService.getPluginManagementEntry(provider2.javaClass) } returns pluginEntry2
+        every { companyService.createOrGet(any()) } answers { firstArg() }
 
         val results = gameService.getPotentialMatches("Test Game", emptySet())
 
@@ -1440,12 +1439,12 @@ class GameServiceTest {
         val gameId = 1L
         val existingGame = createTestGame(gameId)
         val oidcUser = mockk<OidcUser> {
-            every { preferredUsername } returns "oidcuser"
+            every { subject } returns "oidc-sub"
         }
 
         every { authentication.principal } returns oidcUser
         every { gameRepository.findByIdOrNull(gameId) } returns existingGame
-        every { userService.getByUsernameNonNull("oidcuser") } returns mockUser
+        every { userService.findByOidcProviderId("oidc-sub") } returns mockUser
         every { gameRepository.save(existingGame) } returns existingGame
 
         val updateDto = GameUpdateDto(
@@ -1470,7 +1469,7 @@ class GameServiceTest {
         gameService.edit(updateDto)
 
         assertEquals("OIDC Updated Title", existingGame.title)
-        verify(exactly = 1) { userService.getByUsernameNonNull("oidcuser") }
+        verify(exactly = 1) { userService.findByOidcProviderId("oidc-sub") }
     }
 
     @Test
@@ -2138,6 +2137,7 @@ class GameServiceTest {
 
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
+        every { companyService.createOrGet(any()) } answers { firstArg() }
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 5000L
 
@@ -2289,6 +2289,7 @@ class GameServiceTest {
         )
         every { pluginService.getPluginManagementEntry(highProvider.javaClass) } returns highEntry
         every { pluginService.getPluginManagementEntry(lowProvider.javaClass) } returns lowEntry
+        every { companyService.createOrGet(any()) } answers { firstArg() }
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any()) } returns 3000L
 

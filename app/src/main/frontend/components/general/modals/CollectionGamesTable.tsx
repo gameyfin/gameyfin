@@ -3,21 +3,18 @@ import {
     Button,
     Input,
     Link,
+    ListBox,
     Select,
-    SelectItem,
     SortDescriptor,
     Table,
-    TableBody,
-    TableCell,
-    TableColumn,
-    TableHeader,
-    TableRow,
-    Tooltip
+    TableLayout,
+    Tooltip,
+    Virtualizer
 } from "@heroui/react";
 import React, {useMemo, useState} from "react";
 import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
-import {MinusIcon, PlusIcon} from "@phosphor-icons/react";
+import {MinusIcon, PlusIcon, XIcon} from "@phosphor-icons/react";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
@@ -44,9 +41,10 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
     }
 
     const gameInCollectionMap = useMemo(() => {
+        const gameIds = new Set(collection.gameIds);
         const map = new Map<number, boolean>();
         games.forEach(game => {
-            map.set(game.id, collection.gameIds!.includes(game.id));
+            map.set(game.id, gameIds.has(game.id));
         });
         return map;
     }, [games, collection.gameIds]);
@@ -105,84 +103,134 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
     return (
         <div className="flex flex-col gap-2">
             <div className="flex flex-row gap-2 justify-between">
-                <Input
-                    className="w-96"
-                    isClearable
-                    placeholder="Search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onClear={() => setSearchTerm("")}
-                />
-                <Select
-                    selectedKeys={[filter]}
-                    disallowEmptySelection
-                    onSelectionChange={keys => setFilter(Array.from(keys)[0] as any)}
-                    className="w-64"
-                >
-                    <SelectItem key="all">Show all games</SelectItem>
-                    <SelectItem key="inCollection">Show only games in collection</SelectItem>
-                    <SelectItem key="notInCollection">Show only games not in collection</SelectItem>
+                <div className="w-96 relative">
+                    <Input
+                        className="w-full pr-8"
+                        placeholder="Search"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted"
+                            onClick={() => setSearchTerm("")}
+                        >
+                            <XIcon/>
+                        </button>
+                    )}
+                </div>
+                <Select value={filter}
+                        onChange={(value) => setFilter(value as "all" | "inCollection" | "notInCollection")}
+                        className="w-64">
+                    <Select.Trigger>
+                        <Select.Value/>
+                        <Select.Indicator/>
+                    </Select.Trigger>
+                    <Select.Popover>
+                        <ListBox>
+                            <ListBox.Item id="all" textValue="Show all games">
+                                Show all games
+                                <ListBox.ItemIndicator/>
+                            </ListBox.Item>
+                            <ListBox.Item id="inCollection" textValue="Show only games in collection">
+                                Show only games in collection
+                                <ListBox.ItemIndicator/>
+                            </ListBox.Item>
+                            <ListBox.Item id="notInCollection" textValue="Show only games not in collection">
+                                Show only games not in collection
+                                <ListBox.ItemIndicator/>
+                            </ListBox.Item>
+                        </ListBox>
+                    </Select.Popover>
                 </Select>
             </div>
-            <Table isStriped isHeaderSticky
-                   sortDescriptor={sortDescriptor}
-                   onSortChange={setSortDescriptor}
-                   classNames={{
-                       base: "h-96"
-                   }}>
-                <TableHeader>
-                    <TableColumn key="title" allowsSorting>Title</TableColumn>
-                    <TableColumn key="library" allowsSorting>Library</TableColumn>
-                    <TableColumn key="dateAdded" allowsSorting>Date added</TableColumn>
-                    <TableColumn width={1}>Actions</TableColumn>
-                </TableHeader>
-                <TableBody
-                    emptyContent="Your filters did not match any games."
-                    items={sortedGames}>
-                    {(game) => (
-                        // Key includes _inCollection to force re-render when that value changes
-                        <TableRow key={`${game.id}-${game._inCollection}`}>
-                            <TableCell>
-                                <Link href={`/game/${game.id}`}
-                                      color="foreground"
-                                      className="text-sm"
-                                      underline="hover">
-                                    {game.title} ({game.release ? new Date(game.release).getFullYear() : "unknown"})
-                                </Link>
-                            </TableCell>
-                            <TableCell>
-                                <Link href={`/administration/games/library/${game.libraryId}`}
-                                      color="foreground"
-                                      className="text-sm"
-                                      underline="hover">
-                                    {libraryName(game)}
-                                </Link>
-                            </TableCell>
-                            <TableCell>
-                                {new Date(game.createdAt).toLocaleString()}
-                            </TableCell>
-                            <TableCell>
-                                <div className="flex flex-row gap-2">
-                                    <Tooltip content="Add game to collection">
-                                        <Button isIconOnly size="sm"
-                                                onPress={() => addGameToCollection(game)}
-                                                isDisabled={game._inCollection}>
-                                            <PlusIcon/>
-                                        </Button>
-                                    </Tooltip>
-                                    <Tooltip content="Remove game from collection">
-                                        <Button isIconOnly size="sm"
-                                                onPress={() => removeGameFromCollection(game)}
-                                                isDisabled={!game._inCollection}>
-                                            <MinusIcon/>
-                                        </Button>
-                                    </Tooltip>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+            {/* Virtualized, so that only the visible rows are rendered (collections can contain thousands of games) */}
+            <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 52}}>
+                <Table variant="secondary">
+                    <Table.ScrollContainer>
+                        <Table.Content aria-label="Games in collection"
+                                       className="h-96 overflow-auto"
+                                       sortDescriptor={sortDescriptor}
+                                       onSortChange={setSortDescriptor}>
+                            <Table.Header className="z-10 bg-background">
+                                <Table.Column id="title" allowsSorting isRowHeader>
+                                    {({sortDirection}) => (
+                                        <Table.SortableColumnHeader
+                                            sortDirection={sortDirection}>Title</Table.SortableColumnHeader>
+                                    )}
+                                </Table.Column>
+                                <Table.Column id="library" allowsSorting>
+                                    {({sortDirection}) => (
+                                        <Table.SortableColumnHeader
+                                            sortDirection={sortDirection}>Library</Table.SortableColumnHeader>
+                                    )}
+                                </Table.Column>
+                                <Table.Column id="dateAdded" allowsSorting>
+                                    {({sortDirection}) => (
+                                        <Table.SortableColumnHeader sortDirection={sortDirection}>Date
+                                            added</Table.SortableColumnHeader>
+                                    )}
+                                </Table.Column>
+                                <Table.Column>Actions</Table.Column>
+                            </Table.Header>
+                            <Table.Body
+                                renderEmptyState={() => <p className="text-center text-muted p-4">Your filters did not
+                                    match
+                                    any games.</p>}
+                                items={sortedGames}>
+                                {(game) => (
+                                    <Table.Row key={`${game.id}-${game._inCollection}`}>
+                                        <Table.Cell>
+                                            <Link href={`/game/${game.id}`}
+                                                  className="text-sm text-foreground hover:underline">
+                                                {game.title} ({game.release ? new Date(game.release).getFullYear() : "unknown"})
+                                            </Link>
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            <Link href={`/administration/games/library/${game.libraryId}`}
+                                                  className="text-sm text-foreground hover:underline">
+                                                {libraryName(game)}
+                                            </Link>
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            {new Date(game.createdAt).toLocaleString()}
+                                        </Table.Cell>
+                                        <Table.Cell>
+                                            <div className="flex flex-row gap-2">
+                                                <Tooltip delay={0}>
+                                                    <Tooltip.Trigger>
+                                                    <span className="inline-flex">
+                                                        <Button isIconOnly size="sm" variant="tertiary"
+                                                                onPress={() => addGameToCollection(game)}
+                                                                isDisabled={game._inCollection}>
+                                                            <PlusIcon/>
+                                                        </Button>
+                                                    </span>
+                                                    </Tooltip.Trigger>
+                                                    <Tooltip.Content>Add game to collection</Tooltip.Content>
+                                                </Tooltip>
+                                                <Tooltip delay={0}>
+                                                    <Tooltip.Trigger>
+                                                    <span className="inline-flex">
+                                                        <Button isIconOnly size="sm" variant="tertiary"
+                                                                onPress={() => removeGameFromCollection(game)}
+                                                                isDisabled={!game._inCollection}>
+                                                            <MinusIcon/>
+                                                        </Button>
+                                                    </span>
+                                                    </Tooltip.Trigger>
+                                                    <Tooltip.Content>Remove game from collection</Tooltip.Content>
+                                                </Tooltip>
+                                            </div>
+                                        </Table.Cell>
+                                    </Table.Row>
+                                )}
+                            </Table.Body>
+                        </Table.Content>
+                    </Table.ScrollContainer>
+                </Table>
+            </Virtualizer>
         </div>
     );
 }

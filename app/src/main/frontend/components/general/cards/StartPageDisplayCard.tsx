@@ -1,4 +1,4 @@
-import {Card, Chip, Image} from "@heroui/react";
+import {Card, Chip} from "@heroui/react";
 import React, {useMemo} from "react";
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
@@ -7,6 +7,8 @@ import {gameState} from "Frontend/state/GameState";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import Rand from "rand-seed";
 import {useNavigate} from "react-router";
+import ImageDto from "Frontend/generated/org/gameyfin/app/media/ImageDto";
+import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 
 
 interface StartPageDisplayCardProps {
@@ -25,16 +27,16 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     };
 
     const gamesState = useSnapshot(gameState);
-    const randomImageId = useMemo<number | null>(() => getRandomImageId(), [item]);
+    const randomImage = useMemo<ImageDto | null>(() => getRandomImage(), [item]);
     const link = useMemo<string>(() => getLink(), [item]);
     const type = isCollection(item) ? 'Collection' : 'Library';
 
     /**
-     * Gets a random cover ID from the games in the specified library or collection.
+     * Gets a random screenshot from the games in the specified library or collection.
      * Since the Random class is seeded with the game ID, the same game and image will always be selected for a given library/collection (unless the games inside change).
-     * @return {number | null} The random cover ID or null if none found.
+     * @return {ImageDto | null} The random screenshot or null if none found.
      */
-    function getRandomImageId(): number | null {
+    function getRandomImage(): ImageDto | null {
         let games: GameDto[] = [];
 
         if (isCollection(item)) {
@@ -52,7 +54,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
 
         const random = new Rand(`${item.id}-${game.id}`);
         const randomImageIndex = Math.floor(random.next() * game.images!.length);
-        return game.images![randomImageIndex].id;
+        return game.images![randomImageIndex] as ImageDto;
     }
 
     function getLink(): string {
@@ -64,21 +66,28 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
         return '#';
     }
 
-    return randomImageId && (
-        <Card isPressable={true}
-              onPress={() => navigate(link)}
-              className="h-48 w-96 relative overflow-hidden scale-95 hover:scale-100 shine transition-all select-none">
-            <Image
-                src={`images/cover/${randomImageId}`}
-                className="absolute inset-0 w-full h-full object-cover brightness-40 z-0"
-                removeWrapper
-            />
-            <div className="flex flex-col gap-1 relative z-10 items-center justify-center h-full">
-                <h2 className="text-white text-2xl font-bold text-center px-4">
-                    {item.name}
-                </h2>
-                <Chip size="sm" radius="sm">{type}</Chip>
-            </div>
+    return randomImage && (
+        <Card className="h-48 w-96 relative overflow-hidden p-0 scale-95 hover:scale-100 shine transition-all select-none">
+            <button
+                type="button"
+                onClick={() => navigate(link)}
+                className="relative h-full w-full cursor-pointer text-left"
+                aria-label={`Open ${type.toLowerCase()} ${item.name}`}
+            >
+                <BlurhashImage
+                    src={`images/cover/${randomImage.id}`}
+                    blurhash={randomImage.blurhash}
+                    placeholderSize={{width: 32, height: 16}}
+                    alt={`${item.name} background`}
+                    className="absolute inset-0 h-full w-full object-cover brightness-40 z-0"
+                />
+                <div className="flex flex-col gap-1 relative z-10 items-center justify-center h-full">
+                    <h2 className="text-white text-2xl font-bold text-center px-4">
+                        {item.name}
+                    </h2>
+                    <Chip size="sm" className="rounded-sm">{type}</Chip>
+                </div>
+            </button>
         </Card>
     );
 }

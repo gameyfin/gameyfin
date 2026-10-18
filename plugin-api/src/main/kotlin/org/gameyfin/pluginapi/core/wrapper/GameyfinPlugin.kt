@@ -1,7 +1,7 @@
 package org.gameyfin.pluginapi.core.wrapper
 
+import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.pf4j.Plugin
-import org.pf4j.PluginWrapper
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.jsonMapper
 import tools.jackson.module.kotlin.kotlinModule
@@ -15,14 +15,19 @@ import kotlin.io.path.fileSize
 /**
  * Abstract base class for all Gameyfin plugins.
  *
- * This class extends the PF4J [Plugin] class and provides utility methods for plugin logo management.
- * It also maintains a static reference to the current plugin instance.
+ * This class extends the PF4J [Plugin] class and provides access to the [PluginContext] as well as utility methods
+ * for state persistence and plugin logo management.
  *
- * @constructor Creates a Gameyfin plugin with the given [PluginWrapper].
- * @param wrapper The plugin wrapper provided by the Gameyfin application.
+ * Subclasses must declare a public constructor with a single [PluginContext] parameter, which Gameyfin uses to
+ * instantiate the plugin:
+ * ```
+ * class MyPlugin(context: PluginContext) : GameyfinPlugin(context)
+ * ```
+ *
+ * @constructor Creates a Gameyfin plugin with the given [PluginContext].
+ * @param context The plugin context provided by the Gameyfin application.
  */
-@Suppress("DEPRECATION")
-abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
+abstract class GameyfinPlugin(val context: PluginContext) : Plugin() {
 
     companion object {
         /**
@@ -37,14 +42,22 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     }
 
     /**
-     * State file for the plugin, used to persist plugin-specific state.
-     */
-    val stateFile: Path = Path.of("plugindata/${wrapper.pluginId}/state.json")
-
-    /**
      * Plugin data directory for storing plugin-specific files.
      */
-    val dataDirectory: Path = Path.of("plugindata/${wrapper.pluginId}")
+    val dataDirectory: Path
+        get() = context.dataDirectory
+
+    /**
+     * State file for the plugin, used to persist plugin-specific state.
+     */
+    val stateFile: Path
+        get() = dataDirectory.resolve("state.json")
+
+    /**
+     * Read-only access to games, libraries and collections of Gameyfin.
+     */
+    val dataService: GameyfinDataService
+        get() = context.dataService
 
     /**
      * JSON serializer for serializing and deserializing plugin state.
@@ -61,8 +74,7 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     fun hasLogo(): Boolean {
         for (format in SUPPORTED_LOGO_FORMATS) {
             val resourcePath = "$LOGO_FILE_NAME.$format"
-            val inputStream = wrapper.pluginClassLoader.getResourceAsStream(resourcePath)
-            if (inputStream != null) return true
+            if (javaClass.classLoader.getResource(resourcePath) != null) return true
         }
         return false
     }
@@ -75,8 +87,8 @@ abstract class GameyfinPlugin(wrapper: PluginWrapper) : Plugin(wrapper) {
     fun getLogo(): ByteArray? {
         for (format in SUPPORTED_LOGO_FORMATS) {
             val resourcePath = "$LOGO_FILE_NAME.$format"
-            val inputStream = wrapper.pluginClassLoader.getResourceAsStream(resourcePath)
-            if (inputStream != null) return inputStream.readAllBytes()
+            val inputStream = javaClass.classLoader.getResourceAsStream(resourcePath)
+            if (inputStream != null) return inputStream.use { it.readAllBytes() }
         }
         return null
     }

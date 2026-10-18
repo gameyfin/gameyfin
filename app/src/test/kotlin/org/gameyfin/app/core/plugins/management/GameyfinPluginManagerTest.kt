@@ -1,5 +1,7 @@
 package org.gameyfin.app.core.plugins.management
 
+import org.gameyfin.pluginapi.data.GameyfinDataService
+import org.springframework.beans.factory.ObjectProvider
 import io.mockk.*
 import org.gameyfin.app.core.plugins.config.PluginConfigEntry
 import org.gameyfin.app.core.plugins.config.PluginConfigEntryKey
@@ -27,6 +29,7 @@ class GameyfinPluginManagerTest {
     private lateinit var pluginConfigRepository: PluginConfigRepository
     private lateinit var pluginManagementRepository: PluginManagementRepository
     private lateinit var pluginManager: GameyfinPluginManager
+    private val pluginDataService = mockk<ObjectProvider<GameyfinDataService>>(relaxed = true)
 
     @TempDir
     lateinit var tempPluginsDir: Path
@@ -72,7 +75,8 @@ class GameyfinPluginManagerTest {
             forwardingPluginStateListener,
             dbPluginStatusProvider,
             pluginConfigRepository,
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginDataService
         )
 
         assertNotNull(pluginManager)
@@ -87,7 +91,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -112,7 +117,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -122,13 +128,48 @@ class GameyfinPluginManagerTest {
 
         every { pluginWrapper.pluginId } returns "test-plugin"
         every { pluginWrapper.plugin } returns configurablePlugin
-        every { configurablePlugin.validateConfig() } returns expectedResult
+        every { pluginConfigRepository.findAllByPluginId("test-plugin") } returns listOf(
+            PluginConfigEntry(PluginConfigEntryKey("test-plugin", "key1"), "value1")
+        )
+        every { configurablePlugin.validateConfig(any()) } returns expectedResult
         every { pluginManager.getPlugin("test-plugin") } returns pluginWrapper
 
         val result = pluginManager.validatePluginConfig("test-plugin")
 
         assertEquals(expectedResult, result)
-        verify(exactly = 1) { configurablePlugin.validateConfig() }
+        verify(exactly = 1) { configurablePlugin.validateConfig(mapOf("key1" to "value1")) }
+    }
+
+    @Test
+    fun `validatePluginConfig should not pass stored config to untrusted plugin`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = spyk(
+            GameyfinPluginManager(
+                forwardingPluginStateListener,
+                dbPluginStatusProvider,
+                pluginConfigRepository,
+                pluginManagementRepository,
+                pluginDataService
+            )
+        )
+
+        val configurablePlugin = mockk<TestConfigurablePlugin>(relaxed = true)
+        val pluginWrapper = mockk<PluginWrapper>()
+        val untrustedEntry = PluginManagementEntry("test-plugin", enabled = false, priority = 1)
+        untrustedEntry.trustLevel = PluginTrustLevel.UNTRUSTED
+
+        every { pluginWrapper.pluginId } returns "test-plugin"
+        every { pluginWrapper.plugin } returns configurablePlugin
+        every { pluginManagementRepository.findByIdOrNull("test-plugin") } returns untrustedEntry
+        every { pluginConfigRepository.findAllByPluginId("test-plugin") } returns listOf(
+            PluginConfigEntry(PluginConfigEntryKey("test-plugin", "secret"), "value")
+        )
+        every { pluginManager.getPlugin("test-plugin") } returns pluginWrapper
+
+        pluginManager.validatePluginConfig("test-plugin")
+
+        verify(exactly = 1) { configurablePlugin.validateConfig(emptyMap()) }
     }
 
     @Test
@@ -140,7 +181,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -169,7 +211,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -189,7 +232,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -217,7 +261,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -251,7 +296,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -271,7 +317,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -297,7 +344,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -319,7 +367,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -340,7 +389,8 @@ class GameyfinPluginManagerTest {
             forwardingPluginStateListener,
             dbPluginStatusProvider,
             pluginConfigRepository,
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginDataService
         )
 
         val entry = PluginManagementEntry("test-plugin", enabled = true, priority = 10)
@@ -359,7 +409,8 @@ class GameyfinPluginManagerTest {
             forwardingPluginStateListener,
             dbPluginStatusProvider,
             pluginConfigRepository,
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginDataService
         )
 
         every { pluginManagementRepository.findByIdOrNull("non-existent-plugin") } returns null
@@ -380,7 +431,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -406,7 +458,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -430,7 +483,8 @@ class GameyfinPluginManagerTest {
             forwardingPluginStateListener,
             dbPluginStatusProvider,
             pluginConfigRepository,
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginDataService
         )
 
         // Create a simple mock plugin that can actually be loaded
@@ -467,7 +521,8 @@ class GameyfinPluginManagerTest {
             forwardingPluginStateListener,
             dbPluginStatusProvider,
             pluginConfigRepository,
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginDataService
         )
 
         val result = pluginManager.startPlugin(null)
@@ -484,7 +539,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -512,7 +568,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -539,7 +596,8 @@ class GameyfinPluginManagerTest {
             forwardingPluginStateListener,
             dbPluginStatusProvider,
             pluginConfigRepository,
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginDataService
         )
 
         // Verify the plugin manager initializes properly
@@ -556,7 +614,8 @@ class GameyfinPluginManagerTest {
             forwardingPluginStateListener,
             dbPluginStatusProvider,
             pluginConfigRepository,
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginDataService
         )
 
         val loader = invokeCreatePluginLoader(pluginManager)
@@ -578,7 +637,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
 
             val loader = invokeCreatePluginLoader(pluginManager)
@@ -603,7 +663,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -648,7 +709,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -696,7 +758,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 
@@ -733,7 +796,8 @@ class GameyfinPluginManagerTest {
                 forwardingPluginStateListener,
                 dbPluginStatusProvider,
                 pluginConfigRepository,
-                pluginManagementRepository
+                pluginManagementRepository,
+                pluginDataService
             )
         )
 

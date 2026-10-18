@@ -3,7 +3,7 @@ import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {addToast, Button} from "@heroui/react";
+import {Button, toast} from "@heroui/react";
 import {MagicWandIcon} from "@phosphor-icons/react";
 
 function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
@@ -34,10 +34,7 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
             formik.setFieldValue("sso.oidc.logout-url", data.end_session_endpoint);
             formik.setFieldValue("sso.oidc.jwks-url", data.jwks_uri);
         } catch (e) {
-            addToast({
-                title: "Failed to auto-populate SSO configuration",
-                color: "warning"
-            });
+            toast.warning("Failed to auto-populate SSO configuration");
         }
     }
 
@@ -48,7 +45,7 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
             <ConfigFormField configElement={getConfig("security.allow-public-access")}/>
 
             <Section title="Single Sign-On"/>
-            <div className="flex flex-row items-start gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-8">
                 <div className="flex flex-col">
                     <h2 className="text-xl font-bold mb-4">General configuration</h2>
                     <ConfigFormField className="mb-4" configElement={getConfig("sso.oidc.enabled")}/>
@@ -62,20 +59,21 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
                     <ConfigFormField configElement={getConfig("sso.oidc.oauth-scopes")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                 </div>
-                <div className="flex flex-col flex-1">
+                <div className="flex flex-col lg:col-span-2">
                     <h2 className="text-xl font-bold mb-4">SSO Provider Configuration</h2>
                     <ConfigFormField configElement={getConfig("sso.oidc.client-id")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.client-secret")}
                                      type="password"
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
-                    <div className="flex flex-row gap-2">
+                    <div className="flex flex-row items-start gap-2">
                         <ConfigFormField configElement={getConfig("sso.oidc.issuer-url")}
                                          isDisabled={!formik.values.sso.oidc.enabled}/>
                         <Button
+                            variant="ghost"
                             isDisabled={isAutoPopulateDisabled()}
                             onPress={autoPopulate}
-                            className="h-14"><MagicWandIcon className="min-w-5"/>Auto-populate</Button>
+                            className="mt-6 shrink-0"><MagicWandIcon className="min-w-5"/>Auto-populate</Button>
                     </div>
                     <ConfigFormField configElement={getConfig("sso.oidc.authorize-url")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>

@@ -9,17 +9,31 @@ import org.springframework.data.repository.query.Param
 import java.time.Instant
 
 interface GameRequestRepository : JpaRepository<GameRequest, Long> {
-    @Query("SELECT g FROM GameRequest g WHERE g.title = :title AND YEAR(g.release) = YEAR(:release) AND g.platform = :platform")
+
+    @Query("""
+        SELECT g FROM GameRequest g
+        WHERE g.title = :title
+        AND :releaseYear IS NOT NULL
+        AND EXTRACT(YEAR FROM g.release) = :releaseYear
+        AND g.platform = :platform
+    """)
     fun findByTitleAndReleaseYearAndPlatform(
         @Param("title") title: String,
-        @Param("release") release: Instant?,
+        @Param("releaseYear") releaseYear: Int?,
         @Param("platform") platform: Platform
     ): List<GameRequest>
 
-    @Query("SELECT g FROM GameRequest g WHERE g.title = :title AND YEAR(g.release) = YEAR(:release) AND g.platform = :platform AND g.status NOT IN (:excludedStatuses)")
+    @Query("""
+        SELECT g FROM GameRequest g
+        WHERE g.title = :title
+        AND :releaseYear IS NOT NULL
+        AND EXTRACT(YEAR FROM g.release) = :releaseYear
+        AND g.platform = :platform
+        AND g.status NOT IN (:excludedStatuses)
+    """)
     fun findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
         @Param("title") title: String,
-        @Param("release") release: Instant?,
+        @Param("releaseYear") releaseYear: Int?,
         @Param("platform") platform: Platform,
         @Param("excludedStatuses") excludedStatuses: List<GameRequestStatus>
     ): List<GameRequest>

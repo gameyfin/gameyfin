@@ -10,6 +10,7 @@ import java.nio.file.StandardCopyOption
 import java.util.*
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteExisting
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 
 private val logger = KotlinLogging.logger {}
@@ -74,9 +75,12 @@ class FileStorageService(
         if (contentId == null) return
 
         val filePath = rootPath.resolve(contentId)
-        if (filePath.exists()) {
-            filePath.deleteExisting()
+        val deleted = filePath.deleteIfExists()
+
+        if (deleted) {
             logger.debug { "Deleted file with contentId: $contentId" }
+        } else {
+            logger.debug { "File already deleted or missing for contentId: $contentId" }
         }
     }
 

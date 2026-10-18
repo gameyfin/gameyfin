@@ -15,6 +15,7 @@ plugins {
     application
     jacoco
     id("org.sonarqube")
+    kotlin("kapt")
 }
 
 application {
@@ -33,6 +34,7 @@ repositories {
     maven {
         setUrl("https://maven.vaadin.com/vaadin-addons")
     }
+    mavenCentral()
 }
 
 dependencies {
@@ -65,7 +67,7 @@ dependencies {
 
     // Persistence & I/O
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("org.springframework.boot:spring-boot-starter-liquibase")
     implementation("commons-io:commons-io:${rootProject.extra["commonsIoVersion"]}")
     implementation("com.google.guava:guava:${rootProject.extra["guavaVersion"]}")
 
@@ -93,7 +95,9 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     developmentOnly("com.vaadin:vaadin-dev")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    kapt("org.springframework.boot:spring-boot-configuration-processor")
     runtimeOnly("com.h2database:h2")
+    runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     // Testing
@@ -104,6 +108,9 @@ dependencies {
     testImplementation("io.mockk:mockk:${rootProject.extra["mockkVersion"]}")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("io.projectreactor:reactor-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter:${rootProject.extra["testContainersVersion"]}")
+    testImplementation("org.testcontainers:postgresql:${rootProject.extra["testContainersVersion"]}")
 }
 
 dependencyManagement {

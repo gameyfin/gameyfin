@@ -1,5 +1,6 @@
 package org.gameyfin.app.libraries
 
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
@@ -120,7 +121,7 @@ class LibraryWatcherService(
         log.info { "Library Watcher Service stopped" }
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @EventListener(LibraryCreatedEvent::class)
     fun onLibraryCreated(event: LibraryCreatedEvent) {
         if (!running.get()) {
@@ -131,7 +132,7 @@ class LibraryWatcherService(
         startWatchingLibrary(event.library)
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @EventListener(LibraryUpdatedEvent::class)
     fun onLibraryUpdated(event: LibraryUpdatedEvent) {
         if (!running.get()) {
@@ -145,7 +146,7 @@ class LibraryWatcherService(
         startWatchingLibrary(event.currentState)
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @EventListener(LibraryDeletedEvent::class)
     fun onLibraryDeleted(event: LibraryDeletedEvent) {
         if (!running.get()) {
@@ -318,18 +319,12 @@ class LibraryWatcherService(
 
     private fun handleCreates(library: Library, events: List<WatchEvent<*>>) {
         log.debug { "Handling ${events.size} create events for library ${library.id}" }
-
-        // Trigger a quick scan to add new games
-        // The scan service will handle the actual game creation
-        libraryScanService.triggerScan(ScanType.QUICK, listOf(library.id!!))
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
     }
 
     private fun handleDeletes(library: Library, events: List<WatchEvent<*>>) {
         log.debug { "Handling ${events.size} delete events for library ${library.id}" }
-
-        // Trigger a quick scan to remove deleted games
-        // The scan service will handle the actual game deletion
-        libraryScanService.triggerScan(ScanType.QUICK, listOf(library.id!!))
+        libraryScanService.scheduleScan(ScanType.QUICK, library)
     }
 
     private fun handleModifies(library: Library, watchInfo: LibraryWatchInfo, events: List<WatchEvent<*>>) {

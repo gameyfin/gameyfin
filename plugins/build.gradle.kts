@@ -34,6 +34,11 @@ subprojects {
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
 
+    // Dependency locking adds constraints that bypass per-dependency excludes, so exclude globally
+    configurations.named("runtimeClasspath") {
+        exclude(group = "org.slf4j")
+    }
+
     // Read the version from the MANIFEST.MF file in resources
     val manifestFile = file("src/main/resources/MANIFEST.MF")
     val manifestVersion: String? = if (manifestFile.exists()) {

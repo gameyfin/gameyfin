@@ -1,4 +1,4 @@
-import {Button, Card, Chip, Tooltip, useDisclosure} from "@heroui/react";
+import {Button, Card, Chip, Tooltip, useOverlayState} from "@heroui/react";
 import {
     CheckCircleIcon,
     IconContext,
@@ -27,8 +27,22 @@ import PluginConfigValidationResult
 import PluginConfigValidationResultType
     from "Frontend/generated/org/gameyfin/pluginapi/core/config/PluginConfigValidationResultType";
 
+const BORDER_CLASSES = {
+    success: "border-success",
+    warning: "border-warning",
+    danger: "border-danger",
+    default: "border-default"
+};
+
+const CHIP_CLASSES = {
+    success: "bg-success text-foreground",
+    warning: "bg-warning text-foreground",
+    danger: "bg-danger text-foreground",
+    default: "bg-default text-foreground"
+};
+
 export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
-    const pluginDetailsModal = useDisclosure();
+    const pluginDetailsModal = useOverlayState();
 
     function borderColor(state: PluginState | undefined, trustLevel: PluginTrustLevel | undefined): "success" | "warning" | "danger" | "default" {
         if (trustLevel === PluginTrustLevel.UNTRUSTED) return "danger";
@@ -71,47 +85,103 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     function configValidationResultToChip(validationResult: PluginConfigValidationResult | undefined): ReactNode {
         switch (validationResult?.result) {
             case PluginConfigValidationResultType.VALID:
-                return <Tooltip content="Config valid" placement="bottom" color="foreground">
-                    <Chip size="sm" radius="sm" className="text-xs" color="success">
-                        <CheckCircleIcon/>
-                    </Chip>
-                </Tooltip>
+                return <Chip size="sm" className={`text-xs rounded-xl h-6 ${CHIP_CLASSES.success}`}>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger className="flex">
+                            <span className="inline-flex">
+                                <CheckCircleIcon/>
+                            </span>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Config valid
+                        </Tooltip.Content>
+                    </Tooltip>
+                </Chip>
             case PluginConfigValidationResultType.INVALID:
-                return <Tooltip content="Config invalid" placement="bottom" color="foreground">
-                    <Chip size="sm" radius="sm" className="text-xs" color="danger">
-                        <WarningCircleIcon/>
-                    </Chip>
-                </Tooltip>;
+                return <Chip size="sm" className={`text-xs rounded-xl h-6 ${CHIP_CLASSES.danger}`}>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger className="flex">
+                            <span className="inline-flex">
+                                <WarningCircleIcon/>
+                            </span>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Config invalid
+                        </Tooltip.Content>
+                    </Tooltip>
+                </Chip>;
             default:
-                return <Tooltip content="Config could not be validated" placement="bottom" color="foreground">
-                    <Chip size="sm" radius="sm" className="text-xs">
-                        <QuestionIcon/>
-                    </Chip>
-                </Tooltip>
+                return <Chip size="sm" className="text-xs rounded-xl h-6">
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger className="flex">
+                            <span className="inline-flex">
+                                <QuestionIcon/>
+                            </span>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Config could not be validated
+                        </Tooltip.Content>
+                    </Tooltip>
+                </Chip>
         }
     }
 
     function trustLevelToBadge(trustLevel: PluginTrustLevel | undefined): React.ReactNode {
         switch (trustLevel) {
             case PluginTrustLevel.OFFICIAL:
-                return <Tooltip color="foreground" placement="bottom" content="Official plugin">
-                    <SealCheckIcon className="fill-success"/>
+                return <Tooltip delay={0}>
+                    <Tooltip.Trigger className="flex">
+                        <span className="inline-flex">
+                            <SealCheckIcon className="fill-success"/>
+                        </span>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        Official plugin
+                    </Tooltip.Content>
                 </Tooltip>;
             case PluginTrustLevel.BUNDLED:
-                return <Tooltip color="foreground" placement="bottom" content="Bundled plugin">
-                    <SealCheckIcon/>
+                return <Tooltip delay={0}>
+                    <Tooltip.Trigger className="flex">
+                        <span className="inline-flex">
+                            <SealCheckIcon/>
+                        </span>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        Bundled plugin
+                    </Tooltip.Content>
                 </Tooltip>;
             case PluginTrustLevel.THIRD_PARTY:
-                return <Tooltip color="foreground" placement="bottom" content="3rd party plugin">
-                    <SealWarningIcon/>
+                return <Tooltip delay={0}>
+                    <Tooltip.Trigger className="flex">
+                        <span className="inline-flex">
+                            <SealWarningIcon/>
+                        </span>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        3rd party plugin
+                    </Tooltip.Content>
                 </Tooltip>;
             case PluginTrustLevel.UNTRUSTED:
-                return <Tooltip color="foreground" placement="bottom" content="Invalid plugin signature">
-                    <SealWarningIcon className="fill-danger"/>
+                return <Tooltip delay={0}>
+                    <Tooltip.Trigger className="flex">
+                        <span className="inline-flex">
+                            <SealWarningIcon className="fill-danger"/>
+                        </span>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        Invalid plugin signature
+                    </Tooltip.Content>
                 </Tooltip>;
             default:
-                return <Tooltip color="foreground" placement="bottom" content="Unkown verification status">
-                    <SealQuestionIcon/>
+                return <Tooltip delay={0}>
+                    <Tooltip.Trigger className="flex">
+                        <span className="inline-flex">
+                            <SealQuestionIcon/>
+                        </span>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        Unknown verification status
+                    </Tooltip.Content>
                 </Tooltip>;
         }
     }
@@ -132,38 +202,56 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     return (
         <>
             <Card
-                className={`flex flex-row justify-between p-2 border-2 border-${borderColor(plugin.state, plugin.trustLevel)}`}>
+                className={`flex flex-row justify-between p-2 border-2 ${BORDER_CLASSES[borderColor(plugin.state, plugin.trustLevel)]}`}>
                 <div className="absolute right-0 top-0 flex flex-row">
-                    <Tooltip content={`${isDisabled(plugin.state) ? "Enable" : "Disable"} plugin`} placement="bottom"
-                             color="foreground">
-                        <Button isIconOnly
-                                variant="light"
-                                onPress={() => togglePluginEnabled()}
-                                isDisabled={plugin.state == PluginState.UNLOADED || plugin.state == PluginState.RESOLVED}
-                        >
-                            <PowerIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly
+                                    variant="ghost"
+                                    onPress={() => togglePluginEnabled()}
+                                    isDisabled={plugin.state == PluginState.UNLOADED || plugin.state == PluginState.RESOLVED}
+                            >
+                                <PowerIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            {`${isDisabled(plugin.state) ? "Enable" : "Disable"} plugin`}
+                        </Tooltip.Content>
                     </Tooltip>
-                    <Tooltip content="Configuration" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light" onPress={pluginDetailsModal.onOpen}>
-                            <SlidersHorizontalIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="ghost" onPress={pluginDetailsModal.open}>
+                                <SlidersHorizontalIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Configuration
+                        </Tooltip.Content>
                     </Tooltip>
                 </div>
                 <div className="flex flex-1 flex-col items-center gap-2">
-                    <PluginLogo plugin={plugin}/>
+                    <div className="flex h-16 w-full items-center justify-center">
+                        <PluginLogo plugin={plugin} glow={true}/>
+                    </div>
                     <p className="flex flex-row items-center gap-1 font-semibold">
                         {plugin.name}
                         <IconContext.Provider value={{size: 18, weight: "fill"}}>
                             {trustLevelToBadge(plugin.trustLevel)}
                         </IconContext.Provider>
                     </p>
-                    <div className="flex flex-row gap-2">
-                        <Chip size="sm" radius="sm" className="text-xs">{plugin.version}</Chip>
-                        <Chip size="sm" radius="sm" className="text-xs" color={stateToColor(plugin.state)}>
-                            <Tooltip content={`Plugin ${plugin.state?.toLowerCase()}`} placement="bottom"
-                                     color="foreground">
-                                {stateToIcon(plugin.state)}
+                    <div className="flex flex-row items-center gap-2 mt-auto">
+                        <Chip size="sm" className="text-xs rounded-xl h-6">{plugin.version}</Chip>
+                        <Chip size="sm"
+                              className={`text-xs rounded-xl h-6 ${CHIP_CLASSES[stateToColor(plugin.state)]}`}>
+                            <Tooltip delay={0}>
+                                <Tooltip.Trigger className="flex">
+                                   <span className="inline-flex">
+                                       {stateToIcon(plugin.state)}
+                                   </span>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                    {`Plugin ${plugin.state?.toLowerCase()}`}
+                                </Tooltip.Content>
                             </Tooltip>
                         </Chip>
                         {configValidationResultToChip(plugin.configValidation)}
@@ -172,7 +260,7 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
             </Card>
             <PluginDetailsModal plugin={plugin}
                                 isOpen={pluginDetailsModal.isOpen}
-                                onOpenChange={pluginDetailsModal.onOpenChange}
+                                onOpenChange={pluginDetailsModal.setOpen}
             />
         </>
 

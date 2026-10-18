@@ -1,22 +1,77 @@
-import {Button, Input, Select, SelectedItems, SelectItem, Tooltip} from "@heroui/react";
+import {Button, Input, ListBox, Select, Tooltip} from "@heroui/react";
 import {
     FunnelSimpleIcon,
     FunnelSimpleXIcon,
     MagnifyingGlassIcon,
     SortAscendingIcon,
-    StarIcon
+    StarIcon,
 } from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";
 import {useSearchParams} from "react-router";
 import React, {useEffect, useMemo, useState} from "react";
+import {Form, Formik, useFormikContext} from "formik";
 import {Fzf} from "fzf";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
+import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput";
 import {compoundRating} from "Frontend/util/utils";
 
+type SearchFormValues = {
+    searchTerm: string;
+    sortBy: string;
+    libraries: string[];
+    developers: string[];
+    genres: string[];
+    themes: string[];
+    features: string[];
+    perspectives: string[];
+    keywords: string[];
+    minRating: number;
+};
+
+const SORT_OPTIONS = [
+    {id: "title_asc", label: "Title (A-Z)"},
+    {id: "title_desc", label: "Title (Z-A)"},
+    {id: "release_desc", label: "Release Date (Newest)"},
+    {id: "release_asc", label: "Release Date (Oldest)"},
+    {id: "rating_desc", label: "Rating (Highest)"},
+    {id: "rating_asc", label: "Rating (Lowest)"},
+    {id: "added_desc", label: "Date Added (Newest)"},
+    {id: "added_asc", label: "Date Added (Oldest)"},
+    {id: "updated_desc", label: "Last Updated (Newest)"},
+    {id: "updated_asc", label: "Last Updated (Oldest)"},
+];
+
 export default function SearchView() {
+    const [searchParams] = useSearchParams();
+
+    const [initialValues] = useState<SearchFormValues>(() => {
+        const minRatingParam = parseInt(searchParams.get("minRating") || "1", 10);
+        return {
+            searchTerm: searchParams.get("term") || "",
+            sortBy: searchParams.get("sort") || "title_asc",
+            libraries: searchParams.getAll("lib"),
+            developers: searchParams.getAll("dev"),
+            genres: searchParams.getAll("genre"),
+            themes: searchParams.getAll("theme"),
+            features: searchParams.getAll("feature"),
+            perspectives: searchParams.getAll("perspective"),
+            keywords: searchParams.getAll("keyword"),
+            minRating: isNaN(minRatingParam) ? 1 : minRatingParam,
+        };
+    });
+
+    return (
+        <Formik initialValues={initialValues} onSubmit={() => {
+        }}>
+            <SearchViewContent/>
+        </Formik>
+    );
+}
+
+function SearchViewContent() {
     const games = useSnapshot(gameState).sortedAlphabetically;
     const knownDevelopers = useSnapshot(gameState).knownDevelopers;
     const knownGenres = useSnapshot(gameState).knownGenres;
@@ -27,120 +82,50 @@ export default function SearchView() {
     const libraries = useSnapshot(libraryState).libraries;
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+    const {values, setFieldValue, setValues} = useFormikContext<SearchFormValues>();
+    const {
+        searchTerm, sortBy, minRating,
+        libraries: selectedLibraries,
+        developers: selectedDevelopers,
+        genres: selectedGenres,
+        themes: selectedThemes,
+        features: selectedFeatures,
+        perspectives: selectedPerspectives,
+        keywords: selectedKeywords,
+    } = values;
 
-    const [showFilters, setShowFilters] = useState(false);
-    const [sortBy, setSortBy] = useState("title_asc");
+    const [showFilters, setShowFilters] = useState(() => searchParams.get("filters") === "1");
 
-    // State to track selected filter values
-    const [searchTerm, setSearchTerm] = useState<string>("");
-    const [selectedLibraries, setSelectedLibraries] = useState<Set<string>>(new Set());
-    const [selectedDevelopers, setSelectedDevelopers] = useState<Set<string>>(new Set());
-    const [selectedGenres, setSelectedGenres] = useState<Set<string>>(new Set());
-    const [selectedThemes, setSelectedThemes] = useState<Set<string>>(new Set());
-    const [selectedFeatures, setSelectedFeatures] = useState<Set<string>>(new Set());
-    const [selectedPerspectives, setSelectedPerspectives] = useState<Set<string>>(new Set());
-    const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
-    const [minRating, setMinRating] = useState<number>(1); // Minimum rating filter
-
-    // Load initial filter values from URL parameters on component mount
     useEffect(() => {
-        // Scroll to top on load
-        window.scrollTo(0, 0)
-
-        // Get all parameters from the URL
-        const term = searchParams.get("term") || "";
-        const libs = searchParams.getAll("lib");
-        const devs = searchParams.getAll("dev");
-        const genres = searchParams.getAll("genre");
-        const themes = searchParams.getAll("theme");
-        const features = searchParams.getAll("feature");
-        const perspectives = searchParams.getAll("perspective");
-        const keywords = searchParams.getAll("keyword");
-        const sort = searchParams.get("sort") || "title_asc";
-        const minRatingParam = parseInt(searchParams.get("minRating") || "1", 10);
-        const filtersParam = searchParams.get("filters");
-
-        setSearchTerm(term);
-        setSelectedLibraries(new Set(libs));
-        setSelectedDevelopers(new Set(devs));
-        setSelectedGenres(new Set(genres));
-        setSelectedThemes(new Set(themes));
-        setSelectedFeatures(new Set(features));
-        setSelectedPerspectives(new Set(perspectives));
-        setSelectedKeywords(new Set(keywords));
-        setSortBy(sort);
-        setMinRating(isNaN(minRatingParam) ? 1 : minRatingParam);
-        setShowFilters(filtersParam === "1");
-
-        setInitialLoadComplete(true);
+        window.scrollTo(0, 0);
     }, []);
 
-    // Update search parameters whenever the filters or sort change
     useEffect(() => {
-        if (!initialLoadComplete) return;
-
         const newParams = new URLSearchParams();
 
-        // Preserve search term if exists
         if (searchTerm && searchTerm.trim() !== "") {
             newParams.set("term", searchTerm);
         }
-
-        // Only add parameters for non-empty filters
-        if (selectedLibraries.size > 0) {
-            selectedLibraries.forEach(lib => {
-                newParams.append("lib", lib.toString());
-            });
-        }
-        if (selectedDevelopers.size > 0) {
-            selectedDevelopers.forEach(dev => {
-                newParams.append("dev", dev);
-            });
-        }
-        if (selectedGenres.size > 0) {
-            selectedGenres.forEach(genre => {
-                newParams.append("genre", genre);
-            });
-        }
-        if (selectedThemes.size > 0) {
-            selectedThemes.forEach(theme => {
-                newParams.append("theme", theme);
-            });
-        }
-        if (selectedFeatures.size > 0) {
-            selectedFeatures.forEach(feature => {
-                newParams.append("feature", feature);
-            });
-        }
-        if (selectedPerspectives.size > 0) {
-            selectedPerspectives.forEach(perspective => {
-                newParams.append("perspective", perspective);
-            });
-        }
-        if (selectedKeywords.size > 0) {
-            selectedKeywords.forEach(keyword => {
-                newParams.append("keyword", keyword);
-            });
-        }
-        // Add minRating param if not default
+        selectedLibraries.forEach(lib => newParams.append("lib", lib));
+        selectedDevelopers.forEach(dev => newParams.append("dev", dev));
+        selectedGenres.forEach(genre => newParams.append("genre", genre));
+        selectedThemes.forEach(theme => newParams.append("theme", theme));
+        selectedFeatures.forEach(feature => newParams.append("feature", feature));
+        selectedPerspectives.forEach(perspective => newParams.append("perspective", perspective));
+        selectedKeywords.forEach(keyword => newParams.append("keyword", keyword));
         if (minRating > 1) {
             newParams.set("minRating", minRating.toString());
         }
-        // Add sort param
         if (sortBy && sortBy !== "title_asc") {
             newParams.set("sort", sortBy);
         }
-        // Add showFilters param
         if (showFilters) {
             newParams.set("filters", "1");
         }
 
         setSearchParams(newParams, {replace: true});
-    }, [searchTerm, selectedLibraries, selectedDevelopers, selectedGenres,
-        selectedThemes, selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating, showFilters]);
+    }, [values, showFilters]);
 
-    // Sorting function (refactored to use sortKey and sortDirection)
     function sortGames(games: GameDto[]): GameDto[] {
         if (!sortBy) return games;
 
@@ -169,7 +154,7 @@ export default function SearchView() {
                     cmp = 0;
             }
             if (sortDirection === "desc") {
-                cmp *= -1; // Reverse the comparison if sorting in descending order
+                cmp *= -1;
             }
             return cmp;
         });
@@ -179,13 +164,12 @@ export default function SearchView() {
         games, searchTerm,
         selectedLibraries, selectedDevelopers,
         selectedGenres, selectedThemes,
-        selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating
+        selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating,
     ]);
 
     function filterGames(): GameDto[] {
         let filtered = games;
 
-        // Apply text search filter if term exists
         if (searchTerm !== "") {
             const fzf = new Fzf(filtered, {
                 selector: (game: GameDto) => game.title
@@ -193,54 +177,46 @@ export default function SearchView() {
             filtered = fzf.find(searchTerm).map(result => result.item);
         }
 
-        // Apply library filter
-        if (selectedLibraries.size > 0) {
-            filtered = filtered.filter(game => selectedLibraries.has(game.libraryId.toString()));
+        if (selectedLibraries.length > 0) {
+            filtered = filtered.filter(game => selectedLibraries.includes(game.libraryId.toString()));
         }
 
-        // Apply developer filter
-        if (selectedDevelopers.size > 0) {
+        if (selectedDevelopers.length > 0) {
             filtered = filtered.filter(game =>
-                game.developers?.some(developer => selectedDevelopers.has(developer))
+                game.developers?.some(developer => selectedDevelopers.includes(developer))
             );
         }
 
-        // Apply genre filter
-        if (selectedGenres.size > 0) {
+        if (selectedGenres.length > 0) {
             filtered = filtered.filter(game =>
-                game.genres?.some(genre => selectedGenres.has(genre))
+                game.genres?.some(genre => selectedGenres.includes(genre))
             );
         }
 
-        // Apply theme filter
-        if (selectedThemes.size > 0) {
+        if (selectedThemes.length > 0) {
             filtered = filtered.filter(game =>
-                game.themes?.some(theme => selectedThemes.has(theme))
+                game.themes?.some(theme => selectedThemes.includes(theme))
             );
         }
 
-        // Apply feature filter
-        if (selectedFeatures.size > 0) {
+        if (selectedFeatures.length > 0) {
             filtered = filtered.filter(game =>
-                game.features?.some(feature => selectedFeatures.has(feature))
+                game.features?.some(feature => selectedFeatures.includes(feature))
             );
         }
 
-        // Apply perspective filter
-        if (selectedPerspectives.size > 0) {
+        if (selectedPerspectives.length > 0) {
             filtered = filtered.filter(game =>
-                game.perspectives?.some(perspective => selectedPerspectives.has(perspective))
+                game.perspectives?.some(perspective => selectedPerspectives.includes(perspective))
             );
         }
 
-        // Apply keyword filter
-        if (selectedKeywords.size > 0) {
+        if (selectedKeywords.length > 0) {
             filtered = filtered.filter(game =>
-                game.keywords?.some(keyword => selectedKeywords.has(keyword))
+                game.keywords?.some(keyword => selectedKeywords.includes(keyword))
             );
         }
 
-        // Apply minimum rating filter
         if (minRating > 1) {
             filtered = filtered.filter(game => {
                 const starRating = compoundRating(game, [1, 5]);
@@ -265,69 +241,108 @@ export default function SearchView() {
         </div>;
     }
 
-    return <div className="flex flex-col gap-4 items-center w-full">
-        <div className="flex w-full justify-between px-12 gap-4 flex-col lg:flex-row">
-            <Input
-                classNames={{
-                    base: "w-full lg:w-96 shrink-0",
-                    mainWrapper: "h-full",
-                    inputWrapper:
-                        "h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
-                }}
-                placeholder="Type to search..."
-                startContent={<MagnifyingGlassIcon/>}
-                type="search"
-                value={searchTerm}
-                isClearable
-                onChange={(event) => setSearchTerm(event.target.value)}
-                onClear={() => setSearchTerm("")}
-            />
-            <div className="flex flex-row gap-2">
-                <Select
-                    startContent={<SortAscendingIcon/>}
-                    selectedKeys={[sortBy]}
-                    disallowEmptySelection
+    function ratingLabel(value: number) {
+        return "★".repeat(value) + "☆".repeat(5 - value);
+    }
+
+    function toOptions(options: Iterable<string>): string[] {
+        return Array.from(options);
+    }
+
+    function renderSelect(
+        label: string,
+        value: string | string[],
+        onChange: (value: any) => void,
+        children: React.ReactNode,
+        selectionMode: "single" | "multiple" = "multiple",
+        placeholder?: string,
+        className?: string,
+        disallowEmptySelection?: boolean,
+        triggerPrefix?: React.ReactNode,
+    ) {
+        return (
+            <Select
+                value={value}
+                onChange={onChange}
+                selectionMode={selectionMode}
+                placeholder={placeholder}
+                className={className}
+            >
+                <span className="text-sm text-muted">{label}</span>
+                <Select.Trigger className="flex items-center gap-2">
+                    {triggerPrefix}
+                    <Select.Value/>
+                    <Select.Indicator/>
+                </Select.Trigger>
+                <Select.Popover>
+                    <ListBox>
+                        {children}
+                    </ListBox>
+                </Select.Popover>
+            </Select>
+        );
+    }
+
+    return <Form className="flex flex-col gap-4 items-center w-full">
+        <div className="flex w-full justify-between px-4 gap-4 flex-col lg:flex-row">
+            <div
+                className="flex h-full w-full lg:w-96 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-muted">
+                <MagnifyingGlassIcon/>
+                <Input
+                    className="grow"
+                    placeholder="Type to search..."
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setFieldValue("searchTerm", event.target.value)}
+                />
+                {searchTerm && (
+                    <button className="text-muted" onClick={() => setFieldValue("searchTerm", "")} type="button">
+                        ×
+                    </button>
+                )}
+            </div>
+            <div className="flex flex-row items-end gap-2">
+                <AutocompleteInput
+                    name="sortBy"
+                    label="Sort"
+                    options={SORT_OPTIONS}
                     selectionMode="single"
-                    onSelectionChange={keys => setSortBy(Array.from(keys)[0] as any)}
-                    className="w-full lg:w-64"
-                >
-                    <SelectItem key="title_asc">Title (A-Z)</SelectItem>
-                    <SelectItem key="title_desc">Title (Z-A)</SelectItem>
-                    <SelectItem key="release_desc">Release Date (Newest)</SelectItem>
-                    <SelectItem key="release_asc">Release Date (Oldest)</SelectItem>
-                    <SelectItem key="rating_desc">Rating (Highest)</SelectItem>
-                    <SelectItem key="rating_asc">Rating (Lowest)</SelectItem>
-                    <SelectItem key="added_desc">Date Added (Newest)</SelectItem>
-                    <SelectItem key="added_asc">Date Added (Oldest)</SelectItem>
-                    <SelectItem key="updated_desc">Last Updated (Newest)</SelectItem>
-                    <SelectItem key="updated_asc">Last Updated (Oldest)</SelectItem>
-                </Select>
-                <Tooltip content={showFilters ? "Hide Filters" : "Show Filters"}>
-                    <Button isIconOnly
-                            variant={showFilters ? "solid" : "bordered"}
-                            color={showFilters ? "primary" : "default"}
-                            onPress={() => setShowFilters(!showFilters)}
-                            aria-label="Toggle Filters"
-                    >
-                        <FunnelSimpleIcon/>
-                    </Button>
+                    className="flex flex-col gap-1 w-full lg:w-64"
+                    triggerPrefix={<SortAscendingIcon/>}
+                    showError={false}
+                />
+                <Tooltip>
+                    <Tooltip.Trigger>
+                        <Button isIconOnly
+                                variant={showFilters ? "primary" : "outline"}
+                                onPress={() => setShowFilters(!showFilters)}
+                                aria-label="Toggle Filters"
+                        >
+                            <FunnelSimpleIcon/>
+                        </Button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>{showFilters ? "Hide Filters" : "Show Filters"}</Tooltip.Content>
                 </Tooltip>
-                <Tooltip content="Clear All Filters">
-                    <Button isIconOnly
-                            onPress={() => {
-                                setSelectedLibraries(new Set());
-                                setSelectedDevelopers(new Set());
-                                setSelectedGenres(new Set());
-                                setSelectedThemes(new Set());
-                                setSelectedFeatures(new Set());
-                                setSelectedPerspectives(new Set());
-                                setSelectedKeywords(new Set());
-                                setMinRating(1);
-                            }}
-                            aria-label="Clear All Filters"
-                    >
-                        <FunnelSimpleXIcon/>
-                    </Button>
+                <Tooltip>
+                    <Tooltip.Trigger>
+                        <Button isIconOnly
+                                onPress={() => setValues({
+                                    ...values,
+                                    libraries: [],
+                                    developers: [],
+                                    genres: [],
+                                    themes: [],
+                                    features: [],
+                                    perspectives: [],
+                                    keywords: [],
+                                    minRating: 1,
+                                })}
+                                aria-label="Clear All Filters"
+                        >
+                            <FunnelSimpleXIcon/>
+                        </Button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>Clear All Filters</Tooltip.Content>
                 </Tooltip>
             </div>
         </div>
@@ -337,127 +352,50 @@ export default function SearchView() {
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "0.5rem",
-                margin: "0 auto"
+                margin: "0 auto",
             }}
         >
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Libraries"
-                placeholder="Filter by library"
-                selectedKeys={selectedLibraries}
-                //@ts-ignore
-                onSelectionChange={setSelectedLibraries}
-            >
-                {libraries.map((library) => (
-                    <SelectItem key={library.id}>{library.name}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="single"
-                label="Minimum Rating"
-                placeholder="Minimum rating"
-                disallowEmptySelection
-                selectedKeys={[minRating.toString()]}
-                onSelectionChange={keys => setMinRating(parseInt(Array.from(keys)[0] as string, 10))}
-                renderValue={(items: SelectedItems<any>) => {
-                    return items.map((item) => stars(parseInt(item.key as string)));
-                }}
-            >
-                <SelectItem key="1">{stars(1)}</SelectItem>
-                <SelectItem key="2">{stars(2)}</SelectItem>
-                <SelectItem key="3">{stars(3)}</SelectItem>
-                <SelectItem key="4">{stars(4)}</SelectItem>
-                <SelectItem key="5">{stars(5)}</SelectItem>
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Developers"
-                placeholder="Filter by developer"
-                selectedKeys={selectedDevelopers}
-                //@ts-ignore
-                onSelectionChange={setSelectedDevelopers}
-            >
-                {Array.from(knownDevelopers).map((developer) => (
-                    <SelectItem key={developer}>{developer}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Genres"
-                placeholder="Filter by genre"
-                selectedKeys={selectedGenres}
-                //@ts-ignore
-                onSelectionChange={setSelectedGenres}
-            >
-                {Array.from(knownGenres).map((genre) => (
-                    <SelectItem key={genre}>{genre}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Themes"
-                placeholder="Filter by theme"
-                selectedKeys={selectedThemes}
-                //@ts-ignore
-                onSelectionChange={setSelectedThemes}
-            >
-                {Array.from(knownThemes).map((theme) => (
-                    <SelectItem key={theme}>{theme}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Features"
-                placeholder="Filter by feature"
-                selectedKeys={selectedFeatures}
-                //@ts-ignore
-                onSelectionChange={setSelectedFeatures}
-            >
-                {Array.from(knownFeatures).map((feature) => (
-                    <SelectItem key={feature}>{feature}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Perspectives"
-                placeholder="Filter by perspective"
-                selectedKeys={selectedPerspectives}
-                //@ts-ignore
-                onSelectionChange={setSelectedPerspectives}
-            >
-                {Array.from(knownPerspectives).map((perspective) => (
-                    <SelectItem key={perspective}>{perspective}</SelectItem>
-                ))}
-            </Select>
-            <Select
-                size="sm"
-                selectionMode="multiple"
-                label="Keywords"
-                placeholder="Filter by keyword"
-                selectedKeys={selectedKeywords}
-                //@ts-ignore
-                onSelectionChange={setSelectedKeywords}
-            >
-                {Array.from(knownKeywords).map((keyword) => (
-                    <SelectItem key={keyword}>{keyword}</SelectItem>
-                ))}
-            </Select>
+            <AutocompleteInput name="libraries" label="Libraries" placeholder="Filter by library"
+                               options={libraries.map((library) => ({id: library.id.toString(), label: library.name}))}
+                               className="flex flex-col gap-1" showError={false}/>
+            {renderSelect(
+                "Minimum Rating",
+                minRating.toString(),
+                (value) => setFieldValue("minRating", parseInt(value as string, 10)),
+                <>
+                    {[1, 2, 3, 4, 5].map((value) => (
+                        <ListBox.Item key={value} id={value.toString()} textValue={ratingLabel(value)}>
+                            {stars(value)}
+                            <ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                    ))}
+                </>,
+                "single",
+                "Minimum rating",
+                undefined,
+                true,
+            )}
+            <AutocompleteInput name="developers" label="Developers" placeholder="Filter by developer"
+                               options={toOptions(knownDevelopers)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="genres" label="Genres" placeholder="Filter by genre"
+                               options={toOptions(knownGenres)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="themes" label="Themes" placeholder="Filter by theme"
+                               options={toOptions(knownThemes)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="features" label="Features" placeholder="Filter by feature"
+                               options={toOptions(knownFeatures)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="perspectives" label="Perspectives" placeholder="Filter by perspective"
+                               options={toOptions(knownPerspectives)} className="flex flex-col gap-1" showError={false}/>
+            <AutocompleteInput name="keywords" label="Keywords" placeholder="Filter by keyword"
+                               options={toOptions(knownKeywords)} className="flex flex-col gap-1" showError={false}/>
         </div>
         }
         <div className="mt-4 w-full select-none">
             <CoverGrid games={filteredAndSortedGames}/>
             {filteredAndSortedGames.length === 0 && (
-                <div className="text-center mt-8 text-default-500">
+                <div className="text-center mt-8 text-muted">
                     No games found matching your filters
                 </div>
             )}
         </div>
-    </div>
+    </Form>;
 }

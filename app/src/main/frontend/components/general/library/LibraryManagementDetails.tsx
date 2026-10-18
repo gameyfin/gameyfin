@@ -1,6 +1,6 @@
 import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
 import {CheckIcon} from "@phosphor-icons/react";
-import {addToast, Button} from "@heroui/react";
+import {Button, Spinner, toast} from "@heroui/react";
 import React from "react";
 import {Form, Formik} from "formik";
 import {deepDiff} from "Frontend/util/utils";
@@ -11,7 +11,7 @@ import DirectoryMappingInput from "Frontend/components/general/input/DirectoryMa
 import Section from "Frontend/components/general/Section";
 import {useNavigate} from "react-router";
 import * as Yup from "yup";
-import ArrayInputAutocomplete from "Frontend/components/general/input/ArrayInputAutocomplete";
+import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput.tsx";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
@@ -40,18 +40,14 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
         try {
             await LibraryEndpoint.deleteLibrary(library.id);
 
-            addToast({
-                title: "Library deleted",
-                description: `Library ${library.name} deleted!`,
-                color: "success"
+            toast.success("Library deleted", {
+                description: `Library ${library.name} deleted!`
             });
 
             navigate("/administration/games");
         } catch (e) {
-            addToast({
-                title: "Error deleting library",
-                description: `Library ${library.name} could not be deleted!`,
-                color: "warning"
+            toast.warning("Error deleting library", {
+                description: `Library ${library.name} could not be deleted!`
             });
         }
     }
@@ -74,12 +70,13 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                 <div className="flex flex-row grow justify-between mb-4">
                     <h1 className="text-2xl font-bold">Edit library details</h1>
                     <Button
-                        color="primary"
-                        isLoading={formik.isSubmitting}
+                        variant="primary"
+                        isPending={formik.isSubmitting}
                         isDisabled={formik.isSubmitting || librarySaved || !formik.dirty}
                         type="submit"
                     >
-                        {formik.isSubmitting ? "" : librarySaved ? <CheckIcon/> : "Save"}
+                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : librarySaved ?
+                            <CheckIcon/> : "Save"}
                     </Button>
                 </div>
 
@@ -87,12 +84,12 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
 
                 <CheckboxInput label="Display on homepage" name="metadata.displayOnHomepage" className="mb-4"/>
 
-                <ArrayInputAutocomplete options={Array.from(availablePlatforms)} name="platforms" label="Platforms"/>
+                <AutocompleteInput options={Array.from(availablePlatforms)} name="platforms" label="Platforms"/>
 
                 <DirectoryMappingInput name="directories"/>
 
                 <Section title="Danger zone"/>
-                <Button color="danger" onPress={handleDelete}>
+                <Button variant="danger" onPress={handleDelete}>
                     Delete library
                 </Button>
             </Form>
