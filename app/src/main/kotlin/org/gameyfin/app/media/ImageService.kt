@@ -1,5 +1,6 @@
 package org.gameyfin.app.media
 
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import com.github.benmanes.caffeine.cache.Cache
 import com.vanniktech.blurhash.BlurHash
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -85,7 +86,7 @@ class ImageService(
         log.debug { "Pre-populated image cache with ${images.size} entries" }
     }
 
-    @Async
+    @Async(BOUNDED_EXECUTOR)
     @TransactionalEventListener(
         classes = [GameDeletedEvent::class],
         phase = TransactionPhase.AFTER_COMPLETION
@@ -156,10 +157,10 @@ class ImageService(
     }
 
     fun downloadIfNew(image: Image) {
-        requireNotNull(image.originalUrl) { "Image must have an original URL" }
+        val originalUrl = requireNotNull(image.originalUrl) { "Image must have an original URL" }
 
         // Always try to get existing image first to avoid detached entity issues and duplicate lookups
-        val existingImage = imageRepository.findAllByOriginalUrl(image.originalUrl).firstOrNull()
+        val existingImage = imageRepository.findAllByOriginalUrl(originalUrl).firstOrNull()
 
         // Check if the existing image has valid content
         val existingImageHasValidContent = (existingImage != null && imageHasValidContent(existingImage))
@@ -174,7 +175,7 @@ class ImageService(
         }
 
         // If no existing image or existing image has no valid content, download it
-        TikaInputStream.get { URI.create(image.originalUrl).toURL().openStream() }.use { input ->
+        TikaInputStream.get { URI.create(originalUrl).toURL().openStream() }.use { input ->
             image.mimeType = tika.detect(input)
             processImageContent(image, input)
         }
@@ -215,7 +216,14 @@ class ImageService(
 
         if (!isImageStillInUse) {
             imageCache.invalidate(imageId)
-            imageRepository.delete(image)
+            try {
+                if (imageRepository.existsById(imageId)) {
+                    imageRepository.deleteById(imageId)
+                }
+            } catch (_: org.springframework.orm.ObjectOptimisticLockingFailureException) {
+                // Image was already deleted by another concurrent async cleanup. Safe to ignore.
+                log.debug { "Image $imageId already deleted by concurrent cleanup, skipping." }
+            }
             fileStorageService.deleteFile(image.contentId)
         }
     }
@@ -234,6 +242,16 @@ class ImageService(
 
         return imageRepository.save(image)
     }
+
+    /**
+     * Replaces the content of an existing image, e.g. when the file has been lost. The MIME type is detected.
+     */
+    fun restoreContent(image: Image, content: InputStream): Image =
+        TikaInputStream.get(content).use { input ->
+            updateFileContent(image, input, tika.detect(input))
+        }
+
+    fun hasContent(image: Image): Boolean = fileStorageService.fileExists(image.contentId)
 
     private fun imageHasValidContent(image: Image): Boolean {
         return image.contentId != null

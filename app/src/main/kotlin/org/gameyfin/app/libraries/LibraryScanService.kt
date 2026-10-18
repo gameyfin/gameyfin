@@ -1,14 +1,20 @@
 package org.gameyfin.app.libraries
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import jakarta.annotation.PostConstruct
+import jakarta.annotation.PreDestroy
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.tasks.LIBRARY_SCAN_TASK_KEY
+import org.gameyfin.app.core.tasks.TaskAction
+import org.gameyfin.app.core.tasks.TaskDefinition
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.repositories.GameRepository
-import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.IgnoredPathSourceType
@@ -19,18 +25,16 @@ import org.gameyfin.app.libraries.scan.MatchNewGamesResult
 import org.gameyfin.app.libraries.scan.UpdateExistingGamesResult
 import org.gameyfin.app.libraries.scan.UpdateLibraryResult
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.gameyfin.pluginapi.tasks.TaskCancelledException
+import org.gameyfin.pluginapi.tasks.TaskContext
+import org.gameyfin.pluginapi.tasks.TaskResult
+import org.gameyfin.pluginapi.tasks.TaskTrigger
 import org.pf4j.PluginState
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 import java.nio.file.Path
 import java.time.Instant
-import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 
 @Service
 class LibraryScanService(
@@ -42,120 +46,139 @@ class LibraryScanService(
     private val ignoredPathRepository: IgnoredPathRepository,
     private val pluginService: PluginService,
     private val configService: ConfigService,
-    private val scanMetrics: ScanMetrics
+    private val scanMetrics: ScanMetrics,
+    private val taskRegistry: TaskRegistry,
+    private val taskRunService: TaskRunService
 ) {
 
     companion object {
         private val log = KotlinLogging.logger {}
 
-        private val SCAN_PROGRESS_RETENTION = 24.hours.toJavaDuration()
-
-        /**
-         * Keeps only the **most recent** progress event per scan (keyed by scanId).
-         */
-        private val latestProgressPerScan = ConcurrentHashMap<UUID, LibraryScanProgress>()
-        private val scanProgressEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryScanProgress>(1024, false)
-
-        fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
-            log.debug { "New subscription for scanProgressEvents" }
-
-            // Replay the current snapshot first, then stream live updates
-            val snapshot = Flux.fromIterable(latestProgressPerScan.values.toList())
-            val live = scanProgressEvents.asFlux()
-
-            return Flux.concat(snapshot, live)
-                .buffer(1.seconds.toJavaDuration())
-                .doOnSubscribe {
-                    log.debug { "Subscriber added to scanProgressEvents [${scanProgressEvents.currentSubscriberCount()}]" }
-                }
-                .doFinally {
-                    log.debug { "Subscriber removed from scanProgressEvents with signal type $it [${scanProgressEvents.currentSubscriberCount()}]" }
-                }
-        }
-
-        fun emit(scanProgressDto: LibraryScanProgress) {
-            latestProgressPerScan[scanProgressDto.scanId] = scanProgressDto
-            scanProgressEvents.tryEmitNext(scanProgressDto)
-        }
-
-        /** Remove scans which are not running and have finished longer ago than the retention. */
-        private fun evictStaleScanProgress() {
-            val cutoff = Instant.now().minus(SCAN_PROGRESS_RETENTION)
-            latestProgressPerScan.values.removeIf { it.finishedAt?.isBefore(cutoff) == true }
-        }
-
+        private var scanConcurrency = ConfigProperties.Libraries.Scan.MaxConcurrency.default!!
         @Volatile
-        private var scanSemaphore = Semaphore(ConfigProperties.Libraries.Scan.MaxConcurrency.default!!)
+        private var scanSemaphore = Semaphore(scanConcurrency)
         private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
-        private val scansInProgress = ConcurrentHashMap<Long, Boolean>()
+
+        /** Precedence of triggers when multiple scan requests for a library are coalesced */
+        private val TRIGGER_PRECEDENCE = listOf(
+            TaskTrigger.WATCHER,
+            TaskTrigger.SYSTEM,
+            TaskTrigger.SCHEDULE,
+            TaskTrigger.MANUAL
+        )
+    }
+
+    private val scanQueue = LibraryScanQueue(scan = ::runQueuedScan)
+
+    /** What caused the pending scan of a library */
+    private val requestedTriggers = ConcurrentHashMap<Long, TaskTrigger>()
+
+    @PostConstruct
+    fun registerTask() {
+        taskRegistry.register(
+            TaskDefinition(
+                key = LIBRARY_SCAN_TASK_KEY,
+                name = "Library scan",
+                description = "Scans all libraries for new, removed and updated games and refreshes their metadata. " +
+                        "Every library is scanned in its own run.",
+                defaultSchedule = "@daily",
+                action = TaskAction.Dispatch { trigger -> triggerScan(ScanType.SCHEDULED, null, trigger) }
+            )
+        )
+    }
+
+    @PreDestroy
+    fun stop() {
+        scanQueue.close()
+    }
+
+    /** Watcher bursts collapse into a single scan after 30 seconds of quiet. */
+    fun scheduleScan(scanType: ScanType, library: Library) {
+        library.id?.let {
+            requestTrigger(it, TaskTrigger.WATCHER)
+            scanQueue.request(it, scanType, debounce = true)
+        }
     }
 
     /**
-     * Re-creates the concurrency semaphore from the current config value.
-     * Called once at the start of each scan so that config changes take
-     * effect without restarting the application.
+     * Updates the concurrency semaphore when the configured limit changes.
+     * Reuse the current semaphore across libraries so starting another scan
+     * does not bypass permits already held by running game tasks.
      */
     private fun refreshScanSemaphore() {
         val permits = configService.get(ConfigProperties.Libraries.Scan.MaxConcurrency)!!
-        scanSemaphore = Semaphore(permits)
+        synchronized(Companion) {
+            if (permits != scanConcurrency) {
+                scanSemaphore = Semaphore(permits)
+                scanConcurrency = permits
+            }
+        }
     }
 
     /**
      * Wrapper function to trigger a scan for a list of libraries.
      */
-    fun triggerScan(scanType: ScanType, libraryIds: Collection<Long>?) {
+    fun triggerScan(scanType: ScanType, libraryIds: Collection<Long>?, trigger: TaskTrigger = TaskTrigger.MANUAL) {
         check(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isNotEmpty()) {
             "At least one metadata plugin must be enabled to perform a scan."
         }
-
-        refreshScanSemaphore()
-        evictStaleScanProgress()
 
         val libraries =
             if (libraryIds.isNullOrEmpty()) libraryRepository.findAll().toList()
             else libraryRepository.findAllById(libraryIds).toList()
 
         libraries.forEach { library ->
-            val libraryId = library.id!!
-            if (scansInProgress.putIfAbsent(libraryId, true) == null) {
-                executor.submit {
-                    try {
-                        when (scanType) {
-                            ScanType.QUICK -> quickScan(library)
-                            ScanType.FULL -> fullScan(library, false)
-                            ScanType.SCHEDULED -> fullScan(library, true)
-                        }
-                    } finally {
-                        scansInProgress.remove(libraryId)
-                    }
-                }
-            } else {
-                log.info { "Scan already in progress for library $libraryId, skipping." }
+            requestTrigger(library.id!!, trigger)
+            scanQueue.request(library.id!!, scanType, debounce = false)
+        }
+    }
+
+    private fun requestTrigger(libraryId: Long, trigger: TaskTrigger) {
+        requestedTriggers.merge(libraryId, trigger) { current, requested ->
+            if (TRIGGER_PRECEDENCE.indexOf(requested) > TRIGGER_PRECEDENCE.indexOf(current)) requested else current
+        }
+    }
+
+    private fun runQueuedScan(libraryId: Long, scanType: ScanType) {
+        val trigger = requestedTriggers.remove(libraryId) ?: TaskTrigger.MANUAL
+        // Follow-up scans must use current library contents, not the previous scan's entity graph.
+        val library = libraryRepository.findAllById(listOf(libraryId)).firstOrNull() ?: return
+        val scanName = when (scanType) {
+            ScanType.QUICK -> "Quick scan"
+            ScanType.FULL -> "Full scan"
+            ScanType.SCHEDULED -> "Scheduled scan"
+        }
+
+        taskRunService.runBlocking(
+            taskKey = LIBRARY_SCAN_TASK_KEY,
+            trigger = trigger,
+            displayName = "$scanName of library '${library.name}'",
+            link = "/administration/games/library/$libraryId",
+            rethrow = false
+        ) { context ->
+            check(pluginService.getAllByTypeAndState(GameMetadataProvider::class, PluginState.STARTED).isNotEmpty()) {
+                "At least one metadata plugin must be enabled to perform a scan."
+            }
+            refreshScanSemaphore()
+            when (scanType) {
+                ScanType.QUICK -> quickScan(library, context)
+                ScanType.FULL -> fullScan(library, false, context)
+                ScanType.SCHEDULED -> fullScan(library, true, context)
             }
         }
     }
 
-    private fun quickScan(library: Library) {
-        val progress = LibraryScanProgress(
-            libraryId = library.id!!,
-            type = ScanType.QUICK,
-            currentStep = LibraryScanStep(
-                description = "Scanning filesystem"
-            )
-        )
-        emit(progress)
+    private fun quickScan(library: Library, context: TaskContext): TaskResult {
+        context.progress("Scanning filesystem")
         scanMetrics.recordScanStarted(ScanType.QUICK)
         val scanStartTime = System.currentTimeMillis()
 
         try {
             val scanData = performFilesystemScan(library)
+            context.throwIfCancelled()
 
             // 1. Process each new game independently (including re-scanned plugin ignored paths)
-            val (newUnmatchedPaths, persistedNewGames) = processNewGamesWithProgress(
-                library,
-                scanData.allPathsToProcess,
-                progress
-            )
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, scanData.allPathsToProcess, context)
 
             // 2. Update library (removed games/ignored paths, and add persisted new ones)
             val (removedGames) = updateLibrary(
@@ -166,17 +189,7 @@ class LibraryScanService(
             )
 
             // 3. Finish scan: persist library changes and report
-            finishScanWithProgress(persistedNewGames, library, progress)
-
-            // 4. Send final progress update
-            completeScan(
-                progress,
-                QuickScanResult(
-                    new = persistedNewGames.size,
-                    removed = removedGames.size,
-                    unmatched = newUnmatchedPaths.size
-                )
-            )
+            finishScan(persistedNewGames, library, context)
 
             scanMetrics.recordScanCompleted(
                 type = ScanType.QUICK,
@@ -185,44 +198,33 @@ class LibraryScanService(
                 removedGames = removedGames.size,
                 unmatchedPaths = newUnmatchedPaths.size
             )
+
+            val summary = "${persistedNewGames.size} new, ${removedGames.size} removed, " +
+                    "${newUnmatchedPaths.size} unmatched"
+            return completeScan(library, summary, context)
+        } catch (e: TaskCancelledException) {
+            throw e
         } catch (e: Exception) {
             scanMetrics.recordScanFailed(ScanType.QUICK, System.currentTimeMillis() - scanStartTime)
-            handleScanError(e, library, progress, "quick scan")
+            throw e
         }
     }
 
-    private fun fullScan(library: Library, triggeredBySchedule: Boolean) {
+    private fun fullScan(library: Library, triggeredBySchedule: Boolean, context: TaskContext): TaskResult {
         val scanType = if (triggeredBySchedule) ScanType.SCHEDULED else ScanType.FULL
-        val progress = LibraryScanProgress(
-            libraryId = library.id!!,
-            type = scanType,
-            currentStep = LibraryScanStep(
-                description = "Scanning filesystem"
-            )
-        )
-        emit(progress)
+        context.progress("Scanning filesystem")
         scanMetrics.recordScanStarted(scanType)
         val scanStartTime = System.currentTimeMillis()
 
         try {
             val scanData = performFilesystemScan(library)
+            context.throwIfCancelled()
 
             // 1. Update existing games (individually)
-            progress.currentStep = LibraryScanStep(
-                description = "Updating existing games",
-                current = 0,
-                total = library.games.size
-            )
-            emit(progress)
-
-            val (updatedGames) = updateExistingGames(library.games, progress)
+            val (updatedGames) = updateExistingGames(library.games, context)
 
             // 2. Process new games (individually, including re-scanned plugin ignored paths)
-            val (newUnmatchedPaths, persistedNewGames) = processNewGamesWithProgress(
-                library,
-                scanData.allPathsToProcess,
-                progress
-            )
+            val (newUnmatchedPaths, persistedNewGames) = processNewGames(library, scanData.allPathsToProcess, context)
 
             val (removedGames) = updateLibrary(
                 library,
@@ -232,18 +234,7 @@ class LibraryScanService(
             )
 
             // 3. Finish scan
-            finishScanWithProgress(persistedNewGames, library, progress)
-
-            // 4. Send final progress update
-            completeScan(
-                progress,
-                FullScanResult(
-                    new = persistedNewGames.size,
-                    removed = removedGames.size,
-                    unmatched = newUnmatchedPaths.size,
-                    updated = updatedGames.size
-                )
-            )
+            finishScan(persistedNewGames, library, context)
 
             scanMetrics.recordScanCompleted(
                 type = scanType,
@@ -253,10 +244,29 @@ class LibraryScanService(
                 unmatchedPaths = newUnmatchedPaths.size,
                 updatedGames = updatedGames.size
             )
+
+            val summary = "${persistedNewGames.size} new, ${updatedGames.size} updated, " +
+                    "${removedGames.size} removed, ${newUnmatchedPaths.size} unmatched"
+            return completeScan(library, summary, context)
+        } catch (e: TaskCancelledException) {
+            throw e
         } catch (e: Exception) {
             scanMetrics.recordScanFailed(scanType, System.currentTimeMillis() - scanStartTime)
-            handleScanError(e, library, progress, "full scan")
+            throw e
         }
+    }
+
+    /**
+     * Games which have already been processed when a scan is cancelled are kept, so the result of a cancelled scan
+     * is reported as summary of the cancelled run.
+     */
+    private fun completeScan(library: Library, summary: String, context: TaskContext): TaskResult {
+        if (context.isCancellationRequested) {
+            log.info { "Scan of library '${library.name}' has been cancelled: $summary" }
+            throw TaskCancelledException(summary)
+        }
+        log.info { "Scan of library '${library.name}' finished: $summary" }
+        return TaskResult(summary)
     }
 
     private data class FilesystemScanData(
@@ -272,8 +282,10 @@ class LibraryScanService(
         val removedIgnoredPaths = scanResult.removedIgnoredPaths
 
         // Get plugin-generated (system) ignored paths to re-scan
+        // Skip paths that no longer exist on the filesystem, otherwise they get re-added as unmatched
+        val removedIgnoredPathIds = removedIgnoredPaths.map { it.path }.toSet()
         val pluginIgnoredPathsToRescan = library.ignoredPaths
-            .filter { it.getType() == IgnoredPathSourceType.PLUGIN }
+            .filter { it.getType() == IgnoredPathSourceType.PLUGIN && it.path !in removedIgnoredPathIds }
             .map { Path.of(it.path) }
 
         val allPathsToProcess = newPaths + pluginIgnoredPathsToRescan
@@ -285,65 +297,26 @@ class LibraryScanService(
         )
     }
 
-    private fun processNewGamesWithProgress(
-        library: Library,
-        gamePaths: List<Path>,
-        progress: LibraryScanProgress
-    ): MatchNewGamesResult {
-        progress.currentStep = LibraryScanStep(
-            description = "Processing new games",
-            current = 0,
-            total = gamePaths.size
-        )
-        emit(progress)
-
-        return processNewGames(library, gamePaths, progress)
-    }
-
-    private fun finishScanWithProgress(
-        persistedNewGames: List<Game>,
-        library: Library,
-        progress: LibraryScanProgress
-    ) {
-        progress.currentStep = LibraryScanStep(
-            description = "Finishing up",
-            current = 0,
-            total = persistedNewGames.size
-        )
-        emit(progress)
-
-        finishScanPersisted(persistedNewGames, library, progress)
-    }
-
-    private fun completeScan(progress: LibraryScanProgress, result: LibraryScanResult) {
-        progress.currentStep = LibraryScanStep(description = "Finished")
-        progress.finishedAt = Instant.now()
-        progress.status = LibraryScanStatus.COMPLETED
-        progress.result = result
-        emit(progress)
-    }
-
-    private fun handleScanError(e: Exception, library: Library, progress: LibraryScanProgress, scanType: String) {
-        log.error { "Error during $scanType for library ${library.id}: ${e.message}" }
-        log.debug(e) {}
-        progress.status = LibraryScanStatus.FAILED
-        progress.finishedAt = Instant.now()
-        emit(progress)
-    }
-
     private fun processNewGames(
         library: Library,
         gamePaths: List<Path>,
-        progress: LibraryScanProgress
+        context: TaskContext
     ): MatchNewGamesResult {
+        val step = "Processing new games"
+        context.progress(step, 0, gamePaths.size)
         val completed = AtomicInteger(0)
         val newUnmatchedPaths = ConcurrentHashMap.newKeySet<IgnoredPath>()
+        val semaphore = scanSemaphore
 
         val tasks = gamePaths.map { path ->
-            Callable<Game?> {
-                scanSemaphore.acquire()
+            context.wrap(Callable<Game?> {
+                // Skipped paths are neither added to the library nor marked as unmatched, so they are picked up again
+                if (context.isCancellationRequested) return@Callable null
+                semaphore.acquire()
                 try {
-                    val persisted = libraryGameProcessor.processNewGame(path, library)
+                    val persisted = logProcessingTime("new game '${path.fileName}'") {
+                        libraryGameProcessor.processNewGame(path, library)
+                    }
 
                     if (persisted == null) {
                         // Not identified, mark as unmatched by all current metadata providers
@@ -374,14 +347,13 @@ class LibraryScanService(
 
                     return@Callable null
                 } finally {
-                    scanSemaphore.release()
-                    progress.currentStep.current = completed.incrementAndGet()
-                    emit(progress)
+                    semaphore.release()
+                    context.progress(step, completed.incrementAndGet(), gamePaths.size)
                 }
-            }
+            })
         }
 
-        val persistedGames = executor.invokeAll(tasks).mapNotNull { it.get() }
+        val persistedGames = collectTaskResults(tasks)
 
         return MatchNewGamesResult(
             unmatchedPaths = newUnmatchedPaths.toList(),
@@ -396,7 +368,8 @@ class LibraryScanService(
         removedGamePaths: List<String>
     ): UpdateLibraryResult {
         // 1.2 Remove old ignored paths from the library
-        library.ignoredPaths.removeAll(removedIgnoredPaths)
+        val removedIgnoredPathIds = removedIgnoredPaths.mapNotNull { it.id }.toSet()
+        library.ignoredPaths.removeIf { it.id != null && it.id in removedIgnoredPathIds }
 
         // Add new unmatched paths to the library, but check if they already exist
         val pathsToAdd = mutableListOf<IgnoredPath>()
@@ -421,15 +394,15 @@ class LibraryScanService(
         return UpdateLibraryResult(removedGames = removedGames)
     }
 
-    private fun finishScanPersisted(games: List<Game>, library: Library, progress: LibraryScanProgress) {
+    private fun finishScan(games: List<Game>, library: Library, context: TaskContext) {
+        context.progress("Finishing up", 0, games.size)
         val gameIds = games.mapNotNull { it.id }
         val managedGames = if (gameIds.isNotEmpty()) gameRepository.findAllById(gameIds) else emptyList()
 
         // Add new games to library using managed entities, but do not persist yet
         libraryCoreService.addGamesToLibrary(managedGames, library, persist = false)
 
-        progress.currentStep.current = games.size
-        emit(progress)
+        context.progress("Finishing up", games.size, games.size)
 
         // Persist library updates
         library.updatedAt = Instant.now() // Force the EntityListener to update the timestamp
@@ -438,29 +411,63 @@ class LibraryScanService(
 
     private fun updateExistingGames(
         games: List<Game>,
-        progress: LibraryScanProgress
+        context: TaskContext
     ): UpdateExistingGamesResult {
+        val step = "Updating existing games"
+        context.progress(step, 0, games.size)
         val completedUpdates = AtomicInteger(0)
+        val semaphore = scanSemaphore
 
         val updateTasks = games.map { game ->
-            Callable<Game?> {
-                scanSemaphore.acquire()
+            context.wrap(Callable<Game?> {
+                if (context.isCancellationRequested) return@Callable null
+                semaphore.acquire()
                 try {
-                    val updated = libraryGameProcessor.processExistingGame(game)
+                    val updated = logProcessingTime("existing game '${game.title}' (id=${game.id})") {
+                        libraryGameProcessor.processExistingGame(game)
+                    }
                     return@Callable updated
                 } catch (e: Exception) {
                     log.error { "Error updating game with id '${game.id}': ${e.message}" }
                     log.debug(e) {}
                     return@Callable null
                 } finally {
-                    scanSemaphore.release()
-                    progress.currentStep.current = completedUpdates.incrementAndGet()
-                    emit(progress)
+                    semaphore.release()
+                    context.progress(step, completedUpdates.incrementAndGet(), games.size)
                 }
-            }
+            })
         }
 
-        val updatedGames = executor.invokeAll(updateTasks).mapNotNull { it.get() }
+        val updatedGames = collectTaskResults(updateTasks)
         return UpdateExistingGamesResult(updatedGames = updatedGames)
+    }
+
+    private fun <T : Any> collectTaskResults(tasks: List<Callable<T?>>): List<T> {
+        return executor.invokeAll(tasks).mapNotNull { future ->
+            try {
+                future.get()
+            } catch (e: ExecutionException) {
+                log.warn(e.cause ?: e) { "Game processing task failed after completion" }
+                null
+            } catch (_: CancellationException) {
+                log.warn { "Game processing task was cancelled" }
+                null
+            }
+        }
+    }
+
+    private fun <T> logProcessingTime(description: String, process: () -> T): T {
+        val startedAt = System.nanoTime()
+        log.debug { "Processing $description" }
+        try {
+            return process()
+        } finally {
+            val elapsed = TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - startedAt)
+            if (elapsed > 60) {
+                log.warn { "Processing $description took ${elapsed}s" }
+            } else {
+                log.debug { "Finished processing $description in ${elapsed}s" }
+            }
+        }
     }
 }

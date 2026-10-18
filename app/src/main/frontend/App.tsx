@@ -1,16 +1,15 @@
 import {Outlet, useHref, useNavigate} from 'react-router';
 import "./main.css";
-import {HeroUIProvider} from "@heroui/react";
+import {RouterProvider, Toast} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
-import {themeNames} from "Frontend/theming/themes";
+import {applyAccentTheme, getStoredAccentTheme, injectThemeStyles} from "Frontend/theming/themes";
 import {AuthProvider, useAuth} from "Frontend/util/auth";
-import {IconContext, XIcon} from "@phosphor-icons/react";
+import {IconContext} from "@phosphor-icons/react";
 import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
-import {initializeScanState} from "Frontend/state/ScanState";
-import {ToastProvider} from "@heroui/toast";
+import {initializeTaskState} from "Frontend/state/TaskState";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
@@ -20,6 +19,13 @@ import {initializePlatformState} from "Frontend/state/PlatformState";
 import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
 import {initializeUserState} from "Frontend/state/UserState";
 import {initializeCollectionState} from "Frontend/state/CollectionState";
+
+// Generate & inject the per-theme CSS custom property overrides once, before first render
+injectThemeStyles();
+// Apply the last used accent theme (or the default) immediately to avoid an unstyled flash and to
+// keep the theme on logged-out views; MainLayout will override this with the user's persisted
+// preference once loaded.
+applyAccentTheme(getStoredAccentTheme("gameyfin-violet"));
 
 export default function App() {
     client.middlewares = [ErrorHandlingMiddleware];
@@ -38,13 +44,15 @@ export default function App() {
     }, [routeMetadata, window.location.href]);
 
     return (
-        <HeroUIProvider className="size-full" navigate={navigate} useHref={safeUseHref}>
-            <NextThemesProvider attribute="class" themes={themeNames()} defaultTheme="gameyfin-violet-dark">
-                <AuthProvider>
-                    <ViewWithAuth/>
-                </AuthProvider>
-            </NextThemesProvider>
-        </HeroUIProvider>
+        <RouterProvider navigate={navigate} useHref={safeUseHref}>
+            <div className="size-full">
+                <NextThemesProvider attribute="class" defaultTheme="dark">
+                    <AuthProvider>
+                        <ViewWithAuth/>
+                    </AuthProvider>
+                </NextThemesProvider>
+            </div>
+        </RouterProvider>
     );
 }
 
@@ -62,7 +70,7 @@ function ViewWithAuth() {
         initializeGameState();
 
         if (isAdmin(auth)) {
-            initializeScanState();
+            initializeTaskState();
             initializeDownloadSessionState();
             initializeUserState();
         }
@@ -71,20 +79,7 @@ function ViewWithAuth() {
     return <>
         <IconContext.Provider value={{size: 20}}>
             <Outlet/>
-            <ToastProvider
-                toastProps={{
-                    shouldShowTimeoutProgress: true,
-                    radius: "sm",
-                    variant: "flat",
-                    hideIcon: true,
-                    closeIcon: <XIcon/>,
-                    classNames: {
-                        closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
-                        progressTrack: "h-1",
-                    }
-                }}
-                toastOffset={64}
-            />
+            <Toast.Provider placement="bottom end"/>
         </IconContext.Provider>
     </>;
 }

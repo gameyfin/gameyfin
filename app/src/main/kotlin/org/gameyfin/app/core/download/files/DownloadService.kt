@@ -101,18 +101,21 @@ class DownloadService(
         downloadMetrics.recordDownloadStarted(throttled)
 
         try {
-            finalOutputStream.use {
-                val timeTaken = measureTime {
-                    data.copyTo(finalOutputStream)
-                    finalOutputStream.flush()
-                }
+            // Close the source as well, so its resources are released when the client cancels the download
+            data.use {
+                finalOutputStream.use {
+                    val timeTaken = measureTime {
+                        data.copyTo(finalOutputStream)
+                        finalOutputStream.flush()
+                    }
 
-                val bytesWritten = tracker.totalBytesTransferred
-                downloadMetrics.recordDownloadCompleted(bytesWritten)
+                    val bytesWritten = tracker.totalBytesTransferred
+                    downloadMetrics.recordDownloadCompleted(bytesWritten)
 
-                log.debug {
-                    "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
-                            "(session: $sessionId) completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
+                    log.debug {
+                        "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
+                                "(session: $sessionId) completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
+                    }
                 }
             }
         } catch (e: IOException) {

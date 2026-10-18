@@ -8,7 +8,6 @@ import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.libraries.dto.LibraryAdminDto
 import org.gameyfin.app.libraries.dto.LibraryEvent
-import org.gameyfin.app.libraries.dto.LibraryScanProgress
 import org.gameyfin.app.libraries.dto.LibraryUpdateDto
 import org.gameyfin.app.libraries.enums.ScanType
 import reactor.core.publisher.Flux
@@ -29,11 +28,6 @@ class LibraryEndpoint(
     }
 
     fun getAll() = libraryService.getAll()
-
-    fun subscribeToScanProgressEvents(): Flux<List<LibraryScanProgress>> {
-        return if (isCurrentUserAdmin()) LibraryScanService.subscribeToScanProgressEvents()
-        else Flux.empty()
-    }
 
     @RolesAllowed(Role.Names.ADMIN)
     fun triggerScan(scanType: ScanType = ScanType.QUICK, libraryIds: Collection<Long>?) =

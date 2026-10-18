@@ -35,7 +35,7 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
 
 
     return (
-        <Card className="flex flex-col justify-between w-[353px]">
+        <Card className="flex flex-col justify-between w-[353px] p-0 overflow-hidden">
             <div className="flex flex-1 justify-center items-center">
                 <div className="flex flex-1 opacity-10 min-h-[100px]">
                     <IconBackgroundPattern/>
@@ -51,16 +51,21 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
                 <p className="absolute text-2xl font-bold">{collection.name}</p>
 
                 <div className="absolute right-0 top-0 flex flex-row">
-                    <Tooltip content="Configuration" placement="bottom" color="foreground">
-                        <Button isIconOnly variant="light" onPress={() => navigate('collection/' + collection.id)}>
-                            <SlidersHorizontalIcon/>
-                        </Button>
+                    <Tooltip delay={0}>
+                        <Tooltip.Trigger>
+                            <Button isIconOnly variant="ghost" onPress={() => navigate('collection/' + collection.id)}>
+                                <SlidersHorizontalIcon/>
+                            </Button>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                            Configuration
+                        </Tooltip.Content>
                     </Tooltip>
                 </div>
             </div>
 
             {collection.stats &&
-                <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4">
+                <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
                     <p>Games</p>
                     <p>Downloads</p>
                     <p>Platforms</p>

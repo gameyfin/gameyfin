@@ -7,7 +7,11 @@ on:
 
 jobs:
   delete-docker-tag:
-    if: startsWith(github.event.pull_request.head.ref, 'fix/') || startsWith(github.event.pull_request.head.ref, 'release/')
+    if: >-
+      startsWith(github.event.pull_request.head.ref, 'fix/') ||
+      startsWith(github.event.pull_request.head.ref, 'release/') ||
+      startsWith(github.event.pull_request.head.ref, 'feat/') ||
+      startsWith(github.event.pull_request.head.ref, 'feature/')
     runs-on: ubuntu-latest
     name: Cleanup Image Tags from GHCR
     permissions:
@@ -15,12 +19,14 @@ jobs:
     steps:
       - name: Extract tag from branch name
         id: extract_branch
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          BRANCH="${{ github.event.pull_request.head.ref }}"
-          if [[ "$BRANCH" == fix/* ]]; then
-            TAG=${BRANCH#fix/}
-          elif [[ "$BRANCH" == release/* ]]; then
+          if [[ "$BRANCH" == release/* ]]; then
             TAG="${BRANCH#release/}-preview"
+          elif [[ "$BRANCH" == fix/* || "$BRANCH" == feature/* || "$BRANCH" == feat/* ]]; then
+            # Same as in docker-fix.yml and docker-feature.yml (e.g. "fix/foo" -> "fix-foo")
+            TAG=$(echo "$BRANCH" | sed -e 's/[^A-Za-z0-9_.-]/-/g' -e 's/^[.-]*//' | cut -c1-120)
           else
             TAG=""
           fi

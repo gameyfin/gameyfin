@@ -116,24 +116,6 @@ sealed class ConfigProperties<T : Serializable>(
                 step = 1
             )
         }
-
-        sealed class Metadata {
-            data object UpdateEnabled : ConfigProperties<Boolean>(
-                Boolean::class,
-                "library.metadata.update.enabled",
-                "Enable periodic refresh of video game metadata",
-                "When enabled, Gameyfin periodically re-fetches metadata (cover art, descriptions, genres, …) according to the configured schedule.",
-                true
-            )
-
-            data object UpdateSchedule : ConfigProperties<String>(
-                String::class,
-                "library.metadata.update.schedule",
-                "Schedule for periodic metadata refresh in Spring cron format",
-                "Controls **when** the automatic metadata refresh runs. Accepts [Spring cron expressions](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/scheduling/support/CronExpression.html) or shortcuts such as `@daily`.",
-                "@daily"
-            )
-        }
     }
 
     /** Requests */

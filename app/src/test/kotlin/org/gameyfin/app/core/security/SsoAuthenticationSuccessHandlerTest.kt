@@ -429,5 +429,79 @@ class SsoAuthenticationSuccessHandlerTest {
             handler.onAuthenticationSuccess(request, response, authentication)
         }
     }
-}
 
+    // ── Additional error / branch coverage ────────────────────────────────────
+
+    private fun userWithoutEmail(subject: String? = "sub-1"): OidcUser = mockk {
+        every { this@mockk.subject } returns subject
+        every { getClaim<String>("preferred_username") } returns "alice"
+        every { getClaim<String>("name") } returns null
+        every { getClaim<String>("email") } returns null
+        every { authorities } returns emptyList()
+        every { email } returns null
+    }
+
+    @Test
+    fun `throws when OIDC user has no subject`() {
+        every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
+        every { authentication.principal } returns userWithoutEmail(subject = null)
+
+        assertThrows<IllegalStateException> {
+            handler.onAuthenticationSuccess(request, response, authentication)
+        }
+    }
+
+    @Test
+    fun `throws when matching by email and OIDC user has no email`() {
+        every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
+        every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.email
+        every { authentication.principal } returns userWithoutEmail()
+        every { userService.findByOidcProviderId(any()) } returns null
+
+        assertThrows<IllegalStateException> {
+            handler.onAuthenticationSuccess(request, response, authentication)
+        }
+    }
+
+    @Test
+    fun `throws when updating existing user and OIDC user has no email`() {
+        every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
+        every { authentication.principal } returns userWithoutEmail()
+        every { userService.findByOidcProviderId("sub-1") } returns mockk<User>(relaxed = true)
+
+        assertThrows<IllegalStateException> {
+            handler.onAuthenticationSuccess(request, response, authentication)
+        }
+    }
+
+    @Test
+    fun `updates security context when principal and credentials are present`() {
+        every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
+        every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
+        every { authentication.principal } returns oidcUser()
+        every { authentication.credentials } returns "credentials"
+        every { userService.findByOidcProviderId(any()) } returns null
+        every { userService.getByUsername(any()) } returns null
+        every { userService.registerOrUpdateUser(any()) } returns mockk(relaxed = true)
+
+        handler.onAuthenticationSuccess(request, response, authentication)
+
+        verify { securityContext.authentication = any() }
+    }
+
+    @Test
+    fun `redirects to root when continue parameter is blank`() {
+        every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
+        every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
+        every { authentication.principal } returns oidcUser()
+        every { authentication.credentials } returns null
+        every { request.getParameter("continue") } returns "  "
+        every { userService.findByOidcProviderId(any()) } returns null
+        every { userService.getByUsername(any()) } returns null
+        every { userService.registerOrUpdateUser(any()) } returns mockk(relaxed = true)
+
+        handler.onAuthenticationSuccess(request, response, authentication)
+
+        verify { response.sendRedirect("/") }
+    }
+}

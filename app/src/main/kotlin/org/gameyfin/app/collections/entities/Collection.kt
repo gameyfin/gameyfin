@@ -3,7 +3,9 @@ package org.gameyfin.app.collections.entities
 import jakarta.persistence.*
 import org.gameyfin.app.games.entities.Game
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.UpdateTimestamp
+import org.hibernate.type.SqlTypes
 import java.time.Instant
 
 @Entity
@@ -24,7 +26,7 @@ class Collection(
     @Column(nullable = false, unique = true)
     var name: String,
 
-    @Lob
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     var description: String? = null,
 
     @ManyToMany(fetch = FetchType.EAGER)

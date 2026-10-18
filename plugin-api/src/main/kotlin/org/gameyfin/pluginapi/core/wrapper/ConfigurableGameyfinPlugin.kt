@@ -4,20 +4,18 @@ import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigError
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
-import org.pf4j.PluginWrapper
 import java.io.Serializable
 
 /**
  * Abstract base class for Gameyfin plugins that support configuration.
  *
  * This class implements the [Configurable] interface and provides default logic for loading,
- * validating, and accessing plugin configuration values using metadata.
+ * validating, and accessing plugin configuration values (see [config] and [optionalConfig]) using metadata.
  *
- * @constructor Creates a configurable Gameyfin plugin with the given [PluginWrapper].
- * @param wrapper The plugin wrapper provided by the Gameyfin application.
+ * @constructor Creates a configurable Gameyfin plugin with the given [PluginContext].
+ * @param context The plugin context provided by the Gameyfin application.
  */
-@Suppress("UNCHECKED_CAST")
-abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlugin(wrapper), Configurable {
+abstract class ConfigurableGameyfinPlugin(context: PluginContext) : GameyfinPlugin(context), Configurable {
 
     /**
      * The current configuration map, where keys are configuration property names and values are their string representations.
@@ -32,13 +30,6 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
     override fun loadConfig(config: Map<String, String?>) {
         this.config = config
     }
-
-    /**
-     * Validates the current configuration state.
-     *
-     * @return The result of the configuration validation.
-     */
-    override fun validateConfig(): PluginConfigValidationResult = validateConfig(config)
 
     /**
      * Validates the provided configuration map.
@@ -80,7 +71,8 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
      * @return The configuration value of type T, or null if not present or invalid.
      * @throws PluginConfigError if the value cannot be cast to the expected type.
      */
-    override fun <T : Serializable> optionalConfig(key: String): T? {
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Serializable> optionalConfig(key: String): T? {
         val meta = resolveMetadata(key)
         val value = resolveValue(key) ?: return null
 
@@ -98,7 +90,7 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
      * @return The configuration value of type T.
      * @throws PluginConfigError if the key is missing or the value is invalid.
      */
-    override fun <T : Serializable> config(key: String): T {
+    fun <T : Serializable> config(key: String): T {
         val value = optionalConfig<T>(key)
             ?: throw PluginConfigError("Required configuration key '$key' is missing or has no value")
         return value
@@ -114,6 +106,7 @@ abstract class ConfigurableGameyfinPlugin(wrapper: PluginWrapper) : GameyfinPlug
      * @return The cast value, or throws PluginConfigError if casting fails.
      * @throws PluginConfigError if the value cannot be cast to the expected type.
      */
+    @Suppress("UNCHECKED_CAST")
     private fun castConfigValue(meta: ConfigMetadata<*>, value: Any): Any? {
         val expectedType = meta.type
 
