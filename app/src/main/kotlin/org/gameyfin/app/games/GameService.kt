@@ -610,69 +610,78 @@ class GameService(
         persist: Boolean,
         refreshGame: Game? = null
     ): Game? {
-        // Step 0: Query all metadata plugins for metadata on the provided originalIds
-        val metadataResults = runBlocking {
-            coroutineScope {
-                metadataPlugins.associateWith { plugin ->
-                    async {
-                        val originalId = originalIds[plugin.javaClass.name]?.externalProviderId ?: return@async null
-                        try {
-                            val metadata = plugin.fetchById(originalId)
-                            if (metadata != null || refreshGame == null) return@async metadata
+        val validResults = fetchMetadataByOriginalIds(originalIds, refreshGame).filterValuesNotNull()
+        if (validResults.isEmpty()) return handleMissingMetadata(originalIds, refreshGame)
 
-                            // Some providers can search IDs that their direct lookup only serves from a memory cache.
-                            // Recover the saved identity after cache eviction/restart without choosing another edition.
-                            val title = refreshGame.title?.takeIf { it.isNotBlank() } ?: return@async null
-                            val recovered = plugin.fetchByTitle(title, refreshGame.platforms.toSet(), 10)
-                                .firstOrNull { it.originalId == originalId }
-                            if (recovered != null) {
-                                log.debug { "Recovered metadata for game ${refreshGame.id} by title with original ID $originalId" }
-                            }
-                            return@async recovered
-                        } catch (e: Exception) {
-                            val pluginWrapper = pluginManager.getPluginForExtension(plugin::class)
-                            log.warn { "Error fetching metadata for game [id: $originalId] with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
-                            log.debug(e) {}
-                            null
-                        }
-                    }.await()
-                }
-            }
-        }
-
-        // Step 1: Filter out invalid (empty) results
-        // In theory all results should be valid
-        val validResults = metadataResults.filterValuesNotNull()
-        if (validResults.isEmpty()) {
-            if (refreshGame != null) {
-                log.warn { "No metadata returned for game ${refreshGame.id} from its saved providers; keeping existing metadata" }
-            } else {
-                log.error { "No results found for originalIds: $originalIds" }
-            }
-            return null
-        }
-
-        // Step 3: Merge results into a single Game entity
         val mergedGame = mergeResults(validResults, path, library)
-
-        // Step 4: Filter platforms to only those supported by the library
         mergedGame.platforms = library.platforms.intersect(mergedGame.platforms.toSet()).toMutableList()
 
-        // Step 5: If a replaceGameId is provided, set it (overwriting the existing entity)
-        if (replaceGameId != null) {
-            val existingGame = getById(replaceGameId)
-
-            // Copy fields from the existing game to the merged game
-            mergedGame.id = existingGame.id
-            mergedGame.createdAt = existingGame.createdAt
-            mergedGame.metadata.downloadCount = existingGame.metadata.downloadCount
-        }
-
+        replaceGame(replaceGameId, mergedGame)
         mergedGame.metadata.matchConfirmed = true
 
-        // Step 6: Save the game
         return if (persist) create(mergedGame) else mergedGame
     }
+
+    private fun fetchMetadataByOriginalIds(
+        originalIds: Map<String, ExternalProviderIdDto>,
+        refreshGame: Game?
+    ): Map<GameMetadataProvider, PluginApiMetadata?> = runBlocking {
+        coroutineScope {
+            metadataPlugins.associateWith { plugin ->
+                async {
+                    fetchMetadata(plugin, originalIds[plugin.javaClass.name]?.externalProviderId, refreshGame)
+                }.await()
+            }
+        }
+    }
+
+    private fun fetchMetadata(
+        plugin: GameMetadataProvider,
+        originalId: String?,
+        refreshGame: Game?
+    ): PluginApiMetadata? {
+        if (originalId == null) return null
+
+        return try {
+            val metadata = plugin.fetchById(originalId)
+            if (metadata != null || refreshGame == null) return metadata
+
+            val title = refreshGame.title?.takeIf { it.isNotBlank() } ?: return null
+            val recovered = plugin.fetchByTitle(title, refreshGame.platforms.toSet(), 10)
+                .firstOrNull { it.originalId == originalId }
+            if (recovered != null) {
+                log.debug { "Recovered metadata for game ${refreshGame.id} by title with original ID $originalId" }
+            }
+            recovered
+        } catch (e: Exception) {
+            val pluginWrapper = pluginManager.getPluginForExtension(plugin::class)
+            log.warn { "Error fetching metadata for game [id: $originalId] with plugin '${(pluginWrapper?.descriptor as GameyfinPluginDescriptor?)?.pluginName ?: pluginWrapper?.pluginId ?: plugin.javaClass.name}': ${e.message}" }
+            log.debug(e) {}
+            null
+        }
+    }
+
+    private fun handleMissingMetadata(
+        originalIds: Map<String, ExternalProviderIdDto>,
+        refreshGame: Game?
+    ): Game? {
+        if (refreshGame != null) {
+            log.warn { "No metadata returned for game ${refreshGame.id} from its saved providers; keeping existing metadata" }
+        } else {
+            log.error { "No results found for originalIds: $originalIds" }
+        }
+        return null
+    }
+
+    private fun replaceGame(replaceGameId: Long?, mergedGame: Game) {
+        if (replaceGameId == null) return
+
+        val existingGame = getById(replaceGameId)
+        mergedGame.id = existingGame.id
+        mergedGame.createdAt = existingGame.createdAt
+        mergedGame.metadata.downloadCount = existingGame.metadata.downloadCount
+    }
+
 
     fun matchFromFile(path: Path, library: Library): Game? {
         var query = FilenameUtils.removeExtension(path.fileName.toString())

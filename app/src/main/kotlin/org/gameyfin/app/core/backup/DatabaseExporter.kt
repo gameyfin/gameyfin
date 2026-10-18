@@ -190,7 +190,8 @@ class DatabaseExporter {
         if (!Files.isDirectory(mediaRoot)) return 0
 
         progress(BackupStep(EXPORT_MEDIA_STEP))
-        val files = Files.list(mediaRoot).use { stream -> stream.filter { it.isRegularFile() }.sorted().toList() }
+        val files = Files.list(mediaRoot)
+            .use { stream -> buildList { stream.filter { it.isRegularFile() }.sorted().forEach(::add) } }
 
         var count = 0
         zip.setLevel(Deflater.BEST_SPEED)

@@ -23,12 +23,12 @@ class TaskRunLogFilter : Filter<ILoggingEvent>() {
 object MdcPropagation {
 
     fun wrap(runnable: Runnable): Runnable {
-        val context = MDC.getCopyOfContextMap()
+        val context = MDC.getCopyOfContextMap().toMap()
         return Runnable { withContext(context) { runnable.run() } }
     }
 
     fun <T> wrap(callable: Callable<T>): Callable<T> {
-        val context = MDC.getCopyOfContextMap()
+        val context = MDC.getCopyOfContextMap().toMap()
         return Callable { withContext(context) { callable.call() } }
     }
 

@@ -131,12 +131,34 @@ class ImageRecoveryService(
         val processed = AtomicInteger()
         val unavailable = ConcurrentLinkedQueue<Image>()
 
+        downloadMissingImages(context, missing, restored, failed, processed, unavailable)
+        if (Thread.interrupted()) throw InterruptedException()
+
+        val removed = removeUnavailableImages(context, unavailable, failed)
+
+        val summary = "${restored.get()} restored, $removed removed, ${failed.get()} failed"
+        if (context.isCancellationRequested) {
+            log.info { "Recovery of missing images has been cancelled, it will be resumed on the next start" }
+            throw TaskCancelledException(summary)
+        }
+        log.info { "Recovery of missing images finished: $summary" }
+        return TaskResult(summary)
+    }
+
+    private fun downloadMissingImages(
+        context: TaskContext,
+        missing: List<Image>,
+        restored: AtomicInteger,
+        failed: AtomicInteger,
+        processed: AtomicInteger,
+        unavailable: ConcurrentLinkedQueue<Image>,
+    ) {
         val permits = Semaphore(PARALLEL_DOWNLOADS)
         Executors.newVirtualThreadPerTaskExecutor().use { downloads ->
             for (image in missing) {
                 if (context.isCancellationRequested) break
                 permits.acquire()
-                downloads.execute(context.wrap(Runnable {
+                downloads.execute(context.wrap {
                     try {
                         when (recover(image)) {
                             RecoveryResult.RESTORED -> restored.incrementAndGet()
@@ -147,36 +169,34 @@ class ImageRecoveryService(
                         permits.release()
                         context.progress("Downloading images", processed.incrementAndGet(), missing.size)
                     }
-                }))
+                })
             }
         }
-        if (Thread.interrupted()) throw InterruptedException()
+    }
 
+    private fun removeUnavailableImages(
+        context: TaskContext,
+        unavailable: ConcurrentLinkedQueue<Image>,
+        failed: AtomicInteger,
+    ): Int {
+        if (unavailable.isEmpty() || context.isCancellationRequested) return 0
+
+        log.info { "Removing ${unavailable.size} images which are not available anymore" }
         var removed = 0
-        if (unavailable.isNotEmpty() && !context.isCancellationRequested) {
-            log.info { "Removing ${unavailable.size} images which are not available anymore" }
-            // Removed sequentially, as several images may be referenced by the same game
-            for ((index, image) in unavailable.withIndex()) {
-                if (Thread.interrupted()) throw InterruptedException()
-                if (context.isCancellationRequested) break
-                try {
-                    removeImageAndReferences(image)
-                    removed++
-                } catch (e: Exception) {
-                    log.warn(e) { "Could not remove unavailable image ${image.id}" }
-                    failed.incrementAndGet()
-                }
-                context.progress("Removing unavailable images", index + 1, unavailable.size)
+        // Removed sequentially, as several images may be referenced by the same game
+        for ((index, image) in unavailable.withIndex()) {
+            if (Thread.interrupted()) throw InterruptedException()
+            if (context.isCancellationRequested) break
+            try {
+                removeImageAndReferences(image)
+                removed++
+            } catch (e: Exception) {
+                log.warn(e) { "Could not remove unavailable image ${image.id}" }
+                failed.incrementAndGet()
             }
+            context.progress("Removing unavailable images", index + 1, unavailable.size)
         }
-
-        val summary = "${restored.get()} restored, $removed removed, ${failed.get()} failed"
-        if (context.isCancellationRequested) {
-            log.info { "Recovery of missing images has been cancelled, it will be resumed on the next start" }
-            throw TaskCancelledException(summary)
-        }
-        log.info { "Recovery of missing images finished: $summary" }
-        return TaskResult(summary)
+        return removed
     }
 
     private fun recover(image: Image): RecoveryResult {

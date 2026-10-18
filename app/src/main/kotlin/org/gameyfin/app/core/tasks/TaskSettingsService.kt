@@ -37,18 +37,16 @@ class TaskSettingsService(private val settingRepository: TaskSettingRepository) 
         fun convert(meta: ConfigMetadata<*>, value: String): Serializable {
             val type = meta.type.kotlin.javaObjectType
             if (type.isEnum) {
-                return type.enumConstants.firstOrNull { (it as Enum<*>).name == value } as Serializable?
-                    ?: throw IllegalArgumentException(
-                        "${meta.label} must be one of ${type.enumConstants.joinToString(", ")}"
-                    )
+                return type.enumConstants.firstOrNull { (it as Enum<*>).name == value }
+                    ?: throw IllegalArgumentException("${meta.label} must be one of ${type.enumConstants.joinToString(", ")}")
             }
             return try {
                 when (type) {
-                    java.lang.Integer::class.java -> value.trim().toInt()
-                    java.lang.Long::class.java -> value.trim().toLong()
-                    java.lang.Float::class.java -> value.trim().toFloat()
-                    java.lang.Double::class.java -> value.trim().toDouble()
-                    java.lang.Boolean::class.java -> value.trim().toBooleanStrict()
+                    Int::class.javaObjectType -> value.trim().toInt()
+                    Long::class.javaObjectType -> value.trim().toLong()
+                    Float::class.javaObjectType -> value.trim().toFloat()
+                    Double::class.javaObjectType -> value.trim().toDouble()
+                    Boolean::class.javaObjectType -> value.trim().toBooleanStrict()
                     String::class.java -> value
                     GameSelection::class.java -> GameSelection.parse(value)
                     else -> throw IllegalArgumentException("Unsupported type ${type.simpleName}")
@@ -86,7 +84,10 @@ class TaskSettingsService(private val settingRepository: TaskSettingRepository) 
          * missing ones.
          * @throws IllegalArgumentException if any value is invalid
          */
-        fun convertValues(declarations: List<ConfigMetadata<*>>, values: Map<String, String?>): Map<String, Serializable?> {
+        fun convertValues(
+            declarations: List<ConfigMetadata<*>>,
+            values: Map<String, String?>
+        ): Map<String, Serializable?> {
             val errors = validateValues(declarations, values)
             require(errors.isEmpty()) { errors.entries.joinToString("; ") { "${it.key}: ${it.value}" } }
             return declarations.associate { meta ->

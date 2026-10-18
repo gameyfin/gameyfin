@@ -196,41 +196,57 @@ class DatabaseRestorer(
             ?: throw InvalidBackupException("Data for table ${backupTable.name} is missing in the backup")
 
         val targetColumns = schema.columns(table).associateBy { it.name.uppercase() }
-        var columnMapping: List<SchemaInspector.Column?>? = null
-        var rowCount = 0L
-
-        zip.getInputStream(entry).use { input ->
+        val rowCount = zip.getInputStream(entry).use { input ->
             BackupFormat.jsonMapper.createParser(input).use { parser ->
-                if (parser.nextToken() != JsonToken.START_OBJECT) {
-                    throw InvalidBackupException("Data for table ${backupTable.name} is malformed")
-                }
-                while (parser.nextToken() == JsonToken.PROPERTY_NAME) {
-                    val property = parser.currentName()
-                    parser.nextToken()
-                    when (property) {
-                        "columns" -> {
-                            val columns = parser.readValueAsTree<JsonNode>().toList().map { it.get("name").asString() }
-                            val unknownColumns = columns.filter { it.uppercase() !in targetColumns }
-                            if (unknownColumns.isNotEmpty()) {
-                                log.warn { "Skipping columns of table $table which do not exist in the database: $unknownColumns" }
-                            }
-                            columnMapping = columns.map { targetColumns[it.uppercase()] }
-                        }
-
-                        "rows" -> {
-                            val mapping = columnMapping
-                                ?: throw InvalidBackupException("Data for table ${backupTable.name} is malformed")
-                            rowCount = insertRows(connection, schema, table, mapping, parser)
-                        }
-
-                        else -> parser.skipChildren()
-                    }
-                }
+                readTableData(connection, schema, table, backupTable, targetColumns, parser)
             }
         }
 
         log.debug { "Imported $rowCount rows into table $table" }
         return rowCount
+    }
+
+    private fun readTableData(
+        connection: Connection,
+        schema: SchemaInspector,
+        table: String,
+        backupTable: BackupTable,
+        targetColumns: Map<String, SchemaInspector.Column>,
+        parser: JsonParser
+    ): Long {
+        if (parser.nextToken() != JsonToken.START_OBJECT) {
+            throw InvalidBackupException("Data for table ${backupTable.name} is malformed")
+        }
+
+        var columnMapping: List<SchemaInspector.Column?>? = null
+        var rowCount = 0L
+        while (parser.nextToken() == JsonToken.PROPERTY_NAME) {
+            val property = parser.currentName()
+            parser.nextToken()
+            when (property) {
+                "columns" -> columnMapping = readColumnMapping(parser, table, targetColumns)
+                "rows" -> {
+                    val mapping = columnMapping
+                        ?: throw InvalidBackupException("Data for table ${backupTable.name} is malformed")
+                    rowCount = insertRows(connection, schema, table, mapping, parser)
+                }
+                else -> parser.skipChildren()
+            }
+        }
+        return rowCount
+    }
+
+    private fun readColumnMapping(
+        parser: JsonParser,
+        table: String,
+        targetColumns: Map<String, SchemaInspector.Column>
+    ): List<SchemaInspector.Column?> {
+        val columns = parser.readValueAsTree<JsonNode>().toList().map { it.get("name").asString() }
+        val unknownColumns = columns.filter { it.uppercase() !in targetColumns }
+        if (unknownColumns.isNotEmpty()) {
+            log.warn { "Skipping columns of table $table which do not exist in the database: $unknownColumns" }
+        }
+        return columns.map { targetColumns[it.uppercase()] }
     }
 
     private fun insertRows(

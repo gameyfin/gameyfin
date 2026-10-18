@@ -44,7 +44,7 @@ class PluginTaskRegistrar(
     private fun register(pluginId: String) {
         unregister(pluginId)
         val tasks = try {
-            pluginManager.getExtensions(GameyfinTask::class.java, pluginId)
+            pluginManager.getExtensions(GameyfinTask::class.java, pluginId).toList()
         } catch (e: Throwable) {
             log.warn { "Could not load the tasks of plugin $pluginId: ${e.message}" }
             return

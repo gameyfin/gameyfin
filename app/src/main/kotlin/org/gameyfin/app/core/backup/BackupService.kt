@@ -268,9 +268,7 @@ class BackupService(
     fun getLastRestoreStatus(): RestoreStatusDto? = storage.readRestoreStatus()
 
     private fun acquireOperationPermit() {
-        if (!operationPermit.tryAcquire()) {
-            throw IllegalStateException("Another backup operation is currently in progress")
-        }
+        check(operationPermit.tryAcquire()) { "Another backup operation is currently in progress" }
         if (restartPending) {
             operationPermit.release()
             throw IllegalStateException("A restore is pending, Gameyfin is restarting")

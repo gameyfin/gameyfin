@@ -22,11 +22,7 @@ import java.io.Serializable
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.Callable
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.*
 
 /**
  * Executes task runs, keeps track of their progress and publishes it to subscribers.
@@ -113,9 +109,8 @@ class TaskRunService(
      */
     fun trigger(taskKey: String, trigger: TaskTrigger, parameters: Map<String, String?> = emptyMap()): TaskRunDto? {
         val definition = registry.require(taskKey)
-        if (trigger == TaskTrigger.MANUAL && !definition.manuallyTriggerable) {
-            throw IllegalStateException("Task ${definition.name} can not be started manually")
-        }
+        check(!(trigger == TaskTrigger.MANUAL && !definition.manuallyTriggerable)) { "Task ${definition.name} can not be started manually" }
+        
         // Scheduled runs use the default values of the parameters
         val parameterValues = TaskSettingsService.convertValues(definition.parameters, parameters)
         return when (val action = definition.action) {
@@ -275,34 +270,44 @@ class TaskRunService(
     private fun execute(run: ActiveRun, body: (TaskContext) -> TaskResult?, rethrow: Boolean) {
         MdcPropagation.withTaskRun(run.id) {
             log.info { "Started ${run.displayName} (triggered by ${run.trigger.name.lowercase()})" }
-            run.parameters.filterValues { it != null }.takeIf { it.isNotEmpty() }?.let { parameters ->
-                log.info { "Parameters: " + parameters.entries.joinToString(", ") { "${it.key}=${it.value}" } }
-            }
+            logParameters(run)
             try {
-                run.throwIfCancelled()
-                val result = body(run)
-                finish(run, TaskRunStatus.COMPLETED, result?.summary, null)
-                log.info { "Finished ${run.displayName}" + (result?.summary?.let { ": $it" } ?: "") }
-            } catch (e: TaskCancelledException) {
-                finish(run, TaskRunStatus.CANCELLED, e.message, null)
-                log.info { "Cancelled ${run.displayName}" }
-            } catch (e: InterruptedException) {
-                Thread.currentThread().interrupt()
-                finish(run, TaskRunStatus.CANCELLED, null, "Interrupted")
-                log.info { "Interrupted ${run.displayName}" }
-                if (rethrow) throw e
-            } catch (e: Throwable) {
-                if (run.cancelRequested && e.cause is InterruptedException) {
-                    finish(run, TaskRunStatus.CANCELLED, null, null)
-                } else {
-                    finish(run, TaskRunStatus.FAILED, null, e.message ?: e.javaClass.simpleName)
-                }
-                log.error(e) { "${run.displayName} failed: ${e.message}" }
-                if (rethrow) throw e
+                executeTask(run, body, rethrow)
             } finally {
                 // Closes the log file of the run
                 finalizeLogger.info(ClassicConstants.FINALIZE_SESSION_MARKER, "End of log")
             }
+        }
+    }
+
+    private fun logParameters(run: ActiveRun) {
+        run.parameters.filterValues { it != null }.takeIf { it.isNotEmpty() }?.let { parameters ->
+            log.info { "Parameters: " + parameters.entries.joinToString(", ") { "${it.key}=${it.value}" } }
+        }
+    }
+
+    private fun executeTask(run: ActiveRun, body: (TaskContext) -> TaskResult?, rethrow: Boolean) {
+        try {
+            run.throwIfCancelled()
+            val result = body(run)
+            finish(run, TaskRunStatus.COMPLETED, result?.summary, null)
+            log.info { "Finished ${run.displayName}" + (result?.summary?.let { ": $it" } ?: "") }
+        } catch (e: TaskCancelledException) {
+            finish(run, TaskRunStatus.CANCELLED, e.message, null)
+            log.info { "Cancelled ${run.displayName}" }
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            finish(run, TaskRunStatus.CANCELLED, null, "Interrupted")
+            log.info { "Interrupted ${run.displayName}" }
+            if (rethrow) throw e
+        } catch (e: Throwable) {
+            if (run.cancelRequested && e.cause is InterruptedException) {
+                finish(run, TaskRunStatus.CANCELLED, null, null)
+            } else {
+                finish(run, TaskRunStatus.FAILED, null, e.message ?: e.javaClass.simpleName)
+            }
+            log.error(e) { "${run.displayName} failed: ${e.message}" }
+            if (rethrow) throw e
         }
     }
 
