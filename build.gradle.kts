@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 
 group = "org.gameyfin"
-version = "2.4.1-preview"
+version = "2.5.0-preview"
 
 allprojects {
     dependencyLocking {
