@@ -3,6 +3,8 @@ package org.gameyfin.app.core.plugins.management
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PluginManagementEntryTest {
@@ -137,5 +139,37 @@ class PluginManagementEntryTest {
 
         assertEquals(entry1.hashCode(), entry2.hashCode())
     }
-}
 
+    @Test
+    fun `PluginManagementEntry should have null sourceMarketplaceId by default`() {
+        assertNull(PluginManagementEntry("test-plugin").sourceMarketplaceId)
+    }
+
+    @Test
+    fun `PluginManagementEntry should store sourceMarketplaceId`() {
+        val entry = PluginManagementEntry("test-plugin", sourceMarketplaceId = "official")
+
+        assertEquals("official", entry.sourceMarketplaceId)
+    }
+
+    @Test
+    fun `PluginManagementEntry sourceMarketplaceId should be mutable`() {
+        val entry = PluginManagementEntry("test-plugin", sourceMarketplaceId = "official")
+
+        entry.sourceMarketplaceId = "custom"
+        assertEquals("custom", entry.sourceMarketplaceId)
+
+        entry.sourceMarketplaceId = null
+        assertNull(entry.sourceMarketplaceId)
+    }
+
+    @Test
+    fun `PluginManagementEntry equality and copy should consider sourceMarketplaceId`() {
+        val entry = PluginManagementEntry("test-plugin", sourceMarketplaceId = "official")
+
+        assertEquals(entry, PluginManagementEntry("test-plugin", sourceMarketplaceId = "official"))
+        assertNotEquals(entry, PluginManagementEntry("test-plugin"))
+        assertEquals("official", entry.copy(priority = 5).sourceMarketplaceId)
+        assertNull(entry.copy(sourceMarketplaceId = null).sourceMarketplaceId)
+    }
+}

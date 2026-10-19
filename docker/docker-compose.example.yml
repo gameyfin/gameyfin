@@ -29,6 +29,7 @@ services:
       - "./data:/opt/gameyfin/data"
       - "./backups:/opt/gameyfin/backups"
       - "./plugindata:/opt/gameyfin/plugindata"
+      - "./plugins-installed:/opt/gameyfin/plugins-installed"
       - "./logs:/opt/gameyfin/logs"
       - <mount your library folder(s) here>
     ports:

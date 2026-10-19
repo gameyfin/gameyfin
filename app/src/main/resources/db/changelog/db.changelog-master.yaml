@@ -1426,3 +1426,56 @@ databaseChangeLog:
             columns:
               - column:
                   name: STARTED_AT
+
+  - changeSet:
+      id: 2.6.0-plugin-marketplace
+      author: grimsi
+      comment: >
+        Plugin marketplace: repositories (marketplaces) to install plugins from
+        and the source marketplace of installed plugins.
+      changes:
+        - createTable:
+            tableName: PLUGIN_MARKETPLACE_ENTRY
+            columns:
+              - column:
+                  name: ID
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: NAME
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: URL
+                  type: varchar(2048)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: INDEX_URL
+                  type: varchar(2048)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ENABLED
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: OFFICIAL
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - addColumn:
+            tableName: PLUGIN_MANAGEMENT_ENTRY
+            columns:
+              - column:
+                  name: SOURCE_MARKETPLACE_ID
+                  type: varchar(255)
