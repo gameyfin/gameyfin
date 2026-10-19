@@ -1,4 +1,4 @@
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import {CheckIcon} from "@phosphor-icons/react";
 import {Button, Spinner, toast} from "@heroui/react";
 import React from "react";
@@ -17,7 +17,7 @@ import {platformState} from "Frontend/state/PlatformState";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
 
 interface LibraryManagementDetailsProps {
-    library: LibraryDto;
+    library: LibraryAdminDto;
 }
 
 export default function LibraryManagementDetails({library}: LibraryManagementDetailsProps) {
@@ -25,7 +25,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
     const [librarySaved, setLibrarySaved] = React.useState(false);
     const availablePlatforms = useSnapshot(platformState).available;
 
-    async function handleSubmit(values: LibraryDto): Promise<void> {
+    async function handleSubmit(values: LibraryAdminDto): Promise<void> {
         const changed = deepDiff(library, values) as LibraryUpdateDto;
 
         if (Object.keys(changed).length === 0) return;

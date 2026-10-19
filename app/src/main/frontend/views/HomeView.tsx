@@ -3,7 +3,8 @@ import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
 import React, {useMemo} from "react";
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
+import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
+import {useGamesByCollectionId} from "Frontend/state/derived";
 import {collectionState} from "Frontend/state/CollectionState";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import {StartPageDisplayCard} from "Frontend/components/general/cards/StartPageDisplayCard";
@@ -18,7 +19,7 @@ export default function HomeView() {
     const collectionsState = useSnapshot(collectionState);
     const gamesState = useSnapshot(gameState);
     const gamesByLibrary = gamesState.gamesByLibraryId;
-    const gamesByCollection = gamesState.gamesByCollectionId;
+    const gamesByCollection = useGamesByCollectionId();
 
     const filteredAndSortedLibraries = useMemo(() =>
             librariesState.sorted
@@ -110,7 +111,7 @@ export default function HomeView() {
                         </Link>
                         <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
                             {filteredAndSortedLibraries.length > 0 &&
-                                filteredAndSortedLibraries.map((library: LibraryDto) => (
+                                filteredAndSortedLibraries.map((library: LibrarySummaryDto) => (
                                     <StartPageDisplayCard key={library.id} item={library}/>
                                 ))
                             }

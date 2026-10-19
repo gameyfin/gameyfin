@@ -13,6 +13,7 @@ import org.gameyfin.app.core.events.UserUpdatedEvent
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.users.persistence.UserRepository
+import org.hibernate.Hibernate
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.dao.DataIntegrityViolationException
@@ -103,12 +104,17 @@ class ImageService(
         phase = TransactionPhase.AFTER_COMPLETION
     )
     fun onGameUpdated(event: GameUpdatedEvent) {
+        // The (lazy) images collection is only initialized if it has been accessed (and potentially modified)
+        // during the transaction. Otherwise, it is unchanged and must not be compared.
+        val galleryChanged = Hibernate.isInitialized(event.previousState.images) &&
+                Hibernate.isInitialized(event.currentState.images)
+
         val imagesBeforeUpdate = (listOfNotNull(event.previousState.coverImage, event.previousState.headerImage) +
-                event.previousState.images)
+                (if (galleryChanged) event.previousState.images else emptyList()))
             .toSet()
 
         val imagesStillInUse = (listOfNotNull(event.currentState.coverImage, event.currentState.headerImage) +
-                event.currentState.images)
+                (if (galleryChanged) event.currentState.images else emptyList()))
             .toSet()
 
         imagesBeforeUpdate.minus(imagesStillInUse).forEach { deleteImageIfUnused(it) }

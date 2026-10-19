@@ -3,7 +3,7 @@ import {useNavigate, useParams} from "react-router";
 import React, {useEffect} from "react";
 import {ArrowLeftIcon, CheckIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
-import CollectionAdminDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionAdminDto";
+import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import {collectionState} from "Frontend/state/CollectionState";
 import {Form, Formik} from "formik";
 import * as Yup from "yup";
@@ -35,7 +35,7 @@ export default function CollectionManagementView() {
         return null;
     }
 
-    const collection = collections.state[collectionIdNum] as CollectionAdminDto;
+    const collection = collections.state[collectionIdNum] as CollectionDto;
 
     async function handleSubmit(values: CollectionUpdateDto): Promise<void> {
         const changed = deepDiff(collection, values) as CollectionUpdateDto;

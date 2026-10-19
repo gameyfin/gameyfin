@@ -3,10 +3,10 @@ package org.gameyfin.app.games
 import io.mockk.*
 import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.security.isCurrentUserAdmin
+import org.gameyfin.app.core.sync.EntityEventType
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.libraries.LibraryCoreService
-import org.gameyfin.app.libraries.LibraryService
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.AfterEach
@@ -15,21 +15,21 @@ import org.junit.jupiter.api.Test
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import java.nio.file.Path
+import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class GameEndpointTest {
 
     private lateinit var gameService: GameService
-    private lateinit var libraryService: LibraryService
     private lateinit var libraryCoreService: LibraryCoreService
     private lateinit var gameEndpoint: GameEndpoint
 
     @BeforeEach
     fun setup() {
         gameService = mockk()
-        libraryService = mockk()
         libraryCoreService = mockk()
-        gameEndpoint = GameEndpoint(gameService, libraryService, libraryCoreService)
+        gameEndpoint = GameEndpoint(gameService, libraryCoreService)
 
         mockkStatic("org.gameyfin.app.core.security.SecurityUtilsKt")
     }
@@ -44,8 +44,8 @@ class GameEndpointTest {
     fun `subscribe should return admin flux when user is admin`() {
         mockkObject(GameService.Companion)
         every { isCurrentUserAdmin() } returns true
-        val adminEvent: GameAdminEvent = GameAdminEvent.Created(mockk(relaxed = true))
-        val adminFlux: Flux<List<GameAdminEvent>> = Flux.just(listOf(adminEvent))
+        val adminEvent = GameEvent(EntityEventType.DELETED, 1L)
+        val adminFlux: Flux<List<GameEvent>> = Flux.just(listOf(adminEvent))
         every { GameService.subscribeAdmin() } returns adminFlux
 
         val result = gameEndpoint.subscribe()
@@ -58,8 +58,8 @@ class GameEndpointTest {
     fun `subscribe should return user flux when user is not admin`() {
         mockkObject(GameService.Companion)
         every { isCurrentUserAdmin() } returns false
-        val userEvent: GameUserEvent = GameUserEvent.Created(mockk(relaxed = true))
-        val userFlux: Flux<List<GameUserEvent>> = Flux.just(listOf(userEvent))
+        val userEvent = GameEvent(EntityEventType.DELETED, 1L)
+        val userFlux: Flux<List<GameEvent>> = Flux.just(listOf(userEvent))
         every { GameService.subscribeUser() } returns userFlux
 
         val result = gameEndpoint.subscribe()
@@ -73,8 +73,8 @@ class GameEndpointTest {
     fun `subscribe should emit events to subscribers when admin`() {
         mockkObject(GameService.Companion)
         every { isCurrentUserAdmin() } returns true
-        val event: GameAdminEvent = GameAdminEvent.Created(mockk<GameAdminDto>(relaxed = true))
-        val adminFlux: Flux<List<GameAdminEvent>> = Flux.just(listOf(event))
+        val event = GameEvent(EntityEventType.CREATED, 1L, summary = mockk<GameSummaryDto>(relaxed = true))
+        val adminFlux: Flux<List<GameEvent>> = Flux.just(listOf(event))
         every { GameService.subscribeAdmin() } returns adminFlux
 
         val result = gameEndpoint.subscribe()
@@ -86,24 +86,51 @@ class GameEndpointTest {
     }
 
     @Test
-    fun `getAll should return all games from service`() {
-        val games = listOf(mockk<GameDto>(relaxed = true), mockk<GameDto>(relaxed = true))
-        every { gameService.getAll() } returns games
+    fun `sync should delegate to service with admin flag`() {
+        val since = Instant.parse("2024-01-01T00:00:00Z")
+        val syncDto = GameSyncDto(Instant.now(), false, emptyList(), listOf(1L, 2L))
+        every { isCurrentUserAdmin() } returns true
+        every { gameService.sync(since, true) } returns syncDto
 
-        val result = gameEndpoint.getAll()
+        val result = gameEndpoint.sync(since)
 
-        assertEquals(games, result)
-        verify(exactly = 1) { gameService.getAll() }
+        assertEquals(syncDto, result)
+        verify(exactly = 1) { gameService.sync(since, true) }
     }
 
     @Test
-    fun `getAll should return empty list when no games exist`() {
-        every { gameService.getAll() } returns emptyList()
+    fun `sync should request full sync for non-admin users when since is null`() {
+        val syncDto = GameSyncDto(Instant.now(), true, emptyList(), emptyList())
+        every { isCurrentUserAdmin() } returns false
+        every { gameService.sync(null, false) } returns syncDto
 
-        val result = gameEndpoint.getAll()
+        val result = gameEndpoint.sync(null)
 
-        assertEquals(emptyList(), result)
-        verify(exactly = 1) { gameService.getAll() }
+        assertEquals(syncDto, result)
+        verify(exactly = 1) { gameService.sync(null, false) }
+    }
+
+    @Test
+    fun `getById should return full game DTO from service`() {
+        val dto = mockk<GameDto>(relaxed = true)
+        every { gameService.getDtoById(42L) } returns dto
+
+        assertEquals(dto, gameEndpoint.getById(42L))
+    }
+
+    @Test
+    fun `getById should return null for unknown game`() {
+        every { gameService.getDtoById(42L) } returns null
+
+        assertNull(gameEndpoint.getById(42L))
+    }
+
+    @Test
+    fun `getByIds should delegate to service`() {
+        val dtos = listOf(mockk<GameDto>(relaxed = true))
+        every { gameService.getDtosByIds(listOf(1L, 2L)) } returns dtos
+
+        assertEquals(dtos, gameEndpoint.getByIds(listOf(1L, 2L)))
     }
 
     @Test
@@ -190,13 +217,13 @@ class GameEndpointTest {
         val library = mockk<Library>()
         val game = mockk<Game>()
 
-        every { libraryService.getById(libraryId) } returns library
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
         every { gameService.matchManually(originalIds, Path.of(path), library, replaceGameId) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
         gameEndpoint.matchManually(originalIds, path, libraryId, replaceGameId)
 
-        verify(exactly = 1) { libraryService.getById(libraryId) }
+        verify(exactly = 1) { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) }
         verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library, replaceGameId) }
         coVerify(exactly = 1) { libraryCoreService.addGamesToLibrary(listOf(game), library, true) }
     }
@@ -209,12 +236,12 @@ class GameEndpointTest {
         val replaceGameId = null
         val library = mockk<Library>()
 
-        every { libraryService.getById(libraryId) } returns library
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
         every { gameService.matchManually(originalIds, Path.of(path), library, replaceGameId) } returns null
 
         gameEndpoint.matchManually(originalIds, path, libraryId, replaceGameId)
 
-        verify(exactly = 1) { libraryService.getById(libraryId) }
+        verify(exactly = 1) { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) }
         verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library, replaceGameId) }
         coVerify(exactly = 0) { libraryCoreService.addGamesToLibrary(any(), any(), any()) }
     }
@@ -228,7 +255,7 @@ class GameEndpointTest {
         val library = mockk<Library>()
         val game = mockk<Game>()
 
-        every { libraryService.getById(libraryId) } returns library
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
         every { gameService.matchManually(originalIds, Path.of(path), library, replaceGameId) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
@@ -251,7 +278,7 @@ class GameEndpointTest {
         val library = mockk<Library>()
         val game = mockk<Game>()
 
-        every { libraryService.getById(libraryId) } returns library
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
         every { gameService.matchManually(originalIds, Path.of(path), library, replaceGameId) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
@@ -269,7 +296,7 @@ class GameEndpointTest {
         val library = mockk<Library>()
         val game = mockk<Game>()
 
-        every { libraryService.getById(libraryId) } returns library
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
         every { gameService.matchManually(any(), any(), library, null) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
@@ -286,7 +313,7 @@ class GameEndpointTest {
         val library = mockk<Library>()
         val game = mockk<Game>()
 
-        every { libraryService.getById(libraryId) } returns library
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
         every { gameService.matchManually(any(), any(), library, null) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 

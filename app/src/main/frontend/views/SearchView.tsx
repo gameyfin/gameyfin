@@ -13,7 +13,7 @@ import {useSearchParams} from "react-router";
 import React, {useEffect, useMemo, useState} from "react";
 import {Form, Formik, useFormikContext} from "formik";
 import {Fzf} from "fzf";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
 import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput";
 import {compoundRating} from "Frontend/util/utils";
@@ -126,7 +126,7 @@ function SearchViewContent() {
         setSearchParams(newParams, {replace: true});
     }, [values, showFilters]);
 
-    function sortGames(games: GameDto[]): GameDto[] {
+    function sortGames(games: GameSummaryDto[]): GameSummaryDto[] {
         if (!sortBy) return games;
 
         const [sortKey, sortDirection] = sortBy.split("_");
@@ -167,12 +167,12 @@ function SearchViewContent() {
         selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating,
     ]);
 
-    function filterGames(): GameDto[] {
+    function filterGames(): GameSummaryDto[] {
         let filtered = games;
 
         if (searchTerm !== "") {
             const fzf = new Fzf(filtered, {
-                selector: (game: GameDto) => game.title
+                selector: (game: GameSummaryDto) => game.title
             });
             filtered = fzf.find(searchTerm).map(result => result.item);
         }

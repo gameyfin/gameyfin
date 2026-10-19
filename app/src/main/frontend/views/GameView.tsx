@@ -8,7 +8,8 @@ import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 import {Accordion, Button, Chip, Link, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
-import {gameState} from "Frontend/state/GameState";
+import {gameState, useFullGame} from "Frontend/state/GameState";
+import {useCollectionIdsOfGame} from "Frontend/state/derived";
 import {useSnapshot} from "valtio/react";
 import {CheckCircleIcon, InfoIcon, MagnifyingGlassIcon, PencilIcon, StarIcon, TrashIcon,} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
@@ -31,8 +32,12 @@ export default function GameView() {
     const matchGameModal = useOverlayState();
 
     const state = useSnapshot(gameState);
-    const game = gameId ? state.state[parseInt(gameId)] : undefined;
+    const id = gameId ? parseInt(gameId) : undefined;
+    const summary = id !== undefined ? state.state[id] : undefined;
+    // Details are only loaded when the game is opened
+    const {full: game} = useFullGame(summary ? id : undefined);
     const collections = useSnapshot(collectionState).state;
+    const collectionIds = useCollectionIdsOfGame(summary ? id : undefined);
 
     const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
 
@@ -53,11 +58,11 @@ export default function GameView() {
     }, [gameId]);
 
     useEffect(() => {
-        if (state.isLoaded && (!gameId || !state.state[parseInt(gameId)])) {
+        if (state.isLoaded && !summary) {
             navigate("/", {replace: true});
         }
-        document.title = game ? game.title : "Gameyfin";
-    }, [gameId, state]);
+        document.title = summary ? summary.title : "Gameyfin";
+    }, [gameId, state.isLoaded, summary]);
 
     async function toggleMatchConfirmed() {
         if (!game) return;
@@ -300,12 +305,13 @@ export default function GameView() {
                                             }
                                         </td>
                                     </tr>}
-                                {game.collectionIds.length > 0 &&
+                                {collectionIds.length > 0 &&
                                     <tr>
                                         <td className="text-muted w-0 min-w-32">Collections</td>
                                         <td className="flex flex-row gap-1">
-                                            {[...game.collectionIds]
+                                            {collectionIds
                                                 .map((collectionId) => collections[collectionId])
+                                                .filter((collection) => collection !== undefined)
                                                 .sort((a, b) => a.id - b.id)
                                                 .map((collection, index) =>
                                                     <React.Fragment key={collection.id}>
@@ -313,7 +319,7 @@ export default function GameView() {
                                                               className="text-foreground hover:underline">
                                                             {collection.name}
                                                         </Link>
-                                                        {index !== game.collectionIds!.length - 1 && <p>/</p>}
+                                                        {index !== collectionIds.length - 1 && <p>/</p>}
                                                     </React.Fragment>
                                                 )}
                                         </td>
@@ -337,7 +343,7 @@ export default function GameView() {
                 </div>
             </div>
             {isAdmin(auth) && <>
-                <EditGameMetadataModal game={game}
+                <EditGameMetadataModal gameId={game.id}
                                        isOpen={editGameModal.isOpen}
                                        onOpenChange={editGameModal.setOpen}/>
                 <MatchGameModal path={(game.metadata as GameMetadataAdminDto).path!}
