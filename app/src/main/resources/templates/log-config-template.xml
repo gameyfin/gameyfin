@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!-- Console, without the output of task runs (it is written to the per-run log files instead) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="org.gameyfin.app.core.tasks.logging.NonTaskRunLogFilter"/>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
 
     <!-- Custom File Appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -32,6 +40,9 @@
             </appender>
         </sift>
     </appender>
+
+    <!-- Logs every message pushed via websocket on DEBUG, which floods the log -->
+    <logger name="com.vaadin.hilla.push" level="INFO"/>
 
     <logger name="org.gameyfin" level="{LOG_LEVEL_GAMEYFIN}"/>
 

@@ -18,6 +18,7 @@ import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.replaceRomanNumerals
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.core.tasks.logging.submitWithMdc
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDtos
@@ -161,6 +162,7 @@ class GameService(
                 userService.findByOidcProviderId(subject)
                     ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
             }
+
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
@@ -471,7 +473,7 @@ class GameService(
     fun getPotentialMatches(searchTerm: String, platformFilter: Set<Platform>): List<GameSearchResultDto> {
         // 1. Query all plugins for up to 10 results each
         val futures: List<Future<List<Pair<GameMetadataProvider, PluginApiMetadata>>>> = metadataPlugins.map { plugin ->
-            executor.submit<List<Pair<GameMetadataProvider, PluginApiMetadata>>> {
+            executor.submitWithMdc {
                 try {
                     plugin.fetchByTitle(searchTerm, platformFilter, 10).map { plugin to it }
                 } catch (e: Exception) {
@@ -787,7 +789,7 @@ class GameService(
         }
 
         val futures = pluginsWithPlatformSupport.associateWith { plugin ->
-            executor.submit<PluginApiMetadata?> {
+            executor.submitWithMdc<PluginApiMetadata?> {
                 try {
                     plugin.fetchByTitle(gameTitle, platforms).firstOrNull()
                 } catch (e: Exception) {
