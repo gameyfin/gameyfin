@@ -93,7 +93,7 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
                                 <Modal.Body>
                                     <ListBox items={sortedItems.items}
                                              dragAndDropHooks={dragAndDropHooks}
-                                             className="flex flex-col gap-2"
+                                             className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1"
                                              key={orderVersion}>
                                         {(item: T) => (
                                             <ListBoxItem
