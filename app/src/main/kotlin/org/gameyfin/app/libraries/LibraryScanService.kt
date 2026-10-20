@@ -169,6 +169,7 @@ class LibraryScanService(
     }
 
     private fun quickScan(library: Library, context: TaskContext): TaskResult {
+        log.info { "Starting QUICK scan of library '${library.name}'" }
         context.progress("Scanning filesystem")
         scanMetrics.recordScanStarted(ScanType.QUICK)
         val scanStartTime = System.currentTimeMillis()
@@ -212,6 +213,7 @@ class LibraryScanService(
 
     private fun fullScan(library: Library, triggeredBySchedule: Boolean, context: TaskContext): TaskResult {
         val scanType = if (triggeredBySchedule) ScanType.SCHEDULED else ScanType.FULL
+        log.info { "Starting $scanType scan of library '${library.name}'" }
         context.progress("Scanning filesystem")
         scanMetrics.recordScanStarted(scanType)
         val scanStartTime = System.currentTimeMillis()
@@ -277,6 +279,10 @@ class LibraryScanService(
 
     private fun performFilesystemScan(library: Library): FilesystemScanData {
         val scanResult = filesystemService.scanLibraryForGamefiles(library)
+        log.info {
+            "Filesystem scan of library '${library.name}' found ${scanResult.newPaths.size} new and " +
+                    "${scanResult.removedGamePaths.size} removed path(s)"
+        }
         val newPaths = scanResult.newPaths
         val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
         val removedIgnoredPaths = scanResult.removedIgnoredPaths
@@ -303,6 +309,7 @@ class LibraryScanService(
         context: TaskContext
     ): MatchNewGamesResult {
         val step = "Processing new games"
+        log.info { "Processing ${gamePaths.size} new path(s) in library '${library.name}'" }
         context.progress(step, 0, gamePaths.size)
         val completed = AtomicInteger(0)
         val newUnmatchedPaths = ConcurrentHashMap.newKeySet<IgnoredPath>()
@@ -330,6 +337,12 @@ class LibraryScanService(
                         newUnmatchedPaths.add(ignoredPath)
                     }
 
+                    if (persisted != null) {
+                        log.info { "Added new game '${persisted.title}' from '$path'" }
+                    } else {
+                        log.info { "No metadata match found for '$path', marked as unmatched" }
+                    }
+
                     return@Callable persisted
                 } catch (e: Exception) {
                     // Error, mark as unmatched by all current metadata providers
@@ -348,7 +361,9 @@ class LibraryScanService(
                     return@Callable null
                 } finally {
                     semaphore.release()
-                    context.progress(step, completed.incrementAndGet(), gamePaths.size)
+                    val done = completed.incrementAndGet()
+                    log.info { "Processed new game entry $done/${gamePaths.size}: '$path'" }
+                    context.progress(step, done, gamePaths.size)
                 }
             })
         }
@@ -414,6 +429,7 @@ class LibraryScanService(
         context: TaskContext
     ): UpdateExistingGamesResult {
         val step = "Updating existing games"
+        log.info { "Updating ${games.size} existing game(s)" }
         context.progress(step, 0, games.size)
         val completedUpdates = AtomicInteger(0)
         val semaphore = scanSemaphore
@@ -426,6 +442,7 @@ class LibraryScanService(
                     val updated = logProcessingTime("existing game '${game.title}' (id=${game.id})") {
                         libraryGameProcessor.processExistingGame(game)
                     }
+                    log.info { "Updated existing game '${game.title}' (id=${game.id})" }
                     return@Callable updated
                 } catch (e: Exception) {
                     log.error { "Error updating game with id '${game.id}': ${e.message}" }
@@ -433,7 +450,9 @@ class LibraryScanService(
                     return@Callable null
                 } finally {
                     semaphore.release()
-                    context.progress(step, completedUpdates.incrementAndGet(), games.size)
+                    val done = completedUpdates.incrementAndGet()
+                    log.info { "Processed existing game entry $done/${games.size}: '${game.title}' (id=${game.id})" }
+                    context.progress(step, done, games.size)
                 }
             })
         }
@@ -458,7 +477,7 @@ class LibraryScanService(
 
     private fun <T> logProcessingTime(description: String, process: () -> T): T {
         val startedAt = System.nanoTime()
-        log.debug { "Processing $description" }
+        log.info { "Processing $description" }
         try {
             return process()
         } finally {
@@ -466,7 +485,7 @@ class LibraryScanService(
             if (elapsed > 60) {
                 log.warn { "Processing $description took ${elapsed}s" }
             } else {
-                log.debug { "Finished processing $description in ${elapsed}s" }
+                log.info { "Finished processing $description in ${elapsed}s" }
             }
         }
     }

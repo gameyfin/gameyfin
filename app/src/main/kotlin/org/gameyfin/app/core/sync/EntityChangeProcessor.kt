@@ -106,7 +106,7 @@ class EntityChangeProcessor(
     fun process(changes: EntityChangeSet) {
         resolveChildOwners(changes)
         bumpTimestamps(changes)
-        val events = readTransaction.execute { buildEvents(changes) } ?: return
+        val events = readTransaction.execute { buildEvents(changes) }
         events.emit()
     }
 
@@ -193,8 +193,16 @@ class EntityChangeProcessor(
                 }
 
                 change.created -> libraries[id]?.let { library ->
-                    events.libraryUser += LibraryEvent(EntityEventType.CREATED, id, summary = library.toSummaryDto(false))
-                    events.libraryAdmin += LibraryEvent(EntityEventType.CREATED, id, summary = library.toSummaryDto(true))
+                    events.libraryUser += LibraryEvent(
+                        EntityEventType.CREATED,
+                        id,
+                        summary = library.toSummaryDto(false)
+                    )
+                    events.libraryAdmin += LibraryEvent(
+                        EntityEventType.CREATED,
+                        id,
+                        summary = library.toSummaryDto(true)
+                    )
                 }
 
                 else -> libraries[id]?.let { library ->
@@ -215,7 +223,10 @@ class EntityChangeProcessor(
         val gameIdsByCollection = collectionChanges
             .filter { (id, change) -> id in collections && (change.created || CollectionField.GAME_IDS in change.fields) }
             .keys
-            .let { ids -> ids.chunked(MAX_IDS_PER_QUERY).flatMap { collectionRepository.findGameIdsGroupedByCollectionId(it).entries } }
+            .let { ids ->
+                ids.chunked(MAX_IDS_PER_QUERY)
+                    .flatMap { collectionRepository.findGameIdsGroupedByCollectionId(it).entries }
+            }
             .associate { it.key to it.value }
 
         collectionChanges.forEach { (id, change) ->

@@ -7,8 +7,9 @@ import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.libraries.entities.Library
 import org.springframework.stereotype.Service
 import java.io.File
-import java.nio.file.FileSystems
-import java.nio.file.Path
+import java.io.IOException
+import java.nio.file.*
+import java.nio.file.attribute.BasicFileAttributes
 import kotlin.io.path.*
 
 @Service
@@ -145,7 +146,21 @@ class FilesystemService(
             if (file.isFile) {
                 file.length()
             } else if (file.isDirectory) {
-                File(path).walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                // Files.walkFileTree does not follow symlinks, so cyclic links can't cause endless traversal
+                var total = 0L
+                Files.walkFileTree(file.toPath(), object : SimpleFileVisitor<Path>() {
+                    override fun visitFile(
+                        f: Path,
+                        attrs: BasicFileAttributes
+                    ): FileVisitResult {
+                        if (attrs.isRegularFile) total += attrs.size()
+                        return FileVisitResult.CONTINUE
+                    }
+
+                    override fun visitFileFailed(f: Path, exc: IOException): FileVisitResult =
+                        FileVisitResult.CONTINUE
+                })
+                total
             } else {
                 0L
             }

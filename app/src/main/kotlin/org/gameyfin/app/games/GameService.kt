@@ -20,6 +20,7 @@ import org.gameyfin.app.core.replaceRomanNumerals
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.core.sync.EntityEventBroadcaster
 import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
+import org.gameyfin.app.core.tasks.logging.submitWithMdc
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDto
@@ -45,6 +46,8 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.time.Duration.Companion.seconds
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
 
@@ -61,6 +64,7 @@ class GameService(
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
+        private const val PLUGIN_QUERY_TIMEOUT_SECONDS = 120L
 
         /* Websockets */
         private val userEvents = EntityEventBroadcaster<GameEvent>("gameUserEvents", 1.seconds)
@@ -169,6 +173,7 @@ class GameService(
                 userService.findByOidcProviderId(subject)
                     ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
             }
+
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
@@ -479,7 +484,7 @@ class GameService(
     fun getPotentialMatches(searchTerm: String, platformFilter: Set<Platform>): List<GameSearchResultDto> {
         // 1. Query all plugins for up to 10 results each
         val futures: List<Future<List<Pair<GameMetadataProvider, PluginApiMetadata>>>> = metadataPlugins.map { plugin ->
-            executor.submit<List<Pair<GameMetadataProvider, PluginApiMetadata>>> {
+            executor.submitWithMdc {
                 try {
                     plugin.fetchByTitle(searchTerm, platformFilter, 10).map { plugin to it }
                 } catch (e: Exception) {
@@ -795,7 +800,7 @@ class GameService(
         }
 
         val futures = pluginsWithPlatformSupport.associateWith { plugin ->
-            executor.submit<PluginApiMetadata?> {
+            executor.submitWithMdc<PluginApiMetadata?> {
                 try {
                     plugin.fetchByTitle(gameTitle, platforms).firstOrNull()
                 } catch (e: Exception) {
@@ -806,7 +811,15 @@ class GameService(
                 }
             }
         }
-        return futures.mapValues { it.value.get() }
+        return futures.mapValues { (plugin, future) ->
+            try {
+                future.get(PLUGIN_QUERY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            } catch (_: TimeoutException) {
+                future.cancel(true)
+                log.warn { "Metadata plugin '${plugin.javaClass.name}' did not respond within ${PLUGIN_QUERY_TIMEOUT_SECONDS}s for title '$gameTitle'" }
+                null
+            }
+        }
     }
 
     /**
