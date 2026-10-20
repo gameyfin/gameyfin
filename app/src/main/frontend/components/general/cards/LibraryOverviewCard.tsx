@@ -8,12 +8,13 @@ import {useNavigate} from "react-router";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
-import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
+import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
+import {useLibraryStats} from "Frontend/state/derived";
 import ChipList from "Frontend/components/general/ChipList";
 import {pluginState} from "Frontend/state/PluginState";
 
 interface LibraryOverviewCardProps {
-    library: LibraryAdminDto;
+    library: LibrarySummaryDto;
 }
 
 export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
@@ -22,6 +23,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     const state = useSnapshot(gameState);
     const randomGames = getRandomGames();
     const hasActiveMetadataPlugins = useSnapshot(pluginState).hasActiveMetadataPlugins;
+    const stats = useLibraryStats(library.id);
 
     function getRandomGames() {
         if (!state.randomlyOrderedGamesByLibraryId[library.id]) return [];
@@ -89,14 +91,14 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                 </div>
             </div>
 
-            {library.stats &&
+            {stats &&
                 <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
                     <p>Games</p>
                     <p>Downloads</p>
                     <p>Platforms</p>
-                    <p className="font-bold">{library.stats.gamesCount}</p>
-                    <p className="font-bold">{library.stats.downloadedGamesCount}</p>
-                    <ChipList items={library.platforms} maxVisible={0} defaultContent="All"/>
+                    <p className="font-bold">{stats.gamesCount}</p>
+                    <p className="font-bold">{stats.downloadedGamesCount}</p>
+                    <ChipList items={library.platforms ?? []} maxVisible={0} defaultContent="All"/>
                 </div>
             }
         </Card>

@@ -62,12 +62,16 @@ function ViewWithAuth() {
     useEffect(() => {
         if (auth.state.initializing || auth.state.loading) return;
 
-        initializeLibraryState();
-        initializeCollectionState();
+        // The persistent cache is bound to the user and its roles, so cached data never leaks between users
+        const user = auth.state.user;
+        const cacheIdentity = `${user?.id ?? "anonymous"}:${[...(user?.roles ?? [])].sort().join(",")}`;
+
+        initializeLibraryState(cacheIdentity);
+        initializeCollectionState(cacheIdentity);
         initializePlatformState();
         initializeGameRequestState();
         initializePluginState();
-        initializeGameState();
+        initializeGameState(cacheIdentity);
 
         if (isAdmin(auth)) {
             initializeTaskState();

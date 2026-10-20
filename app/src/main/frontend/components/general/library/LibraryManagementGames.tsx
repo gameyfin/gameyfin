@@ -1,5 +1,5 @@
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
+import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {
     Button,
     Input,
@@ -21,13 +21,12 @@ import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpd
 import {useMemo, useState} from "react";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
-import {GameAdminDto} from "Frontend/dtos/GameDtos";
 import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
 import {metadataCompleteness} from "Frontend/util/utils";
 import ChipList from "Frontend/components/general/ChipList";
 
 interface LibraryManagementGamesProps {
-    library: LibraryDto;
+    library: LibrarySummaryDto;
 }
 
 export default function LibraryManagementGames({library}: LibraryManagementGamesProps) {
@@ -37,7 +36,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const [filter, setFilter] = useState<"all" | "confirmed" | "nonConfirmed">("all");
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "title", direction: "ascending"});
 
-    const [selectedGame, setSelectedGame] = useState<GameAdminDto | undefined>(undefined);
+    const [selectedGame, setSelectedGame] = useState<GameSummaryDto | undefined>(undefined);
     const editGameModal = useOverlayState();
     const matchGameModal = useOverlayState();
 
@@ -46,7 +45,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     }, [games, filter, searchTerm]);
 
     const sortedItems = useMemo(() => {
-        return (filteredItems as GameAdminDto[]).slice().sort((a, b) => {
+        return filteredItems.slice().sort((a, b) => {
             let cmp: number;
 
             switch (sortDescriptor.column) {
@@ -57,7 +56,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                     cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
                     break;
                 case "downloadCount":
-                    cmp = a.metadata.downloadCount - b.metadata.downloadCount;
+                    cmp = (a.downloadCount ?? 0) - (b.downloadCount ?? 0);
                     break;
                 case "completeness":
                     cmp = metadataCompleteness(a) - metadataCompleteness(b);
@@ -75,32 +74,32 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     }, [filteredItems, sortDescriptor]);
 
     function getFilteredGames() {
-        let filteredGames = (games as GameAdminDto[]).filter((game) =>
-            game.metadata.path!.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        let filteredGames = games.filter((game) =>
+            game.path?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             game.publishers?.some(publisher => publisher.toLowerCase().includes(searchTerm.toLowerCase())) ||
             game.developers?.some(developer => developer.toLowerCase().includes(searchTerm.toLowerCase()))
         )
 
         if (filter === "confirmed") {
-            return filteredGames.filter(g => g.metadata.matchConfirmed);
+            return filteredGames.filter(g => g.matchConfirmed);
         } else if (filter === "nonConfirmed") {
-            return filteredGames.filter(g => !g.metadata.matchConfirmed);
+            return filteredGames.filter(g => !g.matchConfirmed);
         }
 
         return filteredGames;
     }
 
-    async function toggleMatchConfirmed(game: GameAdminDto) {
+    async function toggleMatchConfirmed(game: GameSummaryDto) {
         await GameEndpoint.updateGame(
             {
                 id: game.id,
-                metadata: {matchConfirmed: !game.metadata.matchConfirmed}
+                metadata: {matchConfirmed: !game.matchConfirmed}
             } as GameUpdateDto
         )
     }
 
-    async function deleteGame(game: GameDto) {
+    async function deleteGame(game: GameSummaryDto) {
         await GameEndpoint.deleteGame(game.id);
     }
 
@@ -176,7 +175,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                             renderEmptyState={() => <p className="text-center text-muted p-4">Your filter did not match
                                 any
                                 games.</p>} items={sortedItems}>
-                            {(item: GameAdminDto) => (
+                            {(item: GameSummaryDto) => (
                                 <Table.Row key={item.id}>
                                     <Table.Cell>
                                         <Link href={`/game/${item.id}`}
@@ -191,12 +190,12 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                         {new Date(item.createdAt).toLocaleString()}
                                     </Table.Cell>
                                     <Table.Cell>
-                                        {item.metadata.downloadCount}
+                                        {item.downloadCount}
                                     </Table.Cell>
                                     <Table.Cell>
                                         <p className="truncate max-w-[16rem] text-left" dir="rtl"
-                                           title={item.metadata.path ?? undefined}>
-                                            <bdi>{item.metadata.path}</bdi>
+                                           title={item.path ?? undefined}>
+                                            <bdi>{item.path}</bdi>
                                         </p>
                                     </Table.Cell>
                                     <Table.Cell>
@@ -208,13 +207,13 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                                 <Tooltip.Trigger>
                                                     <Button isIconOnly size="sm" variant="tertiary"
                                                             onPress={() => toggleMatchConfirmed(item)}>
-                                                        {item.metadata.matchConfirmed ?
+                                                        {item.matchConfirmed ?
                                                             <CheckCircleIcon weight="fill" className="fill-success"/> :
                                                             <CheckCircleIcon/>}
                                                     </Button>
                                                 </Tooltip.Trigger>
                                                 <Tooltip.Content>
-                                                    {item.metadata.matchConfirmed ? "Unconfirm match" : "Confirm match"}
+                                                    {item.matchConfirmed ? "Unconfirm match" : "Confirm match"}
                                                 </Tooltip.Content>
                                             </Tooltip>
                                             <Tooltip>
@@ -260,10 +259,10 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
             </Table>
         </Virtualizer>
         {selectedGame && <>
-            <EditGameMetadataModal game={selectedGame}
+            <EditGameMetadataModal gameId={selectedGame.id}
                                    isOpen={editGameModal.isOpen}
                                    onOpenChange={editGameModal.setOpen}/>
-            <MatchGameModal path={selectedGame.metadata.path!}
+            <MatchGameModal path={selectedGame.path!}
                             libraryId={library.id}
                             replaceGameId={selectedGame.id}
                             initialSearchTerm={selectedGame.title}

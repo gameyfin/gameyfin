@@ -1,17 +1,16 @@
 package org.gameyfin.app.libraries.dto
 
-sealed interface LibraryEvent {
-    val type: String
-}
+import org.gameyfin.app.core.sync.EntityEventType
 
-sealed class LibraryUserEvent : LibraryEvent {
-    data class Created(val library: LibraryUserDto, override val type: String = "created") : LibraryUserEvent()
-    data class Updated(val library: LibraryUserDto, override val type: String = "updated") : LibraryUserEvent()
-    data class Deleted(val libraryId: Long, override val type: String = "deleted") : LibraryUserEvent()
-}
-
-sealed class LibraryAdminEvent : LibraryEvent {
-    data class Created(val library: LibraryAdminDto, override val type: String = "created") : LibraryAdminEvent()
-    data class Updated(val library: LibraryAdminDto, override val type: String = "updated") : LibraryAdminEvent()
-    data class Deleted(val libraryId: Long, override val type: String = "deleted") : LibraryAdminEvent()
-}
+/**
+ * Real-time update for a single library.
+ * - [EntityEventType.CREATED]: [summary] is set
+ * - [EntityEventType.UPDATED]: [patch] is set and contains only the changed fields
+ * - [EntityEventType.DELETED]: only [id] is set
+ */
+data class LibraryEvent(
+    val type: EntityEventType,
+    val id: Long,
+    val summary: LibrarySummaryDto? = null,
+    val patch: LibraryPatchDto? = null
+)

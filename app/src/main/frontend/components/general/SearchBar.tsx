@@ -4,7 +4,7 @@ import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {useNavigate} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 
 export default function SearchBar() {
 
@@ -24,7 +24,7 @@ export default function SearchBar() {
         </ComboBox.InputGroup>
         <ComboBox.Popover className="max-w-(--trigger-width)">
             <ListBox className="max-h-[66vh] overflow-y-auto">
-                {(item: GameDto) => (
+                {(item: GameSummaryDto) => (
                     <ListBox.Item key={item.id} id={item.id} textValue={item.title}>
                         <div className="flex flex-row gap-4 items-center">
                             <GameCover game={item} size={75} showTitle={false}/>

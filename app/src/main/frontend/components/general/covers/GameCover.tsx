@@ -1,4 +1,4 @@
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {GameCoverFallback} from "Frontend/components/general/covers/GameCoverFallback";
 import {memo, useEffect, useMemo, useRef, useState} from "react";
 import {blurhashToDataUrl, imageRetryDelay, MAX_IMAGE_RETRIES, withRetryParam} from "Frontend/util/images";
@@ -13,7 +13,8 @@ const radiusClasses: Record<NonNullable<GameCoverProps["radius"]>, string> = {
 };
 
 interface GameCoverProps {
-    game: GameDto;
+    /** Works with both summary and full DTOs */
+    game: Pick<GameSummaryDto, "id" | "title" | "cover">;
     size?: number;
     radius?: "none" | "sm" | "md" | "lg";
     interactive?: boolean;

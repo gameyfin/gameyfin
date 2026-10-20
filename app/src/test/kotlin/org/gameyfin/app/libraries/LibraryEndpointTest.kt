@@ -2,6 +2,7 @@ package org.gameyfin.app.libraries
 
 import io.mockk.*
 import org.gameyfin.app.core.security.isCurrentUserAdmin
+import org.gameyfin.app.core.sync.EntityEventType
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.pluginapi.gamemetadata.Platform
@@ -38,8 +39,8 @@ class LibraryEndpointTest {
     fun `subscribeToLibraryEvents should return admin flux when user is admin`() {
         mockkObject(LibraryService.Companion)
         every { isCurrentUserAdmin() } returns true
-        val adminEvent = LibraryAdminEvent.Created(createAdminDto(1L))
-        val adminFlux: Flux<List<LibraryAdminEvent>> = Flux.just(listOf(adminEvent))
+        val adminEvent = LibraryEvent(EntityEventType.CREATED, 1L, summary = createSummaryDto(1L, admin = true))
+        val adminFlux: Flux<List<LibraryEvent>> = Flux.just(listOf(adminEvent))
         every { LibraryService.subscribeAdmin() } returns adminFlux
 
         val result = libraryEndpoint.subscribeToLibraryEvents()
@@ -52,15 +53,8 @@ class LibraryEndpointTest {
     fun `subscribeToLibraryEvents should return user flux when user is not admin`() {
         mockkObject(LibraryService.Companion)
         every { isCurrentUserAdmin() } returns false
-        val userDto = LibraryUserDto(
-            id = 1L,
-            createdAt = Instant.now(),
-            name = "Test Library",
-            gameIds = emptyList(),
-            metadata = LibraryMetadataDto(true, 1)
-        )
-        val userEvent = LibraryUserEvent.Created(userDto)
-        val userFlux: Flux<List<LibraryUserEvent>> = Flux.just(listOf(userEvent))
+        val userEvent = LibraryEvent(EntityEventType.CREATED, 1L, summary = createSummaryDto(1L, admin = false))
+        val userFlux: Flux<List<LibraryEvent>> = Flux.just(listOf(userEvent))
         every { LibraryService.subscribeUser() } returns userFlux
 
         val result = libraryEndpoint.subscribeToLibraryEvents()
@@ -74,8 +68,16 @@ class LibraryEndpointTest {
     fun `subscribeToLibraryEvents should emit admin events to admin subscribers`() {
         mockkObject(LibraryService.Companion)
         every { isCurrentUserAdmin() } returns true
-        val event = LibraryAdminEvent.Updated(createAdminDto(1L))
-        val adminFlux: Flux<List<LibraryAdminEvent>> = Flux.just(listOf(event))
+        val event = LibraryEvent(
+            EntityEventType.UPDATED,
+            1L,
+            patch = LibraryPatchDto(
+                updatedAt = Instant.now(),
+                fields = listOf(LibraryField.NAME),
+                values = LibraryPatchValuesDto(name = "Renamed")
+            )
+        )
+        val adminFlux: Flux<List<LibraryEvent>> = Flux.just(listOf(event))
         every { LibraryService.subscribeAdmin() } returns adminFlux
 
         val result = libraryEndpoint.subscribeToLibraryEvents()
@@ -87,24 +89,36 @@ class LibraryEndpointTest {
     }
 
     @Test
-    fun `getAll should return all libraries from service`() {
-        val libraries = listOf(createAdminDto(1L), createAdminDto(2L))
-        every { libraryService.getAll() } returns libraries
+    fun `sync should delegate to service with admin flag`() {
+        val since = Instant.parse("2024-01-01T00:00:00Z")
+        val syncDto = LibrarySyncDto(Instant.now(), false, listOf(createSummaryDto(1L, true)), listOf(1L))
+        every { isCurrentUserAdmin() } returns true
+        every { libraryService.sync(since, true) } returns syncDto
 
-        val result = libraryEndpoint.getAll()
+        val result = libraryEndpoint.sync(since)
 
-        assertEquals(libraries, result)
-        verify(exactly = 1) { libraryService.getAll() }
+        assertEquals(syncDto, result)
+        verify(exactly = 1) { libraryService.sync(since, true) }
     }
 
     @Test
-    fun `getAll should return empty list when no libraries exist`() {
-        every { libraryService.getAll() } returns emptyList()
+    fun `sync should delegate to service for non-admin users`() {
+        val syncDto = LibrarySyncDto(Instant.now(), true, emptyList(), emptyList())
+        every { isCurrentUserAdmin() } returns false
+        every { libraryService.sync(null, false) } returns syncDto
 
-        val result = libraryEndpoint.getAll()
+        val result = libraryEndpoint.sync(null)
 
-        assertEquals(emptyList(), result)
-        verify(exactly = 1) { libraryService.getAll() }
+        assertEquals(syncDto, result)
+        verify(exactly = 1) { libraryService.sync(null, false) }
+    }
+
+    @Test
+    fun `getById should return full library from service`() {
+        val dto = createAdminDto(1L)
+        every { libraryService.getAdminDtoById(1L) } returns dto
+
+        assertEquals(dto, libraryEndpoint.getById(1L))
     }
 
     @Test
@@ -235,6 +249,15 @@ class LibraryEndpointTest {
         verify(exactly = 1) { libraryService.delete(3L) }
     }
 
+    private fun createSummaryDto(id: Long, admin: Boolean) = LibrarySummaryDto(
+        id = id,
+        name = "Test Library",
+        createdAt = Instant.now(),
+        updatedAt = Instant.now(),
+        metadata = LibraryMetadataDto(true, 1),
+        platforms = if (admin) listOf(Platform.PC_MICROSOFT_WINDOWS) else null
+    )
+
     private fun createAdminDto(
         id: Long = 1L,
         name: String = "Test Library"
@@ -245,8 +268,6 @@ class LibraryEndpointTest {
             name = name,
             directories = emptyList(),
             platforms = emptyList(),
-            gameIds = emptyList(),
-            stats = LibraryStatsDto(0, 0),
             ignoredPaths = emptyList(),
             metadata = LibraryMetadataDto(true, 1)
         )

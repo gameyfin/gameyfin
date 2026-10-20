@@ -1,10 +1,10 @@
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {useMemo} from "react";
 import {ProgressCircle} from "@heroui/react";
 import {metadataCompleteness} from "Frontend/util/utils";
 
 interface MetadataCompletenessIndicatorProps {
-    game: GameDto;
+    game: GameSummaryDto;
 }
 
 export default function MetadataCompletenessIndicator({game}: MetadataCompletenessIndicatorProps) {

@@ -8,11 +8,14 @@ import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
+import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.games.dto.GameDto
+import org.gameyfin.app.games.dto.GameSummaryDto
 import org.gameyfin.app.games.dto.GameUpdateDto
 import org.gameyfin.app.games.dto.GameUpdateMetadataDto
 import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDtos
+import org.gameyfin.app.games.extensions.toSummaryDto
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
@@ -37,8 +40,10 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class GameServiceTest {
 
@@ -104,33 +109,66 @@ class GameServiceTest {
     }
 
     @Test
-    fun `getAll should return all games as DTOs`() {
+    fun `sync without timestamp should return all game summaries`() {
         val game1 = createTestGame(1L)
         val game2 = createTestGame(2L)
-        val games = listOf(game1, game2)
-        val gameDtos = mockk<List<GameDto>>()
+        val summary1 = mockk<GameSummaryDto>()
+        val summary2 = mockk<GameSummaryDto>()
 
-        every { gameRepository.findAll() } returns games
-        every { games.toDtos() } returns gameDtos
+        every { gameRepository.findAll() } returns listOf(game1, game2)
+        every { game1.toSummaryDto(true) } returns summary1
+        every { game2.toSummaryDto(true) } returns summary2
 
-        val result = gameService.getAll()
+        val before = Instant.now()
+        val result = gameService.sync(null, true)
 
-        assertEquals(gameDtos, result)
-        verify(exactly = 1) { gameRepository.findAll() }
+        assertTrue(result.full)
+        assertEquals(listOf(summary1, summary2), result.games)
+        assertTrue(result.allIds.isEmpty())
+        assertFalse(result.serverTime.isBefore(before))
+        verify(exactly = 0) { gameRepository.findAllIds() }
+        verify(exactly = 0) { gameRepository.findAllByUpdatedAtAfter(any()) }
     }
 
     @Test
-    fun `getAll should return empty list when no games exist`() {
-        val emptyList = emptyList<Game>()
-        val emptyDtoList = emptyList<GameDto>()
+    fun `sync with timestamp should return changed summaries and all ids`() {
+        val since = Instant.parse("2024-01-01T12:00:00Z")
+        val game = createTestGame(1L)
+        val summary = mockk<GameSummaryDto>()
 
-        every { gameRepository.findAll() } returns emptyList
-        every { emptyList.toDtos() } returns emptyDtoList
+        every { gameRepository.findAllByUpdatedAtAfter(since.minus(SYNC_SAFETY_WINDOW)) } returns listOf(game)
+        every { gameRepository.findAllIds() } returns listOf(1L, 2L, 3L)
+        every { game.toSummaryDto(false) } returns summary
 
-        val result = gameService.getAll()
+        val result = gameService.sync(since, false)
 
-        assertEquals(emptyList(), result)
-        verify(exactly = 1) { gameRepository.findAll() }
+        assertFalse(result.full)
+        assertEquals(listOf(summary), result.games)
+        assertEquals(listOf(1L, 2L, 3L), result.allIds)
+        verify(exactly = 0) { gameRepository.findAll() }
+    }
+
+    @Test
+    fun `getDtoById should return null for unknown game`() {
+        every { gameRepository.findByIdOrNull(99L) } returns null
+
+        assertNull(gameService.getDtoById(99L))
+    }
+
+    @Test
+    fun `getDtosByIds should return empty list without querying for empty input`() {
+        assertEquals(emptyList(), gameService.getDtosByIds(emptyList()))
+        verify(exactly = 0) { gameRepository.findAllById(any()) }
+    }
+
+    @Test
+    fun `getDtosByIds should map found games to DTOs`() {
+        val game = createTestGame(1L)
+        val dtos = listOf(mockk<GameDto>())
+        every { gameRepository.findAllById(listOf(1L, 2L)) } returns listOf(game)
+        every { listOf(game).toDtos() } returns dtos
+
+        assertEquals(dtos, gameService.getDtosByIds(listOf(1L, 2L, 1L)))
     }
 
     @Test

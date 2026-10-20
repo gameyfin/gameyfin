@@ -12,10 +12,9 @@ import {
     Virtualizer
 } from "@heroui/react";
 import React, {useMemo, useState} from "react";
-import {GameAdminDto} from "Frontend/dtos/GameDtos";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
 import {MinusIcon, PlusIcon, XIcon} from "@phosphor-icons/react";
-import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import {libraryState} from "Frontend/state/LibraryState";
 import {gameState} from "Frontend/state/GameState";
 import {collectionState} from "Frontend/state/CollectionState";
@@ -26,9 +25,9 @@ interface CollectionGamesTableProps {
 
 export default function CollectionGamesTable({collectionId}: CollectionGamesTableProps) {
     const gamesState = useSnapshot(gameState);
-    const games = gamesState.games as GameAdminDto[];
+    const games = gamesState.games;
     const librariesState = useSnapshot(libraryState);
-    const libraries = librariesState.state as Record<number, LibraryAdminDto>;
+    const libraries = librariesState.state;
     const collectionsState = useSnapshot(collectionState);
     const collection = collectionsState.state[collectionId];
 
@@ -36,7 +35,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<"all" | "inCollection" | "notInCollection">("all");
 
-    function libraryName(game: GameAdminDto) {
+    function libraryName(game: GameSummaryDto) {
         return libraries[game.libraryId]?.name || "Unknown";
     }
 
@@ -49,7 +48,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
         return map;
     }, [games, collection.gameIds]);
 
-    function isGameInCollection(game: GameAdminDto) {
+    function isGameInCollection(game: GameSummaryDto) {
         return gameInCollectionMap.get(game.id) ?? false;
     }
 
@@ -92,11 +91,11 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
             .map(game => ({...game, _inCollection: isGameInCollection(game)}));
     }, [filteredGames, sortDescriptor, libraries, gameInCollectionMap]);
 
-    async function addGameToCollection(game: GameAdminDto) {
+    async function addGameToCollection(game: GameSummaryDto) {
         await CollectionEndpoint.addGameToCollection(collectionId, game.id);
     }
 
-    async function removeGameFromCollection(game: GameAdminDto) {
+    async function removeGameFromCollection(game: GameSummaryDto) {
         await CollectionEndpoint.removeGameFromCollection(collectionId, game.id);
     }
 

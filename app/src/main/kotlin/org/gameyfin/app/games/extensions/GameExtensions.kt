@@ -29,7 +29,6 @@ fun Game.toAdminDto(): GameAdminDto {
         createdAt = createdAt!!,
         updatedAt = updatedAt!!,
         libraryId = this.library.id!!,
-        collectionIds = this.collections.mapNotNull { it.id },
         title = title!!,
         platforms = this.platforms,
         cover = this.coverImage?.toDto(),
@@ -58,7 +57,6 @@ fun Game.toUserDto(): GameUserDto {
         createdAt = createdAt!!,
         updatedAt = updatedAt!!,
         libraryId = this.library.id!!,
-        collectionIds = this.collections.mapNotNull { it.id },
         title = title!!,
         platforms = this.platforms,
         cover = this.coverImage?.toDto(),
@@ -79,6 +77,80 @@ fun Game.toUserDto(): GameUserDto {
         videoUrls = this.videoUrls.map { it.toString() },
         metadata = this.metadata.toUserDto()
     )
+}
+
+fun Game.toSummaryDto(admin: Boolean): GameSummaryDto {
+    return GameSummaryDto(
+        id = id!!,
+        createdAt = createdAt!!,
+        updatedAt = updatedAt!!,
+        libraryId = this.library.id!!,
+        title = title!!,
+        platforms = this.platforms.toList(),
+        cover = this.coverImage?.toDto(),
+        header = this.headerImage?.toDto(),
+        previewImage = this.images.firstOrNull()?.toDto(),
+        release = this.release?.atZone(ZoneOffset.UTC)?.toLocalDate(),
+        userRating = this.userRating,
+        criticRating = this.criticRating,
+        publishers = this.publishers.map { it.name }.ifEmpty { null },
+        developers = this.developers.map { it.name }.ifEmpty { null },
+        genres = this.genres.toList().ifEmpty { null },
+        themes = this.themes.toList().ifEmpty { null },
+        keywords = this.keywords.toList().ifEmpty { null },
+        features = this.features.toList().ifEmpty { null },
+        perspectives = this.perspectives.toList().ifEmpty { null },
+        fileSize = this.metadata.fileSize ?: 0L,
+        path = if (admin) this.metadata.path else null,
+        downloadCount = if (admin) this.metadata.downloadCount else null,
+        matchConfirmed = if (admin) this.metadata.matchConfirmed else null
+    )
+}
+
+/**
+ * Builds a patch containing only the given fields. Admin-only fields are dropped for non-admins.
+ * Returns `null` if no field is visible for the given audience.
+ */
+fun Game.toPatchDto(fields: Set<GameField>, admin: Boolean): GamePatchDto? {
+    val visibleFields = fields.filter { admin || !it.adminOnly }.sorted()
+    if (visibleFields.isEmpty()) return null
+
+    var values = GamePatchValuesDto()
+    for (field in visibleFields) {
+        values = when (field) {
+            GameField.LIBRARY_ID -> values.copy(libraryId = library.id)
+            GameField.TITLE -> values.copy(title = title)
+            GameField.PLATFORMS -> values.copy(platforms = platforms.toList())
+            GameField.COVER -> values.copy(cover = coverImage?.toDto())
+            GameField.HEADER -> values.copy(header = headerImage?.toDto())
+            GameField.COMMENT -> values.copy(comment = comment)
+            GameField.SUMMARY -> values.copy(summary = summary)
+            GameField.RELEASE -> values.copy(release = release?.atZone(ZoneOffset.UTC)?.toLocalDate())
+            GameField.USER_RATING -> values.copy(userRating = userRating)
+            GameField.CRITIC_RATING -> values.copy(criticRating = criticRating)
+            GameField.PUBLISHERS -> values.copy(publishers = publishers.map { it.name })
+            GameField.DEVELOPERS -> values.copy(developers = developers.map { it.name })
+            GameField.GENRES -> values.copy(genres = genres.toList())
+            GameField.THEMES -> values.copy(themes = themes.toList())
+            GameField.KEYWORDS -> values.copy(keywords = keywords.toList())
+            GameField.FEATURES -> values.copy(features = features.toList())
+            GameField.PERSPECTIVES -> values.copy(perspectives = perspectives.toList())
+            GameField.IMAGES -> values.copy(
+                images = images.map { it.toDto() },
+                previewImage = images.firstOrNull()?.toDto()
+            )
+
+            GameField.VIDEO_URLS -> values.copy(videoUrls = videoUrls.map { it.toString() })
+            GameField.FILE_SIZE -> values.copy(fileSize = metadata.fileSize ?: 0L)
+            GameField.PATH -> values.copy(path = metadata.path)
+            GameField.DOWNLOAD_COUNT -> values.copy(downloadCount = metadata.downloadCount)
+            GameField.MATCH_CONFIRMED -> values.copy(matchConfirmed = metadata.matchConfirmed)
+            GameField.FIELD_METADATA -> values.copy(fieldMetadata = metadata.fields.mapValues { it.value.toDto() })
+            GameField.ORIGINAL_IDS -> values.copy(originalIds = metadata.originalIds.mapKeys { it.key.pluginId })
+        }
+    }
+
+    return GamePatchDto(updatedAt = updatedAt!!, fields = visibleFields, values = values)
 }
 
 fun GameMetadata.toAdminDto(): GameMetadataAdminDto {

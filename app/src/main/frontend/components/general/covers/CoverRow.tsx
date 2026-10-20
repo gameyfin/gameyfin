@@ -1,12 +1,12 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {CaretLeftIcon, CaretRightIcon} from "@phosphor-icons/react";
 import {Button, Link} from "@heroui/react";
 import {Grid, GridImperativeAPI} from "react-window";
 
 interface CoverRowProps {
-    games: GameDto[];
+    games: GameSummaryDto[];
     title: string;
     link: string;
 }
@@ -105,7 +105,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
         columnIndex: number;
         rowIndex: number;
         style: React.CSSProperties;
-        games: GameDto[];
+        games: GameSummaryDto[];
     }
 
     // Cell renderer for react-window Grid
@@ -151,7 +151,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
             </div>
             <div ref={containerRef} className="w-full relative overflow-hidden">
                 {containerWidth > 0 && (
-                    <Grid<{ games: GameDto[] }>
+                    <Grid<{ games: GameSummaryDto[] }>
                         gridRef={gridRef}
                         columnCount={games.length}
                         columnWidth={defaultImageWidth + gap}
