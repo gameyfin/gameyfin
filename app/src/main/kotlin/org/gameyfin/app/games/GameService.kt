@@ -18,9 +18,9 @@ import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.replaceRomanNumerals
 import org.gameyfin.app.core.security.getCurrentAuth
-import org.gameyfin.app.core.tasks.logging.submitWithMdc
 import org.gameyfin.app.core.sync.EntityEventBroadcaster
 import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
+import org.gameyfin.app.core.tasks.logging.submitWithMdc
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDto
@@ -46,6 +46,8 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.time.Duration.Companion.seconds
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
 
@@ -171,6 +173,7 @@ class GameService(
                 userService.findByOidcProviderId(subject)
                     ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
             }
+
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
