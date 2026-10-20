@@ -4,13 +4,10 @@ import com.vaadin.flow.server.auth.AnonymousAllowed
 import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.collections.dto.*
-import org.gameyfin.app.collections.extensions.toAdminDto
-import org.gameyfin.app.collections.extensions.toDto
-import org.gameyfin.app.collections.extensions.toUserDto
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
-import org.gameyfin.app.core.security.isCurrentUserAdmin
 import reactor.core.publisher.Flux
+import java.time.Instant
 
 @Endpoint
 @DynamicPublicAccess
@@ -18,17 +15,16 @@ import reactor.core.publisher.Flux
 class CollectionEndpoint(
     private val collectionService: CollectionService
 ) {
-    fun subscribeToCollectionEvents(): Flux<out List<CollectionEvent>> {
-        return if (isCurrentUserAdmin()) {
-            CollectionService.subscribeAdmin()
-        } else {
-            CollectionService.subscribeUser()
-        }
-    }
+    fun subscribeToCollectionEvents(): Flux<out List<CollectionEvent>> = CollectionService.subscribe()
 
-    fun getAll(): List<CollectionDto> = collectionService.getAll()
+    /**
+     * Delta synchronization of the collections.
+     *
+     * @param since `serverTime` of the last synchronization, `null` to fetch all collections
+     */
+    fun sync(since: Instant?): CollectionSyncDto = collectionService.sync(since)
 
-    fun getById(id: Long): CollectionDto = collectionService.getById(id).toDto()
+    fun getById(id: Long): CollectionDto? = collectionService.getDtoById(id)
 
     @RolesAllowed(Role.Names.ADMIN)
     fun createCollection(dto: CollectionCreateDto) = collectionService.create(dto)
@@ -49,14 +45,4 @@ class CollectionEndpoint(
 
     @RolesAllowed(Role.Names.ADMIN)
     fun deleteCollection(collectionId: Long) = collectionService.delete(collectionId)
-
-    /* Unused endpoints for Hilla to generate TypeScript classes */
-
-    @Suppress("Unused", "FunctionName", "kotlin:S100")
-    @RolesAllowed(Role.Names.ADMIN)
-    fun _getAdminDto(id: Long): CollectionAdminDto = collectionService.getById(id).toAdminDto()
-
-    @Suppress("Unused", "FunctionName", "kotlin:S100")
-    @RolesAllowed(Role.Names.ADMIN)
-    fun _getUserDto(id: Long): CollectionUserDto = collectionService.getById(id).toUserDto()
 }

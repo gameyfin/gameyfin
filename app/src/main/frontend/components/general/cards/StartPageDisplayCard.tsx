@@ -1,60 +1,53 @@
 import {Card, Chip} from "@heroui/react";
 import React, {useMemo} from "react";
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
+import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import Rand from "rand-seed";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
+import {useRandomlyOrderedGamesByCollectionId} from "Frontend/state/derived";
 import {useNavigate} from "react-router";
 import ImageDto from "Frontend/generated/org/gameyfin/app/media/ImageDto";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 
 
 interface StartPageDisplayCardProps {
-    item: LibraryDto | CollectionDto;
+    item: LibrarySummaryDto | CollectionDto;
 }
 
 export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     const navigate = useNavigate();
 
-    const isCollection = (libraryOrCollection: LibraryDto | CollectionDto): libraryOrCollection is CollectionDto => {
+    const isCollection = (libraryOrCollection: LibrarySummaryDto | CollectionDto): libraryOrCollection is CollectionDto => {
         return 'description' in libraryOrCollection;
     };
 
-    const isLibrary = (libraryOrCollection: LibraryDto | CollectionDto): libraryOrCollection is LibraryDto => {
+    const isLibrary = (libraryOrCollection: LibrarySummaryDto | CollectionDto): libraryOrCollection is LibrarySummaryDto => {
         return !('description' in libraryOrCollection);
     };
 
     const gamesState = useSnapshot(gameState);
-    const randomImage = useMemo<ImageDto | null>(() => getRandomImage(), [item]);
+    const randomlyOrderedGamesByCollectionId = useRandomlyOrderedGamesByCollectionId();
+    const randomImage = useMemo<ImageDto | null>(() => getRandomImage(), [item, gamesState.state, randomlyOrderedGamesByCollectionId]);
     const link = useMemo<string>(() => getLink(), [item]);
     const type = isCollection(item) ? 'Collection' : 'Library';
 
     /**
-     * Gets a random screenshot from the games in the specified library or collection.
-     * Since the Random class is seeded with the game ID, the same game and image will always be selected for a given library/collection (unless the games inside change).
-     * @return {ImageDto | null} The random screenshot or null if none found.
+     * Gets a screenshot from a random game in the specified library or collection.
+     * Since the games are ordered with a seeded random, the same game will always be selected for a given library/collection (unless the games inside change).
+     * @return {ImageDto | null} The screenshot or null if none found.
      */
     function getRandomImage(): ImageDto | null {
-        let games: GameDto[] = [];
+        let games: readonly GameSummaryDto[] | undefined;
 
         if (isCollection(item)) {
-            games = gamesState.randomlyOrderedGamesByCollectionId[item.id] as GameDto[];
+            games = randomlyOrderedGamesByCollectionId[item.id];
         } else if (isLibrary(item)) {
-            games = gamesState.randomlyOrderedGamesByLibraryId[item.id] as GameDto[];
+            games = gamesState.randomlyOrderedGamesByLibraryId[item.id];
         }
 
-        if (!games || games.length == 0) return null;
-
         // Find the first game that has at least one screenshot available
-        let game: GameDto | undefined = games.find(game => game.images && game.images.length > 0);
-
-        if (!game) return null;
-
-        const random = new Rand(`${item.id}-${game.id}`);
-        const randomImageIndex = Math.floor(random.next() * game.images!.length);
-        return game.images![randomImageIndex] as ImageDto;
+        return games?.find(game => game.previewImage)?.previewImage ?? null;
     }
 
     function getLink(): string {

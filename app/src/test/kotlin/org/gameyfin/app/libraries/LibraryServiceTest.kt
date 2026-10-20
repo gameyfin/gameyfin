@@ -3,6 +3,7 @@ package org.gameyfin.app.libraries
 import com.vaadin.hilla.exception.EndpointException
 import io.mockk.*
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.libraries.dto.*
@@ -12,7 +13,8 @@ import org.gameyfin.app.libraries.entities.IgnoredPathUserSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.extensions.toDto
-import org.gameyfin.app.libraries.extensions.toDtos
+import org.gameyfin.app.libraries.extensions.toAdminDto
+import org.gameyfin.app.libraries.extensions.toSummaryDto
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.pluginapi.gamemetadata.Platform
@@ -24,7 +26,9 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.Authentication
 import java.time.Instant
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LibraryServiceTest {
@@ -53,36 +57,57 @@ class LibraryServiceTest {
     }
 
     @Test
-    fun `getAll should return all libraries as DTOs`() {
+    fun `sync without timestamp should return all library summaries`() {
         val library1 = createTestLibrary(1L, "Library 1")
         val library2 = createTestLibrary(2L, "Library 2")
-        val libraries = listOf(library1, library2)
-        val libraryDtos = listOf(
-            createAdminDto(1L, "Library 1"),
-            createAdminDto(2L, "Library 2")
-        )
+        val summary1 = createSummaryDto(1L, "Library 1")
+        val summary2 = createSummaryDto(2L, "Library 2")
 
-        every { libraryRepository.findAll() } returns libraries
-        every { libraries.toDtos() } returns libraryDtos
+        every { libraryRepository.findAll() } returns listOf(library1, library2)
+        every { library1.toSummaryDto(true) } returns summary1
+        every { library2.toSummaryDto(true) } returns summary2
 
-        val result = libraryService.getAll()
+        val result = libraryService.sync(null, true)
 
-        assertEquals(2, result.size)
-        assertEquals(libraryDtos, result)
-        verify(exactly = 1) { libraryRepository.findAll() }
+        assertTrue(result.full)
+        assertEquals(listOf(summary1, summary2), result.libraries)
+        assertTrue(result.allIds.isEmpty())
+        verify(exactly = 0) { libraryRepository.findAllIds() }
     }
 
     @Test
-    fun `getAll should return empty list when no libraries exist`() {
-        val emptyList = emptyList<Library>()
+    fun `sync with timestamp should return changed summaries and all ids`() {
+        val since = Instant.parse("2024-01-01T12:00:00Z")
+        val library = createTestLibrary(1L, "Library 1")
+        val summary = createSummaryDto(1L, "Library 1")
 
-        every { libraryRepository.findAll() } returns emptyList
-        every { emptyList.toDtos() } returns emptyList()
+        every { libraryRepository.findAllByUpdatedAtAfter(since.minus(SYNC_SAFETY_WINDOW)) } returns listOf(library)
+        every { libraryRepository.findAllIds() } returns listOf(1L, 2L)
+        every { library.toSummaryDto(false) } returns summary
 
-        val result = libraryService.getAll()
+        val result = libraryService.sync(since, false)
 
-        assertTrue(result.isEmpty())
-        verify(exactly = 1) { libraryRepository.findAll() }
+        assertFalse(result.full)
+        assertEquals(listOf(summary), result.libraries)
+        assertEquals(listOf(1L, 2L), result.allIds)
+        verify(exactly = 0) { libraryRepository.findAll() }
+    }
+
+    @Test
+    fun `getAdminDtoById should return null when library does not exist`() {
+        every { libraryRepository.findByIdOrNull(1L) } returns null
+
+        assertNull(libraryService.getAdminDtoById(1L))
+    }
+
+    @Test
+    fun `getAdminDtoById should map library to admin DTO`() {
+        val library = createTestLibrary(1L, "Library 1")
+        val dto = createAdminDto(1L, "Library 1")
+        every { libraryRepository.findByIdOrNull(1L) } returns library
+        every { library.toAdminDto() } returns dto
+
+        assertEquals(dto, libraryService.getAdminDtoById(1L))
     }
 
     @Test
@@ -490,6 +515,14 @@ class LibraryServiceTest {
         }
     }
 
+    private fun createSummaryDto(id: Long, name: String) = LibrarySummaryDto(
+        id = id,
+        name = name,
+        createdAt = Instant.now(),
+        updatedAt = Instant.now(),
+        metadata = LibraryMetadataDto(true, 1)
+    )
+
     private fun createAdminDto(
         id: Long = 1L,
         name: String = "Test Library",
@@ -502,8 +535,6 @@ class LibraryServiceTest {
             name = name,
             directories = directories,
             platforms = platforms,
-            gameIds = emptyList(),
-            stats = LibraryStatsDto(0, 0),
             ignoredPaths = emptyList(),
             metadata = LibraryMetadataDto(true, 1)
         )

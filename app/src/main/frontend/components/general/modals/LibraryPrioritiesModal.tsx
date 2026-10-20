@@ -2,7 +2,7 @@ import React from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
+import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
 import LibraryUpdateDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryUpdateDto";
 import PrioritiesModal from "./PrioritiesModal";
 
@@ -15,7 +15,7 @@ export default function LibraryPrioritiesModal({isOpen, onOpenChange}: LibraryPr
 
     const libraries = useSnapshot(libraryState).sorted;
 
-    const updateLibraries = async (reorderedLibraries: LibraryDto[]) => {
+    const updateLibraries = async (reorderedLibraries: LibrarySummaryDto[]) => {
         const updateDtos: LibraryUpdateDto[] = reorderedLibraries.map((library, index): LibraryUpdateDto => {
             return {
                 id: library.id,

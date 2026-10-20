@@ -1,17 +1,17 @@
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
+import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import {Grid} from "react-window";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 interface CoverGridProps {
-    games: GameDto[];
+    games: GameSummaryDto[];
 }
 
 interface GridCellProps {
     columnIndex: number;
     rowIndex: number;
     style: React.CSSProperties;
-    games: GameDto[];
+    games: GameSummaryDto[];
     columnCount: number;
     coverHeight: number;
 }
@@ -106,7 +106,7 @@ export default function CoverGrid({games}: CoverGridProps) {
     return (
         <div ref={containerRef} className="w-full">
             {containerWidth > 0 && (
-                <Grid<{ games: GameDto[], columnCount: number, coverHeight: number }>
+                <Grid<{ games: GameSummaryDto[], columnCount: number, coverHeight: number }>
                     columnCount={columnCount}
                     columnWidth={getColumnWidth}
                     rowCount={rowCount}

@@ -1,18 +1,16 @@
 package org.gameyfin.app.games.dto
 
+import org.gameyfin.app.core.sync.EntityEventType
 
-sealed interface GameEvent {
-    val type: String
-}
-
-sealed class GameUserEvent : GameEvent {
-    data class Created(val game: GameUserDto, override val type: String = "created") : GameUserEvent()
-    data class Updated(val game: GameUserDto, override val type: String = "updated") : GameUserEvent()
-    data class Deleted(val gameId: Long, override val type: String = "deleted") : GameUserEvent()
-}
-
-sealed class GameAdminEvent : GameEvent {
-    data class Created(val game: GameAdminDto, override val type: String = "created") : GameAdminEvent()
-    data class Updated(val game: GameAdminDto, override val type: String = "updated") : GameAdminEvent()
-    data class Deleted(val gameId: Long, override val type: String = "deleted") : GameAdminEvent()
-}
+/**
+ * Real-time update for a single game.
+ * - [EntityEventType.CREATED]: [summary] is set
+ * - [EntityEventType.UPDATED]: [patch] is set and contains only the changed fields
+ * - [EntityEventType.DELETED]: only [id] is set
+ */
+data class GameEvent(
+    val type: EntityEventType,
+    val id: Long,
+    val summary: GameSummaryDto? = null,
+    val patch: GamePatchDto? = null
+)

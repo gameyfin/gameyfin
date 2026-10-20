@@ -78,13 +78,13 @@ class Game(
     @ElementCollection(targetClass = PlayerPerspective::class, fetch = FetchType.EAGER)
     var perspectives: List<PlayerPerspective> = emptyList(),
 
-    @ManyToMany(cascade = [MERGE, REFRESH], fetch = FetchType.EAGER)
+    @ManyToMany(cascade = [MERGE, REFRESH], fetch = FetchType.LAZY)
     var images: MutableList<Image> = mutableListOf(),
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     var videoUrls: List<URI> = emptyList(),
 
-    @ManyToMany(mappedBy = "games", fetch = FetchType.EAGER)
+    @ManyToMany(mappedBy = "games", fetch = FetchType.LAZY)
     var collections: MutableList<Collection> = mutableListOf(),
 
     @Embedded
