@@ -111,6 +111,12 @@ fun String.replaceRomanNumerals(): String {
     }
 }
 
+/**
+ * Removes multiple consecutive whitespace characters and replaces them with a single space.
+ */
+fun String.removeMultiSpaces(): String {
+    return this.replace(Regex("\\s+"), " ")
+}
 
 /**
  * Get the remote IP address, preferring IPv4 over IPv6.

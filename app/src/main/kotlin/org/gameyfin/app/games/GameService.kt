@@ -16,6 +16,7 @@ import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
+import org.gameyfin.app.core.removeMultiSpaces
 import org.gameyfin.app.core.replaceRomanNumerals
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.core.sync.EntityEventBroadcaster
@@ -991,5 +992,5 @@ class GameService(
         return FuzzySearch.ratio(this.normalizeGameTitle(), other.normalizeGameTitle()) > minRatio
     }
 
-    fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals()
+    fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals().removeMultiSpaces()
 }
