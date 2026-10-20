@@ -60,6 +60,7 @@ class GameService(
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
+        private const val PLUGIN_QUERY_TIMEOUT_SECONDS = 120L
 
         /* Websockets */
         private val gameUserEvents = Sinks.many().multicast().onBackpressureBuffer<GameUserEvent>(1024, false)
@@ -800,7 +801,15 @@ class GameService(
                 }
             }
         }
-        return futures.mapValues { it.value.get() }
+        return futures.mapValues { (plugin, future) ->
+            try {
+                future.get(PLUGIN_QUERY_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS)
+            } catch (_: java.util.concurrent.TimeoutException) {
+                future.cancel(true)
+                log.warn { "Metadata plugin '${plugin.javaClass.name}' did not respond within ${PLUGIN_QUERY_TIMEOUT_SECONDS}s for title '$gameTitle'" }
+                null
+            }
+        }
     }
 
     /**

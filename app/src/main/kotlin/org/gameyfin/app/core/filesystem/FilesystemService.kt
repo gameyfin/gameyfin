@@ -145,7 +145,21 @@ class FilesystemService(
             if (file.isFile) {
                 file.length()
             } else if (file.isDirectory) {
-                File(path).walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                // Files.walkFileTree does not follow symlinks, so cyclic links can't cause endless traversal
+                var total = 0L
+                java.nio.file.Files.walkFileTree(file.toPath(), object : java.nio.file.SimpleFileVisitor<Path>() {
+                    override fun visitFile(
+                        f: Path,
+                        attrs: java.nio.file.attribute.BasicFileAttributes
+                    ): java.nio.file.FileVisitResult {
+                        if (attrs.isRegularFile) total += attrs.size()
+                        return java.nio.file.FileVisitResult.CONTINUE
+                    }
+
+                    override fun visitFileFailed(f: Path, exc: java.io.IOException): java.nio.file.FileVisitResult =
+                        java.nio.file.FileVisitResult.CONTINUE
+                })
+                total
             } else {
                 0L
             }
