@@ -7,7 +7,7 @@ import {camelCaseToTitle} from "Frontend/util/utils";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
-import {initializeMarketplaceState} from "Frontend/state/MarketplaceState";
+import {initializeMarketplaceState, marketplaceState} from "Frontend/state/MarketplaceState";
 
 interface PluginManagementSectionProps {
     type: string;
@@ -23,7 +23,25 @@ export function matchesSearchTerm(plugin: PluginDto, searchTerm?: string): boole
 }
 
 export function PluginManagementSection({type, searchTerm}: PluginManagementSectionProps) {
-    const allPlugins = useSnapshot(pluginState).sortedByType[type];
+    const state = useSnapshot(pluginState);
+    const marketplace = useSnapshot(marketplaceState);
+    const fallbackTypesByPluginId = useMemo(
+        () => Object.fromEntries(
+            marketplace.plugins
+                .filter(plugin => plugin.types.length > 0)
+                .map(plugin => [plugin.id, plugin.types])
+        ) as Record<string, string[]>,
+        [marketplace.plugins]
+    );
+
+    const allPlugins = useMemo(() => state.plugins.filter((plugin: PluginDto) => {
+        const pluginTypes = plugin.types.length > 0
+            ? plugin.types
+            : (fallbackTypesByPluginId[plugin.id] ?? []);
+
+        return pluginTypes.includes(type);
+    }), [state.plugins, type, fallbackTypesByPluginId]);
+
     const plugins = useMemo(
         () => allPlugins.filter(plugin => matchesSearchTerm(plugin as PluginDto, searchTerm)),
         [allPlugins, searchTerm]

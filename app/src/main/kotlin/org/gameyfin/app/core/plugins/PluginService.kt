@@ -11,6 +11,7 @@ import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.plugins.management.PluginManagementRepository
+import org.gameyfin.app.core.plugins.marketplace.GameyfinUpdateManager
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
@@ -30,7 +31,8 @@ import kotlin.time.toJavaDuration
 class PluginService(
     private val pluginManager: GameyfinPluginManager,
     private val pluginManagementRepository: PluginManagementRepository,
-    private val pluginConfigRepository: PluginConfigRepository
+    private val pluginConfigRepository: PluginConfigRepository,
+    private val updateManager: GameyfinUpdateManager
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
@@ -218,7 +220,7 @@ class PluginService(
 
         return PluginDto(
             id = descriptor.pluginId,
-            types = pluginManager.getExtensionTypes(pluginWrapper.pluginId),
+            types = resolvePluginTypes(pluginWrapper.pluginId, pluginManagementEntry),
             name = descriptor.pluginName,
             description = descriptor.pluginDescription,
             shortDescription = descriptor.pluginShortDescription,
@@ -239,5 +241,19 @@ class PluginService(
             compatible = pluginManager.isCompatible(pluginWrapper),
             failureReason = pluginWrapper.failedException?.message
         )
+    }
+
+    private fun resolvePluginTypes(pluginId: String, pluginManagementEntry: PluginManagementEntry): List<String> {
+        val extensionTypes = pluginManager.getExtensionTypes(pluginId)
+        if (extensionTypes.isNotEmpty()) return extensionTypes
+
+        // Newly installed marketplace plugins can briefly have no PF4J-resolved types until extension discovery settles.
+        val marketplaceId = pluginManagementEntry.sourceMarketplaceId ?: return emptyList()
+
+        return updateManager.findPluginInfo(pluginId, marketplaceId)
+            ?.types
+            ?.filter { it.isNotBlank() }
+            ?.distinct()
+            .orEmpty()
     }
 }

@@ -6,6 +6,8 @@ import org.gameyfin.app.core.plugins.config.PluginConfigEntryKey
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.app.core.plugins.dto.PluginUpdateDto
 import org.gameyfin.app.core.plugins.management.*
+import org.gameyfin.app.core.plugins.marketplace.GameyfinPluginInfo
+import org.gameyfin.app.core.plugins.marketplace.GameyfinUpdateManager
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -30,6 +32,7 @@ class PluginServiceTest {
     private lateinit var pluginManager: GameyfinPluginManager
     private lateinit var pluginManagementRepository: PluginManagementRepository
     private lateinit var pluginConfigRepository: PluginConfigRepository
+    private lateinit var updateManager: GameyfinUpdateManager
     private lateinit var service: PluginService
 
     @BeforeEach
@@ -37,13 +40,15 @@ class PluginServiceTest {
         pluginManager = mockk(relaxed = true)
         pluginManagementRepository = mockk(relaxed = true)
         pluginConfigRepository = mockk(relaxed = true)
+        updateManager = mockk(relaxed = true)
 
         // Default stubs
         every { pluginManager.plugins } returns emptyList()
         every { pluginConfigRepository.findAllByPluginId(any()) } returns emptyList()
         every { pluginManagementRepository.findByIdOrNull(any()) } returns null
+        every { updateManager.findPluginInfo(any(), any()) } returns null
 
-        service = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository)
+        service = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository, updateManager)
     }
 
     @AfterEach
@@ -479,7 +484,7 @@ class PluginServiceTest {
     private fun createServiceCapturingListener(): Pair<PluginService, CapturingSlot<PluginStateListener>> {
         val listenerSlot = slot<PluginStateListener>()
         every { pluginManager.addPluginStateListener(capture(listenerSlot)) } just Runs
-        val serviceWithListener = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository)
+        val serviceWithListener = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository, updateManager)
         assertTrue(listenerSlot.isCaptured)
         return serviceWithListener to listenerSlot
     }
@@ -643,6 +648,44 @@ class PluginServiceTest {
         assertEquals(PluginOrigin.MARKETPLACE, dto.origin)
         assertEquals("official", dto.sourceMarketplaceId)
         verify { pluginManager.getPluginOrigin("marketplace-plugin") }
+    }
+
+    @Test
+    fun `toDto should fall back to marketplace plugin types when PF4J types are empty`() {
+        val wrapper = buildFullPluginWrapper(
+            "marketplace-plugin",
+            origin = PluginOrigin.MARKETPLACE,
+            sourceMarketplaceId = "official"
+        )
+        every { pluginManager.plugins } returns listOf(wrapper)
+        every { pluginManager.getExtensionTypes("marketplace-plugin") } returns emptyList()
+
+        val marketplaceInfo = GameyfinPluginInfo().apply {
+            id = "marketplace-plugin"
+            types = listOf("GameMetadataProvider")
+        }
+        every { updateManager.findPluginInfo("marketplace-plugin", "official") } returns marketplaceInfo
+
+        val dto = service.getAll().single()
+
+        assertEquals(listOf("GameMetadataProvider"), dto.types)
+        verify(exactly = 1) { updateManager.findPluginInfo("marketplace-plugin", "official") }
+    }
+
+    @Test
+    fun `toDto should prefer PF4J plugin types over marketplace fallback`() {
+        val wrapper = buildFullPluginWrapper(
+            "marketplace-plugin",
+            origin = PluginOrigin.MARKETPLACE,
+            sourceMarketplaceId = "official"
+        )
+        every { pluginManager.plugins } returns listOf(wrapper)
+        every { pluginManager.getExtensionTypes("marketplace-plugin") } returns listOf("DownloadProvider")
+
+        val dto = service.getAll().single()
+
+        assertEquals(listOf("DownloadProvider"), dto.types)
+        verify(exactly = 0) { updateManager.findPluginInfo(any(), any()) }
     }
 
     @Test
