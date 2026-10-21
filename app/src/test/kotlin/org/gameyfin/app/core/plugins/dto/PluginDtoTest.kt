@@ -1,11 +1,14 @@
 package org.gameyfin.app.core.plugins.dto
 
+import org.gameyfin.app.core.plugins.management.PluginOrigin
 import org.gameyfin.app.core.plugins.management.PluginTrustLevel
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
 import org.junit.jupiter.api.Test
 import org.pf4j.PluginState
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -243,5 +246,57 @@ class PluginDtoTest {
             assertEquals(priority, dto.priority)
         }
     }
-}
 
+    private fun minimalDto() = PluginDto(
+        id = "plugin",
+        types = emptyList(),
+        name = "Plugin",
+        description = "Desc",
+        version = "1.0.0",
+        author = "Author",
+        hasLogo = false,
+        state = PluginState.STARTED,
+        priority = 1,
+        trustLevel = PluginTrustLevel.UNKNOWN
+    )
+
+    @Test
+    fun `dto should have correct defaults for marketplace fields`() {
+        val dto = minimalDto()
+
+        assertEquals(PluginOrigin.LOCAL, dto.origin)
+        assertNull(dto.sourceMarketplaceId)
+        assertNull(dto.requires)
+        assertTrue(dto.compatible)
+        assertNull(dto.failureReason)
+    }
+
+    @Test
+    fun `dto should store marketplace fields correctly`() {
+        val dto = minimalDto().copy(
+            origin = PluginOrigin.MARKETPLACE,
+            sourceMarketplaceId = "official",
+            requires = ">=2.6.0",
+            compatible = false,
+            failureReason = "Plugin failed to start"
+        )
+
+        assertEquals(PluginOrigin.MARKETPLACE, dto.origin)
+        assertEquals("official", dto.sourceMarketplaceId)
+        assertEquals(">=2.6.0", dto.requires)
+        assertFalse(dto.compatible)
+        assertEquals("Plugin failed to start", dto.failureReason)
+    }
+
+    @Test
+    fun `dto equality should consider marketplace fields`() {
+        val dto = minimalDto()
+
+        assertEquals(dto, minimalDto())
+        assertNotEquals(dto, dto.copy(origin = PluginOrigin.MARKETPLACE))
+        assertNotEquals(dto, dto.copy(sourceMarketplaceId = "official"))
+        assertNotEquals(dto, dto.copy(requires = ">=1.0.0"))
+        assertNotEquals(dto, dto.copy(compatible = false))
+        assertNotEquals(dto, dto.copy(failureReason = "error"))
+    }
+}

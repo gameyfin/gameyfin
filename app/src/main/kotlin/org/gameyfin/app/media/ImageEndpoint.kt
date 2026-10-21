@@ -8,6 +8,7 @@ import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.plugins.marketplace.PluginMarketplaceService
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.users.UserService
 import org.springframework.core.io.ByteArrayResource
@@ -26,7 +27,8 @@ import java.util.concurrent.TimeUnit
 class ImageEndpoint(
     private val imageService: ImageService,
     private val userService: UserService,
-    private val pluginService: PluginService
+    private val pluginService: PluginService,
+    private val pluginMarketplaceService: PluginMarketplaceService
 ) {
 
     @GetMapping("/screenshot/{id}")
@@ -48,6 +50,31 @@ class ImageEndpoint(
     fun getPluginLogo(@PathVariable pluginId: String): ResponseEntity<ByteArrayResource>? {
         val logo = pluginService.getLogo(pluginId)
         return Utils.inputStreamToResponseEntity(logo)
+    }
+
+    /**
+     * Proxies the logo of a plugin listed in a marketplace.
+     * SVGs are served with a restrictive CSP, so embedded scripts can't be executed.
+     */
+    @RolesAllowed(Role.Names.ADMIN)
+    @GetMapping("/marketplace/{marketplaceId}/{pluginId}/logo")
+    fun getMarketplacePluginLogo(
+        @PathVariable marketplaceId: String,
+        @PathVariable pluginId: String
+    ): ResponseEntity<ByteArrayResource> {
+        val logo = pluginMarketplaceService.getLogo(marketplaceId, pluginId) ?: return ResponseEntity.notFound().build()
+        val response = Utils.inputStreamToResponseEntity(logo)
+
+        if (!pluginMarketplaceService.isSupportedLogoType(response.headers.contentType?.toString())) {
+            return ResponseEntity.notFound().build()
+        }
+
+        return ResponseEntity.ok()
+            .headers(response.headers)
+            .header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
+            .header("X-Content-Type-Options", "nosniff")
+            .cacheControl(CacheControl.maxAge(1, TimeUnit.HOURS).cachePrivate())
+            .body(response.body)
     }
 
     @GetMapping("/avatar")

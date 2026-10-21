@@ -13,4 +13,9 @@ data class PluginManagementEntry(
     var priority: Int = 0,
 
     var trustLevel: PluginTrustLevel = PluginTrustLevel.UNKNOWN,
+
+    /**
+     * ID of the marketplace the plugin was installed from (null if the plugin was not installed via a marketplace)
+     */
+    var sourceMarketplaceId: String? = null,
 )

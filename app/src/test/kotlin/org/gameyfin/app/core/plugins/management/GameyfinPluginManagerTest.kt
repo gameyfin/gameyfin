@@ -824,6 +824,535 @@ class GameyfinPluginManagerTest {
     }
 
     // ========================================================================================
+    // Plugin marketplace support: installed plugins root, system version and compatibility
+    // ========================================================================================
+
+    private fun createManager(
+        installedPluginsDirectory: Path = tempPluginsDir.resolve("installed"),
+        applicationVersion: String = ""
+    ): GameyfinPluginManager {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.resolve("plugins").toString())
+        return GameyfinPluginManager(
+            forwardingPluginStateListener,
+            dbPluginStatusProvider,
+            pluginConfigRepository,
+            pluginManagementRepository,
+            pluginDataService,
+            installedPluginsDirectory.toString(),
+            applicationVersion
+        )
+    }
+
+    @Test
+    fun `constructor should use default installed plugins directory when not given`() {
+        System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
+
+        pluginManager = GameyfinPluginManager(
+            forwardingPluginStateListener,
+            dbPluginStatusProvider,
+            pluginConfigRepository,
+            pluginManagementRepository,
+            pluginDataService
+        )
+
+        assertEquals(
+            Path.of(GameyfinPluginManager.DEFAULT_INSTALLED_PLUGINS_DIR).toAbsolutePath().normalize(),
+            pluginManager.installedPluginsRoot
+        )
+        assertEquals("0.0.0", pluginManager.systemVersion)
+    }
+
+    @Test
+    fun `constructor should register pf4j plugins dir and installed plugins dir as plugin roots`() {
+        val installedDir = tempPluginsDir.resolve("installed")
+        pluginManager = createManager(installedPluginsDirectory = installedDir)
+
+        assertEquals(
+            listOf(tempPluginsDir.resolve("plugins"), installedDir),
+            pluginManager.pluginsRoots
+        )
+        assertEquals(installedDir.toAbsolutePath().normalize(), pluginManager.installedPluginsRoot)
+    }
+
+    @Test
+    fun `constructor should normalize installed plugins root`() {
+        pluginManager = createManager(installedPluginsDirectory = tempPluginsDir.resolve("a/../installed"))
+
+        assertEquals(tempPluginsDir.resolve("installed").toAbsolutePath().normalize(), pluginManager.installedPluginsRoot)
+    }
+
+    @Test
+    fun `constructor should fall back to plugins directory when pf4j pluginsDir is not set`() {
+        System.clearProperty("pf4j.pluginsDir")
+
+        pluginManager = GameyfinPluginManager(
+            forwardingPluginStateListener,
+            dbPluginStatusProvider,
+            pluginConfigRepository,
+            pluginManagementRepository,
+            pluginDataService,
+            tempPluginsDir.resolve("installed").toString(),
+            "2.6.0"
+        )
+
+        assertEquals(Path.of("plugins"), pluginManager.pluginsRoots.first())
+    }
+
+    @Test
+    fun `systemVersion should be derived from application version`() {
+        val expectations = mapOf(
+            "2.6.0" to "2.6.0",
+            "2.6.0-preview" to "2.6.0",
+            "2.6.0-SNAPSHOT" to "2.6.0",
+            "2.6.0+build.42" to "2.6.0",
+            "  2.6.1  " to "2.6.1",
+            "10.20.30" to "10.20.30",
+            "" to "0.0.0",
+            "   " to "0.0.0",
+            "2.6" to "0.0.0",
+            "v2.6.0" to "0.0.0",
+            "unknown" to "0.0.0"
+        )
+
+        expectations.forEach { (applicationVersion, expected) ->
+            val manager = createManager(applicationVersion = applicationVersion)
+            assertEquals(expected, manager.systemVersion, "Unexpected system version for '$applicationVersion'")
+        }
+    }
+
+    @Test
+    fun `isCompatible should accept everything when system version is unknown`() {
+        pluginManager = createManager(applicationVersion = "")
+
+        assertTrue(pluginManager.isCompatible(null))
+        assertTrue(pluginManager.isCompatible(">=99.0.0"))
+        assertTrue(pluginManager.isCompatible("<0.0.1"))
+        assertTrue(pluginManager.isCompatible("not a constraint"))
+    }
+
+    @Test
+    fun `isCompatible should accept blank and wildcard constraints`() {
+        pluginManager = createManager(applicationVersion = "2.6.0")
+
+        assertTrue(pluginManager.isCompatible(null))
+        assertTrue(pluginManager.isCompatible(""))
+        assertTrue(pluginManager.isCompatible("   "))
+        assertTrue(pluginManager.isCompatible("*"))
+        assertTrue(pluginManager.isCompatible(" * "))
+    }
+
+    @Test
+    fun `isCompatible should treat exact version as minimum version`() {
+        pluginManager = createManager(applicationVersion = "2.6.0")
+
+        assertTrue(pluginManager.isCompatible("2.6.0"))
+        assertTrue(pluginManager.isCompatible("2.5.0"))
+        assertTrue(pluginManager.isCompatible("1.0.0"))
+        assertTrue(pluginManager.isCompatible(" 2.0.0 "))
+        assertFalse(pluginManager.isCompatible("2.6.1"))
+        assertFalse(pluginManager.isCompatible("3.0.0"))
+    }
+
+    @Test
+    fun `isCompatible should treat exact version as exact when exact versions are allowed`() {
+        pluginManager = createManager(applicationVersion = "2.6.0")
+        pluginManager.isExactVersionAllowed = true
+
+        assertTrue(pluginManager.isCompatible("2.6.0"))
+        assertFalse(pluginManager.isCompatible("2.5.0"))
+    }
+
+    @Test
+    fun `isCompatible should evaluate version ranges`() {
+        pluginManager = createManager(applicationVersion = "2.6.0")
+
+        assertTrue(pluginManager.isCompatible(">=1.0.0 & <3.0.0"))
+        assertTrue(pluginManager.isCompatible(">=2.6.0"))
+        assertTrue(pluginManager.isCompatible("<3.0.0"))
+        assertFalse(pluginManager.isCompatible(">=3.0.0"))
+        assertFalse(pluginManager.isCompatible(">=1.0.0 & <2.0.0"))
+        assertFalse(pluginManager.isCompatible("<2.6.0"))
+    }
+
+    @Test
+    fun `isCompatible should use stripped preview version`() {
+        pluginManager = createManager(applicationVersion = "2.6.0-preview")
+
+        assertTrue(pluginManager.isCompatible(">=2.6.0"))
+        assertTrue(pluginManager.isCompatible("2.6.0"))
+    }
+
+    @Test
+    fun `isCompatible should return false for invalid constraints`() {
+        pluginManager = createManager(applicationVersion = "2.6.0")
+
+        assertFalse(pluginManager.isCompatible("not a constraint"))
+        assertFalse(pluginManager.isCompatible(">=abc"))
+    }
+
+    @Test
+    fun `isCompatible with plugin wrapper should use requires of descriptor`() {
+        pluginManager = createManager(applicationVersion = "2.6.0")
+
+        val compatible = mockk<PluginWrapper>()
+        every { compatible.descriptor.requires } returns ">=2.0.0"
+        val incompatible = mockk<PluginWrapper>()
+        every { incompatible.descriptor.requires } returns ">=3.0.0"
+
+        assertTrue(pluginManager.isCompatible(compatible))
+        assertFalse(pluginManager.isCompatible(incompatible))
+    }
+
+    @Test
+    fun `isInInstalledPluginsRoot should detect paths inside the installed plugins root`() {
+        val installedDir = tempPluginsDir.resolve("installed")
+        pluginManager = createManager(installedPluginsDirectory = installedDir)
+
+        assertTrue(pluginManager.isInInstalledPluginsRoot(installedDir))
+        assertTrue(pluginManager.isInInstalledPluginsRoot(installedDir.resolve("plugin.jar")))
+        assertTrue(pluginManager.isInInstalledPluginsRoot(installedDir.resolve("sub/../plugin.jar")))
+        assertFalse(pluginManager.isInInstalledPluginsRoot(tempPluginsDir.resolve("plugins/plugin.jar")))
+        assertFalse(pluginManager.isInInstalledPluginsRoot(tempPluginsDir.resolve("installed-other/plugin.jar")))
+        assertFalse(pluginManager.isInInstalledPluginsRoot(installedDir.resolve("../plugins/plugin.jar")))
+    }
+
+    @Test
+    fun `isInInstalledPluginsRoot should resolve relative paths against working directory`() {
+        pluginManager = createManager(installedPluginsDirectory = Path.of("relative-installed"))
+
+        assertTrue(pluginManager.isInInstalledPluginsRoot(Path.of("relative-installed/plugin.jar")))
+        assertFalse(pluginManager.isInInstalledPluginsRoot(Path.of("plugins/plugin.jar")))
+    }
+
+    @Test
+    fun `getPluginOrigin should return MARKETPLACE for plugins in installed plugins root`() {
+        val installedDir = tempPluginsDir.resolve("installed")
+        pluginManager = spyk(createManager(installedPluginsDirectory = installedDir))
+
+        val pluginWrapper = mockk<PluginWrapper>()
+        every { pluginWrapper.pluginPath } returns installedDir.resolve("plugin.jar")
+        every { pluginManager.getPlugin("marketplace-plugin") } returns pluginWrapper
+
+        assertEquals(PluginOrigin.MARKETPLACE, pluginManager.getPluginOrigin("marketplace-plugin"))
+    }
+
+    @Test
+    fun `getPluginOrigin should return LOCAL for plugins outside installed plugins root`() {
+        pluginManager = spyk(createManager())
+
+        val pluginWrapper = mockk<PluginWrapper>()
+        every { pluginWrapper.pluginPath } returns tempPluginsDir.resolve("plugins/plugin.jar")
+        every { pluginManager.getPlugin("local-plugin") } returns pluginWrapper
+
+        assertEquals(PluginOrigin.LOCAL, pluginManager.getPluginOrigin("local-plugin"))
+    }
+
+    @Test
+    fun `getPluginOrigin should return LOCAL for unknown plugins`() {
+        pluginManager = createManager()
+
+        assertEquals(PluginOrigin.LOCAL, pluginManager.getPluginOrigin("unknown-plugin"))
+    }
+
+    @Test
+    fun `readPluginDescriptor should read descriptor from plugin jar`() {
+        pluginManager = createManager()
+        val jar = createPluginJar(tempPluginsDir.resolve("plugins"), "my-plugin", "1.2.3", requires = ">=2.0.0")
+
+        val descriptor = pluginManager.readPluginDescriptor(jar)
+
+        assertNotNull(descriptor)
+        assertEquals("my-plugin", descriptor.pluginId)
+        assertEquals("1.2.3", descriptor.version)
+        assertEquals(">=2.0.0", descriptor.requires)
+        assertIs<GameyfinPluginDescriptor>(descriptor)
+    }
+
+    @Test
+    fun `readPluginDescriptor should return null for invalid plugin files`() {
+        pluginManager = createManager()
+        val noDescriptor = createUnsignedJar("no-descriptor.jar", mapOf("a.txt" to "a"))
+
+        assertNull(pluginManager.readPluginDescriptor(noDescriptor))
+        assertNull(pluginManager.readPluginDescriptor(tempPluginsDir.resolve("does-not-exist.jar")))
+    }
+
+    @Test
+    fun `findLocalPluginPath should find plugin in local roots and ignore installed plugins root`() {
+        val pluginsDir = tempPluginsDir.resolve("plugins").createDirs()
+        val installedDir = tempPluginsDir.resolve("installed").createDirs()
+        pluginManager = createManager(installedPluginsDirectory = installedDir)
+
+        val localJar = createPluginJar(pluginsDir, "my-plugin", "1.0.0")
+        createPluginJar(installedDir, "my-plugin", "2.0.0")
+        createPluginJar(pluginsDir, "other-plugin", "1.0.0")
+
+        assertEquals(localJar, pluginManager.findLocalPluginPath("my-plugin"))
+    }
+
+    @Test
+    fun `findLocalPluginPath should return null when plugin only exists in installed plugins root`() {
+        tempPluginsDir.resolve("plugins").createDirs()
+        val installedDir = tempPluginsDir.resolve("installed").createDirs()
+        pluginManager = createManager(installedPluginsDirectory = installedDir)
+
+        createPluginJar(installedDir, "marketplace-only", "1.0.0")
+
+        assertNull(pluginManager.findLocalPluginPath("marketplace-only"))
+        assertNull(pluginManager.findLocalPluginPath("unknown-plugin"))
+    }
+
+    @Test
+    fun `findLocalPluginPath should skip unreadable plugin files`() {
+        val pluginsDir = tempPluginsDir.resolve("plugins").createDirs()
+        pluginManager = createManager()
+
+        val brokenJar = pluginsDir.resolve("broken.jar")
+        brokenJar.toFile().writeText("not a jar")
+        val localJar = createPluginJar(pluginsDir, "my-plugin", "1.0.0")
+
+        assertEquals(localJar, pluginManager.findLocalPluginPath("my-plugin"))
+    }
+
+    @Test
+    fun `plugin repository should only return highest compatible version when plugin exists in both roots`() {
+        val pluginsDir = tempPluginsDir.resolve("plugins").createDirs()
+        val installedDir = tempPluginsDir.resolve("installed").createDirs()
+        pluginManager = createManager(installedPluginsDirectory = installedDir, applicationVersion = "2.6.0")
+
+        createPluginJar(pluginsDir, "my-plugin", "1.0.0")
+        val newer = createPluginJar(installedDir, "my-plugin", "1.1.0")
+        createPluginJar(installedDir, "incompatible-plugin", "9.0.0", requires = ">=3.0.0")
+        val compatible = createPluginJar(pluginsDir, "incompatible-plugin", "1.0.0", requires = ">=2.0.0")
+
+        val paths = repositoryPluginPaths()
+
+        assertEquals(setOf(newer, compatible), paths.toSet())
+    }
+
+    @Test
+    fun `plugin repository should prefer installed plugins root on equal versions`() {
+        val pluginsDir = tempPluginsDir.resolve("plugins").createDirs()
+        val installedDir = tempPluginsDir.resolve("installed").createDirs()
+        pluginManager = createManager(installedPluginsDirectory = installedDir, applicationVersion = "2.6.0")
+
+        createPluginJar(pluginsDir, "my-plugin", "1.0.0")
+        val installed = createPluginJar(installedDir, "my-plugin", "1.0.0")
+
+        assertEquals(listOf(installed), repositoryPluginPaths())
+    }
+
+    @Test
+    fun `loadPlugins should load only the highest version when plugin exists in both roots`() {
+        val pluginsDir = tempPluginsDir.resolve("plugins").createDirs()
+        val installedDir = tempPluginsDir.resolve("installed").createDirs()
+        pluginManager = createManager(installedPluginsDirectory = installedDir, applicationVersion = "2.6.0")
+
+        createPluginJar(pluginsDir, "my-plugin", "1.0.0")
+        val newer = createPluginJar(installedDir, "my-plugin", "2.0.0")
+
+        pluginManager.loadPlugins()
+
+        assertEquals(1, pluginManager.plugins.size)
+        val plugin = pluginManager.getPlugin("my-plugin")
+        assertNotNull(plugin)
+        assertEquals("2.0.0", plugin.descriptor.version)
+        assertEquals(newer, plugin.pluginPath)
+        assertEquals(PluginOrigin.MARKETPLACE, pluginManager.getPluginOrigin("my-plugin"))
+    }
+
+    @Test
+    fun `loadPlugins should load compatible local version instead of incompatible installed version`() {
+        val pluginsDir = tempPluginsDir.resolve("plugins").createDirs()
+        val installedDir = tempPluginsDir.resolve("installed").createDirs()
+        pluginManager = createManager(installedPluginsDirectory = installedDir, applicationVersion = "2.6.0")
+
+        val local = createPluginJar(pluginsDir, "my-plugin", "1.0.0", requires = ">=2.0.0")
+        createPluginJar(installedDir, "my-plugin", "2.0.0", requires = ">=3.0.0")
+
+        pluginManager.loadPlugins()
+
+        val plugin = pluginManager.getPlugin("my-plugin")
+        assertNotNull(plugin)
+        assertEquals("1.0.0", plugin.descriptor.version)
+        assertEquals(local, plugin.pluginPath)
+        assertEquals(PluginOrigin.LOCAL, pluginManager.getPluginOrigin("my-plugin"))
+    }
+
+    @Test
+    fun `loadPluginOrThrow should return plugin ID on success`() {
+        pluginManager = spyk(createManager())
+
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        every { pluginWrapper.pluginId } returns "loaded-plugin"
+        every { pluginWrapper.plugin } returns mockk<Plugin>(relaxed = true)
+        every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
+
+        val pluginDir = tempPluginsDir.resolve("loaded-plugin").createDirs()
+
+        assertEquals("loaded-plugin", pluginManager.loadPluginOrThrow(pluginDir))
+    }
+
+    @Test
+    fun `loadPluginOrThrow should propagate errors from loading`() {
+        pluginManager = spyk(createManager())
+
+        every { pluginManager.superLoadPluginFromPath(any()) } throws PluginAlreadyLoadedException("dup", Path.of("x"))
+
+        assertFailsWith<PluginAlreadyLoadedException> {
+            pluginManager.loadPluginOrThrow(tempPluginsDir.resolve("plugin.jar"))
+        }
+        verify(exactly = 0) { pluginManagementRepository.save(any()) }
+    }
+
+    @Test
+    fun `loadPluginOrThrow should throw when no plugin could be loaded`() {
+        pluginManager = spyk(createManager())
+
+        every { pluginManager.superLoadPluginFromPath(any()) } returns null
+
+        assertFailsWith<PluginRuntimeException> {
+            pluginManager.loadPluginOrThrow(tempPluginsDir.resolve("plugin.jar"))
+        }
+    }
+
+    @Test
+    fun `loadPluginOrThrow should throw for skipped data and state paths`() {
+        pluginManager = spyk(createManager())
+
+        assertFailsWith<PluginRuntimeException> { pluginManager.loadPluginOrThrow(tempPluginsDir.resolve("data")) }
+        assertFailsWith<PluginRuntimeException> { pluginManager.loadPluginOrThrow(tempPluginsDir.resolve("state")) }
+        verify(exactly = 0) { pluginManager.superLoadPluginFromPath(any()) }
+    }
+
+    @Test
+    fun `loadPluginOrThrow should propagate errors of real invalid plugin`() {
+        pluginManager = createManager()
+        val invalidJar = createUnsignedJar("invalid.jar", mapOf("a.txt" to "a"))
+
+        assertFails { pluginManager.loadPluginOrThrow(invalidJar) }
+        assertTrue(pluginManager.plugins.isEmpty())
+    }
+
+    @Test
+    fun `loadPluginFromPath should swallow errors from loading`() {
+        pluginManager = spyk(createManager())
+
+        every { pluginManager.superLoadPluginFromPath(any()) } throws PluginRuntimeException("boom")
+
+        assertNull(pluginManager.loadPluginFromPath(tempPluginsDir.resolve("plugin.jar")))
+    }
+
+    @Test
+    fun `plugin state listener should start plugin when it leaves DISABLED state`() {
+        pluginManager = createManager()
+        val pluginWrapper = registerPlugin("listener-plugin", PluginState.RESOLVED)
+
+        firePluginStateEvent(PluginStateEvent(pluginManager, pluginWrapper, PluginState.DISABLED))
+
+        // startPlugin looks up the trust level first
+        verify(atLeast = 1) { pluginManagementRepository.findById("listener-plugin") }
+    }
+
+    @Test
+    fun `plugin state listener should ignore UNLOADED events`() {
+        pluginManager = createManager()
+        val pluginWrapper = registerPlugin("listener-plugin", PluginState.UNLOADED)
+
+        assertDoesNotThrow {
+            firePluginStateEvent(PluginStateEvent(pluginManager, pluginWrapper, PluginState.DISABLED))
+        }
+
+        verify(exactly = 0) { pluginManagementRepository.findById("listener-plugin") }
+    }
+
+    @Test
+    fun `plugin state listener should ignore events of plugins which are not loaded`() {
+        pluginManager = createManager()
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        every { pluginWrapper.pluginId } returns "not-loaded-plugin"
+        every { pluginWrapper.pluginState } returns PluginState.RESOLVED
+
+        assertDoesNotThrow {
+            firePluginStateEvent(PluginStateEvent(pluginManager, pluginWrapper, PluginState.DISABLED))
+            every { pluginWrapper.pluginState } returns PluginState.DISABLED
+            firePluginStateEvent(PluginStateEvent(pluginManager, pluginWrapper, PluginState.STARTED))
+        }
+
+        verify(exactly = 0) { pluginManagementRepository.findById("not-loaded-plugin") }
+    }
+
+    @Test
+    fun `plugin state listener should still forward UNLOADED events to Spring listener`() {
+        pluginManager = createManager()
+        val pluginWrapper = registerPlugin("listener-plugin", PluginState.UNLOADED)
+        val event = PluginStateEvent(pluginManager, pluginWrapper, PluginState.STARTED)
+
+        firePluginStateEvent(event)
+
+        verify(exactly = 1) { forwardingPluginStateListener.pluginStateChanged(event) }
+    }
+
+    private fun registerPlugin(pluginId: String, state: PluginState): PluginWrapper {
+        val pluginWrapper = mockk<PluginWrapper>(relaxed = true)
+        every { pluginWrapper.pluginId } returns pluginId
+        every { pluginWrapper.pluginState } returns state
+
+        val pluginsField = AbstractPluginManager::class.java.getDeclaredField("plugins")
+        pluginsField.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        (pluginsField.get(pluginManager) as MutableMap<String, PluginWrapper>)[pluginId] = pluginWrapper
+
+        return pluginWrapper
+    }
+
+    private fun firePluginStateEvent(event: PluginStateEvent) {
+        val method = AbstractPluginManager::class.java.getDeclaredMethod("firePluginStateEvent", PluginStateEvent::class.java)
+        method.isAccessible = true
+        method.invoke(pluginManager, event)
+    }
+
+    private fun repositoryPluginPaths(): List<Path> {
+        val field = AbstractPluginManager::class.java.getDeclaredField("pluginRepository")
+        field.isAccessible = true
+        return (field.get(pluginManager) as PluginRepository).pluginPaths
+    }
+
+    private fun Path.createDirs(): Path {
+        toFile().mkdirs()
+        return this
+    }
+
+    /**
+     * Creates a minimal (unsigned) plugin JAR with a PF4J manifest in the given directory.
+     */
+    private fun createPluginJar(
+        directory: Path,
+        pluginId: String,
+        version: String,
+        requires: String? = null
+    ): Path {
+        directory.toFile().mkdirs()
+        val jarPath = directory.resolve("$pluginId-$version.jar")
+        val manifest = Manifest()
+        manifest.mainAttributes.putValue("Manifest-Version", "1.0")
+        manifest.mainAttributes.putValue("Plugin-Id", pluginId)
+        manifest.mainAttributes.putValue("Plugin-Version", version)
+        manifest.mainAttributes.putValue("Plugin-Class", Plugin::class.java.name)
+        manifest.mainAttributes.putValue("Plugin-Name", "Plugin $pluginId")
+        manifest.mainAttributes.putValue("Plugin-Author", "Test Author")
+        requires?.let { manifest.mainAttributes.putValue("Plugin-Requires", it) }
+
+        JarOutputStream(jarPath.toFile().outputStream(), manifest).use { jos ->
+            jos.putNextEntry(JarEntry("dummy.txt"))
+            jos.write("dummy".toByteArray())
+            jos.closeEntry()
+        }
+
+        return jarPath
+    }
+
+    // ========================================================================================
     // JAR creation helpers
     // ========================================================================================
 

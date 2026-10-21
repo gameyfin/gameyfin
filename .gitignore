@@ -72,3 +72,4 @@ out/
 /docker-debug/
 /app/target/
 **/*.trace.db
+/plugins-installed/

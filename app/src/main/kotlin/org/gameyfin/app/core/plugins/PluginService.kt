@@ -11,6 +11,7 @@ import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.plugins.management.PluginManagementRepository
+import org.gameyfin.app.core.plugins.marketplace.GameyfinUpdateManager
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.wrapper.GameyfinPlugin
@@ -21,6 +22,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.toJavaDuration
@@ -29,7 +31,8 @@ import kotlin.time.toJavaDuration
 class PluginService(
     private val pluginManager: GameyfinPluginManager,
     private val pluginManagementRepository: PluginManagementRepository,
-    private val pluginConfigRepository: PluginConfigRepository
+    private val pluginConfigRepository: PluginConfigRepository,
+    private val updateManager: GameyfinUpdateManager
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
@@ -52,10 +55,13 @@ class PluginService(
         }
     }
 
-    private val pluginConfigValidationCache = mutableMapOf<String, PluginConfigValidationResult>()
+    private val pluginConfigValidationCache = ConcurrentHashMap<String, PluginConfigValidationResult>()
 
     init {
         pluginManager.addPluginStateListener { event ->
+            if (event.pluginState == PluginState.UNLOADED) {
+                pluginConfigValidationCache.remove(event.plugin.pluginId)
+            }
             val update = PluginUpdateDto(id = event.plugin.pluginId, state = event.pluginState)
             emit(update)
         }
@@ -69,6 +75,23 @@ class PluginService(
     fun getAll(): List<PluginDto> {
         return pluginManager.plugins
             .map { toDto(it) }
+    }
+
+    fun getDto(pluginId: String): PluginDto? {
+        return pluginManager.getPlugin(pluginId)?.let { toDto(it) }
+    }
+
+    /**
+     * Sends the current state of the plugin to all subscribers (or a removal notice if it is not loaded anymore).
+     */
+    fun emitPlugin(pluginId: String) {
+        val dto = getDto(pluginId)
+        val update = if (dto != null) {
+            PluginUpdateDto(id = pluginId, plugin = dto)
+        } else {
+            PluginUpdateDto(id = pluginId, removed = true)
+        }
+        emit(update)
     }
 
     fun getAllByTypeAndState(type: KClass<out ExtensionPoint>, state: PluginState): List<PluginDto> {
@@ -197,7 +220,7 @@ class PluginService(
 
         return PluginDto(
             id = descriptor.pluginId,
-            types = pluginManager.getExtensionTypes(pluginWrapper.pluginId),
+            types = resolvePluginTypes(pluginWrapper.pluginId, pluginManagementEntry),
             name = descriptor.pluginName,
             description = descriptor.pluginDescription,
             shortDescription = descriptor.pluginShortDescription,
@@ -211,7 +234,26 @@ class PluginService(
             config = getConfig(pluginWrapper),
             configValidation = validatePluginConfig(descriptor.pluginId),
             priority = pluginManagementEntry.priority,
-            trustLevel = pluginManagementEntry.trustLevel
+            trustLevel = pluginManagementEntry.trustLevel,
+            origin = pluginManager.getPluginOrigin(pluginWrapper.pluginId),
+            sourceMarketplaceId = pluginManagementEntry.sourceMarketplaceId,
+            requires = descriptor.requires?.takeIf { it.isNotBlank() && it != "*" },
+            compatible = pluginManager.isCompatible(pluginWrapper),
+            failureReason = pluginWrapper.failedException?.message
         )
+    }
+
+    private fun resolvePluginTypes(pluginId: String, pluginManagementEntry: PluginManagementEntry): List<String> {
+        val extensionTypes = pluginManager.getExtensionTypes(pluginId)
+        if (extensionTypes.isNotEmpty()) return extensionTypes
+
+        // Newly installed marketplace plugins can briefly have no PF4J-resolved types until extension discovery settles.
+        val marketplaceId = pluginManagementEntry.sourceMarketplaceId ?: return emptyList()
+
+        return updateManager.findPluginInfo(pluginId, marketplaceId)
+            ?.types
+            ?.filter { it.isNotBlank() }
+            ?.distinct()
+            .orEmpty()
     }
 }

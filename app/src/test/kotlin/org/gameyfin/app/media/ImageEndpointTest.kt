@@ -3,6 +3,7 @@ package org.gameyfin.app.media
 import io.mockk.*
 import jakarta.servlet.http.HttpServletRequest
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.plugins.marketplace.PluginMarketplaceService
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.users.UserService
 import org.junit.jupiter.api.AfterEach
@@ -21,6 +22,7 @@ import java.nio.file.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ImageEndpointTest {
 
@@ -30,6 +32,7 @@ class ImageEndpointTest {
     private lateinit var imageService: ImageService
     private lateinit var userService: UserService
     private lateinit var pluginService: PluginService
+    private lateinit var pluginMarketplaceService: PluginMarketplaceService
     private lateinit var imageEndpoint: ImageEndpoint
     private lateinit var mockRequest: HttpServletRequest
 
@@ -38,7 +41,8 @@ class ImageEndpointTest {
         imageService = mockk()
         userService = mockk()
         pluginService = mockk()
-        imageEndpoint = ImageEndpoint(imageService, userService, pluginService)
+        pluginMarketplaceService = mockk()
+        imageEndpoint = ImageEndpoint(imageService, userService, pluginService, pluginMarketplaceService)
         mockRequest = mockk {
             every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns null
         }
@@ -183,6 +187,52 @@ class ImageEndpointTest {
         assertNotNull(response)
         assertEquals(HttpStatus.OK, response.statusCode)
         verify(exactly = 1) { pluginService.getLogo(pluginId) }
+    }
+
+    @Test
+    fun `getMarketplacePluginLogo should return not found when logo is not available`() {
+        every { pluginMarketplaceService.getLogo("official", "test-plugin") } returns null
+
+        val response = imageEndpoint.getMarketplacePluginLogo("official", "test-plugin")
+
+        assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        verify(exactly = 0) { pluginMarketplaceService.isSupportedLogoType(any()) }
+    }
+
+    @Test
+    fun `getMarketplacePluginLogo should return not found for unsupported content types`() {
+        val html = "<html><body><script>alert(1)</script></body></html>".toByteArray()
+        every { pluginMarketplaceService.getLogo("official", "test-plugin") } returns html
+        every { pluginMarketplaceService.isSupportedLogoType("text/html") } returns false
+
+        val response = imageEndpoint.getMarketplacePluginLogo("official", "test-plugin")
+
+        assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+        assertNull(response.body)
+        verify(exactly = 1) { pluginMarketplaceService.isSupportedLogoType("text/html") }
+    }
+
+    @Test
+    fun `getMarketplacePluginLogo should return logo with restrictive security headers`() {
+        val png = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0x0D)
+        every { pluginMarketplaceService.getLogo("official", "test-plugin") } returns png
+        every { pluginMarketplaceService.isSupportedLogoType("image/png") } returns true
+
+        val response = imageEndpoint.getMarketplacePluginLogo("official", "test-plugin")
+
+        assertEquals(HttpStatus.OK, response.statusCode)
+        assertEquals(MediaType.IMAGE_PNG, response.headers.contentType)
+        assertEquals(png.size.toLong(), response.headers.contentLength)
+        assertEquals(
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            response.headers.getFirst("Content-Security-Policy")
+        )
+        assertEquals("nosniff", response.headers.getFirst("X-Content-Type-Options"))
+        val cacheControl = response.headers.cacheControl
+        assertNotNull(cacheControl)
+        assertTrue(cacheControl.contains("private"))
+        assertTrue(cacheControl.contains("max-age=3600"))
+        assertTrue(png.contentEquals(response.body!!.byteArray))
     }
 
     @Test
