@@ -8,9 +8,11 @@ import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.libraries.dto.LibraryAdminDto
 import org.gameyfin.app.libraries.dto.LibraryEvent
+import org.gameyfin.app.libraries.dto.LibrarySyncDto
 import org.gameyfin.app.libraries.dto.LibraryUpdateDto
 import org.gameyfin.app.libraries.enums.ScanType
 import reactor.core.publisher.Flux
+import java.time.Instant
 
 @Endpoint
 @DynamicPublicAccess
@@ -27,7 +29,18 @@ class LibraryEndpoint(
         }
     }
 
-    fun getAll() = libraryService.getAll()
+    /**
+     * Delta synchronization of the library summaries.
+     *
+     * @param since `serverTime` of the last synchronization, `null` to fetch all libraries
+     */
+    fun sync(since: Instant?): LibrarySyncDto = libraryService.sync(since, isCurrentUserAdmin())
+
+    /**
+     * Returns the full details of a library, `null` if it does not exist.
+     */
+    @RolesAllowed(Role.Names.ADMIN)
+    fun getById(libraryId: Long): LibraryAdminDto? = libraryService.getAdminDtoById(libraryId)
 
     @RolesAllowed(Role.Names.ADMIN)
     fun triggerScan(scanType: ScanType = ScanType.QUICK, libraryIds: Collection<Long>?) =

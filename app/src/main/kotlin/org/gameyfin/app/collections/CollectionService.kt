@@ -7,15 +7,16 @@ import org.gameyfin.app.collections.entities.CollectionMetadata
 import org.gameyfin.app.collections.extensions.toDto
 import org.gameyfin.app.collections.extensions.toEntity
 import org.gameyfin.app.collections.repositories.CollectionRepository
+import org.gameyfin.app.collections.repositories.findGameIdsGroupedByCollectionId
+import org.gameyfin.app.core.sync.EntityEventBroadcaster
+import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.toJavaDuration
+import java.time.Instant
 
 @Service
 class CollectionService(
@@ -25,45 +26,46 @@ class CollectionService(
     companion object {
         private val log = KotlinLogging.logger {}
 
-        private val collectionUserEvents =
-            Sinks.many().multicast().onBackpressureBuffer<CollectionUserEvent>(1024, false)
-        private val collectionAdminEvents =
-            Sinks.many().multicast().onBackpressureBuffer<CollectionAdminEvent>(1024, false)
+        /* Websockets (collections contain no admin-only data, so all users share one stream) */
+        private val events = EntityEventBroadcaster<CollectionEvent>("collectionEvents")
 
-        fun subscribeUser(): Flux<List<CollectionUserEvent>> {
-            log.debug { "New user subscription for collectionUserEvents" }
-            return collectionUserEvents.asFlux()
-                .buffer(100.milliseconds.toJavaDuration())
-                .doOnSubscribe {
-                    log.debug { "Subscriber added to user collectionUserEvents [${collectionUserEvents.currentSubscriberCount()}]" }
-                }
-                .doFinally {
-                    log.debug { "Subscriber removed from user collectionUserEvents with signal type $it [${collectionUserEvents.currentSubscriberCount()}]" }
-                }
-        }
+        fun subscribe(): Flux<List<CollectionEvent>> = events.subscribe()
 
-        fun subscribeAdmin(): Flux<List<CollectionAdminEvent>> {
-            log.debug { "New admin subscription for collectionAdminEvents" }
-            return collectionAdminEvents.asFlux()
-                .buffer(100.milliseconds.toJavaDuration())
-                .doOnSubscribe {
-                    log.debug { "Subscriber added to admin collectionAdminEvents [${collectionAdminEvents.currentSubscriberCount()}]" }
-                }
-                .doFinally {
-                    log.debug { "Subscriber removed from admin collectionAdminEvents with signal type $it [${collectionAdminEvents.currentSubscriberCount()}]" }
-                }
-        }
-
-        fun emitUser(event: CollectionUserEvent) {
-            collectionUserEvents.tryEmitNext(event)
-        }
-
-        fun emitAdmin(event: CollectionAdminEvent) {
-            collectionAdminEvents.tryEmitNext(event)
-        }
+        fun emit(event: CollectionEvent) = events.emit(event)
     }
 
-    fun getAll(): List<CollectionDto> = collectionRepository.findAll().map { it.toDto() }
+    /**
+     * Returns the collections that changed since the given timestamp, or all if [since] is `null`.
+     * Clients have to remove all collections that are not contained in [CollectionSyncDto.allIds] (delta sync only).
+     */
+    @Transactional(readOnly = true)
+    fun sync(since: Instant?): CollectionSyncDto {
+        val serverTime = Instant.now()
+
+        if (since == null) {
+            return CollectionSyncDto(
+                serverTime = serverTime,
+                full = true,
+                collections = collectionRepository.findAll().toDtos(),
+                allIds = emptyList()
+            )
+        }
+
+        return CollectionSyncDto(
+            serverTime = serverTime,
+            full = false,
+            collections = collectionRepository.findAllByUpdatedAtAfter(since.minus(SYNC_SAFETY_WINDOW)).toDtos(),
+            allIds = collectionRepository.findAllIds()
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getDtoById(id: Long): CollectionDto? = collectionRepository.findByIdOrNull(id)?.let { listOf(it).toDtos().first() }
+
+    private fun List<Collection>.toDtos(): List<CollectionDto> {
+        val gameIds = collectionRepository.findGameIdsGroupedByCollectionId(this.mapNotNull { it.id })
+        return this.map { it.toDto(gameIds[it.id] ?: emptyList()) }
+    }
 
     fun getById(id: Long): Collection = collectionRepository.findByIdOrNull(id)
         ?: throw IllegalArgumentException("Collection with id $id not found")
@@ -113,9 +115,9 @@ class CollectionService(
             )
         }
 
-        val saved = collectionRepository.save(collection)
+        val saved = collectionRepository.saveAndFlush(collection)
 
-        return saved.toDto()
+        return listOf(saved).toDtos().first()
     }
 
     /**
@@ -132,11 +134,10 @@ class CollectionService(
         val game = gameService.getById(gameId)
 
         collection.addGame(game)
-        gameService.update(game)
 
-        val saved = collectionRepository.save(collection)
+        val saved = collectionRepository.saveAndFlush(collection)
 
-        return saved.toDto()
+        return listOf(saved).toDtos().first()
     }
 
     @Transactional
@@ -145,11 +146,10 @@ class CollectionService(
         val game = gameService.getById(gameId)
 
         collection.removeGame(game)
-        gameService.update(game)
 
-        val saved = collectionRepository.save(collection)
+        val saved = collectionRepository.saveAndFlush(collection)
 
-        return saved.toDto()
+        return listOf(saved).toDtos().first()
     }
 
     fun delete(collectionId: Long) {

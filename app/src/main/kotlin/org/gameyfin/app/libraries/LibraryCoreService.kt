@@ -10,6 +10,8 @@ import org.gameyfin.app.libraries.entities.IgnoredPathUserSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.users.UserService
 import org.gameyfin.pluginapi.gamemetadata.GameMetadataProvider
+import org.hibernate.Hibernate
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -25,6 +27,18 @@ class LibraryCoreService(
     private val userService: UserService,
     private val pluginService: PluginService
 ) {
+    /**
+     * Loads a library with its (lazy) games and ignored paths initialized, so the returned (detached) entity graph
+     * can safely be used outside a transaction, e.g. during library scans.
+     */
+    @Transactional(readOnly = true)
+    fun getWithGamesAndIgnoredPaths(libraryId: Long): Library? {
+        val library = libraryRepository.findByIdOrNull(libraryId) ?: return null
+        Hibernate.initialize(library.games)
+        Hibernate.initialize(library.ignoredPaths)
+        return library
+    }
+
     /**
      * Adds a collection of games to the library.
      *

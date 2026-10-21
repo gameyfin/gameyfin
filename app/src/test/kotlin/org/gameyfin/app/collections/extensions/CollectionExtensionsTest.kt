@@ -1,65 +1,80 @@
 package org.gameyfin.app.collections.extensions
 
-import io.mockk.every
-import io.mockk.mockkStatic
+import io.mockk.mockk
+import org.gameyfin.app.collections.dto.CollectionField
+import org.gameyfin.app.collections.dto.CollectionMetadataDto
 import org.gameyfin.app.collections.entities.Collection
-import org.gameyfin.app.core.security.isCurrentUserAdmin
+import org.gameyfin.app.collections.entities.CollectionMetadata
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.gameyfin.app.libraries.entities.Library
+import java.time.Instant
+import kotlin.test.*
 
 class CollectionExtensionsTest {
-    @Test
-    fun toAdminDtoBuildsStats() {
-        val c = Collection(name = "Stats").apply { id = 1L; createdAt = java.time.Instant.now(); updatedAt = createdAt }
-        val g1 = Game(library = mockkLibrary(), metadata = GameMetadata(path = "p1")).apply {
-            id = 11L; platforms = mutableListOf(org.gameyfin.pluginapi.gamemetadata.Platform.PC_MICROSOFT_WINDOWS)
-        }
-        val g2 = Game(library = mockkLibrary(), metadata = GameMetadata(path = "p2")).apply {
-            id = 12L; platforms = mutableListOf(
-            org.gameyfin.pluginapi.gamemetadata.Platform.LINUX,
-            org.gameyfin.pluginapi.gamemetadata.Platform.PC_MICROSOFT_WINDOWS
-        )
-        }
-        g1.metadata.downloadCount = 3
-        g2.metadata.downloadCount = 7
-        c.addGame(g1); c.addGame(g2)
 
-        val dto = c.toAdminDto()
-        assertEquals(2, dto.stats?.gamesCount)
-        assertEquals(10, dto.stats?.downloadCount)
-        assertEquals(
-            setOf(
-                org.gameyfin.pluginapi.gamemetadata.Platform.PC_MICROSOFT_WINDOWS,
-                org.gameyfin.pluginapi.gamemetadata.Platform.LINUX
-            ), dto.stats?.gamePlatforms
-        )
+    @Test
+    fun toDtoUsesProvidedGameIds() {
+        val createdAt = Instant.parse("2024-01-01T00:00:00Z")
+        val c = Collection(name = "Favorites", description = "Desc").apply {
+            id = 1L; this.createdAt = createdAt; updatedAt = createdAt
+            metadata = CollectionMetadata(displayOnHomepage = false, displayOrder = 2)
+        }
+
+        val dto = c.toDto(listOf(11L, 12L))
+
+        assertEquals(1L, dto.id)
+        assertEquals("Favorites", dto.name)
+        assertEquals("Desc", dto.description)
+        assertEquals(createdAt, dto.createdAt)
+        assertEquals(createdAt, dto.updatedAt)
         assertEquals(listOf(11L, 12L), dto.gameIds)
+        assertEquals(CollectionMetadataDto(false, 2, emptyMap()), dto.metadata)
     }
 
     @Test
-    fun toUserDtoOmitsStatsAndMapsIds() {
-        val c = Collection(name = "User").apply { id = 2L; createdAt = java.time.Instant.now(); updatedAt = createdAt }
-        val g = Game(library = mockkLibrary(), metadata = GameMetadata(path = "p")).apply { id = 21L }
+    fun toPatchDtoContainsOnlyRequestedFields() {
+        val c = Collection(name = "Renamed", description = "Desc").apply {
+            id = 1L; createdAt = Instant.now(); updatedAt = createdAt
+        }
+
+        val patch = c.toPatchDto(setOf(CollectionField.NAME), gameIds = null)
+
+        assertNotNull(patch)
+        assertEquals(listOf(CollectionField.NAME), patch.fields)
+        assertEquals("Renamed", patch.values.name)
+        assertNull(patch.values.description)
+        assertNull(patch.values.gameIds)
+        assertEquals(c.updatedAt, patch.updatedAt)
+    }
+
+    @Test
+    fun toPatchDtoUsesProvidedGameIds() {
+        val c = Collection(name = "C").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
+
+        val patch = c.toPatchDto(setOf(CollectionField.GAME_IDS, CollectionField.METADATA), gameIds = listOf(5L))
+
+        assertNotNull(patch)
+        assertEquals(listOf(CollectionField.GAME_IDS, CollectionField.METADATA), patch.fields)
+        assertEquals(listOf(5L), patch.values.gameIds)
+        assertNotNull(patch.values.metadata)
+    }
+
+    @Test
+    fun toPatchDtoFallsBackToAssociationForGameIds() {
+        val c = Collection(name = "C").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
+        val g = Game(library = mockk<Library>(relaxed = true), metadata = GameMetadata(path = "p")).apply { id = 21L }
         c.addGame(g)
-        val dto = c.toUserDto()
-        assertEquals(listOf(21L), dto.gameIds)
+
+        val patch = c.toPatchDto(setOf(CollectionField.GAME_IDS), gameIds = null)
+
+        assertEquals(listOf(21L), patch?.values?.gameIds)
     }
 
     @Test
-    fun toDtoSwitchesByAdminFlag() {
-        mockkStatic(::isCurrentUserAdmin)
-        val c =
-            Collection(name = "Switch").apply { id = 3L; createdAt = java.time.Instant.now(); updatedAt = createdAt }
-        every { isCurrentUserAdmin() } returns true
-        val admin = c.toDto()
-        assertEquals("Switch", admin.name)
-        every { isCurrentUserAdmin() } returns false
-        val user = c.toDto()
-        assertEquals("Switch", user.name)
-    }
+    fun toPatchDtoReturnsNullWithoutFields() {
+        val c = Collection(name = "C").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
 
-    private fun mockkLibrary(): org.gameyfin.app.libraries.entities.Library =
-        io.mockk.mockk(relaxed = true)
+        assertNull(c.toPatchDto(emptySet(), gameIds = null))
+    }
 }

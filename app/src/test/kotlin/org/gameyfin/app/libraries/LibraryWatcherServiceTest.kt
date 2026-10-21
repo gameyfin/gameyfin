@@ -32,6 +32,7 @@ import kotlin.test.assertTrue
 class LibraryWatcherServiceTest {
 
     private lateinit var libraryRepository: LibraryRepository
+    private lateinit var libraryCoreService: LibraryCoreService
     private lateinit var libraryScanService: LibraryScanService
     private lateinit var gameRepository: GameRepository
     private lateinit var filesystemService: FilesystemService
@@ -44,6 +45,7 @@ class LibraryWatcherServiceTest {
     @BeforeEach
     fun setup() {
         libraryRepository = mockk(relaxed = true)
+        libraryCoreService = mockk(relaxed = true)
         libraryScanService = mockk(relaxed = true)
         gameRepository = mockk(relaxed = true)
         filesystemService = mockk(relaxed = true)
@@ -58,6 +60,7 @@ class LibraryWatcherServiceTest {
 
         libraryWatcherService = LibraryWatcherService(
             libraryRepository,
+            libraryCoreService,
             libraryScanService,
             gameRepository,
             filesystemService,
@@ -179,7 +182,7 @@ class LibraryWatcherServiceTest {
         val library = createTestLibrary(1L, "Watch Library", listOf(libraryDir.toString()))
 
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.of(library)
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
         every { libraryScanService.scheduleScan(ScanType.QUICK, any()) } just Runs
 
         libraryWatcherService.start()
@@ -212,7 +215,7 @@ class LibraryWatcherServiceTest {
         val library = createTestLibrary(1L, "Watch Library", listOf(libraryDir.toString()), mutableListOf(game))
 
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.of(library)
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
         every { libraryRepository.save(library) } returns library
 
         libraryWatcherService.start()
@@ -242,7 +245,7 @@ class LibraryWatcherServiceTest {
         val library = createTestLibrary(1L, "Watch Library", listOf(libraryDir.toString()))
 
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.of(library)
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
         every { libraryScanService.scheduleScan(ScanType.QUICK, any()) } just Runs
 
         libraryWatcherService.start()
@@ -276,7 +279,7 @@ class LibraryWatcherServiceTest {
 
         val newFileSize = 2000L
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.of(library)
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
         every { filesystemService.calculateFileSize(gameFile.toString()) } returns newFileSize
         every { gameRepository.save(game) } returns game
 
@@ -304,7 +307,7 @@ class LibraryWatcherServiceTest {
         val library = createTestLibrary(1L, "Watch Library", listOf(libraryDir.toString()))
 
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.of(library)
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
         every { libraryScanService.scheduleScan(any(), any()) } just Runs
 
         libraryWatcherService.start()
@@ -337,7 +340,7 @@ class LibraryWatcherServiceTest {
         val library = createTestLibrary(1L, "Multi-Dir Library", listOf(dir1.toString(), dir2.toString()))
 
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.of(library)
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
         every { libraryScanService.scheduleScan(any(), any()) } just Runs
 
         libraryWatcherService.start()
@@ -370,7 +373,7 @@ class LibraryWatcherServiceTest {
         val library = createTestLibrary(1L, "Watch Library", listOf(libraryDir.toString()))
 
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.of(library)
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
         every { libraryScanService.scheduleScan(any(), any()) } just Runs
 
         libraryWatcherService.start()
@@ -397,7 +400,7 @@ class LibraryWatcherServiceTest {
         val library = createTestLibrary(1L, "Watch Library", listOf(libraryDir.toString()))
 
         every { libraryRepository.findAll() } returns listOf(library)
-        every { libraryRepository.findById(1L) } returns Optional.empty() // Library deleted
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns null // Library deleted
 
         libraryWatcherService.start()
 

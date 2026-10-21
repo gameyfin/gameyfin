@@ -127,7 +127,7 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
                                     </Chip>
                                 </Tooltip.Trigger>
                                 <Tooltip.Content placement="bottom" className="bg-foreground text-background">
-                                    {`Size: ${humanFileSize(games[gameId].metadata.fileSize)} / Library: ${libraries[games[gameId].libraryId]?.name || "Unknown"}`}
+                                    {`Size: ${humanFileSize(games[gameId].fileSize)} / Library: ${libraries[games[gameId].libraryId]?.name || "Unknown"}`}
                                 </Tooltip.Content>
                             </Tooltip>
                         )}

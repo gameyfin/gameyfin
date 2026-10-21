@@ -16,11 +16,17 @@ import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
+import org.gameyfin.app.core.removeMultiSpaces
 import org.gameyfin.app.core.replaceRomanNumerals
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.core.sync.EntityEventBroadcaster
+import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
+import org.gameyfin.app.core.tasks.logging.submitWithMdc
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
+import org.gameyfin.app.games.extensions.toDto
 import org.gameyfin.app.games.extensions.toDtos
+import org.gameyfin.app.games.extensions.toSummaryDto
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
@@ -35,15 +41,15 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 import org.gameyfin.pluginapi.gamemetadata.GameMetadata as PluginApiMetadata
 
 @Service
@@ -59,42 +65,19 @@ class GameService(
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
+        private const val PLUGIN_QUERY_TIMEOUT_SECONDS = 120L
 
         /* Websockets */
-        private val gameUserEvents = Sinks.many().multicast().onBackpressureBuffer<GameUserEvent>(1024, false)
-        private val gameAdminEvents = Sinks.many().multicast().onBackpressureBuffer<GameAdminEvent>(1024, false)
+        private val userEvents = EntityEventBroadcaster<GameEvent>("gameUserEvents", 1.seconds)
+        private val adminEvents = EntityEventBroadcaster<GameEvent>("gameAdminEvents", 1.seconds)
 
-        fun subscribeUser(): Flux<List<GameUserEvent>> {
-            log.debug { "New user subscription for gameUpdates" }
-            return gameUserEvents.asFlux()
-                .buffer(1.seconds.toJavaDuration())
-                .doOnSubscribe {
-                    log.debug { "Subscriber added to gameUserEvents [${gameUserEvents.currentSubscriberCount()}]" }
-                }
-                .doFinally {
-                    log.debug { "Subscriber removed from gameUserEvents with signal type $it [${gameUserEvents.currentSubscriberCount()}]" }
-                }
-        }
+        fun subscribeUser(): Flux<List<GameEvent>> = userEvents.subscribe()
 
-        fun subscribeAdmin(): Flux<List<GameAdminEvent>> {
-            log.debug { "New admin subscription for gameUpdates" }
-            return gameAdminEvents.asFlux()
-                .buffer(1.seconds.toJavaDuration())
-                .doOnSubscribe {
-                    log.debug { "Subscriber added to gameAdminEvents [${gameAdminEvents.currentSubscriberCount()}]" }
-                }
-                .doFinally {
-                    log.debug { "Subscriber removed from gameAdminEvents with signal type $it [${gameAdminEvents.currentSubscriberCount()}]" }
-                }
-        }
+        fun subscribeAdmin(): Flux<List<GameEvent>> = adminEvents.subscribe()
 
-        fun emitUser(event: GameUserEvent) {
-            gameUserEvents.tryEmitNext(event)
-        }
+        fun emitUser(event: GameEvent) = userEvents.emit(event)
 
-        fun emitAdmin(event: GameAdminEvent) {
-            gameAdminEvents.tryEmitNext(event)
-        }
+        fun emitAdmin(event: GameEvent) = adminEvents.emit(event)
 
         private val executor = Executors.newVirtualThreadPerTaskExecutor()
     }
@@ -103,9 +86,39 @@ class GameService(
         get() = pluginManager.getExtensions(GameMetadataProvider::class.java)
 
 
-    fun getAll(): List<GameDto> {
-        val entities = gameRepository.findAll().toList()
-        return entities.toDtos()
+    /**
+     * Returns the game summaries that changed since the given timestamp, or all game summaries if [since] is `null`.
+     * Clients have to remove all games that are not contained in [GameSyncDto.allIds] (delta sync only).
+     */
+    @Transactional(readOnly = true)
+    fun sync(since: Instant?, admin: Boolean): GameSyncDto {
+        val serverTime = Instant.now()
+
+        if (since == null) {
+            return GameSyncDto(
+                serverTime = serverTime,
+                full = true,
+                games = gameRepository.findAll().map { it.toSummaryDto(admin) },
+                allIds = emptyList()
+            )
+        }
+
+        return GameSyncDto(
+            serverTime = serverTime,
+            full = false,
+            games = gameRepository.findAllByUpdatedAtAfter(since.minus(SYNC_SAFETY_WINDOW))
+                .map { it.toSummaryDto(admin) },
+            allIds = gameRepository.findAllIds()
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun getDtoById(id: Long): GameDto? = gameRepository.findByIdOrNull(id)?.toDto()
+
+    @Transactional(readOnly = true)
+    fun getDtosByIds(ids: Collection<Long>): List<GameDto> {
+        if (ids.isEmpty()) return emptyList()
+        return gameRepository.findAllById(ids.distinct()).toDtos()
     }
 
     private fun create(game: Game): Game {
@@ -161,6 +174,7 @@ class GameService(
                 userService.findByOidcProviderId(subject)
                     ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
             }
+
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
 
@@ -471,7 +485,7 @@ class GameService(
     fun getPotentialMatches(searchTerm: String, platformFilter: Set<Platform>): List<GameSearchResultDto> {
         // 1. Query all plugins for up to 10 results each
         val futures: List<Future<List<Pair<GameMetadataProvider, PluginApiMetadata>>>> = metadataPlugins.map { plugin ->
-            executor.submit<List<Pair<GameMetadataProvider, PluginApiMetadata>>> {
+            executor.submitWithMdc {
                 try {
                     plugin.fetchByTitle(searchTerm, platformFilter, 10).map { plugin to it }
                 } catch (e: Exception) {
@@ -787,7 +801,7 @@ class GameService(
         }
 
         val futures = pluginsWithPlatformSupport.associateWith { plugin ->
-            executor.submit<PluginApiMetadata?> {
+            executor.submitWithMdc<PluginApiMetadata?> {
                 try {
                     plugin.fetchByTitle(gameTitle, platforms).firstOrNull()
                 } catch (e: Exception) {
@@ -798,7 +812,15 @@ class GameService(
                 }
             }
         }
-        return futures.mapValues { it.value.get() }
+        return futures.mapValues { (plugin, future) ->
+            try {
+                future.get(PLUGIN_QUERY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            } catch (_: TimeoutException) {
+                future.cancel(true)
+                log.warn { "Metadata plugin '${plugin.javaClass.name}' did not respond within ${PLUGIN_QUERY_TIMEOUT_SECONDS}s for title '$gameTitle'" }
+                null
+            }
+        }
     }
 
     /**
@@ -970,5 +992,5 @@ class GameService(
         return FuzzySearch.ratio(this.normalizeGameTitle(), other.normalizeGameTitle()) > minRatio
     }
 
-    fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals()
+    fun String.normalizeGameTitle(): String = this.alphaNumeric().replaceRomanNumerals().removeMultiSpaces()
 }

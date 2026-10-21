@@ -56,6 +56,10 @@ class LibraryScanServiceTest {
         libraryRepository = mockk()
         filesystemService = mockk()
         libraryCoreService = mockk()
+        // Queued scans reload the library with its lazy associations initialized, delegate to the repository stubs
+        every { libraryCoreService.getWithGamesAndIgnoredPaths(any()) } answers {
+            libraryRepository.findAllById(listOf(firstArg<Long>())).firstOrNull()
+        }
         libraryGameProcessor = mockk()
         gameRepository = mockk()
         ignoredPathRepository = mockk()
