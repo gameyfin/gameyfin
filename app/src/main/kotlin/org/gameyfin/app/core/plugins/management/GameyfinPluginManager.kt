@@ -183,39 +183,10 @@ class GameyfinPluginManager(
 
         if (pluginWrapper == null) return null
 
-        var pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
-
-        if (pluginManagementEntry == null) {
-            // Create a new entry
-
-            // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
-            val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
-
-            pluginManagementEntry =
-                PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
-
-            pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
-                else -> PluginTrustLevel.BUNDLED
-            }
-
-            // If the plugin is official or bundled, we can enable it and start it by default
-            if (pluginManagementEntry.trustLevel == PluginTrustLevel.OFFICIAL
-                || pluginManagementEntry.trustLevel == PluginTrustLevel.BUNDLED
-            ) {
-                pluginManagementEntry.enabled = true
-                log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
-                // Save management entry before starting, so startPlugin can find it in the database
-                pluginManagementRepository.save(pluginManagementEntry)
-                startPlugin(pluginWrapper.pluginId)
-            }
-        } else {
-            // Just re-verify the plugin if it was already in the database
-            pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
-                else -> PluginTrustLevel.BUNDLED
-            }
-        }
+        // Re-verify existing entries, create and start new ones
+        val pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
+            ?.apply { trustLevel = verifyTrustLevel(pluginPath) }
+            ?: createManagementEntry(pluginWrapper, pluginPath)
 
         // If the plugin is untrusted, we disable it regardless of the previous state
         if (pluginManagementEntry.trustLevel == PluginTrustLevel.UNTRUSTED) {
@@ -232,6 +203,40 @@ class GameyfinPluginManager(
 
         return pluginWrapper
     }
+
+    /**
+     * Creates a new management entry for a plugin that is not yet in the database.
+     * Official and bundled plugins are enabled and started right away.
+     */
+    private fun createManagementEntry(pluginWrapper: PluginWrapper, pluginPath: Path): PluginManagementEntry {
+        // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
+        val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
+
+        val pluginManagementEntry =
+            PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
+        pluginManagementEntry.trustLevel = verifyTrustLevel(pluginPath)
+
+        // If the plugin is official or bundled, we can enable it and start it by default
+        if (pluginManagementEntry.trustLevel == PluginTrustLevel.OFFICIAL
+            || pluginManagementEntry.trustLevel == PluginTrustLevel.BUNDLED
+        ) {
+            pluginManagementEntry.enabled = true
+            log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
+            // Save management entry before starting, so startPlugin can find it in the database
+            pluginManagementRepository.save(pluginManagementEntry)
+            startPlugin(pluginWrapper.pluginId)
+        }
+
+        return pluginManagementEntry
+    }
+
+    private fun verifyTrustLevel(pluginPath: Path): PluginTrustLevel {
+        return when (pluginPath.extension) {
+            "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
+            else -> PluginTrustLevel.BUNDLED
+        }
+    }
+
 
     override fun startPlugin(pluginId: String?): PluginState? {
         if (pluginId == null) return PluginState.FAILED

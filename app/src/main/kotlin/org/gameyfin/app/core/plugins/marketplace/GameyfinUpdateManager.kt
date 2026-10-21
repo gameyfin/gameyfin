@@ -2,8 +2,8 @@ package org.gameyfin.app.core.plugins.marketplace
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
-import org.gameyfin.app.core.plugins.management.PluginTrustLevel
 import org.gameyfin.app.core.plugins.management.PluginManagementRepository
+import org.gameyfin.app.core.plugins.management.PluginTrustLevel
 import org.pf4j.PluginRuntimeException
 import org.pf4j.PluginState
 import org.pf4j.update.FileVerifier
@@ -44,7 +44,7 @@ class GameyfinUpdateManager(
     private val pluginManager: GameyfinPluginManager,
     private val httpClient: MarketplaceHttpClient,
     private val pluginManagementRepository: PluginManagementRepository,
-    @Value("\${gameyfin.plugins.marketplace.cache-ttl:1h}")
+    @Value($$"${gameyfin.plugins.marketplace.cache-ttl:1h}")
     private val cacheTtl: Duration = Duration.ofHours(1),
 ) : UpdateManager(pluginManager, null as Path?) {
 
@@ -200,11 +200,9 @@ class GameyfinUpdateManager(
                 ?: throw IllegalArgumentException("Plugin '$pluginId' not found in marketplace '$marketplaceId'")
             val release = findRelease(pluginInfo, version)
 
-            if (!isCompatible(release)) {
-                throw IllegalStateException(
-                    "Version ${release.version} of plugin '$pluginId' requires Gameyfin '${release.requires}', " +
-                            "but this is ${pluginManager.systemVersion}"
-                )
+            check(isCompatible(release)) {
+                "Version ${release.version} of plugin '$pluginId' requires Gameyfin '${release.requires}', " +
+                        "but this is ${pluginManager.systemVersion}"
             }
 
             checkInstallable(pluginId, release)
@@ -231,17 +229,13 @@ class GameyfinUpdateManager(
             val pluginWrapper = pluginManager.getPlugin(pluginId)
                 ?: throw IllegalArgumentException("Plugin '$pluginId' is not installed")
 
-            if (!pluginManager.isInInstalledPluginsRoot(pluginWrapper.pluginPath)) {
-                throw IllegalStateException("Plugin '$pluginId' was not installed via the marketplace and can't be uninstalled")
-            }
+            check(pluginManager.isInInstalledPluginsRoot(pluginWrapper.pluginPath)) { "Plugin '$pluginId' was not installed via the marketplace and can't be uninstalled" }
 
             log.info { "Uninstalling plugin '$pluginId' (${pluginWrapper.pluginPath})" }
 
-            if (!pluginManager.deletePlugin(pluginId)) {
-                throw IllegalStateException(
-                    "Failed to uninstall plugin '$pluginId'" +
-                            (pluginWrapper.failedException?.message?.let { ": $it" } ?: "")
-                )
+            check(pluginManager.deletePlugin(pluginId)) {
+                "Failed to uninstall plugin '$pluginId'" +
+                        (pluginWrapper.failedException?.message?.let { ": $it" } ?: "")
             }
 
             pluginManagementRepository.findByIdOrNull(pluginId)?.let {
@@ -278,23 +272,21 @@ class GameyfinUpdateManager(
      */
     private fun checkInstallable(pluginId: String, release: PluginRelease) {
         val installed = pluginManager.getPlugin(pluginId)
-        if (installed != null
-            && pluginManager.isInInstalledPluginsRoot(installed.pluginPath)
-            && compareVersions(installed.descriptor.version, release.version) == 0
-        ) {
-            throw IllegalStateException("Version ${release.version} of plugin '$pluginId' is already installed")
-        }
+        check(
+            !(installed != null
+                    && pluginManager.isInInstalledPluginsRoot(installed.pluginPath)
+                    && compareVersions(installed.descriptor.version, release.version) == 0)
+        ) { "Version ${release.version} of plugin '$pluginId' is already installed" }
 
         val localPath = pluginManager.findLocalPluginPath(pluginId) ?: return
         val localDescriptor = pluginManager.readPluginDescriptor(localPath) ?: return
 
-        if (pluginManager.isCompatible(localDescriptor.requires)
-            && compareVersions(localDescriptor.version, release.version) >= 0
+        check(
+            !(pluginManager.isCompatible(localDescriptor.requires)
+                    && compareVersions(localDescriptor.version, release.version) >= 0)
         ) {
-            throw IllegalStateException(
-                "Version ${localDescriptor.version} of plugin '$pluginId' is already provided locally (e.g. bundled " +
-                        "with Gameyfin) and would take precedence over version ${release.version}"
-            )
+            "Version ${localDescriptor.version} of plugin '$pluginId' is already provided locally (e.g. bundled " +
+                    "with Gameyfin) and would take precedence over version ${release.version}"
         }
     }
 
@@ -309,7 +301,12 @@ class GameyfinUpdateManager(
         return downloaded
     }
 
-    private fun replacePlugin(pluginId: String, release: PluginRelease, downloaded: Path, marketplaceId: String): PluginState {
+    private fun replacePlugin(
+        pluginId: String,
+        release: PluginRelease,
+        downloaded: Path,
+        marketplaceId: String
+    ): PluginState {
         val installedRoot = Files.createDirectories(pluginManager.installedPluginsRoot)
         val target = installedRoot.resolve("${sanitize(pluginId)}-${sanitize(release.version)}.jar")
 
