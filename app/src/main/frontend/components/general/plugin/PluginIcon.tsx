@@ -15,7 +15,7 @@ export default function PluginIcon({
                                        blurred = false,
                                        showTooltip = true
                                    }: PluginIconProps) {
-    const src = `/images/plugins/${plugin.id}/logo`;
+    const src = `/images/plugins/${plugin.id}/logo?v=${encodeURIComponent(plugin.version)}`;
     const icon = plugin.hasLogo
         ? <span className="relative inline-flex" style={{width: size, height: size}}>
             {blurred && <img className="absolute inset-0 size-full object-contain blur-lg opacity-70" src={src}

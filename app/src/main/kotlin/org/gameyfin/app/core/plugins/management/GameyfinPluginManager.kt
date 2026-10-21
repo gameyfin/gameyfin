@@ -8,6 +8,7 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
 import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.pf4j.*
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import java.nio.file.Path
@@ -28,18 +29,38 @@ class GameyfinPluginManager(
     private val dbPluginStatusProvider: DatabasePluginStatusProvider,
     private val pluginConfigRepository: PluginConfigRepository,
     private val pluginManagementRepository: PluginManagementRepository,
-    private val pluginDataService: ObjectProvider<GameyfinDataService>
-) : DefaultPluginManager(Path(System.getProperty("pf4j.pluginsDir", "plugins"))) {
+    private val pluginDataService: ObjectProvider<GameyfinDataService>,
+    @Value($$"${gameyfin.plugins.install-directory:$$DEFAULT_INSTALLED_PLUGINS_DIR}")
+    installedPluginsDirectory: String = DEFAULT_INSTALLED_PLUGINS_DIR,
+    @Value($$"${spring.application.version:}")
+    applicationVersion: String = ""
+) : DefaultPluginManager(
+    listOf(
+        Path(System.getProperty("pf4j.pluginsDir", "plugins")),
+        Path(installedPluginsDirectory)
+    )
+) {
 
     companion object {
         private const val PUBLIC_KEY_FILE = "certificates/gameyfin-plugins.pem"
+        const val DEFAULT_INSTALLED_PLUGINS_DIR = "plugins-installed"
+        private const val UNKNOWN_SYSTEM_VERSION = "0.0.0"
         private val log = KotlinLogging.logger {}
     }
-    
+
     private val publicKey: PublicKey = loadPluginSignaturePublicKey()
     private val signatureVerifier = PluginSignatureVerifier(publicKey)
 
+    /**
+     * Root directory for plugins installed via the plugin marketplace
+     */
+    val installedPluginsRoot: Path = Path(installedPluginsDirectory).toAbsolutePath().normalize()
+
     init {
+        // Enables the PF4J compatibility checks ("Plugin-Requires" in the plugin manifest)
+        systemVersion = toSystemVersion(applicationVersion)
+        log.info { "Plugin system version: $systemVersion" }
+
         // This took me way too long to figure out...
         // But I learned a lot about Kotlin and Java interoperability in the process
         pluginStatusProvider = dbPluginStatusProvider
@@ -48,6 +69,8 @@ class GameyfinPluginManager(
         pluginStateListeners.add { event ->
             if (event is PluginStateEvent) {
                 log.info { "Plugin ${event.plugin.pluginId} changed state to ${event.pluginState}" }
+                val isLoaded = event.pluginState != PluginState.UNLOADED && getPlugin(event.plugin.pluginId) != null
+                if (!isLoaded) return@add
                 if (event.oldState == PluginState.DISABLED) {
                     startPlugin(event.plugin.pluginId)
                 } else if (event.pluginState == PluginState.DISABLED) {
@@ -74,11 +97,23 @@ class GameyfinPluginManager(
         return pluginLoader
     }
 
+    /**
+     * Note: Called from the constructor of the superclass, so the properties of this class are not initialized yet.
+     * They must only be accessed lazily, i.e. when the plugin paths are requested.
+     */
     override fun createPluginRepository(): PluginRepository? {
-        return CompoundPluginRepository()
+        val compoundPluginRepository = CompoundPluginRepository()
             .add(JarPluginRepository(getPluginsRoots()))
             .add(DefaultPluginRepository(getPluginsRoots()))
             .add(DevelopmentPluginRepository(getPluginsRoots())) { this.isDevelopment }
+
+        return HighestVersionPluginRepository(
+            delegate = compoundPluginRepository,
+            descriptorFinder = { pluginDescriptorFinder },
+            isCompatible = { isCompatible(it.requires) },
+            compareVersions = { v1, v2 -> versionManager.compareVersions(v1, v2) },
+            preferredRoot = { installedPluginsRoot }
+        )
     }
 
     /**
@@ -117,6 +152,21 @@ class GameyfinPluginManager(
     }
 
     public override fun loadPluginFromPath(pluginPath: Path): PluginWrapper? {
+        return loadPluginFromPath(pluginPath, throwOnError = false)
+    }
+
+    /**
+     * Loads a single plugin (e.g. one installed via the marketplace), resolves its dependencies and returns its ID.
+     * In contrast to [loadPlugin], errors are propagated instead of being swallowed.
+     */
+    fun loadPluginOrThrow(pluginPath: Path): String {
+        val pluginWrapper = loadPluginFromPath(pluginPath, throwOnError = true)
+            ?: throw PluginRuntimeException("Could not load plugin from '{}'", pluginPath)
+        resolvePlugins()
+        return pluginWrapper.pluginId
+    }
+
+    private fun loadPluginFromPath(pluginPath: Path, throwOnError: Boolean): PluginWrapper? {
 
         if (pluginPath.endsWith("data") || pluginPath.endsWith("state")) {
             log.info { "Skipping non-plugin path '$pluginPath'" }
@@ -127,44 +177,16 @@ class GameyfinPluginManager(
             superLoadPluginFromPath(pluginPath)
         } catch (e: Exception) {
             log.error { "Failed to load plugin '$pluginPath': ${e.message}" }
+            if (throwOnError) throw e
             null
         }
 
         if (pluginWrapper == null) return null
 
-        var pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
-
-        if (pluginManagementEntry == null) {
-            // Create a new entry
-
-            // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
-            val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
-
-            pluginManagementEntry =
-                PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
-
-            pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
-                else -> PluginTrustLevel.BUNDLED
-            }
-
-            // If the plugin is official or bundled, we can enable it and start it by default
-            if (pluginManagementEntry.trustLevel == PluginTrustLevel.OFFICIAL
-                || pluginManagementEntry.trustLevel == PluginTrustLevel.BUNDLED
-            ) {
-                pluginManagementEntry.enabled = true
-                log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
-                // Save management entry before starting, so startPlugin can find it in the database
-                pluginManagementRepository.save(pluginManagementEntry)
-                startPlugin(pluginWrapper.pluginId)
-            }
-        } else {
-            // Just re-verify the plugin if it was already in the database
-            pluginManagementEntry.trustLevel = when (pluginPath.extension) {
-                "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
-                else -> PluginTrustLevel.BUNDLED
-            }
-        }
+        // Re-verify existing entries, create and start new ones
+        val pluginManagementEntry = pluginManagementRepository.findByIdOrNull(pluginWrapper.pluginId)
+            ?.apply { trustLevel = verifyTrustLevel(pluginPath) }
+            ?: createManagementEntry(pluginWrapper, pluginPath)
 
         // If the plugin is untrusted, we disable it regardless of the previous state
         if (pluginManagementEntry.trustLevel == PluginTrustLevel.UNTRUSTED) {
@@ -181,6 +203,40 @@ class GameyfinPluginManager(
 
         return pluginWrapper
     }
+
+    /**
+     * Creates a new management entry for a plugin that is not yet in the database.
+     * Official and bundled plugins are enabled and started right away.
+     */
+    private fun createManagementEntry(pluginWrapper: PluginWrapper, pluginPath: Path): PluginManagementEntry {
+        // Set priority to the max value of the current plugins + 1 (which is the lowest priority) or 1 if there are no entries
+        val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
+
+        val pluginManagementEntry =
+            PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
+        pluginManagementEntry.trustLevel = verifyTrustLevel(pluginPath)
+
+        // If the plugin is official or bundled, we can enable it and start it by default
+        if (pluginManagementEntry.trustLevel == PluginTrustLevel.OFFICIAL
+            || pluginManagementEntry.trustLevel == PluginTrustLevel.BUNDLED
+        ) {
+            pluginManagementEntry.enabled = true
+            log.info { "Plugin ${pluginWrapper.pluginId} verified, starting" }
+            // Save management entry before starting, so startPlugin can find it in the database
+            pluginManagementRepository.save(pluginManagementEntry)
+            startPlugin(pluginWrapper.pluginId)
+        }
+
+        return pluginManagementEntry
+    }
+
+    private fun verifyTrustLevel(pluginPath: Path): PluginTrustLevel {
+        return when (pluginPath.extension) {
+            "jar" -> signatureVerifier.verifyPluginSignature(pluginPath)
+            else -> PluginTrustLevel.BUNDLED
+        }
+    }
+
 
     override fun startPlugin(pluginId: String?): PluginState? {
         if (pluginId == null) return PluginState.FAILED
@@ -214,6 +270,20 @@ class GameyfinPluginManager(
         }
 
         return super.startPlugin(pluginId)
+    }
+
+    /**
+     * Same as [DefaultPluginManager.deletePlugin], but also works for plugins whose plugin class can't be
+     * instantiated (PF4J would fail with a NullPointerException when notifying the plugin about its deletion).
+     */
+    override fun deletePlugin(pluginId: String?): Boolean {
+        val pluginWrapper = getPlugin(pluginId) ?: return super.deletePlugin(pluginId)
+        if (runCatching { pluginWrapper.plugin }.getOrNull() != null) return super.deletePlugin(pluginId)
+
+        log.warn { "Plugin $pluginId could not be instantiated, deleting it without notifying the plugin" }
+        if (stopPlugin(pluginId)?.isFailed == true) return false
+        if (!unloadPlugin(pluginId)) return false
+        return pluginRepository.deletePluginPath(pluginWrapper.pluginPath)
     }
 
     override fun startPlugins() {
@@ -281,6 +351,69 @@ class GameyfinPluginManager(
         return getPluginsForExtension(extensionClass).firstOrNull()
     }
 
+    /**
+     * Checks if a version constraint (e.g. the "Plugin-Requires" manifest entry) is satisfied by this Gameyfin instance.
+     * Mirrors the logic of [AbstractPluginManager.isPluginValid].
+     */
+    fun isCompatible(requires: String?): Boolean {
+        if (systemVersion == UNKNOWN_SYSTEM_VERSION) return true
+
+        var constraint = requires?.trim().orEmpty()
+        if (constraint.isEmpty() || constraint == "*") return true
+        if (!isExactVersionAllowed && constraint.matches(Regex("^\\d+\\.\\d+\\.\\d+$"))) {
+            constraint = ">=$constraint"
+        }
+
+        return try {
+            versionManager.checkVersionConstraint(systemVersion, constraint)
+        } catch (e: Exception) {
+            log.warn { "Invalid version constraint '$requires': ${e.message}" }
+            false
+        }
+    }
+
+    fun isCompatible(pluginWrapper: PluginWrapper): Boolean {
+        return isCompatible(pluginWrapper.descriptor.requires)
+    }
+
+    /**
+     * Returns whether the plugin was installed via the marketplace or is a local plugin (bundled, mounted manually or
+     * loaded in development mode).
+     */
+    fun getPluginOrigin(pluginId: String): PluginOrigin {
+        val pluginPath = getPlugin(pluginId)?.pluginPath ?: return PluginOrigin.LOCAL
+        return if (isInInstalledPluginsRoot(pluginPath)) PluginOrigin.MARKETPLACE else PluginOrigin.LOCAL
+    }
+
+    fun isInInstalledPluginsRoot(path: Path): Boolean {
+        return path.toAbsolutePath().normalize().startsWith(installedPluginsRoot)
+    }
+
+    /**
+     * Finds plugin files of the given plugin ID in the local plugin roots (excluding the marketplace root).
+     * Used to fall back to a bundled version after a marketplace version has been removed.
+     */
+    fun findLocalPluginPath(pluginId: String): Path? {
+        val repository = (pluginRepository as? HighestVersionPluginRepository)?.delegate ?: pluginRepository
+        return repository.pluginPaths
+            .filterNot { isInInstalledPluginsRoot(it) }
+            .firstOrNull { path ->
+                try {
+                    pluginDescriptorFinder.isApplicable(path) && pluginDescriptorFinder.find(path).pluginId == pluginId
+                } catch (_: Exception) {
+                    false
+                }
+            }
+    }
+
+    fun readPluginDescriptor(pluginPath: Path): PluginDescriptor? {
+        return try {
+            pluginDescriptorFinder.find(pluginPath)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun getManagementEntry(pluginId: String): PluginManagementEntry {
         return pluginManagementRepository.findByIdOrNull(pluginId)
             ?: throw IllegalArgumentException("Plugin with ID $pluginId not found")
@@ -306,6 +439,15 @@ class GameyfinPluginManager(
         return cert.publicKey
     }
 
+
+    /**
+     * Converts the application version to a version usable for compatibility checks.
+     * Pre-release and build metadata are stripped, so preview builds are treated like their final release.
+     */
+    private fun toSystemVersion(applicationVersion: String): String {
+        val match = Regex("^(\\d+\\.\\d+\\.\\d+)").find(applicationVersion.trim())
+        return match?.groupValues?.get(1) ?: UNKNOWN_SYSTEM_VERSION
+    }
 
     // Needed for unit testing since super.loadPluginFromPath is protected
     internal fun superLoadPluginFromPath(pluginPath: Path): PluginWrapper? {

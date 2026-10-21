@@ -1,0 +1,38 @@
+{
+  "plugins": [
+    {
+      "id": "com.example.gameyfin.awesome-metadata",
+      "name": "Awesome Metadata",
+      "shortDescription": "Fetches game metadata from the Awesome Games Database.",
+      "description": "Longer description of the plugin. **Markdown** is supported.\n\nRequires an API key that can be created on https://awesome-games.example.com.",
+      "provider": "Jane Doe",
+      "license": "MIT",
+      "projectUrl": "https://github.com/janedoe/gameyfin-awesome-metadata",
+      "logo": "https://raw.githubusercontent.com/janedoe/gameyfin-awesome-metadata/main/logo.png",
+      "types": [
+        "GameMetadataProvider"
+      ],
+      "tags": [
+        "metadata",
+        "covers"
+      ],
+      "releases": [
+        {
+          "version": "1.1.0",
+          "date": "2025-06-01",
+          "requires": ">=2.5.1",
+          "url": "https://github.com/janedoe/gameyfin-awesome-metadata/releases/download/v1.1.0/awesome-metadata-1.1.0.jar",
+          "sha512sum": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000abcd",
+          "changelog": "Added support for screenshots."
+        },
+        {
+          "version": "1.0.0",
+          "date": "2025-04-12",
+          "requires": ">=2.5.1",
+          "url": "https://github.com/janedoe/gameyfin-awesome-metadata/releases/download/v1.0.0/awesome-metadata-1.0.0.jar",
+          "sha512sum": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ef01"
+        }
+      ]
+    }
+  ]
+}

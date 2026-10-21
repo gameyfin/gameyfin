@@ -6,6 +6,8 @@ import org.gameyfin.app.core.plugins.config.PluginConfigEntryKey
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.app.core.plugins.dto.PluginUpdateDto
 import org.gameyfin.app.core.plugins.management.*
+import org.gameyfin.app.core.plugins.marketplace.GameyfinPluginInfo
+import org.gameyfin.app.core.plugins.marketplace.GameyfinUpdateManager
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -18,6 +20,8 @@ import org.junit.jupiter.api.Test
 import org.pf4j.ExtensionPoint
 import org.pf4j.Plugin
 import org.pf4j.PluginState
+import org.pf4j.PluginStateEvent
+import org.pf4j.PluginStateListener
 import org.pf4j.PluginWrapper
 import org.springframework.data.repository.findByIdOrNull
 import reactor.test.StepVerifier
@@ -28,6 +32,7 @@ class PluginServiceTest {
     private lateinit var pluginManager: GameyfinPluginManager
     private lateinit var pluginManagementRepository: PluginManagementRepository
     private lateinit var pluginConfigRepository: PluginConfigRepository
+    private lateinit var updateManager: GameyfinUpdateManager
     private lateinit var service: PluginService
 
     @BeforeEach
@@ -35,13 +40,15 @@ class PluginServiceTest {
         pluginManager = mockk(relaxed = true)
         pluginManagementRepository = mockk(relaxed = true)
         pluginConfigRepository = mockk(relaxed = true)
+        updateManager = mockk(relaxed = true)
 
         // Default stubs
         every { pluginManager.plugins } returns emptyList()
         every { pluginConfigRepository.findAllByPluginId(any()) } returns emptyList()
         every { pluginManagementRepository.findByIdOrNull(any()) } returns null
+        every { updateManager.findPluginInfo(any(), any()) } returns null
 
-        service = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository)
+        service = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository, updateManager)
     }
 
     @AfterEach
@@ -471,6 +478,270 @@ class PluginServiceTest {
     }
 
     // -----------------------------------------------------------------------
+    // Validation cache invalidation via plugin state listener
+    // -----------------------------------------------------------------------
+
+    private fun createServiceCapturingListener(): Pair<PluginService, CapturingSlot<PluginStateListener>> {
+        val listenerSlot = slot<PluginStateListener>()
+        every { pluginManager.addPluginStateListener(capture(listenerSlot)) } just Runs
+        val serviceWithListener = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository, updateManager)
+        assertTrue(listenerSlot.isCaptured)
+        return serviceWithListener to listenerSlot
+    }
+
+    @Test
+    fun `validation cache should be cleared when plugin is unloaded`() {
+        val (serviceWithListener, listenerSlot) = createServiceCapturingListener()
+        val pluginId = "unloaded-plugin"
+        every { pluginManager.validatePluginConfig(pluginId) } returns
+                PluginConfigValidationResult(PluginConfigValidationResultType.VALID)
+
+        serviceWithListener.validatePluginConfig(pluginId)
+        serviceWithListener.validatePluginConfig(pluginId)
+        verify(exactly = 1) { pluginManager.validatePluginConfig(pluginId) }
+
+        val wrapper = mockPluginWrapper(pluginId, PluginState.UNLOADED)
+        listenerSlot.captured.pluginStateChanged(PluginStateEvent(pluginManager, wrapper, PluginState.STOPPED))
+
+        serviceWithListener.validatePluginConfig(pluginId)
+        verify(exactly = 2) { pluginManager.validatePluginConfig(pluginId) }
+    }
+
+    @Test
+    fun `validation cache should be kept for state changes other than UNLOADED`() {
+        val (serviceWithListener, listenerSlot) = createServiceCapturingListener()
+        val pluginId = "stopped-plugin"
+        every { pluginManager.validatePluginConfig(pluginId) } returns
+                PluginConfigValidationResult(PluginConfigValidationResultType.VALID)
+
+        serviceWithListener.validatePluginConfig(pluginId)
+
+        listOf(PluginState.STOPPED, PluginState.STARTED, PluginState.DISABLED, PluginState.FAILED).forEach { state ->
+            val wrapper = mockPluginWrapper(pluginId, state)
+            listenerSlot.captured.pluginStateChanged(PluginStateEvent(pluginManager, wrapper, PluginState.RESOLVED))
+        }
+
+        serviceWithListener.validatePluginConfig(pluginId)
+        verify(exactly = 1) { pluginManager.validatePluginConfig(pluginId) }
+    }
+
+    @Test
+    fun `validation cache should only be cleared for the unloaded plugin`() {
+        val (serviceWithListener, listenerSlot) = createServiceCapturingListener()
+        every { pluginManager.validatePluginConfig(any()) } returns
+                PluginConfigValidationResult(PluginConfigValidationResultType.VALID)
+
+        serviceWithListener.validatePluginConfig("plugin-a")
+        serviceWithListener.validatePluginConfig("plugin-b")
+
+        val wrapper = mockPluginWrapper("plugin-a", PluginState.UNLOADED)
+        listenerSlot.captured.pluginStateChanged(PluginStateEvent(pluginManager, wrapper, PluginState.STOPPED))
+
+        serviceWithListener.validatePluginConfig("plugin-a")
+        serviceWithListener.validatePluginConfig("plugin-b")
+
+        verify(exactly = 2) { pluginManager.validatePluginConfig("plugin-a") }
+        verify(exactly = 1) { pluginManager.validatePluginConfig("plugin-b") }
+    }
+
+    @Test
+    fun `plugin state listener should emit state update`() {
+        mockkObject(PluginService.Companion)
+        every { PluginService.emit(any()) } just Runs
+        val (_, listenerSlot) = createServiceCapturingListener()
+
+        val wrapper = mockPluginWrapper("emitting-plugin", PluginState.UNLOADED)
+        listenerSlot.captured.pluginStateChanged(PluginStateEvent(pluginManager, wrapper, PluginState.STOPPED))
+
+        verify(exactly = 1) {
+            PluginService.emit(PluginUpdateDto(id = "emitting-plugin", state = PluginState.UNLOADED))
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // getDto / emitPlugin
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `getDto should return dto for loaded plugin`() {
+        val wrapper = buildFullPluginWrapper("dto-plugin")
+        every { pluginManager.getPlugin("dto-plugin") } returns wrapper
+
+        val result = service.getDto("dto-plugin")
+
+        assertNotNull(result)
+        assertEquals("dto-plugin", result.id)
+        assertEquals(PluginState.STARTED, result.state)
+    }
+
+    @Test
+    fun `getDto should return null for unknown plugin`() {
+        every { pluginManager.getPlugin("unknown-plugin") } returns null
+
+        assertNull(service.getDto("unknown-plugin"))
+        verify(exactly = 0) { pluginManager.getManagementEntry(any()) }
+    }
+
+    @Test
+    fun `emitPlugin should emit full plugin dto when plugin is loaded`() {
+        mockkObject(PluginService.Companion)
+        val captured = slot<PluginUpdateDto>()
+        every { PluginService.emit(capture(captured)) } just Runs
+
+        val wrapper = buildFullPluginWrapper("emit-plugin")
+        every { pluginManager.getPlugin("emit-plugin") } returns wrapper
+
+        service.emitPlugin("emit-plugin")
+
+        verify(exactly = 1) { PluginService.emit(any()) }
+        with(captured.captured) {
+            assertEquals("emit-plugin", id)
+            assertNotNull(plugin)
+            assertEquals("emit-plugin", plugin.id)
+            assertNull(removed)
+            assertNull(state)
+        }
+    }
+
+    @Test
+    fun `emitPlugin should emit removal notice when plugin is not loaded`() {
+        mockkObject(PluginService.Companion)
+        val captured = slot<PluginUpdateDto>()
+        every { PluginService.emit(capture(captured)) } just Runs
+        every { pluginManager.getPlugin("removed-plugin") } returns null
+
+        service.emitPlugin("removed-plugin")
+
+        verify(exactly = 1) { PluginService.emit(any()) }
+        assertEquals(PluginUpdateDto(id = "removed-plugin", removed = true), captured.captured)
+    }
+
+    // -----------------------------------------------------------------------
+    // toDto marketplace fields
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `toDto should use defaults for local compatible plugin`() {
+        val wrapper = buildFullPluginWrapper("local-plugin")
+        every { pluginManager.plugins } returns listOf(wrapper)
+
+        val dto = service.getAll().single()
+
+        assertEquals(PluginOrigin.LOCAL, dto.origin)
+        assertNull(dto.sourceMarketplaceId)
+        assertNull(dto.requires)
+        assertTrue(dto.compatible)
+        assertNull(dto.failureReason)
+    }
+
+    @Test
+    fun `toDto should map marketplace origin and source marketplace`() {
+        val wrapper = buildFullPluginWrapper(
+            "marketplace-plugin",
+            origin = PluginOrigin.MARKETPLACE,
+            sourceMarketplaceId = "official"
+        )
+        every { pluginManager.plugins } returns listOf(wrapper)
+
+        val dto = service.getAll().single()
+
+        assertEquals(PluginOrigin.MARKETPLACE, dto.origin)
+        assertEquals("official", dto.sourceMarketplaceId)
+        verify { pluginManager.getPluginOrigin("marketplace-plugin") }
+    }
+
+    @Test
+    fun `toDto should fall back to marketplace plugin types when PF4J types are empty`() {
+        val wrapper = buildFullPluginWrapper(
+            "marketplace-plugin",
+            origin = PluginOrigin.MARKETPLACE,
+            sourceMarketplaceId = "official"
+        )
+        every { pluginManager.plugins } returns listOf(wrapper)
+        every { pluginManager.getExtensionTypes("marketplace-plugin") } returns emptyList()
+
+        val marketplaceInfo = GameyfinPluginInfo().apply {
+            id = "marketplace-plugin"
+            types = listOf("GameMetadataProvider")
+        }
+        every { updateManager.findPluginInfo("marketplace-plugin", "official") } returns marketplaceInfo
+
+        val dto = service.getAll().single()
+
+        assertEquals(listOf("GameMetadataProvider"), dto.types)
+        verify(exactly = 1) { updateManager.findPluginInfo("marketplace-plugin", "official") }
+    }
+
+    @Test
+    fun `toDto should prefer PF4J plugin types over marketplace fallback`() {
+        val wrapper = buildFullPluginWrapper(
+            "marketplace-plugin",
+            origin = PluginOrigin.MARKETPLACE,
+            sourceMarketplaceId = "official"
+        )
+        every { pluginManager.plugins } returns listOf(wrapper)
+        every { pluginManager.getExtensionTypes("marketplace-plugin") } returns listOf("DownloadProvider")
+
+        val dto = service.getAll().single()
+
+        assertEquals(listOf("DownloadProvider"), dto.types)
+        verify(exactly = 0) { updateManager.findPluginInfo(any(), any()) }
+    }
+
+    @Test
+    fun `toDto should expose requires constraint`() {
+        val wrapper = buildFullPluginWrapper("requires-plugin", requires = ">=2.6.0 & <3.0.0")
+        every { pluginManager.plugins } returns listOf(wrapper)
+
+        assertEquals(">=2.6.0 & <3.0.0", service.getAll().single().requires)
+    }
+
+    @Test
+    fun `toDto should map blank and wildcard requires to null`() {
+        listOf("", "   ", "*").forEach { requires ->
+            val wrapper = buildFullPluginWrapper("requires-plugin", requires = requires)
+            every { pluginManager.plugins } returns listOf(wrapper)
+
+            assertNull(service.getAll().single().requires, "requires '$requires' should be mapped to null")
+        }
+    }
+
+    @Test
+    fun `toDto should map incompatible plugin`() {
+        val wrapper = buildFullPluginWrapper("incompatible-plugin", requires = ">=99.0.0", compatible = false)
+        every { pluginManager.plugins } returns listOf(wrapper)
+
+        val dto = service.getAll().single()
+
+        assertFalse(dto.compatible)
+        assertEquals(">=99.0.0", dto.requires)
+        verify { pluginManager.isCompatible(wrapper) }
+    }
+
+    @Test
+    fun `toDto should map failure reason from failed exception`() {
+        val wrapper = buildFullPluginWrapper(
+            "failed-plugin",
+            state = PluginState.FAILED,
+            failedException = IllegalStateException("Something went wrong")
+        )
+        every { pluginManager.plugins } returns listOf(wrapper)
+
+        val dto = service.getAll().single()
+
+        assertEquals(PluginState.FAILED, dto.state)
+        assertEquals("Something went wrong", dto.failureReason)
+    }
+
+    @Test
+    fun `toDto should map failed exception without message to null failure reason`() {
+        val wrapper = buildFullPluginWrapper("failed-plugin", failedException = RuntimeException())
+        every { pluginManager.plugins } returns listOf(wrapper)
+
+        assertNull(service.getAll().single().failureReason)
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
@@ -488,7 +759,12 @@ class PluginServiceTest {
      */
     private fun buildFullPluginWrapper(
         pluginId: String,
-        state: PluginState = PluginState.STARTED
+        state: PluginState = PluginState.STARTED,
+        requires: String? = null,
+        origin: PluginOrigin = PluginOrigin.LOCAL,
+        compatible: Boolean = true,
+        failedException: Throwable? = null,
+        sourceMarketplaceId: String? = null
     ): PluginWrapper {
         val wrapper = mockPluginWrapper(pluginId, state)
 
@@ -501,13 +777,22 @@ class PluginServiceTest {
         every { descriptor.author } returns "Author"
         every { descriptor.license } returns null
         every { descriptor.pluginUrl } returns null
+        every { descriptor.requires } returns requires
         every { wrapper.descriptor } returns descriptor
+        every { wrapper.failedException } returns failedException
 
         // Non-GameyfinPlugin so hasLogo = false
         every { wrapper.plugin } returns mockk<Plugin>(relaxed = true)
 
-        val managementEntry = PluginManagementEntry(pluginId, priority = 1, trustLevel = PluginTrustLevel.OFFICIAL)
+        val managementEntry = PluginManagementEntry(
+            pluginId,
+            priority = 1,
+            trustLevel = PluginTrustLevel.OFFICIAL,
+            sourceMarketplaceId = sourceMarketplaceId
+        )
         every { pluginManager.getManagementEntry(pluginId) } returns managementEntry
+        every { pluginManager.getPluginOrigin(pluginId) } returns origin
+        every { pluginManager.isCompatible(wrapper) } returns compatible
         every { pluginManager.getExtensionTypes(pluginId) } returns emptyList()
         every { pluginConfigRepository.findAllByPluginId(pluginId) } returns emptyList()
         every { pluginManager.validatePluginConfig(pluginId) } returns

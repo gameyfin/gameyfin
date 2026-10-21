@@ -6,30 +6,32 @@ import {ArrowLeftIcon} from "@phosphor-icons/react";
 import LibraryManagementDetails from "Frontend/components/general/library/LibraryManagementDetails";
 import LibraryManagementGames from "Frontend/components/general/library/LibraryManagementGames";
 import {useSnapshot} from "valtio/react";
-import {libraryState} from "Frontend/state/LibraryState";
+import {libraryState, useFullLibrary} from "Frontend/state/LibraryState";
 import LibraryManagementIgnoredPaths from "Frontend/components/general/library/LibraryManagementIgnoredPaths";
-import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
 export default function LibraryManagementView() {
     const {libraryId} = useParams();
     const {hash} = useLocation();
     const navigate = useNavigate();
     const state = useSnapshot(libraryState);
+    const library = libraryId ? state.state[parseInt(libraryId)] : undefined;
+    // Directories and ignored paths are only part of the full DTO
+    const {full: fullLibrary} = useFullLibrary(library?.id);
 
     useEffect(() => {
-        if (state.isLoaded && (!libraryId || !state.state[parseInt(libraryId)])) {
+        if (state.isLoaded && !library) {
             navigate("/administration/games");
         }
-    }, [state, libraryId]);
+    }, [state.isLoaded, library]);
 
-    return libraryId && state.state[parseInt(libraryId)] && <div className="flex flex-col gap-4">
+    return library && <div className="flex flex-col gap-4">
         <div className="flex flex-row gap-4 items-center">
             <Button isIconOnly variant="ghost" onPress={() => history.back()}>
                 <ArrowLeftIcon/>
             </Button>
             <h1 className="text-2xl font-bold">Manage library</h1>
         </div>
-        <LibraryHeader library={state.state[parseInt(libraryId)]} className="h-32"/>
+        <LibraryHeader library={library} className="h-32"/>
         <Tabs
             variant="primary"
             selectedKey={hash.length > 0 ? hash : "#details"}
@@ -53,13 +55,13 @@ export default function LibraryManagementView() {
                 </Tabs.List>
             </Tabs.ListContainer>
             <Tabs.Panel id="#details">
-                <LibraryManagementDetails library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
+                {fullLibrary && <LibraryManagementDetails library={fullLibrary}/>}
             </Tabs.Panel>
             <Tabs.Panel id="#games">
-                <LibraryManagementGames library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
+                <LibraryManagementGames library={library}/>
             </Tabs.Panel>
             <Tabs.Panel id="#ignored-paths">
-                <LibraryManagementIgnoredPaths library={state.state[parseInt(libraryId)] as LibraryAdminDto}/>
+                {fullLibrary && <LibraryManagementIgnoredPaths library={fullLibrary}/>}
             </Tabs.Panel>
         </Tabs>
     </div>;

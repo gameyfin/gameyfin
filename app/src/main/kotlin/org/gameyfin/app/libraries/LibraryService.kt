@@ -3,22 +3,22 @@ package org.gameyfin.app.libraries
 import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.core.sync.EntityEventBroadcaster
+import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.entities.DirectoryMapping
 import org.gameyfin.app.libraries.entities.IgnoredPathSourceType
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
-import org.gameyfin.app.libraries.extensions.toDtos
+import org.gameyfin.app.libraries.extensions.toAdminDto
+import org.gameyfin.app.libraries.extensions.toSummaryDto
 import org.gameyfin.app.libraries.extensions.toEntity
 import org.gameyfin.app.users.UserService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 import java.time.Instant
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.toJavaDuration
 
 @Service
 class LibraryService(
@@ -32,50 +32,49 @@ class LibraryService(
         private val log = KotlinLogging.logger {}
 
         /* Websockets */
-        private val libraryUserEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryUserEvent>(1024, false)
-        private val libraryAdminEvents = Sinks.many().multicast().onBackpressureBuffer<LibraryAdminEvent>(1024, false)
+        private val userEvents = EntityEventBroadcaster<LibraryEvent>("libraryUserEvents")
+        private val adminEvents = EntityEventBroadcaster<LibraryEvent>("libraryAdminEvents")
 
-        fun subscribeUser(): Flux<List<LibraryUserEvent>> {
-            log.debug { "New user subscription for libraryUserEvents" }
-            return libraryUserEvents.asFlux()
-                .buffer(100.milliseconds.toJavaDuration())
-                .doOnSubscribe {
-                    log.debug { "Subscriber added to user libraryUserEvents [${libraryUserEvents.currentSubscriberCount()}]" }
-                }
-                .doFinally {
-                    log.debug { "Subscriber removed from user libraryUserEvents with signal type $it [${libraryUserEvents.currentSubscriberCount()}]" }
-                }
-        }
+        fun subscribeUser(): Flux<List<LibraryEvent>> = userEvents.subscribe()
 
-        fun subscribeAdmin(): Flux<List<LibraryAdminEvent>> {
-            log.debug { "New admin subscription for libraryAdminEvents" }
-            return libraryAdminEvents.asFlux()
-                .buffer(100.milliseconds.toJavaDuration())
-                .doOnSubscribe {
-                    log.debug { "Subscriber added to admin libraryAdminEvents [${libraryAdminEvents.currentSubscriberCount()}]" }
-                }
-                .doFinally {
-                    log.debug { "Subscriber removed from admin libraryAdminEvents with signal type $it [${libraryAdminEvents.currentSubscriberCount()}]" }
-                }
-        }
+        fun subscribeAdmin(): Flux<List<LibraryEvent>> = adminEvents.subscribe()
 
-        fun emitUser(event: LibraryUserEvent) {
-            libraryUserEvents.tryEmitNext(event)
-        }
+        fun emitUser(event: LibraryEvent) = userEvents.emit(event)
 
-        fun emitAdmin(event: LibraryAdminEvent) {
-            libraryAdminEvents.tryEmitNext(event)
-        }
+        fun emitAdmin(event: LibraryEvent) = adminEvents.emit(event)
     }
-
 
     /**
-     * Retrieves all libraries from the repository.
+     * Returns the library summaries that changed since the given timestamp, or all if [since] is `null`.
+     * Clients have to remove all libraries that are not contained in [LibrarySyncDto.allIds] (delta sync only).
      */
-    fun getAll(): List<LibraryDto> {
-        val entities = libraryRepository.findAll().toList()
-        return entities.toDtos()
+    @Transactional(readOnly = true)
+    fun sync(since: Instant?, admin: Boolean): LibrarySyncDto {
+        val serverTime = Instant.now()
+
+        if (since == null) {
+            return LibrarySyncDto(
+                serverTime = serverTime,
+                full = true,
+                libraries = libraryRepository.findAll().map { it.toSummaryDto(admin) },
+                allIds = emptyList()
+            )
+        }
+
+        return LibrarySyncDto(
+            serverTime = serverTime,
+            full = false,
+            libraries = libraryRepository.findAllByUpdatedAtAfter(since.minus(SYNC_SAFETY_WINDOW))
+                .map { it.toSummaryDto(admin) },
+            allIds = libraryRepository.findAllIds()
+        )
     }
+
+    /**
+     * Returns the full details of a library, `null` if it does not exist.
+     */
+    @Transactional(readOnly = true)
+    fun getAdminDtoById(libraryId: Long): LibraryAdminDto? = libraryRepository.findByIdOrNull(libraryId)?.toAdminDto()
 
     /**
      * Retrieves a library by its ID.

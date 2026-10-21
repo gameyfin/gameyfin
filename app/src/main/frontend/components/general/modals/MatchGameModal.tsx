@@ -1,11 +1,4 @@
-import {
-    Button,
-    Input,
-    Modal,
-    Spinner,
-    Table,
-    Tooltip
-} from "@heroui/react";
+import {Button, Input, Modal, Spinner, Table, Tooltip} from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import {GameEndpoint} from "Frontend/generated/endpoints";
@@ -60,7 +53,7 @@ export default function MatchGameModal({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}
-                             isDismissable={!isSearching && !isMatching}>
+                            isDismissable={!isSearching && !isMatching}>
                 <Modal.Container size="lg" className="max-w-5xl">
                     <Modal.Dialog>
                         {({close}) => (
@@ -77,6 +70,7 @@ export default function MatchGameModal({
                                                    await search();
                                                }
                                            }}
+                                           className="flex-1"
                                     />
                                     <Button isIconOnly onPress={search} variant="primary" isPending={isSearching}>
                                         {isSearching ? <Spinner size="sm" color="current"/> : <MagnifyingGlassIcon/>}
@@ -94,7 +88,9 @@ export default function MatchGameModal({
                                                     <Table.Column id="sources">Sources</Table.Column>
                                                     <Table.Column id="actions"> </Table.Column>
                                                 </Table.Header>
-                                                <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">Your filter did not match any games.</p>}
+                                                <Table.Body renderEmptyState={() => <p
+                                                    className="text-center text-muted p-4">Your filter did not match any
+                                                    games.</p>}
                                                             items={searchResults}>
                                                     {(item) => (
                                                         <Table.Row key={item.id}>
@@ -135,7 +131,9 @@ export default function MatchGameModal({
                                                                                     setIsMatching(null);
                                                                                     close();
                                                                                 }}>
-                                                                            {isMatching === item.id ? <Spinner size="sm" color="current"/> : <ArrowRightIcon/>}
+                                                                            {isMatching === item.id ?
+                                                                                <Spinner size="sm" color="current"/> :
+                                                                                <ArrowRightIcon/>}
                                                                         </Button>
                                                                     </Tooltip.Trigger>
                                                                     <Tooltip.Content placement="bottom">Pick this

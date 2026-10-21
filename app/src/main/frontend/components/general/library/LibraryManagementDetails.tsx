@@ -1,7 +1,8 @@
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import {CheckIcon} from "@phosphor-icons/react";
-import {Button, Spinner, toast} from "@heroui/react";
+import {Button, Spinner, toast, useOverlayState} from "@heroui/react";
 import React from "react";
+import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 import {Form, Formik} from "formik";
 import {deepDiff} from "Frontend/util/utils";
 import LibraryUpdateDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryUpdateDto";
@@ -17,15 +18,17 @@ import {platformState} from "Frontend/state/PlatformState";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
 
 interface LibraryManagementDetailsProps {
-    library: LibraryDto;
+    library: LibraryAdminDto;
 }
 
 export default function LibraryManagementDetails({library}: LibraryManagementDetailsProps) {
     const navigate = useNavigate();
     const [librarySaved, setLibrarySaved] = React.useState(false);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const deleteModal = useOverlayState();
     const availablePlatforms = useSnapshot(platformState).available;
 
-    async function handleSubmit(values: LibraryDto): Promise<void> {
+    async function handleSubmit(values: LibraryAdminDto): Promise<void> {
         const changed = deepDiff(library, values) as LibraryUpdateDto;
 
         if (Object.keys(changed).length === 0) return;
@@ -37,6 +40,7 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
     }
 
     async function handleDelete(): Promise<void> {
+        setIsDeleting(true);
         try {
             await LibraryEndpoint.deleteLibrary(library.id);
 
@@ -44,11 +48,14 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                 description: `Library ${library.name} deleted!`
             });
 
+            deleteModal.close();
             navigate("/administration/games");
         } catch (e) {
             toast.warning("Error deleting library", {
                 description: `Library ${library.name} could not be deleted!`
             });
+        } finally {
+            setIsDeleting(false);
         }
     }
 
@@ -89,9 +96,18 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
                 <DirectoryMappingInput name="directories"/>
 
                 <Section title="Danger zone"/>
-                <Button variant="danger" onPress={handleDelete}>
+                <Button variant="danger" onPress={deleteModal.open}>
                     Delete library
                 </Button>
+
+                <ConfirmModal isOpen={deleteModal.isOpen}
+                              onOpenChange={deleteModal.setOpen}
+                              title="Delete library"
+                              confirmLabel="Delete"
+                              isPending={isDeleting}
+                              onConfirm={handleDelete}>
+                    <p>Delete library <code>{library.name}</code>? This can not be undone.</p>
+                </ConfirmModal>
             </Form>
         )}
     </Formik>;

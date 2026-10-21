@@ -32,10 +32,10 @@ class Library(
     @Column(nullable = false)
     var platforms: MutableList<Platform> = ArrayList(),
 
-    @OneToMany(mappedBy = "library", fetch = FetchType.EAGER, orphanRemoval = true)
+    @OneToMany(mappedBy = "library", fetch = FetchType.LAZY, orphanRemoval = true)
     var games: MutableList<Game> = ArrayList(),
 
-    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = [CascadeType.ALL])
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = [CascadeType.ALL])
     var ignoredPaths: MutableList<IgnoredPath> = ArrayList(),
 
     @Embedded

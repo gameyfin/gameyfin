@@ -82,6 +82,10 @@ dependencies {
 
     // Plugins
     implementation(project(":plugin-api"))
+    implementation("org.pf4j:pf4j-update:${rootProject.extra["pf4jUpdateVersion"]}") {
+        // The PF4J version is provided by the plugin-api
+        exclude(group = "org.pf4j", module = "pf4j")
+    }
 
     // Caching
     implementation("com.github.ben-manes.caffeine:caffeine:${rootProject.extra["caffeineVersion"]}")

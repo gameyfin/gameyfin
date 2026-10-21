@@ -9,17 +9,16 @@ import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.libraries.LibraryCoreService
-import org.gameyfin.app.libraries.LibraryService
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import reactor.core.publisher.Flux
 import java.nio.file.Path
+import java.time.Instant
 
 @Endpoint
 @DynamicPublicAccess
 @AnonymousAllowed
 class GameEndpoint(
     private val gameService: GameService,
-    private val libraryService: LibraryService,
     private val libraryCoreService: LibraryCoreService
 ) {
     fun subscribe(): Flux<out List<GameEvent>> {
@@ -30,7 +29,22 @@ class GameEndpoint(
         }
     }
 
-    fun getAll(): List<GameDto> = gameService.getAll()
+    /**
+     * Delta synchronization of the game summaries used by all overview pages.
+     *
+     * @param since `serverTime` of the last synchronization, `null` to fetch all games
+     */
+    fun sync(since: Instant?): GameSyncDto = gameService.sync(since, isCurrentUserAdmin())
+
+    /**
+     * Returns the full details of a game, `null` if it does not exist.
+     */
+    fun getById(id: Long): GameDto? = gameService.getDtoById(id)
+
+    /**
+     * Returns the full details of multiple games. Non-existing games are omitted.
+     */
+    fun getByIds(ids: List<Long>): List<GameDto> = gameService.getDtosByIds(ids)
 
     fun getPotentialMatches(searchTerm: String, platformFilter: Set<Platform>): List<GameSearchResultDto> {
         return gameService.getPotentialMatches(searchTerm, platformFilter)
@@ -52,7 +66,8 @@ class GameEndpoint(
         libraryId: Long,
         replaceGameId: Long?
     ) {
-        val library = libraryService.getById(libraryId)
+        val library = libraryCoreService.getWithGamesAndIgnoredPaths(libraryId)
+            ?: throw IllegalArgumentException("Library with id $libraryId not found")
         val game = gameService.matchManually(originalIds, Path.of(path), library, replaceGameId)
         if (game != null) {
             libraryCoreService.addGamesToLibrary(listOf(game), library, true)

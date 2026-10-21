@@ -1,33 +1,20 @@
-import CollectionAdminDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionAdminDto";
-import React, {useEffect, useState} from "react";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import {useSnapshot} from "valtio/react";
-import {gameState} from "Frontend/state/GameState";
+import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
+import React, {useMemo} from "react";
+import {useRandomlyOrderedGamesByCollectionId} from "Frontend/state/derived";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
 import {Card} from "@heroui/react";
 
 interface CollectionHeaderProps {
-    collection: CollectionAdminDto;
+    collection: CollectionDto;
     className?: string;
 }
 
 export default function CollectionHeader({collection, className}: CollectionHeaderProps) {
     const MAX_COVER_COUNT = 5;
-    const state = useSnapshot(gameState);
-    const [randomGames, setRandomGames] = useState<GameDto[]>([]);
-
-    useEffect(() => {
-        if (!state.randomlyOrderedGamesByCollectionId) return;
-        setRandomGames(getRandomGames());
-    }, [state]);
-
-    function getRandomGames() {
-        if (!state.randomlyOrderedGamesByCollectionId[collection.id]) return [];
-        const games = state.randomlyOrderedGamesByCollectionId[collection.id]
-            .filter(game => game.images && game.images.length > 0);
-        if (!games) return [];
-        return games.slice(0, MAX_COVER_COUNT);
-    }
+    const randomlyOrderedGames = useRandomlyOrderedGamesByCollectionId()[collection.id];
+    const randomGames = useMemo(() => (randomlyOrderedGames ?? [])
+        .filter(game => game.previewImage)
+        .slice(0, MAX_COVER_COUNT), [randomlyOrderedGames]);
 
     return (
         <Card className={`overflow-hidden rounded-lg relative pointer-events-none select-none ${className}`}>
@@ -43,7 +30,7 @@ export default function CollectionHeader({collection, className}: CollectionHead
                         }}
                     >
                         <img
-                            src={`/images/screenshot/${game.images![0].id}`}
+                            src={`/images/screenshot/${game.previewImage!.id}`}
                             alt={`Image ${idx}`}
                         />
                     </div>

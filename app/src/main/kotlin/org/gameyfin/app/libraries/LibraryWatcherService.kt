@@ -31,6 +31,7 @@ import kotlin.io.path.isDirectory
 @Service
 class LibraryWatcherService(
     private val libraryRepository: LibraryRepository,
+    private val libraryCoreService: LibraryCoreService,
     private val libraryScanService: LibraryScanService,
     private val gameRepository: GameRepository,
     private val filesystemService: FilesystemService,
@@ -274,7 +275,7 @@ class LibraryWatcherService(
         hasModifies: Boolean
     ) {
         try {
-            val library = libraryRepository.findById(watchInfo.libraryId).orElse(null)
+            val library = libraryCoreService.getWithGamesAndIgnoredPaths(watchInfo.libraryId)
             if (library == null) {
                 log.warn { "Library ${watchInfo.libraryId} not found, stopping watcher" }
                 stopWatchingLibrary(watchInfo.libraryId)

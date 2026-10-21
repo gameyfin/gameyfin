@@ -4,6 +4,7 @@ import io.mockk.*
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.games.dto.GameAdminDto
+import org.gameyfin.app.games.dto.GameField
 import org.gameyfin.app.games.dto.GameUserDto
 import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.entities.CompanyType
@@ -20,6 +21,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GameExtensionsTest {
@@ -284,6 +286,104 @@ class GameExtensionsTest {
         val result = metadata.toAdminDto()
 
         assertEquals(0L, result.fileSize)
+    }
+
+    @Test
+    fun `toSummaryDto should map overview fields and admin-only fields for admins`() {
+        game = createTestGame(5L)
+        game.metadata.fileSize = 1234L
+        game.metadata.downloadCount = 7
+        game.metadata.matchConfirmed = true
+
+        val result = game.toSummaryDto(admin = true)
+
+        assertEquals(5L, result.id)
+        assertEquals(1L, result.libraryId)
+        assertEquals("Test Game", result.title)
+        assertEquals(listOf(Platform.PC_MICROSOFT_WINDOWS), result.platforms)
+        assertEquals(10L, result.cover?.id)
+        assertEquals(11L, result.header?.id)
+        assertEquals(12L, result.previewImage?.id)
+        assertEquals(listOf("Publisher1"), result.publishers)
+        assertEquals(listOf("Developer1"), result.developers)
+        assertEquals(1234L, result.fileSize)
+        assertEquals("/test/path", result.path)
+        assertEquals(7, result.downloadCount)
+        assertEquals(true, result.matchConfirmed)
+    }
+
+    @Test
+    fun `toSummaryDto should omit admin-only fields for users`() {
+        game = createTestGame()
+
+        val result = game.toSummaryDto(admin = false)
+
+        assertNull(result.path)
+        assertNull(result.downloadCount)
+        assertNull(result.matchConfirmed)
+    }
+
+    @Test
+    fun `toSummaryDto should map empty lists to null`() {
+        game = createTestGame()
+        game.publishers.clear()
+        game.images.clear()
+        game.genres = emptyList()
+
+        val result = game.toSummaryDto(admin = false)
+
+        assertNull(result.publishers)
+        assertNull(result.genres)
+        assertNull(result.previewImage)
+    }
+
+    @Test
+    fun `toPatchDto should only contain requested fields`() {
+        game = createTestGame()
+
+        val result = game.toPatchDto(setOf(GameField.TITLE, GameField.IMAGES), admin = false)
+
+        assertNotNull(result)
+        assertEquals(listOf(GameField.TITLE, GameField.IMAGES), result.fields)
+        assertEquals("Test Game", result.values.title)
+        assertEquals(listOf(12L), result.values.images?.map { it.id })
+        assertEquals(12L, result.values.previewImage?.id)
+        assertNull(result.values.summary)
+        assertNull(result.values.platforms)
+        assertEquals(game.updatedAt, result.updatedAt)
+    }
+
+    @Test
+    fun `toPatchDto should drop admin-only fields for users`() {
+        game = createTestGame()
+
+        val result = game.toPatchDto(setOf(GameField.PATH, GameField.DOWNLOAD_COUNT, GameField.FILE_SIZE), admin = false)
+
+        assertNotNull(result)
+        assertEquals(listOf(GameField.FILE_SIZE), result.fields)
+        assertNull(result.values.path)
+        assertNull(result.values.downloadCount)
+    }
+
+    @Test
+    fun `toPatchDto should include admin-only fields for admins`() {
+        game = createTestGame()
+        game.metadata.downloadCount = 3
+
+        val result = game.toPatchDto(setOf(GameField.PATH, GameField.DOWNLOAD_COUNT), admin = true)
+
+        assertNotNull(result)
+        assertEquals(listOf(GameField.PATH, GameField.DOWNLOAD_COUNT), result.fields)
+        assertEquals("/test/path", result.values.path)
+        assertEquals(3, result.values.downloadCount)
+    }
+
+    @Test
+    fun `toPatchDto should return null if no field is visible`() {
+        game = createTestGame()
+
+        assertNull(game.toPatchDto(setOf(GameField.MATCH_CONFIRMED, GameField.ORIGINAL_IDS), admin = false))
+        assertNull(game.toPatchDto(emptySet(), admin = true))
     }
 
     private fun createTestGame(id: Long = 1L): Game {

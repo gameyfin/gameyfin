@@ -1,29 +1,30 @@
-import {Subscription} from "@vaadin/hilla-frontend";
-import {proxy} from "valtio/index";
+import {proxy} from "valtio";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
+import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
+import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import LibraryEvent from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryEvent";
+import LibraryField from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryField";
+import LibraryPatchDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryPatchDto";
+import {createSyncedStore, SyncedEntityState, useFullEntity} from "Frontend/state/sync/createSyncedStore";
+import {identityMapping} from "Frontend/state/sync/patches";
 
-type LibraryState = {
-    subscription?: Subscription<LibraryEvent[]>;
-    isLoaded: boolean;
-    state: Record<number, LibraryDto>;
-    libraries: LibraryDto[];
-    sorted: LibraryDto[];
+type LibraryState = SyncedEntityState<LibrarySummaryDto, LibraryAdminDto> & {
+    libraries: LibrarySummaryDto[];
+    sorted: LibrarySummaryDto[];
 };
 
 export const libraryState = proxy<LibraryState>({
-    get isLoaded() {
-        return this.subscription != null;
-    },
     state: {},
+    full: {},
+    isLoaded: false,
+    isSynced: false,
     get libraries() {
-        return Object.values<LibraryDto>(this.state);
+        return Object.values<LibrarySummaryDto>(this.state);
     },
     get sorted() {
-        return Object.values<LibraryDto>(this.state).sort((a, b) => {
-            const orderA = a.metadata!.displayOrder;
-            const orderB = b.metadata!.displayOrder;
+        return Object.values<LibrarySummaryDto>(this.state).sort((a, b) => {
+            const orderA = a.metadata.displayOrder;
+            const orderB = b.metadata.displayOrder;
 
             // Handle -1 as "end of list"
             const effectiveOrderA = orderA === -1 ? Number.MAX_SAFE_INTEGER : orderA;
@@ -35,35 +36,43 @@ export const libraryState = proxy<LibraryState>({
             }
 
             // Fallback to creation date (newer first)
-            return new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime();
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
     }
 });
 
+const libraryPatchMapping = identityMapping<LibraryField>(
+    {
+        [LibraryField.NAME]: "name",
+        [LibraryField.METADATA]: "metadata",
+        [LibraryField.PLATFORMS]: "platforms",
+        [LibraryField.DIRECTORIES]: "directories",
+        [LibraryField.IGNORED_PATHS]: "ignoredPaths"
+    },
+    {summary: [LibraryField.NAME, LibraryField.METADATA, LibraryField.PLATFORMS]}
+);
+
+export const libraryStore = createSyncedStore<LibrarySummaryDto, LibraryAdminDto, LibraryEvent, LibraryField, LibraryPatchDto>(libraryState, {
+    name: "libraries",
+    summaryStore: "libraries",
+    fullStore: "librariesFull",
+    fetchSync: async (since) => {
+        const result = await LibraryEndpoint.sync(since);
+        return {serverTime: result.serverTime, full: result.full, items: result.libraries, allIds: result.allIds};
+    },
+    // Only available for admins
+    fetchFull: (id) => LibraryEndpoint.getById(id),
+    subscribe: () => LibraryEndpoint.subscribeToLibraryEvents(),
+    normalizeEvent: (event) => event,
+    patchMapping: libraryPatchMapping
+});
+
 /** Subscribe to and process state updates from backend **/
-export async function initializeLibraryState() {
-    if (libraryState.isLoaded) return;
+export async function initializeLibraryState(identity: string) {
+    await libraryStore.start(identity);
+}
 
-    // Fetch initial library list
-    const initialEntries = await LibraryEndpoint.getAll();
-    initialEntries.forEach((library: LibraryDto) => {
-        libraryState.state[library.id] = library;
-    });
-
-    // Subscribe to real-time updates
-    libraryState.subscription = LibraryEndpoint.subscribeToLibraryEvents().onNext((libraryEvents: LibraryEvent[]) => {
-        libraryEvents.forEach((libraryEvent: LibraryEvent) => {
-            switch (libraryEvent.type) {
-                case "created":
-                case "updated":
-                    //@ts-ignore
-                    libraryState.state[libraryEvent.library.id] = libraryEvent.library;
-                    break;
-                case "deleted":
-                    //@ts-ignore
-                    delete libraryState.state[libraryEvent.libraryId];
-                    break;
-            }
-        })
-    });
+/** Returns the full (admin) DTO of a library, loaded on demand. Only available for admins. */
+export function useFullLibrary(libraryId: number | undefined) {
+    return useFullEntity(libraryState, libraryStore, libraryId);
 }

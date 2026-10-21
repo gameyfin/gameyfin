@@ -80,6 +80,7 @@ spring:
         jdbc.batch_size: 25
         order_inserts: true
         order_updates: true
+        default_batch_fetch_size: 100
   content:
     fs.filesystem-root: ./data/
   mvc:

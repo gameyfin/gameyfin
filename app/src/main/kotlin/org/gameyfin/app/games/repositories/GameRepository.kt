@@ -3,6 +3,7 @@ package org.gameyfin.app.games.repositories
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
@@ -29,4 +30,31 @@ interface GameRepository : JpaRepository<Game, Long> {
 
     @Query("SELECT DISTINCT p FROM Game g JOIN g.platforms p")
     fun findAllDistinctPlatforms(): Set<Platform>
+
+    /* Synchronization */
+
+    fun findAllByUpdatedAtAfter(since: Instant): List<Game>
+
+    @Query("SELECT g.id FROM Game g")
+    fun findAllIds(): List<Long>
+
+    @Query("SELECT DISTINCT g.id FROM Game g JOIN g.metadata.fields f WHERE f.id IN :fieldMetadataIds")
+    fun findIdsByFieldMetadataIds(@Param("fieldMetadataIds") fieldMetadataIds: Collection<Long>): List<Long>
+
+    @Query("SELECT g.id FROM Game g WHERE g.coverImage.id IN :imageIds")
+    fun findIdsByCoverImageIds(@Param("imageIds") imageIds: Collection<Long>): List<Long>
+
+    @Query("SELECT g.id FROM Game g WHERE g.headerImage.id IN :imageIds")
+    fun findIdsByHeaderImageIds(@Param("imageIds") imageIds: Collection<Long>): List<Long>
+
+    @Query("SELECT DISTINCT g.id FROM Game g JOIN g.images i WHERE i.id IN :imageIds")
+    fun findIdsByGalleryImageIds(@Param("imageIds") imageIds: Collection<Long>): List<Long>
+
+    /**
+     * Bulk update of the timestamp, e.g. if only an associated collection or child entity has changed.
+     * Bypasses entity listeners.
+     */
+    @Modifying
+    @Query("UPDATE Game g SET g.updatedAt = :updatedAt WHERE g.id IN :ids")
+    fun bumpUpdatedAt(@Param("ids") ids: Collection<Long>, @Param("updatedAt") updatedAt: Instant): Int
 }

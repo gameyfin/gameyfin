@@ -1,5 +1,6 @@
-import {Button, Card, Chip, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Card, Chip, Spinner, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {
+    ArrowCircleUpIcon,
     CheckCircleIcon,
     IconContext,
     PauseCircleIcon,
@@ -12,7 +13,10 @@ import {
     SealWarningIcon,
     SlidersHorizontalIcon,
     StopCircleIcon,
+    StorefrontIcon,
+    TrashIcon,
     WarningCircleIcon,
+    WarningIcon,
     XCircleIcon
 } from "@phosphor-icons/react";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
@@ -26,6 +30,10 @@ import PluginConfigValidationResult
     from "Frontend/generated/org/gameyfin/pluginapi/core/config/PluginConfigValidationResult";
 import PluginConfigValidationResultType
     from "Frontend/generated/org/gameyfin/pluginapi/core/config/PluginConfigValidationResultType";
+import PluginOrigin from "Frontend/generated/org/gameyfin/app/core/plugins/management/PluginOrigin";
+import {useSnapshot} from "valtio/react";
+import {installPlugin, marketplaceState, uninstallPlugin} from "Frontend/state/MarketplaceState";
+import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 
 const BORDER_CLASSES = {
     success: "border-success",
@@ -43,6 +51,39 @@ const CHIP_CLASSES = {
 
 export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     const pluginDetailsModal = useOverlayState();
+    const uninstallModal = useOverlayState();
+    const marketplace = useSnapshot(marketplaceState);
+
+    const availableUpdate = marketplace.updates[plugin.id];
+    const isPending = marketplace.pending[plugin.id] ?? false;
+    const isMarketplacePlugin = plugin.origin === PluginOrigin.MARKETPLACE;
+    const sourceMarketplace = marketplace.marketplaces.find(m => m.id === plugin.sourceMarketplaceId);
+
+    async function update() {
+        if (!availableUpdate) return;
+        try {
+            await installPlugin(availableUpdate.marketplaceId, plugin.id, availableUpdate.latestCompatibleVersion);
+            toast.success("Plugin updated", {
+                description: `${plugin.name} has been updated to version ${availableUpdate.latestCompatibleVersion}`
+            });
+        } catch (e: any) {
+            toast.danger("Update failed", {description: e?.message ?? `Failed to update ${plugin.name}`});
+        }
+    }
+
+    async function uninstall() {
+        try {
+            const fallback = await uninstallPlugin(plugin.id);
+            uninstallModal.close();
+            toast.success("Plugin uninstalled", {
+                description: fallback
+                    ? `${plugin.name} has been reverted to the local version ${fallback.version}`
+                    : `${plugin.name} has been uninstalled`
+            });
+        } catch (e: any) {
+            toast.danger("Uninstall failed", {description: e?.message ?? `Failed to uninstall ${plugin.name}`});
+        }
+    }
 
     function borderColor(state: PluginState | undefined, trustLevel: PluginTrustLevel | undefined): "success" | "warning" | "danger" | "default" {
         if (trustLevel === PluginTrustLevel.UNTRUSTED) return "danger";
@@ -203,6 +244,41 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
         <>
             <Card
                 className={`flex flex-row justify-between p-2 border-2 ${BORDER_CLASSES[borderColor(plugin.state, plugin.trustLevel)]}`}>
+                <div className="absolute left-0 top-0 flex flex-row">
+                    {availableUpdate &&
+                        <Tooltip delay={0}>
+                            <Tooltip.Trigger>
+                                <Button isIconOnly
+                                        variant="ghost"
+                                        aria-label="Update plugin"
+                                        onPress={update}
+                                        isDisabled={isPending}>
+                                    {isPending ? <Spinner size="sm" color="current"/> :
+                                        <ArrowCircleUpIcon className="fill-accent" weight="fill"/>}
+                                </Button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                {`Update to version ${availableUpdate.latestCompatibleVersion}`}
+                            </Tooltip.Content>
+                        </Tooltip>
+                    }
+                    {isMarketplacePlugin &&
+                        <Tooltip delay={0}>
+                            <Tooltip.Trigger>
+                                <Button isIconOnly
+                                        variant="ghost"
+                                        aria-label="Uninstall plugin"
+                                        onPress={uninstallModal.open}
+                                        isDisabled={isPending}>
+                                    <TrashIcon/>
+                                </Button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                Uninstall plugin
+                            </Tooltip.Content>
+                        </Tooltip>
+                    }
+                </div>
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
@@ -237,6 +313,32 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                         {plugin.name}
                         <IconContext.Provider value={{size: 18, weight: "fill"}}>
                             {trustLevelToBadge(plugin.trustLevel)}
+                            {isMarketplacePlugin &&
+                                <Tooltip delay={0}>
+                                    <Tooltip.Trigger className="flex">
+                                        <span className="inline-flex">
+                                            <StorefrontIcon/>
+                                        </span>
+                                    </Tooltip.Trigger>
+                                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                        {sourceMarketplace
+                                            ? `Installed from marketplace "${sourceMarketplace.name}"`
+                                            : "Installed from a marketplace"}
+                                    </Tooltip.Content>
+                                </Tooltip>
+                            }
+                            {!plugin.compatible &&
+                                <Tooltip delay={0}>
+                                    <Tooltip.Trigger className="flex">
+                                        <span className="inline-flex">
+                                            <WarningIcon className="fill-danger"/>
+                                        </span>
+                                    </Tooltip.Trigger>
+                                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                        {`Incompatible with this Gameyfin version (requires ${plugin.requires})`}
+                                    </Tooltip.Content>
+                                </Tooltip>
+                            }
                         </IconContext.Provider>
                     </p>
                     <div className="flex flex-row items-center gap-2 mt-auto">
@@ -262,6 +364,18 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                                 isOpen={pluginDetailsModal.isOpen}
                                 onOpenChange={pluginDetailsModal.setOpen}
             />
+            <ConfirmModal isOpen={uninstallModal.isOpen}
+                          onOpenChange={uninstallModal.setOpen}
+                          title={`Uninstall ${plugin.name}`}
+                          confirmLabel="Uninstall"
+                          isPending={isPending}
+                          onConfirm={uninstall}>
+                <p>Do you really want to uninstall <b>{plugin.name}</b> (version {plugin.version})?</p>
+                <p className="text-muted">
+                    If a bundled version of this plugin exists, it will be used instead.
+                    The configuration of the plugin is kept.
+                </p>
+            </ConfirmModal>
         </>
 
     )

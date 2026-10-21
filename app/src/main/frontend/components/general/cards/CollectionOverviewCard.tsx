@@ -1,37 +1,25 @@
 import {Button, Card, Tooltip} from "@heroui/react";
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
-import React, {useEffect, useState} from "react";
+import React, {useMemo} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import CollectionAdminDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionAdminDto";
+import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import {SlidersHorizontalIcon} from "@phosphor-icons/react";
 import {useNavigate} from "react-router";
-import {useSnapshot} from "valtio/react";
-import {gameState} from "Frontend/state/GameState";
+import {useCollectionStats, useRandomlyOrderedGamesByCollectionId} from "Frontend/state/derived";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
 import ChipList from "Frontend/components/general/ChipList";
 
 interface CollectionOverviewCardProps {
-    collection: CollectionAdminDto;
+    collection: CollectionDto;
 }
 
 export function CollectionOverviewCard({collection}: CollectionOverviewCardProps) {
     const MAX_COVER_COUNT = 5;
     const navigate = useNavigate();
-    const state = useSnapshot(gameState);
-    const [randomGames, setRandomGames] = useState<GameDto[]>([]);
-
-    useEffect(() => {
-        if (!state.randomlyOrderedGamesByCollectionId) return;
-        setRandomGames(getRandomGames());
-    }, [state]);
-
-    function getRandomGames() {
-        if (!state.randomlyOrderedGamesByCollectionId[collection.id]) return [];
-        const games = state.randomlyOrderedGamesByCollectionId[collection.id]
-            .filter(game => game.cover?.id != null);
-        if (!games) return [];
-        return games.slice(0, MAX_COVER_COUNT);
-    }
+    const randomlyOrderedGames = useRandomlyOrderedGamesByCollectionId()[collection.id];
+    const randomGames = useMemo(() => (randomlyOrderedGames ?? [])
+        .filter(game => game.cover?.id != null)
+        .slice(0, MAX_COVER_COUNT), [randomlyOrderedGames]);
+    const stats = useCollectionStats(collection.id);
 
 
     return (
@@ -64,15 +52,15 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
                 </div>
             </div>
 
-            {collection.stats &&
+            {stats &&
                 <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
                     <p>Games</p>
                     <p>Downloads</p>
                     <p>Platforms</p>
-                    <p className="font-bold">{collection.stats.gamesCount}</p>
-                    <p className="font-bold">{collection.stats.downloadCount}</p>
-                    <ChipList items={collection.stats.gamePlatforms} maxVisible={0}
-                              defaultContent={collection.stats.gamesCount > 0 ? "All" : "None"}/>
+                    <p className="font-bold">{stats.gamesCount}</p>
+                    <p className="font-bold">{stats.downloadCount}</p>
+                    <ChipList items={stats.gamePlatforms} maxVisible={0}
+                              defaultContent={stats.gamesCount > 0 ? "All" : "None"}/>
                 </div>
             }
         </Card>

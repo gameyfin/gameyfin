@@ -50,16 +50,34 @@ export async function initializePluginState() {
     // Subscribe to real-time updates
     pluginState.subscription = PluginEndpoint.subscribe().onNext((updateDtos: PluginUpdateDto[]) => {
         updateDtos.forEach((updateDto: PluginUpdateDto) => {
+            const {plugin, removed, ...partialUpdate} = updateDto;
+
+            if (removed) {
+                delete pluginState.state[updateDto.id];
+                return;
+            }
+
+            // Full plugin data is sent if a plugin has been (re-)installed, e.g. via the marketplace
+            if (plugin) {
+                pluginState.state[updateDto.id] = plugin;
+                return;
+            }
+
             // Make sure the plugin exists in the state
             if (pluginState.state[updateDto.id]) {
                 // Update the existing plugin by merging the new data using destructuring
                 pluginState.state[updateDto.id] = {
                     ...pluginState.state[updateDto.id],
-                    ...updateDto
+                    ...partialUpdate
                 };
             }
         })
     });
+}
+
+/** Set the plugin data directly (e.g. after an installation via the marketplace) **/
+export function upsertPlugin(plugin: PluginDto | undefined) {
+    if (plugin) pluginState.state[plugin.id] = plugin;
 }
 
 /** Computed **/

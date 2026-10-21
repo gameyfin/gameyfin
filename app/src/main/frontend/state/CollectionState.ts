@@ -1,27 +1,28 @@
-import {Subscription} from "@vaadin/hilla-frontend";
-import {proxy} from "valtio/index";
+import {proxy} from "valtio";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
 import CollectionEvent from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionEvent";
+import CollectionField from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionField";
+import CollectionPatchDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionPatchDto";
+import {createSyncedStore, SyncedEntityState} from "Frontend/state/sync/createSyncedStore";
+import {identityMapping} from "Frontend/state/sync/patches";
 
-type CollectionState = {
-    subscription?: Subscription<CollectionEvent[]>;
-    isLoaded: boolean;
-    state: Record<number, CollectionDto>;
+/** Collections are small, so there is no separate full tier */
+type CollectionState = SyncedEntityState<CollectionDto, CollectionDto> & {
     collections: CollectionDto[];
     sorted: CollectionDto[];
 };
 
 export const collectionState = proxy<CollectionState>({
-    get isLoaded() {
-        return this.subscription != null;
-    },
     state: {},
+    full: {},
+    isLoaded: false,
+    isSynced: false,
     get collections() {
         return Object.values<CollectionDto>(this.state);
     },
     get sorted() {
-        return Object.values<CollectionDto>(this.state).sort((a: any, b: any) => {
+        return Object.values<CollectionDto>(this.state).sort((a, b) => {
             const orderA = a.metadata?.displayOrder ?? -1;
             const orderB = b.metadata?.displayOrder ?? -1;
 
@@ -35,36 +36,31 @@ export const collectionState = proxy<CollectionState>({
             }
 
             // Fallback to creation date (newer first)
-            return new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime();
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
     }
 });
 
+const collectionPatchMapping = identityMapping<CollectionField>({
+    [CollectionField.NAME]: "name",
+    [CollectionField.DESCRIPTION]: "description",
+    [CollectionField.GAME_IDS]: "gameIds",
+    [CollectionField.METADATA]: "metadata"
+});
+
+export const collectionStore = createSyncedStore<CollectionDto, CollectionDto, CollectionEvent, CollectionField, CollectionPatchDto>(collectionState, {
+    name: "collections",
+    summaryStore: "collections",
+    fetchSync: async (since) => {
+        const result = await CollectionEndpoint.sync(since);
+        return {serverTime: result.serverTime, full: result.full, items: result.collections, allIds: result.allIds};
+    },
+    subscribe: () => CollectionEndpoint.subscribeToCollectionEvents(),
+    normalizeEvent: (event) => ({type: event.type, id: event.id, summary: event.collection, patch: event.patch}),
+    patchMapping: collectionPatchMapping
+});
+
 /** Subscribe to and process state updates from backend **/
-export async function initializeCollectionState() {
-    if (collectionState.isLoaded) return;
-
-    // Fetch initial collection list
-    const initialEntries = await CollectionEndpoint.getAll();
-    initialEntries.forEach((collection: CollectionDto) => {
-        collectionState.state[collection.id] = collection;
-    });
-
-    // Subscribe to real-time updates
-    collectionState.subscription = CollectionEndpoint.subscribeToCollectionEvents().onNext((collectionEvents: CollectionEvent[]) => {
-        collectionEvents.forEach((collectionEvent: CollectionEvent) => {
-            switch (collectionEvent.type) {
-                case "created":
-                case "updated":
-                    //@ts-ignore
-                    collectionState.state[collectionEvent.collection.id] = collectionEvent.collection;
-                    break;
-                case "deleted":
-                    //@ts-ignore
-                    delete collectionState.state[collectionEvent.collectionId];
-                    break;
-            }
-        })
-    });
+export async function initializeCollectionState(identity: string) {
+    await collectionStore.start(identity);
 }
-

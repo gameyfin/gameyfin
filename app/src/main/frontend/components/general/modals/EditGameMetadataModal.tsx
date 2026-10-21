@@ -1,4 +1,3 @@
-import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {Accordion, Button, Modal, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
@@ -16,22 +15,30 @@ import GameHeaderPicker from "Frontend/components/general/input/GameHeaderPicker
 import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput.tsx";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
+import {useFullGame} from "Frontend/state/GameState";
 
 interface EditGameMetadataModalProps {
-    game: GameDto;
+    gameId: number;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
 }
 
-export default function EditGameMetadataModal({game, isOpen, onOpenChange}: EditGameMetadataModalProps) {
+export default function EditGameMetadataModal({gameId, isOpen, onOpenChange}: EditGameMetadataModalProps) {
     const availablePlatforms = useSnapshot(platformState).available;
     const [propertyEnumValues, setPropertyEnumValues] = useState<GameEnumPropertyValuesDto>();
+    // The full game is only loaded once the modal has been opened
+    const [requestedGameId, setRequestedGameId] = useState<number>();
+    const {full: game} = useFullGame(requestedGameId === gameId ? gameId : undefined);
+
+    useEffect(() => {
+        if (isOpen) setRequestedGameId(gameId);
+    }, [isOpen, gameId]);
 
     useEffect(() => {
         GameEndpoint.getEnumPropertyValues().then(setPropertyEnumValues);
     }, []);
 
-    return propertyEnumValues && (
+    return propertyEnumValues && game && (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque">
                 <Modal.Container size="lg" className="max-w-3xl">
@@ -39,6 +46,7 @@ export default function EditGameMetadataModal({game, isOpen, onOpenChange}: Edit
                         {({close}) => {
 
                             async function updateGame(values: GameUpdateDto) {
+                                if (!game) return;
                                 //@ts-ignore
                                 const changed = deepDiff(game, values) as GameUpdateDto;
                                 if (Object.keys(changed).length === 0) return;

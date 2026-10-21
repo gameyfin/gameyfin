@@ -29,7 +29,7 @@ class Collection(
     @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     var description: String? = null,
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     var games: MutableSet<Game> = mutableSetOf(),
 
     @Embedded

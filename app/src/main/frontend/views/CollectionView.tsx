@@ -1,15 +1,15 @@
 import {useSnapshot} from "valtio/react";
-import {gameState} from "Frontend/state/GameState";
 import React, {useEffect} from "react";
 import {useNavigate, useParams} from "react-router";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
 import {collectionState} from "Frontend/state/CollectionState";
+import {useGamesByCollectionId} from "Frontend/state/derived";
 
 export default function CollectionView() {
     const {collectionId} = useParams();
     const navigate = useNavigate();
     const collections = useSnapshot(collectionState);
-    const games = collectionId ? useSnapshot(gameState).gamesByCollectionId[parseInt(collectionId!)] || [] : [];
+    const games = useGamesByCollectionId()[parseInt(collectionId!)] ?? [];
 
     useEffect(() => {
         window.scrollTo(0, 0)

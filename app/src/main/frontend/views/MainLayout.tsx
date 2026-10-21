@@ -23,6 +23,7 @@ import {gameState} from "Frontend/state/GameState";
 import ActiveTaskPopover from "Frontend/components/general/ActiveTaskPopover";
 import {isAdmin} from "Frontend/util/utils";
 import {applyAccentTheme} from "Frontend/theming/themes";
+import {layoutState} from "Frontend/state/LayoutState";
 
 export default function MainLayout() {
     const navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function MainLayout() {
     const isHomePage = location.pathname === "/";
     const [isExploding, setIsExploding] = useState(false);
     const games = useSnapshot(gameState).games;
+    const {stickyHeader} = useSnapshot(layoutState);
 
     useEffect(() => {
         userPreferenceService.sync()
@@ -60,6 +62,10 @@ export default function MainLayout() {
             applyAccentTheme(accentTheme);
             setTheme(mode);
         }
+        const syncedSticky = await userPreferenceService.get("sticky-header");
+        if (syncedSticky !== undefined) {
+            layoutState.stickyHeader = syncedSticky === "true";
+        }
     }
 
     function easterEgg() {
@@ -78,7 +84,7 @@ export default function MainLayout() {
         <div className="flex flex-col min-h-screen">
             {isExploding ? <Confetti {...confettiProps}/> : <></>}
 
-            <header className="2xl:px-[12.5%]">
+            <header className={`2xl:px-[12.5%] ${stickyHeader ? "sticky top-0 z-50 bg-background shadow-sm" : ""}`}>
                 <nav className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 [&_button>svg]:size-5">
                     <div className="flex items-center gap-2">
                         {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :

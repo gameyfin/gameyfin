@@ -10,10 +10,10 @@ class GameMetadata(
 
     var fileSize: Long? = null,
 
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     var fields: MutableMap<String, GameFieldMetadata> = mutableMapOf(),
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     var originalIds: Map<PluginManagementEntry, String> = emptyMap(),
 
     var downloadCount: Int = 0,

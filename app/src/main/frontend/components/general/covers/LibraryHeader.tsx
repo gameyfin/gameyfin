@@ -1,4 +1,4 @@
-import LibraryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryDto";
+import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
 import React from "react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
@@ -6,7 +6,7 @@ import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPat
 import {Card} from "@heroui/react";
 
 interface LibraryHeaderProps {
-    library: LibraryDto;
+    library: LibrarySummaryDto;
     className?: string;
 }
 
@@ -18,7 +18,7 @@ export default function LibraryHeader({library, className}: LibraryHeaderProps) 
     function getRandomGames() {
         if (!state.randomlyOrderedGamesByLibraryId[library.id]) return [];
         const games = state.randomlyOrderedGamesByLibraryId[library.id]
-            .filter(game => game.images && game.images.length > 0);
+            .filter(game => game.previewImage);
         if (!games) return [];
         return games.slice(0, MAX_COVER_COUNT);
     }
@@ -37,7 +37,7 @@ export default function LibraryHeader({library, className}: LibraryHeaderProps) 
                         }}
                     >
                         <img
-                            src={`/images/screenshot/${game.images![0].id}`}
+                            src={`/images/screenshot/${game.previewImage!.id}`}
                             alt={`Image ${idx}`}
                         />
                     </div>
