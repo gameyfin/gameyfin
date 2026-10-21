@@ -2,7 +2,7 @@ import LoginView from "Frontend/views/LoginView";
 import MainLayout from "Frontend/views/MainLayout";
 import HomeView from "Frontend/views/HomeView";
 import SetupView from "Frontend/views/SetupView";
-import {ThemeSelector} from "Frontend/components/theming/ThemeSelector";
+import AppearanceView from "Frontend/components/theming/AppearanceView";
 import App from "Frontend/App";
 import {GameManagement} from "Frontend/components/administration/GameManagement";
 import {UserManagement} from "Frontend/components/administration/UserManagement";
@@ -76,7 +76,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                 },
                                 {
                                     path: 'appearance',
-                                    element: <ThemeSelector/>,
+                                    element: <AppearanceView/>,
                                     handle: {title: 'Appearance'}
                                 }
                             ]

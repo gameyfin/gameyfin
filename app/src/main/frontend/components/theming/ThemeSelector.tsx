@@ -1,19 +1,16 @@
 import {useTheme} from "next-themes";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Button, Card, ColorSwatchPicker, Label, ListBox, Select, Separator, Switch} from "@heroui/react";
+import {Button, Card, ColorSwatchPicker, Label, ListBox, Select, Separator} from "@heroui/react";
 import {themes, themeNames, applyAccentTheme} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
 import {toTitleCase} from "Frontend/util/utils";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
 import type {Color} from "@heroui/react";
-import {layoutState} from "Frontend/state/LayoutState";
-import {useSnapshot} from "valtio/react";
 
 export function ThemeSelector() {
 
     const {theme: mode, setTheme: setMode} = useTheme();
-    const {stickyHeader} = useSnapshot(layoutState);
     // Start from the accent theme that is currently applied, not themes[0], so opening this view
     // doesn't reset the user's theme.
     const [selectedTheme, setSelectedTheme] = useState(
@@ -38,15 +35,7 @@ export function ThemeSelector() {
         }).catch(console.error).finally(() => {
             preferenceLoaded.current = true;
         });
-        userPreferenceService.get("sticky-header").then((value) => {
-            if (value !== undefined) layoutState.stickyHeader = value === "true";
-        }).catch(console.error);
     }, []);
-
-    function onStickyHeaderChange(value: boolean) {
-        layoutState.stickyHeader = value;
-        userPreferenceService.set("sticky-header", String(value)).catch(console.error);
-    }
 
     useEffect(() => {
         applyAccentTheme(selectedTheme);
@@ -68,12 +57,6 @@ export function ThemeSelector() {
 
     return (
         <div className="flex flex-col items-center gap-8">
-            <Switch isSelected={stickyHeader} onChange={onStickyHeaderChange}>
-                <Switch.Control>
-                    <Switch.Thumb/>
-                </Switch.Control>
-                <Switch.Content>Keep navigation bar visible while scrolling</Switch.Content>
-            </Switch>
             <Select className="max-w-xs"
                     value={mode}
                     onChange={(value) => setMode(value as string)}>
