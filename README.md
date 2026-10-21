@@ -7,6 +7,7 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=gameyfin_gameyfin&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=gameyfin_gameyfin)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=gameyfin_gameyfin&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=gameyfin_gameyfin)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=gameyfin_gameyfin&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=gameyfin_gameyfin)
+[![Deploy on RepoCloud](https://dnk92k33or340.cloudfront.net/deploy-20px.png)](https://repocloud.io/details/Gameyfin/)
 </div>
 <div align="center">
     <h2>Gameyfin</h2>
