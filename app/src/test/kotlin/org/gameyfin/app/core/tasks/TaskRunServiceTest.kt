@@ -94,6 +94,84 @@ class TaskRunServiceTest {
     }
 
     @Test
+    fun `cancelled runs should be recorded as cancelled even if the task returns normally`() {
+        registry.register(taskDefinition("test"))
+        val started = CountDownLatch(1)
+
+        val run = service.start("test", TaskTrigger.MANUAL) { context ->
+            started.countDown()
+            while (!context.isCancellationRequested) Thread.sleep(5)
+            TaskResult("Partial")
+        }
+        assertTrue(started.await(5, TimeUnit.SECONDS))
+
+        service.cancel(run.id)
+        awaitFinished(run.id)
+
+        assertEquals(TaskRunStatus.CANCELLED, store.getValue(run.id).status)
+    }
+
+    @Test
+    fun `forEachItem should not process items after the cancellation was requested`() {
+        registry.register(taskDefinition("test"))
+        val started = CountDownLatch(1)
+        val processed = mutableListOf<Int>()
+
+        val run = service.start("test", TaskTrigger.MANUAL) { context ->
+            started.countDown()
+            while (!context.isCancellationRequested) Thread.sleep(5)
+            context.forEachItem(listOf(1, 2, 3)) { processed.add(it) }
+            null
+        }
+        assertTrue(started.await(5, TimeUnit.SECONDS))
+
+        service.cancel(run.id)
+        awaitFinished(run.id)
+
+        assertEquals(emptyList(), processed)
+        assertEquals(TaskRunStatus.CANCELLED, store.getValue(run.id).status)
+    }
+
+    @Test
+    fun `wrap should not execute work once the cancellation was requested`() {
+        registry.register(taskDefinition("test"))
+        val started = CountDownLatch(1)
+        val executed = java.util.concurrent.atomic.AtomicBoolean(false)
+
+        val run = service.start("test", TaskTrigger.MANUAL) { context ->
+            started.countDown()
+            while (!context.isCancellationRequested) Thread.sleep(5)
+            assertThrows<TaskCancelledException> {
+                context.wrap(Runnable { executed.set(true) }).run()
+            }
+            assertThrows<TaskCancelledException> {
+                context.wrap(java.util.concurrent.Callable { executed.set(true) }).call()
+            }
+            throw TaskCancelledException()
+        }
+        assertTrue(started.await(5, TimeUnit.SECONDS))
+
+        service.cancel(run.id)
+        awaitFinished(run.id)
+
+        assertFalse(executed.get())
+        assertEquals(TaskRunStatus.CANCELLED, store.getValue(run.id).status)
+    }
+
+    @Test
+    fun `wrap should execute work while the run is not cancelled`() {
+        registry.register(taskDefinition("test"))
+        var result: String? = null
+
+        service.runBlocking("test", TaskTrigger.MANUAL) { context ->
+            result = context.wrap(java.util.concurrent.Callable { "ok" }).call()
+            null
+        }
+
+        assertEquals("ok", result)
+    }
+
+    @Test
     fun `runBlocking should mark the run as cancelled on TaskCancelledException`() {
         registry.register(taskDefinition("test"))
 
