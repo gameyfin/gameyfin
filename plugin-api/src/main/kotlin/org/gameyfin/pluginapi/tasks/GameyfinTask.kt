@@ -66,7 +66,18 @@ interface GameyfinTask : ExtensionPoint {
 
     /**
      * Whether a run of this task can be cancelled.
-     * Cancellation is cooperative, so the task must check [TaskContext.isCancellationRequested] regularly.
+     *
+     * Cancellation is cooperative and part of the contract of a cancellable task:
+     * - Cancellation never interrupts [execute]. The task must notice it by calling [TaskContext.throwIfCancelled]
+     *   (or checking [TaskContext.isCancellationRequested]) between units of work, at least every few seconds.
+     *   Use [TaskContext.forEachItem] to iterate over items with this check built in.
+     * - Work submitted to other threads must be wrapped using [TaskContext.wrap], which throws a
+     *   [TaskCancelledException] instead of running the work once the cancellation has been requested.
+     *   Blocking calls should use timeouts so they return regularly and the task can check for cancellation.
+     * - Once the cancellation has been requested, the task should end by throwing a [TaskCancelledException].
+     *   A run which returns normally after its cancellation has been requested is still recorded as cancelled.
+     *
+     * Tasks which can not honor these rules should return `false`, so administrators can not request a cancellation.
      */
     val cancellable: Boolean
         get() = true
