@@ -11,7 +11,17 @@ import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState, useFullGame} from "Frontend/state/GameState";
 import {useCollectionIdsOfGame} from "Frontend/state/derived";
 import {useSnapshot} from "valtio/react";
-import {CheckCircleIcon, InfoIcon, MagnifyingGlassIcon, PencilIcon, StarIcon, TrashIcon,} from "@phosphor-icons/react";
+import {
+    CaretLeftIcon,
+    CaretRightIcon,
+    CheckCircleIcon,
+    DownloadSimpleIcon,
+    InfoIcon,
+    MagnifyingGlassIcon,
+    PencilIcon,
+    StarIcon,
+    TrashIcon,
+} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
@@ -21,6 +31,7 @@ import remarkBreaks from "remark-breaks";
 import ChipList from "Frontend/components/general/ChipList";
 import {collectionState} from "Frontend/state/CollectionState";
 import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
+import {libraryState} from "Frontend/state/LibraryState.ts";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -38,8 +49,19 @@ export default function GameView() {
     const {full: game} = useFullGame(summary ? id : undefined);
     const collections = useSnapshot(collectionState).state;
     const collectionIds = useCollectionIdsOfGame(summary ? id : undefined);
+    const libraries = useSnapshot(libraryState).state;
 
     const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
+
+    const sortedGameIds = Object.keys(state.state).map(Number).sort((a, b) => a - b);
+    const currentIndex = id !== undefined ? sortedGameIds.indexOf(id) : -1;
+
+    function navigateToAdjacentGame(offset: number) {
+        if (currentIndex < 0 || sortedGameIds.length === 0) return;
+        const count = sortedGameIds.length;
+        const targetIndex = (currentIndex + offset + count) % count;
+        navigate(`/game/${sortedGameIds[targetIndex]}`);
+    }
 
     useEffect(() => {
         DownloadProviderEndpoint.getProviders().then((providers) => {
@@ -138,6 +160,26 @@ export default function GameView() {
                         </div>
                     </div>
                     <div className="flex flex-row items-center gap-8">
+                        <div className="flex flex-row gap-2">
+                            <Tooltip>
+                                <Tooltip.Trigger>
+                                    <Button isIconOnly variant="tertiary" aria-label="Previous game"
+                                            onPress={() => navigateToAdjacentGame(-1)}>
+                                        <CaretLeftIcon/>
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>Previous game</Tooltip.Content>
+                            </Tooltip>
+                            <Tooltip>
+                                <Tooltip.Trigger>
+                                    <Button isIconOnly variant="tertiary" aria-label="Next game"
+                                            onPress={() => navigateToAdjacentGame(1)}>
+                                        <CaretRightIcon/>
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>Next game</Tooltip.Content>
+                            </Tooltip>
+                        </div>
                         {isAdmin(auth) && <div className="flex flex-row gap-2">
                             <Tooltip>
                                 <Tooltip.Trigger>
@@ -179,7 +221,8 @@ export default function GameView() {
                                 <Tooltip.Content>Remove from library</Tooltip.Content>
                             </Tooltip>
                         </div>}
-                        {downloadOptions && <ComboButton description={humanFileSize(game.metadata.fileSize)}
+                        {downloadOptions && <ComboButton icon={<DownloadSimpleIcon size={24}/>}
+                                                         description={humanFileSize(game.metadata.fileSize)}
                                                          options={downloadOptions}
                                                          preferredOptionKey="preferred-download-method"
                         />}
@@ -305,6 +348,13 @@ export default function GameView() {
                                             }
                                         </td>
                                     </tr>}
+                                <tr>
+                                    <td className="text-muted w-0 min-w-32">Library</td>
+                                    <Link href={`/library/${game.libraryId}`}
+                                          className="text-foreground hover:underline">
+                                        {libraries[game.libraryId]?.name ?? "Unknown library"}
+                                    </Link>
+                                </tr>
                                 {collectionIds.length > 0 &&
                                     <tr>
                                         <td className="text-muted w-0 min-w-32">Collections</td>

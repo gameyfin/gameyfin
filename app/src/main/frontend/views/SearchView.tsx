@@ -1,11 +1,5 @@
-import {Button, Input, ListBox, Select, Tooltip} from "@heroui/react";
-import {
-    FunnelSimpleIcon,
-    FunnelSimpleXIcon,
-    MagnifyingGlassIcon,
-    SortAscendingIcon,
-    StarIcon,
-} from "@phosphor-icons/react";
+import {Button, Label, ListBox, SearchField, Select, Tooltip} from "@heroui/react";
+import {CaretDownIcon, FunnelSimpleIcon, FunnelSimpleXIcon, SortAscendingIcon, StarIcon,} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";
@@ -268,7 +262,7 @@ function SearchViewContent() {
                 placeholder={placeholder}
                 className={className}
             >
-                <span className="text-sm text-muted">{label}</span>
+                <Label>{label}</Label>
                 <Select.Trigger className="flex items-center gap-2">
                     {triggerPrefix}
                     <Select.Value/>
@@ -284,48 +278,44 @@ function SearchViewContent() {
     }
 
     return <Form className="flex flex-col gap-4 items-center w-full">
-        <div className="flex w-full justify-between px-4 gap-4 flex-col lg:flex-row">
-            <div
-                className="flex h-full w-full lg:w-96 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-muted">
-                <MagnifyingGlassIcon/>
-                <Input
-                    className="grow"
-                    placeholder="Type to search..."
-                    type="search"
-                    value={searchTerm}
-                    onChange={(event) => setFieldValue("searchTerm", event.target.value)}
-                />
-                {searchTerm && (
-                    <button className="text-muted" onClick={() => setFieldValue("searchTerm", "")} type="button">
-                        ×
-                    </button>
-                )}
-            </div>
-            <div className="flex flex-row items-end gap-2">
+        <div className="flex w-full justify-between px-4 gap-4 flex-col lg:flex-row lg:items-center">
+            <SearchField
+                name="searchTerm"
+                aria-label="Search games"
+                value={searchTerm}
+                onChange={(value) => setFieldValue("searchTerm", value)}
+                className="w-full lg:flex-1 lg:max-w-4xl"
+            >
+                <SearchField.Group>
+                    <SearchField.SearchIcon/>
+                    <SearchField.Input className="w-full" placeholder="Type to search..."/>
+                    <SearchField.ClearButton/>
+                </SearchField.Group>
+            </SearchField>
+            <div className="flex flex-row items-center gap-2">
                 <AutocompleteInput
                     name="sortBy"
-                    label="Sort"
                     options={SORT_OPTIONS}
                     selectionMode="single"
                     className="flex flex-col gap-1 w-full lg:w-64"
                     triggerPrefix={<SortAscendingIcon/>}
                     showError={false}
                 />
+                <Button
+                    variant="outline"
+                    onPress={() => setShowFilters(!showFilters)}
+                    aria-expanded={showFilters}
+                    aria-controls="search-filters"
+                    className="gap-2"
+                >
+                    <FunnelSimpleIcon/>
+                    Filters
+                    <CaretDownIcon className={`transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`}/>
+                </Button>
                 <Tooltip>
                     <Tooltip.Trigger>
                         <Button isIconOnly
-                                variant={showFilters ? "primary" : "outline"}
-                                onPress={() => setShowFilters(!showFilters)}
-                                aria-label="Toggle Filters"
-                        >
-                            <FunnelSimpleIcon/>
-                        </Button>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content>{showFilters ? "Hide Filters" : "Show Filters"}</Tooltip.Content>
-                </Tooltip>
-                <Tooltip>
-                    <Tooltip.Trigger>
-                        <Button isIconOnly
+                                variant="danger-soft"
                                 onPress={() => setValues({
                                     ...values,
                                     libraries: [],
@@ -346,18 +336,11 @@ function SearchViewContent() {
                 </Tooltip>
             </div>
         </div>
-        {showFilters && <div
-            className="w-full justify-center px-12"
-            style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                gap: "0.5rem",
-                margin: "0 auto",
-            }}
-        >
+        {showFilters && <div id="search-filters"
+                             className="grid w-full grid-cols-1 gap-x-4 gap-y-2 px-4 sm:grid-cols-2 xl:grid-cols-3">
             <AutocompleteInput name="libraries" label="Libraries" placeholder="Filter by library"
                                options={libraries.map((library) => ({id: library.id.toString(), label: library.name}))}
-                               className="flex flex-col gap-1" showError={false}/>
+                               className="flex flex-col gap-1 min-w-0" showError={false}/>
             {renderSelect(
                 "Minimum Rating",
                 minRating.toString(),
@@ -372,21 +355,27 @@ function SearchViewContent() {
                 </>,
                 "single",
                 "Minimum rating",
-                undefined,
+                "flex flex-col gap-1 min-w-0",
                 true,
             )}
             <AutocompleteInput name="developers" label="Developers" placeholder="Filter by developer"
-                               options={toOptions(knownDevelopers)} className="flex flex-col gap-1" showError={false}/>
+                               options={toOptions(knownDevelopers)} className="flex flex-col gap-1 min-w-0"
+                               showError={false}/>
             <AutocompleteInput name="genres" label="Genres" placeholder="Filter by genre"
-                               options={toOptions(knownGenres)} className="flex flex-col gap-1" showError={false}/>
+                               options={toOptions(knownGenres)} className="flex flex-col gap-1 min-w-0"
+                               showError={false}/>
             <AutocompleteInput name="themes" label="Themes" placeholder="Filter by theme"
-                               options={toOptions(knownThemes)} className="flex flex-col gap-1" showError={false}/>
+                               options={toOptions(knownThemes)} className="flex flex-col gap-1 min-w-0"
+                               showError={false}/>
             <AutocompleteInput name="features" label="Features" placeholder="Filter by feature"
-                               options={toOptions(knownFeatures)} className="flex flex-col gap-1" showError={false}/>
+                               options={toOptions(knownFeatures)} className="flex flex-col gap-1 min-w-0"
+                               showError={false}/>
             <AutocompleteInput name="perspectives" label="Perspectives" placeholder="Filter by perspective"
-                               options={toOptions(knownPerspectives)} className="flex flex-col gap-1" showError={false}/>
+                               options={toOptions(knownPerspectives)} className="flex flex-col gap-1 min-w-0"
+                               showError={false}/>
             <AutocompleteInput name="keywords" label="Keywords" placeholder="Filter by keyword"
-                               options={toOptions(knownKeywords)} className="flex flex-col gap-1" showError={false}/>
+                               options={toOptions(knownKeywords)} className="flex flex-col gap-1 min-w-0"
+                               showError={false}/>
         </div>
         }
         <div className="mt-4 w-full select-none">

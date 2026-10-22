@@ -64,6 +64,11 @@ html:root body {
     background-image: none !important;
 }
 
+/* Reserve scrollbar space so the page doesn't shift when a scrollbar appears/disappears */
+html {
+    scrollbar-gutter: stable;
+}
+
 /* Custom gridTemplateColumns */
 @utility grid-cols-300px {
     grid-template-columns: repeat(auto-fit, 300px);

@@ -1,8 +1,9 @@
-import {ComboBox, Input, ListBox} from "@heroui/react";
-import {MagnifyingGlassIcon} from "@phosphor-icons/react";
+import {ComboBox, ListBox, SearchField} from "@heroui/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {useNavigate} from "react-router";
+import {useState} from "react";
+import type {Key} from "react-aria-components";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 
@@ -12,17 +13,33 @@ export default function SearchBar() {
     const state = useSnapshot(gameState);
     const games = state.games;
 
+    const [selectedKey, setSelectedKey] = useState<number | null>(null);
+    const [inputValue, setInputValue] = useState("");
+
+    const handleSelectionChange = (key: Key | null) => {
+        if (key == null) return;
+        navigate("/game/" + key);
+        setSelectedKey(null);
+        setInputValue("");
+    };
+
     return <ComboBox
         aria-label="Search for games"
         defaultItems={games}
         allowsCustomValue={false}
-        onChange={(id) => id && navigate("/game/" + id)}
+        value={selectedKey}
+        onChange={handleSelectionChange}
+        inputValue={inputValue}
+        onInputChange={setInputValue}
     >
-        <ComboBox.InputGroup>
-            <MagnifyingGlassIcon className="mx-2 text-muted"/>
-            <Input placeholder="Type to search..." className="w-96"/>
-        </ComboBox.InputGroup>
-        <ComboBox.Popover className="max-w-(--trigger-width)">
+        <SearchField aria-label="Search for games" className="w-96">
+            <SearchField.Group>
+                <SearchField.SearchIcon/>
+                <SearchField.Input placeholder="Type to search..."/>
+                <SearchField.ClearButton/>
+            </SearchField.Group>
+        </SearchField>
+        <ComboBox.Popover className="w-96">
             <ListBox className="max-h-[66vh] overflow-y-auto">
                 {(item: GameSummaryDto) => (
                     <ListBox.Item key={item.id} id={item.id} textValue={item.title}>
