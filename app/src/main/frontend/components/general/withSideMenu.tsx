@@ -2,6 +2,8 @@ import {Outlet, useLocation} from "react-router";
 import {Icon} from "@phosphor-icons/react";
 import {ListBox} from "@heroui/react";
 import {ReactElement} from "react";
+import {useSnapshot} from "valtio/react";
+import {layoutState} from "Frontend/state/LayoutState";
 
 export type MenuItem = {
     title: string,
@@ -9,10 +11,14 @@ export type MenuItem = {
     icon: ReactElement<Icon>
 }
 
+/** Matches the `mt-4` (16px) gap MainLayout puts above the page content */
+const CONTENT_TOP_GAP = 16;
+
 export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
     return function PageWithSideMenu() {
         const location = useLocation();
         const selectedItem = selectedFromPath(location.pathname);
+        const {stickyHeader, headerHeight} = useSnapshot(layoutState);
 
         /**
          * Remove a "/" at the start if it exists
@@ -42,7 +48,8 @@ export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
 
         return (
             <div className="flex flex-row">
-                <div className="flex flex-col shrink-0 pr-8">
+                <div className="flex flex-col shrink-0 pr-8 sticky self-start"
+                     style={{top: (stickyHeader ? headerHeight : 0) + CONTENT_TOP_GAP}}>
                     <ListBox className="w-60">
                         {menuItems.map((i) => (
                             <ListBox.Item key={key(i.url)} id={key(i.url)} href={link(i.url)}

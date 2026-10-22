@@ -2,7 +2,8 @@ import React, {useEffect, useMemo, useState} from "react";
 import {Alert, Button, ListBox, SearchField, Select, Spinner, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {ArrowsClockwiseIcon, StorefrontIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
-import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
+import MarketplacePluginDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 import MarketplacePluginStatus
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginStatus";
 import {initializeMarketplaceState, marketplaceState} from "Frontend/state/MarketplaceState";
@@ -78,14 +79,16 @@ export default function PluginMarketplace() {
                 <FilterSelect label="Type"
                               value={typeFilter}
                               onChange={setTypeFilter}
-                              options={availableTypes.map(t => ({id: t, label: camelCaseToTitle(t)}))}/>
+                              options={availableTypes.map(t => ({id: t, label: camelCaseToTitle(t)}))}
+                              className="md:w-72"/>
                 <FilterSelect label="Status"
                               value={statusFilter}
                               onChange={setStatusFilter}
                               options={Object.values(MarketplacePluginStatus).map(s => ({
                                   id: s,
                                   label: statusLabels[s]
-                              }))}/>
+                              }))}
+                              className="md:w-48"/>
                 <div className="flex flex-row gap-2">
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
@@ -158,12 +161,13 @@ interface FilterSelectProps {
     value: string;
     onChange: (value: string) => void;
     options: { id: string, label: string }[];
+    className: string;
 }
 
-function FilterSelect({label, value, onChange, options}: FilterSelectProps) {
+function FilterSelect({label, value, onChange, options, className}: FilterSelectProps) {
     return (
         <Select aria-label={`Filter by ${label.toLowerCase()}`}
-                className="md:w-48"
+                className={className}
                 value={value}
                 onChange={(key) => onChange(key?.toString() ?? ALL)}>
             <Select.Trigger>

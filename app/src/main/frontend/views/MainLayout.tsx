@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import ProfileMenu from "Frontend/components/ProfileMenu";
 import {Button, Link, Separator, Tooltip} from "@heroui/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
@@ -36,6 +36,17 @@ export default function MainLayout() {
     const [isExploding, setIsExploding] = useState(false);
     const games = useSnapshot(gameState).games;
     const {stickyHeader} = useSnapshot(layoutState);
+    const headerRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        const header = headerRef.current;
+        if (!header) return;
+        const observer = new ResizeObserver(() => {
+            layoutState.headerHeight = header.offsetHeight;
+        });
+        observer.observe(header);
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         userPreferenceService.sync()
@@ -84,9 +95,10 @@ export default function MainLayout() {
         <div className="flex flex-col min-h-screen">
             {isExploding ? <Confetti {...confettiProps}/> : <></>}
 
-            <header className={`2xl:px-[12.5%] ${stickyHeader ? "sticky top-0 z-50 bg-background shadow-sm" : ""}`}>
+            <header ref={headerRef}
+                    className={`2xl:px-[12.5%] ${stickyHeader ? "sticky top-0 z-50 bg-background/75 backdrop-blur-md shadow-sm" : ""}`}>
                 <nav className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 [&_button>svg]:size-5">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-1 items-center gap-2 h-10">
                         {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
                             <div className="flex flex-row gap-2">
                                 <Button isIconOnly onPress={() => history.back()} variant="ghost">
@@ -100,7 +112,7 @@ export default function MainLayout() {
                     </div>
 
                     {!isSearchPage && (
-                        <div className="flex flex-1 items-center justify-center gap-2 max-w-96 min-w-72 ml-auto">
+                        <div className="flex flex-none w-96 items-center justify-center gap-2">
                             <Tooltip>
                                 <Tooltip.Trigger>
                                     <Button
@@ -126,7 +138,7 @@ export default function MainLayout() {
                         </div>
                     )}
 
-                    <ul className="flex items-center gap-2 ml-auto">
+                    <ul className="flex flex-1 items-center justify-end gap-2">
                         <li>
                             <Tooltip>
                                 <Tooltip.Trigger>
@@ -180,7 +192,7 @@ export default function MainLayout() {
                 </nav>
             </header>
 
-            <div className="flex flex-col grow 2xl:px-[12.5%] overflow-x-hidden mt-4 px-4 2xl:mt-4">
+            <div className="flex flex-col grow 2xl:px-[12.5%] overflow-x-clip mt-4 px-4 2xl:mt-4">
                 <Outlet/>
             </div>
 
