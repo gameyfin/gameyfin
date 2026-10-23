@@ -290,8 +290,13 @@ class TaskRunService(
         try {
             run.throwIfCancelled()
             val result = body(run)
-            finish(run, TaskRunStatus.COMPLETED, result?.summary, null)
-            log.info { "Finished ${run.displayName}" + (result?.summary?.let { ": $it" } ?: "") }
+            if (run.cancelRequested) {
+                finish(run, TaskRunStatus.CANCELLED, result?.summary, null)
+                log.info { "Cancelled ${run.displayName} (task returned without throwing)" }
+            } else {
+                finish(run, TaskRunStatus.COMPLETED, result?.summary, null)
+                log.info { "Finished ${run.displayName}" + (result?.summary?.let { ": $it" } ?: "") }
+            }
         } catch (e: TaskCancelledException) {
             finish(run, TaskRunStatus.CANCELLED, e.message, null)
             log.info { "Cancelled ${run.displayName}" }
@@ -405,9 +410,15 @@ class TaskRunService(
             return parameters[key] as T?
         }
 
-        override fun wrap(runnable: Runnable): Runnable = MdcPropagation.wrap(runnable)
+        override fun wrap(runnable: Runnable): Runnable = MdcPropagation.wrap(Runnable {
+            throwIfCancelled()
+            runnable.run()
+        })
 
-        override fun <T> wrap(callable: Callable<T>): Callable<T> = MdcPropagation.wrap(callable)
+        override fun <T> wrap(callable: Callable<T>): Callable<T> = MdcPropagation.wrap(Callable {
+            throwIfCancelled()
+            callable.call()
+        })
 
         fun toDto() = TaskRunDto(
             id = id,

@@ -21,15 +21,28 @@ interface TaskContext {
 
     /**
      * Whether an administrator has requested to cancel the current run.
-     * Long-running tasks should check this regularly and stop as soon as possible.
+     * Long-running tasks must check this regularly and stop as soon as possible, see [GameyfinTask.cancellable].
      */
     val isCancellationRequested: Boolean
 
     /**
      * Throws a [TaskCancelledException] if the cancellation of the current run has been requested.
+     * Call this between units of work, e.g. once per file or per HTTP request.
      */
     fun throwIfCancelled() {
         if (isCancellationRequested) throw TaskCancelledException()
+    }
+
+    /**
+     * Executes [action] for each item, checking for cancellation before every item.
+     * Throws a [TaskCancelledException] before the first item which would be processed after the cancellation
+     * has been requested.
+     */
+    fun <T> forEachItem(items: Iterable<T>, action: (T) -> Unit) {
+        for (item in items) {
+            throwIfCancelled()
+            action(item)
+        }
     }
 
     /**
@@ -55,13 +68,15 @@ interface TaskContext {
 
     /**
      * Wraps a [Runnable] which is executed on a different thread, so everything it logs is included in the log
-     * of the current run.
+     * of the current run. If the cancellation of the run has been requested before the wrapped work starts,
+     * it is not executed and a [TaskCancelledException] is thrown instead.
      */
     fun wrap(runnable: Runnable): Runnable
 
     /**
      * Wraps a [Callable] which is executed on a different thread, so everything it logs is included in the log
-     * of the current run.
+     * of the current run. If the cancellation of the run has been requested before the wrapped work starts,
+     * it is not executed and a [TaskCancelledException] is thrown instead.
      */
     fun <T> wrap(callable: Callable<T>): Callable<T>
 }

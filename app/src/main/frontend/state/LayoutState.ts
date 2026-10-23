@@ -1,5 +1,6 @@
 import {proxy} from "valtio";
 
 export const layoutState = proxy({
-    stickyHeader: false,
+    stickyHeader: true,
+    headerHeight: 0,
 });

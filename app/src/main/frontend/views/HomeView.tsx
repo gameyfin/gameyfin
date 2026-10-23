@@ -105,8 +105,9 @@ export default function HomeView() {
             <div className="flex flex-col gap-4">
                 {(filteredAndSortedLibraries.length + filteredAndSortedCollections.length > 0) &&
                     <div className="flex flex-col gap-2">
-                        <Link href="/search" className="flex flex-row gap-1 w-fit items-baseline text-foreground hover:underline">
-                            <p className="text-2xl font-bold mb-4">Your games</p>
+                        <Link href="/search"
+                              className="flex flex-row gap-1 w-fit items-baseline text-foreground hover:underline">
+                            <p className="text-2xl font-bold mb-4">All games</p>
                             <CaretRightIcon weight="bold" size={16}/>
                         </Link>
                         <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">

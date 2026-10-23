@@ -8,11 +8,7 @@ import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
-import org.gameyfin.app.core.tasks.LIBRARY_SCAN_TASK_KEY
-import org.gameyfin.app.core.tasks.TaskAction
-import org.gameyfin.app.core.tasks.TaskDefinition
-import org.gameyfin.app.core.tasks.TaskRegistry
-import org.gameyfin.app.core.tasks.TaskRunService
+import org.gameyfin.app.core.tasks.*
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.IgnoredPath
@@ -55,6 +51,7 @@ class LibraryScanService(
         private val log = KotlinLogging.logger {}
 
         private var scanConcurrency = ConfigProperties.Libraries.Scan.MaxConcurrency.default!!
+
         @Volatile
         private var scanSemaphore = Semaphore(scanConcurrency)
         private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
@@ -316,49 +313,13 @@ class LibraryScanService(
         val semaphore = scanSemaphore
 
         val tasks = gamePaths.map { path ->
-            context.wrap(Callable<Game?> {
+            context.wrap(Callable {
                 // Skipped paths are neither added to the library nor marked as unmatched, so they are picked up again
                 if (context.isCancellationRequested) return@Callable null
                 semaphore.acquire()
                 try {
-                    val persisted = logProcessingTime("new game '${path.fileName}'") {
-                        libraryGameProcessor.processNewGame(path, library)
-                    }
-
-                    if (persisted == null) {
-                        // Not identified, mark as unmatched by all current metadata providers
-                        val pluginSource = IgnoredPathPluginSource(
-                            pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
-                        )
-                        val ignoredPath = IgnoredPath(
-                            path = path.toString(),
-                            source = pluginSource
-                        )
-                        newUnmatchedPaths.add(ignoredPath)
-                    }
-
-                    if (persisted != null) {
-                        log.info { "Added new game '${persisted.title}' from '$path'" }
-                    } else {
-                        log.info { "No metadata match found for '$path', marked as unmatched" }
-                    }
-
-                    return@Callable persisted
-                } catch (e: Exception) {
-                    // Error, mark as unmatched by all current metadata providers
-                    val pluginSource = IgnoredPathPluginSource(
-                        pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
-                    )
-                    val ignoredPath = IgnoredPath(
-                        path = path.toString(),
-                        source = pluginSource
-                    )
-                    newUnmatchedPaths.add(ignoredPath)
-
-                    log.warn { "Processing of new game at '$path' failed: ${e.message}" }
-                    log.debug(e) {}
-
-                    return@Callable null
+                    if (context.isCancellationRequested) return@Callable null
+                    matchNewGame(path, library, newUnmatchedPaths)
                 } finally {
                     semaphore.release()
                     val done = completed.incrementAndGet()
@@ -374,6 +335,36 @@ class LibraryScanService(
             unmatchedPaths = newUnmatchedPaths.toList(),
             matchedGames = persistedGames // now these are already persisted
         )
+    }
+
+    /** Processes a single new game path. Paths which fail or are not identified are marked as unmatched. */
+    private fun matchNewGame(path: Path, library: Library, newUnmatchedPaths: MutableSet<IgnoredPath>): Game? {
+        val persisted = try {
+            logProcessingTime("new game '${path.fileName}'") {
+                libraryGameProcessor.processNewGame(path, library)
+            }
+        } catch (e: Exception) {
+            markAsUnmatched(path, newUnmatchedPaths)
+            log.warn { "Processing of new game at '$path' failed: ${e.message}" }
+            log.debug(e) {}
+            return null
+        }
+
+        if (persisted == null) {
+            // Not identified, mark as unmatched by all current metadata providers
+            markAsUnmatched(path, newUnmatchedPaths)
+            log.info { "No metadata match found for '$path', marked as unmatched" }
+        } else {
+            log.info { "Added new game '${persisted.title}' from '$path'" }
+        }
+        return persisted
+    }
+
+    private fun markAsUnmatched(path: Path, newUnmatchedPaths: MutableSet<IgnoredPath>) {
+        val pluginSource = IgnoredPathPluginSource(
+            pluginService.getPluginManagementEntries(GameMetadataProvider::class.java).toMutableList()
+        )
+        newUnmatchedPaths.add(IgnoredPath(path = path.toString(), source = pluginSource))
     }
 
     private fun updateLibrary(
@@ -415,7 +406,7 @@ class LibraryScanService(
         val managedGames = if (gameIds.isNotEmpty()) gameRepository.findAllById(gameIds) else emptyList()
 
         // Add new games to library using managed entities, but do not persist yet
-        libraryCoreService.addGamesToLibrary(managedGames, library, persist = false)
+        libraryCoreService.addGamesToLibrary(managedGames, library)
 
         context.progress("Finishing up", games.size, games.size)
 
@@ -435,10 +426,11 @@ class LibraryScanService(
         val semaphore = scanSemaphore
 
         val updateTasks = games.map { game ->
-            context.wrap(Callable<Game?> {
+            context.wrap(Callable {
                 if (context.isCancellationRequested) return@Callable null
                 semaphore.acquire()
                 try {
+                    if (context.isCancellationRequested) return@Callable null
                     val updated = logProcessingTime("existing game '${game.title}' (id=${game.id})") {
                         libraryGameProcessor.processExistingGame(game)
                     }
