@@ -1,6 +1,6 @@
 {
   "name": "gameyfin",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "type": "module",
   "dependencies": {
     "@heroui/react": "^3.2.6",
