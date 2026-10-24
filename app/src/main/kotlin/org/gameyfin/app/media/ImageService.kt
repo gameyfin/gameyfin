@@ -21,6 +21,9 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 import java.awt.RenderingHints
@@ -145,7 +148,7 @@ class ImageService(
         val url = image.originalUrl
         if (url.isNullOrBlank()) {
             // No original URL => cannot dedupe by URL; just persist as-is
-            return imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
+            return imageRepository.save(image).also(::cacheImage)
         }
 
         // Prefer a list lookup to avoid IncorrectResultSizeDataAccessException if duplicates exist pre-migration
@@ -154,7 +157,7 @@ class ImageService(
 
         return try {
             val toSave = Image(originalUrl = url, type = image.type)
-            imageRepository.save(toSave).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
+            imageRepository.save(toSave).also(::cacheImage)
         } catch (e: DataIntegrityViolationException) {
             // Unique (original_url) might have been inserted concurrently; fetch and return
             imageRepository.findAllByOriginalUrl(url).firstOrNull()
@@ -188,7 +191,7 @@ class ImageService(
 
         // Save or update the image to ensure it's persisted
         try {
-            imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
+            imageRepository.save(image).also(::cacheImage)
         } catch (_: DataIntegrityViolationException) {
             // If another thread saved the same URL meanwhile, just ignore and proceed
         }
@@ -197,7 +200,19 @@ class ImageService(
     fun createFromInputStream(type: ImageType, content: InputStream, mimeType: String): Image {
         val image = Image(type = type, mimeType = mimeType)
         processImageContent(image, content)
-        return imageRepository.save(image).also { saved -> saved.id?.let { imageCache.put(it, saved) } }
+        return imageRepository.save(image).also(::cacheImage)
+    }
+
+    private fun cacheImage(image: Image) {
+        val id = image.id ?: return
+        imageCache.put(id, image)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCompletion(status: Int) {
+                    if (status != TransactionSynchronization.STATUS_COMMITTED) imageCache.invalidate(id)
+                }
+            })
+        }
     }
 
     fun getImage(id: Long): Image? {
@@ -215,6 +230,7 @@ class ImageService(
         return fileStorageService.getFilePath(image.contentId)
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     fun deleteImageIfUnused(image: Image) {
         val imageId = image.id ?: return
 
@@ -288,6 +304,17 @@ class ImageService(
             Files.newInputStream(tempFile).use { contentStream ->
                 image.contentId = fileStorageService.saveFile(contentStream)
                 image.contentLength = fileSize
+                val contentId = image.contentId
+                if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                    TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                        override fun afterCompletion(status: Int) {
+                            if (status != TransactionSynchronization.STATUS_COMMITTED) {
+                                image.id?.let { imageCache.invalidate(it) }
+                                fileStorageService.deleteFile(contentId)
+                            }
+                        }
+                    })
+                }
             }
         } finally {
             Files.deleteIfExists(tempFile)

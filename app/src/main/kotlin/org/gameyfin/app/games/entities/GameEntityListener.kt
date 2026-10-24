@@ -24,7 +24,8 @@ class GameEntityListener {
     @PreRemove
     fun preDelete(game: Game) {
         // Initialize lazy images so they are still accessible to asynchronous listeners of the GameDeletedEvent
-        Hibernate.initialize(game.images)
+        Hibernate.initialize(game.media)
+        game.images.forEach { Hibernate.initialize(it) }
         val collectionsToUpdate = game.collections.toList()
         collectionsToUpdate.forEach { it.removeGame(game) }
         game.collections.clear()

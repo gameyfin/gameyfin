@@ -10,6 +10,7 @@ import "swiper/css/autoplay";
 import {useEffect, useState} from "react";
 import {CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon} from "@phosphor-icons/react";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
+import {orderMedia} from "Frontend/util/mediaOrder";
 
 // react-player v2 is CJS; depending on the bundler interop the default import may be the module namespace
 const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
@@ -23,6 +24,7 @@ export interface CarouselImage {
 interface ImageCarouselProps {
     images?: CarouselImage[];
     videosUrls?: string[];
+    mediaOrder?: string[];
     className?: string;
 }
 
@@ -33,7 +35,7 @@ interface SlideData {
     isNext: boolean;
 }
 
-export default function ImageCarousel({images, videosUrls, className}: ImageCarouselProps) {
+export default function ImageCarousel({images, videosUrls, mediaOrder, className}: ImageCarouselProps) {
 
     interface CarouselElement {
         type: "image" | "video";
@@ -58,8 +60,8 @@ export default function ImageCarousel({images, videosUrls, className}: ImageCaro
             url: videoUrl
         })) || [];
 
-        setElements([...imageElements, ...videos]);
-    }, [images, videosUrls])
+        setElements(orderMedia<CarouselElement>(imageElements, videos, mediaOrder));
+    }, [images, videosUrls, mediaOrder])
 
     function showImagePopup(image: CarouselImage) {
         setSelectedImage(image);
@@ -112,7 +114,7 @@ export default function ImageCarousel({images, videosUrls, className}: ImageCaro
                                                 <Card
                                                     className={`w-full h-full aspect-video p-0 rounded-xl overflow-hidden transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}>
                                                     <ReactPlayer
-                                                        url={e.url}
+                                                        src={e.url}
                                                         width="100%"
                                                         height="100%"
                                                         light={true}

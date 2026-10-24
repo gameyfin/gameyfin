@@ -31,6 +31,7 @@ class TaskService(
 
     fun getTasks(): List<TaskDto> =
         registry.getAll()
+            .filter { it.visibleInOverview }
             .sortedWith(compareBy<TaskDefinition> { it.source }.thenBy { it.name.lowercase() })
             .map { toDto(it) }
 
@@ -72,7 +73,10 @@ class TaskService(
 
     fun getRuns(taskKey: String?, page: Int, size: Int): TaskRunPageDto {
         val pageable = PageRequest.of(page.coerceAtLeast(0), size.coerceIn(1, MAX_PAGE_SIZE))
+        val hiddenKeys = registry.getAll().filterNot { it.visibleInOverview }.map { it.key }
+        if (taskKey in hiddenKeys) return TaskRunPageDto(emptyList(), false)
         val slice = if (taskKey != null) runRepository.findAllByTaskKeyOrderByStartedAtDesc(taskKey, pageable)
+        else if (hiddenKeys.isNotEmpty()) runRepository.findAllByTaskKeyNotInOrderByStartedAtDesc(hiddenKeys, pageable)
         else runRepository.findAllByOrderByStartedAtDesc(pageable)
         return TaskRunPageDto(runs = slice.content.map { runService.toDto(it) }, hasMore = slice.hasNext())
     }

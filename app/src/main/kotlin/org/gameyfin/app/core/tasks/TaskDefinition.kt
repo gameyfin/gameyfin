@@ -39,6 +39,8 @@ class TaskDefinition(
     val manuallyTriggerable: Boolean = true,
     /** Whether runs of this task can be cancelled (cooperatively) */
     val cancellable: Boolean = true,
+    /** Whether the task and its runs appear in the administration task overview */
+    val visibleInOverview: Boolean = true,
     val settings: List<ConfigMetadata<*>> = emptyList(),
     val parameters: List<ConfigMetadata<*>> = emptyList(),
     val action: TaskAction

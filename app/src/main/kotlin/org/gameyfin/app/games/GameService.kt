@@ -40,6 +40,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
+import org.springframework.web.multipart.MultipartFile
 import reactor.core.publisher.Flux
 import java.nio.file.Path
 import java.time.Instant
@@ -163,9 +166,60 @@ class GameService(
     }
 
     @Transactional
-    fun edit(gameUpdateDto: GameUpdateDto) {
+    fun createManually(title: String, path: String, library: Library): Game {
+        require(title.isNotBlank()) { "Title is required" }
+        require(path.isNotBlank()) { "Path is required" }
+        val normalizedPath = Path.of(path).normalize()
+        require(normalizedPath.isAbsolute) { "Path must be absolute" }
+        require(!gameRepository.existsByMetadataPath(normalizedPath.toString())) { "A game already exists at this path" }
+
+        val game = Game(normalizedPath, library)
+        game.title = title.trim()
+        game.platforms = library.platforms.toMutableList()
+        game.metadata.matchConfirmed = true
+        return create(game)
+    }
+
+    @Transactional(rollbackFor = [Exception::class])
+    fun edit(gameUpdateDto: GameUpdateDto, uploads: Map<String, MultipartFile> = emptyMap()) {
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
+
+        require(gameUpdateDto.cover == null || gameUpdateDto.coverUrl == null) { "Conflicting cover selections" }
+        require(gameUpdateDto.header == null || gameUpdateDto.headerUrl == null) { "Conflicting banner selections" }
+        val selections = listOfNotNull(gameUpdateDto.cover, gameUpdateDto.header) + gameUpdateDto.images.orEmpty()
+        val uploadKeys = selections.mapNotNull { it.uploadKey }
+        require(uploadKeys.size == uploadKeys.distinct().size && uploadKeys.toSet() == uploads.keys) {
+            "Uploaded images must each be referenced exactly once"
+        }
+        gameUpdateDto.cover?.let {
+            GameMediaValidation.selection(it, setOfNotNull(existingGame.coverImage?.id), uploads.keys)
+        }
+        gameUpdateDto.header?.let {
+            GameMediaValidation.selection(it, setOfNotNull(existingGame.headerImage?.id), uploads.keys)
+        }
+        gameUpdateDto.images?.let { images ->
+            require(images.distinct().size == images.size) { "Screenshots must be unique" }
+            val allowedIds = existingGame.images.mapNotNull { it.id }.toSet()
+            images.forEach { GameMediaValidation.selection(it, allowedIds, uploads.keys) }
+        }
+        gameUpdateDto.coverUrl?.let { GameMediaValidation.httpUrl(it) }
+        gameUpdateDto.headerUrl?.let { GameMediaValidation.httpUrl(it) }
+        val videoUrls = gameUpdateDto.videoUrls?.map { GameMediaValidation.httpUrl(it) }
+        gameUpdateDto.mediaOrder?.let { order ->
+            require(order.all { it == "image" || it == "video" } &&
+                order.count { it == "image" } == (gameUpdateDto.images?.size ?: existingGame.images.size) &&
+                order.count { it == "video" } == (videoUrls?.size ?: existingGame.videoUrls.size)) {
+                "Media order must include every screenshot and video exactly once"
+            }
+        }
+        require(uploads.values.sumOf { it.size } <= GameMediaValidation.MAX_REQUEST_SIZE) { "Uploads exceed 100 MiB" }
+        val uploadTypes = uploads.mapValues { GameMediaValidation.upload(it.value) }
+        // Snapshot before replacing collections; Hibernate's dirty state can share collection instances.
+        val previousImages = if (selections.isNotEmpty() || gameUpdateDto.images != null ||
+            gameUpdateDto.coverUrl != null || gameUpdateDto.headerUrl != null) {
+            listOfNotNull(existingGame.coverImage, existingGame.headerImage) + existingGame.images.toList()
+        } else emptyList()
 
         val user = when (val userDetails = getCurrentAuth()?.principal) {
             is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
@@ -177,6 +231,42 @@ class GameService(
 
             else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
         }
+
+        fun markMediaEdited(field: String) {
+            val metadata = existingGame.metadata.fields[field]
+            if (metadata == null) {
+                existingGame.metadata.fields[field] = GameFieldMetadata(source = GameFieldUserSource(user = user))
+            } else {
+                metadata.source = GameFieldUserSource(user = user)
+            }
+        }
+
+        fun resolveImage(selection: GameImageSelectionDto, type: ImageType): Image {
+            selection.id?.let { id ->
+                return when (type) {
+                    ImageType.COVER -> existingGame.coverImage!!
+                    ImageType.HEADER -> existingGame.headerImage!!
+                    else -> existingGame.images.first { it.id == id }
+                }
+            }
+            selection.uploadKey?.let { key ->
+                return imageService.createFromInputStream(type, uploads.getValue(key).inputStream, uploadTypes.getValue(key))
+            }
+            return imageService.createOrGet(Image(originalUrl = selection.url!!, type = type)).also {
+                imageService.downloadIfNew(it)
+            }
+        }
+
+        // Resolve every new image before modifying game associations.
+        val cover = gameUpdateDto.cover?.let { resolveImage(it, ImageType.COVER) }
+        val header = gameUpdateDto.header?.let { resolveImage(it, ImageType.HEADER) }
+        val images = gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT) }
+        require(images == null || images.map { it.id }.distinct().size == images.size) { "Screenshots must be unique" }
+        cover?.let { existingGame.coverImage = it; markMediaEdited("coverImage") }
+        header?.let { existingGame.headerImage = it; markMediaEdited("headerImage") }
+        images?.let { existingGame.images = it.toMutableList(); markMediaEdited("images") }
+        videoUrls?.let { existingGame.videoUrls = it; markMediaEdited("videoUrls") }
+        gameUpdateDto.mediaOrder?.let { existingGame.mediaOrder = it }
 
         // Update only non-null fields
         gameUpdateDto.title?.let {
@@ -198,7 +288,7 @@ class GameService(
             imageService.downloadIfNew(newCoverImage)
 
             existingGame.coverImage = newCoverImage
-            existingGame.metadata.fields["coverImage"]?.source = GameFieldUserSource(user = user)
+            markMediaEdited("coverImage")
         }
         gameUpdateDto.headerUrl?.let {
             val newHeaderImage = imageService.createOrGet(
@@ -207,7 +297,7 @@ class GameService(
             imageService.downloadIfNew(newHeaderImage)
 
             existingGame.headerImage = newHeaderImage
-            existingGame.metadata.fields["headerImage"]?.source = GameFieldUserSource(user = user)
+            markMediaEdited("headerImage")
         }
         gameUpdateDto.comment?.let {
             existingGame.comment = it
@@ -256,6 +346,18 @@ class GameService(
         }
 
         gameRepository.save(existingGame)
+        if (previousImages.isNotEmpty() && TransactionSynchronizationManager.isSynchronizationActive()) {
+            val retainedIds = (listOfNotNull(existingGame.coverImage, existingGame.headerImage) + existingGame.images)
+                .map { it.id }.toSet()
+            val removed = previousImages.filter { it.id !in retainedIds }.distinctBy { it.id }
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCompletion(status: Int) {
+                    if (status == TransactionSynchronization.STATUS_COMMITTED) {
+                        removed.forEach { imageService.deleteImageIfUnused(it) }
+                    }
+                }
+            })
+        }
     }
 
     @Transactional
@@ -577,7 +679,13 @@ class GameService(
                 release = pick { it.release },
                 publishers = pickList { it.publishedBy?.toList() },
                 developers = pickList { it.developedBy?.toList() },
-                originalIds = originalIds
+                originalIds = originalIds,
+                screenshotUrls = group.flatMap { (provider, metadata) ->
+                    val pluginId = providerToManagementEntry[provider]?.pluginId
+                    metadata.screenshotUrls.orEmpty().mapNotNull { url ->
+                        pluginId?.let { UrlWithSourceDto(url.toString(), it) }
+                    }
+                }.distinctBy { it.url }.ifEmpty { null }
             )
         }
 

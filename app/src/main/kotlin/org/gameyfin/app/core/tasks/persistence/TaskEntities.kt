@@ -91,6 +91,8 @@ interface TaskRunRepository : JpaRepository<TaskRunEntry, String> {
 
     fun findAllByOrderByStartedAtDesc(pageable: Pageable): Slice<TaskRunEntry>
 
+    fun findAllByTaskKeyNotInOrderByStartedAtDesc(taskKeys: Collection<String>, pageable: Pageable): Slice<TaskRunEntry>
+
     fun findFirstByTaskKeyOrderByStartedAtDesc(taskKey: String): TaskRunEntry?
 
     fun findAllByStatus(status: TaskRunStatus): List<TaskRunEntry>

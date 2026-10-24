@@ -109,7 +109,7 @@ class DatabaseBackupIntegrationTest {
             ps.setString(3, UNICODE_TEXT)
             ps.executeUpdate()
         }
-        c.prepareStatement("INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)").use { ps ->
+        c.prepareStatement("INSERT INTO GAME_MEDIA (GAME_ID, MEDIA_POSITION, VIDEO_URL) VALUES (101, 0, ?)").use { ps ->
             ps.setBytes(1, BLOB_CONTENT)
             ps.executeUpdate()
         }
@@ -185,7 +185,7 @@ class DatabaseBackupIntegrationTest {
 
         val game = roundTrip.connection.use { c ->
             c.createStatement().use { s ->
-                s.executeQuery("SELECT g.SUMMARY, v.VIDEO_URLS FROM GAME g JOIN GAME_VIDEO_URLS v ON v.GAME_ID = g.ID")
+                s.executeQuery("SELECT g.SUMMARY, v.VIDEO_URL FROM GAME g JOIN GAME_MEDIA v ON v.GAME_ID = g.ID")
                     .use {
                         it.next(); it.getString(1) to it.getBytes(2)
                     }
