@@ -184,7 +184,7 @@ class ImageService(
         }
 
         // If no existing image or existing image has no valid content, download it
-        TikaInputStream.get { URI.create(originalUrl).toURL().openStream() }.use { input ->
+        TikaInputStream.get(URI.create(originalUrl).toURL()).use { input ->
             image.mimeType = tika.detect(input)
             processImageContent(image, input)
         }

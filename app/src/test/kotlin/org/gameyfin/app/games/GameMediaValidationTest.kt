@@ -25,13 +25,38 @@ class GameMediaValidationTest {
     }
 
     @Test
-    fun `reject empty oversized truncated or non-image files`() {
+    fun `reject empty oversized unsupported or non-image files`() {
         val empty = MockMultipartFile("file", byteArrayOf())
         val oversized = mockk<MultipartFile> { every { size } returns GameMediaValidation.MAX_FILE_SIZE + 1 }
         val text = MockMultipartFile("file", "test.png", "image/png", "not an image".toByteArray())
-        val truncated = MockMultipartFile("file", byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
-        for (file in listOf(empty, oversized, text, truncated)) {
+        val unsupported = MockMultipartFile("file", "test.png", "image/png", "<svg xmlns=\"http://www.w3.org/2000/svg\"/>".toByteArray())
+        for (file in listOf(empty, oversized, text, unsupported)) {
             assertFailsWith<IllegalArgumentException> { GameMediaValidation.upload(file) }
+        }
+    }
+
+    @Test
+    fun `reject signatures without readable image dimensions`() {
+        val signatures = listOf(
+            byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a),
+            byteArrayOf(0xff.toByte(), 0xd8.toByte(), 0xff.toByte(), 0xe0.toByte()),
+            "GIF89a".toByteArray(),
+            Base64.getDecoder().decode("UklGRgQAAABXRUJQ")
+        )
+        for (signature in signatures) {
+            assertFailsWith<IllegalArgumentException> {
+                GameMediaValidation.upload(MockMultipartFile("file", signature))
+            }
+        }
+    }
+
+    @Test
+    fun `reject WebP with zero width`() {
+        val webp = Base64.getDecoder().decode("UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA")
+        webp[26] = 0
+        webp[27] = 0
+        assertFailsWith<IllegalArgumentException> {
+            GameMediaValidation.upload(MockMultipartFile("file", webp))
         }
     }
 
