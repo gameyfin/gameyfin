@@ -13,7 +13,7 @@ interface AddGameModalProps {
     onCreated: (gameId: number) => void;
 }
 
-export default function AddGameModal({isOpen, onOpenChange, onCreated}: AddGameModalProps) {
+export default function ImportGameModal({isOpen, onOpenChange, onCreated}: AddGameModalProps) {
     const libraries = useSnapshot(libraryState).sorted;
     const formik = useFormik({
         initialValues: {title: "", path: "", libraryId: null as string | null},
@@ -45,16 +45,19 @@ export default function AddGameModal({isOpen, onOpenChange, onCreated}: AddGameM
                         <Modal.Dialog>
                             {({close}) => (
                                 <Form>
-                                    <Modal.Header><Modal.Heading>Add game manually</Modal.Heading></Modal.Header>
-                                    <Modal.Body className="flex flex-col gap-4">
-                                        <p>Enter the game details, then add artwork and other metadata in the
-                                            editor.</p>
-                                        <Input name="title" aria-label="Title" placeholder="Title" isRequired
-                                               isDisabled={isSubmitting}/>
+                                    <Modal.Header>
+                                        <Modal.Heading>Import game manually</Modal.Heading>
+                                    </Modal.Header>
+                                    <Modal.Body className="flex flex-col">
+                                        <p className="mb-2">
+                                            Enter the game details, then add artwork and other metadata
+                                            in the editor.
+                                        </p>
                                         <Select aria-label="Library" placeholder="Select library"
                                                 value={values.libraryId}
                                                 onChange={value => formik.setFieldValue("libraryId", value === null ? null : String(value))}
-                                                isDisabled={isSubmitting}>
+                                                isDisabled={isSubmitting}
+                                                className="mb-12">
                                             <Select.Trigger><Select.Value/><Select.Indicator/></Select.Trigger>
                                             <Select.Popover>
                                                 <ListBox>
@@ -67,6 +70,8 @@ export default function AddGameModal({isOpen, onOpenChange, onCreated}: AddGameM
                                                 </ListBox>
                                             </Select.Popover>
                                         </Select>
+                                        <Input name="title" aria-label="Title" placeholder="Title" isRequired
+                                               isDisabled={isSubmitting}/>
                                         <Input name="path" aria-label="Selected path"
                                                placeholder="Select a game directory"
                                                isReadOnly isDisabled={isSubmitting}/>

@@ -11,8 +11,8 @@ import {
     DiscIcon,
     HeartIcon,
     HouseIcon,
-    PlusIcon,
     ListMagnifyingGlassIcon,
+    PlusIcon,
     SignInIcon,
 } from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
@@ -25,7 +25,7 @@ import ActiveTaskPopover from "Frontend/components/general/ActiveTaskPopover";
 import {isAdmin} from "Frontend/util/utils";
 import {applyAccentTheme} from "Frontend/theming/themes";
 import {layoutState} from "Frontend/state/LayoutState";
-import AddGameModal from "Frontend/components/general/modals/AddGameModal";
+import ImportGameModal from "Frontend/components/general/modals/ImportGameModal.tsx";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 
 export default function MainLayout() {
@@ -147,7 +147,7 @@ export default function MainLayout() {
                         {isAdmin(auth) && (
                             <li>
                                 <Button variant="ghost" onPress={() => setIsAddingGame(true)}>
-                                    <PlusIcon/>Add game
+                                    <PlusIcon/>Import game
                                 </Button>
                             </li>
                         )}
@@ -210,13 +210,15 @@ export default function MainLayout() {
 
             <Separator className="mt-8"/>
             {isAdmin(auth) && <>
-                {isAddingGame && <AddGameModal isOpen={isAddingGame} onOpenChange={setIsAddingGame}
-                                              onCreated={id => {
-                                                  setCreatedGameId(id);
-                                                  navigate(`/game/${id}`);
-                                              }}/>}
+                {isAddingGame && <ImportGameModal isOpen={isAddingGame} onOpenChange={setIsAddingGame}
+                                                  onCreated={id => {
+                                                      setCreatedGameId(id);
+                                                      navigate(`/game/${id}`);
+                                                  }}/>}
                 {createdGameId !== undefined && <EditGameMetadataModal gameId={createdGameId} isOpen
-                    onOpenChange={open => { if (!open) setCreatedGameId(undefined); }}/>}
+                                                                       onOpenChange={open => {
+                                                                           if (!open) setCreatedGameId(undefined);
+                                                                       }}/>}
             </>}
             <div className="flex flex-col w-full 2xl:px-[12.5%] px-4">
                 <footer className="flex flex-row items-center justify-between py-4">
