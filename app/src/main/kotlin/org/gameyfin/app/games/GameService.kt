@@ -33,6 +33,7 @@ import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
 import org.gameyfin.app.media.ImageType
 import org.gameyfin.app.users.UserService
+import org.gameyfin.app.users.entities.User
 import org.gameyfin.pluginapi.gamemetadata.*
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.userdetails.UserDetails
@@ -221,16 +222,7 @@ class GameService(
             listOfNotNull(existingGame.coverImage, existingGame.headerImage) + existingGame.images.toList()
         } else emptyList()
 
-        val user = when (val userDetails = getCurrentAuth()?.principal) {
-            is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
-            is OidcUser -> {
-                val subject = userDetails.subject ?: error("OidcUser has no subject claim")
-                userService.findByOidcProviderId(subject)
-                    ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
-            }
-
-            else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
-        }
+        val user = getEditingUser()
 
         fun markMediaEdited(field: String) {
             val metadata = existingGame.metadata.fields[field]
@@ -241,26 +233,10 @@ class GameService(
             }
         }
 
-        fun resolveImage(selection: GameImageSelectionDto, type: ImageType): Image {
-            selection.id?.let { id ->
-                return when (type) {
-                    ImageType.COVER -> existingGame.coverImage!!
-                    ImageType.HEADER -> existingGame.headerImage!!
-                    else -> existingGame.images.first { it.id == id }
-                }
-            }
-            selection.uploadKey?.let { key ->
-                return imageService.createFromInputStream(type, uploads.getValue(key).inputStream, uploadTypes.getValue(key))
-            }
-            return imageService.createOrGet(Image(originalUrl = selection.url!!, type = type)).also {
-                imageService.downloadIfNew(it)
-            }
-        }
-
         // Resolve every new image before modifying game associations.
-        val cover = gameUpdateDto.cover?.let { resolveImage(it, ImageType.COVER) }
-        val header = gameUpdateDto.header?.let { resolveImage(it, ImageType.HEADER) }
-        val images = gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT) }
+        val cover = gameUpdateDto.cover?.let { resolveImage(it, ImageType.COVER, existingGame, uploads, uploadTypes) }
+        val header = gameUpdateDto.header?.let { resolveImage(it, ImageType.HEADER, existingGame, uploads, uploadTypes) }
+        val images = gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT, existingGame, uploads, uploadTypes) }
         require(images == null || images.map { it.id }.distinct().size == images.size) { "Screenshots must be unique" }
         cover?.let { existingGame.coverImage = it; markMediaEdited("coverImage") }
         header?.let { existingGame.headerImage = it; markMediaEdited("headerImage") }
@@ -346,6 +322,10 @@ class GameService(
         }
 
         gameRepository.save(existingGame)
+        deleteRemovedImagesAfterCommit(existingGame, previousImages)
+    }
+
+    private fun deleteRemovedImagesAfterCommit(existingGame: Game, previousImages: List<Image>) {
         if (previousImages.isNotEmpty() && TransactionSynchronizationManager.isSynchronizationActive()) {
             val retainedIds = (listOfNotNull(existingGame.coverImage, existingGame.headerImage) + existingGame.images)
                 .map { it.id }.toSet()
@@ -357,6 +337,39 @@ class GameService(
                     }
                 }
             })
+        }
+    }
+
+    private fun getEditingUser(): User = when (val userDetails = getCurrentAuth()?.principal) {
+        is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
+        is OidcUser -> {
+            val subject = userDetails.subject ?: error("OidcUser has no subject claim")
+            userService.findByOidcProviderId(subject)
+                ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
+        }
+
+        else -> error("Unknown user type: ${userDetails?.javaClass?.name}")
+    }
+
+    private fun resolveImage(
+        selection: GameImageSelectionDto,
+        type: ImageType,
+        existingGame: Game,
+        uploads: Map<String, MultipartFile>,
+        uploadTypes: Map<String, String>
+    ): Image {
+        selection.id?.let { id ->
+            return when (type) {
+                ImageType.COVER -> existingGame.coverImage!!
+                ImageType.HEADER -> existingGame.headerImage!!
+                else -> existingGame.images.first { it.id == id }
+            }
+        }
+        selection.uploadKey?.let { key ->
+            return imageService.createFromInputStream(type, uploads.getValue(key).inputStream, uploadTypes.getValue(key))
+        }
+        return imageService.createOrGet(Image(originalUrl = selection.url!!, type = type)).also {
+            imageService.downloadIfNew(it)
         }
     }
 

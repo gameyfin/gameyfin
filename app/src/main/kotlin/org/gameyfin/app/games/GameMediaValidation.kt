@@ -54,37 +54,46 @@ internal object GameMediaValidation {
     private fun validWebP(bytes: ByteArray): Boolean {
         // The JDK has no WebP decoder. Check the complete RIFF structure and require a frame header,
         // including frames nested in animated WebP, rather than accepting a MIME signature alone.
-        if (bytes.size < 25) return false
-        val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
-        fun tag(offset: Int) = String(bytes, offset, 4, Charsets.US_ASCII)
-        if (tag(0) != "RIFF" || buffer.getInt(4).toLong() + 8 != bytes.size.toLong() || tag(8) != "WEBP") return false
-        fun frames(start: Int, end: Int, nested: Boolean = false): Boolean {
+        return bytes.size >= 25 && WebPValidator(bytes).isValid()
+    }
+
+    private class WebPValidator(private val bytes: ByteArray) {
+        private val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+        private val frameTypes = setOf("VP8 ", "VP8L", "ANMF")
+
+        private fun tag(offset: Int) = String(bytes, offset, 4, Charsets.US_ASCII)
+
+        fun isValid(): Boolean {
+            return !(tag(0) != "RIFF"
+                    || buffer.getInt(4).toLong() + 8 != bytes.size.toLong()
+                    || tag(8) != "WEBP") && frames(12, bytes.size)
+        }
+
+        private fun frames(start: Int, end: Int, nested: Boolean = false): Boolean {
             var offset = start
             var found = false
             while (offset + 8 <= end) {
                 val size = buffer.getInt(offset + 4)
                 if (size < 0 || offset.toLong() + 8 + size + (size and 1) > end) return false
                 val data = offset + 8
-                when (tag(offset)) {
-                    "VP8 " -> {
-                        if (size < 10 || bytes[data + 3] != 0x9d.toByte() || bytes[data + 4] != 0x01.toByte() ||
-                            bytes[data + 5] != 0x2a.toByte() || buffer.getShort(data + 6).toInt() and 0x3fff == 0 ||
-                            buffer.getShort(data + 8).toInt() and 0x3fff == 0) return false
-                        found = true
-                    }
-                    "VP8L" -> {
-                        if (size < 5 || bytes[data] != 0x2f.toByte()) return false
-                        found = true
-                    }
-                    "ANMF" -> {
-                        if (nested || size < 16 || !frames(data + 16, data + size, true)) return false
-                        found = true
-                    }
-                }
+                val type = tag(offset)
+                if (!validChunk(type, data, size, nested)) return false
+                if (type in frameTypes) found = true
                 offset = data + size + (size and 1)
             }
             return offset == end && found
         }
-        return frames(12, bytes.size)
+
+        private fun validChunk(type: String, data: Int, size: Int, nested: Boolean): Boolean = when (type) {
+            "VP8 " -> validLossyFrame(data, size)
+            "VP8L" -> size >= 5 && bytes[data] == 0x2f.toByte()
+            "ANMF" -> !nested && size >= 16 && frames(data + 16, data + size, true)
+            else -> true
+        }
+
+        private fun validLossyFrame(data: Int, size: Int): Boolean =
+            size >= 10 && bytes[data + 3] == 0x9d.toByte() && bytes[data + 4] == 0x01.toByte() &&
+                    bytes[data + 5] == 0x2a.toByte() && buffer.getShort(data + 6).toInt() and 0x3fff != 0 &&
+                    buffer.getShort(data + 8).toInt() and 0x3fff != 0
     }
 }
