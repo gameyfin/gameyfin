@@ -60,10 +60,10 @@ class DatabaseBackupIntegrationTest {
     private fun postgres(): DataSource = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
 
     /** Runs the database migrations the same way as on application startup */
-    private fun migrate(dataSource: DataSource) {
+    private fun migrate(dataSource: DataSource, changelog: String = CHANGELOG) {
         SpringLiquibase().apply {
             this.dataSource = dataSource
-            changeLog = CHANGELOG
+            changeLog = changelog
             resourceLoader = DefaultResourceLoader()
             afterPropertiesSet()
         }
@@ -87,7 +87,7 @@ class DatabaseBackupIntegrationTest {
         return "${schema.quote(columns.getValue("KEY").name)}, ${schema.quote(columns.getValue("VALUE").name)}"
     }
 
-    private fun insertSampleData(dataSource: DataSource) = dataSource.connection.use { c ->
+    private fun insertSampleData(dataSource: DataSource, legacyMedia: Boolean = false) = dataSource.connection.use { c ->
         val appConfig = keyValueColumns(c, "APP_CONFIG")
         val userPreference = keyValueColumns(c, "USER_PREFERENCE")
         c.createStatement().use { s ->
@@ -109,7 +109,12 @@ class DatabaseBackupIntegrationTest {
             ps.setString(3, UNICODE_TEXT)
             ps.executeUpdate()
         }
-        c.prepareStatement("INSERT INTO GAME_MEDIA (GAME_ID, MEDIA_POSITION, VIDEO_URL) VALUES (101, 0, ?)").use { ps ->
+        val mediaSql = if (legacyMedia) {
+            "INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)"
+        } else {
+            "INSERT INTO GAME_MEDIA (GAME_ID, MEDIA_POSITION, VIDEO_URL) VALUES (101, 0, ?)"
+        }
+        c.prepareStatement(mediaSql).use { ps ->
             ps.setBytes(1, BLOB_CONTENT)
             ps.executeUpdate()
         }
@@ -198,21 +203,26 @@ class DatabaseBackupIntegrationTest {
     @Test
     fun `backup of an older schema version is restored and migrated afterwards`() {
         val source = h2("source-old")
-        migrate(source)
-        insertSampleData(source)
-        val expected = dump(source)
+        migrate(source, "classpath:/db/changelog/db.changelog-2.4.1.yaml")
+        insertSampleData(source, legacyMedia = true)
+        val expectedOldSchema = dump(source)
 
-        // Pretend the source database has only been migrated up to the first changeset
-        val firstChangeSet = restorer(source).currentChangeSets().first()
-        source.connection.use { c ->
-            c.createStatement().use { it.execute("DELETE FROM DATABASECHANGELOG WHERE ID <> '${firstChangeSet.id}'") }
-        }
+        val oldChangeSetCount = source.connection.use { it.changeLogRows() }
         val archive = backup(source)
-        assertEquals(listOf(firstChangeSet), DatabaseRestorer.readManifest(archive).changeSets)
+        assertEquals(
+            restorer(source).currentChangeSets().take(oldChangeSetCount),
+            DatabaseRestorer.readManifest(archive).changeSets
+        )
+
+        // Migrating the original database provides the expected schema and converted legacy media.
+        migrate(source)
+        val expected = dump(source)
+        assertEquals(1, query(source, "SELECT COUNT(*) FROM GAME_MEDIA"))
 
         val target = postgres()
         restorer(target).restore(archive, APP_KEY_FINGERPRINT, null)
-        assertEquals(1, target.connection.use { it.changeLogRows() })
+        assertEquals(oldChangeSetCount, target.connection.use { it.changeLogRows() })
+        assertEquals(expectedOldSchema, dump(target))
 
         // The remaining changesets are applied by the regular migration on startup
         migrate(target)
