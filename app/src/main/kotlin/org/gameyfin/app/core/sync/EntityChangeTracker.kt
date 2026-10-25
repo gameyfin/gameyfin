@@ -129,8 +129,10 @@ class EntityChangeTracker(
         val property = EntityFieldMappings.propertyPathFromRole(role, event.affectedOwnerEntityName)
 
         when (owner) {
-            is Game -> EntityFieldMappings.GAME_PROPERTIES[property]?.let { field ->
-                record { it.game(ownerId).addAssociationFields(listOf(field)) }
+            is Game -> {
+                val fields = if (property == "media") EntityFieldMappings.GAME_MEDIA_FIELDS
+                    else listOfNotNull(EntityFieldMappings.GAME_PROPERTIES[property])
+                if (fields.isNotEmpty()) record { it.game(ownerId).addAssociationFields(fields) }
             }
 
             is Library -> EntityFieldMappings.LIBRARY_PROPERTIES[property]?.let { field ->

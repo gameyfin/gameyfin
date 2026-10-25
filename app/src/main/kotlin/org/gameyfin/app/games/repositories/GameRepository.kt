@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param
 import java.time.Instant
 
 interface GameRepository : JpaRepository<Game, Long> {
+    fun existsByMetadataPath(path: String): Boolean
+
     @Query("""
         SELECT g FROM Game g JOIN g.platforms p
         WHERE g.title = :title
@@ -22,10 +24,10 @@ interface GameRepository : JpaRepository<Game, Long> {
         @Param("platform") platform: Platform
     ): List<Game>
 
-    @Query("SELECT CASE WHEN COUNT(g) > 0 THEN true ELSE false END FROM Game g WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR :imageId IN (SELECT i.id FROM g.images i)")
+    @Query("SELECT CASE WHEN COUNT(g) > 0 THEN true ELSE false END FROM Game g WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR :imageId IN (SELECT m.image.id FROM g.media m)")
     fun existsByImage(@Param("imageId") imageId: Long): Boolean
 
-    @Query("SELECT DISTINCT g FROM Game g LEFT JOIN g.images i WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR i.id = :imageId")
+    @Query("SELECT DISTINCT g FROM Game g LEFT JOIN g.media m WHERE g.coverImage.id = :imageId OR g.headerImage.id = :imageId OR m.image.id = :imageId")
     fun findAllByImage(@Param("imageId") imageId: Long): List<Game>
 
     @Query("SELECT DISTINCT p FROM Game g JOIN g.platforms p")
@@ -47,7 +49,7 @@ interface GameRepository : JpaRepository<Game, Long> {
     @Query("SELECT g.id FROM Game g WHERE g.headerImage.id IN :imageIds")
     fun findIdsByHeaderImageIds(@Param("imageIds") imageIds: Collection<Long>): List<Long>
 
-    @Query("SELECT DISTINCT g.id FROM Game g JOIN g.images i WHERE i.id IN :imageIds")
+    @Query("SELECT DISTINCT g.id FROM Game g JOIN g.media m WHERE m.image.id IN :imageIds")
     fun findIdsByGalleryImageIds(@Param("imageIds") imageIds: Collection<Long>): List<Long>
 
     /**

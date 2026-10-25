@@ -10,6 +10,7 @@ import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.libraries.LibraryCoreService
 import org.gameyfin.pluginapi.gamemetadata.Platform
+import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import java.nio.file.Path
 import java.time.Instant
@@ -52,6 +53,16 @@ class GameEndpoint(
 
     @RolesAllowed(Role.Names.ADMIN)
     fun updateGame(game: GameUpdateDto) = gameService.edit(game)
+
+    @RolesAllowed(Role.Names.ADMIN)
+    @Transactional
+    fun createGame(title: String, path: String, libraryId: Long): Long {
+        val library = libraryCoreService.getWithGamesAndIgnoredPaths(libraryId)
+            ?: throw IllegalArgumentException("Library with id $libraryId not found")
+        val game = gameService.createManually(title, path, library)
+        libraryCoreService.addGamesToLibrary(listOf(game), library, true)
+        return game.id!!
+    }
 
     @RolesAllowed(Role.Names.ADMIN)
     fun deleteGame(gameId: Long) {

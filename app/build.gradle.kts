@@ -92,6 +92,7 @@ dependencies {
 
     // Utils
     implementation("org.apache.tika:tika-core:${rootProject.extra["tikaVersion"]}")
+    implementation("org.apache.tika:tika-parser-image-module:${rootProject.extra["tikaVersion"]}")
     implementation("me.xdrop:fuzzywuzzy:${rootProject.extra["fuzzywuzzyVersion"]}")
     implementation("com.vanniktech:blurhash:${rootProject.extra["blurhashVersion"]}")
 

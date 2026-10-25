@@ -85,6 +85,10 @@ spring:
     fs.filesystem-root: ./data/
   mvc:
     async.request-timeout: 0
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 100MB
 
 vaadin:
   # To improve the performance during development.

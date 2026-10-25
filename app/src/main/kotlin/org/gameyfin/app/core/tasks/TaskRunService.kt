@@ -86,7 +86,13 @@ class TaskRunService(
 
     fun subscribe(): Flux<List<TaskRunDto>> {
         // Subscribe to live updates before taking the snapshot, so no update can get lost in between
-        val snapshot = Flux.defer { Flux.fromIterable(recentRuns.values + activeRuns.values.map { it.toDto() }) }
+        val snapshot = Flux.defer {
+            // History is loaded before all task definitions have necessarily been registered.
+            val recent = recentRuns.values.map {
+                it.copy(visibleInOverview = registry.get(it.taskKey)?.visibleInOverview ?: true)
+            }
+            Flux.fromIterable(recent + activeRuns.values.map { it.toDto() })
+        }
         return Flux.merge(events.asFlux(), snapshot)
             .buffer(Duration.ofSeconds(1))
             .filter { it.isNotEmpty() }
@@ -221,7 +227,8 @@ class TaskRunService(
             summary = entry.summary,
             errorMessage = entry.errorMessage,
             cancellable = false,
-            cancelRequested = false
+            cancelRequested = false,
+            visibleInOverview = definition?.visibleInOverview ?: true
         )
     }
 
@@ -434,7 +441,8 @@ class TaskRunService(
             summary = summary,
             errorMessage = errorMessage,
             cancellable = cancellable && status == TaskRunStatus.IN_PROGRESS,
-            cancelRequested = cancelRequested
+            cancelRequested = cancelRequested,
+            visibleInOverview = definition.visibleInOverview
         )
     }
 }
