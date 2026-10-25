@@ -11,6 +11,7 @@ import org.apache.tika.parser.image.ImageParser
 import org.apache.tika.parser.image.JpegParser
 import org.apache.tika.parser.image.WebPParser
 import org.gameyfin.app.games.dto.GameImageSelectionDto
+import org.springframework.http.MediaType
 import org.springframework.web.multipart.MultipartFile
 import org.xml.sax.helpers.DefaultHandler
 import java.net.URI
@@ -18,13 +19,14 @@ import java.net.URI
 internal object GameMediaValidation {
     const val MAX_FILE_SIZE = 20L * 1024 * 1024
     const val MAX_REQUEST_SIZE = 100L * 1024 * 1024
+    private const val IMAGE_WEBP_VALUE = "image/webp"
     private val tika = Tika()
     private val imageParser = ImageParser()
     private val parsers = mapOf(
-        "image/jpeg" to JpegParser(),
-        "image/png" to imageParser,
-        "image/webp" to WebPParser(),
-        "image/gif" to imageParser
+        MediaType.IMAGE_JPEG_VALUE to JpegParser(),
+        MediaType.IMAGE_PNG_VALUE to imageParser,
+        IMAGE_WEBP_VALUE to WebPParser(),
+        MediaType.IMAGE_GIF_VALUE to imageParser
     )
 
     fun httpUrl(value: String): URI {
@@ -58,10 +60,10 @@ internal object GameMediaValidation {
         }
         // These parsers read headers and metadata, rather than fully decoding pixel data.
         // WebP dimensions are exposed as native tags instead of the standard TIFF properties.
-        val width = if (mime == "image/webp") {
+        val width = if (mime == IMAGE_WEBP_VALUE) {
             metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Width")?.toIntOrNull()
         } else metadata.getInt(TIFF.IMAGE_WIDTH)
-        val height = if (mime == "image/webp") {
+        val height = if (mime == IMAGE_WEBP_VALUE) {
             metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Height")?.toIntOrNull()
         } else metadata.getInt(TIFF.IMAGE_LENGTH)
         require(width != null && width > 0 && height != null && height > 0) {
