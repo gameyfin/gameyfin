@@ -41,18 +41,6 @@ class GameEndpointTest {
     }
 
     @Test
-    fun `createGame adds manual game to library and returns id`() {
-        val library = mockk<Library>()
-        val game = mockk<Game> { every { id } returns 42L }
-        every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
-        every { gameService.createManually("Title", "/games/title", library) } returns game
-        every { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
-
-        assertEquals(42L, gameEndpoint.createGame("Title", "/games/title", 1L))
-        verify { libraryCoreService.addGamesToLibrary(listOf(game), library, true) }
-    }
-
-    @Test
     fun `subscribe should return admin flux when user is admin`() {
         mockkObject(GameService.Companion)
         every { isCurrentUserAdmin() } returns true

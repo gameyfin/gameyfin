@@ -10,6 +10,7 @@ import {ArrowRightIcon, CheckIcon, UploadSimpleIcon} from "@phosphor-icons/react
 
 interface Props {
     game: GameDto;
+    searchOnOpen: boolean;
     kind: MediaKind;
     onSelect: (images: DraftImage[]) => void;
     onClose: () => void;
@@ -22,7 +23,7 @@ interface SearchImage {
     pluginId: string
 }
 
-export default function GameImagePickerModal({game, kind, onSelect, onClose, excludedUrls = []}: Props) {
+export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect, onClose, excludedUrls = []}: Props) {
     const multiple = kind === "screenshot";
     const label = kind === "header" ? "banner" : kind;
     const [url, setUrl] = useState("");
@@ -30,6 +31,7 @@ export default function GameImagePickerModal({game, kind, onSelect, onClose, exc
     const [results, setResults] = useState<SearchImage[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
     const [searching, setSearching] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
     const fileInput = useRef<HTMLInputElement>(null);
@@ -40,7 +42,7 @@ export default function GameImagePickerModal({game, kind, onSelect, onClose, exc
 
     useEffect(() => {
         mounted.current = true;
-        void search(game.title);
+        if (searchOnOpen) void search(game.title);
         return () => {
             mounted.current = false;
             request.current++;
@@ -53,6 +55,7 @@ export default function GameImagePickerModal({game, kind, onSelect, onClose, exc
         searchInFlight.current = true;
         const current = ++request.current;
         setSearching(true);
+        setHasSearched(true);
         setError("");
         try {
             const matches = await GameEndpoint.getPotentialMatches(query, game.platforms);
@@ -115,21 +118,23 @@ export default function GameImagePickerModal({game, kind, onSelect, onClose, exc
                     <Modal.CloseTrigger/>
                     <Modal.Header><Modal.Heading>Choose {multiple ? "screenshots" : `a ${label}`}</Modal.Heading></Modal.Header>
                     <Modal.Body className="flex flex-col gap-4">
-                        <div className="flex flex-row items-center gap-2">
-                            <span className="text-sm text-muted"><span
-                                className="text-foreground">Upload your own. </span>
-                                JPEG, PNG, WebP or GIF. Up to 20 MiB per image.</span>
-                            <Button type="button" variant="ghost" onPress={() => fileInput.current?.click()}
-                                    isPending={uploading}>
-                                {uploading ? <Spinner size="sm" color="current"/> : <UploadSimpleIcon/>}
-                                Upload {multiple ? "images" : "an image"}
-                            </Button>
-                            <input ref={fileInput} type="file" accept={IMAGE_ACCEPT} multiple={multiple}
-                                   className="hidden" disabled={uploading}
-                                   onChange={event => {
-                                       void upload(Array.from(event.target.files ?? []));
-                                       event.target.value = "";
-                                   }}/>
+                        <div className="flex flex-row items-center justify-between gap-2">
+                            <span className="text-foreground">Upload your own </span>
+                            <div className="flex flex-row items-center gap-2">
+                                <span
+                                    className="text-sm text-muted"> JPEG, PNG, WebP or GIF. Up to 20 MiB per image.</span>
+                                <Button type="button" variant="primary" onPress={() => fileInput.current?.click()}
+                                        isPending={uploading}>
+                                    {uploading ? <Spinner size="sm" color="current"/> : <UploadSimpleIcon/>}
+                                    Upload {multiple ? "images" : "an image"}
+                                </Button>
+                                <input ref={fileInput} type="file" accept={IMAGE_ACCEPT} multiple={multiple}
+                                       className="hidden" disabled={uploading}
+                                       onChange={event => {
+                                           void upload(Array.from(event.target.files ?? []));
+                                           event.target.value = "";
+                                       }}/>
+                            </div>
                         </div>
                         <div className="flex gap-2">
                             <Input aria-label="Image URL" placeholder="Image URL" value={url} className="flex-1 min-w-0"
@@ -162,7 +167,7 @@ export default function GameImagePickerModal({game, kind, onSelect, onClose, exc
                             </Button>
                         </div>
                         {error && <p role="alert" className="text-danger">{error}</p>}
-                        {!searching && results.length === 0 && <p>No images found.</p>}
+                        {hasSearched && !searching && results.length === 0 && <p>No images found.</p>}
                         <div
                             className={`grid gap-3 overflow-y-auto ${kind === "cover" ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-2"}`}>
                             {results.map(image => {

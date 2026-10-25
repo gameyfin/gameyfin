@@ -69,10 +69,11 @@ function OrderedMediaList({label, items, onChange, onDelete, disabled, layout = 
 }
 
 interface GameMediaEditorProps {
+    searchOnOpen: boolean;
     children: (sections: { artwork: ReactNode; gallery: ReactNode }) => ReactNode;
 }
 
-export default function GameMediaEditor({children}: GameMediaEditorProps) {
+export default function GameMediaEditor({children, searchOnOpen}: GameMediaEditorProps) {
     const {values, setFieldValue, setValues, isSubmitting} = useFormikContext<GameMetadataFormValues>();
     const [picker, setPicker] = useState<MediaKind>();
     const [videoUrl, setVideoUrl] = useState("");
@@ -216,6 +217,7 @@ export default function GameMediaEditor({children}: GameMediaEditorProps) {
     return <>
         {children({artwork, gallery})}
         {picker && <GameImagePickerModal key={picker} game={values} kind={picker} onSelect={selectImages}
+                                        searchOnOpen={searchOnOpen}
                                          excludedUrls={picker === "screenshot" ? values.mediaImages.map(image => image.selection.url).filter((url): url is string => !!url) : []}
                                          onClose={() => setPicker(undefined)}/>}
     </>;

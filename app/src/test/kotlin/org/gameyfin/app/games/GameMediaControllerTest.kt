@@ -20,7 +20,8 @@ import kotlin.test.assertFailsWith
 
 class GameMediaControllerTest {
     private val service = mockk<GameService>()
-    private val controller = GameMediaController(service)
+    private val libraries = mockk<org.gameyfin.app.libraries.LibraryCoreService>()
+    private val controller = GameMediaController(service, libraries)
     private val update = GameUpdateDto(
         id = 1, title = null, platforms = null, release = null, coverUrl = null, headerUrl = null,
         comment = null, summary = null, developers = null, publishers = null, genres = null, themes = null,
@@ -81,6 +82,37 @@ class GameMediaControllerTest {
             .andReturn().response
         assertEquals(204, response.status, response.contentAsString)
         verify(exactly = 1) { service.edit(match { it.id == 1L && it.cover?.uploadKey == "cover" }, match { it.keys == setOf("cover") }) }
+    }
+
+    @Test
+    fun `manual import saves metadata and uploads before removing ignored path`() {
+        authenticate(Role.Names.ADMIN)
+        val library = mockk<org.gameyfin.app.libraries.entities.Library>()
+        val game = mockk<org.gameyfin.app.games.entities.Game> { every { id } returns 42L }
+        val metadata = update.copy(title = "Manual title", summary = "Custom summary")
+        val file = MockMultipartFile("cover", byteArrayOf(1))
+        val request = MockMultipartHttpServletRequest().apply { addFile(file) }
+        every { libraries.getWithGamesAndIgnoredPaths(2L) } returns library
+        every { service.createManually("Manual title", "/games/manual", library) } returns game
+        every { service.edit(any(), any()) } just Runs
+        every { libraries.addGamesToLibrary(listOf(game), library, true) } returns library
+
+        controller.importGame(metadata, "/games/manual", 2L, request)
+
+        verifyOrder {
+            service.createManually("Manual title", "/games/manual", library)
+            service.edit(metadata.copy(id = 42L), mapOf("cover" to file))
+            libraries.addGamesToLibrary(listOf(game), library, true)
+        }
+    }
+
+    @Test
+    fun `regular users cannot import games`() {
+        authenticate(Role.Names.USER)
+        assertEquals(HttpStatus.FORBIDDEN, assertFailsWith<ResponseStatusException> {
+            controller.importGame(update, "/games/manual", 2L, MockMultipartHttpServletRequest())
+        }.statusCode)
+        verify { service wasNot Called; libraries wasNot Called }
     }
 
     private fun authenticate(role: String) {

@@ -35,6 +35,13 @@ export function metadataInitialValues(game: GameDto): GameMetadataFormValues {
     });
     return {
         ...snapshot,
+        developers: snapshot.developers ?? [],
+        publishers: snapshot.publishers ?? [],
+        genres: snapshot.genres ?? [],
+        themes: snapshot.themes ?? [],
+        features: snapshot.features ?? [],
+        perspectives: snapshot.perspectives ?? [],
+        keywords: snapshot.keywords ?? [],
         mediaCover: snapshot.cover ? existing(snapshot.cover.id, "cover") : undefined,
         mediaHeader: snapshot.header ? existing(snapshot.header.id, "header") : undefined,
         mediaImages: (snapshot.images ?? []).map(image => existing(image.id, "screenshot")),
@@ -102,10 +109,16 @@ export function metadataUpdate(initial: GameMetadataFormValues, values: GameMeta
     return update;
 }
 
-export async function saveMetadata(update: GameUpdateDto, values: MediaDraft): Promise<void> {
+export interface ManualGameImport {
+    path: string;
+    libraryId: number;
+    platforms: GameDto["platforms"];
+}
+
+export async function saveMetadata(update: GameUpdateDto, values: MediaDraft, newGame?: ManualGameImport): Promise<void> {
     const images = allDraftImages(values);
     const files = images.filter(image => image.file);
-    if (files.length === 0) {
+    if (files.length === 0 && !newGame) {
         await GameEndpoint.updateGame(update);
         return;
     }
@@ -115,7 +128,11 @@ export async function saveMetadata(update: GameUpdateDto, values: MediaDraft): P
     const body = new FormData();
     body.append("metadata", new Blob([JSON.stringify(update)], {type: "application/json"}));
     files.forEach(image => body.append(image.selection.uploadKey!, image.file!));
-    const response = await fetch("game-media/metadata", {
+    if (newGame) {
+        body.append("path", newGame.path);
+        body.append("libraryId", String(newGame.libraryId));
+    }
+    const response = await fetch(newGame ? "game-media/import" : "game-media/metadata", {
         method: "POST", credentials: "same-origin", headers: {"X-CSRF-Token": getCsrfToken()}, body
     });
     if (response.redirected) throw new Error("Your session has expired. Sign in again to save changes.");

@@ -1,16 +1,10 @@
-import {
-    Button,
-    Input,
-    SortDescriptor,
-    Table,
-    Tooltip,
-    useOverlayState
-} from "@heroui/react";
-import {MagnifyingGlassIcon, TrashIcon} from "@phosphor-icons/react";
+import {Button, Input, SortDescriptor, Table, Tooltip, useOverlayState} from "@heroui/react";
+import {MagnifyingGlassIcon, PlusIcon, TrashIcon} from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {useMemo, useState} from "react";
 import LibraryUpdateDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryUpdateDto";
 import {fileNameFromPath} from "Frontend/util/utils";
+import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 import IgnoredPathDto from "Frontend/generated/org/gameyfin/app/libraries/dto/IgnoredPathDto";
@@ -31,6 +25,7 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
     const users = useSnapshot(userState).state;
 
     const matchGameModal = useOverlayState();
+    const manualImportModal = useOverlayState();
     const [page, setPage] = useState(1);
     const rowsPerPage = 25;
 
@@ -115,19 +110,24 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <Table variant="secondary" className="h-[35rem]">
-            <Table.ScrollContainer className="h-[35rem]">
+        <Table variant="secondary" className="h-140">
+            <Table.ScrollContainer className="h-140">
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                     <Table.Header className="sticky top-0 z-10 bg-background">
                         <Table.Column id="path" allowsSorting isRowHeader>
                             {({sortDirection}) => (
-                                <Table.SortableColumnHeader sortDirection={sortDirection}>Path</Table.SortableColumnHeader>
+                                <Table.SortableColumnHeader
+                                    sortDirection={sortDirection}>Path</Table.SortableColumnHeader>
                             )}
                         </Table.Column>
                         <Table.Column id="source">Source</Table.Column>
                         <Table.Column id="actions">Actions</Table.Column>
                     </Table.Header>
-                    <Table.Body renderEmptyState={() => <p className="text-center text-muted p-4">This library has no ignored paths.</p>} items={pagedPaths}>
+                    <Table.Body
+                        renderEmptyState={() =>
+                            <p className="text-center text-muted p-4">This library has no ignored paths.</p>
+                        }
+                        items={pagedPaths}>
                         {(item) => (
                             <Table.Row key={item.key}>
                                 <Table.Cell>
@@ -148,6 +148,17 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
                                                 </Button>
                                             </Tooltip.Trigger>
                                             <Tooltip.Content>Match game</Tooltip.Content>
+                                        </Tooltip>
+                                        <Tooltip>
+                                            <Tooltip.Trigger>
+                                                <Button isIconOnly size="sm" aria-label="Manual import" onPress={() => {
+                                                    setSelectedPath(item.path);
+                                                    manualImportModal.open();
+                                                }}>
+                                                    <PlusIcon/>
+                                                </Button>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Content>Manual import</Tooltip.Content>
                                         </Tooltip>
                                         <Tooltip>
                                             <Tooltip.Trigger>
@@ -178,6 +189,11 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
                                          initialSearchTerm={fileNameFromPath(selectedPath.path, false)}
                                          isOpen={matchGameModal.isOpen}
                                          onOpenChange={matchGameModal.setOpen}/>
+        }
+        {selectedPath && manualImportModal.isOpen && <EditGameMetadataModal
+            newGame={{path: selectedPath.path, libraryId: library.id, platforms: library.platforms}}
+            isOpen={manualImportModal.isOpen}
+            onOpenChange={manualImportModal.setOpen}/>
         }
     </div>;
 }
