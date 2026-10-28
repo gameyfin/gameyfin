@@ -1,11 +1,11 @@
 package org.gameyfin.app.media
 
-import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import com.github.benmanes.caffeine.cache.Cache
 import com.vanniktech.blurhash.BlurHash
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.apache.tika.Tika
 import org.apache.tika.io.TikaInputStream
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import org.gameyfin.app.core.events.GameDeletedEvent
 import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.events.UserDeletedEvent
@@ -20,12 +20,12 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.support.TransactionSynchronization
-import org.springframework.transaction.support.TransactionSynchronizationManager
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.InputStream

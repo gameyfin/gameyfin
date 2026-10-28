@@ -6,31 +6,38 @@ import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.time.Instant
 
 interface GameRequestRepository : JpaRepository<GameRequest, Long> {
 
-    @Query("""
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM GameRequest r WHERE r.id = :id")
+    fun findForVote(@Param("id") id: Long): GameRequest?
+
+    @Query(
+        """
         SELECT g FROM GameRequest g
         WHERE g.title = :title
         AND :releaseYear IS NOT NULL
         AND EXTRACT(YEAR FROM g.release) = :releaseYear
         AND g.platform = :platform
-    """)
+    """
+    )
     fun findByTitleAndReleaseYearAndPlatform(
         @Param("title") title: String,
         @Param("releaseYear") releaseYear: Int?,
         @Param("platform") platform: Platform
     ): List<GameRequest>
 
-    @Query("""
+    @Query(
+        """
         SELECT g FROM GameRequest g
         WHERE g.title = :title
         AND :releaseYear IS NOT NULL
         AND EXTRACT(YEAR FROM g.release) = :releaseYear
         AND g.platform = :platform
         AND g.status NOT IN (:excludedStatuses)
-    """)
+    """
+    )
     fun findRequestsByTitleAndReleaseYearAndPlatformAndStatusNotIn(
         @Param("title") title: String,
         @Param("releaseYear") releaseYear: Int?,

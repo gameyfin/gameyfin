@@ -99,3 +99,12 @@ vaadin:
     - dev.hilla
   pnpm:
     enable: false
+
+springdoc:
+  packages-to-scan: org.gameyfin.app.api.v1
+  paths-to-match: /v1/**
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    persist-authorization: false

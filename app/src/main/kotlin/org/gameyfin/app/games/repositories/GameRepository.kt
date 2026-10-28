@@ -8,16 +8,19 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 
-interface GameRepository : JpaRepository<Game, Long> {
+interface GameRepository : JpaRepository<Game, Long>,
+    org.springframework.data.jpa.repository.JpaSpecificationExecutor<Game> {
     fun existsByMetadataPath(path: String): Boolean
 
-    @Query("""
+    @Query(
+        """
         SELECT g FROM Game g JOIN g.platforms p
         WHERE g.title = :title
         AND :releaseYear IS NOT NULL
         AND EXTRACT(YEAR FROM g.release) = :releaseYear
         AND p = :platform
-    """)
+    """
+    )
     fun findByTitleAndReleaseYearAndPlatform(
         @Param("title") title: String,
         @Param("releaseYear") releaseYear: Int?,

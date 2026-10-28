@@ -4,15 +4,19 @@ import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.repositories.CompanyRepository
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
-import org.springframework.context.annotation.Lazy
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.TransactionDefinition
+import org.springframework.transaction.support.TransactionTemplate
 
 @Service
 class CompanyService(
     private val companyRepository: CompanyRepository,
-    @Lazy private val self: CompanyService
+    transactionManager: PlatformTransactionManager
 ) {
+
+    private val requiresNewTx = TransactionTemplate(transactionManager).apply {
+        propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
+    }
 
     /**
      * Returns an existing company matching (name, type), or creates a new one.
@@ -31,7 +35,7 @@ class CompanyService(
         companyRepository.findByNameAndType(company.name, company.type)?.let { return it }
 
         return try {
-            self.trySave(Company(name = company.name, type = company.type))
+            trySave(Company(name = company.name, type = company.type))
         } catch (e: DataIntegrityViolationException) {
             // Another thread inserted the same (name, type) concurrently — fetch and return it
             companyRepository.findByNameAndType(company.name, company.type)
@@ -45,6 +49,6 @@ class CompanyService(
      * DataIntegrityViolationException and only this inner transaction is rolled back,
      * leaving the caller's context clean to perform the fallback lookup.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun trySave(company: Company): Company = companyRepository.saveAndFlush(company)
+    fun trySave(company: Company): Company =
+        requiresNewTx.execute { companyRepository.saveAndFlush(company) }
 }

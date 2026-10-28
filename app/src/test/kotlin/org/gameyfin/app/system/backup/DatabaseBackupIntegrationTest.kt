@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.junit.jupiter.Testcontainers
 import java.math.BigDecimal
 import java.nio.file.Files
 import java.nio.file.Path
@@ -32,6 +33,7 @@ import kotlin.test.assertTrue
 /**
  * Creates backups of a database and restores them into databases of the same and of different types.
  */
+@Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DatabaseBackupIntegrationTest {
 
@@ -87,38 +89,39 @@ class DatabaseBackupIntegrationTest {
         return "${schema.quote(columns.getValue("KEY").name)}, ${schema.quote(columns.getValue("VALUE").name)}"
     }
 
-    private fun insertSampleData(dataSource: DataSource, legacyMedia: Boolean = false) = dataSource.connection.use { c ->
-        val appConfig = keyValueColumns(c, "APP_CONFIG")
-        val userPreference = keyValueColumns(c, "USER_PREFERENCE")
-        c.createStatement().use { s ->
-            s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('library.scan.enable', 'true')")
-            s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('sso.client-secret', 'ZW5jcnlwdGVk')")
-            s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, CONTENT_LENGTH, MIME_TYPE, ORIGINAL_URL, TYPE) VALUES (1, 'content-1', 1234, 'image/png', 'https://example.org/1.png', 0)")
-            s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, TYPE) VALUES (51, 'content-2', 2)")
-            s.execute("INSERT INTO LIBRARY (ID, CREATED_AT, NAME, UPDATED_AT, DISPLAY_ON_HOMEPAGE, DISPLAY_ORDER) VALUES (1, TIMESTAMP '2024-01-02 03:04:05.123456', 'Library', TIMESTAMP '2024-02-03 04:05:06', FALSE, 3)")
-            s.execute("INSERT INTO USERS (ID, EMAIL, EMAIL_CONFIRMED, ENABLED, PASSWORD, USERNAME, AVATAR_ID) VALUES (1, 'admin@example.org', TRUE, TRUE, 'hash', 'admin', 51)")
-            s.execute("INSERT INTO USER_ROLES (USER_ID, ROLES) VALUES (1, 'ROLE_SUPERADMIN')")
-            s.execute("INSERT INTO USER_PREFERENCE ($userPreference, USER_ID) VALUES ('preferred-theme', 'dark', 1)")
+    private fun insertSampleData(dataSource: DataSource, legacyMedia: Boolean = false) =
+        dataSource.connection.use { c ->
+            val appConfig = keyValueColumns(c, "APP_CONFIG")
+            val userPreference = keyValueColumns(c, "USER_PREFERENCE")
+            c.createStatement().use { s ->
+                s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('library.scan.enable', 'true')")
+                s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('sso.client-secret', 'ZW5jcnlwdGVk')")
+                s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, CONTENT_LENGTH, MIME_TYPE, ORIGINAL_URL, TYPE) VALUES (1, 'content-1', 1234, 'image/png', 'https://example.org/1.png', 0)")
+                s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, TYPE) VALUES (51, 'content-2', 2)")
+                s.execute("INSERT INTO LIBRARY (ID, CREATED_AT, NAME, UPDATED_AT, DISPLAY_ON_HOMEPAGE, DISPLAY_ORDER) VALUES (1, TIMESTAMP '2024-01-02 03:04:05.123456', 'Library', TIMESTAMP '2024-02-03 04:05:06', FALSE, 3)")
+                s.execute("INSERT INTO USERS (ID, EMAIL, EMAIL_CONFIRMED, ENABLED, PASSWORD, USERNAME, AVATAR_ID) VALUES (1, 'admin@example.org', TRUE, TRUE, 'hash', 'admin', 51)")
+                s.execute("INSERT INTO USER_ROLES (USER_ID, ROLES) VALUES (1, 'ROLE_SUPERADMIN')")
+                s.execute("INSERT INTO USER_PREFERENCE ($userPreference, USER_ID) VALUES ('preferred-theme', 'dark', 1)")
+            }
+            c.prepareStatement(
+                "INSERT INTO GAME (ID, CREATED_AT, UPDATED_AT, TITLE, PATH, SUMMARY, FILE_SIZE, MATCH_CONFIRMED, COVER_IMAGE_ID, LIBRARY_ID) " +
+                        "VALUES (101, ?, ?, 'Game', '/games/game', ?, 123456789012, TRUE, 1, 1)"
+            ).use { ps ->
+                ps.setObject(1, LocalDateTime.of(2024, 5, 6, 7, 8, 9))
+                ps.setObject(2, LocalDateTime.of(2024, 5, 6, 7, 8, 10))
+                ps.setString(3, UNICODE_TEXT)
+                ps.executeUpdate()
+            }
+            val mediaSql = if (legacyMedia) {
+                "INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)"
+            } else {
+                "INSERT INTO GAME_MEDIA (GAME_ID, MEDIA_POSITION, VIDEO_URL) VALUES (101, 0, ?)"
+            }
+            c.prepareStatement(mediaSql).use { ps ->
+                ps.setBytes(1, BLOB_CONTENT)
+                ps.executeUpdate()
+            }
         }
-        c.prepareStatement(
-            "INSERT INTO GAME (ID, CREATED_AT, UPDATED_AT, TITLE, PATH, SUMMARY, FILE_SIZE, MATCH_CONFIRMED, COVER_IMAGE_ID, LIBRARY_ID) " +
-                    "VALUES (101, ?, ?, 'Game', '/games/game', ?, 123456789012, TRUE, 1, 1)"
-        ).use { ps ->
-            ps.setObject(1, LocalDateTime.of(2024, 5, 6, 7, 8, 9))
-            ps.setObject(2, LocalDateTime.of(2024, 5, 6, 7, 8, 10))
-            ps.setString(3, UNICODE_TEXT)
-            ps.executeUpdate()
-        }
-        val mediaSql = if (legacyMedia) {
-            "INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)"
-        } else {
-            "INSERT INTO GAME_MEDIA (GAME_ID, MEDIA_POSITION, VIDEO_URL) VALUES (101, 0, ?)"
-        }
-        c.prepareStatement(mediaSql).use { ps ->
-            ps.setBytes(1, BLOB_CONTENT)
-            ps.executeUpdate()
-        }
-    }
 
     /** Reads the content of all application tables in a vendor-neutral representation */
     private fun dump(dataSource: DataSource): Map<String, List<Map<String, String?>>> = dataSource.connection.use { c ->

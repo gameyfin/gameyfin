@@ -209,8 +209,8 @@ class GameService(
         val videoUrls = gameUpdateDto.videoUrls?.map { GameMediaValidation.httpUrl(it) }
         gameUpdateDto.mediaOrder?.let { order ->
             require(order.all { it == "image" || it == "video" } &&
-                order.count { it == "image" } == (gameUpdateDto.images?.size ?: existingGame.images.size) &&
-                order.count { it == "video" } == (videoUrls?.size ?: existingGame.videoUrls.size)) {
+                    order.count { it == "image" } == (gameUpdateDto.images?.size ?: existingGame.images.size) &&
+                    order.count { it == "video" } == (videoUrls?.size ?: existingGame.videoUrls.size)) {
                 "Media order must include every screenshot and video exactly once"
             }
         }
@@ -218,25 +218,28 @@ class GameService(
         val uploadTypes = uploads.mapValues { GameMediaValidation.upload(it.value) }
         // Snapshot before replacing collections; Hibernate's dirty state can share collection instances.
         val previousImages = if (selections.isNotEmpty() || gameUpdateDto.images != null ||
-            gameUpdateDto.coverUrl != null || gameUpdateDto.headerUrl != null) {
+            gameUpdateDto.coverUrl != null || gameUpdateDto.headerUrl != null
+        ) {
             listOfNotNull(existingGame.coverImage, existingGame.headerImage) + existingGame.images.toList()
         } else emptyList()
 
-        val user = getEditingUser()
+        val newEditingSource = editingSourceFactory()
 
         fun markMediaEdited(field: String) {
             val metadata = existingGame.metadata.fields[field]
             if (metadata == null) {
-                existingGame.metadata.fields[field] = GameFieldMetadata(source = GameFieldUserSource(user = user))
+                existingGame.metadata.fields[field] = GameFieldMetadata(source = newEditingSource())
             } else {
-                metadata.source = GameFieldUserSource(user = user)
+                metadata.source = newEditingSource()
             }
         }
 
         // Resolve every new image before modifying game associations.
         val cover = gameUpdateDto.cover?.let { resolveImage(it, ImageType.COVER, existingGame, uploads, uploadTypes) }
-        val header = gameUpdateDto.header?.let { resolveImage(it, ImageType.HEADER, existingGame, uploads, uploadTypes) }
-        val images = gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT, existingGame, uploads, uploadTypes) }
+        val header =
+            gameUpdateDto.header?.let { resolveImage(it, ImageType.HEADER, existingGame, uploads, uploadTypes) }
+        val images =
+            gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT, existingGame, uploads, uploadTypes) }
         require(images == null || images.map { it.id }.distinct().size == images.size) { "Screenshots must be unique" }
         cover?.let { existingGame.coverImage = it; markMediaEdited("coverImage") }
         header?.let { existingGame.headerImage = it; markMediaEdited("headerImage") }
@@ -247,15 +250,15 @@ class GameService(
         // Update only non-null fields
         gameUpdateDto.title?.let {
             existingGame.title = it
-            existingGame.metadata.fields["title"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["title"]?.source = newEditingSource()
         }
         gameUpdateDto.platforms?.let {
             existingGame.platforms = it.toMutableList()
-            existingGame.metadata.fields["platforms"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["platforms"]?.source = newEditingSource()
         }
         gameUpdateDto.release?.let {
             existingGame.release = it.atStartOfDay(ZoneOffset.UTC).toInstant()
-            existingGame.metadata.fields["release"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["release"]?.source = newEditingSource()
         }
         gameUpdateDto.coverUrl?.let {
             val newCoverImage = imageService.createOrGet(
@@ -277,43 +280,43 @@ class GameService(
         }
         gameUpdateDto.comment?.let {
             existingGame.comment = it
-            existingGame.metadata.fields["comment"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["comment"]?.source = newEditingSource()
         }
         gameUpdateDto.summary?.let {
             existingGame.summary = it
-            existingGame.metadata.fields["summary"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["summary"]?.source = newEditingSource()
         }
         gameUpdateDto.developers?.let {
             existingGame.developers =
                 it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.DEVELOPER)) }
                     .toMutableList()
-            existingGame.metadata.fields["developers"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["developers"]?.source = newEditingSource()
         }
         gameUpdateDto.publishers?.let {
             existingGame.publishers =
                 it.map { name -> companyService.createOrGet(Company(name = name, type = CompanyType.PUBLISHER)) }
                     .toMutableList()
-            existingGame.metadata.fields["publishers"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["publishers"]?.source = newEditingSource()
         }
         gameUpdateDto.genres?.let {
             existingGame.genres = it.toMutableList()
-            existingGame.metadata.fields["genres"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["genres"]?.source = newEditingSource()
         }
         gameUpdateDto.themes?.let {
             existingGame.themes = it.toMutableList()
-            existingGame.metadata.fields["themes"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["themes"]?.source = newEditingSource()
         }
         gameUpdateDto.keywords?.let {
             existingGame.keywords = it
-            existingGame.metadata.fields["keywords"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["keywords"]?.source = newEditingSource()
         }
         gameUpdateDto.features?.let {
             existingGame.features = it.toMutableList()
-            existingGame.metadata.fields["features"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["features"]?.source = newEditingSource()
         }
         gameUpdateDto.perspectives?.let {
             existingGame.perspectives = it.toMutableList()
-            existingGame.metadata.fields["perspectives"]?.source = GameFieldUserSource(user = user)
+            existingGame.metadata.fields["perspectives"]?.source = newEditingSource()
         }
 
 
@@ -340,7 +343,31 @@ class GameService(
         }
     }
 
+    @Transactional
+    fun clearArtwork(id: Long, cover: Boolean, header: Boolean) {
+        val game = gameRepository.findByIdOrNull(id) ?: throw NoSuchElementException("Game not found")
+        val previousImages = listOfNotNull(game.coverImage, game.headerImage)
+        val source = editingSourceFactory()
+        if (cover) {
+            game.coverImage = null; game.metadata.fields["coverImage"] = GameFieldMetadata(source = source())
+        }
+        if (header) {
+            game.headerImage = null; game.metadata.fields["headerImage"] = GameFieldMetadata(source = source())
+        }
+        deleteRemovedImagesAfterCommit(game, previousImages)
+    }
+
+    fun editingSourceFactory(): () -> GameFieldSource {
+        val principal = getCurrentAuth()?.principal as? org.gameyfin.app.api.security.ApiPrincipal
+        if (principal?.kind == org.gameyfin.app.api.security.CredentialKind.SERVICE) {
+            return { GameFieldApiSource(principal.credentialId, principal.credentialName) }
+        }
+        val user = getEditingUser()
+        return { GameFieldUserSource(user) }
+    }
+
     private fun getEditingUser(): User = when (val userDetails = getCurrentAuth()?.principal) {
+        is org.gameyfin.app.api.security.ApiPrincipal -> userService.getByUsernameNonNull(userDetails.name)
         is UserDetails -> userService.getByUsernameNonNull(userDetails.username)
         is OidcUser -> {
             val subject = userDetails.subject ?: error("OidcUser has no subject claim")
@@ -366,7 +393,11 @@ class GameService(
             }
         }
         selection.uploadKey?.let { key ->
-            return imageService.createFromInputStream(type, uploads.getValue(key).inputStream, uploadTypes.getValue(key))
+            return imageService.createFromInputStream(
+                type,
+                uploads.getValue(key).inputStream,
+                uploadTypes.getValue(key)
+            )
         }
         return imageService.createOrGet(Image(originalUrl = selection.url!!, type = type)).also {
             imageService.downloadIfNew(it)
@@ -422,7 +453,7 @@ class GameService(
 
             val fieldSource = game.metadata.fields[fieldName]?.source
             if (updatedValue != null &&
-                fieldSource !is GameFieldUserSource &&
+                fieldSource !is GameFieldUserSource && fieldSource !is GameFieldApiSource &&
                 !areEqual(originalValue, updatedValue) &&
                 updatedFieldMetadata != null
             ) {
