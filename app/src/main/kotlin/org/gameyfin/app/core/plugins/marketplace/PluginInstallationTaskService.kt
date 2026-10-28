@@ -2,7 +2,10 @@ package org.gameyfin.app.core.plugins.marketplace
 
 import jakarta.annotation.PostConstruct
 import org.gameyfin.app.core.plugins.dto.PluginDto
-import org.gameyfin.app.core.tasks.*
+import org.gameyfin.app.core.tasks.TaskAction
+import org.gameyfin.app.core.tasks.TaskDefinition
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
 import org.gameyfin.app.core.tasks.dto.TaskRunDto
 import org.gameyfin.pluginapi.tasks.TaskResult
 import org.gameyfin.pluginapi.tasks.TaskTrigger
@@ -25,15 +28,16 @@ class PluginInstallationTaskService(
     fun registerTasks() {
         listOf(INSTALL to "Install plugin", UPDATE to "Update plugin", UNINSTALL to "Uninstall plugin")
             .forEach { (key, name) ->
-                registry.register(TaskDefinition(
-                    key = key,
-                    name = name,
-                    schedulable = false,
-                    manuallyTriggerable = false,
-                    cancellable = false,
-                    visibleInOverview = false,
-                    action = TaskAction.Dispatch { error("Plugin operations require a plugin ID") }
-                ))
+                registry.register(
+                    TaskDefinition(
+                        key = key,
+                        name = name,
+                        schedulable = false,
+                        manuallyTriggerable = false,
+                        cancellable = false,
+                        visibleInOverview = false,
+                        action = TaskAction.Dispatch { error("Plugin operations require a plugin ID") }
+                    ))
             }
     }
 
@@ -53,13 +57,17 @@ class PluginInstallationTaskService(
         runService.start(UNINSTALL, TaskTrigger.MANUAL, displayName = "Uninstall plugin $pluginId") { context ->
             context.progress("Uninstalling plugin $pluginId")
             val fallback = marketplaceService.uninstall(pluginId)
-            TaskResult(if (fallback == null) "Plugin $pluginId uninstalled"
-            else "Plugin $pluginId reverted to local version ${fallback.version}. ${stateSummary(fallback)}")
+            TaskResult(
+                if (fallback == null) "Plugin $pluginId uninstalled"
+                else "Plugin $pluginId reverted to local version ${fallback.version}. ${stateSummary(fallback)}"
+            )
         }
 
     private fun installationResult(plugin: PluginDto?, pluginId: String): TaskResult =
-        TaskResult(if (plugin == null) "Plugin $pluginId installed"
-        else "${plugin.name} version ${plugin.version} installed. ${stateSummary(plugin)}")
+        TaskResult(
+            if (plugin == null) "Plugin $pluginId installed"
+            else "${plugin.name} version ${plugin.version} installed. ${stateSummary(plugin)}"
+        )
 
     private fun stateSummary(plugin: PluginDto): String = when (plugin.state) {
         PluginState.STARTED -> "Plugin is active."

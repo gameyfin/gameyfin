@@ -188,6 +188,7 @@ private fun GameFieldMetadata.toDto(): GameFieldMetadataDto {
             source = source.credentialName,
             updatedAt = this.updatedAt!!
         )
+
         is GameFieldUserSource -> {
             GameFieldMetadataDto(
                 type = GameFieldMetadataType.USER,

@@ -116,7 +116,7 @@ class TaskRunService(
     fun trigger(taskKey: String, trigger: TaskTrigger, parameters: Map<String, String?> = emptyMap()): TaskRunDto? {
         val definition = registry.require(taskKey)
         check(!(trigger == TaskTrigger.MANUAL && !definition.manuallyTriggerable)) { "Task ${definition.name} can not be started manually" }
-        
+
         // Scheduled runs use the default values of the parameters
         val parameterValues = TaskSettingsService.convertValues(definition.parameters, parameters)
         return when (val action = definition.action) {
@@ -417,10 +417,10 @@ class TaskRunService(
             return parameters[key] as T?
         }
 
-        override fun wrap(runnable: Runnable): Runnable = MdcPropagation.wrap(Runnable {
+        override fun wrap(runnable: Runnable): Runnable = MdcPropagation.wrap {
             throwIfCancelled()
             runnable.run()
-        })
+        }
 
         override fun <T> wrap(callable: Callable<T>): Callable<T> = MdcPropagation.wrap(Callable {
             throwIfCancelled()

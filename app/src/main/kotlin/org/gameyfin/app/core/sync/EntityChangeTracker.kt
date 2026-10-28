@@ -68,9 +68,7 @@ class EntityChangeTracker(
 
     override fun onPostUpdate(event: PostUpdateEvent) {
         val id = event.id as? Long ?: return
-        val entity = event.entity
-
-        when (entity) {
+        when (val entity = event.entity) {
             is Game, is Library, is Collection -> {
                 val propertyNames = event.persister.propertyNames
                 val dirtyProperties = event.dirtyProperties?.map { propertyNames[it] }
@@ -131,7 +129,7 @@ class EntityChangeTracker(
         when (owner) {
             is Game -> {
                 val fields = if (property == "media") EntityFieldMappings.GAME_MEDIA_FIELDS
-                    else listOfNotNull(EntityFieldMappings.GAME_PROPERTIES[property])
+                else listOfNotNull(EntityFieldMappings.GAME_PROPERTIES[property])
                 if (fields.isNotEmpty()) record { it.game(ownerId).addAssociationFields(fields) }
             }
 

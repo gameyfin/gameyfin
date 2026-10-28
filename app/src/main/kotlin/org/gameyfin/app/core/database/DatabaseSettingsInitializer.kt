@@ -1,14 +1,11 @@
 package org.gameyfin.app.core.database
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.database.DatabaseSettingsInitializer.Companion.captureEmbeddedDatabase
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.core.Ordered
-import org.springframework.core.env.CommandLinePropertySource
-import org.springframework.core.env.ConfigurableEnvironment
-import org.springframework.core.env.Environment
-import org.springframework.core.env.MapPropertySource
-import org.springframework.core.env.StandardEnvironment
+import org.springframework.core.env.*
 import java.nio.file.Path
 
 /**

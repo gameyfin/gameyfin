@@ -5,14 +5,15 @@ import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.core.Role
-import org.gameyfin.app.core.tasks.DeletionTaskService
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.core.tasks.DeletionTaskService
 import reactor.core.publisher.Flux
 import java.time.Instant
 
 @Endpoint
 @DynamicPublicAccess
 @AnonymousAllowed
+@Suppress("unused")
 class CollectionEndpoint(
     private val collectionService: CollectionService,
     private val deletionTaskService: DeletionTaskService

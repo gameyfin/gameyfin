@@ -155,8 +155,8 @@ class GameRequestService(
         val requester = gameRequest.requester
 
         val serviceMayDelete = auth is org.gameyfin.app.api.security.ApiAuthentication &&
-            auth.actor.kind == org.gameyfin.app.api.security.CredentialKind.SERVICE &&
-            auth.authorities.any { it.authority == org.gameyfin.app.api.security.ApiScope.REQUESTS_DELETE.authority }
+                auth.actor.kind == org.gameyfin.app.api.security.CredentialKind.SERVICE &&
+                auth.authorities.any { it.authority == org.gameyfin.app.api.security.ApiScope.REQUESTS_DELETE.authority }
         if (!serviceMayDelete && auth?.isAdmin() != true && (requester == null || requester.id != currentUser?.id)) {
             throw EndpointException("Only the requester or an admin can delete a game request")
         }

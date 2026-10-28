@@ -87,7 +87,10 @@ class DatabaseSettingsStore(
                 backupName = node.required("backupName").asString()
             )
         } catch (e: Exception) {
-            throw IllegalStateException("Could not read pending database switch from $pendingSwitchFile: ${e.message}", e)
+            throw IllegalStateException(
+                "Could not read pending database switch from $pendingSwitchFile: ${e.message}",
+                e
+            )
         }
     }
 

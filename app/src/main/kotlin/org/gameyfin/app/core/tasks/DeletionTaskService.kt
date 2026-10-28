@@ -49,7 +49,11 @@ class DeletionTaskService(
 
     fun deleteCollection(id: Long): TaskRunDto {
         val name = collectionService.getById(id).name
-        return runService.start(COLLECTION_DELETE, TaskTrigger.MANUAL, displayName = "Delete collection $name") { context ->
+        return runService.start(
+            COLLECTION_DELETE,
+            TaskTrigger.MANUAL,
+            displayName = "Delete collection $name"
+        ) { context ->
             context.progress("Deleting collection $name")
             collectionService.delete(id)
             TaskResult("Collection $name deleted")

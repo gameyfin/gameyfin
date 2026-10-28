@@ -209,8 +209,8 @@ class GameService(
         val videoUrls = gameUpdateDto.videoUrls?.map { GameMediaValidation.httpUrl(it) }
         gameUpdateDto.mediaOrder?.let { order ->
             require(order.all { it == "image" || it == "video" } &&
-                order.count { it == "image" } == (gameUpdateDto.images?.size ?: existingGame.images.size) &&
-                order.count { it == "video" } == (videoUrls?.size ?: existingGame.videoUrls.size)) {
+                    order.count { it == "image" } == (gameUpdateDto.images?.size ?: existingGame.images.size) &&
+                    order.count { it == "video" } == (videoUrls?.size ?: existingGame.videoUrls.size)) {
                 "Media order must include every screenshot and video exactly once"
             }
         }
@@ -218,7 +218,8 @@ class GameService(
         val uploadTypes = uploads.mapValues { GameMediaValidation.upload(it.value) }
         // Snapshot before replacing collections; Hibernate's dirty state can share collection instances.
         val previousImages = if (selections.isNotEmpty() || gameUpdateDto.images != null ||
-            gameUpdateDto.coverUrl != null || gameUpdateDto.headerUrl != null) {
+            gameUpdateDto.coverUrl != null || gameUpdateDto.headerUrl != null
+        ) {
             listOfNotNull(existingGame.coverImage, existingGame.headerImage) + existingGame.images.toList()
         } else emptyList()
 
@@ -235,8 +236,10 @@ class GameService(
 
         // Resolve every new image before modifying game associations.
         val cover = gameUpdateDto.cover?.let { resolveImage(it, ImageType.COVER, existingGame, uploads, uploadTypes) }
-        val header = gameUpdateDto.header?.let { resolveImage(it, ImageType.HEADER, existingGame, uploads, uploadTypes) }
-        val images = gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT, existingGame, uploads, uploadTypes) }
+        val header =
+            gameUpdateDto.header?.let { resolveImage(it, ImageType.HEADER, existingGame, uploads, uploadTypes) }
+        val images =
+            gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT, existingGame, uploads, uploadTypes) }
         require(images == null || images.map { it.id }.distinct().size == images.size) { "Screenshots must be unique" }
         cover?.let { existingGame.coverImage = it; markMediaEdited("coverImage") }
         header?.let { existingGame.headerImage = it; markMediaEdited("headerImage") }
@@ -345,8 +348,12 @@ class GameService(
         val game = gameRepository.findByIdOrNull(id) ?: throw NoSuchElementException("Game not found")
         val previousImages = listOfNotNull(game.coverImage, game.headerImage)
         val source = editingSourceFactory()
-        if (cover) { game.coverImage = null; game.metadata.fields["coverImage"] = GameFieldMetadata(source = source()) }
-        if (header) { game.headerImage = null; game.metadata.fields["headerImage"] = GameFieldMetadata(source = source()) }
+        if (cover) {
+            game.coverImage = null; game.metadata.fields["coverImage"] = GameFieldMetadata(source = source())
+        }
+        if (header) {
+            game.headerImage = null; game.metadata.fields["headerImage"] = GameFieldMetadata(source = source())
+        }
         deleteRemovedImagesAfterCommit(game, previousImages)
     }
 
@@ -386,7 +393,11 @@ class GameService(
             }
         }
         selection.uploadKey?.let { key ->
-            return imageService.createFromInputStream(type, uploads.getValue(key).inputStream, uploadTypes.getValue(key))
+            return imageService.createFromInputStream(
+                type,
+                uploads.getValue(key).inputStream,
+                uploadTypes.getValue(key)
+            )
         }
         return imageService.createOrGet(Image(originalUrl = selection.url!!, type = type)).also {
             imageService.downloadIfNew(it)

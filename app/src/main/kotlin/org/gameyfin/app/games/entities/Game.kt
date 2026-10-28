@@ -1,7 +1,8 @@
 package org.gameyfin.app.games.entities
 
 import jakarta.persistence.*
-import jakarta.persistence.CascadeType.*
+import jakarta.persistence.CascadeType.MERGE
+import jakarta.persistence.CascadeType.REFRESH
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
@@ -93,7 +94,7 @@ class Game(
     @CollectionTable(name = "game_media", joinColumns = [JoinColumn(name = "game_id")])
     @OrderColumn(name = "media_position")
     var media: MutableList<GameMedia> = (images.map { GameMedia(image = it) } +
-        videoUrls.map { GameMedia(videoUrl = it) }).toMutableList()
+            videoUrls.map { GameMedia(videoUrl = it) }).toMutableList()
 
     // Keep the existing API and metadata-provider views backed by the shared gallery.
     var images: MutableList<Image>
@@ -105,6 +106,7 @@ class Game(
                 val position = positions()[index]
                 return media.set(position, GameMedia(image = element)).image!!
             }
+
             override fun add(index: Int, element: Image) {
                 val positions = positions()
                 require(index in 0..positions.size)
@@ -112,6 +114,7 @@ class Game(
                     positions.lastOrNull()?.plus(1) ?: media.size
                 media.add(position, GameMedia(image = element))
             }
+
             override fun removeAt(index: Int): Image = media.removeAt(positions()[index]).image!!
         }
         set(value) = replaceMedia(true, value.map { GameMedia(image = it) })

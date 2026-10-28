@@ -1,11 +1,11 @@
 package org.gameyfin.app.libraries
 
-import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import org.gameyfin.app.core.events.LibraryCreatedEvent
 import org.gameyfin.app.core.events.LibraryDeletedEvent
 import org.gameyfin.app.core.events.LibraryFilesystemWatcherConfigUpdatedEvent

@@ -230,6 +230,7 @@ class DatabaseRestorer(
                         ?: throw InvalidBackupException("Data for table ${backupTable.name} is malformed")
                     rowCount = insertRows(connection, schema, table, mapping, parser)
                 }
+
                 else -> parser.skipChildren()
             }
         }
@@ -260,6 +261,12 @@ class DatabaseRestorer(
         if (usedColumns.isEmpty()) {
             parser.skipChildren()
             return 0
+        }
+
+        // Identifiers can't be bound as parameters, so make sure they're plain identifiers before using them in SQL
+        val identifierPattern = Regex("[A-Za-z0-9_$]+")
+        require(identifierPattern.matches(table) && usedColumns.all { identifierPattern.matches(it.second.name) }) {
+            "Unsafe identifier in table $table"
         }
 
         val sql = "INSERT INTO ${schema.quote(table)} " +
