@@ -1,0 +1,5418 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Gameyfin public API",
+    "description": "Stable integration API. Send a personal token or service key in X-API-Key. Personal tokens mirror the owner's current permissions; service keys require the scopes listed on each operation. Response vocabulary codes are extensible. Lists are not snapshots: periodically reconcile the complete catalog to detect deletions.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [
+    {
+      "apiKey": []
+    }
+  ],
+  "paths": {
+    "/v1/requests/{id}/vote": {
+      "put": {
+        "tags": [
+          "request-controller-v-1"
+        ],
+        "description": "Personal tokens only. Idempotently adds the owner's vote.",
+        "operationId": "voteForRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "request-controller-v-1"
+        ],
+        "description": "Personal tokens only. Idempotently removes the owner's vote.",
+        "operationId": "removeRequestVote",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/games/{id}/media": {
+      "put": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires games:write or an administrator personal token. The metadata JSON part describes the complete artwork/gallery. Each image selects exactly one existing id, URL or named file uploadKey. Null cover/header removes it. Gallery arrays replace existing content.",
+        "operationId": "replaceGameMedia",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "properties": {
+                  "metadata": {
+                    "$ref": "#/components/schemas/GameMediaV1"
+                  }
+                },
+                "required": [
+                  "metadata"
+                ]
+              },
+              "encoding": {
+                "metadata": {
+                  "contentType": "application/json"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/collections/{id}/games/{gameId}": {
+      "put": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:write or an administrator personal token. Idempotent.",
+        "operationId": "addCollectionGame",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:write or an administrator personal token. Idempotent; does not delete the game.",
+        "operationId": "removeCollectionGame",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/requests": {
+      "get": {
+        "tags": [
+          "request-controller-v-1"
+        ],
+        "description": "Requires requests:read. sort: id, title, createdAt or updatedAt.",
+        "operationId": "listRequests",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageV1RequestV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "request-controller-v-1"
+        ],
+        "description": "Personal tokens only. Honors instance request settings and the owner's open-request limit.",
+        "operationId": "createRequest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequestV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/libraries": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires libraries:read. sort: id, name, createdAt or updatedAt.",
+        "operationId": "listLibraries",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageV1LibraryV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires libraries:write or an administrator personal token. scanAfterCreation also requires libraries:scan.",
+        "operationId": "createLibrary",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLibraryV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/libraries/{id}/scans": {
+      "post": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires libraries:scan or an administrator personal token. Acknowledges queue acceptance; task runs are created when the queue processes the scan.",
+        "operationId": "scanLibrary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedScanV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/collections": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:read. sort: id, name, createdAt or updatedAt.",
+        "operationId": "listCollections",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageV1CollectionV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:write or an administrator personal token.",
+        "operationId": "createCollection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCollectionV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/requests/{id}/status": {
+      "patch": {
+        "tags": [
+          "request-controller-v-1"
+        ],
+        "description": "Requires requests:write or an administrator personal token. Fulfilled requests cannot be changed.",
+        "operationId": "changeRequestStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestStatusV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/libraries/{id}": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires libraries:read. Does not include server filesystem paths.",
+        "operationId": "getLibrary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires libraries:delete or an administrator personal token. Queues catalog deletion, including this library's games; does not delete game files.",
+        "operationId": "deleteLibrary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRunV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires libraries:write or an administrator personal token. Removing directory mappings also requires games:delete because it removes catalog entries.",
+        "operationId": "patchLibrary",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryPatchV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/games/{id}": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires games:read.",
+        "operationId": "getGame",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires games:delete or an administrator personal token. Removes the catalog entry, not the game files.",
+        "operationId": "deleteGame",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires games:write or an administrator personal token.",
+        "operationId": "patchGame",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/GamePatchV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/collections/{id}": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:read.",
+        "operationId": "getCollection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:delete or an administrator personal token. Does not delete member games.",
+        "operationId": "deleteCollection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRunV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:write or an administrator personal token.",
+        "operationId": "patchCollection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionPatchV1"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users": {
+      "get": {
+        "tags": [
+          "user-controller-v-1"
+        ],
+        "description": "Requires users:read. Only administrator personal tokens receive full user information. sort: id.",
+        "operationId": "getAllUsers",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageV1UserV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/{id}": {
+      "get": {
+        "tags": [
+          "user-controller-v-1"
+        ],
+        "description": "Requires users:read. Only administrator personal tokens receive full user information.",
+        "operationId": "getUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users/by-username/{username}": {
+      "get": {
+        "tags": [
+          "user-controller-v-1"
+        ],
+        "description": "Requires users:read. Only administrator personal tokens receive full user information.",
+        "operationId": "getUserByUsername",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tasks": {
+      "get": {
+        "tags": [
+          "instance-controller-v-1"
+        ],
+        "description": "Requires tasks:read or an administrator personal token. Does not expose task settings, parameters, or secrets.",
+        "operationId": "listTasks",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskV1"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/task-runs": {
+      "get": {
+        "tags": [
+          "instance-controller-v-1"
+        ],
+        "description": "Requires tasks:read or an administrator personal token. sort: id, startedAt or finishedAt. Raw logs and error details are excluded.",
+        "operationId": "listTaskRuns",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "startedAt,desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageV1TaskRunV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/task-runs/{id}": {
+      "get": {
+        "tags": [
+          "instance-controller-v-1"
+        ],
+        "description": "Requires tasks:read or an administrator personal token.",
+        "operationId": "getTaskRun",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskRunV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/requests/{id}": {
+      "get": {
+        "tags": [
+          "request-controller-v-1"
+        ],
+        "description": "Requires requests:read.",
+        "operationId": "getRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "request-controller-v-1"
+        ],
+        "description": "Requires requests:delete. Personal tokens may delete their owner's requests; administrators may delete any request.",
+        "operationId": "deleteRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/platforms": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires games:read. Returns platforms supported by active metadata providers.",
+        "operationId": "listPlatforms",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OptionV1"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/metadata-options": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires games:read. Codes are extensible; clients must tolerate new values.",
+        "operationId": "getMetadataOptions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/OptionV1"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "user-controller-v-1"
+        ],
+        "description": "Personal tokens only. Request write/delete permissions remain subject to ownership and administrator restrictions.",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/libraries/{id}/configuration": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires libraries:write or an administrator personal token. Includes server directory mappings.",
+        "operationId": "getLibraryConfiguration",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryConfigurationV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/instance": {
+      "get": {
+        "tags": [
+          "instance-controller-v-1"
+        ],
+        "description": "Requires instance:read. Missing development build metadata is null.",
+        "operationId": "getInstance",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "instance-controller-v-1"
+        ],
+        "description": "Requires instance:read. Aggregate health only; HTTP 503 when not healthy.",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Instance is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/HealthV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/games": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires games:read. Filter by externalProvider and externalId together. sort: id, title, createdAt or updatedAt, optionally followed by ,asc or ,desc.",
+        "operationId": "listGames",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "libraryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "collectionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "externalProvider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "externalId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageV1GameV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/games/{id}/images/{imageId}": {
+      "get": {
+        "tags": [
+          "download-controller-v-1"
+        ],
+        "description": "Requires games:read. Supports ETag conditional requests. The image must belong to the specified game.",
+        "operationId": "getGameImage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "imageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "image/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not modified"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/games/{id}/download": {
+      "get": {
+        "tags": [
+          "download-controller-v-1"
+        ],
+        "description": "Requires downloads:read. Streams a file or returns a JSON link descriptor. Follow links explicitly without forwarding X-API-Key. Range/resume is not supported; requests receive the complete stream.",
+        "operationId": "downloadGame",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadLinkV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/download-providers": {
+      "get": {
+        "tags": [
+          "download-controller-v-1"
+        ],
+        "description": "Requires downloads:read. Provider IDs are opaque; discover them rather than constructing or hard-coding them.",
+        "operationId": "listDownloadProviders",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DownloadProviderV1"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/collections/{id}/games": {
+      "get": {
+        "tags": [
+          "catalog-controller-v-1"
+        ],
+        "description": "Requires collections:read and games:read.",
+        "operationId": "listCollectionGames",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageV1GameV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GameMediaV1": {
+        "type": "object",
+        "properties": {
+          "cover": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ImageSelectionV1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "header": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ImageSelectionV1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageSelectionV1"
+            }
+          },
+          "videoUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mediaOrder": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ImageSelectionV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "uploadKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ExternalIdV1": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "provider"
+        ]
+      },
+      "GameV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "libraryId": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "release": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "comment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userRating": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "criticRating": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "publishers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "developers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "themes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "perspectives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cover": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ImageV1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "header": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ImageV1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageV1"
+            }
+          },
+          "videoUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mediaOrder": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "externalIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalIdV1"
+            }
+          },
+          "fileSize": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          }
+        },
+        "required": [
+          "comment",
+          "cover",
+          "createdAt",
+          "criticRating",
+          "developers",
+          "externalIds",
+          "features",
+          "fileSize",
+          "genres",
+          "header",
+          "id",
+          "images",
+          "keywords",
+          "libraryId",
+          "mediaOrder",
+          "perspectives",
+          "platforms",
+          "publishers",
+          "release",
+          "summary",
+          "themes",
+          "title",
+          "updatedAt",
+          "userRating",
+          "videoUrls"
+        ]
+      },
+      "ImageV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          }
+        },
+        "required": [
+          "contentType",
+          "id",
+          "size",
+          "url"
+        ]
+      },
+      "CreateRequestV1": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "platform": {
+            "type": "string"
+          },
+          "release": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        },
+        "required": [
+          "platform",
+          "title"
+        ]
+      },
+      "RequestV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "release": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "status": {
+            "type": "string"
+          },
+          "requesterId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voteCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "voted": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "linkedGameId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "linkedGameId",
+          "platform",
+          "release",
+          "requesterId",
+          "status",
+          "title",
+          "updatedAt",
+          "voteCount",
+          "voted"
+        ]
+      },
+      "CreateLibraryV1": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "directories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryV1"
+            },
+            "maxItems": 100,
+            "minItems": 1
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scanAfterCreation": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "directories",
+          "name"
+        ]
+      },
+      "DirectoryV1": {
+        "type": "object",
+        "properties": {
+          "internalPath": {
+            "type": "string"
+          },
+          "externalPath": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "internalPath"
+        ]
+      },
+      "LibraryV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "name",
+          "platforms",
+          "updatedAt"
+        ]
+      },
+      "ScanV1": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "QUICK",
+              "FULL"
+            ]
+          }
+        }
+      },
+      "AcceptedScanV1": {
+        "type": "object",
+        "properties": {
+          "libraryId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "libraryId",
+          "status",
+          "type"
+        ]
+      },
+      "CreateCollectionV1": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 0
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CollectionV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "createdAt",
+          "description",
+          "id",
+          "name",
+          "updatedAt"
+        ]
+      },
+      "RequestStatusV1": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "FULFILLED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "LibraryPatchV1": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "directories": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/DirectoryV1"
+            }
+          },
+          "platforms": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "GamePatchV1": {
+        "type": "object",
+        "description": "JSON Merge Patch: omitted fields stay unchanged, null clears summary, comment or release; arrays replace their contents. Other null values are rejected.",
+        "properties": {
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "platforms": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "release": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "comment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publishers": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "developers": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "genres": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "themes": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "features": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "perspectives": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "keywords": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CollectionPatchV1": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PageV1UserV1": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserV1"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "totalElements"
+        ]
+      },
+      "UserV1": {
+        "type": "object",
+        "description": "Public user profile. Email, account status, SSO status and roles are included only for administrator personal tokens.",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "hasAvatar": {
+            "type": "boolean"
+          },
+          "avatarId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "emailConfirmed": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "enabled": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "managedBySso": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "roles": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "hasAvatar",
+          "id",
+          "username"
+        ]
+      },
+      "TaskV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "running": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "description",
+          "id",
+          "name",
+          "running"
+        ]
+      },
+      "PageV1TaskRunV1": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskRunV1"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "totalElements"
+        ]
+      },
+      "TaskRunV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "finishedAt",
+          "id",
+          "startedAt",
+          "status",
+          "taskId"
+        ]
+      },
+      "PageV1RequestV1": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequestV1"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "totalElements"
+        ]
+      },
+      "OptionV1": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
+        ]
+      },
+      "MeV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "permissions",
+          "username"
+        ]
+      },
+      "PageV1LibraryV1": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryV1"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "totalElements"
+        ]
+      },
+      "LibraryConfigurationV1": {
+        "type": "object",
+        "properties": {
+          "directories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirectoryV1"
+            }
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "directories",
+          "platforms"
+        ]
+      },
+      "InstanceV1": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "buildTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "gitCommit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "apiVersions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "apiVersions",
+          "buildTime",
+          "capabilities",
+          "gitCommit",
+          "version"
+        ]
+      },
+      "HealthV1": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "PageV1GameV1": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameV1"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "totalElements"
+        ]
+      },
+      "DownloadLinkV1": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "url"
+        ]
+      },
+      "DownloadProviderV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "description",
+          "id",
+          "name",
+          "priority"
+        ]
+      },
+      "PageV1CollectionV1": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CollectionV1"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "items",
+          "page",
+          "size",
+          "totalElements"
+        ]
+      },
+      "ApiProblemV1": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "name": "X-API-Key",
+        "in": "header"
+      }
+    }
+  }
+}

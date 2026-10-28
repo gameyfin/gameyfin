@@ -1,4 +1,4 @@
-import { PaletteIcon, UserIcon } from "@phosphor-icons/react";
+import {GearFineIcon, KeyIcon, PaletteIcon, UserIcon} from "@phosphor-icons/react";
 import withSideMenu from "Frontend/components/general/withSideMenu";
 
 const menuItems = [
@@ -12,12 +12,16 @@ const menuItems = [
         url: "appearance",
         icon: <PaletteIcon/>
     },
-    /* TODO: Implement account self management
+    {
+        title: "Personal access tokens",
+        url: "tokens",
+        icon: <KeyIcon/>
+    },
     {
         title: "Manage account",
         url: "account-management",
-        icon: <GearFine/>
-    }*/
+        icon: <GearFineIcon/>
+    }
 ]
 
 export const ProfileView = withSideMenu("/settings", menuItems);
