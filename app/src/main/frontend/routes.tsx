@@ -8,6 +8,7 @@ import {GameManagement} from "Frontend/components/administration/GameManagement"
 import {UserManagement} from "Frontend/components/administration/UserManagement";
 import ProfileManagement from "Frontend/components/administration/ProfileManagement";
 import CredentialManagement from "Frontend/components/CredentialManagement";
+import AccountManagement from "Frontend/components/AccountManagement";
 import {SecurityManagement} from "Frontend/components/administration/SecurityManagement";
 import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
@@ -86,6 +87,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'tokens',
                                     element: <CredentialManagement/>,
                                     handle: {title: 'Personal access tokens'}
+                                },
+                                {
+                                    path: 'account-management',
+                                    element: <AccountManagement/>,
+                                    handle: {title: 'Manage account'}
                                 }
                             ]
                         },
