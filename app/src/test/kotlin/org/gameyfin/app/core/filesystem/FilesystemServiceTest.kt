@@ -12,12 +12,16 @@ import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.Library
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
+import java.nio.file.Files
+import java.io.IOException
 import kotlin.io.path.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class FilesystemServiceTest {
@@ -574,6 +578,87 @@ class FilesystemServiceTest {
         libraryDir.toFile().setReadable(true)
 
         assertTrue(result.newPaths.isEmpty())
+    }
+
+    private fun libraryAt(root: Path): Library = mockk {
+        every { directories } returns mutableListOf(DirectoryMapping(internalPath = root.toString()))
+    }
+
+    private fun symbolicLink(link: Path, target: Path): Path {
+        try {
+            return Files.createSymbolicLink(link, target)
+        } catch (e: Exception) {
+            if (e !is IOException && e !is UnsupportedOperationException && e !is SecurityException) throw e
+            assumeTrue(false, "Symbolic links are unavailable: ${e.message}")
+            throw e
+        }
+    }
+
+    @Test
+    fun `validateGamePath accepts files and nested directories inside a library`() {
+        val root = tempDir.resolve("library").createDirectory()
+        val directory = root.resolve("game").createDirectory()
+        val file = directory.resolve("game.zip").createFile()
+        val library = libraryAt(root)
+
+        assertEquals(directory, filesystemService.validateGamePath(directory.toString(), library))
+        assertEquals(file, filesystemService.validateGamePath(file.toString(), library))
+    }
+
+    @Test
+    fun `validateGamePath rejects paths outside the library regardless of existence`() {
+        val root = tempDir.resolve("library").createDirectory()
+        val outside = tempDir.resolve("outside.zip").createFile()
+        val sibling = tempDir.resolve("library-other").createDirectory().resolve("game.zip").createFile()
+        val library = libraryAt(root)
+
+        for (path in listOf(outside, tempDir.resolve("missing.zip"), sibling, root.resolve("../outside.zip"), root)) {
+            assertFailsWith<IllegalArgumentException> {
+                filesystemService.validateGamePath(path.toString(), library)
+            }
+        }
+        assertFailsWith<IllegalArgumentException> { filesystemService.validateGamePath("relative/game", library) }
+    }
+
+    @Test
+    fun `validateGamePath rejects symbolic links escaping the library`() {
+        val root = tempDir.resolve("library").createDirectory()
+        val outside = tempDir.resolve("outside").createDirectory()
+        val file = outside.resolve("secret.zip").createFile()
+        val fileLink = symbolicLink(root.resolve("game.zip"), file)
+        val directoryLink = symbolicLink(root.resolve("linked"), outside)
+        val library = libraryAt(root)
+
+        for (path in listOf(fileLink, directoryLink, directoryLink.resolve("secret.zip"))) {
+            assertFailsWith<IllegalArgumentException> {
+                filesystemService.validateGamePath(path.toString(), library)
+            }
+        }
+    }
+
+    @Test
+    fun `validateGamePath rejects missing paths and libraries without directories`() {
+        val root = tempDir.resolve("library").createDirectory()
+        assertFailsWith<IllegalArgumentException> {
+            filesystemService.validateGamePath(root.resolve("missing.zip").toString(), libraryAt(root))
+        }
+        val library = mockk<Library> { every { directories } returns mutableListOf() }
+        assertFailsWith<IllegalArgumentException> {
+            filesystemService.validateGamePath(root.resolve("game.zip").createFile().toString(), library)
+        }
+    }
+
+    @Test
+    fun `calculateFileSize ignores symbolic links at the root and within directories`() {
+        val outside = tempDir.resolve("outside.zip").apply { writeText("secret") }
+        val directory = tempDir.resolve("game").createDirectory()
+        directory.resolve("data.zip").writeText("123")
+        val link = symbolicLink(directory.resolve("linked.zip"), outside)
+        val directoryLink = symbolicLink(tempDir.resolve("linked-game"), directory)
+
+        assertEquals(0L, filesystemService.calculateFileSize(link.toString()))
+        assertEquals(0L, filesystemService.calculateFileSize(directoryLink.toString()))
+        assertEquals(3L, filesystemService.calculateFileSize(directory.toString()))
     }
 
     @Test

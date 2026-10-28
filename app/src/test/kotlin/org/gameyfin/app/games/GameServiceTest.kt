@@ -111,6 +111,7 @@ class GameServiceTest {
     @Test
     fun `manual creation persists confirmed game without metadata providers`() {
         val path = Path.of("manual-game").toAbsolutePath().normalize().toString()
+        every { filesystemService.validateGamePath(path, library) } returns Path.of(path)
         every { gameRepository.existsByMetadataPath(path) } returns false
         every { filesystemService.calculateFileSize(path) } returns 123L
         every { gameRepository.save(any()) } answers { firstArg<Game>().also { it.id = 42L } }
@@ -129,6 +130,8 @@ class GameServiceTest {
     @Test
     fun `manual creation rejects duplicate paths and blank fields`() {
         val path = Path.of("manual-game").toAbsolutePath().normalize().toString()
+        every { filesystemService.validateGamePath(path, library) } returns Path.of(path)
+        every { filesystemService.validateGamePath("relative/path", library) } throws IllegalArgumentException("Path must be absolute")
         every { gameRepository.existsByMetadataPath(path) } returns true
 
         assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", path, library) }
@@ -136,6 +139,18 @@ class GameServiceTest {
         assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", " ", library) }
         assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", "relative/path", library) }
         verify(exactly = 0) { gameRepository.save(any()) }
+    }
+
+    @Test
+    fun `manual creation rejects invalid library path before sizing or persistence`() {
+        every { filesystemService.validateGamePath(any(), library) } throws IllegalArgumentException("Invalid library path")
+
+        assertThrows(IllegalArgumentException::class.java) {
+            gameService.createManually("Title", "/outside/game", library)
+        }
+
+        verify(exactly = 0) { filesystemService.calculateFileSize(any()) }
+        verify { gameRepository wasNot Called }
     }
 
     @Test

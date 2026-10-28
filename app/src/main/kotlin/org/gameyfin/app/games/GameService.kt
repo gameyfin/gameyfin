@@ -170,8 +170,7 @@ class GameService(
     fun createManually(title: String, path: String, library: Library): Game {
         require(title.isNotBlank()) { "Title is required" }
         require(path.isNotBlank()) { "Path is required" }
-        val normalizedPath = Path.of(path).normalize()
-        require(normalizedPath.isAbsolute) { "Path must be absolute" }
+        val normalizedPath = filesystemService.validateGamePath(path, library)
         require(!gameRepository.existsByMetadataPath(normalizedPath.toString())) { "A game already exists at this path" }
 
         val game = Game(normalizedPath, library)

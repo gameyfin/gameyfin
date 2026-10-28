@@ -6,7 +6,6 @@ import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.libraries.entities.Library
 import org.springframework.stereotype.Service
-import java.io.File
 import java.io.IOException
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -140,15 +139,41 @@ class FilesystemService(
         )
     }
 
+    /** Validate the library boundary before probing a path supplied by a client. */
+    fun validateGamePath(path: String, library: Library): Path {
+        val candidate = Path(path).normalize()
+        require(candidate.isAbsolute) { "Path must be absolute" }
+        val roots = library.directories.map { Path(it.internalPath).toAbsolutePath().normalize() }
+            .filter { candidate != it && candidate.startsWith(it) }
+        require(roots.isNotEmpty()) { "Path must be inside a library directory" }
+
+        // Only resolve client paths after the lexical boundary check. Real paths also
+        // catch links in ancestor directories that would escape the library.
+        val allowed = try {
+            val realCandidate = candidate.toRealPath()
+            roots.any {
+                val realRoot = it.toRealPath()
+                realCandidate != realRoot && realCandidate.startsWith(realRoot)
+            }
+        } catch (_: IOException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+        require(allowed) { "Path must refer to an accessible file or directory inside the library" }
+        return candidate
+    }
+
     fun calculateFileSize(path: String): Long {
         return try {
-            val file = File(path)
-            if (file.isFile) {
-                file.length()
-            } else if (file.isDirectory) {
+            val file = Path(path)
+            val attributes = Files.readAttributes(file, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
+            if (attributes.isRegularFile) {
+                attributes.size()
+            } else if (attributes.isDirectory) {
                 // Files.walkFileTree does not follow symlinks, so cyclic links can't cause endless traversal
                 var total = 0L
-                Files.walkFileTree(file.toPath(), object : SimpleFileVisitor<Path>() {
+                Files.walkFileTree(file, object : SimpleFileVisitor<Path>() {
                     override fun visitFile(
                         f: Path,
                         attrs: BasicFileAttributes
