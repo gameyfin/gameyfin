@@ -22,5 +22,6 @@ export interface GameFieldMetadataDto {
 export enum GameFieldMetadataType {
     PLUGIN = 'PLUGIN',
     USER = 'USER',
+    API_KEY = 'API_KEY',
     UNKNOWN = 'UNKNOWN'
 }

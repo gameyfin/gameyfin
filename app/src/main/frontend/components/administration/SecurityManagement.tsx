@@ -9,12 +9,12 @@ import {MagicWandIcon} from "@phosphor-icons/react";
 function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
     useEffect(() => {
-        if (formik.dirty) {
+        if (JSON.stringify(formik.values.sso) !== JSON.stringify(formik.initialValues.sso)) {
             setSaveMessage("Gameyfin must be restarted for changes in the SSO configuration to take effect");
         } else {
             setSaveMessage(null);
         }
-    }, [formik.dirty]);
+    }, [formik.values.sso, formik.initialValues.sso]);
 
     function isAutoPopulateDisabled() {
         return !formik.values.sso.oidc.enabled || !formik.values.sso.oidc["issuer-url"];
@@ -43,6 +43,9 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
 
             <Section title="Permissions"/>
             <ConfigFormField configElement={getConfig("security.allow-public-access")}/>
+
+            <Section title="API Documentation"/>
+            <ConfigFormField configElement={getConfig("security.swagger-ui-enabled")}/>
 
             <Section title="Single Sign-On"/>
             <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-8">
@@ -124,4 +127,8 @@ const validationSchema = Yup.object({
     })
 });
 
-export const SecurityManagement = withConfigPage(SecurityManagementLayout, "Security", validationSchema);
+const SecurityConfiguration = withConfigPage(SecurityManagementLayout, "Security", validationSchema);
+
+export function SecurityManagement() {
+    return <SecurityConfiguration/>;
+}

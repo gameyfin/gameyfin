@@ -2,6 +2,7 @@ import {
     DownloadSimpleIcon,
     EnvelopeIcon,
     GameControllerIcon,
+    KeyIcon,
     LockKeyIcon,
     LogIcon,
     PlugIcon,
@@ -37,6 +38,11 @@ const menuItems: MenuItem[] = [
         title: "Security",
         url: "security",
         icon: <LockKeyIcon/>
+    },
+    {
+        title: "API keys",
+        url: "api-keys",
+        icon: <KeyIcon/>
     },
     {
         title: "Messages",

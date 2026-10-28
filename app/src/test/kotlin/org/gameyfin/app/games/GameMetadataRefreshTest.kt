@@ -179,6 +179,19 @@ class GameMetadataRefreshTest {
         assertEquals(emptyList(), provider.titleSearches)
     }
 
+    @Test
+    fun `recovery preserves service key supplied fields`() {
+        val source = GameFieldMetadata(source = org.gameyfin.app.games.entities.GameFieldApiSource("key-id", "Import service"))
+        game.summary = "Integration notes"
+        game.metadata.fields["summary"] = source
+        val provider = RefreshProvider(listOf(metadata().copy(userRating = 90)))
+        install(provider)
+        assertNotNull(service.updateMetadata(game))
+        assertEquals("Integration notes", game.summary)
+        assertSame(source, game.metadata.fields["summary"])
+        assertEquals(90, game.userRating)
+    }
+
     private fun install(provider: RefreshProvider) {
         every { pluginManager.getExtensions(entry.pluginId) } returns listOf(provider)
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)

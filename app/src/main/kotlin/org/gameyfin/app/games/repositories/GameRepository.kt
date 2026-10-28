@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 
-interface GameRepository : JpaRepository<Game, Long> {
+interface GameRepository : JpaRepository<Game, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Game> {
     fun existsByMetadataPath(path: String): Boolean
 
     @Query("""

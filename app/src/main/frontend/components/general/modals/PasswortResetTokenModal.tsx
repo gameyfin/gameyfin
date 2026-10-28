@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Button, Modal} from "@heroui/react";
 import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import {timeUntil} from "Frontend/util/utils";
-import {CopyIcon} from "@phosphor-icons/react";
+import CopyButton from "Frontend/components/general/CopyButton";
 
 interface PasswordResetTokenModalProps {
     isOpen: boolean;
@@ -12,14 +12,10 @@ interface PasswordResetTokenModalProps {
 
 export default function PasswordResetTokenModal({isOpen, onOpenChange, token}: PasswordResetTokenModalProps) {
     const [timeUntilExpiry, setTimeUntilExpiry] = useState<string>("");
-    const [copied, setCopied] = useState(false);
 
     const timeoutRefresh = setInterval(updateTimeUntilExpiry, 1000);
 
     useEffect(updateTimeUntilExpiry, [token]);
-    useEffect(() => {
-        setCopied(false);
-    }, [isOpen, token]);
 
     useEffect(() => {
         return () => {
@@ -29,12 +25,6 @@ export default function PasswordResetTokenModal({isOpen, onOpenChange, token}: P
 
     function passwordResetLink() {
         return `${document.baseURI}reset-password?token=${token.secret}`;
-    }
-
-    async function copyPasswordResetLink() {
-        await navigator.clipboard.writeText(passwordResetLink());
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 2000);
     }
 
     function updateTimeUntilExpiry() {
@@ -52,27 +42,16 @@ export default function PasswordResetTokenModal({isOpen, onOpenChange, token}: P
                                 <Modal.CloseTrigger/>
                                 <Modal.Header className="flex flex-col gap-1">
                                     <Modal.Heading>
-                                        The user can reset their password using the following link
+                                        Password Reset Link
                                     </Modal.Heading>
                                 </Modal.Header>
                                 <Modal.Body>
-                                    <div className="flex items-start gap-2 rounded-lg bg-surface-secondary p-3">
+                                    <div className="flex items-center gap-2 rounded-lg bg-surface-secondary p-3">
                                         <pre className="m-0 flex-1 overflow-x-auto text-sm font-mono">
                                             <code>{passwordResetLink()}</code>
                                         </pre>
-                                        <Button
-                                            isIconOnly
-                                            size="sm"
-                                            variant="ghost"
-                                            aria-label="Copy password reset link"
-                                            onPress={copyPasswordResetLink}
-                                        >
-                                            <CopyIcon/>
-                                        </Button>
+                                        <CopyButton text={passwordResetLink()} label="Copy password reset link"/>
                                     </div>
-                                    {copied && (
-                                        <small className="text-success">Password reset link copied.</small>
-                                    )}
                                     {
                                         !timeUntilExpiry.endsWith("ago")
                                             ? <small className="text-warning">
