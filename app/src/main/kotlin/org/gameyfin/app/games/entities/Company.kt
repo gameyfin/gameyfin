@@ -18,7 +18,7 @@ class Company(
     }
 
     override fun hashCode(): Int {
-        var result = id?.hashCode() ?: 0
+        var result = id.hashCode()
         result = 31 * result + name.hashCode()
         result = 31 * result + type.hashCode()
         return result

@@ -13,7 +13,7 @@ import javax.sql.DataSource
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class MigrationIntegrationTest {
 
     @Configuration

@@ -13,15 +13,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.repository.findByIdOrNull
-import reactor.core.publisher.Flux
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class CollectionServiceTest {
 
@@ -96,8 +91,8 @@ class CollectionServiceTest {
         stubGameIdsFrom(existing)
 
         val result = service.addGame(1L, 10L)
-        assertEquals(1, result.gameIds?.size)
-        assertEquals(10L, result.gameIds?.first())
+        assertEquals(1, result.gameIds.size)
+        assertEquals(10L, result.gameIds.first())
     }
 
     @Test
@@ -172,7 +167,7 @@ class CollectionServiceTest {
         every { repository.save(capture(entitySlot)) } answers {
             entitySlot.captured.apply { id = 5L; createdAt = Instant.now(); updatedAt = createdAt }
         }
-        val result = service.create(dto)
+        service.create(dto)
         verify { repository.save(any()) }
     }
 
@@ -219,7 +214,7 @@ class CollectionServiceTest {
 
         val result = service.removeGame(6L, 77L)
 
-        assertEquals(0, result.gameIds?.size ?: 0)
+        assertEquals(0, result.gameIds.size)
     }
 
     @Test
@@ -231,18 +226,20 @@ class CollectionServiceTest {
 
     @Test
     fun `companion events emit and subscribe`() {
-        val flux: Flux<List<CollectionEvent>> = CollectionService.subscribe().take(1)
+        // Integration tests may have emitted other events into the shared broadcaster.
+        val flux = CollectionService.subscribe().flatMapIterable { it }
+            .filter { it.id == -2001L || it.id == -2002L }.take(2).collectList()
         val now = Instant.now()
         val dto = CollectionDto(1L, now, now, "n", null, emptyList(), CollectionMetadataDto(true, 1, emptyMap()))
-        CollectionService.emit(CollectionEvent(EntityEventType.CREATED, 1L, collection = dto))
-        CollectionService.emit(CollectionEvent(EntityEventType.DELETED, 2L))
-        val batch = flux.blockFirst(Duration.ofSeconds(2))
+        CollectionService.emit(CollectionEvent(EntityEventType.CREATED, -2001L, collection = dto))
+        CollectionService.emit(CollectionEvent(EntityEventType.DELETED, -2002L))
+        val batch = flux.block(Duration.ofSeconds(2))
         assertEquals(2, batch?.size)
     }
 
     private fun stubGameIdsFrom(collection: Collection) {
         every { repository.findGameIdsByCollectionIds(listOf(collection.id!!)) } answers {
-            collection.games.map { arrayOf<Any>(collection.id!!, it.id!!) }
+            collection.games.map { arrayOf(collection.id!!, it.id!!) }
         }
     }
 }

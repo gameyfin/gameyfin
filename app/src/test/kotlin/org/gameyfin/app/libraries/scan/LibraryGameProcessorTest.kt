@@ -51,7 +51,7 @@ class LibraryGameProcessorTest {
 
         every { gameService.matchFromFile(path, library) } returns matchedGame
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize(path.toString()) } returns 1024L
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns 1024L
         every { gameService.create(listOf(matchedGame)) } returns listOf(persistedGame)
 
         val result = libraryGameProcessor.processNewGame(path, library)
@@ -72,7 +72,7 @@ class LibraryGameProcessorTest {
         every { gameService.matchFromFile(path, library) } returns matchedGame
         every { imageService.downloadIfNew(coverImage) } just Runs
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize(path.toString()) } returns 1024L
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns 1024L
         every { gameService.create(listOf(matchedGame)) } returns listOf(persistedGame)
 
         libraryGameProcessor.processNewGame(path, library)
@@ -91,7 +91,7 @@ class LibraryGameProcessorTest {
         every { gameService.matchFromFile(path, library) } returns matchedGame
         every { imageService.downloadIfNew(headerImage) } just Runs
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize(path.toString()) } returns 1024L
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns 1024L
         every { gameService.create(listOf(matchedGame)) } returns listOf(persistedGame)
 
         libraryGameProcessor.processNewGame(path, library)
@@ -110,7 +110,7 @@ class LibraryGameProcessorTest {
 
         every { gameService.matchFromFile(path, library) } returns matchedGame
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize(path.toString()) } returns 1024L
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns 1024L
         every { gameService.create(listOf(matchedGame)) } returns listOf(persistedGame)
 
         libraryGameProcessor.processNewGame(path, library)
@@ -129,13 +129,13 @@ class LibraryGameProcessorTest {
 
         every { gameService.matchFromFile(path, library) } returns matchedGame
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize(path.toString()) } returns expectedSize
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns expectedSize
         every { gameService.create(listOf(matchedGame)) } returns listOf(persistedGame)
 
         libraryGameProcessor.processNewGame(path, library)
 
         assertEquals(expectedSize, matchedGame.metadata.fileSize)
-        verify(exactly = 1) { filesystemService.calculateFileSize(path.toString()) }
+        verify(exactly = 1) { filesystemService.calculateFileSize(path.toString(), any()) }
     }
 
     @Test
@@ -148,7 +148,7 @@ class LibraryGameProcessorTest {
         every { gameService.matchFromFile(path, library) } returns matchedGame
         every { imageService.downloadIfNew(coverImage) } just Runs
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize(path.toString()) } returns 1024L
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns 1024L
         every { gameService.create(listOf(matchedGame)) } throws RuntimeException("Persistence error")
         every { imageService.deleteImageIfUnused(coverImage) } just Runs
 
@@ -168,7 +168,7 @@ class LibraryGameProcessorTest {
 
         every { gameService.matchFromFile(path, library) } returns matchedGame
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize(path.toString()) } returns 1024L
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns 1024L
         every { gameService.create(listOf(matchedGame)) } throws RuntimeException("Persistence error")
         every { imageService.deleteImageIfUnused(any()) } throws RuntimeException("Cleanup error")
 
@@ -184,7 +184,7 @@ class LibraryGameProcessorTest {
 
         every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize("/path/to/game") } returns 1024L
+        every { filesystemService.calculateFileSize("/path/to/game", any()) } returns 1024L
 
         val result = libraryGameProcessor.processExistingGame(game)
 
@@ -213,7 +213,7 @@ class LibraryGameProcessorTest {
         every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(coverImage) } just Runs
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize("/path/to/game") } returns 1024L
+        every { filesystemService.calculateFileSize("/path/to/game", any()) } returns 1024L
 
         libraryGameProcessor.processExistingGame(game)
 
@@ -228,12 +228,12 @@ class LibraryGameProcessorTest {
 
         every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize("/path/to/game") } returns newSize
+        every { filesystemService.calculateFileSize("/path/to/game", any()) } returns newSize
 
         libraryGameProcessor.processExistingGame(game)
 
         assertEquals(newSize, updatedGame.metadata.fileSize)
-        verify(exactly = 1) { filesystemService.calculateFileSize("/path/to/game") }
+        verify(exactly = 1) { filesystemService.calculateFileSize("/path/to/game", any()) }
     }
 
     @Test
@@ -245,7 +245,7 @@ class LibraryGameProcessorTest {
         every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(coverImage) } just Runs
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize("/path/to/game") } throws RuntimeException("File error")
+        every { filesystemService.calculateFileSize("/path/to/game", any()) } throws RuntimeException("File error")
         every { imageService.deleteImageIfUnused(coverImage) } just Runs
 
         assertThrows(RuntimeException::class.java) {
@@ -275,7 +275,7 @@ class LibraryGameProcessorTest {
         libraryGameProcessor.processExistingGame(game)
 
         verify(exactly = 0) { imageService.downloadIfNew(any()) }
-        verify(exactly = 0) { filesystemService.calculateFileSize(any()) }
+        verify(exactly = 0) { filesystemService.calculateFileSize(any(), any()) }
     }
 
     @Test
@@ -292,7 +292,7 @@ class LibraryGameProcessorTest {
 
         every { gameService.updateMetadata(game) } returns updatedGame
         every { imageService.downloadIfNew(any()) } just Runs
-        every { filesystemService.calculateFileSize("/path/to/game") } returns 1024L
+        every { filesystemService.calculateFileSize("/path/to/game", any()) } returns 1024L
 
         libraryGameProcessor.processExistingGame(game)
 
@@ -309,7 +309,7 @@ class LibraryGameProcessorTest {
         val persistedGame = createTestGame(1L, path.toString())
 
         every { gameService.matchFromFile(path, library) } returns matchedGame
-        every { filesystemService.calculateFileSize(path.toString()) } returns 1024L
+        every { filesystemService.calculateFileSize(path.toString(), any()) } returns 1024L
         every { gameService.create(listOf(matchedGame)) } returns listOf(persistedGame)
 
         val result = libraryGameProcessor.processNewGame(path, library)

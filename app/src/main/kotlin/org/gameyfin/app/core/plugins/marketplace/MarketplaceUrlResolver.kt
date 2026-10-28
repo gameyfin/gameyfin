@@ -31,7 +31,8 @@ object MarketplaceUrlResolver {
 
         // "host:port/path" must not be mistaken for a URL with scheme "host", so a scheme is only detected if it is
         // followed by a slash (e.g. "https://..." or "file:/...")
-        val withScheme = if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:/").containsMatchIn(trimmed)) trimmed else "https://$trimmed"
+        val withScheme =
+            if (Regex("^[a-zA-Z][a-zA-Z0-9+.-]*:/").containsMatchIn(trimmed)) trimmed else "https://$trimmed"
 
         val uri = try {
             URI(withScheme).normalize()

@@ -259,7 +259,7 @@ class MarketplaceHttpClientTest {
 
     @Test
     fun `reads file URLs when insecure URLs are allowed`() {
-        val file = tempDir.resolve("plugins.json")
+        val file = tempDir.resolve("plugins with spaces #1.json")
         file.writeText("""[{"id":"a"}]""")
         assertEquals("""[{"id":"a"}]""", client.getString(file.toUri(), 1024))
     }

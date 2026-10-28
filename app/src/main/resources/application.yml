@@ -85,6 +85,10 @@ spring:
     fs.filesystem-root: ./data/
   mvc:
     async.request-timeout: 0
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 100MB
 
 vaadin:
   # To improve the performance during development.
@@ -95,3 +99,12 @@ vaadin:
     - dev.hilla
   pnpm:
     enable: false
+
+springdoc:
+  packages-to-scan: org.gameyfin.app.api.v1
+  paths-to-match: /v1/**
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    persist-authorization: false

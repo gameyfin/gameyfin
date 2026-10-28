@@ -2,11 +2,7 @@ package org.gameyfin.app.core.backup
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
-import org.gameyfin.app.core.tasks.TaskAction
-import org.gameyfin.app.core.tasks.TaskAlreadyRunningException
-import org.gameyfin.app.core.tasks.TaskDefinition
-import org.gameyfin.app.core.tasks.TaskRegistry
-import org.gameyfin.app.core.tasks.TaskRunService
+import org.gameyfin.app.core.tasks.*
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.media.Image
@@ -103,7 +99,12 @@ class ImageRecoveryService(
      */
     fun start() {
         try {
-            taskRunService.start(TASK_KEY, TaskTrigger.SYSTEM, displayName = "Restoring missing images", exclusive = true) {
+            taskRunService.start(
+                TASK_KEY,
+                TaskTrigger.SYSTEM,
+                displayName = "Restoring missing images",
+                exclusive = true
+            ) {
                 val result = recoverMissingImages(it)
                 storage.clearPendingImageRecovery()
                 result
@@ -236,8 +237,7 @@ class ImageRecoveryService(
         val request = HttpRequest.newBuilder(uri).timeout(Duration.ofSeconds(60)).GET().build()
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
         response.body().use { body ->
-            val status = response.statusCode()
-            return when (status) {
+            return when (val status = response.statusCode()) {
                 in 200..299 -> {
                     imageService.restoreContent(image, body)
                     RecoveryResult.RESTORED

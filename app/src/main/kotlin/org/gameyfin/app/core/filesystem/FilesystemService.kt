@@ -6,7 +6,6 @@ import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.libraries.entities.Library
 import org.springframework.stereotype.Service
-import java.io.File
 import java.io.IOException
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
@@ -140,15 +139,41 @@ class FilesystemService(
         )
     }
 
-    fun calculateFileSize(path: String): Long {
+    /** Resolve and validate a client path against canonical library directories. */
+    fun validateGamePath(path: String, library: Library): Path {
+        val input = Path(path)
+        require(input.isAbsolute) { "Path must be absolute" }
+
+        // Resolve the original path so links are resolved before any '..' components.
+        // Check and return the same canonical path that callers will use. Path.startsWith
+        // compares complete components, preventing sibling-prefix matches.
+        try {
+            val canonicalPath = input.toRealPath()
+            for (directory in library.directories) {
+                val canonicalRoot = Path(directory.internalPath).toRealPath()
+                if (canonicalPath != canonicalRoot && canonicalPath.startsWith(canonicalRoot)) {
+                    return canonicalPath
+                }
+            }
+        } catch (e: IOException) {
+            throw IllegalArgumentException("Path must refer to an accessible file or directory inside the library", e)
+        } catch (e: SecurityException) {
+            throw IllegalArgumentException("Path must refer to an accessible file or directory inside the library", e)
+        }
+        throw IllegalArgumentException("Path must refer to an accessible file or directory inside the library")
+    }
+
+    /** Recheck the library boundary at use time, including paths loaded from stored game metadata. */
+    fun calculateFileSize(path: String, library: Library): Long {
         return try {
-            val file = File(path)
-            if (file.isFile) {
-                file.length()
-            } else if (file.isDirectory) {
+            val file = validateGamePath(path, library)
+            val attributes = Files.readAttributes(file, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
+            if (attributes.isRegularFile) {
+                attributes.size()
+            } else if (attributes.isDirectory) {
                 // Files.walkFileTree does not follow symlinks, so cyclic links can't cause endless traversal
                 var total = 0L
-                Files.walkFileTree(file.toPath(), object : SimpleFileVisitor<Path>() {
+                Files.walkFileTree(file, object : SimpleFileVisitor<Path>() {
                     override fun visitFile(
                         f: Path,
                         attrs: BasicFileAttributes

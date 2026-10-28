@@ -213,7 +213,7 @@ class ImageServiceTest {
 
         mockkStatic(TikaInputStream::class)
         val testData = "test image data".toByteArray()
-        every { TikaInputStream.get(any<org.apache.tika.io.InputStreamFactory>()) } answers {
+        every { TikaInputStream.get(any<java.net.URL>()) } answers {
             TikaInputStream.get(ByteArrayInputStream(testData))
         }
 
@@ -244,7 +244,7 @@ class ImageServiceTest {
 
         mockkStatic(TikaInputStream::class)
         val testData = "test image data".toByteArray()
-        every { TikaInputStream.get(any<org.apache.tika.io.InputStreamFactory>()) } answers {
+        every { TikaInputStream.get(any<java.net.URL>()) } answers {
             TikaInputStream.get(ByteArrayInputStream(testData))
         }
 
@@ -267,7 +267,7 @@ class ImageServiceTest {
 
         mockkStatic(TikaInputStream::class)
         val testData = "test image data".toByteArray()
-        every { TikaInputStream.get(any<org.apache.tika.io.InputStreamFactory>()) } answers {
+        every { TikaInputStream.get(any<java.net.URL>()) } answers {
             TikaInputStream.get(ByteArrayInputStream(testData))
         }
 
@@ -289,7 +289,7 @@ class ImageServiceTest {
 
         mockkStatic(TikaInputStream::class)
         val testData = "test image data".toByteArray()
-        every { TikaInputStream.get(any<org.apache.tika.io.InputStreamFactory>()) } answers {
+        every { TikaInputStream.get(any<java.net.URL>()) } answers {
             TikaInputStream.get(ByteArrayInputStream(testData))
         }
 

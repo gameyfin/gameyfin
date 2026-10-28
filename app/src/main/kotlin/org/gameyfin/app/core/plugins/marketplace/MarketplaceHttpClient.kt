@@ -14,7 +14,6 @@ import java.net.http.HttpResponse
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
-import kotlin.io.path.Path
 import kotlin.io.path.fileSize
 import kotlin.io.path.outputStream
 
@@ -87,7 +86,7 @@ class MarketplaceHttpClient(
         checkAllowed(uri)
 
         if (uri.scheme.equals("file", ignoreCase = true)) {
-            val path = Path(uri.path)
+            val path = Path.of(uri)
             if (Files.size(path) > maxBytes) throw IOException("File '$uri' exceeds the maximum size of $maxBytes bytes")
             Files.newInputStream(path).use { copyLimited(it, output, maxBytes, uri) }
             return

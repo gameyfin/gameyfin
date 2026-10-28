@@ -84,6 +84,12 @@ class GameRequestService(
     }
 
     fun createRequest(gameRequest: GameRequestCreationDto) {
+        createEntity(gameRequest)
+    }
+
+    fun createReturningId(gameRequest: GameRequestCreationDto): Long = createEntity(gameRequest).id!!
+
+    private fun createEntity(gameRequest: GameRequestCreationDto): GameRequest {
         if (config.get(ConfigProperties.Requests.Games.Enabled) != true) {
             throw EndpointException("Game requests are disabled")
         }
@@ -137,7 +143,7 @@ class GameRequestService(
             }
         )
 
-        gameRequestRepository.save(newGameRequest)
+        return gameRequestRepository.save(newGameRequest)
     }
 
     fun deleteRequest(id: Long) {
@@ -148,7 +154,10 @@ class GameRequestService(
         val currentUser = auth?.let { userService.getByUsername(it.name) }
         val requester = gameRequest.requester
 
-        if (auth?.isAdmin() != true && (requester == null || requester.id != currentUser?.id)) {
+        val serviceMayDelete = auth is org.gameyfin.app.api.security.ApiAuthentication &&
+                auth.actor.kind == org.gameyfin.app.api.security.CredentialKind.SERVICE &&
+                auth.authorities.any { it.authority == org.gameyfin.app.api.security.ApiScope.REQUESTS_DELETE.authority }
+        if (!serviceMayDelete && auth?.isAdmin() != true && (requester == null || requester.id != currentUser?.id)) {
             throw EndpointException("Only the requester or an admin can delete a game request")
         }
 

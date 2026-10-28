@@ -32,7 +32,7 @@ class LibraryGameProcessor(
             downloadImagesForGame(game)
 
             // Calculate file size
-            game.metadata.fileSize = filesystemService.calculateFileSize(game.metadata.path)
+            game.metadata.fileSize = filesystemService.calculateFileSize(game.metadata.path, game.library)
 
             // Persist the game
             val persisted = gameService.create(listOf(game)).first()
@@ -56,7 +56,7 @@ class LibraryGameProcessor(
                 // Download any images now associated with the game
                 downloadImagesForGame(updated)
                 // Recalculate file size (in case files changed)
-                updated.metadata.fileSize = filesystemService.calculateFileSize(updated.metadata.path)
+                updated.metadata.fileSize = filesystemService.calculateFileSize(updated.metadata.path, updated.library)
                 // No explicit save needed; entity is managed in this transaction and will be flushed on commit
             }
             return updated

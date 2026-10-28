@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2.6.0-public-api
+      author: gameyfin
+      changes:
+        - sql:
+            sql: >
+              CREATE TABLE API_CREDENTIAL (
+                ID VARCHAR(255) PRIMARY KEY,
+                KIND VARCHAR(255) NOT NULL,
+                NAME VARCHAR(100) NOT NULL,
+                SECRET_DIGEST VARCHAR(64) NOT NULL,
+                OWNER_ID BIGINT REFERENCES USERS(ID) ON DELETE CASCADE,
+                CREATOR_ID BIGINT REFERENCES USERS(ID) ON DELETE SET NULL,
+                CREATED_AT TIMESTAMP WITH TIME ZONE NOT NULL,
+                EXPIRES_AT TIMESTAMP WITH TIME ZONE,
+                REVOKED_AT TIMESTAMP WITH TIME ZONE,
+                LAST_USED_AT TIMESTAMP WITH TIME ZONE,
+                CONSTRAINT CK_API_CREDENTIAL_OWNER CHECK
+                  ((KIND = 'PERSONAL' AND OWNER_ID IS NOT NULL) OR (KIND = 'SERVICE' AND OWNER_ID IS NULL))
+              )
+        - sql:
+            sql: >
+              CREATE TABLE API_CREDENTIAL_SCOPE (
+                CREDENTIAL_ID VARCHAR(255) NOT NULL REFERENCES API_CREDENTIAL(ID) ON DELETE CASCADE,
+                SCOPE VARCHAR(255) NOT NULL,
+                PRIMARY KEY (CREDENTIAL_ID, SCOPE)
+              )
+        - createIndex:
+            tableName: API_CREDENTIAL
+            indexName: IDX_API_CREDENTIAL_OWNER
+            columns:
+              - column:
+                  name: OWNER_ID
+        - addColumn:
+            tableName: GAME_FIELD_SOURCE
+            columns:
+              - column:
+                  name: API_CREDENTIAL_ID
+                  type: varchar(255)
+              - column:
+                  name: API_CREDENTIAL_NAME
+                  type: varchar(100)

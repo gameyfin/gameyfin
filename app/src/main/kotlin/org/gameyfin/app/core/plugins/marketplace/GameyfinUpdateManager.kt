@@ -225,6 +225,7 @@ class GameyfinUpdateManager(
      * @return the state of the local version of the plugin or null if there is none
      */
     fun uninstall(pluginId: String): PluginState? {
+        0
         return lock.withLock {
             val pluginWrapper = pluginManager.getPlugin(pluginId)
                 ?: throw IllegalArgumentException("Plugin '$pluginId' is not installed")

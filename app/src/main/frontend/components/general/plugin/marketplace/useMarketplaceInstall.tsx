@@ -1,7 +1,6 @@
 import React, {useState} from "react";
 import {toast, useOverlayState} from "@heroui/react";
 import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
-import PluginState from "Frontend/generated/org/pf4j/PluginState";
 import {installPlugin} from "Frontend/state/MarketplaceState";
 import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 
@@ -18,22 +17,11 @@ export function useMarketplaceInstall(plugin: MarketplacePluginDto) {
         const isUpdate = plugin.installedVersion != null;
         setIsInstalling(true);
         try {
-            const installed = await installPlugin(plugin.marketplaceId, plugin.id, version);
+            await installPlugin(plugin.marketplaceId, plugin.id, version);
             confirmModal.close();
-
-            if (installed && installed.state !== PluginState.STARTED) {
-                toast.warning(`${plugin.name} ${isUpdate ? "updated" : "installed"}`, {
-                    description: installed.state === PluginState.DISABLED
-                        ? `Version ${installed.version} is installed but disabled. ` +
-                        "Review and enable it in the \"Installed\" tab."
-                        : `Version ${installed.version} is installed but could not be started` +
-                        (installed.failureReason ? `: ${installed.failureReason}` : ".")
-                });
-            } else {
-                toast.success(`${plugin.name} ${isUpdate ? "updated" : "installed"}`, {
-                    description: `Version ${installed?.version ?? version ?? plugin.latestCompatibleVersion} is now active.`
-                });
-            }
+            toast.info(`${plugin.name} ${isUpdate ? "update" : "installation"} started`, {
+                description: "Progress is shown in the active tasks popover."
+            });
         } catch (e: any) {
             toast.danger(`Failed to install ${plugin.name}`, {description: e?.message});
         } finally {

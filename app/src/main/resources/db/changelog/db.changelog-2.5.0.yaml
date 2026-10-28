@@ -1,0 +1,108 @@
+databaseChangeLog:
+  # Preserve the identity of changesets originally defined in the master changelog.
+  - logicalFilePath: db/changelog/db.changelog-master.yaml
+  - changeSet:
+      id: 2.5.0-tasks
+      author: grimsi
+      comment: >
+        Generic task framework: schedules and settings of tasks as well as the history of task runs.
+        Replaces the unused JOB_RUN_RESULT table.
+      changes:
+        - dropTable:
+            tableName: JOB_RUN_RESULT
+        - createTable:
+            tableName: TASK_SCHEDULE
+            columns:
+              - column:
+                  name: TASK_KEY
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: CRON
+                  type: varchar(255)
+              - column:
+                  name: ENABLED
+                  type: boolean
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: TASK_SETTING
+            columns:
+              - column:
+                  name: TASK_KEY
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: SETTING_KEY
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: SETTING_VALUE
+                  type: varchar(4000)
+        - addPrimaryKey:
+            tableName: TASK_SETTING
+            columnNames: TASK_KEY, SETTING_KEY
+        - createTable:
+            tableName: TASK_RUN
+            columns:
+              - column:
+                  name: ID
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: TASK_KEY
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: DISPLAY_NAME
+                  type: varchar(1000)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: LINK
+                  type: varchar(1000)
+              - column:
+                  name: TRIGGER_TYPE
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STATUS
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STARTED_AT
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: FINISHED_AT
+                  type: timestamp
+              - column:
+                  name: SUMMARY
+                  type: varchar(4000)
+              - column:
+                  name: ERROR_MESSAGE
+                  type: varchar(4000)
+        - createIndex:
+            tableName: TASK_RUN
+            indexName: IDX_TASK_RUN_TASK_KEY_STARTED_AT
+            columns:
+              - column:
+                  name: TASK_KEY
+              - column:
+                  name: STARTED_AT
+        - createIndex:
+            tableName: TASK_RUN
+            indexName: IDX_TASK_RUN_STARTED_AT
+            columns:
+              - column:
+                  name: STARTED_AT

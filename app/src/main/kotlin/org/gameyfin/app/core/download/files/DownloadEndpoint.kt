@@ -46,8 +46,9 @@ class DownloadEndpoint(
 
                 val result = when (val download = downloadService.getDownload(game.metadata.path, provider)) {
                     is FileDownload -> {
-                        val baseFilename = game.title?.replace("[\\\\/:*?\"<>|]".toRegex(), "") // Remove common invalid filename chars
-                            ?: "download"
+                        val baseFilename =
+                            game.title?.replace("[\\\\/:*?\"<>|]".toRegex(), "") // Remove common invalid filename chars
+                                ?: "download"
 
                         val filename = if (download.fileExtension != null) {
                             "$baseFilename.${download.fileExtension}"
@@ -66,7 +67,7 @@ class DownloadEndpoint(
                             )
 
                         val downloadSize = download.size
-                        if(downloadSize != null) {
+                        if (downloadSize != null) {
                             responseBuilder.contentLength(downloadSize)
                         }
 
@@ -87,6 +88,7 @@ class DownloadEndpoint(
                     }
                 }
 
+                @Suppress("UsePropertyAccessSyntax")
                 deferredResult.setResult(result)
             } catch (e: Exception) {
                 deferredResult.setErrorResult(e)

@@ -25,6 +25,14 @@ sealed class ConfigProperties<T : Serializable>(
             "When enabled, anyone can browse (and potentially download) games **without logging in**.",
             false
         )
+
+        data object SwaggerUiEnabled : ConfigProperties<Boolean>(
+            Boolean::class,
+            "security.swagger-ui-enabled",
+            "Enable interactive API documentation",
+            "Makes the API documentation and OpenAPI document publicly accessible under this link: [Swagger UI](/swagger-ui.html)",
+            false
+        )
     }
 
     /** Libraries */

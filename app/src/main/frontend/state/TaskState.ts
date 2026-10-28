@@ -74,14 +74,13 @@ function handleUpdate(run: TaskRunDto) {
  */
 export function trackRun(run: TaskRunDto) {
     taskState.tracked[run.id] = true;
-    if (!taskState.runs[run.id]) {
+    // A fast operation may finish before its response or first subscription update arrives.
+    const current = taskState.runs[run.id];
+    const finished = current && !isRunActive(current) ? current : !isRunActive(run) ? run : undefined;
+    if (finished) {
+        taskState.runs[run.id] = {...finished, status: TaskRunStatus.IN_PROGRESS};
+        handleUpdate(finished);
+    } else if (!current) {
         taskState.runs[run.id] = run;
-    } else {
-        // The run may already have finished before the response arrived
-        const current = taskState.runs[run.id];
-        if (!isRunActive(current)) {
-            taskState.runs[run.id] = run;
-            handleUpdate(current);
-        }
     }
 }

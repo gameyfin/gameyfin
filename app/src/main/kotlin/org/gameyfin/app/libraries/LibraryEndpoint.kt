@@ -6,6 +6,7 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
 import org.gameyfin.app.core.security.isCurrentUserAdmin
+import org.gameyfin.app.core.tasks.DeletionTaskService
 import org.gameyfin.app.libraries.dto.LibraryAdminDto
 import org.gameyfin.app.libraries.dto.LibraryEvent
 import org.gameyfin.app.libraries.dto.LibrarySyncDto
@@ -20,6 +21,7 @@ import java.time.Instant
 class LibraryEndpoint(
     private val libraryService: LibraryService,
     private val libraryScanService: LibraryScanService,
+    private val deletionTaskService: DeletionTaskService,
 ) {
     fun subscribeToLibraryEvents(): Flux<out List<LibraryEvent>> {
         return if (isCurrentUserAdmin()) {
@@ -57,5 +59,5 @@ class LibraryEndpoint(
     fun updateLibraries(libraries: Collection<LibraryUpdateDto>) = libraryService.update(libraries)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun deleteLibrary(libraryId: Long) = libraryService.delete(libraryId)
+    fun deleteLibrary(libraryId: Long) = deletionTaskService.deleteLibrary(libraryId)
 }

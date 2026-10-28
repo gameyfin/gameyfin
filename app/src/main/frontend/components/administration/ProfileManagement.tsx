@@ -1,6 +1,6 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/input/Input";
-import {toast, Button, Input as HeroUiInput, Tooltip, Spinner} from "@heroui/react";
+import {Button, Input as HeroUiInput, Spinner, toast, Tooltip} from "@heroui/react";
 import {Form, Formik, FormikProps} from "formik";
 import {ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
@@ -63,124 +63,123 @@ export default function ProfileManagement() {
         }
     }
 
-    return (
-        <>
-            <Formik
-                initialValues={{
-                    username: auth.state.user?.username,
-                    email: auth.state.user?.email,
-                    newPassword: "",
-                    passwordRepeat: ""
-                }}
-                onSubmit={handleSubmit}
-                validationSchema={Yup.object({
-                    username: Yup.string()
-                        .required('Required'),
-                    newPassword: Yup.string()
-                        .min(8, 'Password must be at least 8 characters long'),
-                    email: Yup.string()
-                        .email()
-                        .required('Required'),
-                    passwordRepeat: Yup.string()
-                        .equals([Yup.ref('newPassword')], 'Passwords do not match')
-                })}
-            >
-                {(formik: FormikProps<ProfileFormValues>) => (
-                    <Form>
-                        <div className="flex flex-row grow justify-between mb-8">
-                            <h2 className="text-2xl font-bold">My Profile</h2>
-                            {auth.state.user?.managedBySso &&
-                                <p className="text-warning">Your account is managed externally.</p>}
+    const saveButtonContent = configSaved ? <CheckIcon/> : "Save";
 
-                            <div className="flex flex-row items-center gap-4">
-                                {formik.values.newPassword.length > 0 &&
-                                    <SmallInfoField icon={InfoIcon}
-                                                    message="You will be logged out of all current sessions"
-                                                    className="text-muted"
-                                    />
-                                }
-                                <Button
-                                    variant="primary"
-                                    isPending={formik.isSubmitting}
-                                    isDisabled={!formik.dirty || formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
-                                    type="submit"
-                                >
-                                    {formik.isSubmitting ? <Spinner size="sm" color="current"/> : configSaved ? <CheckIcon/> : "Save"}
-                                </Button>
+    return (<Formik
+            initialValues={{
+                username: auth.state.user?.username,
+                email: auth.state.user?.email,
+                newPassword: "",
+                passwordRepeat: ""
+            }}
+            onSubmit={handleSubmit}
+            validationSchema={Yup.object({
+                username: Yup.string()
+                    .required('Required'),
+                newPassword: Yup.string()
+                    .min(8, 'Password must be at least 8 characters long'),
+                email: Yup.string()
+                    .email()
+                    .required('Required'),
+                passwordRepeat: Yup.string()
+                    .equals([Yup.ref('newPassword')], 'Passwords do not match')
+            })}
+        >
+            {(formik: FormikProps<ProfileFormValues>) => (
+                <Form>
+                    <div className="flex flex-row grow justify-between mb-8">
+                        <h2 className="text-2xl font-bold">My Profile</h2>
+                        {auth.state.user?.managedBySso &&
+                            <p className="text-warning">Your account is managed externally.</p>}
+
+                        <div className="flex flex-row items-center gap-4">
+                            {formik.values.newPassword.length > 0 &&
+                                <SmallInfoField icon={InfoIcon}
+                                                message="You will be logged out of all current sessions"
+                                                className="text-muted"
+                                />
+                            }
+                            <Button
+                                variant="primary"
+                                isPending={formik.isSubmitting}
+                                isDisabled={!formik.dirty || formik.isSubmitting || configSaved || auth.state.user?.managedBySso}
+                                type="submit"
+                            >
+                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : saveButtonContent}
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-row flex-1 justify-between gap-16">
+                        <div className="flex flex-col basis-1/4 mt-8 gap-4">
+                            <div className="flex flex-row justify-center">
+                                <Avatar className="size-40 m-4 flex flex-row"/>
+                            </div>
+                            <div className="flex flex-row gap-2">
+                                <HeroUiInput type="file" accept="image/*" onChange={onFileSelected}
+                                             disabled={auth.state.user?.managedBySso}/>
+                                <Button onPress={() => uploadAvatar(avatar)} isDisabled={avatar == null}
+                                        variant="primary">Upload</Button>
+                                <Tooltip delay={0}>
+                                    <Tooltip.Trigger>
+                                        <Button onPress={removeAvatar} isIconOnly variant="danger"
+                                                isDisabled={auth.state.user?.managedBySso}><TrashIcon/></Button>
+                                    </Tooltip.Trigger>
+                                    <Tooltip.Content>
+                                        <p>Remove your current avatar</p>
+                                    </Tooltip.Content>
+                                </Tooltip>
                             </div>
                         </div>
 
-                        <div className="flex flex-row flex-1 justify-between gap-16">
-                            <div className="flex flex-col basis-1/4 mt-8 gap-4">
-                                <div className="flex flex-row justify-center">
-                                    <Avatar className="size-40 m-4 flex flex-row"/>
-                                </div>
-                                <div className="flex flex-row gap-2">
-                                    <HeroUiInput type="file" accept="image/*" onChange={onFileSelected}
-                                                 disabled={auth.state.user?.managedBySso}/>
-                                    <Button onPress={() => uploadAvatar(avatar)} isDisabled={avatar == null}
-                                            variant="primary">Upload</Button>
+                        <div className="flex flex-col grow">
+                            <Section title="Personal information"/>
+                            <Input name="username" label="Username" type="text" autoComplete="username"
+                                   isDisabled={auth.state.user?.managedBySso}/>
+                            <div className="flex flex-row gap-4">
+                                <Input name="email" label="Email" type="email" autoComplete="email"
+                                       isDisabled={auth.state.user?.managedBySso || !messagesEnabled}/>
+                                {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&
                                     <Tooltip delay={0}>
                                         <Tooltip.Trigger>
-                                            <Button onPress={removeAvatar} isIconOnly variant="danger"
-                                                    isDisabled={auth.state.user?.managedBySso}><TrashIcon/></Button>
+                                            <Button isIconOnly
+                                                    onPress={() => {
+                                                        EmailConfirmationEndpoint.resendEmailConfirmation().then(
+                                                            () => toast.success("Email confirmation message sent", {
+                                                                description: "Please check your inbox"
+                                                            })
+                                                        )
+                                                    }}
+                                                    isDisabled={!messagesEnabled}
+                                                    variant="ghost"
+                                                    className="size-14"
+                                            >
+                                                <ArrowCounterClockwiseIcon size={26}/>
+                                            </Button>
                                         </Tooltip.Trigger>
                                         <Tooltip.Content>
-                                            <p>Remove your current avatar</p>
+                                            <p>Resend email confirmation message</p>
                                         </Tooltip.Content>
                                     </Tooltip>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col grow">
-                                <Section title="Personal information"/>
-                                <Input name="username" label="Username" type="text" autoComplete="username"
-                                       isDisabled={auth.state.user?.managedBySso}/>
-                                <div className="flex flex-row gap-4">
-                                    <Input name="email" label="Email" type="email" autoComplete="email"
-                                           isDisabled={auth.state.user?.managedBySso || !messagesEnabled}/>
-                                    {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&
-                                        <Tooltip delay={0}>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly
-                                                        onPress={() => {
-                                                            EmailConfirmationEndpoint.resendEmailConfirmation().then(
-                                                                () => toast.success("Email confirmation message sent", {
-                                                                    description: "Please check your inbox"
-                                                                })
-                                                            )
-                                                        }}
-                                                        isDisabled={!messagesEnabled}
-                                                        variant="ghost"
-                                                        className="size-14"
-                                                >
-                                                    <ArrowCounterClockwiseIcon size={26}/>
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>
-                                                <p>Resend email confirmation message</p>
-                                            </Tooltip.Content>
-                                        </Tooltip>
-                                    }
-                                </div>
-                                {!messagesEnabled &&
-                                    <div className="flex flex-row gap-2 text-warning -mt-5">
-                                        <InfoIcon/>
-                                        <small>
-                                            Email services are disabled. Please contact your administrator.
-                                        </small>
-                                    </div>
                                 }
-                                <Section title="Security"/>
-                                <Input name="newPassword" label="New Password" type="password"
-                                       autoComplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
-                                <Input name="passwordRepeat" label="Repeat password" type="password"
-                                       autoComplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
                             </div>
+                            {!messagesEnabled &&
+                                <div className="flex flex-row gap-2 text-warning -mt-5">
+                                    <InfoIcon/>
+                                    <small>
+                                        Email services are disabled. Please contact your administrator.
+                                    </small>
+                                </div>
+                            }
+                            <Section title="Security"/>
+                            <Input name="newPassword" label="New Password" type="password"
+                                   autoComplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
+                            <Input name="passwordRepeat" label="Repeat password" type="password"
+                                   autoComplete="new-password" isDisabled={auth.state.user?.managedBySso}/>
                         </div>
-                    </Form>
-                )}
-            </Formik>
-        </>
+                    </div>
+                </Form>
+            )}
+        </Formik>
     );
 }

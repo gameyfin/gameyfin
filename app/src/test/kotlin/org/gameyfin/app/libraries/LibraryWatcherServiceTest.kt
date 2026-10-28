@@ -280,7 +280,7 @@ class LibraryWatcherServiceTest {
         val newFileSize = 2000L
         every { libraryRepository.findAll() } returns listOf(library)
         every { libraryCoreService.getWithGamesAndIgnoredPaths(1L) } returns library
-        every { filesystemService.calculateFileSize(gameFile.toString()) } returns newFileSize
+        every { filesystemService.calculateFileSize(gameFile.toString(), library) } returns newFileSize
         every { gameRepository.save(game) } returns game
 
         libraryWatcherService.start()
@@ -295,7 +295,7 @@ class LibraryWatcherServiceTest {
         Thread.sleep(500)
 
         // Verify file size was recalculated
-        verify(atLeast = 1) { filesystemService.calculateFileSize(gameFile.toString()) }
+        verify(atLeast = 1) { filesystemService.calculateFileSize(gameFile.toString(), library) }
     }
 
     @Test

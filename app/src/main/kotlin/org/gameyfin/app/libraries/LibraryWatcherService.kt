@@ -1,11 +1,11 @@
 package org.gameyfin.app.libraries
 
-import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.config.BOUNDED_EXECUTOR
 import org.gameyfin.app.core.events.LibraryCreatedEvent
 import org.gameyfin.app.core.events.LibraryDeletedEvent
 import org.gameyfin.app.core.events.LibraryFilesystemWatcherConfigUpdatedEvent
@@ -345,7 +345,7 @@ class LibraryWatcherService(
             if (gamesToUpdate.isNotEmpty()) {
                 log.debug { "Updating file size for ${gamesToUpdate.size} games: $fullPath" }
                 gamesToUpdate.forEach { game ->
-                    val newFileSize = filesystemService.calculateFileSize(game.metadata.path)
+                    val newFileSize = filesystemService.calculateFileSize(game.metadata.path, library)
                     if (game.metadata.fileSize != newFileSize) {
                         game.metadata.fileSize = newFileSize
                         gameRepository.save(game)
