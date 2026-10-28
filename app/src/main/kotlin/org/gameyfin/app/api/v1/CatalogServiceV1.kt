@@ -2,6 +2,7 @@ package org.gameyfin.app.api.v1
 
 import jakarta.persistence.criteria.JoinType
 import org.gameyfin.app.api.security.ApiAccess
+import org.gameyfin.app.api.security.ApiScope
 import org.gameyfin.app.collections.CollectionService
 import org.gameyfin.app.collections.dto.CollectionCreateDto
 import org.gameyfin.app.collections.dto.CollectionUpdateDto
@@ -185,7 +186,7 @@ class CatalogServiceV1(
         patch.directories?.let { directories ->
             validateDirectories(directories)
             if (library.directories.any { existing -> directories.none { it.internalPath == existing.internalPath } }) {
-                access.require("games:delete", admin = true)
+                access.require(ApiScope.GAMES_DELETE)
             }
         }
         libraryService.update(

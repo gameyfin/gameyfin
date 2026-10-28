@@ -3,6 +3,7 @@ package org.gameyfin.app.api.v1
 import io.swagger.v3.oas.annotations.Operation
 import jakarta.validation.Valid
 import org.gameyfin.app.api.security.ApiAccess
+import org.gameyfin.app.api.security.ApiScope
 import org.gameyfin.app.api.security.CredentialKind
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.requests.GameRequestRepository
@@ -33,10 +34,11 @@ class RequestControllerV1(
         description = "Requires requests:read. sort: id, title, createdAt or updatedAt."
     )
     fun list(
-        @RequestParam(defaultValue = "0") page: Int, @RequestParam(defaultValue = "50") size: Int,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "50") size: Int,
         @RequestParam(defaultValue = "id") sort: String
     ): PageV1<RequestV1> {
-        access.require("requests:read")
+        access.require(ApiScope.REQUESTS_READ)
         return repository.findAll(apiPage(page, size, sort, setOf("id", "title", "createdAt", "updatedAt")))
             .publicPage(::view)
     }
@@ -45,7 +47,7 @@ class RequestControllerV1(
     @Transactional(readOnly = true)
     @Operation(operationId = "getRequest", description = "Requires requests:read.")
     fun get(@PathVariable id: String): RequestV1 {
-        access.require("requests:read"); return view(entity(id))
+        access.require(ApiScope.REQUESTS_READ); return view(entity(id))
     }
 
     @PostMapping
@@ -74,7 +76,7 @@ class RequestControllerV1(
         description = "Requires requests:write or an administrator personal token. Fulfilled requests cannot be changed."
     )
     fun status(@PathVariable id: String, @RequestBody input: RequestStatusV1): RequestV1 {
-        access.require("requests:write", true)
+        access.require(ApiScope.REQUESTS_WRITE)
         val request = entity(id)
         val status = apiEnum<GameRequestStatus>(input.status)
         check(request.status != GameRequestStatus.FULFILLED || status == request.status) { "Fulfilled requests cannot be changed" }
@@ -90,7 +92,7 @@ class RequestControllerV1(
         description = "Requires requests:delete. Personal tokens may delete their owner's requests; administrators may delete any request."
     )
     fun delete(@PathVariable id: String): ResponseEntity<Void> {
-        val actor = access.require("requests:delete")
+        val actor = access.require(ApiScope.REQUESTS_DELETE)
         val request = entity(id)
         if (actor.kind == CredentialKind.PERSONAL && !isCurrentUserAdmin() && request.requester?.id != actor.userId) {
             throw AccessDeniedException("Only the requester or an administrator may delete this request")

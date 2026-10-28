@@ -128,9 +128,9 @@ class ApiCredentialServiceTest {
         val (created, _) = created(true)
         SecurityContextHolder.getContext().authentication = service.authenticate(created.secret)
         val access = ApiAccess()
-        access.require("games:read")
-        assertFailsWith<AccessDeniedException> { access.require("games:write", true) }
-        assertFailsWith<AccessDeniedException> { access.require("games:delete", true) }
+        access.require(ApiScope.GAMES_READ)
+        assertFailsWith<AccessDeniedException> { access.require(ApiScope.GAMES_WRITE) }
+        assertFailsWith<AccessDeniedException> { access.require(ApiScope.GAMES_DELETE) }
         assertFailsWith<AccessDeniedException> { access.personal() }
     }
 

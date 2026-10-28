@@ -11,7 +11,8 @@ import java.time.LocalDate
 /** Unknown inputs must not be silently accepted when a client targets a newer contract. */
 abstract class StrictInputV1 {
     @JsonAnySetter
-    fun unknown(name: String) {
+    @Suppress("UNUSED_PARAMETER")
+    fun unknown(name: String, value: Any?) {
         throw IllegalArgumentException("Unknown input field: $name")
     }
 }

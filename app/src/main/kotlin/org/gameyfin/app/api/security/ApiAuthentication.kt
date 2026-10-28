@@ -19,8 +19,12 @@ class ApiPrincipal(
     override fun toString(): String = "ApiPrincipal($credentialId)"
 }
 
-class ApiAuthentication(val actor: ApiPrincipal, authorities: Collection<GrantedAuthority>) : AbstractAuthenticationToken(authorities) {
-    init { isAuthenticated = true }
+class ApiAuthentication(val actor: ApiPrincipal, authorities: Collection<GrantedAuthority>) :
+    AbstractAuthenticationToken(authorities) {
+    init {
+        isAuthenticated = true
+    }
+
     override fun getPrincipal(): ApiPrincipal = actor
     override fun getCredentials(): Any? = null
     override fun getName(): String = actor.name
@@ -31,13 +35,13 @@ class ApiAccess {
     fun principal(): ApiPrincipal = (getCurrentAuth() as? ApiAuthentication)?.actor
         ?: throw AccessDeniedException("API authentication required")
 
-    fun require(scope: String, admin: Boolean = false): ApiPrincipal {
-        check(scope in ApiScopes.all) { "Unknown API permission" }
+    fun require(scope: ApiScope): ApiPrincipal {
         val actor = principal()
         val auth = getCurrentAuth()!!
-        val allowed = if (actor.kind == CredentialKind.SERVICE) {
-            auth.authorities.any { it.authority == "SCOPE_$scope" }
-        } else if (admin) auth.isAdmin() else true
+        val allowed = when (actor.kind) {
+            CredentialKind.SERVICE -> auth.authorities.any { it.authority == scope.authority }
+            CredentialKind.PERSONAL -> !scope.adminOnly || auth.isAdmin()
+        }
         if (!allowed) throw AccessDeniedException("Missing permission: $scope")
         return actor
     }

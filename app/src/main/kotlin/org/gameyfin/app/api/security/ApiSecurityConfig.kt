@@ -27,8 +27,10 @@ import org.springframework.web.filter.OncePerRequestFilter
 class ApiSecurityConfig {
     @Bean
     @Order(0)
-    fun publicApiSecurity(http: HttpSecurity, credentials: ApiCredentialService,
-                          strategies: ObjectProvider<SecurityContextHolderStrategy>): SecurityFilterChain {
+    fun publicApiSecurity(
+        http: HttpSecurity, credentials: ApiCredentialService,
+        strategies: ObjectProvider<SecurityContextHolderStrategy>
+    ): SecurityFilterChain {
         val authenticationConverter = BearerTokenAuthenticationConverter().apply {
             setBearerTokenResolver(HeaderBearerTokenResolver("X-API-Key"))
         }
@@ -41,7 +43,14 @@ class ApiSecurityConfig {
         // Retain authentication across streaming/error dispatches of this request only.
         val contextRepository = RequestAttributeSecurityContextRepository()
         filter.setSecurityContextRepository(contextRepository)
-        filter.setAuthenticationEntryPoint { _, response, _ -> problem(response, 401, "unauthorized", "A valid X-API-Key header is required") }
+        filter.setAuthenticationEntryPoint { _, response, _ ->
+            problem(
+                response,
+                401,
+                "unauthorized",
+                "A valid X-API-Key header is required"
+            )
+        }
         http.securityMatcher("/v1", "/v1/**")
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .securityContext { it.securityContextRepository(contextRepository) }
@@ -50,7 +59,14 @@ class ApiSecurityConfig {
             .cors { it.disable() }
             .authorizeHttpRequests { it.anyRequest().authenticated() }
             .exceptionHandling {
-                it.authenticationEntryPoint { _, response, _ -> problem(response, 401, "unauthorized", "A valid X-API-Key header is required") }
+                it.authenticationEntryPoint { _, response, _ ->
+                    problem(
+                        response,
+                        401,
+                        "unauthorized",
+                        "A valid X-API-Key header is required"
+                    )
+                }
                 it.accessDeniedHandler { _, response, _ -> problem(response, 403, "forbidden", "Permission denied") }
             }
             .addFilterBefore(filter, AnonymousAuthenticationFilter::class.java)
@@ -62,7 +78,11 @@ class ApiSecurityConfig {
     fun apiDocumentationSecurity(http: HttpSecurity, config: ConfigService): SecurityFilterChain = http
         .securityMatcher("/v3/api-docs/**", "/v3/api-docs.yaml/**", "/swagger-ui/**", "/swagger-ui.html")
         .addFilterBefore(object : OncePerRequestFilter() {
-            override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
+            override fun doFilterInternal(
+                request: HttpServletRequest,
+                response: HttpServletResponse,
+                filterChain: FilterChain
+            ) {
                 if (config.get(ConfigProperties.Security.SwaggerUiEnabled) != true) {
                     response.status = HttpServletResponse.SC_NOT_FOUND
                     response.setHeader("Cache-Control", "no-store")

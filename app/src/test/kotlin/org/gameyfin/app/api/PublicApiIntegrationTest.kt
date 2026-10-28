@@ -5,6 +5,8 @@ import org.gameyfin.app.api.security.ApiCredential
 import org.gameyfin.app.api.security.ApiCredentialRepository
 import org.gameyfin.app.api.security.ApiCredentialService
 import org.gameyfin.app.api.security.CredentialKind
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameFieldApiSource
@@ -18,6 +20,7 @@ import org.gameyfin.app.requests.status.GameRequestStatus
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository
 import org.gameyfin.pluginapi.gamemetadata.Platform
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -49,9 +52,17 @@ import java.util.*
 import kotlin.test.*
 
 @SpringBootTest(
-    classes = [GameyfinApplication::class], webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["spring.datasource.url=jdbc:h2:mem:public-api;DB_CLOSE_DELAY=-1", "spring.datasource.username=sa", "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=validate", "management.server.port=0", "vaadin.productionMode=true", "vaadin.launch-browser=false"]
+    classes = [GameyfinApplication::class],
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = [
+        "spring.datasource.url=jdbc:h2:mem:public-api;DB_CLOSE_DELAY=-1",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.hibernate.ddl-auto=validate",
+        "management.server.port=0",
+        "vaadin.productionMode=true",
+        "vaadin.launch-browser=false"
+    ]
 )
 @Import(PublicApiIntegrationTest.ProductionEntities::class)
 class PublicApiIntegrationTest {
@@ -69,6 +80,7 @@ class PublicApiIntegrationTest {
 
     companion object {
         private val root = Files.createTempDirectory("gameyfin-api-test")
+
         @JvmStatic
         @DynamicPropertySource
         fun directories(properties: DynamicPropertyRegistry) {
@@ -80,23 +92,35 @@ class PublicApiIntegrationTest {
 
     @Autowired
     lateinit var environment: Environment
+
     @Autowired
     lateinit var credentials: ApiCredentialRepository
+
     @Qualifier("apiCredentialService")
     @Autowired
     lateinit var credentialService: ApiCredentialService
+
     @Autowired
     lateinit var users: UserRepository
+
     @Autowired
     lateinit var libraries: LibraryRepository
+
     @Autowired
     lateinit var games: GameRepository
+
     @Autowired
     lateinit var transactions: PlatformTransactionManager
+
     @Autowired
     lateinit var mapper: JsonMapper
+
     @Autowired
     lateinit var requests: GameRequestRepository
+
+    @Autowired
+    lateinit var configService: ConfigService
+
     private val client = HttpClient.newHttpClient()
 
     private fun request(
@@ -130,6 +154,12 @@ class PublicApiIntegrationTest {
             )
         )
         return ApiCredentialService.prefix(credential.kind) + credential.id + "." + secret
+    }
+
+    @BeforeEach
+    fun setup() {
+        //Enable Swagger UI for the integration tests, since it is disabled by default in production mode.
+        configService.set(ConfigProperties.Security.SwaggerUiEnabled, true)
     }
 
     @Test
@@ -221,9 +251,13 @@ class PublicApiIntegrationTest {
 
     @Test
     fun `user endpoints expose sensitive profile fields only to administrators`() {
-        val owner = users.save(User(username = "api-profile", email = "profile@example.test",
-            password = "private-password-hash", oidcProviderId = "private-subject", emailConfirmed = true,
-            enabled = true, roles = listOf(Role.ADMIN)))
+        val owner = users.save(
+            User(
+                username = "api-profile", email = "profile@example.test",
+                password = "private-password-hash", oidcProviderId = "private-subject", emailConfirmed = true,
+                enabled = true, roles = listOf(Role.ADMIN)
+            )
+        )
         val token = key(emptySet(), owner)
         val paths = listOf("/v1/users?size=200", "/v1/users/${owner.id}", "/v1/users/by-username/${owner.username}")
         for (role in listOf(Role.ADMIN, Role.SUPERADMIN, Role.USER)) {
@@ -233,7 +267,8 @@ class PublicApiIntegrationTest {
                 val response = request(path, token)
                 assertEquals(200, response.statusCode(), response.body())
                 val json = mapper.readTree(response.body())
-                val profile = if (path.contains("?")) json["items"].first { it["id"].asString() == owner.id.toString() } else json
+                val profile =
+                    if (path.contains("?")) json["items"].first { it["id"].asString() == owner.id.toString() } else json
                 assertEquals(owner.username, profile["username"].asString())
                 assertEquals(owner.id.toString(), profile["id"].asString())
                 val sensitive = setOf("email", "emailConfirmed", "enabled", "managedBySso", "roles")
@@ -261,7 +296,15 @@ class PublicApiIntegrationTest {
             val json = mapper.readTree(response.body())
             val profiles = if (path.contains("?")) json["items"].toList() else listOf(json)
             for (profile in profiles) {
-                for (field in setOf("email", "emailConfirmed", "enabled", "managedBySso", "roles", "password", "oidcProviderId")) {
+                for (field in setOf(
+                    "email",
+                    "emailConfirmed",
+                    "enabled",
+                    "managedBySso",
+                    "roles",
+                    "password",
+                    "oidcProviderId"
+                )) {
                     assertFalse(profile.has(field), field)
                 }
             }
@@ -292,16 +335,25 @@ class PublicApiIntegrationTest {
 
     @Test
     fun `regenerated credentials persist settings reject old secrets and can be deleted after revocation`() {
-        val owner = users.save(User(username = "api-rotation-admin", email = "rotation@example.test",
-            enabled = true, roles = listOf(Role.ADMIN)))
+        val owner = users.save(
+            User(
+                username = "api-rotation-admin", email = "rotation@example.test",
+                enabled = true, roles = listOf(Role.ADMIN)
+            )
+        )
         org.springframework.security.core.context.SecurityContextHolder.getContext().authentication =
-            org.springframework.security.authentication.UsernamePasswordAuthenticationToken(owner.username, null,
-                listOf(org.springframework.security.core.authority.SimpleGrantedAuthority(Role.Names.ADMIN)))
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                owner.username, null,
+                listOf(org.springframework.security.core.authority.SimpleGrantedAuthority(Role.Names.ADMIN))
+            )
         try {
             for (serviceKey in listOf(false, true)) {
                 val expiry = Instant.now().plusSeconds(86400)
-                val original = credentialService.create(serviceKey, org.gameyfin.app.api.security.CredentialInput(
-                    "Rotation test", expiry, if (serviceKey) setOf("games:read") else emptySet()))
+                val original = credentialService.create(
+                    serviceKey, org.gameyfin.app.api.security.CredentialInput(
+                        "Rotation test", expiry, if (serviceKey) setOf("games:read") else emptySet()
+                    )
+                )
                 assertEquals(200, request("/v1/games", original.secret).statusCode())
                 val regenerated = credentialService.regenerate(original.credential.id, serviceKey)
                 val stored = credentials.findById(original.credential.id).orElseThrow()

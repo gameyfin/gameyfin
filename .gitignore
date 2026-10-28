@@ -73,3 +73,4 @@ out/
 /app/target/
 **/*.trace.db
 /plugins-installed/
+/app/logs/
