@@ -1,5 +1,6 @@
 package org.gameyfin.app.api.v1
 
+import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.libraries.entities.Library

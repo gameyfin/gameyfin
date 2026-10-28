@@ -18,6 +18,7 @@ import java.net.URI
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.*
+import org.gameyfin.app.api.v1.dto.*
 
 class ApiSupportTest {
     @Test

@@ -1,10 +1,15 @@
 package org.gameyfin.app.api.v1
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
 import org.gameyfin.app.api.security.CredentialKind
+import org.gameyfin.app.api.v1.dto.CreateRequestV1
+import org.gameyfin.app.api.v1.dto.PageV1
+import org.gameyfin.app.api.v1.dto.RequestStatusV1
+import org.gameyfin.app.api.v1.dto.RequestV1
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.requests.GameRequestRepository
 import org.gameyfin.app.requests.GameRequestService
@@ -56,6 +61,7 @@ class RequestControllerV1(
         operationId = "createRequest",
         description = "Personal tokens only. Honors instance request settings and the owner's open-request limit."
     )
+    @ApiResponse(responseCode = "201", description = "Created")
     fun create(@Valid @RequestBody input: CreateRequestV1): ResponseEntity<RequestV1> {
         access.personal()
         val id = service.createReturningId(
@@ -91,6 +97,7 @@ class RequestControllerV1(
         operationId = "deleteRequest",
         description = "Requires requests:delete. Personal tokens may delete their owner's requests; administrators may delete any request."
     )
+    @ApiResponse(responseCode = "204", description = "No content")
     fun delete(@PathVariable id: String): ResponseEntity<Void> {
         val actor = access.require(ApiScope.REQUESTS_DELETE)
         val request = entity(id)
@@ -107,6 +114,7 @@ class RequestControllerV1(
         operationId = "voteForRequest",
         description = "Personal tokens only. Idempotently adds the owner's vote."
     )
+    @ApiResponse(responseCode = "204", description = "No content")
     fun vote(@PathVariable id: String): ResponseEntity<Void> = setVote(id, true)
 
     @DeleteMapping("/{id}/vote")
@@ -115,6 +123,7 @@ class RequestControllerV1(
         operationId = "removeRequestVote",
         description = "Personal tokens only. Idempotently removes the owner's vote."
     )
+    @ApiResponse(responseCode = "204", description = "No content")
     fun unvote(@PathVariable id: String): ResponseEntity<Void> = setVote(id, false)
 
     private fun setVote(id: String, present: Boolean): ResponseEntity<Void> {

@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.file.Files
 import kotlin.test.*
+import org.gameyfin.app.api.v1.dto.*
 
 class DownloadControllerV1Test {
     private val access = allowingAccess()

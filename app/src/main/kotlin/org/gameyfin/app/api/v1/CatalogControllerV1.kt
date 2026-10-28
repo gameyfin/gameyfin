@@ -2,10 +2,13 @@ package org.gameyfin.app.api.v1
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Encoding
 import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.core.tasks.DeletionTaskService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.libraries.LibraryCoreService
@@ -74,6 +77,12 @@ class CatalogControllerV1(
         operationId = "replaceGameMedia",
         description = "Requires games:write or an administrator personal token. The metadata JSON part describes the complete artwork/gallery. Each image selects exactly one existing id, URL or named file uploadKey. Null cover/header removes it. Gallery arrays replace existing content."
     )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        content = [Content(
+            mediaType = "multipart/form-data",
+            encoding = [Encoding(name = "metadata", contentType = "application/json")]
+        )]
+    )
     fun media(
         @PathVariable id: String,
         @RequestPart metadata: GameMediaV1,
@@ -90,6 +99,7 @@ class CatalogControllerV1(
         operationId = "deleteGame",
         description = "Requires games:delete or an administrator personal token. Removes the catalog entry, not the game files."
     )
+    @ApiResponse(responseCode = "204", description = "No content")
     fun deleteGame(@PathVariable id: String): ResponseEntity<Void> {
         access.require(ApiScope.GAMES_DELETE); catalog.game(id)
         libraries.deleteGameFromLibrary(apiId(id)); games.delete(apiId(id))
@@ -139,6 +149,7 @@ class CatalogControllerV1(
         operationId = "createLibrary",
         description = "Requires libraries:write or an administrator personal token. scanAfterCreation also requires libraries:scan."
     )
+    @ApiResponse(responseCode = "201", description = "Created")
     fun createLibrary(@Valid @RequestBody input: CreateLibraryV1): ResponseEntity<LibraryV1> {
         access.require(ApiScope.LIBRARIES_WRITE)
         if (input.scanAfterCreation) access.require(ApiScope.LIBRARIES_SCAN)
@@ -166,6 +177,7 @@ class CatalogControllerV1(
         operationId = "deleteLibrary",
         description = "Requires libraries:delete or an administrator personal token. Queues catalog deletion, including this library's games; does not delete game files."
     )
+    @ApiResponse(responseCode = "202", description = "Accepted")
     fun deleteLibrary(@PathVariable id: String): ResponseEntity<TaskRunV1> {
         access.require(ApiScope.LIBRARIES_DELETE); catalog.library(id)
         val run = deletions.deleteLibrary(apiId(id))
@@ -178,6 +190,7 @@ class CatalogControllerV1(
         operationId = "scanLibrary",
         description = "Requires libraries:scan or an administrator personal token. Acknowledges queue acceptance; task runs are created when the queue processes the scan."
     )
+    @ApiResponse(responseCode = "202", description = "Accepted")
     fun scan(@PathVariable id: String, @RequestBody input: ScanV1): ResponseEntity<AcceptedScanV1> {
         access.require(ApiScope.LIBRARIES_SCAN); catalog.library(id)
         require(input.type in setOf("QUICK", "FULL")) { "Scan type must be QUICK or FULL" }
@@ -216,6 +229,7 @@ class CatalogControllerV1(
         operationId = "createCollection",
         description = "Requires collections:write or an administrator personal token."
     )
+    @ApiResponse(responseCode = "201", description = "Created")
     fun createCollection(@Valid @RequestBody input: CreateCollectionV1): ResponseEntity<CollectionV1> {
         access.require(ApiScope.COLLECTIONS_WRITE)
         val collection = catalog.createCollection(input)
@@ -241,6 +255,7 @@ class CatalogControllerV1(
         operationId = "deleteCollection",
         description = "Requires collections:delete or an administrator personal token. Does not delete member games."
     )
+    @ApiResponse(responseCode = "202", description = "Accepted")
     fun deleteCollection(@PathVariable id: String): ResponseEntity<TaskRunV1> {
         access.require(ApiScope.COLLECTIONS_DELETE); catalog.collection(id)
         val run = deletions.deleteCollection(apiId(id))
@@ -264,6 +279,7 @@ class CatalogControllerV1(
         operationId = "addCollectionGame",
         description = "Requires collections:write or an administrator personal token. Idempotent."
     )
+    @ApiResponse(responseCode = "204", description = "No content")
     fun addGame(@PathVariable id: String, @PathVariable gameId: String): ResponseEntity<Void> {
         access.require(ApiScope.COLLECTIONS_WRITE); catalog.membership(
             id,
@@ -277,6 +293,7 @@ class CatalogControllerV1(
         operationId = "removeCollectionGame",
         description = "Requires collections:write or an administrator personal token. Idempotent; does not delete the game."
     )
+    @ApiResponse(responseCode = "204", description = "No content")
     fun removeGame(@PathVariable id: String, @PathVariable gameId: String): ResponseEntity<Void> {
         access.require(ApiScope.COLLECTIONS_WRITE); catalog.membership(
             id,

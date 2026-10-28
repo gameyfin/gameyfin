@@ -3601,7 +3601,6 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
                   "$ref": "#/components/schemas/HealthV1"
                 }
               }

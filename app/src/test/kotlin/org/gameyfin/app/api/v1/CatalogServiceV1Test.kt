@@ -29,6 +29,7 @@ import tools.jackson.databind.json.JsonMapper
 import java.time.LocalDate
 import java.util.*
 import kotlin.test.*
+import org.gameyfin.app.api.v1.dto.*
 
 class CatalogServiceV1Test {
     private val games = mockk<GameRepository>(relaxed = true)

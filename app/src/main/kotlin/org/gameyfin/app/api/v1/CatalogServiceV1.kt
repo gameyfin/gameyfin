@@ -3,6 +3,7 @@ package org.gameyfin.app.api.v1
 import jakarta.persistence.criteria.JoinType
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.collections.CollectionService
 import org.gameyfin.app.collections.dto.CollectionCreateDto
 import org.gameyfin.app.collections.dto.CollectionUpdateDto

@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import java.time.Instant
 import java.util.*
 import kotlin.test.*
+import org.gameyfin.app.api.v1.dto.*
 
 class RequestControllerV1Test {
     private val access = allowingAccess(personalPrincipal(7))

@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.mock.web.MockMultipartHttpServletRequest
 import kotlin.test.*
+import org.gameyfin.app.api.v1.dto.*
 
 class CatalogControllerV1Test {
     private val access = allowingAccess()

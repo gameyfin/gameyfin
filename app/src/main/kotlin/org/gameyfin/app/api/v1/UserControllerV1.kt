@@ -3,6 +3,9 @@ package org.gameyfin.app.api.v1
 import io.swagger.v3.oas.annotations.Operation
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.dto.MeV1
+import org.gameyfin.app.api.v1.dto.PageV1
+import org.gameyfin.app.api.v1.dto.UserV1
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository

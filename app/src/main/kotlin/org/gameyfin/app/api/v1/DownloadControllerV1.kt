@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.servlet.http.HttpServletRequest
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.dto.DownloadLinkV1
+import org.gameyfin.app.api.v1.dto.DownloadProviderV1
 import org.gameyfin.app.core.LookupPolicy
 import org.gameyfin.app.core.download.files.DownloadService
 import org.gameyfin.app.core.getRemoteIp
@@ -107,6 +109,11 @@ class DownloadControllerV1(
         operationId = "getGameImage",
         description = "Requires games:read. Supports ETag conditional requests. The image must belong to the specified game."
     )
+    @ApiResponse(
+        responseCode = "200", description = "OK",
+        content = [Content(mediaType = "image/*", schema = Schema(type = "string", format = "binary"))]
+    )
+    @ApiResponse(responseCode = "304", description = "Not modified", content = [Content()])
     fun image(@PathVariable id: String, @PathVariable imageId: String, request: WebRequest): ResponseEntity<Resource> {
         access.require(ApiScope.GAMES_READ)
         val game = catalog.gameEntity(id)

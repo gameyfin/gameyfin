@@ -1,8 +1,12 @@
 package org.gameyfin.app.api.v1
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.core.tasks.TaskService
 import org.gameyfin.app.core.tasks.persistence.TaskRunEntry
 import org.gameyfin.app.core.tasks.persistence.TaskRunRepository
@@ -39,6 +43,15 @@ class InstanceControllerV1(
     @Operation(
         operationId = "getHealth",
         description = "Requires instance:read. Aggregate health only; HTTP 503 when not healthy."
+    )
+    @ApiResponse(
+        responseCode = "200", description = "OK",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = HealthV1::class))]
+    )
+    @ApiResponse(
+        responseCode = "503",
+        description = "Instance is unhealthy",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = HealthV1::class))]
     )
     fun health(): ResponseEntity<HealthV1> {
         access.require(ApiScope.INSTANCE_READ)

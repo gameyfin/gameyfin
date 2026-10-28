@@ -23,6 +23,7 @@ import org.springframework.data.jpa.domain.Specification
 import java.time.Instant
 import java.util.*
 import kotlin.test.*
+import org.gameyfin.app.api.v1.dto.*
 
 class InstanceControllerV1Test {
     private val environment = mockk<Environment>()
