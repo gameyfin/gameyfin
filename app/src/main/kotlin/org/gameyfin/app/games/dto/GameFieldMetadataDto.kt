@@ -11,5 +11,6 @@ class GameFieldMetadataDto(
 enum class GameFieldMetadataType {
     PLUGIN,
     USER,
+    API_KEY,
     UNKNOWN
 }

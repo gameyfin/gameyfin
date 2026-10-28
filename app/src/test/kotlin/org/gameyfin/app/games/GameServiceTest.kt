@@ -109,6 +109,36 @@ class GameServiceTest {
     }
 
     @Test
+    fun `manual creation persists confirmed game without metadata providers`() {
+        val path = Path.of("manual-game").toAbsolutePath().normalize().toString()
+        every { gameRepository.existsByMetadataPath(path) } returns false
+        every { filesystemService.calculateFileSize(path) } returns 123L
+        every { gameRepository.save(any()) } answers { firstArg<Game>().also { it.id = 42L } }
+
+        val game = gameService.createManually("  Obscure title  ", path, library)
+
+        assertEquals("Obscure title", game.title)
+        assertEquals(path, game.metadata.path)
+        assertEquals(123L, game.metadata.fileSize)
+        assertTrue(game.metadata.matchConfirmed)
+        assertTrue(game.metadata.originalIds.isEmpty())
+        assertEquals(library, game.library)
+        verify { pluginManager wasNot Called }
+    }
+
+    @Test
+    fun `manual creation rejects duplicate paths and blank fields`() {
+        val path = Path.of("manual-game").toAbsolutePath().normalize().toString()
+        every { gameRepository.existsByMetadataPath(path) } returns true
+
+        assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", path, library) }
+        assertThrows(IllegalArgumentException::class.java) { gameService.createManually(" ", path, library) }
+        assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", " ", library) }
+        assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", "relative/path", library) }
+        verify(exactly = 0) { gameRepository.save(any()) }
+    }
+
+    @Test
     fun `sync without timestamp should return all game summaries`() {
         val game1 = createTestGame(1L)
         val game2 = createTestGame(2L)

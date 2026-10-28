@@ -17,7 +17,7 @@ class GameyfinFileDownloader(
     override fun downloadFile(fileUrl: URL): Path {
         val directory = Files.createDirectories(downloadDirectory())
         val target = Files.createTempFile(directory, "plugin-", ".jar.part")
-        httpClient.download(fileUrl.toURI(), target, MarketplaceHttpClient.MAX_PLUGIN_SIZE)
+        httpClient.download(fileUrl.toURI(), target)
         return target
     }
 }

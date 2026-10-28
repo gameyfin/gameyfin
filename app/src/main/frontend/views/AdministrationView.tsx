@@ -1,11 +1,12 @@
 import {
-    DiscIcon,
     DownloadSimpleIcon,
     EnvelopeIcon,
     GameControllerIcon,
+    KeyIcon,
     LockKeyIcon,
     LogIcon,
     PlugIcon,
+    ShootingStarIcon,
     TimerIcon,
     UsersIcon,
     WrenchIcon
@@ -21,7 +22,7 @@ const menuItems: MenuItem[] = [
     {
         title: "Game Requests",
         url: "requests",
-        icon: <DiscIcon/>
+        icon: <ShootingStarIcon/>
     },
     {
         title: "Downloads",
@@ -37,6 +38,11 @@ const menuItems: MenuItem[] = [
         title: "Security",
         url: "security",
         icon: <LockKeyIcon/>
+    },
+    {
+        title: "API keys",
+        url: "api-keys",
+        icon: <KeyIcon/>
     },
     {
         title: "Messages",

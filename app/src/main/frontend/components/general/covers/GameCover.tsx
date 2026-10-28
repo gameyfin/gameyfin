@@ -19,7 +19,7 @@ interface GameCoverProps {
     radius?: "none" | "sm" | "md" | "lg";
     interactive?: boolean;
     lazy?: boolean;
-    /** Whether the title is shown on top of the blurhash while the cover image is not available */
+    /** Whether the title is shown while the cover image is not available */
     showTitle?: boolean;
 }
 
@@ -156,7 +156,7 @@ const GameCoverComponent = ({
             )}
         </div>
     ) : (
-        <GameCoverFallback title={game.title} size={size} radius={radius} hover={interactive}/>
+        <GameCoverFallback title={game.title} size={size} radius={radius} hover={interactive} showTitle={showTitle}/>
     );
 
     return interactive ? (

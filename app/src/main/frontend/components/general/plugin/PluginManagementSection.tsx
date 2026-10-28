@@ -40,7 +40,7 @@ export function PluginManagementSection({type, searchTerm}: PluginManagementSect
             : (fallbackTypesByPluginId[plugin.id] ?? []);
 
         return pluginTypes.includes(type);
-    }), [state.plugins, type, fallbackTypesByPluginId]);
+    }).sort((a, b) => b.priority - a.priority), [state.plugins, type, fallbackTypesByPluginId]);
 
     const plugins = useMemo(
         () => allPlugins.filter(plugin => matchesSearchTerm(plugin as PluginDto, searchTerm)),

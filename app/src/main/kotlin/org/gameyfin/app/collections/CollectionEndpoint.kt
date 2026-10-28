@@ -6,14 +6,17 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.core.tasks.DeletionTaskService
 import reactor.core.publisher.Flux
 import java.time.Instant
 
 @Endpoint
 @DynamicPublicAccess
 @AnonymousAllowed
+@Suppress("unused")
 class CollectionEndpoint(
-    private val collectionService: CollectionService
+    private val collectionService: CollectionService,
+    private val deletionTaskService: DeletionTaskService
 ) {
     fun subscribeToCollectionEvents(): Flux<out List<CollectionEvent>> = CollectionService.subscribe()
 
@@ -44,5 +47,5 @@ class CollectionEndpoint(
         collectionService.removeGame(collectionId, gameId)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun deleteCollection(collectionId: Long) = collectionService.delete(collectionId)
+    fun deleteCollection(collectionId: Long) = deletionTaskService.deleteCollection(collectionId)
 }

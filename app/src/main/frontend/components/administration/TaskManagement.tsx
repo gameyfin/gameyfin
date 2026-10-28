@@ -66,6 +66,7 @@ export function TaskManagement() {
         const loadedIds = new Set(history.map(run => run.id));
         const oldestLoaded = history.length > 0 ? new Date(history[history.length - 1].startedAt).getTime() : 0;
         const newRuns = Object.values(liveRuns).filter(run =>
+            run.visibleInOverview !== false &&
             !loadedIds.has(run.id) &&
             (filter === ALL_TASKS || run.taskKey === filter) &&
             (!hasMore || new Date(run.startedAt).getTime() >= oldestLoaded));
