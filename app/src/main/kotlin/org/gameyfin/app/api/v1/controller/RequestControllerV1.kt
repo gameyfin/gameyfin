@@ -1,15 +1,21 @@
-package org.gameyfin.app.api.v1
+package org.gameyfin.app.api.v1.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.validation.Valid
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
 import org.gameyfin.app.api.security.CredentialKind
+import org.gameyfin.app.api.v1.apiEnum
+import org.gameyfin.app.api.v1.apiId
+import org.gameyfin.app.api.v1.apiPage
 import org.gameyfin.app.api.v1.dto.CreateRequestV1
 import org.gameyfin.app.api.v1.dto.PageV1
 import org.gameyfin.app.api.v1.dto.RequestStatusV1
 import org.gameyfin.app.api.v1.dto.RequestV1
+import org.gameyfin.app.api.v1.publicPage
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.requests.GameRequestRepository
 import org.gameyfin.app.requests.GameRequestService
@@ -25,6 +31,7 @@ import org.springframework.web.bind.annotation.*
 import java.net.URI
 import java.time.ZoneOffset
 
+@Tag(name = "Requests", description = "Game requests, their status and votes.")
 @RestController
 @RequestMapping("/v1/requests")
 class RequestControllerV1(
@@ -39,8 +46,9 @@ class RequestControllerV1(
         description = "Requires requests:read. sort: id, title, createdAt or updatedAt."
     )
     fun list(
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "50") size: Int,
+        @Parameter(description = "Zero-based page index.") @RequestParam(defaultValue = "0") page: Int,
+        @Parameter(description = "Page size.") @RequestParam(defaultValue = "50") size: Int,
+        @Parameter(description = "Sort field, optionally followed by ,asc or ,desc. Allowed fields: id, title, createdAt, updatedAt.")
         @RequestParam(defaultValue = "id") sort: String
     ): PageV1<RequestV1> {
         access.require(ApiScope.REQUESTS_READ)
@@ -51,7 +59,7 @@ class RequestControllerV1(
     @GetMapping("/{id}")
     @Transactional(readOnly = true)
     @Operation(operationId = "getRequest", description = "Requires requests:read.")
-    fun get(@PathVariable id: String): RequestV1 {
+    fun get(@Parameter(description = "Request ID.") @PathVariable id: String): RequestV1 {
         access.require(ApiScope.REQUESTS_READ); return view(entity(id))
     }
 
@@ -81,7 +89,7 @@ class RequestControllerV1(
         operationId = "changeRequestStatus",
         description = "Requires requests:write or an administrator personal token. Fulfilled requests cannot be changed."
     )
-    fun status(@PathVariable id: String, @RequestBody input: RequestStatusV1): RequestV1 {
+    fun status(@Parameter(description = "Request ID.") @PathVariable id: String, @RequestBody input: RequestStatusV1): RequestV1 {
         access.require(ApiScope.REQUESTS_WRITE)
         val request = entity(id)
         val status = apiEnum<GameRequestStatus>(input.status)
@@ -98,7 +106,7 @@ class RequestControllerV1(
         description = "Requires requests:delete. Personal tokens may delete their owner's requests; administrators may delete any request."
     )
     @ApiResponse(responseCode = "204", description = "No content")
-    fun delete(@PathVariable id: String): ResponseEntity<Void> {
+    fun delete(@Parameter(description = "Request ID.") @PathVariable id: String): ResponseEntity<Void> {
         val actor = access.require(ApiScope.REQUESTS_DELETE)
         val request = entity(id)
         if (actor.kind == CredentialKind.PERSONAL && !isCurrentUserAdmin() && request.requester?.id != actor.userId) {
@@ -115,7 +123,7 @@ class RequestControllerV1(
         description = "Personal tokens only. Idempotently adds the owner's vote."
     )
     @ApiResponse(responseCode = "204", description = "No content")
-    fun vote(@PathVariable id: String): ResponseEntity<Void> = setVote(id, true)
+    fun vote(@Parameter(description = "Request ID.") @PathVariable id: String): ResponseEntity<Void> = setVote(id, true)
 
     @DeleteMapping("/{id}/vote")
     @Transactional
@@ -124,7 +132,7 @@ class RequestControllerV1(
         description = "Personal tokens only. Idempotently removes the owner's vote."
     )
     @ApiResponse(responseCode = "204", description = "No content")
-    fun unvote(@PathVariable id: String): ResponseEntity<Void> = setVote(id, false)
+    fun unvote(@Parameter(description = "Request ID.") @PathVariable id: String): ResponseEntity<Void> = setVote(id, false)
 
     private fun setVote(id: String, present: Boolean): ResponseEntity<Void> {
         val actor = access.personal()

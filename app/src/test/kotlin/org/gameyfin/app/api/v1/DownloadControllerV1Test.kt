@@ -1,6 +1,10 @@
 package org.gameyfin.app.api.v1
 
 import io.mockk.*
+import org.gameyfin.app.api.v1.controller.DownloadControllerV1
+import org.gameyfin.app.api.v1.dto.DownloadLinkV1
+import org.gameyfin.app.api.v1.dto.DownloadProviderV1
+import org.gameyfin.app.api.v1.service.CatalogServiceV1
 import org.gameyfin.app.core.download.files.DownloadService
 import org.gameyfin.app.core.download.provider.DownloadProviderDto
 import org.gameyfin.app.games.GameService
@@ -19,8 +23,9 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.file.Files
-import kotlin.test.*
-import org.gameyfin.app.api.v1.dto.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class DownloadControllerV1Test {
     private val access = allowingAccess()
@@ -122,7 +127,8 @@ class DownloadControllerV1Test {
     fun `images are served with caching headers and support conditional requests`() {
         val file = Files.createTempFile("api-image", ".png").also { Files.writeString(it, "png") }
         try {
-            val cover = Image(id = 5, type = ImageType.COVER, contentId = "abc", contentLength = 3, mimeType = "image/png")
+            val cover =
+                Image(id = 5, type = ImageType.COVER, contentId = "abc", contentLength = 3, mimeType = "image/png")
             val game = testGame().apply { coverImage = cover }
             every { catalog.gameEntity("10") } returns game
             every { images.getFilePath(cover) } returns file

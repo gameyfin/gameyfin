@@ -1,12 +1,16 @@
-package org.gameyfin.app.api.v1
+package org.gameyfin.app.api.v1.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.apiPage
 import org.gameyfin.app.api.v1.dto.*
+import org.gameyfin.app.api.v1.publicPage
 import org.gameyfin.app.core.tasks.TaskService
 import org.gameyfin.app.core.tasks.persistence.TaskRunEntry
 import org.gameyfin.app.core.tasks.persistence.TaskRunRepository
@@ -18,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
+@Tag(name = "Instance", description = "Instance information, health and background task runs.")
 @RestController
 @RequestMapping("/v1")
 class InstanceControllerV1(
@@ -75,8 +80,11 @@ class InstanceControllerV1(
         description = "Requires tasks:read or an administrator personal token. sort: id, startedAt or finishedAt. Raw logs and error details are excluded."
     )
     fun runs(
-        @RequestParam(required = false) taskId: String?, @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "50") size: Int, @RequestParam(defaultValue = "startedAt,desc") sort: String
+        @Parameter(description = "Only include runs of this task key.") @RequestParam(required = false) taskId: String?,
+        @Parameter(description = "Zero-based page index.") @RequestParam(defaultValue = "0") page: Int,
+        @Parameter(description = "Page size.") @RequestParam(defaultValue = "50") size: Int,
+        @Parameter(description = "Sort field, optionally followed by ,asc or ,desc. Allowed fields: id, startedAt, finishedAt.")
+        @RequestParam(defaultValue = "startedAt,desc") sort: String
     ): PageV1<TaskRunV1> {
         access.require(ApiScope.TASKS_READ)
         val specification = Specification<TaskRunEntry> { root, _, cb ->
@@ -90,7 +98,7 @@ class InstanceControllerV1(
 
     @GetMapping("/task-runs/{id}")
     @Operation(operationId = "getTaskRun", description = "Requires tasks:read or an administrator personal token.")
-    fun run(@PathVariable id: String): TaskRunV1 {
+    fun run(@Parameter(description = "Task run ID.") @PathVariable id: String): TaskRunV1 {
         access.require(ApiScope.TASKS_READ)
         val run = tasks.getRun(id) ?: throw NoSuchElementException("Task run not found")
         return TaskRunV1(run.id, run.taskKey, run.status.name, run.startedAt, run.finishedAt)

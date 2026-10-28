@@ -6,6 +6,11 @@ import io.mockk.slot
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
+import org.gameyfin.app.api.v1.controller.InstanceControllerV1
+import org.gameyfin.app.api.v1.dto.HealthV1
+import org.gameyfin.app.api.v1.dto.InstanceV1
+import org.gameyfin.app.api.v1.dto.TaskRunV1
+import org.gameyfin.app.api.v1.dto.TaskV1
 import org.gameyfin.app.core.tasks.TaskRunStatus
 import org.gameyfin.app.core.tasks.TaskService
 import org.gameyfin.app.core.tasks.dto.TaskDto
@@ -22,8 +27,10 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import java.time.Instant
 import java.util.*
-import kotlin.test.*
-import org.gameyfin.app.api.v1.dto.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class InstanceControllerV1Test {
     private val environment = mockk<Environment>()
@@ -96,7 +103,13 @@ class InstanceControllerV1Test {
         )
         val spec = slot<Specification<TaskRunEntry>>()
         val pageable = slot<Pageable>()
-        every { runs.findAll(capture(spec), capture(pageable)) } answers { PageImpl(listOf(entry), pageable.captured, 1) }
+        every { runs.findAll(capture(spec), capture(pageable)) } answers {
+            PageImpl(
+                listOf(entry),
+                pageable.captured,
+                1
+            )
+        }
 
         val page = controller.runs("scan", 0, 10, "startedAt,desc")
 

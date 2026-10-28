@@ -3,6 +3,7 @@ package org.gameyfin.app.api.v1
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media.*
 import io.swagger.v3.oas.models.responses.ApiResponse
@@ -38,7 +39,23 @@ class OpenApiConfig {
         .addOpenApiCustomizer { api ->
             api.components.addSchemas("ApiProblemV1", apiProblemSchema())
             api.paths.values.flatMap { it.readOperations() }.forEach { customizeOperation(it) }
+            sortPaths(api)
         }.build()
+
+    private val methodOrder = listOf("GET", "POST", "PUT", "PATCH", "DELETE")
+
+    // Swagger UI lists operations in path order, so collection paths (no path variable) come before single-entity paths
+    private fun sortPaths(api: OpenAPI) {
+        val sorted = api.paths.entries
+            .sortedWith(compareBy({ it.key.contains("{") }, { methodRank(it.value) }))
+            .map { it.key to it.value }
+        api.paths.clear()
+        sorted.forEach { (path, item) -> api.paths[path] = item }
+    }
+
+    private fun methodRank(item: PathItem): Int =
+        item.readOperationsMap().keys.minOfOrNull { methodOrder.indexOf(it.name).takeIf { i -> i >= 0 } ?: methodOrder.size }
+            ?: methodOrder.size
 
     private val errorResponses = mapOf(
         "400" to "Invalid request",

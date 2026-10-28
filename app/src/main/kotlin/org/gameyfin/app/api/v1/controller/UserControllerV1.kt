@@ -1,17 +1,23 @@
-package org.gameyfin.app.api.v1
+package org.gameyfin.app.api.v1.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.apiId
+import org.gameyfin.app.api.v1.apiPage
 import org.gameyfin.app.api.v1.dto.MeV1
 import org.gameyfin.app.api.v1.dto.PageV1
 import org.gameyfin.app.api.v1.dto.UserV1
+import org.gameyfin.app.api.v1.publicPage
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
+@Tag(name = "Users", description = "Current user and user lookup.")
 @RestController
 @RequestMapping("/v1")
 class UserControllerV1(private val access: ApiAccess, private val users: UserRepository) {
@@ -33,8 +39,9 @@ class UserControllerV1(private val access: ApiAccess, private val users: UserRep
         description = "Requires users:read. Only administrator personal tokens receive full user information. sort: id."
     )
     fun getAllUsers(
-        @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "50") size: Int, @RequestParam(defaultValue = "id") sort: String
+        @Parameter(description = "Zero-based page index.") @RequestParam(defaultValue = "0") page: Int,
+        @Parameter(description = "Page size.") @RequestParam(defaultValue = "50") size: Int,
+        @Parameter(description = "Sort field. Allowed fields: id.") @RequestParam(defaultValue = "id") sort: String
     ): PageV1<UserV1> {
         access.require(ApiScope.USERS_READ)
         return users.findAll(apiPage(page, size, sort, setOf("id"))).publicPage(::view)
@@ -46,7 +53,7 @@ class UserControllerV1(private val access: ApiAccess, private val users: UserRep
         operationId = "getUserById",
         description = "Requires users:read. Only administrator personal tokens receive full user information."
     )
-    fun getUserById(@PathVariable id: String): UserV1 {
+    fun getUserById(@Parameter(description = "User ID.") @PathVariable id: String): UserV1 {
         access.require(ApiScope.USERS_READ)
         return view(users.findById(apiId(id)).orElseThrow { NoSuchElementException("User not found") })
     }
@@ -57,7 +64,7 @@ class UserControllerV1(private val access: ApiAccess, private val users: UserRep
         operationId = "getUserByUsername",
         description = "Requires users:read. Only administrator personal tokens receive full user information."
     )
-    fun getUserByUsername(@PathVariable username: String): UserV1 {
+    fun getUserByUsername(@Parameter(description = "Username of the user.") @PathVariable username: String): UserV1 {
         access.require(ApiScope.USERS_READ)
         return view(users.findByUsername(username) ?: throw NoSuchElementException("User not found"))
     }

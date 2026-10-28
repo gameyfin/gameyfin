@@ -3,6 +3,8 @@ package org.gameyfin.app.api.v1
 import io.mockk.*
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.dto.*
+import org.gameyfin.app.api.v1.service.CatalogServiceV1
 import org.gameyfin.app.collections.CollectionService
 import org.gameyfin.app.collections.dto.CollectionUpdateDto
 import org.gameyfin.app.collections.entities.Collection
@@ -28,8 +30,9 @@ import org.springframework.security.access.AccessDeniedException
 import tools.jackson.databind.json.JsonMapper
 import java.time.LocalDate
 import java.util.*
-import kotlin.test.*
-import org.gameyfin.app.api.v1.dto.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class CatalogServiceV1Test {
     private val games = mockk<GameRepository>(relaxed = true)
@@ -211,7 +214,8 @@ class CatalogServiceV1Test {
     @Test
     fun `library patches require delete permission when removing directories`() {
         val library = testLibrary().apply {
-            directories = mutableListOf(DirectoryMapping(internalPath = "/keep"), DirectoryMapping(internalPath = "/drop"))
+            directories =
+                mutableListOf(DirectoryMapping(internalPath = "/keep"), DirectoryMapping(internalPath = "/drop"))
         }
         every { libraries.findById(1) } returns Optional.of(library)
         val update = slot<LibraryUpdateDto>()
@@ -226,7 +230,11 @@ class CatalogServiceV1Test {
         service.patchLibrary(
             "1", mapOf(
                 "name" to "Renamed",
-                "directories" to listOf(mapOf("internalPath" to "/keep"), mapOf("internalPath" to "/drop"), mapOf("internalPath" to "/new")),
+                "directories" to listOf(
+                    mapOf("internalPath" to "/keep"),
+                    mapOf("internalPath" to "/drop"),
+                    mapOf("internalPath" to "/new")
+                ),
                 "platforms" to listOf(Platform.entries.first().name)
             )
         )

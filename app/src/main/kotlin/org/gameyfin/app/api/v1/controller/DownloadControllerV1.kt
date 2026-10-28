@@ -1,14 +1,18 @@
-package org.gameyfin.app.api.v1
+package org.gameyfin.app.api.v1.controller
 
 import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import jakarta.servlet.http.HttpServletRequest
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.apiId
 import org.gameyfin.app.api.v1.dto.DownloadLinkV1
 import org.gameyfin.app.api.v1.dto.DownloadProviderV1
+import org.gameyfin.app.api.v1.service.CatalogServiceV1
 import org.gameyfin.app.core.LookupPolicy
 import org.gameyfin.app.core.download.files.DownloadService
 import org.gameyfin.app.core.getRemoteIp
@@ -26,6 +30,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 
+@Tag(name = "Downloads", description = "Download providers, game downloads and game images.")
 @RestController
 @RequestMapping("/v1")
 class DownloadControllerV1(
@@ -57,7 +62,8 @@ class DownloadControllerV1(
         )]
     )
     fun download(
-        @PathVariable id: String,
+        @Parameter(description = "Game ID.") @PathVariable id: String,
+        @Parameter(description = "Download provider key, as returned by GET /v1/download-providers.")
         @RequestParam provider: String,
         request: HttpServletRequest
     ): ResponseEntity<*> {
@@ -114,7 +120,11 @@ class DownloadControllerV1(
         content = [Content(mediaType = "image/*", schema = Schema(type = "string", format = "binary"))]
     )
     @ApiResponse(responseCode = "304", description = "Not modified", content = [Content()])
-    fun image(@PathVariable id: String, @PathVariable imageId: String, request: WebRequest): ResponseEntity<Resource> {
+    fun image(
+        @Parameter(description = "Game ID.") @PathVariable id: String,
+        @Parameter(description = "ID of a cover, header or gallery image of the game.") @PathVariable imageId: String,
+        request: WebRequest
+    ): ResponseEntity<Resource> {
         access.require(ApiScope.GAMES_READ)
         val game = catalog.gameEntity(id)
         val image =

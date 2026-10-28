@@ -1,14 +1,17 @@
-package org.gameyfin.app.api.v1
+package org.gameyfin.app.api.v1.service
 
 import jakarta.persistence.criteria.JoinType
+import jakarta.persistence.criteria.Predicate
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.*
 import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.collections.CollectionService
 import org.gameyfin.app.collections.dto.CollectionCreateDto
 import org.gameyfin.app.collections.dto.CollectionUpdateDto
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.collections.repositories.CollectionRepository
+import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.dto.GameImageSelectionDto
 import org.gameyfin.app.games.dto.GameUpdateDto
@@ -57,7 +60,7 @@ class CatalogServiceV1(
         val platformValue = platform?.let { apiEnum<Platform>(it) }
         val spec = Specification<Game> { root, query, cb ->
             query.distinct(true)
-            val predicates = mutableListOf<jakarta.persistence.criteria.Predicate>()
+            val predicates = mutableListOf<Predicate>()
             q?.let {
                 val escaped = it.lowercase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
                 predicates += cb.like(cb.lower(root.get("title")), "%$escaped%", '\\')
@@ -67,7 +70,7 @@ class CatalogServiceV1(
             platformValue?.let { predicates += cb.equal(root.join<Game, Platform>("platforms"), it) }
             externalProvider?.let {
                 val ids = root.join<Game, Any>("metadata")
-                    .joinMap<Any, org.gameyfin.app.core.plugins.management.PluginManagementEntry, String>(
+                    .joinMap<Any, PluginManagementEntry, String>(
                         "originalIds",
                         JoinType.INNER
                     )

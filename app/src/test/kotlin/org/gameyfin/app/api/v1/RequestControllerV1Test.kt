@@ -1,7 +1,13 @@
 package org.gameyfin.app.api.v1
 
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import org.gameyfin.app.api.security.ApiScope
+import org.gameyfin.app.api.v1.controller.RequestControllerV1
+import org.gameyfin.app.api.v1.dto.CreateRequestV1
+import org.gameyfin.app.api.v1.dto.RequestStatusV1
 import org.gameyfin.app.requests.GameRequestRepository
 import org.gameyfin.app.requests.GameRequestService
 import org.gameyfin.app.requests.dto.GameRequestCreationDto
@@ -20,8 +26,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import java.time.Instant
 import java.util.*
-import kotlin.test.*
-import org.gameyfin.app.api.v1.dto.*
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RequestControllerV1Test {
     private val access = allowingAccess(personalPrincipal(7))
@@ -83,7 +91,13 @@ class RequestControllerV1Test {
         every { service.createReturningId(capture(dto)) } returns 1
         every { repository.findById(1) } returns Optional.of(entry())
 
-        val response = controller.create(CreateRequestV1("Title", Platform.entries.first().name, java.time.LocalDate.of(2020, 1, 1)))
+        val response = controller.create(
+            CreateRequestV1(
+                "Title",
+                Platform.entries.first().name,
+                java.time.LocalDate.of(2020, 1, 1)
+            )
+        )
 
         assertEquals(201, response.statusCode.value())
         assertEquals("/v1/requests/1", response.headers.location.toString())
