@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.context.ApplicationEventPublisher
 import java.time.Instant
-import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -48,27 +47,6 @@ class TaskRunServiceTest {
             check(System.currentTimeMillis() < deadline) { "Run $runId did not finish in time" }
             Thread.sleep(10)
         }
-    }
-
-    @Test
-    fun `subscription resolves visibility of history after task registration`() {
-        val entry = TaskRunEntry(
-            id = "hidden-run", taskKey = "hidden", displayName = "Hidden", link = null,
-            trigger = TaskTrigger.MANUAL, status = TaskRunStatus.COMPLETED,
-            startedAt = Instant.now(), finishedAt = Instant.now()
-        )
-        val repository = inMemoryTaskRunRepository()
-        every { repository.findAllByFinishedAtAfterOrderByStartedAtDesc(any(), any()) } returns listOf(entry)
-        service.shutdown()
-        service = TaskRunService(registry, repository, settingsService)
-        service.init()
-        registry.register(TaskDefinition(
-            key = "hidden", name = "Hidden", visibleInOverview = false, action = TaskAction.Run { null }
-        ))
-
-        val snapshot = assertNotNull(service.subscribe().blockFirst(Duration.ofSeconds(5)))
-
-        assertFalse(snapshot.single().visibleInOverview)
     }
 
     @Test

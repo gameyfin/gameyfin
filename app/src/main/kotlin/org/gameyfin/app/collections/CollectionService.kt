@@ -1,5 +1,6 @@
 package org.gameyfin.app.collections
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.collections.entities.CollectionMetadata
@@ -23,6 +24,8 @@ class CollectionService(
     private val gameService: GameService
 ) {
     companion object {
+        private val log = KotlinLogging.logger {}
+
         /* Websockets (collections contain no admin-only data, so all users share one stream) */
         private val events = EntityEventBroadcaster<CollectionEvent>("collectionEvents")
 
@@ -57,8 +60,7 @@ class CollectionService(
     }
 
     @Transactional(readOnly = true)
-    fun getDtoById(id: Long): CollectionDto? =
-        collectionRepository.findByIdOrNull(id)?.let { listOf(it).toDtos().first() }
+    fun getDtoById(id: Long): CollectionDto? = collectionRepository.findByIdOrNull(id)?.let { listOf(it).toDtos().first() }
 
     private fun List<Collection>.toDtos(): List<CollectionDto> {
         val gameIds = collectionRepository.findGameIdsGroupedByCollectionId(this.mapNotNull { it.id })
@@ -70,13 +72,6 @@ class CollectionService(
 
     @Transactional
     fun create(dto: CollectionCreateDto) {
-        createEntity(dto)
-    }
-
-    @Transactional
-    fun createReturningId(dto: CollectionCreateDto): Long = createEntity(dto).id!!
-
-    private fun createEntity(dto: CollectionCreateDto): Collection {
         require(collectionRepository.findByName(dto.name) == null) {
             "Collection with name '${dto.name}' already exists"
         }
@@ -87,7 +82,7 @@ class CollectionService(
                 entity.addGame(game)
             }
         }
-        return collectionRepository.save(entity)
+        collectionRepository.save(entity)
     }
 
     @Transactional

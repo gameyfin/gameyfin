@@ -3,7 +3,6 @@ package org.gameyfin.app.core.interceptors
 import org.gameyfin.app.core.events.GameUpdatedEvent
 import org.gameyfin.app.core.events.UserUpdatedEvent
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.GameMedia
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.util.EventPublisherHolder
@@ -68,9 +67,9 @@ class EntityUpdateInterceptor : Interceptor {
                 "release" -> reconstructed.release = state[i] as? java.time.Instant
                 "userRating" -> reconstructed.userRating = state[i] as? Int
                 "criticRating" -> reconstructed.criticRating = state[i] as? Int
-                "media" -> {
+                "images" -> {
                     @Suppress("UNCHECKED_CAST")
-                    (state[i] as? MutableList<GameMedia>)?.let { reconstructed.media = it }
+                    (state[i] as? MutableList<Image>)?.let { reconstructed.images = it }
                 }
             }
         }

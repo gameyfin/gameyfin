@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
-import {Button, Modal, Spinner, toast} from "@heroui/react";
+import {Button, Modal, toast, Spinner} from "@heroui/react";
 import {MessageEndpoint, RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import {Form, Formik, FormikErrors} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
-import CopyButton from "Frontend/components/general/CopyButton";
+import {CopyIcon} from "@phosphor-icons/react";
 
 interface InviteUserModalProps {
     isOpen: boolean;
@@ -15,9 +15,11 @@ interface InviteUserModalProps {
 export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalProps) {
     const [token, setToken] = useState<TokenDto | null>(null);
     const [isMessageServiceEnabled, setIsMessageServiceEnabled] = useState<boolean>(false);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         setToken(null);
+        setCopied(false);
         MessageEndpoint.isEnabled().then(enabled => {
             setIsMessageServiceEnabled(enabled);
         });
@@ -43,6 +45,12 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
             variant: "success"
         });
         onClose();
+    }
+
+    async function copyInvitationLink(text: string) {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2000);
     }
 
     return (
@@ -84,14 +92,25 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
                                                             <p>The user can accept the invitation using the following
                                                                 link:</p>
                                                             <div
-                                                                className="flex items-center gap-2 rounded-lg bg-surface-secondary p-3">
+                                                                className="flex items-start gap-2 rounded-lg bg-surface-secondary p-3">
                                                                 <pre
                                                                     className="m-0 flex-1 overflow-x-auto text-sm font-mono">
                                                                     <code>{invitationLink}</code>
                                                                 </pre>
-                                                                <CopyButton text={invitationLink}
-                                                                            label="Copy invitation link"/>
+                                                                <Button
+                                                                    isIconOnly
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    aria-label="Copy invitation link"
+                                                                    onPress={() => copyInvitationLink(invitationLink)}
+                                                                >
+                                                                    <CopyIcon/>
+                                                                </Button>
                                                             </div>
+                                                            {copied && (
+                                                                <small className="text-success">Invitation link
+                                                                    copied.</small>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </Modal.Body>

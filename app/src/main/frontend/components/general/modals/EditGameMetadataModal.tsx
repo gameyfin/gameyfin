@@ -2,50 +2,33 @@ import {Accordion, Button, Modal, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import React, {useEffect, useState} from "react";
+import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
 import GameEnumPropertyValuesDto from "Frontend/generated/org/gameyfin/app/games/dto/GameEnumPropertyValuesDto";
+import {deepDiff} from "Frontend/util/utils";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
 import * as Yup from "yup";
+import GameCoverPicker from "Frontend/components/general/input/GameCoverPicker";
 import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
 import ArrayInput from "Frontend/components/general/input/ArrayInput";
-import GameMediaEditor from "Frontend/components/general/input/GameMediaEditor";
-import {GameMetadataFormValues, ManualGameImport, metadataInitialValues, metadataUpdate, saveMetadata} from "Frontend/util/gameMedia";
+import GameHeaderPicker from "Frontend/components/general/input/GameHeaderPicker";
 import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput.tsx";
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 import {useFullGame} from "Frontend/state/GameState";
-import {fileNameFromPath} from "Frontend/util/utils";
 
-type EditGameMetadataModalProps = ({gameId: number; newGame?: never} | {gameId?: never; newGame: ManualGameImport}) & {
+interface EditGameMetadataModalProps {
+    gameId: number;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
 }
 
-export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenChange}: EditGameMetadataModalProps) {
+export default function EditGameMetadataModal({gameId, isOpen, onOpenChange}: EditGameMetadataModalProps) {
     const availablePlatforms = useSnapshot(platformState).available;
     const [propertyEnumValues, setPropertyEnumValues] = useState<GameEnumPropertyValuesDto>();
     // The full game is only loaded once the modal has been opened
     const [requestedGameId, setRequestedGameId] = useState<number>();
     const {full: game} = useFullGame(requestedGameId === gameId ? gameId : undefined);
-    const [initialValues, setInitialValues] = useState<GameMetadataFormValues>();
-    const [saveError, setSaveError] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
-
-    useEffect(() => {
-        if (!isOpen) {
-            setInitialValues(undefined);
-            setSaveError("");
-        } else if (newGame && !initialValues) {
-            setInitialValues(metadataInitialValues({
-                id: 0, title: fileNameFromPath(newGame.path.replace(/[\\/]+$/, "")),
-                libraryId: newGame.libraryId, platforms: [...newGame.platforms],
-                metadata: {fileSize: 0, path: newGame.path} as GameMetadataFormValues["metadata"],
-                createdAt: "", updatedAt: "", mediaOrder: []
-            }));
-        } else if (game && (!initialValues || initialValues.id !== gameId)) {
-            setInitialValues(metadataInitialValues(game));
-        }
-    }, [isOpen, gameId, game, newGame, initialValues]);
 
     useEffect(() => {
         if (isOpen) setRequestedGameId(gameId);
@@ -55,122 +38,104 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
         GameEndpoint.getEnumPropertyValues().then(setPropertyEnumValues);
     }, []);
 
-    return propertyEnumValues && initialValues && (newGame || initialValues.id === gameId) && isOpen && (
+    return propertyEnumValues && game && (
         <Modal>
-            <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque"
-                            isDismissable={!isSaving} isKeyboardDismissDisabled={isSaving}>
+            <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque">
                 <Modal.Container size="lg" className="max-w-3xl">
                     <Modal.Dialog>
                         {({close}) => {
 
-                            async function updateGame(values: GameMetadataFormValues) {
-                                setSaveError("");
-                                setIsSaving(true);
-                                try {
-                                    const changed = metadataUpdate(initialValues!, values);
-                                    if (newGame) {
-                                        changed.title = values.title.trim();
-                                        changed.platforms = values.platforms;
-                                    }
-                                    if (newGame || Object.keys(changed).length > 1) await saveMetadata(changed, values, newGame);
-                                    close();
-                                } catch (error) {
-                                    setSaveError(error instanceof Error ? error.message : "Unable to save metadata. Try again.");
-                                } finally {
-                                    setIsSaving(false);
-                                }
+                            async function updateGame(values: GameUpdateDto) {
+                                if (!game) return;
+                                //@ts-ignore
+                                const changed = deepDiff(game, values) as GameUpdateDto;
+                                if (Object.keys(changed).length === 0) return;
+
+                                changed.id = game.id;
+                                await GameEndpoint.updateGame(changed);
+                                close();
                             }
 
                             return (
                                 <>
-                                    <Modal.CloseTrigger isDisabled={isSaving}/>
-                                    <Formik initialValues={initialValues}
+                                    <Modal.CloseTrigger/>
+                                    <Formik initialValues={game}
+                                            enableReinitialize={true}
                                             onSubmit={updateGame}
                                             validationSchema={Yup.object({
-                                                title: Yup.string().trim().required("Title is required")
+                                                title: Yup.string().required("Title is required")
                                             })}
                                     >
-                                        {(formik) => (
+                                        {(formik: any) => (
                                             <Form className="flex flex-col flex-1 min-h-0">
                                                 <Modal.Header className="flex flex-col gap-1">
-                                                    <Modal.Heading>{newGame ? "Manual import" : "Update game metadata"}</Modal.Heading>
+                                                    <Modal.Heading>Update game metadata</Modal.Heading>
                                                 </Modal.Header>
                                                 <Modal.Body>
-                                                    <GameMediaEditor searchOnOpen={!newGame}>
-                                                        {({artwork, gallery}) => <>
-                                                            <Input key="metadata.path" name="metadata.path" label="Path"
-                                                                   isDisabled className="mb-0"/>
-                                                            {artwork}
-                                                            <div className="flex flex-row gap-4 mt-4">
-                                                                <Input key="title" name="title" label="Title"
-                                                                       isRequired/>
-                                                                <DatePickerInput key="release" name="release"
-                                                                                 label="Release"
-                                                                                 className="w-fit"/>
-                                                            </div>
-                                                            <AutocompleteInput options={Array.from(availablePlatforms)}
-                                                                               name="platforms" label="Platforms"/>
-                                                            <TextAreaInput key="summary" name="summary"
-                                                                           label="Summary (HTML)"/>
-                                                            <TextAreaInput key="comment" name="comment"
-                                                                           label="Comment (Markdown)"/>
-                                                            {gallery}
-                                                            <Accordion variant="default" className="space-y-2">
-                                                                <Accordion.Item id="additional-metadata">
-                                                                    <Accordion.Heading>
-                                                                        <Accordion.Trigger
-                                                                            className="bg-segment rounded-2xl mb-4">
-                                                                            <span>Additional Metadata</span>
-                                                                            <Accordion.Indicator/>
-                                                                        </Accordion.Trigger>
-                                                                    </Accordion.Heading>
-                                                                    <Accordion.Panel>
-                                                                        <Accordion.Body className="overflow-y-auto">
-                                                                            <ArrayInput key="developers"
-                                                                                        name="developers"
-                                                                                        label="Developers"/>
-                                                                            <ArrayInput key="publishers"
-                                                                                        name="publishers"
-                                                                                        label="Publishers"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.genres}
-                                                                                defaultSelected={initialValues.genres}
-                                                                                key="genres" name="genres"
-                                                                                label="Genres"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.themes}
-                                                                                defaultSelected={initialValues.themes}
-                                                                                key="themes" name="themes"
-                                                                                label="Themes"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.features}
-                                                                                defaultSelected={initialValues.features}
-                                                                                key="features" name="features"
-                                                                                label="Features"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.perspectives}
-                                                                                defaultSelected={initialValues.perspectives}
-                                                                                key="perspectives" name="perspectives"
-                                                                                label="Perspectives"/>
-                                                                            <ArrayInput key="keywords" name="keywords"
-                                                                                        label="Keywords"/>
-                                                                        </Accordion.Body>
-                                                                    </Accordion.Panel>
-                                                                </Accordion.Item>
-                                                            </Accordion>
-                                                        </>}
-                                                    </GameMediaEditor>
+                                                    <Input key="metadata.path" name="metadata.path" label="Path"
+                                                           isDisabled className="mb-0"/>
+                                                    <div className="flex flex-row gap-4 h-44">
+                                                        <GameCoverPicker key="coverUrl" name="coverUrl" game={game}/>
+                                                        <GameHeaderPicker key="headerUrl" name="headerUrl" game={game}/>
+                                                    </div>
+                                                    <div className="flex flex-row gap-4 mt-4">
+                                                        <Input key="title" name="title" label="Title" isRequired/>
+                                                        <DatePickerInput key="release" name="release" label="Release"
+                                                                         className="w-fit"/>
+                                                    </div>
+                                                    <AutocompleteInput options={Array.from(availablePlatforms)}
+                                                                       name="platforms" label="Platforms"/>
+                                                    <TextAreaInput key="summary" name="summary" label="Summary (HTML)"/>
+                                                    <TextAreaInput key="comment" name="comment"
+                                                                   label="Comment (Markdown)"/>
+                                                    <Accordion variant="default" className="space-y-2">
+                                                        <Accordion.Item id="additional-metadata">
+                                                            <Accordion.Heading>
+                                                                <Accordion.Trigger
+                                                                    className="flex items-center justify-between rounded-xl">
+                                                                    <span>Additional Metadata</span>
+                                                                    <Accordion.Indicator/>
+                                                                </Accordion.Trigger>
+                                                            </Accordion.Heading>
+                                                            <Accordion.Panel>
+                                                                <Accordion.Body className="max-h-80 overflow-y-auto">
+                                                                    <ArrayInput key="developers" name="developers"
+                                                                                label="Developers"/>
+                                                                    <ArrayInput key="publishers" name="publishers"
+                                                                                label="Publishers"/>
+                                                                    <AutocompleteInput
+                                                                        options={propertyEnumValues.genres}
+                                                                        defaultSelected={game.genres}
+                                                                        key="genres" name="genres" label="Genres"/>
+                                                                    <AutocompleteInput
+                                                                        options={propertyEnumValues.themes}
+                                                                        defaultSelected={game.themes}
+                                                                        key="themes" name="themes" label="Themes"/>
+                                                                    <AutocompleteInput
+                                                                        options={propertyEnumValues.features}
+                                                                        defaultSelected={game.features}
+                                                                        key="features" name="features"
+                                                                        label="Features"/>
+                                                                    <AutocompleteInput
+                                                                        options={propertyEnumValues.perspectives}
+                                                                        defaultSelected={game.perspectives}
+                                                                        key="perspectives" name="perspectives"
+                                                                        label="Perspectives"/>
+                                                                    <ArrayInput key="keywords" name="keywords"
+                                                                                label="Keywords"/>
+                                                                </Accordion.Body>
+                                                            </Accordion.Panel>
+                                                        </Accordion.Item>
+                                                    </Accordion>
                                                 </Modal.Body>
-                                                {saveError &&
-                                                    <p role="alert" className="px-6 text-danger">{saveError}</p>}
                                                 <Modal.Footer>
-                                                    <Button variant="ghost" onPress={close} isDisabled={formik.isSubmitting}>
+                                                    <Button variant="ghost" onPress={close}>
                                                         Cancel
                                                     </Button>
                                                     <Button
                                                         variant="primary"
                                                         isPending={formik.isSubmitting}
-                                                        isDisabled={formik.isSubmitting || (!newGame && !formik.dirty)}
+                                                        isDisabled={formik.isSubmitting || !formik.dirty}
                                                         type="submit"
                                                     >
                                                         {formik.isSubmitting ?

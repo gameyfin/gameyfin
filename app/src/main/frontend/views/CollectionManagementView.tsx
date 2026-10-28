@@ -1,4 +1,4 @@
-import {Button, toast, Spinner, useOverlayState} from "@heroui/react";
+import {Button, toast, Spinner} from "@heroui/react";
 import {useNavigate, useParams} from "react-router";
 import React, {useEffect} from "react";
 import {ArrowLeftIcon, CheckIcon} from "@phosphor-icons/react";
@@ -16,15 +16,11 @@ import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
 import CollectionHeader from "Frontend/components/general/covers/CollectionHeader";
 import CollectionGamesTable from "Frontend/components/general/modals/CollectionGamesTable";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
-import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
-import {trackRun} from "Frontend/state/TaskState";
 
 export default function CollectionManagementView() {
     const {collectionId} = useParams();
     const navigate = useNavigate();
     const [collectionSaved, setCollectionSaved] = React.useState(false);
-    const [isDeleting, setIsDeleting] = React.useState(false);
-    const deleteModal = useOverlayState();
     const collections = useSnapshot(collectionState);
 
     const collectionIdNum = collectionId ? parseInt(collectionId) : null;
@@ -53,23 +49,18 @@ export default function CollectionManagementView() {
     }
 
     async function deleteCollection(): Promise<void> {
-        setIsDeleting(true);
         try {
-            const run = await CollectionEndpoint.deleteCollection(collection.id);
-            trackRun(run);
+            await CollectionEndpoint.deleteCollection(collection.id);
 
-            toast.info("Collection deletion started", {
-                description: "Progress is shown in the active tasks popover.",
+            toast.success("Collection deleted", {
+                description: `Collection ${collection.name} deleted!`,
             });
 
-            deleteModal.close();
             navigate("/administration/games");
         } catch (e) {
             toast.warning("Error deleting collection", {
                 description: `Collection ${collection.name} could not be deleted!`,
             });
-        } finally {
-            setIsDeleting(false);
         }
     }
 
@@ -116,17 +107,9 @@ export default function CollectionManagementView() {
                         </div>
 
                         <Section title="Danger zone"/>
-                        <Button variant="danger" onPress={deleteModal.open}>
+                        <Button variant="danger" onPress={deleteCollection}>
                             Delete collection
                         </Button>
-                        <ConfirmModal isOpen={deleteModal.isOpen}
-                                      onOpenChange={deleteModal.setOpen}
-                                      title="Delete collection"
-                                      confirmLabel="Delete"
-                                      isPending={isDeleting}
-                                      onConfirm={deleteCollection}>
-                            <p>Delete collection <code>{collection.name}</code>? This can not be undone.</p>
-                        </ConfirmModal>
                     </Form>
                 )}
             </Formik>

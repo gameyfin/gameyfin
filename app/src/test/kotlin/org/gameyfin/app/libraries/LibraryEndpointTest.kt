@@ -2,7 +2,6 @@ package org.gameyfin.app.libraries
 
 import io.mockk.*
 import org.gameyfin.app.core.security.isCurrentUserAdmin
-import org.gameyfin.app.core.tasks.DeletionTaskService
 import org.gameyfin.app.core.sync.EntityEventType
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.enums.ScanType
@@ -20,14 +19,12 @@ class LibraryEndpointTest {
     private lateinit var libraryService: LibraryService
     private lateinit var libraryScanService: LibraryScanService
     private lateinit var libraryEndpoint: LibraryEndpoint
-    private lateinit var deletionTaskService: DeletionTaskService
 
     @BeforeEach
     fun setup() {
         libraryService = mockk()
         libraryScanService = mockk()
-        deletionTaskService = mockk(relaxed = true)
-        libraryEndpoint = LibraryEndpoint(libraryService, libraryScanService, deletionTaskService)
+        libraryEndpoint = LibraryEndpoint(libraryService, libraryScanService)
 
         mockkStatic("org.gameyfin.app.core.security.SecurityUtilsKt")
     }
@@ -232,24 +229,24 @@ class LibraryEndpointTest {
 
     @Test
     fun `deleteLibrary should call service to delete library`() {
-        every { deletionTaskService.deleteLibrary(1L) } returns mockk()
+        every { libraryService.delete(1L) } just Runs
 
         libraryEndpoint.deleteLibrary(1L)
 
-        verify(exactly = 1) { deletionTaskService.deleteLibrary(1L) }
+        verify(exactly = 1) { libraryService.delete(1L) }
     }
 
     @Test
     fun `deleteLibrary should handle multiple library deletions`() {
-        every { deletionTaskService.deleteLibrary(any()) } returns mockk()
+        every { libraryService.delete(any()) } just Runs
 
         libraryEndpoint.deleteLibrary(1L)
         libraryEndpoint.deleteLibrary(2L)
         libraryEndpoint.deleteLibrary(3L)
 
-        verify(exactly = 1) { deletionTaskService.deleteLibrary(1L) }
-        verify(exactly = 1) { deletionTaskService.deleteLibrary(2L) }
-        verify(exactly = 1) { deletionTaskService.deleteLibrary(3L) }
+        verify(exactly = 1) { libraryService.delete(1L) }
+        verify(exactly = 1) { libraryService.delete(2L) }
+        verify(exactly = 1) { libraryService.delete(3L) }
     }
 
     private fun createSummaryDto(id: Long, admin: Boolean) = LibrarySummaryDto(
@@ -276,3 +273,4 @@ class LibraryEndpointTest {
         )
     }
 }
+

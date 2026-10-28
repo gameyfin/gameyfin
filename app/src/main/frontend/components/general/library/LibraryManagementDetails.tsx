@@ -16,7 +16,6 @@ import AutocompleteInput from "Frontend/components/general/input/AutocompleteInp
 import {useSnapshot} from "valtio/react";
 import {platformState} from "Frontend/state/PlatformState";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
-import {trackRun} from "Frontend/state/TaskState";
 
 interface LibraryManagementDetailsProps {
     library: LibraryAdminDto;
@@ -43,11 +42,10 @@ export default function LibraryManagementDetails({library}: LibraryManagementDet
     async function handleDelete(): Promise<void> {
         setIsDeleting(true);
         try {
-            const run = await LibraryEndpoint.deleteLibrary(library.id);
-            trackRun(run);
+            await LibraryEndpoint.deleteLibrary(library.id);
 
-            toast.info("Library deletion started", {
-                description: "Progress is shown in the active tasks popover."
+            toast.success("Library deleted", {
+                description: `Library ${library.name} deleted!`
             });
 
             deleteModal.close();

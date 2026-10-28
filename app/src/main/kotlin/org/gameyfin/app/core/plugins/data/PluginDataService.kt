@@ -28,10 +28,7 @@ class PluginDataService(
     override fun getGames(ids: Collection<Long>): List<GameInfo> {
         if (ids.isEmpty()) return emptyList()
         val distinctIds = ids.toSet()
-        return toGames(
-            gameRepository.findRowsByIds(distinctIds),
-            groupById(gameRepository.findPlatformsByIds(distinctIds))
-        )
+        return toGames(gameRepository.findRowsByIds(distinctIds), groupById(gameRepository.findPlatformsByIds(distinctIds)))
     }
 
     override fun getGame(id: Long): GameInfo? = getGames(listOf(id)).firstOrNull()

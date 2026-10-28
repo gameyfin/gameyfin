@@ -63,8 +63,8 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
         if (!availableUpdate) return;
         try {
             await installPlugin(availableUpdate.marketplaceId, plugin.id, availableUpdate.latestCompatibleVersion);
-            toast.info("Plugin update started", {
-                description: "Progress is shown in the active tasks popover."
+            toast.success("Plugin updated", {
+                description: `${plugin.name} has been updated to version ${availableUpdate.latestCompatibleVersion}`
             });
         } catch (e: any) {
             toast.danger("Update failed", {description: e?.message ?? `Failed to update ${plugin.name}`});
@@ -73,10 +73,12 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
 
     async function uninstall() {
         try {
-            await uninstallPlugin(plugin.id);
+            const fallback = await uninstallPlugin(plugin.id);
             uninstallModal.close();
-            toast.info("Plugin uninstallation started", {
-                description: "Progress is shown in the active tasks popover."
+            toast.success("Plugin uninstalled", {
+                description: fallback
+                    ? `${plugin.name} has been reverted to the local version ${fallback.version}`
+                    : `${plugin.name} has been uninstalled`
             });
         } catch (e: any) {
             toast.danger("Uninstall failed", {description: e?.message ?? `Failed to uninstall ${plugin.name}`});

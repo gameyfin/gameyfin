@@ -7,7 +7,6 @@ import App from "Frontend/App";
 import {GameManagement} from "Frontend/components/administration/GameManagement";
 import {UserManagement} from "Frontend/components/administration/UserManagement";
 import ProfileManagement from "Frontend/components/administration/ProfileManagement";
-import CredentialManagement from "Frontend/components/CredentialManagement";
 import {SecurityManagement} from "Frontend/components/administration/SecurityManagement";
 import {AdministrationView} from "Frontend/views/AdministrationView";
 import {ProfileView} from "Frontend/views/ProfileView";
@@ -24,7 +23,6 @@ import LibraryManagementView from "Frontend/views/LibraryManagementView";
 import SearchView from "Frontend/views/SearchView";
 import LibraryView from "Frontend/views/LibraryView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
-import NotFoundView from "Frontend/views/NotFoundView.tsx";
 import ErrorView from "Frontend/views/ErrorView";
 import GameRequestView from "Frontend/views/GameRequestView";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
@@ -36,7 +34,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
         {
             element: <App/>,
-            errorElement: <ErrorView/>,
             children: [
                 {
                     element: <MainLayout/>,
@@ -81,11 +78,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'appearance',
                                     element: <AppearanceView/>,
                                     handle: {title: 'Appearance'}
-                                },
-                                {
-                                    path: 'tokens',
-                                    element: <CredentialManagement/>,
-                                    handle: {title: 'Personal access tokens'}
                                 }
                             ]
                         },
@@ -128,11 +120,6 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'security',
                                     element: <SecurityManagement/>,
                                     handle: {title: 'Administration - Security'}
-                                },
-                                {
-                                    path: 'api-keys',
-                                    element: <CredentialManagement service/>,
-                                    handle: {title: 'Administration - API keys'}
                                 },
                                 {
                                     path: 'messages',
@@ -190,7 +177,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                 },
                 {
                     path: '*',
-                    element: <NotFoundView/>,
+                    element: <ErrorView/>,
                     handle: {title: 'Error'}
                 }
             ]

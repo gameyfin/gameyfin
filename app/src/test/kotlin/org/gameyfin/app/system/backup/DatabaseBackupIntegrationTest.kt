@@ -8,7 +8,6 @@ import org.junit.jupiter.api.io.TempDir
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.math.BigDecimal
 import java.nio.file.Files
 import java.nio.file.Path
@@ -33,7 +32,6 @@ import kotlin.test.assertTrue
 /**
  * Creates backups of a database and restores them into databases of the same and of different types.
  */
-@Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DatabaseBackupIntegrationTest {
 
@@ -62,10 +60,10 @@ class DatabaseBackupIntegrationTest {
     private fun postgres(): DataSource = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
 
     /** Runs the database migrations the same way as on application startup */
-    private fun migrate(dataSource: DataSource, changelog: String = CHANGELOG) {
+    private fun migrate(dataSource: DataSource) {
         SpringLiquibase().apply {
             this.dataSource = dataSource
-            changeLog = changelog
+            changeLog = CHANGELOG
             resourceLoader = DefaultResourceLoader()
             afterPropertiesSet()
         }
@@ -89,39 +87,33 @@ class DatabaseBackupIntegrationTest {
         return "${schema.quote(columns.getValue("KEY").name)}, ${schema.quote(columns.getValue("VALUE").name)}"
     }
 
-    private fun insertSampleData(dataSource: DataSource, legacyMedia: Boolean = false) =
-        dataSource.connection.use { c ->
-            val appConfig = keyValueColumns(c, "APP_CONFIG")
-            val userPreference = keyValueColumns(c, "USER_PREFERENCE")
-            c.createStatement().use { s ->
-                s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('library.scan.enable', 'true')")
-                s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('sso.client-secret', 'ZW5jcnlwdGVk')")
-                s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, CONTENT_LENGTH, MIME_TYPE, ORIGINAL_URL, TYPE) VALUES (1, 'content-1', 1234, 'image/png', 'https://example.org/1.png', 0)")
-                s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, TYPE) VALUES (51, 'content-2', 2)")
-                s.execute("INSERT INTO LIBRARY (ID, CREATED_AT, NAME, UPDATED_AT, DISPLAY_ON_HOMEPAGE, DISPLAY_ORDER) VALUES (1, TIMESTAMP '2024-01-02 03:04:05.123456', 'Library', TIMESTAMP '2024-02-03 04:05:06', FALSE, 3)")
-                s.execute("INSERT INTO USERS (ID, EMAIL, EMAIL_CONFIRMED, ENABLED, PASSWORD, USERNAME, AVATAR_ID) VALUES (1, 'admin@example.org', TRUE, TRUE, 'hash', 'admin', 51)")
-                s.execute("INSERT INTO USER_ROLES (USER_ID, ROLES) VALUES (1, 'ROLE_SUPERADMIN')")
-                s.execute("INSERT INTO USER_PREFERENCE ($userPreference, USER_ID) VALUES ('preferred-theme', 'dark', 1)")
-            }
-            c.prepareStatement(
-                "INSERT INTO GAME (ID, CREATED_AT, UPDATED_AT, TITLE, PATH, SUMMARY, FILE_SIZE, MATCH_CONFIRMED, COVER_IMAGE_ID, LIBRARY_ID) " +
-                        "VALUES (101, ?, ?, 'Game', '/games/game', ?, 123456789012, TRUE, 1, 1)"
-            ).use { ps ->
-                ps.setObject(1, LocalDateTime.of(2024, 5, 6, 7, 8, 9))
-                ps.setObject(2, LocalDateTime.of(2024, 5, 6, 7, 8, 10))
-                ps.setString(3, UNICODE_TEXT)
-                ps.executeUpdate()
-            }
-            val mediaSql = if (legacyMedia) {
-                "INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)"
-            } else {
-                "INSERT INTO GAME_MEDIA (GAME_ID, MEDIA_POSITION, VIDEO_URL) VALUES (101, 0, ?)"
-            }
-            c.prepareStatement(mediaSql).use { ps ->
-                ps.setBytes(1, BLOB_CONTENT)
-                ps.executeUpdate()
-            }
+    private fun insertSampleData(dataSource: DataSource) = dataSource.connection.use { c ->
+        val appConfig = keyValueColumns(c, "APP_CONFIG")
+        val userPreference = keyValueColumns(c, "USER_PREFERENCE")
+        c.createStatement().use { s ->
+            s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('library.scan.enable', 'true')")
+            s.execute("INSERT INTO APP_CONFIG ($appConfig) VALUES ('sso.client-secret', 'ZW5jcnlwdGVk')")
+            s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, CONTENT_LENGTH, MIME_TYPE, ORIGINAL_URL, TYPE) VALUES (1, 'content-1', 1234, 'image/png', 'https://example.org/1.png', 0)")
+            s.execute("INSERT INTO IMAGE (ID, CONTENT_ID, TYPE) VALUES (51, 'content-2', 2)")
+            s.execute("INSERT INTO LIBRARY (ID, CREATED_AT, NAME, UPDATED_AT, DISPLAY_ON_HOMEPAGE, DISPLAY_ORDER) VALUES (1, TIMESTAMP '2024-01-02 03:04:05.123456', 'Library', TIMESTAMP '2024-02-03 04:05:06', FALSE, 3)")
+            s.execute("INSERT INTO USERS (ID, EMAIL, EMAIL_CONFIRMED, ENABLED, PASSWORD, USERNAME, AVATAR_ID) VALUES (1, 'admin@example.org', TRUE, TRUE, 'hash', 'admin', 51)")
+            s.execute("INSERT INTO USER_ROLES (USER_ID, ROLES) VALUES (1, 'ROLE_SUPERADMIN')")
+            s.execute("INSERT INTO USER_PREFERENCE ($userPreference, USER_ID) VALUES ('preferred-theme', 'dark', 1)")
         }
+        c.prepareStatement(
+            "INSERT INTO GAME (ID, CREATED_AT, UPDATED_AT, TITLE, PATH, SUMMARY, FILE_SIZE, MATCH_CONFIRMED, COVER_IMAGE_ID, LIBRARY_ID) " +
+                    "VALUES (101, ?, ?, 'Game', '/games/game', ?, 123456789012, TRUE, 1, 1)"
+        ).use { ps ->
+            ps.setObject(1, LocalDateTime.of(2024, 5, 6, 7, 8, 9))
+            ps.setObject(2, LocalDateTime.of(2024, 5, 6, 7, 8, 10))
+            ps.setString(3, UNICODE_TEXT)
+            ps.executeUpdate()
+        }
+        c.prepareStatement("INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)").use { ps ->
+            ps.setBytes(1, BLOB_CONTENT)
+            ps.executeUpdate()
+        }
+    }
 
     /** Reads the content of all application tables in a vendor-neutral representation */
     private fun dump(dataSource: DataSource): Map<String, List<Map<String, String?>>> = dataSource.connection.use { c ->
@@ -193,7 +185,7 @@ class DatabaseBackupIntegrationTest {
 
         val game = roundTrip.connection.use { c ->
             c.createStatement().use { s ->
-                s.executeQuery("SELECT g.SUMMARY, v.VIDEO_URL FROM GAME g JOIN GAME_MEDIA v ON v.GAME_ID = g.ID")
+                s.executeQuery("SELECT g.SUMMARY, v.VIDEO_URLS FROM GAME g JOIN GAME_VIDEO_URLS v ON v.GAME_ID = g.ID")
                     .use {
                         it.next(); it.getString(1) to it.getBytes(2)
                     }
@@ -206,26 +198,21 @@ class DatabaseBackupIntegrationTest {
     @Test
     fun `backup of an older schema version is restored and migrated afterwards`() {
         val source = h2("source-old")
-        migrate(source, "classpath:/db/changelog/db.changelog-2.4.1.yaml")
-        insertSampleData(source, legacyMedia = true)
-        val expectedOldSchema = dump(source)
-
-        val oldChangeSetCount = source.connection.use { it.changeLogRows() }
-        val archive = backup(source)
-        assertEquals(
-            restorer(source).currentChangeSets().take(oldChangeSetCount),
-            DatabaseRestorer.readManifest(archive).changeSets
-        )
-
-        // Migrating the original database provides the expected schema and converted legacy media.
         migrate(source)
+        insertSampleData(source)
         val expected = dump(source)
-        assertEquals(1, query(source, "SELECT COUNT(*) FROM GAME_MEDIA"))
+
+        // Pretend the source database has only been migrated up to the first changeset
+        val firstChangeSet = restorer(source).currentChangeSets().first()
+        source.connection.use { c ->
+            c.createStatement().use { it.execute("DELETE FROM DATABASECHANGELOG WHERE ID <> '${firstChangeSet.id}'") }
+        }
+        val archive = backup(source)
+        assertEquals(listOf(firstChangeSet), DatabaseRestorer.readManifest(archive).changeSets)
 
         val target = postgres()
         restorer(target).restore(archive, APP_KEY_FINGERPRINT, null)
-        assertEquals(oldChangeSetCount, target.connection.use { it.changeLogRows() })
-        assertEquals(expectedOldSchema, dump(target))
+        assertEquals(1, target.connection.use { it.changeLogRows() })
 
         // The remaining changesets are applied by the regular migration on startup
         migrate(target)

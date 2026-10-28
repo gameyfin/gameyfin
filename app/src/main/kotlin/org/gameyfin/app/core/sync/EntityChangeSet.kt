@@ -98,8 +98,6 @@ class EntityChangeSet {
  */
 object EntityFieldMappings {
 
-    val GAME_MEDIA_FIELDS = listOf(GameField.IMAGES, GameField.VIDEO_URLS, GameField.MEDIA_ORDER)
-
     val GAME_PROPERTIES: Map<String, GameField> = mapOf(
         "library" to GameField.LIBRARY_ID,
         "title" to GameField.TITLE,
@@ -118,6 +116,8 @@ object EntityFieldMappings {
         "keywords" to GameField.KEYWORDS,
         "features" to GameField.FEATURES,
         "perspectives" to GameField.PERSPECTIVES,
+        "images" to GameField.IMAGES,
+        "videoUrls" to GameField.VIDEO_URLS,
         "metadata.fields" to GameField.FIELD_METADATA,
         "metadata.originalIds" to GameField.ORIGINAL_IDS
     )
@@ -175,9 +175,7 @@ object EntityFieldMappings {
 
         return buildSet {
             dirtyProperties.forEach { property ->
-                if (property == "media") {
-                    addAll(GAME_MEDIA_FIELDS)
-                } else if (property == "metadata") {
+                if (property == "metadata") {
                     addAll(changedGameMetadataFields(previousMetadata(), currentMetadata()))
                 } else {
                     GAME_PROPERTIES[property]?.let { add(it) }

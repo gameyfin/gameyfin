@@ -41,10 +41,8 @@ class SessionBandwidthTracker(
 
     // For smoothing the monitoring window transitions
     private val previousWindowBytesAtomic = AtomicLong(0)
-
     @Volatile
     private var previousWindowStart: Long = System.nanoTime()
-
     @Volatile
     private var previousWindowEnd: Long = System.nanoTime()
 

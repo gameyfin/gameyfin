@@ -1,7 +1,6 @@
 package org.gameyfin.app.games
 
 import io.mockk.*
-import org.junit.jupiter.api.assertThrows
 import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.entities.CompanyType
 import org.gameyfin.app.games.repositories.CompanyRepository
@@ -9,22 +8,22 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.dao.DataIntegrityViolationException
-import org.springframework.transaction.PlatformTransactionManager
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class CompanyServiceTest {
 
     private lateinit var companyRepository: CompanyRepository
-    private lateinit var transactionManager: PlatformTransactionManager
+    private lateinit var self: CompanyService
     private lateinit var companyService: CompanyService
 
     @BeforeEach
     fun setup() {
         companyRepository = mockk()
-        transactionManager = mockk(relaxed = true)
-        // Spy so trySave can be stubbed while createOrGet still invokes it internally
-        companyService = spyk(CompanyService(companyRepository, transactionManager))
+        // self is a mockk of CompanyService so we can stub trySave independently
+        // of the real transaction proxy (which doesn't exist in unit tests)
+        self = mockk()
+        companyService = CompanyService(companyRepository, self)
     }
 
     @AfterEach
@@ -42,7 +41,7 @@ class CompanyServiceTest {
 
         assertEquals(existingCompany, result)
         verify(exactly = 1) { companyRepository.findByNameAndType("TestCompany", CompanyType.DEVELOPER) }
-        verify(exactly = 0) { companyService.trySave(any()) }
+        verify(exactly = 0) { self.trySave(any()) }
     }
 
     @Test
@@ -51,14 +50,14 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 2L, name = "NewCompany", type = CompanyType.PUBLISHER)
 
         every { companyRepository.findByNameAndType("NewCompany", CompanyType.PUBLISHER) } returns null
-        every { companyService.trySave(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(newCompany)
 
         assertEquals(savedCompany, result)
         verify(exactly = 1) { companyRepository.findByNameAndType("NewCompany", CompanyType.PUBLISHER) }
         verify(exactly = 1) {
-            companyService.trySave(match { it.name == "NewCompany" && it.type == CompanyType.PUBLISHER })
+            self.trySave(match { it.name == "NewCompany" && it.type == CompanyType.PUBLISHER })
         }
     }
 
@@ -71,13 +70,13 @@ class CompanyServiceTest {
             null,
             existingCompany
         )
-        every { companyService.trySave(any()) } throws DataIntegrityViolationException("Duplicate key")
+        every { self.trySave(any()) } throws DataIntegrityViolationException("Duplicate key")
 
         val result = companyService.createOrGet(company)
 
         assertEquals(existingCompany, result)
         verify(exactly = 2) { companyRepository.findByNameAndType("ConcurrentCompany", CompanyType.DEVELOPER) }
-        verify(exactly = 1) { companyService.trySave(any()) }
+        verify(exactly = 1) { self.trySave(any()) }
     }
 
     @Test
@@ -86,7 +85,7 @@ class CompanyServiceTest {
         val exception = DataIntegrityViolationException("Database error")
 
         every { companyRepository.findByNameAndType("FailedCompany", CompanyType.PUBLISHER) } returns null
-        every { companyService.trySave(any()) } throws exception
+        every { self.trySave(any()) } throws exception
 
         try {
             companyService.createOrGet(company)
@@ -96,7 +95,7 @@ class CompanyServiceTest {
         }
 
         verify(exactly = 2) { companyRepository.findByNameAndType("FailedCompany", CompanyType.PUBLISHER) }
-        verify(exactly = 1) { companyService.trySave(any()) }
+        verify(exactly = 1) { self.trySave(any()) }
     }
 
     @Test
@@ -108,8 +107,8 @@ class CompanyServiceTest {
 
         every { companyRepository.findByNameAndType("SameCompany", CompanyType.DEVELOPER) } returns null
         every { companyRepository.findByNameAndType("SameCompany", CompanyType.PUBLISHER) } returns null
-        every { companyService.trySave(match { it.type == CompanyType.DEVELOPER }) } returns savedDeveloper
-        every { companyService.trySave(match { it.type == CompanyType.PUBLISHER }) } returns savedPublisher
+        every { self.trySave(match { it.type == CompanyType.DEVELOPER }) } returns savedDeveloper
+        every { self.trySave(match { it.type == CompanyType.PUBLISHER }) } returns savedPublisher
 
         val resultDeveloper = companyService.createOrGet(developer)
         val resultPublisher = companyService.createOrGet(publisher)
@@ -127,14 +126,14 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 6L, name = companyName, type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType(companyName, CompanyType.DEVELOPER) } returns null
-        every { companyService.trySave(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
         assertNotNull(result)
         assertEquals(companyName, result.name)
         verify(exactly = 1) {
-            companyService.trySave(match { it.name == companyName && it.type == CompanyType.DEVELOPER })
+            self.trySave(match { it.name == companyName && it.type == CompanyType.DEVELOPER })
         }
     }
 
@@ -144,7 +143,7 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 7L, name = "", type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType("", CompanyType.DEVELOPER) } returns null
-        every { companyService.trySave(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
@@ -158,45 +157,28 @@ class CompanyServiceTest {
         val savedCompany = Company(id = 8L, name = "TestCompany", type = CompanyType.DEVELOPER)
 
         every { companyRepository.findByNameAndType("TestCompany", CompanyType.DEVELOPER) } returns null
-        every { companyService.trySave(any()) } returns savedCompany
+        every { self.trySave(any()) } returns savedCompany
 
         val result = companyService.createOrGet(company)
 
         assertEquals(8L, result.id)
         verify(exactly = 1) {
-            companyService.trySave(match { it.id == null && it.name == "TestCompany" })
+            self.trySave(match { it.id == null && it.name == "TestCompany" })
         }
     }
 
     @Test
-    fun `trySave should save via repository saveAndFlush within a new transaction`() {
+    fun `trySave should delegate directly to repository saveAndFlush`() {
         val company = Company(name = "DirectSave", type = CompanyType.DEVELOPER)
         val savedCompany = Company(id = 9L, name = "DirectSave", type = CompanyType.DEVELOPER)
 
         every { companyRepository.saveAndFlush(company) } returns savedCompany
 
-        val result = CompanyService(companyRepository, transactionManager).trySave(company)
+        // Call trySave directly on the real service (bypassing the self mock)
+        val realService = CompanyService(companyRepository, mockk())
+        val result = realService.trySave(company)
 
         assertEquals(savedCompany, result)
         verify(exactly = 1) { companyRepository.saveAndFlush(company) }
-        verify(exactly = 1) { transactionManager.getTransaction(any()) }
-        verify(exactly = 1) { transactionManager.commit(any()) }
-        verify(exactly = 0) { transactionManager.rollback(any()) }
-    }
-
-    @Test
-    fun `trySave should roll back its own transaction if save fails`() {
-        val company = Company(name = "DuplicateSave", type = CompanyType.DEVELOPER)
-        val exception = DataIntegrityViolationException("Duplicate key")
-
-        every { companyRepository.saveAndFlush(company) } throws exception
-
-        val thrown = assertThrows<DataIntegrityViolationException> {
-            CompanyService(companyRepository, transactionManager).trySave(company)
-        }
-
-        assertEquals(exception, thrown)
-        verify(exactly = 1) { transactionManager.rollback(any()) }
-        verify(exactly = 0) { transactionManager.commit(any()) }
     }
 }

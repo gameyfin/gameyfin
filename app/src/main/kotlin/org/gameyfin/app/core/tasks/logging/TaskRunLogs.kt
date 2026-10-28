@@ -3,16 +3,12 @@ package org.gameyfin.app.core.tasks.logging
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
-import org.gameyfin.app.core.tasks.logging.TaskRunLogs.Companion.MAX_LOG_BYTES
 import org.springframework.stereotype.Service
 import java.io.RandomAccessFile
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.isDirectory
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.name
+import kotlin.io.path.*
 
 /**
  * Access to the log files of task runs, which are written by the sifting appender configured in

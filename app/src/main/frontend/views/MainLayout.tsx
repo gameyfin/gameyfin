@@ -8,10 +8,10 @@ import {useAuth} from "Frontend/util/auth";
 import {
     ArrowLeftIcon,
     DiceSixIcon,
+    DiscIcon,
     HeartIcon,
     HouseIcon,
     ListMagnifyingGlassIcon,
-    ShootingStarIcon,
     SignInIcon,
 } from "@phosphor-icons/react";
 import Confetti, {ConfettiProps} from "react-confetti-boom";
@@ -147,7 +147,7 @@ export default function MainLayout() {
                                         isDisabled={location.pathname.startsWith("/requests")}
                                         onPress={() => navigate("/requests")}
                                     >
-                                        <ShootingStarIcon weight="fill"/>
+                                        <DiscIcon weight="fill"/>
                                         Requests
                                     </Button>
                                 </Tooltip.Trigger>

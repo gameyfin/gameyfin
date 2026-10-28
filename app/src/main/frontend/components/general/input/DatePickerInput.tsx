@@ -1,29 +1,32 @@
 import {useField} from "formik";
-import {Calendar, DateField, DatePicker, DatePickerProps, DateValue, Description, FieldError, Label} from "@heroui/react";
+import {Calendar, DateField, DatePicker, DatePickerProps, DateValue, FieldError, Label} from "@heroui/react";
 import {parseDate} from "@internationalized/date";
+import {useState} from "react";
 
 interface DatePickerInputProps extends Omit<DatePickerProps<DateValue>, "name" | "children" | "onChange" | "value"> {
     name: string;
     label?: string;
-    description?: string;
     showErrorUntouched?: boolean;
 }
 
-export default function DatePickerInput({label, description, showErrorUntouched = false, ...props}: DatePickerInputProps) {
-    const [field, meta, helpers] = useField<string>(props.name);
-    const value: DateValue | null = field.value ? parseDate(field.value) : null;
+export default function DatePickerInput({label, showErrorUntouched = false, ...props}: DatePickerInputProps) {
+    const [field, meta] = useField(props.name);
+    const [value, setValue] = useState<DateValue | null>(field.value ? parseDate(field.value) : null);
 
     return (
         <DatePicker
             className="min-h-20 grow"
-            validationBehavior="aria"
             {...props}
             value={value}
-            onChange={date => {
-                void helpers.setTouched(true, false);
-                void helpers.setValue(date ? date.toString() : '');
+            onChange={(date) => {
+                setValue(date);
+                field.onChange({
+                    target: {
+                        name: field.name,
+                        value: date ? date.toString() : ''
+                    }
+                });
             }}
-            onBlur={() => void helpers.setTouched(true)}
             name={field.name}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
         >
@@ -59,8 +62,7 @@ export default function DatePickerInput({label, description, showErrorUntouched 
                     </Calendar.YearPickerGrid>
                 </Calendar>
             </DatePicker.Popover>
-            {description && <Description className="w-0 min-w-full">{description}</Description>}
-            <FieldError>{meta.error}</FieldError>
+            <FieldError>{meta.initialError || meta.error}</FieldError>
         </DatePicker>
     );
 }

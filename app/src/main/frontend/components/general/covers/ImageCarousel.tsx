@@ -1,5 +1,4 @@
-import {Autoplay, Navigation} from 'swiper/modules';
-import type {Swiper as SwiperInstance} from 'swiper';
+import {Autoplay, Navigation, Pagination} from 'swiper/modules';
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Card, Modal, useOverlayState} from "@heroui/react";
 import ReactPlayerModule from 'react-player';
@@ -8,12 +7,11 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
-import {useMemo, useRef, useState} from "react";
+import {useEffect, useState} from "react";
 import {CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon} from "@phosphor-icons/react";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
-import {orderMedia} from "Frontend/util/mediaOrder";
 
-// Depending on the bundler interop the default import may be the module namespace.
+// react-player v2 is CJS; depending on the bundler interop the default import may be the module namespace
 const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
 
 export interface CarouselImage {
@@ -25,7 +23,6 @@ export interface CarouselImage {
 interface ImageCarouselProps {
     images?: CarouselImage[];
     videosUrls?: string[];
-    mediaOrder?: string[];
     className?: string;
 }
 
@@ -36,7 +33,7 @@ interface SlideData {
     isNext: boolean;
 }
 
-export default function ImageCarousel({images, videosUrls, mediaOrder, className}: ImageCarouselProps) {
+export default function ImageCarousel({images, videosUrls, className}: ImageCarouselProps) {
 
     interface CarouselElement {
         type: "image" | "video";
@@ -46,12 +43,11 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
 
     const DEFAULT_SLIDES_PER_VIEW = 3;
 
-    const swiperRef = useRef<SwiperInstance | null>(null);
-    const [activeIndex, setActiveIndex] = useState(0);
+    const [elements, setElements] = useState<CarouselElement[]>();
     const [selectedImage, setSelectedImage] = useState<CarouselImage>();
     const imagePopup = useOverlayState();
 
-    const elements = useMemo(() => {
+    useEffect(() => {
         const imageElements = images?.map((image) => ({
             type: "image" as const,
             url: image.url,
@@ -62,16 +58,8 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
             url: videoUrl
         })) || [];
 
-        return orderMedia<CarouselElement>(imageElements, videos, mediaOrder);
-    }, [images, videosUrls, mediaOrder]);
-
-    const canLoop = elements.length > 1;
-    // Centered loop mode needs the visible slides plus a buffer on either side.
-    // Repeat complete sequences so wrapping preserves the original media order.
-    const minimumLoopSlides = DEFAULT_SLIDES_PER_VIEW + Math.ceil(DEFAULT_SLIDES_PER_VIEW / 2);
-    const slides = canLoop && elements.length < minimumLoopSlides
-        ? Array.from({length: Math.ceil(minimumLoopSlides / elements.length)}, () => elements).flat()
-        : elements;
+        setElements([...imageElements, ...videos]);
+    }, [images, videosUrls])
 
     function showImagePopup(image: CarouselImage) {
         setSelectedImage(image);
@@ -84,31 +72,28 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                 <div className="w-full flex flex-col gap-2 items-center">
                     <div className="w-full flex flex-row items-center">
                         <IconContext.Provider value={{size: 50}}>
-                            <CaretLeftIcon className={`swiper-custom-button-prev cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
+                            <CaretLeftIcon className="swiper-custom-button-prev cursor-pointer fill-accent"/>
                             <Swiper
-                                key={JSON.stringify(elements)}
-                                modules={[Navigation, Autoplay]}
-                                slidesPerView={DEFAULT_SLIDES_PER_VIEW}
-                                onSwiper={(swiper) => {
-                                    swiperRef.current = swiper;
-                                    setActiveIndex(swiper.realIndex % elements.length);
+                                modules={[Pagination, Navigation, Autoplay]}
+                                slidesPerView={DEFAULT_SLIDES_PER_VIEW > elements.length ? elements.length : DEFAULT_SLIDES_PER_VIEW}
+                                pagination={{
+                                    clickable: true,
+                                    el: ".swiper-custom-pagination"
                                 }}
-                                onSlideChange={(swiper) => setActiveIndex(swiper.realIndex % elements.length)}
                                 navigation={{
                                     prevEl: ".swiper-custom-button-prev",
                                     nextEl: ".swiper-custom-button-next"
                                 }}
                                 centeredSlides={true}
-                                loop={canLoop}
-                                allowTouchMove={canLoop}
+                                loop={true}
                                 spaceBetween={0}
-                                autoplay={canLoop && {
+                                autoplay={{
                                     delay: 10000,
                                     disableOnInteraction: true
                                 }}
-                                className="w-full min-w-0"
+                                className="w-full"
                             >
-                                {slides.map((e, index) => (
+                                {elements && elements.map((e, index) => (
                                     <SwiperSlide key={index} virtualIndex={index}>
                                         {({isActive}: SlideData) => {
                                             if (e.type === "image") {
@@ -116,7 +101,7 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                                                     <BlurhashImage
                                                         src={e.url}
                                                         blurhash={e.blurhash}
-                                                        alt={`Game screenshot slide ${index % elements.length}`}
+                                                        alt={`Game screenshot slide ${index}`}
                                                         className={`w-full h-full object-cover aspect-video rounded-xl cursor-zoom-in transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}
                                                         onClick={() => showImagePopup(e)}
                                                         loading="lazy"
@@ -127,20 +112,13 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                                                 <Card
                                                     className={`w-full h-full aspect-video p-0 rounded-xl overflow-hidden transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}>
                                                     <ReactPlayer
-                                                        src={e.url}
+                                                        url={e.url}
                                                         width="100%"
                                                         height="100%"
                                                         light={true}
                                                         controls={true}
                                                         playing={isActive}
                                                         playIcon={<PlayIcon weight="fill"/>}
-                                                        config={{
-                                                            youtube: {
-                                                                // Apply the policy to the iframe, not the ReactPlayer wrapper.
-                                                                referrerpolicy: "strict-origin-when-cross-origin",
-                                                                origin: window.location.origin
-                                                            }
-                                                        }}
                                                     />
                                                 </Card>
                                             )
@@ -152,28 +130,12 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                                             onOpenChange={imagePopup.setOpen}
                                             onClose={imagePopup.close}/>
                             </Swiper>
-                            <CaretRightIcon className={`swiper-custom-button-next cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
+                            <CaretRightIcon className="swiper-custom-button-next cursor-pointer fill-accent"/>
                         </IconContext.Provider>
                     </div>
                     <div>
-                        <div className="swiper-custom-pagination swiper-pagination-bullets swiper-pagination-clickable swiper-pagination-horizontal">
-                            {elements.map((_, index) => (
-                                <button
-                                    key={index}
-                                    type="button"
-                                    aria-label={`Go to media ${index + 1}`}
-                                    aria-current={activeIndex === index ? "true" : undefined}
-                                    className={`swiper-pagination-bullet ${activeIndex === index ? "swiper-pagination-bullet-active" : ""}`}
-                                    onClick={() => {
-                                        const swiper = swiperRef.current;
-                                        if (!swiper || swiper.destroyed || !canLoop) return;
-                                        const cycleStart = Math.floor(swiper.realIndex / elements.length) * elements.length;
-                                        swiper.autoplay.stop();
-                                        swiper.slideToLoop(cycleStart + index);
-                                    }}
-                                />
-                            ))}
-                        </div>
+                        {/* Wrap the pagination in a div because it gets replaced at runtime be SwiperJS and loses all styling */}
+                        <div className="swiper-custom-pagination"/>
                     </div>
                 </div>
             }

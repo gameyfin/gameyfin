@@ -35,7 +35,8 @@ enum class IgnoredPathSourceType {
 @Inheritance
 abstract class IgnoredPathSource(
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    open var id: Long? = null
 )
 
 @Entity

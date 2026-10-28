@@ -23,24 +23,18 @@ class GameFieldMetadata(
 @Inheritance
 abstract class GameFieldSource(
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    open var id: Long? = null
 )
 
 @Entity
 class GameFieldPluginSource(
     @ManyToOne
-    var plugin: PluginManagementEntry
+    val plugin: PluginManagementEntry
 ) : GameFieldSource()
 
 @Entity
 class GameFieldUserSource(
     @ManyToOne
-    var user: User
-) : GameFieldSource()
-
-/** Historical attribution remains available after credential revocation or creator deletion. */
-@Entity
-class GameFieldApiSource(
-    @Column(name = "api_credential_id") var credentialId: String,
-    @Column(name = "api_credential_name", length = 100) var credentialName: String
+    val user: User
 ) : GameFieldSource()

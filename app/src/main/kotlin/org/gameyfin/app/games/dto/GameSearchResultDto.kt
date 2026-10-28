@@ -14,8 +14,7 @@ class GameSearchResultDto(
     val release: Instant?,
     val publishers: Collection<String>?,
     val developers: Collection<String>?,
-    val originalIds: Map<String, ExternalProviderIdDto>,
-    val screenshotUrls: List<UrlWithSourceDto>? = null
+    val originalIds: Map<String, ExternalProviderIdDto>
 )
 
 class UrlWithSourceDto(

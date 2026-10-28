@@ -47,7 +47,7 @@ class UserService(
 
         private val log = KotlinLogging.logger {}
     }
-
+    
     val selfRegistrationAllowed: Boolean
         get() = config.get(ConfigProperties.Users.SignUps.Allow) == true
 

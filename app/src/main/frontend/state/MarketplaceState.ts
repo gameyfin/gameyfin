@@ -1,5 +1,4 @@
-import {proxy, subscribe} from "valtio/index";
-import {toast} from "@heroui/react";
+import {proxy} from "valtio/index";
 import {PluginMarketplaceEndpoint} from "Frontend/generated/endpoints";
 import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 import PluginMarketplaceDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/PluginMarketplaceDto";
@@ -9,8 +8,7 @@ import PluginMarketplaceCreateDto
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/PluginMarketplaceCreateDto";
 import PluginMarketplaceUpdateDto
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/PluginMarketplaceUpdateDto";
-import {isRunActive, taskState, trackRun} from "Frontend/state/TaskState";
-import type TaskRunDto from "Frontend/generated/org/gameyfin/app/core/tasks/dto/TaskRunDto";
+import {upsertPlugin} from "Frontend/state/PluginState";
 
 type MarketplaceState = {
     isLoaded: boolean;
@@ -70,41 +68,38 @@ async function reloadMarketplaces() {
     marketplaceState.marketplaces = await PluginMarketplaceEndpoint.getMarketplaces();
 }
 
-async function withPending(pluginId: string, action: () => Promise<TaskRunDto>): Promise<TaskRunDto> {
+async function withPending<T>(pluginId: string, action: () => Promise<T>): Promise<T> {
     marketplaceState.pending[pluginId] = true;
     try {
-        const run = await action();
-        trackRun(run);
-        // Keep the controls pending after the request returns, until the background work finishes.
-        const unsubscribe = subscribe(taskState.runs, checkFinished);
-        function checkFinished() {
-            const current = taskState.runs[run.id];
-            if (!current || isRunActive(current)) return;
-            unsubscribe();
-            void reloadPlugins().catch((e: any) => {
-                toast.danger("Could not refresh marketplace", {description: e?.message});
-            }).finally(() => {
-                delete marketplaceState.pending[pluginId];
-            });
-        }
-        checkFinished();
-        return run;
-    } catch (e) {
+        return await action();
+    } finally {
         delete marketplaceState.pending[pluginId];
-        throw e;
+        await reloadPlugins();
     }
 }
 
 export async function installPlugin(marketplaceId: string, pluginId: string, version?: string) {
-    return withPending(pluginId, () => PluginMarketplaceEndpoint.install(marketplaceId, pluginId, version));
+    return withPending(pluginId, async () => {
+        const plugin = await PluginMarketplaceEndpoint.install(marketplaceId, pluginId, version);
+        upsertPlugin(plugin);
+        return plugin;
+    });
 }
 
 export async function updatePlugin(pluginId: string, version?: string) {
-    return withPending(pluginId, () => PluginMarketplaceEndpoint.update(pluginId, version));
+    return withPending(pluginId, async () => {
+        const plugin = await PluginMarketplaceEndpoint.update(pluginId, version);
+        upsertPlugin(plugin);
+        return plugin;
+    });
 }
 
 export async function uninstallPlugin(pluginId: string) {
-    return withPending(pluginId, () => PluginMarketplaceEndpoint.uninstall(pluginId));
+    return withPending(pluginId, async () => {
+        const plugin = await PluginMarketplaceEndpoint.uninstall(pluginId);
+        upsertPlugin(plugin);
+        return plugin;
+    });
 }
 
 export async function addMarketplace(marketplace: PluginMarketplaceCreateDto) {

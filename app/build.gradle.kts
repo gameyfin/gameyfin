@@ -1,5 +1,4 @@
 import org.apache.tools.ant.filters.ReplaceTokens
-import java.util.*
 
 group = "org.gameyfin"
 version = rootProject.version
@@ -24,11 +23,7 @@ application {
 }
 
 springBoot {
-    buildInfo {
-        properties {
-            additional.set(mapOf("git.commit" to providers.environmentVariable("GITHUB_SHA").getOrElse("unknown")))
-        }
-    }
+    buildInfo()
 }
 
 allOpen {
@@ -46,7 +41,6 @@ dependencies {
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${rootProject.extra["springDocVersion"]}")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-aspectj")
     implementation("org.springframework.boot:spring-boot-starter-jackson")
@@ -98,7 +92,6 @@ dependencies {
 
     // Utils
     implementation("org.apache.tika:tika-core:${rootProject.extra["tikaVersion"]}")
-    implementation("org.apache.tika:tika-parser-image-module:${rootProject.extra["tikaVersion"]}")
     implementation("me.xdrop:fuzzywuzzy:${rootProject.extra["fuzzywuzzyVersion"]}")
     implementation("com.vanniktech:blurhash:${rootProject.extra["blurhashVersion"]}")
 
@@ -133,8 +126,6 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    // Isolated integration databases always use a disposable test key, never a deployment secret.
-    environment("APP_KEY", Base64.getEncoder().encodeToString(ByteArray(32) { (it + 1).toByte() }))
     finalizedBy(tasks.jacocoTestReport)
 }
 

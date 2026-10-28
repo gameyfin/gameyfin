@@ -260,31 +260,6 @@ class PluginServiceTest {
     }
 
     @Test
-    fun `setPluginPriorities should broadcast updated priorities to all subscribers`() {
-        val priorities = mapOf("priority-test-a" to 2, "priority-test-b" to 1)
-        priorities.keys.forEach { id ->
-            every { pluginManager.getManagementEntry(id) } returns PluginManagementEntry(id)
-        }
-        every { pluginManagementRepository.save(any()) } returnsArgument 0
-
-        val expected = priorities.map { (id, priority) -> PluginUpdateDto(id = id, priority = priority) }
-        fun updates() = PluginService.subscribe()
-            .flatMapIterable { it }
-            .filter { it.id in priorities }
-            .take(2)
-            .collectList()
-
-        StepVerifier.create(reactor.core.publisher.Mono.zip(updates(), updates()))
-            .then { service.setPluginPriorities(priorities) }
-            .assertNext { received ->
-                assertEquals(expected, received.t1)
-                assertEquals(expected, received.t2)
-            }
-            .expectComplete()
-            .verify(java.time.Duration.ofSeconds(5))
-    }
-
-    @Test
     fun `setPluginPriorities with empty map should not call save`() {
         service.setPluginPriorities(emptyMap())
         verify(exactly = 0) { pluginManagementRepository.save(any()) }
@@ -835,3 +810,4 @@ class PluginServiceTest {
     @Suppress("unused")
     enum class TestMode { FAST, SLOW }
 }
+

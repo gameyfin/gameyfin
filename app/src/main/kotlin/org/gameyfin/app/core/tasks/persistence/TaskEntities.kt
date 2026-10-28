@@ -17,7 +17,7 @@ import java.time.Instant
 class TaskScheduleEntry(
     @Id
     @Column(name = "task_key")
-    var taskKey: String,
+    val taskKey: String,
 
     var cron: String?,
 
@@ -30,7 +30,7 @@ interface TaskScheduleRepository : JpaRepository<TaskScheduleEntry, String>
 @Table(name = "task_setting")
 class TaskSettingEntry(
     @EmbeddedId
-    var id: TaskSettingKey,
+    val id: TaskSettingKey,
 
     @Column(name = "setting_value", length = 4000)
     var value: String?
@@ -39,10 +39,10 @@ class TaskSettingEntry(
 @Embeddable
 data class TaskSettingKey(
     @Column(name = "task_key")
-    var taskKey: String,
+    val taskKey: String,
 
     @Column(name = "setting_key")
-    var settingKey: String
+    val settingKey: String
 ) : Serializable
 
 interface TaskSettingRepository : JpaRepository<TaskSettingEntry, TaskSettingKey> {
@@ -54,10 +54,10 @@ interface TaskSettingRepository : JpaRepository<TaskSettingEntry, TaskSettingKey
 class TaskRunEntry(
     @Id
     @Column(length = 36)
-    var id: String,
+    val id: String,
 
     @Column(name = "task_key", nullable = false)
-    var taskKey: String,
+    val taskKey: String,
 
     @Column(name = "display_name", nullable = false, length = 1000)
     var displayName: String,
@@ -67,14 +67,14 @@ class TaskRunEntry(
 
     @Enumerated(EnumType.STRING)
     @Column(name = "trigger_type", nullable = false)
-    var trigger: TaskTrigger,
+    val trigger: TaskTrigger,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: TaskRunStatus,
 
     @Column(name = "started_at", nullable = false)
-    var startedAt: Instant,
+    val startedAt: Instant,
 
     @Column(name = "finished_at")
     var finishedAt: Instant? = null,
@@ -86,13 +86,10 @@ class TaskRunEntry(
     var errorMessage: String? = null
 )
 
-interface TaskRunRepository : JpaRepository<TaskRunEntry, String>,
-    org.springframework.data.jpa.repository.JpaSpecificationExecutor<TaskRunEntry> {
+interface TaskRunRepository : JpaRepository<TaskRunEntry, String> {
     fun findAllByTaskKeyOrderByStartedAtDesc(taskKey: String, pageable: Pageable): Slice<TaskRunEntry>
 
     fun findAllByOrderByStartedAtDesc(pageable: Pageable): Slice<TaskRunEntry>
-
-    fun findAllByTaskKeyNotInOrderByStartedAtDesc(taskKeys: Collection<String>, pageable: Pageable): Slice<TaskRunEntry>
 
     fun findFirstByTaskKeyOrderByStartedAtDesc(taskKey: String): TaskRunEntry?
 

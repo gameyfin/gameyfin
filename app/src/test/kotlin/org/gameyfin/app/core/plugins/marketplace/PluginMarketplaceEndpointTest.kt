@@ -1,26 +1,25 @@
 package org.gameyfin.app.core.plugins.marketplace
 
 import io.mockk.*
-import org.gameyfin.app.core.tasks.dto.TaskRunDto
+import org.gameyfin.app.core.plugins.dto.PluginDto
 import org.gameyfin.app.core.plugins.marketplace.dto.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class PluginMarketplaceEndpointTest {
 
     private lateinit var service: PluginMarketplaceService
-    private lateinit var tasks: PluginInstallationTaskService
     private lateinit var endpoint: PluginMarketplaceEndpoint
 
     @BeforeEach
     fun setup() {
         service = mockk()
-        tasks = mockk()
-        endpoint = PluginMarketplaceEndpoint(service, tasks)
+        endpoint = PluginMarketplaceEndpoint(service)
     }
 
     @AfterEach
@@ -125,19 +124,19 @@ class PluginMarketplaceEndpointTest {
 
     @Test
     fun `install should delegate to service`() {
-        val dto = mockk<TaskRunDto>()
-        every { tasks.install("m1", "plugin", "1.0.0") } returns dto
-        every { tasks.install("m1", "plugin", null) } returns dto
+        val dto = mockk<PluginDto>()
+        every { service.install("m1", "plugin", "1.0.0") } returns dto
+        every { service.install("m1", "plugin", null) } returns null
 
         assertSame(dto, endpoint.install("m1", "plugin", "1.0.0"))
-        assertSame(dto, endpoint.install("m1", "plugin", null))
-        verify(exactly = 1) { tasks.install("m1", "plugin", "1.0.0") }
-        verify(exactly = 1) { tasks.install("m1", "plugin", null) }
+        assertNull(endpoint.install("m1", "plugin", null))
+        verify(exactly = 1) { service.install("m1", "plugin", "1.0.0") }
+        verify(exactly = 1) { service.install("m1", "plugin", null) }
     }
 
     @Test
     fun `install should propagate errors`() {
-        every { tasks.install(any(), any(), any()) } throws IllegalStateException("incompatible")
+        every { service.install(any(), any(), any()) } throws IllegalStateException("incompatible")
 
         val e = assertFailsWith<IllegalStateException> { endpoint.install("m1", "plugin", null) }
         assertEquals("incompatible", e.message)
@@ -145,25 +144,25 @@ class PluginMarketplaceEndpointTest {
 
     @Test
     fun `update should delegate to service`() {
-        val dto = mockk<TaskRunDto>()
-        every { tasks.update("plugin", "2.0.0") } returns dto
+        val dto = mockk<PluginDto>()
+        every { service.update("plugin", "2.0.0") } returns dto
 
         assertSame(dto, endpoint.update("plugin", "2.0.0"))
-        verify(exactly = 1) { tasks.update("plugin", "2.0.0") }
+        verify(exactly = 1) { service.update("plugin", "2.0.0") }
     }
 
     @Test
     fun `uninstall should delegate to service`() {
-        val dto = mockk<TaskRunDto>()
-        every { tasks.uninstall("plugin") } returns dto
+        val dto = mockk<PluginDto>()
+        every { service.uninstall("plugin") } returns dto
 
         assertSame(dto, endpoint.uninstall("plugin"))
-        verify(exactly = 1) { tasks.uninstall("plugin") }
+        verify(exactly = 1) { service.uninstall("plugin") }
     }
 
     @Test
     fun `uninstall should propagate errors`() {
-        every { tasks.uninstall("plugin") } throws IllegalArgumentException("not installed")
+        every { service.uninstall("plugin") } throws IllegalArgumentException("not installed")
 
         assertFailsWith<IllegalArgumentException> { endpoint.uninstall("plugin") }
     }

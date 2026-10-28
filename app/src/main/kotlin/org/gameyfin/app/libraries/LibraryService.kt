@@ -1,6 +1,7 @@
 package org.gameyfin.app.libraries
 
 import com.vaadin.hilla.exception.EndpointException
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.core.sync.EntityEventBroadcaster
 import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
@@ -10,8 +11,8 @@ import org.gameyfin.app.libraries.entities.IgnoredPathSourceType
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.app.libraries.extensions.toAdminDto
-import org.gameyfin.app.libraries.extensions.toEntity
 import org.gameyfin.app.libraries.extensions.toSummaryDto
+import org.gameyfin.app.libraries.extensions.toEntity
 import org.gameyfin.app.users.UserService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -28,6 +29,8 @@ class LibraryService(
 ) {
 
     companion object {
+        private val log = KotlinLogging.logger {}
+
         /* Websockets */
         private val userEvents = EntityEventBroadcaster<LibraryEvent>("libraryUserEvents")
         private val adminEvents = EntityEventBroadcaster<LibraryEvent>("libraryAdminEvents")
@@ -89,13 +92,6 @@ class LibraryService(
      * @return The created or updated LibraryDto object.
      */
     fun create(library: LibraryAdminDto, scanAfterCreation: Boolean) {
-        createEntity(library, scanAfterCreation)
-    }
-
-    fun createReturningId(library: LibraryAdminDto, scanAfterCreation: Boolean): Long =
-        createEntity(library, scanAfterCreation).id!!
-
-    private fun createEntity(library: LibraryAdminDto, scanAfterCreation: Boolean): Library {
         // Check for duplicate directories before creating a new library
         checkForDuplicateDirectories(library.directories.map { it.internalPath })
 
@@ -114,7 +110,6 @@ class LibraryService(
         if (scanAfterCreation) {
             libraryScanService.triggerScan(ScanType.QUICK, listOf(newLibrary.id!!))
         }
-        return newLibrary
     }
 
     /**

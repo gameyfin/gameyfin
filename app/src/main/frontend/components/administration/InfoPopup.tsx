@@ -16,7 +16,7 @@ export default function InfoPopup({content}: InfoPopupProps) {
                     <InfoIcon size={16} weight="fill" className="block"/>
                 </span>
             </Tooltip.Trigger>
-            <Tooltip.Content placement="left" className="max-w-xs [word-break:normal] wrap-normal">
+            <Tooltip.Content placement="right" className="max-w-xs [word-break:normal] [overflow-wrap:normal]">
                 <Markdown
                     remarkPlugins={[remarkBreaks]}
                     components={{

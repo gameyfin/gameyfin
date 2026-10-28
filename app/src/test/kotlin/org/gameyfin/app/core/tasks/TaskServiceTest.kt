@@ -66,22 +66,6 @@ class TaskServiceTest {
     )
 
     @Test
-    fun `hidden tasks should be excluded from task list and paginated history`() {
-        registry.register(taskDefinition("visible"))
-        registry.register(TaskDefinition(
-            key = "hidden", name = "Hidden", visibleInOverview = false, action = TaskAction.Run { null }
-        ))
-        val pageable = PageRequest.of(0, 25)
-        every { runRepository.findAllByTaskKeyNotInOrderByStartedAtDesc(listOf("hidden"), pageable) } returns
-                SliceImpl(emptyList(), pageable, true)
-
-        assertEquals(listOf("visible"), service.getTasks().map { it.key })
-        assertTrue(service.getRuns(null, 0, 25).hasMore)
-        assertTrue(service.getRuns("hidden", 0, 25).runs.isEmpty())
-        verify(exactly = 0) { runRepository.findAllByTaskKeyOrderByStartedAtDesc("hidden", any()) }
-    }
-
-    @Test
     fun `getTasks should list core tasks before plugin tasks`() {
         registry.register(taskDefinition("b"))
         registry.register(

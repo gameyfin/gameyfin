@@ -136,7 +136,6 @@ class PluginService(
             val pluginManagementEntry = pluginManager.getManagementEntry(pluginId)
             pluginManagementEntry.priority = priority
             pluginManagementRepository.save(pluginManagementEntry)
-            emit(PluginUpdateDto(id = pluginId, priority = priority))
         }
     }
 

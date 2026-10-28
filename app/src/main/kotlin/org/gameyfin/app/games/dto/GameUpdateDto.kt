@@ -19,17 +19,5 @@ data class GameUpdateDto(
     val features: List<GameFeature>?,
     val perspectives: List<PlayerPerspective>?,
     val keywords: List<String>?,
-    val metadata: GameUpdateMetadataDto?,
-    val cover: GameImageSelectionDto? = null,
-    val header: GameImageSelectionDto? = null,
-    val images: List<GameImageSelectionDto>? = null,
-    val videoUrls: List<String>? = null,
-    val mediaOrder: List<String>? = null
-)
-
-/** Exactly one reference must be supplied. Upload keys name multipart file parts. */
-data class GameImageSelectionDto(
-    val id: Long? = null,
-    val url: String? = null,
-    val uploadKey: String? = null
+    val metadata: GameUpdateMetadataDto?
 )

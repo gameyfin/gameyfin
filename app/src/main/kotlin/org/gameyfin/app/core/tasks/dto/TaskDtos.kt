@@ -51,8 +51,7 @@ data class TaskRunDto(
     val summary: String?,
     val errorMessage: String?,
     val cancellable: Boolean,
-    val cancelRequested: Boolean,
-    val visibleInOverview: Boolean = true
+    val cancelRequested: Boolean
 )
 
 data class TaskStepDto(

@@ -47,8 +47,7 @@ fun Game.toAdminDto(): GameAdminDto {
         perspectives = this.perspectives,
         images = this.images.map { it.toDto() },
         videoUrls = this.videoUrls.map { it.toString() },
-        metadata = this.metadata.toAdminDto(),
-        mediaOrder = this.mediaOrder.toList()
+        metadata = this.metadata.toAdminDto()
     )
 }
 
@@ -76,8 +75,7 @@ fun Game.toUserDto(): GameUserDto {
         perspectives = this.perspectives,
         images = this.images.map { it.toDto() },
         videoUrls = this.videoUrls.map { it.toString() },
-        metadata = this.metadata.toUserDto(),
-        mediaOrder = this.mediaOrder.toList()
+        metadata = this.metadata.toUserDto()
     )
 }
 
@@ -143,7 +141,6 @@ fun Game.toPatchDto(fields: Set<GameField>, admin: Boolean): GamePatchDto? {
             )
 
             GameField.VIDEO_URLS -> values.copy(videoUrls = videoUrls.map { it.toString() })
-            GameField.MEDIA_ORDER -> values.copy(mediaOrder = mediaOrder.toList())
             GameField.FILE_SIZE -> values.copy(fileSize = metadata.fileSize ?: 0L)
             GameField.PATH -> values.copy(path = metadata.path)
             GameField.DOWNLOAD_COUNT -> values.copy(downloadCount = metadata.downloadCount)
@@ -182,12 +179,6 @@ private fun GameFieldMetadata.toDto(): GameFieldMetadataDto {
                 updatedAt = this.updatedAt!!
             )
         }
-
-        is GameFieldApiSource -> GameFieldMetadataDto(
-            type = GameFieldMetadataType.API_KEY,
-            source = source.credentialName,
-            updatedAt = this.updatedAt!!
-        )
 
         is GameFieldUserSource -> {
             GameFieldMetadataDto(

@@ -9,6 +9,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.*
 import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteExisting
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 
@@ -97,6 +98,7 @@ class FileStorageService(
      * Checks if a file exists for the given content ID.
      */
     fun fileExists(contentId: String?): Boolean {
-        return contentId != null && rootPath.resolve(contentId).exists()
+        if (contentId == null) return false
+        return rootPath.resolve(contentId).exists()
     }
 }

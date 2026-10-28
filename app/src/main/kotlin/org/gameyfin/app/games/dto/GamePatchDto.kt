@@ -28,7 +28,6 @@ enum class GameField(val adminOnly: Boolean = false) {
     /** Also updates `previewImage` of the summary */
     IMAGES,
     VIDEO_URLS,
-    MEDIA_ORDER,
     FILE_SIZE,
     PATH(adminOnly = true),
     DOWNLOAD_COUNT(adminOnly = true),
@@ -69,7 +68,6 @@ data class GamePatchValuesDto(
     val images: List<ImageDto>? = null,
     val previewImage: ImageDto? = null,
     val videoUrls: List<String>? = null,
-    val mediaOrder: List<String>? = null,
     val fileSize: Long? = null,
     val path: String? = null,
     val downloadCount: Int? = null,
