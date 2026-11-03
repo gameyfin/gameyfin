@@ -1,4 +1,4 @@
-import React, {ReactNode, useEffect, useRef, useState} from "react";
+import React, {memo, ReactNode, useEffect, useRef, useState} from "react";
 import {Button, Input} from "@heroui/react";
 import {GridList, GridListItem, useDragAndDrop} from "react-aria-components";
 import {
@@ -10,13 +10,41 @@ import {
     TrashIcon,
     VideoIcon
 } from "@phosphor-icons/react";
-import {useFormikContext} from "formik";
+import {FormikHelpers, useFormikContext} from "formik";
 import ReactPlayerModule from "react-player";
 import GameImagePickerModal from "Frontend/components/general/modals/GameImagePickerModal";
 import {allDraftImages, DraftImage, GameMetadataFormValues, MAX_MEDIA_SIZE, MediaKind} from "Frontend/util/gameMedia";
 import {orderMedia} from "Frontend/util/mediaOrder";
 
 const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
+
+const VideoPreview = memo(function VideoPreview({url, label}: {url: string; label: string}) {
+    const container = useRef<HTMLDivElement>(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        // Video thumbnails may require an external request. Only start it near the viewport.
+        if (!container.current) return;
+        const observer = new IntersectionObserver(entries => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                setVisible(true);
+                observer.disconnect();
+            }
+        }, {rootMargin: "200px"});
+        observer.observe(container.current);
+        return () => observer.disconnect();
+    }, []);
+
+    return <div ref={container} role="img" aria-label={label}
+                className="w-full aspect-video overflow-hidden rounded bg-black">
+        <div inert className="pointer-events-none flex size-full items-center justify-center text-white">
+            {visible ? <ReactPlayer src={url} width="100%" height="100%" light
+                                    playing={false} controls={false} previewTabIndex={-1}
+                                    playIcon={<PlayIcon weight="fill" size={32}/>}/>
+                : <PlayIcon weight="fill" size={32}/>}
+        </div>
+    </div>;
+});
 
 interface OrderedItem {
     key: string;
@@ -68,6 +96,51 @@ function OrderedMediaList({label, items, onChange, onDelete, disabled, layout = 
     </GridList>;
 }
 
+// Keep the drag-and-drop collection and video previews stable while other form fields change.
+const MediaGallery = memo(function MediaGallery({mediaImages, mediaVideos, mediaOrder, isSubmitting, setValues}: {
+    mediaImages: GameMetadataFormValues["mediaImages"];
+    mediaVideos: GameMetadataFormValues["mediaVideos"];
+    mediaOrder: GameMetadataFormValues["mediaOrder"];
+    isSubmitting: boolean;
+    setValues: FormikHelpers<GameMetadataFormValues>["setValues"];
+}) {
+    const occurrences = new Map<string, number>();
+    const videos = mediaVideos.map(url => {
+        const occurrence = occurrences.get(url) ?? 0;
+        occurrences.set(url, occurrence + 1);
+        return {key: `${url}-${occurrence}`, url};
+    });
+    const galleryItems = orderMedia<{ key: string; kind: "image" | "video"; image?: DraftImage; url?: string }>(
+        mediaImages.map(image => ({key: image.key, kind: "image", image})),
+        videos.map(video => ({key: `video-${video.key}`, kind: "video", url: video.url})),
+        mediaOrder
+    ).map((item, index) => ({
+        ...item,
+        label: `${item.kind === "image" ? "screenshot" : "video"} ${index + 1}`,
+        preview: item.kind === "image"
+            ? <img src={item.image!.previewUrl} alt={`Screenshot ${index + 1}`} loading="lazy" decoding="async"
+                   className="w-full aspect-video rounded object-cover"/>
+            : <VideoPreview url={item.url!} label={`Video ${index + 1} preview`}/>,
+        content: <span className="min-w-0 flex flex-row gap-2 flex-1 truncate text-sm"
+                       title={item.url}>{item.kind === "image" ? <ImageIcon/> : <VideoIcon/>} {index + 1}</span>
+    }));
+
+    function changeGallery(keys: string[]) {
+        const items = keys.map(key => galleryItems.find(item => item.key === key)!);
+        void setValues(values => ({
+            ...values,
+            mediaImages: items.filter(item => item.kind === "image").map(item => item.image!),
+            mediaVideos: items.filter(item => item.kind === "video").map(item => item.url!),
+            mediaOrder: items.map(item => item.kind)
+        }));
+    }
+
+    return galleryItems.length === 0 ? <p className="text-sm text-muted">No screenshots or videos added.</p> :
+        <OrderedMediaList label="Screenshot and video order" disabled={isSubmitting} layout="grid"
+                          items={galleryItems} onChange={changeGallery}
+                          onDelete={key => changeGallery(galleryItems.filter(item => item.key !== key).map(item => item.key))}/>;
+});
+
 interface GameMediaEditorProps {
     searchOnOpen: boolean;
     children: (sections: { artwork: ReactNode; gallery: ReactNode }) => ReactNode;
@@ -115,53 +188,17 @@ export default function GameMediaEditor({children, searchOnOpen}: GameMediaEdito
                 throw new Error("Enter an HTTP(S) video URL supported by the video player.");
             }
             if (values.mediaVideos.includes(url)) throw new Error("This video has already been added.");
-            void setValues({
+            void setValues(values => ({
                 ...values, mediaVideos: [...values.mediaVideos, url],
-                mediaOrder: [...galleryItems.map(item => item.kind), "video"]
-            });
+                mediaOrder: [...orderMedia(
+                    values.mediaImages.map(() => "image"), values.mediaVideos.map(() => "video"), values.mediaOrder
+                ), "video"]
+            }));
             setVideoUrl("");
             setVideoError("");
         } catch (error) {
             setVideoError(error instanceof TypeError ? "Enter a valid video URL." : (error as Error).message);
         }
-    }
-
-    const occurrences = new Map<string, number>();
-    const videos = values.mediaVideos.map(url => {
-        const occurrence = occurrences.get(url) ?? 0;
-        occurrences.set(url, occurrence + 1);
-        return {key: `${url}-${occurrence}`, url};
-    });
-    const galleryItems = orderMedia<{ key: string; kind: "image" | "video"; image?: DraftImage; url?: string }>(
-        values.mediaImages.map(image => ({key: image.key, kind: "image", image})),
-        videos.map(video => ({key: `video-${video.key}`, kind: "video", url: video.url})),
-        values.mediaOrder
-    ).map((item, index) => ({
-        ...item,
-        label: `${item.kind === "image" ? "screenshot" : "video"} ${index + 1}`,
-        preview: item.kind === "image"
-            ? <img src={item.image!.previewUrl} alt={`Screenshot ${index + 1}`}
-                   className="w-full aspect-video rounded object-cover"/>
-            : <div role="img" aria-label={`Video ${index + 1} preview`}
-                   className="w-full aspect-video overflow-hidden rounded bg-black">
-                <div inert className="pointer-events-none size-full">
-                    <ReactPlayer src={item.url} width="100%" height="100%" light
-                                 playing={false} controls={false} previewTabIndex={-1}
-                                 playIcon={<PlayIcon weight="fill" size={32}/>}/>
-                </div>
-            </div>,
-        content: <span className="min-w-0 flex flex-row gap-2 flex-1 truncate text-sm"
-                       title={item.url}>{item.kind === "image" ? <ImageIcon/> : <VideoIcon/>} {index + 1}</span>
-    }));
-
-    function changeGallery(keys: string[]) {
-        const items = keys.map(key => galleryItems.find(item => item.key === key)!);
-        void setValues({
-            ...values,
-            mediaImages: items.filter(item => item.kind === "image").map(item => item.image!),
-            mediaVideos: items.filter(item => item.kind === "video").map(item => item.url!),
-            mediaOrder: items.map(item => item.kind)
-        });
     }
 
     const artwork = <div className="flex gap-4 h-44">
@@ -171,7 +208,7 @@ export default function GameMediaEditor({children, searchOnOpen}: GameMediaEdito
             return <button key={kind} type="button" disabled={isSubmitting} onClick={() => setPicker(kind)}
                            aria-label={`Edit ${label}`}
                            className={`cursor-pointer relative group overflow-hidden rounded-lg bg-foreground/5 ${kind === "cover" ? "aspect-12/17" : "flex-1"}`}>
-                {image ? <img src={image.previewUrl} alt={`Game ${label}`}
+                {image ? <img src={image.previewUrl} alt={`Game ${label}`} decoding="async"
                               className="size-full object-cover transition-[filter] group-hover:brightness-25 group-focus-visible:brightness-25"/>
                     : <span
                         className="flex flex-col items-center gap-2 group-hover:opacity-0 group-focus-visible:opacity-0"><ImageIcon
@@ -191,11 +228,8 @@ export default function GameMediaEditor({children, searchOnOpen}: GameMediaEdito
                 <Button type="button" size="sm" isDisabled={isSubmitting} onPress={() => setPicker("screenshot")}>Add
                     screenshots</Button>
             </div>
-            {galleryItems.length === 0 ? <p className="text-sm text-muted">No screenshots or videos added.</p> :
-                <OrderedMediaList label="Screenshot and video order" disabled={isSubmitting} layout="grid"
-                                  items={galleryItems} onChange={changeGallery}
-                                  onDelete={key => changeGallery(galleryItems.filter(item => item.key !== key).map(item => item.key))}/>
-            }
+            <MediaGallery mediaImages={values.mediaImages} mediaVideos={values.mediaVideos}
+                          mediaOrder={values.mediaOrder} isSubmitting={isSubmitting} setValues={setValues}/>
         </section>
         <section aria-label="Videos" className="flex flex-col gap-2">
             <div className="flex gap-2">

@@ -1,5 +1,5 @@
 import {Accordion, Button, Modal, Spinner} from "@heroui/react";
-import {Form, Formik} from "formik";
+import {FastField, FieldProps, Form, Formik, FormikProvider} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import React, {useEffect, useState} from "react";
 import GameEnumPropertyValuesDto from "Frontend/generated/org/gameyfin/app/games/dto/GameEnumPropertyValuesDto";
@@ -19,6 +19,15 @@ import {fileNameFromPath} from "Frontend/util/utils";
 type EditGameMetadataModalProps = ({gameId: number; newGame?: never} | {gameId?: never; newGame: ManualGameImport}) & {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
+}
+
+function MetadataField({name, children}: {name: string; children: React.ReactNode}) {
+    // Existing input components use useField. Scope their context to this FastField so
+    // unrelated edits do not rerender every control in the metadata form.
+    return <FastField name={name}>
+        {({form}: FieldProps<unknown, GameMetadataFormValues>) =>
+            <FormikProvider value={form}>{children}</FormikProvider>}
+    </FastField>;
 }
 
 export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenChange}: EditGameMetadataModalProps) {
@@ -98,22 +107,34 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                 <Modal.Body>
                                                     <GameMediaEditor searchOnOpen={!newGame}>
                                                         {({artwork, gallery}) => <>
-                                                            <Input key="metadata.path" name="metadata.path" label="Path"
-                                                                   isDisabled className="mb-0"/>
+                                                            <MetadataField name="metadata.path">
+                                                                <Input key="metadata.path" name="metadata.path" label="Path"
+                                                                       isDisabled className="mb-0"/>
+                                                            </MetadataField>
                                                             {artwork}
                                                             <div className="flex flex-row gap-4 mt-4">
-                                                                <Input key="title" name="title" label="Title"
-                                                                       isRequired/>
-                                                                <DatePickerInput key="release" name="release"
-                                                                                 label="Release"
-                                                                                 className="w-fit"/>
+                                                                <MetadataField name="title">
+                                                                    <Input key="title" name="title" label="Title"
+                                                                           isRequired/>
+                                                                </MetadataField>
+                                                                <MetadataField name="release">
+                                                                    <DatePickerInput key="release" name="release"
+                                                                                     label="Release"
+                                                                                     className="w-fit"/>
+                                                                </MetadataField>
                                                             </div>
-                                                            <AutocompleteInput options={Array.from(availablePlatforms)}
-                                                                               name="platforms" label="Platforms"/>
-                                                            <TextAreaInput key="summary" name="summary"
-                                                                           label="Summary (HTML)"/>
-                                                            <TextAreaInput key="comment" name="comment"
-                                                                           label="Comment (Markdown)"/>
+                                                            <MetadataField name="platforms" key={Array.from(availablePlatforms).join(",")}>
+                                                                <AutocompleteInput options={Array.from(availablePlatforms)}
+                                                                                   name="platforms" label="Platforms"/>
+                                                            </MetadataField>
+                                                            <MetadataField name="summary">
+                                                                <TextAreaInput key="summary" name="summary"
+                                                                               label="Summary (HTML)"/>
+                                                            </MetadataField>
+                                                            <MetadataField name="comment">
+                                                                <TextAreaInput key="comment" name="comment"
+                                                                               label="Comment (Markdown)"/>
+                                                            </MetadataField>
                                                             {gallery}
                                                             <Accordion variant="default" className="space-y-2">
                                                                 <Accordion.Item id="additional-metadata">
@@ -126,34 +147,48 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                                     </Accordion.Heading>
                                                                     <Accordion.Panel>
                                                                         <Accordion.Body className="overflow-y-auto">
-                                                                            <ArrayInput key="developers"
-                                                                                        name="developers"
-                                                                                        label="Developers"/>
-                                                                            <ArrayInput key="publishers"
-                                                                                        name="publishers"
-                                                                                        label="Publishers"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.genres}
-                                                                                defaultSelected={initialValues.genres}
-                                                                                key="genres" name="genres"
-                                                                                label="Genres"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.themes}
-                                                                                defaultSelected={initialValues.themes}
-                                                                                key="themes" name="themes"
-                                                                                label="Themes"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.features}
-                                                                                defaultSelected={initialValues.features}
-                                                                                key="features" name="features"
-                                                                                label="Features"/>
-                                                                            <AutocompleteInput
-                                                                                options={propertyEnumValues.perspectives}
-                                                                                defaultSelected={initialValues.perspectives}
-                                                                                key="perspectives" name="perspectives"
-                                                                                label="Perspectives"/>
-                                                                            <ArrayInput key="keywords" name="keywords"
-                                                                                        label="Keywords"/>
+                                                                            <MetadataField name="developers">
+                                                                                <ArrayInput key="developers"
+                                                                                            name="developers"
+                                                                                            label="Developers"/>
+                                                                            </MetadataField>
+                                                                            <MetadataField name="publishers">
+                                                                                <ArrayInput key="publishers"
+                                                                                            name="publishers"
+                                                                                            label="Publishers"/>
+                                                                            </MetadataField>
+                                                                            <MetadataField name="genres">
+                                                                                <AutocompleteInput
+                                                                                    options={propertyEnumValues.genres}
+                                                                                    defaultSelected={initialValues.genres}
+                                                                                    key="genres" name="genres"
+                                                                                    label="Genres"/>
+                                                                            </MetadataField>
+                                                                            <MetadataField name="themes">
+                                                                                <AutocompleteInput
+                                                                                    options={propertyEnumValues.themes}
+                                                                                    defaultSelected={initialValues.themes}
+                                                                                    key="themes" name="themes"
+                                                                                    label="Themes"/>
+                                                                            </MetadataField>
+                                                                            <MetadataField name="features">
+                                                                                <AutocompleteInput
+                                                                                    options={propertyEnumValues.features}
+                                                                                    defaultSelected={initialValues.features}
+                                                                                    key="features" name="features"
+                                                                                    label="Features"/>
+                                                                            </MetadataField>
+                                                                            <MetadataField name="perspectives">
+                                                                                <AutocompleteInput
+                                                                                    options={propertyEnumValues.perspectives}
+                                                                                    defaultSelected={initialValues.perspectives}
+                                                                                    key="perspectives" name="perspectives"
+                                                                                    label="Perspectives"/>
+                                                                            </MetadataField>
+                                                                            <MetadataField name="keywords">
+                                                                                <ArrayInput key="keywords" name="keywords"
+                                                                                            label="Keywords"/>
+                                                                            </MetadataField>
                                                                         </Accordion.Body>
                                                                     </Accordion.Panel>
                                                                 </Accordion.Item>
