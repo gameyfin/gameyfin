@@ -3,7 +3,7 @@ import {PlugIcon} from "@phosphor-icons/react";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
 interface PluginIconProps {
-    plugin: PluginDto;
+    plugin: Pick<PluginDto, "id" | "name"> & Partial<Pick<PluginDto, "version" | "hasLogo">>;
     size?: number;
     blurred?: boolean;
     showTooltip?: boolean;
@@ -15,7 +15,7 @@ export default function PluginIcon({
                                        blurred = false,
                                        showTooltip = true
                                    }: PluginIconProps) {
-    const src = `/images/plugins/${plugin.id}/logo?v=${encodeURIComponent(plugin.version)}`;
+    const src = `/images/plugins/${plugin.id}/logo?v=${encodeURIComponent(plugin.version ?? "")}`;
     const icon = plugin.hasLogo
         ? <span className="relative inline-flex" style={{width: size, height: size}}>
             {blurred && <img className="absolute inset-0 size-full object-contain blur-lg opacity-70" src={src}

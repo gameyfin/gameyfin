@@ -9,6 +9,8 @@ import org.gameyfin.app.games.dto.GameUserDto
 import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.entities.CompanyType
 import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.games.entities.GameFieldMetadata
+import org.gameyfin.app.games.entities.GameFieldPluginSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageType
@@ -274,6 +276,20 @@ class GameExtensionsTest {
         val result = metadata.toUserDto()
 
         assertEquals(2000L, result.fileSize)
+    }
+
+    @Test
+    fun `plugin source includes stored display name without an installed plugin`() {
+        val plugin = PluginManagementEntry("removed-plugin", name = "Original plugin name")
+        val metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path", fields = mutableMapOf(
+            "title" to GameFieldMetadata(source = GameFieldPluginSource(plugin))
+        ))
+        val source = metadata.toAdminDto().fields!!.getValue("title")
+        assertEquals("removed-plugin", source.source)
+        assertEquals("Original plugin name", source.sourceName)
+
+        plugin.name = null
+        assertEquals("removed-plugin", metadata.toAdminDto().fields!!.getValue("title").sourceName)
     }
 
     @Test

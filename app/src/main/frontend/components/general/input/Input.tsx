@@ -1,4 +1,5 @@
 import {useField} from "formik";
+import {ReactNode} from "react";
 import {Description, FieldError, Input as HeroUiInput, Label, TextField, TextFieldProps} from "@heroui/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
@@ -6,6 +7,7 @@ import ResetToDefaultButton from "Frontend/components/administration/ResetToDefa
 interface CustomInputProps extends Omit<TextFieldProps, "name" | "children"> {
     name: string;
     label?: string;
+    labelSuffix?: ReactNode;
     showErrorUntouched?: boolean;
     resetValue?: unknown;
     description?: string;
@@ -18,6 +20,7 @@ interface CustomInputProps extends Omit<TextFieldProps, "name" | "children"> {
 
 export default function Input({
                                   label,
+                                  labelSuffix,
                                   showErrorUntouched = false,
                                   description,
                                   className,
@@ -41,7 +44,10 @@ export default function Input({
             className={`min-h-20 grow ${className ?? ""}`}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
         >
-            {label && <Label>{label}</Label>}
+            {label && <Label className={labelSuffix ? "flex items-center after:order-1" : undefined}>
+                {label}
+                {labelSuffix && <span className="order-2 inline-flex">{labelSuffix}</span>}
+            </Label>}
             <div className="flex items-center gap-1">
                 <HeroUiInput className="grow" variant={variant} type={type} autoComplete={autoComplete} placeholder={placeholder}/>
                 {(description || resetValue !== undefined) && (

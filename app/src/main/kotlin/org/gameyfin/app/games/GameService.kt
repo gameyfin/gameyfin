@@ -27,6 +27,8 @@ import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDto
 import org.gameyfin.app.games.extensions.toDtos
 import org.gameyfin.app.games.extensions.toSummaryDto
+import org.gameyfin.app.games.extensions.mediaSources
+import org.gameyfin.app.games.extensions.replaceMediaSources
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
@@ -223,6 +225,24 @@ class GameService(
         } else emptyList()
 
         val newEditingSource = editingSourceFactory()
+        val previousImageSources = if (gameUpdateDto.images != null) existingGame.images.map { it.id }
+            .zip(existingGame.mediaSources("images", existingGame.images.size)).toMap() else emptyMap()
+        val previousVideoSources = if (videoUrls != null) existingGame.videoUrls
+            .zip(existingGame.mediaSources("videoUrls", existingGame.videoUrls.size))
+            .groupBy({ it.first }, { it.second }).mapValues { it.value.toMutableList() } else emptyMap()
+        val selectedImageSources = gameUpdateDto.images?.map { selection ->
+            when {
+                selection.id != null -> previousImageSources[selection.id]
+                selection.pluginId != null -> GameFieldMetadata(
+                    source = GameFieldPluginSource(pluginService.getPluginManagementEntry(selection.pluginId))
+                )
+                else -> GameFieldMetadata(source = newEditingSource())
+            }
+        }
+        val selectedVideoSources = videoUrls?.map { url ->
+            val retained = previousVideoSources[url]
+            if (!retained.isNullOrEmpty()) retained.removeAt(0) else GameFieldMetadata(source = newEditingSource())
+        }
 
         fun markMediaEdited(field: String) {
             val metadata = existingGame.metadata.fields[field]
@@ -242,8 +262,16 @@ class GameService(
         require(images == null || images.map { it.id }.distinct().size == images.size) { "Screenshots must be unique" }
         cover?.let { existingGame.coverImage = it; markMediaEdited("coverImage") }
         header?.let { existingGame.headerImage = it; markMediaEdited("headerImage") }
-        images?.let { existingGame.images = it.toMutableList(); markMediaEdited("images") }
-        videoUrls?.let { existingGame.videoUrls = it; markMediaEdited("videoUrls") }
+        images?.let {
+            existingGame.replaceMediaSources("images", selectedImageSources!!, GameFieldMetadata(source = newEditingSource()))
+            existingGame.images = it.toMutableList()
+            markMediaEdited("images")
+        }
+        videoUrls?.let {
+            existingGame.replaceMediaSources("videoUrls", selectedVideoSources!!, GameFieldMetadata(source = newEditingSource()))
+            existingGame.videoUrls = it
+            markMediaEdited("videoUrls")
+        }
         gameUpdateDto.mediaOrder?.let { existingGame.mediaOrder = it }
 
         // Update only non-null fields
@@ -602,7 +630,11 @@ class GameService(
             "images",
             game.images,
             updatedGame.images,
-            { game.images = it ?: mutableListOf() },
+            {
+                game.replaceMediaSources("images", updatedGame.mediaSources("images", updatedGame.images.size),
+                    updatedGame.metadata.fields.getValue("images"))
+                game.images = it ?: mutableListOf()
+            },
             updatedGame.metadata.fields["images"]
         )
 
@@ -611,7 +643,11 @@ class GameService(
             "videoUrls",
             game.videoUrls,
             updatedGame.videoUrls,
-            { game.videoUrls = it ?: emptyList() },
+            {
+                game.replaceMediaSources("videoUrls", updatedGame.mediaSources("videoUrls", updatedGame.videoUrls.size),
+                    updatedGame.metadata.fields.getValue("videoUrls"))
+                game.videoUrls = it ?: emptyList()
+            },
             updatedGame.metadata.fields["videoUrls"]
         )
 

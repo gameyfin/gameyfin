@@ -1128,6 +1128,7 @@ class GameyfinUpdateManagerTest {
     fun `uninstall should delete plugin and clear source marketplace`() {
         val installed = installedFile("1.0.0")
         preload(installed, "1.0.0", enabled = true, sourceMarketplaceId = "official")
+        entries.getValue(PLUGIN_ID).name = "Original plugin name"
 
         val state = updateManager.uninstall(PLUGIN_ID)
 
@@ -1135,6 +1136,7 @@ class GameyfinUpdateManagerTest {
         assertFalse(installed.exists())
         assertNull(loaded[PLUGIN_ID])
         assertNull(entries[PLUGIN_ID]?.sourceMarketplaceId)
+        assertEquals("Original plugin name", entries.getValue(PLUGIN_ID).name)
         verify(exactly = 1) { pluginManager.deletePlugin(PLUGIN_ID) }
         verify(exactly = 0) { pluginManager.loadPluginOrThrow(any()) }
     }

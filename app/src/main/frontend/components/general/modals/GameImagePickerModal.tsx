@@ -7,6 +7,8 @@ import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
 import {ArrowRightIcon, CheckIcon, UploadSimpleIcon} from "@phosphor-icons/react";
+import {useAuth} from "Frontend/util/auth";
+import {GameFieldMetadataDto, GameFieldMetadataType} from "Frontend/dtos/GameDtos";
 
 interface Props {
     game: GameDto;
@@ -39,6 +41,10 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
     const mounted = useRef(true);
     const searchInFlight = useRef(false);
     const plugins = useSnapshot(pluginState).state;
+    const {state: auth} = useAuth();
+    const userSource: GameFieldMetadataDto | undefined = auth.user ? {
+        type: GameFieldMetadataType.USER, source: auth.user.username, updatedAt: new Date().toISOString()
+    } : undefined;
 
     useEffect(() => {
         mounted.current = true;
@@ -83,7 +89,14 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
 
     function selectUrls(urls: string[]) {
         try {
-            onSelect(urls.map(remoteImage));
+            onSelect(urls.map(url => {
+                const image = remoteImage(url);
+                const pluginId = results.find(result => result.url === url)?.pluginId;
+                return {...image, selection: {...image.selection, pluginId}, source: pluginId ? {
+                    type: GameFieldMetadataType.PLUGIN, source: pluginId, sourceName: plugins[pluginId]?.name,
+                    updatedAt: new Date().toISOString()
+                } : userSource};
+            }));
             onClose();
         } catch (error) {
             setError(error instanceof Error ? error.message : "Enter a valid image URL.");
@@ -100,7 +113,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                 drafts.forEach(image => URL.revokeObjectURL(image.previewUrl));
                 return;
             }
-            onSelect(drafts);
+            onSelect(drafts.map(image => ({...image, source: userSource})));
             onClose();
         } catch (error) {
             if (mounted.current) setError(error instanceof Error ? error.message : "Image upload failed.");

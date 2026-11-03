@@ -179,7 +179,8 @@ private fun GameFieldMetadata.toDto(): GameFieldMetadataDto {
             GameFieldMetadataDto(
                 type = GameFieldMetadataType.PLUGIN,
                 source = source.plugin.pluginId,
-                updatedAt = this.updatedAt!!
+                updatedAt = this.updatedAt!!,
+                sourceName = source.plugin.name ?: source.plugin.pluginId
             )
         }
 

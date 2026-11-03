@@ -41,3 +41,14 @@ databaseChangeLog:
               - column:
                   name: API_CREDENTIAL_NAME
                   type: varchar(100)
+
+  - changeSet:
+      id: 2.6.0-plugin-source-name
+      author: gameyfin
+      changes:
+        - addColumn:
+            tableName: PLUGIN_MANAGEMENT_ENTRY
+            columns:
+              - column:
+                  name: NAME
+                  type: varchar(255)
