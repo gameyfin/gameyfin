@@ -44,7 +44,8 @@ function UserManagementLayout({getConfig, formik}: any) {
             </div>
             <Separator className="mb-4"/>
             <div className="grid grid-cols-300px gap-4">
-                {users.map((user) => <UserManagementCard user={user} key={user.username}/>)}
+                {users.map((user) => <UserManagementCard user={user} key={user.username}
+                    canDelete={users.some(other => other.id !== user.id && other.roles.includes("ROLE_SUPERADMIN"))}/>)}
             </div>
             <InviteUserModal isOpen={inviteUserModal.isOpen} onOpenChange={inviteUserModal.toggle}/>
         </div>

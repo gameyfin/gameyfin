@@ -1,5 +1,6 @@
 package org.gameyfin.app.users.registration
 
+import com.vaadin.hilla.exception.EndpointException
 import io.mockk.*
 import org.gameyfin.app.core.token.TokenDto
 import org.gameyfin.app.users.UserService
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class RegistrationEndpointTest {
@@ -90,9 +92,13 @@ class RegistrationEndpointTest {
     }
 
     @Test
-    fun `getInvitationRecipientEmail should return null`() {
-        every { invitationService.getAssociatedEmail("tok") } returns null
-        assertEquals(null, registrationEndpoint.getInvitationRecipientEmail("tok"))
+    fun `getInvitationRecipientEmail should propagate invalid token error`() {
+        every { invitationService.getAssociatedEmail("tok") } throws EndpointException("Invalid invitation token")
+
+        val error = assertFailsWith<EndpointException> {
+            registrationEndpoint.getInvitationRecipientEmail("tok")
+        }
+        assertEquals("Invalid invitation token", error.message)
     }
 
     @Test
