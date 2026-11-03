@@ -35,12 +35,24 @@ export function isRunActive(run: TaskRunDto): boolean {
 }
 
 /** Subscribe to and process state updates from backend **/
+let generation = 0;
 export function initializeTaskState() {
     if (taskState.subscription) return;
+    const current = ++generation;
 
     taskState.subscription = TaskEndpoint.subscribeToTaskRuns().onNext((runs: TaskRunDto[]) => {
+        if (current !== generation) return;
         runs.forEach(handleUpdate);
     });
+}
+
+export function resetTaskState() {
+    generation++;
+    taskState.subscription?.cancel();
+    taskState.subscription = undefined;
+    taskState.runs = {};
+    taskState.finishedCount = {};
+    taskState.tracked = {};
 }
 
 function handleUpdate(run: TaskRunDto) {

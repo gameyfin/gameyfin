@@ -1,6 +1,7 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/input/Input";
-import {Button, Input as HeroUiInput, Spinner, toast, Tooltip} from "@heroui/react";
+import {Button, Spinner, toast, Tooltip} from "@heroui/react";
+import UploadButton from "Frontend/components/general/input/UploadButton";
 import {Form, Formik, FormikProps} from "formik";
 import {ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
@@ -21,7 +22,7 @@ interface ProfileFormValues {
 
 export default function ProfileManagement() {
     const auth = useAuth();
-    const [avatar, setAvatar] = useState<File>();
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [configSaved, setConfigSaved] = useState(false);
     const [messagesEnabled, setMessagesEnabled] = useState(false);
 
@@ -36,8 +37,15 @@ export default function ProfileManagement() {
     }, [configSaved])
 
 
-    function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
-        setAvatar(event.target.files?.[0]);
+    async function uploadSelectedAvatar(files: File[]) {
+        setUploadingAvatar(true);
+        try {
+            await uploadAvatar(files[0]);
+        } catch (error) {
+            toast.danger("Error uploading avatar", {description: error instanceof Error ? error.message : "Please try again"});
+        } finally {
+            setUploadingAvatar(false);
+        }
     }
 
     async function handleSubmit(values: ProfileFormValues) {
@@ -116,10 +124,8 @@ export default function ProfileManagement() {
                                 <Avatar className="size-40 m-4 flex flex-row"/>
                             </div>
                             <div className="flex flex-row gap-2">
-                                <HeroUiInput type="file" accept="image/*" onChange={onFileSelected}
-                                             disabled={auth.state.user?.managedBySso}/>
-                                <Button onPress={() => uploadAvatar(avatar)} isDisabled={avatar == null}
-                                        variant="primary">Upload</Button>
+                                <UploadButton label="Upload avatar" accept="image/*" onFilesSelected={uploadSelectedAvatar}
+                                              isPending={uploadingAvatar} isDisabled={auth.state.user?.managedBySso}/>
                                 <Tooltip delay={0}>
                                     <Tooltip.Trigger>
                                         <Button onPress={removeAvatar} isIconOnly variant="danger"

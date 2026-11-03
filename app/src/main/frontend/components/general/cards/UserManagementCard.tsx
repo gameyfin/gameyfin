@@ -10,37 +10,31 @@ import TokenDto from "Frontend/generated/org/gameyfin/app/core/token/TokenDto";
 import RoleChip from "Frontend/components/general/RoleChip";
 import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModal";
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
+import {useAuth} from "Frontend/util/auth";
 
 export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
     const userDeletionConfirmationModal = useOverlayState();
     const passwordResetTokenModal = useOverlayState();
     const roleAssignmentModal = useOverlayState();
-    const [userEnabled, setUserEnabled] = useState(true);
+    const auth = useAuth();
+    const userEnabled = user.enabled;
     const [disabledKeys, setDisabledKeys] = useState<string[]>([]);
-    const [dropdownItems, setDropdownItems] = useState<Array<{
-        key: string,
-        onPress: () => void | Promise<void>,
-        label: string
-    }>>([]);
     const [passwordResetToken, setPasswordResetToken] = useState<TokenDto>();
 
     useEffect(() => {
-        setUserEnabled(user.enabled);
-        let keysToBeDisabled: string[] = [];
-        MessageEndpoint.isEnabled().then((isEnabled) => {
-            if (isEnabled) keysToBeDisabled.push("resetPassword");
-            if (!user.hasAvatar) keysToBeDisabled.push("removeAvatar");
-            setDisabledKeys(keysToBeDisabled);
-        });
-        UserEndpoint.canCurrentUserManage(user.username).then((canManage) => {
-            if (!canManage) keysToBeDisabled.push("assignRole", "disableUser", "delete");
-            setDisabledKeys(keysToBeDisabled);
-        });
-    }, []);
-
-    useEffect(() => {
-        setDropdownItems(getDropdownItems());
-    }, [userEnabled]);
+        let cancelled = false;
+        setDisabledKeys(["assignRole", "enableUser", "disableUser", "delete", "resetPassword", "removeAvatar"]);
+        Promise.all([MessageEndpoint.isEnabled(), UserEndpoint.canCurrentUserManage(user.username)])
+            .then(([messagesEnabled, canManage]) => {
+                if (cancelled) return;
+                const keys: string[] = [];
+                if (messagesEnabled) keys.push("resetPassword");
+                if (!user.hasAvatar) keys.push("removeAvatar");
+                if (!canManage) keys.push("assignRole", "enableUser", "disableUser", "delete");
+                setDisabledKeys(keys);
+            }).catch(() => { /* Keep actions disabled when permissions could not be checked. */ });
+        return () => { cancelled = true; };
+    }, [user.username, user.hasAvatar, user.roles.join(","), auth.state.user?.roles.join(",")]);
 
     async function resetPassword() {
         let token = await PasswordResetEndpoint.createPasswordResetTokenForUser(user.username);
@@ -58,9 +52,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                     {
                         key: "enableUser",
                         onPress: () => {
-                            UserEndpoint.setUserEnabled(user.username, true).then(() => {
-                                setUserEnabled(true);
-                            })
+                            return UserEndpoint.setUserEnabled(user.username, true);
                         },
                         label: "Enable user"
                     }
@@ -70,9 +62,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                     {
                         key: "disableUser",
                         onPress: () => {
-                            UserEndpoint.setUserEnabled(user.username, false).then(() => {
-                                setUserEnabled(false);
-                            })
+                            return UserEndpoint.setUserEnabled(user.username, false);
                         },
                         label: "Disable user"
                     }
@@ -108,6 +98,8 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
         return items;
     }
 
+    const dropdownItems = getDropdownItems();
+
     function onDropdownAction(key: React.Key) {
         dropdownItems.find((item) => item.key === String(key))?.onPress();
     }
@@ -141,7 +133,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                     </Dropdown>
                 </div>
                 <div className="flex flex-row items-center gap-4">
-                    <Avatar username={user.username}
+                    <Avatar username={user.username} hasAvatar={user.hasAvatar} avatarId={user.avatarId}
                             className="gradient-primary size-20 text-background/80 text-5xl"/>
                     <div className="flex flex-col gap-1">
                         <p className="font-semibold">{user.username}</p>

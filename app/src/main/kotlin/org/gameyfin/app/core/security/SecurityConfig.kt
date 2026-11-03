@@ -28,7 +28,9 @@ class SecurityConfig(
     private val environment: Environment,
     private val config: ConfigService,
     private val ssoAuthenticationSuccessHandler: SsoAuthenticationSuccessHandler,
-    private val sessionRegistry: SessionRegistry
+    private val sessionRegistry: SessionRegistry,
+    private val users: org.gameyfin.app.users.persistence.UserRepository,
+    private val roleHierarchy: org.springframework.security.access.hierarchicalroles.RoleHierarchy
 ) {
 
     companion object {
@@ -48,6 +50,8 @@ class SecurityConfig(
     @Order(2)
     @Bean
     fun filterChain(http: HttpSecurity, routeUtil: RouteUtil): SecurityFilterChain {
+        http.addFilterBefore(LiveUserSecurityFilter(users, roleHierarchy),
+            org.springframework.security.web.access.intercept.AuthorizationFilter::class.java)
         // Apply Vaadin configuration first to properly configure CSRF and request matchers
         if (config.get(ConfigProperties.SSO.OIDC.Enabled) == true) {
             http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->

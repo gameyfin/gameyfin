@@ -6,7 +6,8 @@ import {DraftImage, IMAGE_ACCEPT, MediaKind, remoteImage, uploadedImages} from "
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
-import {ArrowRightIcon, CheckIcon, UploadSimpleIcon} from "@phosphor-icons/react";
+import {ArrowRightIcon, CheckIcon} from "@phosphor-icons/react";
+import UploadButton from "Frontend/components/general/input/UploadButton";
 import {useAuth} from "Frontend/util/auth";
 import {GameFieldMetadataDto, GameFieldMetadataType} from "Frontend/dtos/GameDtos";
 
@@ -36,7 +37,6 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
     const [hasSearched, setHasSearched] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
-    const fileInput = useRef<HTMLInputElement>(null);
     const request = useRef(0);
     const mounted = useRef(true);
     const searchInFlight = useRef(false);
@@ -136,17 +136,8 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                             <div className="flex flex-row items-center gap-2">
                                 <span
                                     className="text-sm text-muted"> JPEG, PNG, WebP or GIF. Up to 20 MiB per image.</span>
-                                <Button type="button" variant="primary" onPress={() => fileInput.current?.click()}
-                                        isPending={uploading}>
-                                    {uploading ? <Spinner size="sm" color="current"/> : <UploadSimpleIcon/>}
-                                    Upload {multiple ? "images" : "an image"}
-                                </Button>
-                                <input ref={fileInput} type="file" accept={IMAGE_ACCEPT} multiple={multiple}
-                                       className="hidden" disabled={uploading}
-                                       onChange={event => {
-                                           void upload(Array.from(event.target.files ?? []));
-                                           event.target.value = "";
-                                       }}/>
+                                <UploadButton label={`Upload ${multiple ? "images" : "an image"}`} accept={IMAGE_ACCEPT}
+                                              multiple={multiple} isPending={uploading} onFilesSelected={upload}/>
                             </div>
                         </div>
                         <div className="flex gap-2">

@@ -1,4 +1,4 @@
-import {toast, Button, Card, Spinner} from "@heroui/react";
+import {Button, Card, Spinner, toast} from "@heroui/react";
 import {useNavigate, useSearchParams} from "react-router";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
@@ -58,7 +58,7 @@ export default function InvitationRegistrationView() {
 
     return (
         <div className="flex flex-row grow items-center justify-center size-full gradient-primary">
-            <Card className="p-4 min-w-[468px]">
+            <Card className="p-4 min-w-117">
                 <Card.Header className="mb-4">
                     <img
                         className="h-28 w-full content-center"

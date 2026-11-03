@@ -18,7 +18,7 @@ export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: C
 
     async function deleteUser() {
         await UserEndpoint.deleteUserByName(user.username);
-        window.location.reload();
+        onOpenChange(false);
     }
 
     return (
