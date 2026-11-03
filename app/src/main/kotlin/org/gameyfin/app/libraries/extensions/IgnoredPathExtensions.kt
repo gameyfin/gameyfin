@@ -16,7 +16,7 @@ fun IgnoredPath.toDto(): IgnoredPathDto {
         sourceType = this.getType().toDto(),
         source = when (val source = this.source) {
             is IgnoredPathPluginSource -> source.plugins.joinToString("\", \"", "[\"", "\"]") { it.pluginId }
-            is IgnoredPathUserSource -> source.user?.id?.toString() ?: ""
+            is IgnoredPathUserSource -> source.user.id.toString()
             else -> error("Unknown IgnoredPathSource type")
         }
     )

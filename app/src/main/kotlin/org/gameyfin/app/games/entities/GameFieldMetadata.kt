@@ -1,8 +1,6 @@
 package org.gameyfin.app.games.entities
 
 import jakarta.persistence.*
-import org.hibernate.annotations.OnDelete
-import org.hibernate.annotations.OnDeleteAction
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.users.entities.User
 import org.hibernate.annotations.UpdateTimestamp
@@ -37,8 +35,7 @@ class GameFieldPluginSource(
 @Entity
 class GameFieldUserSource(
     @ManyToOne
-    @OnDelete(action = OnDeleteAction.SET_NULL)
-    var user: User?
+    var user: User
 ) : GameFieldSource()
 
 /** Historical attribution remains available after credential revocation or creator deletion. */

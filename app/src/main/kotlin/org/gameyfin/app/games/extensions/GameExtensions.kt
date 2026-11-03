@@ -192,7 +192,7 @@ private fun GameFieldMetadata.toDto(): GameFieldMetadataDto {
         is GameFieldUserSource -> {
             GameFieldMetadataDto(
                 type = GameFieldMetadataType.USER,
-                source = source.user?.username ?: "Deleted user",
+                source = source.user.username,
                 updatedAt = this.updatedAt!!
             )
         }

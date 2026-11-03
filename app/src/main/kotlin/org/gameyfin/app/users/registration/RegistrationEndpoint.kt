@@ -33,7 +33,7 @@ class RegistrationEndpoint(
         return invitationService.acceptInvitation(token, registration)
     }
 
-    fun getInvitationRecipientEmail(token: String): String {
+    fun getInvitationRecipientEmail(token: String): String? {
         return invitationService.getAssociatedEmail(token)
     }
 

@@ -15,10 +15,6 @@ class UserEntityListener {
     fun preRemove(user: User) {
         val entityManager: EntityManager = EntityManagerHolder.getEntityManager()
 
-        entityManager.createQuery("DELETE FROM UserPreference p WHERE p.id.userId = :userId")
-            .setParameter("userId", user.id)
-            .executeUpdate()
-
         // Remove user from all GameRequest voters and requester fields
         val gameRequests = entityManager.createQuery(
             "SELECT gr FROM GameRequest gr WHERE :user MEMBER OF gr.voters OR gr.requester = :user",

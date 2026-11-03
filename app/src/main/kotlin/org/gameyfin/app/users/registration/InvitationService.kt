@@ -1,6 +1,5 @@
 package org.gameyfin.app.users.registration
 
-import com.vaadin.hilla.exception.EndpointException
 import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.events.AccountStatusChangedEvent
 import org.gameyfin.app.core.events.UserInvitationEvent
@@ -38,10 +37,9 @@ class InvitationService(
         return TokenDto(token)
     }
 
-    fun getAssociatedEmail(secret: String): String {
-        val token = super.get(secret, TokenType.Invitation) ?: throw EndpointException("Invalid invitation token")
-        if (token.expired) throw EndpointException("Invitation token has expired")
-        return token.payload[EMAIL_KEY] ?: throw EndpointException("Invalid invitation token")
+    fun getAssociatedEmail(secret: String): String? {
+        val payload = super.getPayload(secret) ?: return null
+        return payload[EMAIL_KEY]
     }
 
     fun acceptInvitation(secret: String, registration: UserRegistrationDto): UserInvitationAcceptanceResult {

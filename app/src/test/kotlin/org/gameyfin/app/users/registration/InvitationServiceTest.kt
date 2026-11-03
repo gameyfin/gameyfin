@@ -1,6 +1,5 @@
 package org.gameyfin.app.users.registration
 
-import com.vaadin.hilla.exception.EndpointException
 import io.mockk.*
 import jakarta.servlet.http.HttpServletRequest
 import org.gameyfin.app.core.events.AccountStatusChangedEvent
@@ -21,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class InvitationServiceTest {
 
@@ -128,41 +128,21 @@ class InvitationServiceTest {
     }
 
     @Test
-    fun `getAssociatedEmail should throw when token missing`() {
+    fun `getAssociatedEmail should return null when token missing`() {
         every { tokenRepository.findBySecret("missing") } returns null
 
-        val error = assertThrows(EndpointException::class.java) {
-            invitationService.getAssociatedEmail("missing")
-        }
-        assertEquals("Invalid invitation token", error.message)
+        val result = invitationService.getAssociatedEmail("missing")
+        assertNull(result)
     }
 
     @Test
-    fun `getAssociatedEmail should throw when payload has no email`() {
+    fun `getAssociatedEmail should return null when payload has no email`() {
         val inviter = User(id = 1L, username = "inviter", email = "inviter@example.com")
         val token = Token(type = TokenType.Invitation, creator = inviter, payload = emptyMap())
         every { tokenRepository.findBySecret(token.secret) } returns token
 
-        val error = assertThrows(EndpointException::class.java) {
-            invitationService.getAssociatedEmail(token.secret)
-        }
-        assertEquals("Invalid invitation token", error.message)
-    }
-
-    @Test
-    fun `getAssociatedEmail should reject other token types even with an email payload`() {
-        val inviter = User(id = 1L, username = "inviter", email = "inviter@example.com")
-        val token = Token(
-            type = TokenType.EmailConfirmation,
-            creator = inviter,
-            payload = mapOf("email" to "invitee@example.com")
-        )
-        every { tokenRepository.findBySecret(token.secret) } returns token
-
-        val error = assertThrows(EndpointException::class.java) {
-            invitationService.getAssociatedEmail(token.secret)
-        }
-        assertEquals("Invalid invitation token", error.message)
+        val result = invitationService.getAssociatedEmail(token.secret)
+        assertNull(result)
     }
 
     @Test

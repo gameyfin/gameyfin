@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {Button} from "@heroui/react";
 import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 import {UserEndpoint} from "Frontend/generated/endpoints";
@@ -10,23 +10,6 @@ export default function AccountManagement() {
     const [isPending, setIsPending] = useState(false);
     const [isDeleted, setIsDeleted] = useState(false);
     const [error, setError] = useState<string>();
-
-    const [canDelete, setCanDelete] = useState(false);
-    const [checkingDeletion, setCheckingDeletion] = useState(true);
-
-    useEffect(() => {
-        const user = auth.state.user;
-        if (!user) return;
-        if (!user.roles.includes("ROLE_SUPERADMIN")) {
-            setCanDelete(true);
-            setCheckingDeletion(false);
-            return;
-        }
-        UserEndpoint.getAllUsers().then(users => {
-            setCanDelete(users.some(other => other.id !== user.id && other.roles.includes("ROLE_SUPERADMIN")));
-        }).catch(() => setError("Could not check whether your account can be deleted. Please reload and try again."))
-            .finally(() => setCheckingDeletion(false));
-    }, [auth.state.user]);
 
     async function signOut() {
         setIsPending(true);
@@ -41,13 +24,13 @@ export default function AccountManagement() {
     }
 
     async function deleteAccount() {
-        if (isPending || isDeleted || !canDelete) return;
+        if (isPending || isDeleted) return;
         setIsPending(true);
         setError(undefined);
         try {
             await UserEndpoint.deleteUser();
-        } catch (error) {
-            setError(error instanceof Error ? error.message : "Could not delete your account. Please try again.");
+        } catch {
+            setError("Could not delete your account. Please try again.");
             setIsPending(false);
             return;
         }
@@ -71,18 +54,12 @@ export default function AccountManagement() {
                 <div className="rounded-lg border border-danger p-4 space-y-4">
                     <h2 className="text-lg font-semibold">Delete account</h2>
                     <p>Permanently delete your account. This action cannot be undone.</p>
-                    {!isOpen && error && <p role="alert" className="text-danger">{error}</p>}
-                    <div className="flex flex-row items-center gap-2">
-                        <Button variant="danger" isDisabled={checkingDeletion || !canDelete} onPress={() => {
-                            setError(undefined);
-                            setIsOpen(true);
-                        }}>
-                            Delete my account
-                        </Button>
-                        {!checkingDeletion && !canDelete && !error &&
-                            <p className="text-danger">The last Superadmin account cannot be deleted. Another Superadmin
-                                must remain.</p>}
-                    </div>
+                    <Button variant="danger" onPress={() => {
+                        setError(undefined);
+                        setIsOpen(true);
+                    }}>
+                        Delete my account
+                    </Button>
                 </div>
             )}
             <ConfirmModal
@@ -93,8 +70,7 @@ export default function AccountManagement() {
                 isPending={isPending}
                 onConfirm={deleteAccount}
             >
-                <p>Are you sure you want to permanently delete your account, <strong>{auth.state.user.username}</strong>?
-                </p>
+                <p>Are you sure you want to permanently delete your account, <strong>{auth.state.user.username}</strong>?</p>
                 <p>This action cannot be undone. You will be signed out after your account is deleted.</p>
                 {error && <p role="alert" className="text-danger">{error}</p>}
             </ConfirmModal>
