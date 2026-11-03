@@ -105,7 +105,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                                         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                                             setTemplateContent(e.target.value)
                                         }}
-                                        className="resize-y min-h-[500px] w-full rounded-md border border-border bg-surface px-3 py-2"
+                                        className="resize-y min-h-[500px] w-full rounded-md border border-border px-3 py-2"
                                     />
                                 </Modal.Body>
                                 <Modal.Footer>

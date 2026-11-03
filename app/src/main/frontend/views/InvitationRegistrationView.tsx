@@ -4,24 +4,41 @@ import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import * as Yup from "yup";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
+import {useAuth} from "Frontend/util/auth";
 import React, {useEffect, useState} from "react";
 import {WarningIcon} from "@phosphor-icons/react";
 import UserInvitationAcceptanceResult
     from "Frontend/generated/org/gameyfin/app/users/enums/UserInvitationAcceptanceResult";
 
 export default function InvitationRegistrationView() {
+    const {login} = useAuth();
     const [searchParams] = useSearchParams();
-    const [token, setToken] = useState<string>();
-    const [email, setEmail] = useState<string>();
+    const token = searchParams.get("token");
+    const [invitation, setInvitation] = useState<{ token: string; email?: string; error?: string }>();
+    const email = invitation?.token === token ? invitation.email : undefined;
+    const error = !token ? "Invalid invitation token" : invitation?.token === token ? invitation.error : undefined;
     const navigate = useNavigate();
 
     useEffect(() => {
-        let token = searchParams.get("token");
-        if (token) {
-            setToken(token);
-            RegistrationEndpoint.getInvitationRecipientEmail(token).then(setEmail);
-        }
-    }, [searchParams]);
+        if (!token) return;
+
+        let active = true;
+        setInvitation(undefined);
+        RegistrationEndpoint.getInvitationRecipientEmail(token)
+            .then(email => {
+                if (active) setInvitation(email
+                    ? {token, email}
+                    : {token, error: "Invalid invitation token"});
+            })
+            .catch(error => {
+                if (active) setInvitation({
+                    token,
+                    error: error instanceof Error ? error.message : "Unable to validate invitation"
+                });
+            });
+
+        return () => { active = false; };
+    }, [token]);
 
     async function register(values: any, formik: any) {
         if (!token || !email) return;
@@ -33,25 +50,30 @@ export default function InvitationRegistrationView() {
         });
 
         switch (result) {
-            case UserInvitationAcceptanceResult.SUCCESS:
+            case UserInvitationAcceptanceResult.SUCCESS: {
                 toast.success("Registration successful", {
                     description: "Your account has been created",
                 });
-                navigate("/", {replace: true});
+                const loginResult = await login(values.username, values.password).catch(() => undefined);
+                if (!loginResult || loginResult.error) {
+                    toast.warning("Automatic login failed", {
+                        description: "Your account has been created. Please log in with your new credentials.",
+                    });
+                    navigate("/login", {replace: true});
+                } else {
+                    window.location.replace("/");
+                }
                 break;
+            }
             case UserInvitationAcceptanceResult.USERNAME_TAKEN:
                 formik.setFieldError("username", "Username is already taken");
                 break;
             case UserInvitationAcceptanceResult.TOKEN_EXPIRED:
-                toast.warning("Token expired", {
-                    description: "Token is expired",
-                });
+                setInvitation({token, error: "Invitation token has expired"});
                 break;
             case UserInvitationAcceptanceResult.TOKEN_INVALID:
             default:
-                toast.danger("Invalid token", {
-                    description: "Token is invalid",
-                });
+                setInvitation({token, error: "Invalid invitation token"});
                 break;
         }
     }
@@ -67,7 +89,12 @@ export default function InvitationRegistrationView() {
                     />
                 </Card.Header>
                 <Card.Content>
-                    {token ?
+                    {error ?
+                        <p role="alert" className="flex flex-row grow justify-center items-center gap-2 text-danger text-2xl font-bold">
+                            <WarningIcon weight="fill"/>
+                            {error}
+                        </p>
+                        : email ?
                         <Formik
                             enableReinitialize={true}
                             initialValues={{
@@ -108,10 +135,9 @@ export default function InvitationRegistrationView() {
                             )}
                         </Formik>
                         :
-                        <p className="flex flex-row grow justify-center items-center gap-2 text-danger text-2xl font-bold">
-                            <WarningIcon weight="fill"/>
-                            Invalid token
-                        </p>
+                        <div role="status" aria-label="Validating invitation" className="flex justify-center">
+                            <Spinner/>
+                        </div>
                     }
                 </Card.Content>
             </Card>
