@@ -44,7 +44,7 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
         blurhash?: string;
     }
 
-    const DEFAULT_SLIDES_PER_VIEW = 3;
+    const MAX_SLIDES_PER_VIEW = 3;
 
     const swiperRef = useRef<SwiperInstance | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -66,9 +66,7 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
     }, [images, videosUrls, mediaOrder]);
 
     const canLoop = elements.length > 1;
-    // Centered loop mode needs the visible slides plus a buffer on either side.
-    // Repeat complete sequences so wrapping preserves the original media order.
-    const minimumLoopSlides = DEFAULT_SLIDES_PER_VIEW + Math.ceil(DEFAULT_SLIDES_PER_VIEW / 2);
+    const minimumLoopSlides = MAX_SLIDES_PER_VIEW + Math.ceil(MAX_SLIDES_PER_VIEW / 2);
     const slides = canLoop && elements.length < minimumLoopSlides
         ? Array.from({length: Math.ceil(minimumLoopSlides / elements.length)}, () => elements).flat()
         : elements;
@@ -84,11 +82,15 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                 <div className="w-full flex flex-col gap-2 items-center">
                     <div className="w-full flex flex-row items-center">
                         <IconContext.Provider value={{size: 50}}>
-                            <CaretLeftIcon className={`swiper-custom-button-prev cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
+                            <CaretLeftIcon
+                                className={`swiper-custom-button-prev cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
                             <Swiper
                                 key={JSON.stringify(elements)}
                                 modules={[Navigation, Autoplay]}
-                                slidesPerView={DEFAULT_SLIDES_PER_VIEW}
+                                slidesPerView={1}
+                                breakpoints={{
+                                    960: {slidesPerView: MAX_SLIDES_PER_VIEW}
+                                }}
                                 onSwiper={(swiper) => {
                                     swiperRef.current = swiper;
                                     setActiveIndex(swiper.realIndex % elements.length);
@@ -152,11 +154,13 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                                             onOpenChange={imagePopup.setOpen}
                                             onClose={imagePopup.close}/>
                             </Swiper>
-                            <CaretRightIcon className={`swiper-custom-button-next cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
+                            <CaretRightIcon
+                                className={`swiper-custom-button-next cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
                         </IconContext.Provider>
                     </div>
                     <div>
-                        <div className="swiper-custom-pagination swiper-pagination-bullets swiper-pagination-clickable swiper-pagination-horizontal">
+                        <div
+                            className="swiper-custom-pagination swiper-pagination-bullets swiper-pagination-clickable swiper-pagination-horizontal">
                             {elements.map((_, index) => (
                                 <button
                                     key={index}

@@ -140,23 +140,25 @@ export default function GameView() {
                 )}
                 <div className="absolute inset-0 bg-linear-to-b from-transparent to-background"/>
             </div>
-            <div className="flex flex-col gap-4 mx-24">
-                <div className="flex flex-row justify-between">
-                    <div className="flex flex-row gap-4">
-                        <div className="-mt-65 relative z-10">
+            <div className="flex min-w-0 flex-col gap-4 mx-4 sm:mx-8 xl:mx-24">
+                <div className="flex flex-wrap items-start gap-4">
+                    <div className="flex min-w-0 flex-1 basis-128 flex-col gap-4 sm:flex-row">
+                        <div className="-mt-65 relative z-10 shrink-0 self-start">
                             <GameCover game={game} size={320} radius="none" showTitle={false}/>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <div className="flex flex-row gap-4 items-end">
-                                <p className="font-semibold text-3xl">
+                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 items-baseline">
+                                <p className="min-w-0 [overflow-wrap:anywhere] font-semibold text-2xl sm:text-3xl">
                                     {game.title}
                                 </p>
-                                <div className="flex flex-row gap-1 mb-0.5 text-muted">
-                                    <StarIcon weight="fill"/>
-                                    {starRatingAsString(game)}
-                                </div>
+                                {(game.criticRating || game.userRating) &&
+                                    <div className="flex shrink-0 items-center gap-1 mb-0.5 text-muted">
+                                        <StarIcon weight="fill"/>
+                                        {starRatingAsString(game)}
+                                    </div>
+                                }
                             </div>
-                            <div className="flex flex-row items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <p className="text-muted">
                                     {game.release !== undefined ? new Date(game.release).getFullYear() :
                                         <span className="text-muted">no data</span>}
@@ -173,8 +175,8 @@ export default function GameView() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex flex-row items-center gap-8">
-                        <div className="flex flex-row gap-2">
+                    <div className="flex max-w-full flex-wrap items-center gap-4 xl:gap-8">
+                        <div className="flex shrink-0 flex-row gap-2">
                             <Tooltip>
                                 <Tooltip.Trigger>
                                     <Button isIconOnly variant="tertiary" aria-label="Previous game"
@@ -194,7 +196,7 @@ export default function GameView() {
                                 <Tooltip.Content>Next game</Tooltip.Content>
                             </Tooltip>
                         </div>
-                        {isAdmin(auth) && <div className="flex flex-row gap-2">
+                        {isAdmin(auth) && <div className="flex shrink-0 flex-row gap-2">
                             <Tooltip>
                                 <Tooltip.Trigger>
                                     <Button isIconOnly variant="tertiary" onPress={toggleMatchConfirmed}>
@@ -239,7 +241,7 @@ export default function GameView() {
                         />}
                     </div>
                 </div>
-                <div className="flex flex-col gap-8">
+                <div className="flex min-w-0 flex-col gap-8 [overflow-wrap:anywhere]">
                     {game.comment &&
                         <Accordion variant="default" className="space-y-2">
                             <Accordion.Item id="information" className="-mx-2 rounded-lg bg-surface-secondary">
@@ -273,22 +275,22 @@ export default function GameView() {
                             </Accordion.Item>
                         </Accordion>
                     }
-                    <div className="flex flex-row gap-12">
-                        <div className="flex flex-col flex-1 gap-2">
+                    <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
+                        <div className="flex min-w-0 flex-col flex-1 gap-2">
                             <p className="text-muted">Summary</p>
                             {game.summary ?
                                 <div className="text-justify" dangerouslySetInnerHTML={{__html: game.summary}}/> :
                                 <p>No summary available</p>
                             }
                         </div>
-                        <div className="flex flex-col flex-1">
+                        <div className="flex min-w-0 flex-col flex-1">
                             <p className="text-muted">Details</p>
-                            <table className="text-left w-full table-auto border-separate border-spacing-y-1">
+                            <table className="text-left w-full table-fixed border-separate border-spacing-y-1">
                                 <tbody>
                                 {game.developers && game.developers.length > 0 &&
                                     <tr>
-                                        <td className="text-muted w-0 min-w-32">Developed by</td>
-                                        <td className="flex flex-row gap-1">
+                                        <td className="text-muted w-32">Developed by</td>
+                                        <td className="flex flex-wrap gap-1">
                                             {
                                                 [...game.developers].sort().map((dev, index) =>
                                                     <React.Fragment key={dev}>
@@ -304,8 +306,8 @@ export default function GameView() {
                                     </tr>}
                                 {game.publishers && game.publishers.length > 0 &&
                                     <tr>
-                                        <td className="text-muted w-0 min-w-32">Published by</td>
-                                        <td className="flex flex-row gap-1">
+                                        <td className="text-muted w-32">Published by</td>
+                                        <td>
                                             {
                                                 [...game.publishers].sort().join(" / ")
                                             }
@@ -313,8 +315,8 @@ export default function GameView() {
                                     </tr>}
                                 {game.genres && game.genres.length > 0 &&
                                     <tr>
-                                        <td className="text-muted w-0 min-w-32">Genres</td>
-                                        <td className="flex flex-row gap-1">
+                                        <td className="text-muted w-32">Genres</td>
+                                        <td className="flex flex-wrap gap-1">
                                             {
                                                 [...game.genres].sort().map((genre) =>
                                                     <Link key={genre}
@@ -329,8 +331,8 @@ export default function GameView() {
                                     </tr>}
                                 {game.themes && game.themes.length > 0 &&
                                     <tr>
-                                        <td className="text-muted w-0 min-w-32">Themes</td>
-                                        <td className="flex flex-row gap-1">
+                                        <td className="text-muted w-32">Themes</td>
+                                        <td className="flex flex-wrap gap-1">
                                             {
                                                 [...game.themes].sort().map((theme) =>
                                                     <Link key={theme}
@@ -345,8 +347,8 @@ export default function GameView() {
                                     </tr>}
                                 {game.features && game.features.length > 0 &&
                                     <tr>
-                                        <td className="text-muted w-0 min-w-32">Features</td>
-                                        <td className="flex flex-row gap-1">
+                                        <td className="text-muted w-32">Features</td>
+                                        <td className="flex flex-wrap gap-1">
                                             {
                                                 [...game.features].sort().map((feature) =>
                                                     <Link key={feature}
@@ -360,16 +362,18 @@ export default function GameView() {
                                         </td>
                                     </tr>}
                                 <tr>
-                                    <td className="text-muted w-0 min-w-32">Library</td>
-                                    <Link href={`/library/${game.libraryId}`}
-                                          className="text-foreground hover:underline">
-                                        {libraries[game.libraryId]?.name ?? "Unknown library"}
-                                    </Link>
+                                    <td className="text-muted w-32">Library</td>
+                                    <td>
+                                        <Link href={`/library/${game.libraryId}`}
+                                              className="text-foreground hover:underline">
+                                            {libraries[game.libraryId]?.name ?? "Unknown library"}
+                                        </Link>
+                                    </td>
                                 </tr>
                                 {collectionIds.length > 0 &&
                                     <tr>
-                                        <td className="text-muted w-0 min-w-32">Collections</td>
-                                        <td className="flex flex-row gap-1">
+                                        <td className="text-muted w-32">Collections</td>
+                                        <td className="flex flex-wrap gap-1">
                                             {collectionIds
                                                 .map((collectionId) => collections[collectionId])
                                                 .filter((collection) => collection !== undefined)
@@ -399,7 +403,7 @@ export default function GameView() {
                             }))}
                             videosUrls={game.videoUrls}
                             mediaOrder={game.mediaOrder}
-                            className="-mx-24"
+                            className="-mx-4 sm:-mx-8 xl:-mx-24"
                         />
                     </div>
                 </div>
