@@ -82,6 +82,8 @@ class CatalogServiceV1(
         return games.findAll(spec, page).publicPage { it.publicGame() }
     }
 
+    fun gameIndex() = games.findAllIndexEntries().map { GameIndexEntryV1(it.id.toString(), it.updatedAt) }
+
     fun game(id: String) = gameEntity(id).publicGame()
     fun gameEntity(id: String): Game =
         games.findById(apiId(id)).orElseThrow { NoSuchElementException("Game not found") }

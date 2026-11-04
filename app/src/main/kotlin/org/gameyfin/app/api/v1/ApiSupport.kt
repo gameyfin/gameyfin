@@ -35,7 +35,9 @@ fun <T : Any, R> Page<T>.publicPage(map: (T) -> R) = PageV1(content.map(map), nu
 inline fun <reified T : Enum<T>> apiEnum(code: String): T = enumValues<T>().firstOrNull { it.name == code }
     ?: throw IllegalArgumentException("Unknown ${T::class.simpleName} code: $code")
 
-fun Image.publicImage(gameId: Long) = ImageV1(id!!.toString(), "/v1/games/$gameId/images/$id", mimeType, contentLength)
+fun Image.publicImage(gameId: Long) =
+    ImageV1(id!!.toString(), "/v1/games/$gameId/images/$id", mimeType, contentLength, blurhash)
+
 fun Game.publicGame() = GameV1(
     id!!.toString(),
     library.id!!.toString(),

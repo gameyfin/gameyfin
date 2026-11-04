@@ -163,6 +163,45 @@ class PublicApiIntegrationTest {
     }
 
     @Test
+    fun `game index exposes the complete ordered catalog and reflects deletions`() {
+        val library = libraries.save(Library(name = "Index library"))
+        val game = games.save(Game(library = library, title = "Index game", metadata = GameMetadata("/index/game")))
+        val token = key(setOf("games:read"))
+        assertEquals(401, request("/v1/games/index").statusCode())
+        assertEquals(403, request("/v1/games/index", key(setOf("instance:read"))).statusCode())
+        val response = request("/v1/games/index", token)
+        assertEquals(200, response.statusCode(), response.body())
+        val entries = mapper.readTree(response.body()).toList()
+        val expected = games.findAll().sortedBy { it.id }
+        assertEquals(expected.map { it.id.toString() }, entries.map { it["id"].asString() })
+        assertEquals(expected.map { it.updatedAt }, entries.map { Instant.parse(it["updatedAt"].asString()) })
+        assertTrue(entries.all { it.propertyNames().toSet() == setOf("id", "updatedAt") })
+        assertEquals(200, request("/v1/games/${game.id}", token).statusCode())
+        games.deleteById(game.id!!)
+        assertFalse(mapper.readTree(request("/v1/games/index", token).body()).any { it["id"].asString() == game.id.toString() })
+    }
+
+    @Test
+    fun `instance and metadata search use public contracts and enforce scopes`() {
+        val token = key(setOf("instance:read"))
+        val response = request("/v1/instance", token)
+        assertEquals(200, response.statusCode(), response.body())
+        val instance = mapper.readTree(response.body())
+        assertFalse(instance.has("capabilities"))
+        assertTrue(instance["plugins"].isArray)
+        assertTrue(instance["features"]["sso"]["enabled"].isBoolean)
+        assertTrue(instance["features"]["publicAccess"]["enabled"].isBoolean)
+        assertTrue(instance["features"]["gameRequests"]["maxOpenRequestsPerUser"].isIntegralNumber)
+        assertEquals(401, request("/v1/metadata/search?q=Game").statusCode())
+        assertEquals(403, request("/v1/metadata/search?q=Game", token).statusCode())
+        val readToken = key(setOf("games:read"))
+        assertEquals(400, request("/v1/metadata/search", readToken).statusCode())
+        assertEquals(400, request("/v1/metadata/search?q=%20", readToken).statusCode())
+        assertEquals(400, request("/v1/metadata/search?q=Game&platform=invalid", readToken).statusCode())
+        assertEquals(200, request("/v1/metadata/search?q=Game", readToken).statusCode())
+    }
+
+    @Test
     fun `catalog requests use independent schemas and enforce key scope and field visibility`() {
         val library = libraries.save(Library(name = "Public API catalog"))
         val game = games.save(
