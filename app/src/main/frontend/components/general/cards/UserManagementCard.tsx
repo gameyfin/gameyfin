@@ -12,7 +12,7 @@ import AssignRolesModal from "Frontend/components/general/modals/AssignRolesModa
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
 import {useAuth} from "Frontend/util/auth";
 
-export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
+export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDto, canDelete: boolean }) {
     const userDeletionConfirmationModal = useOverlayState();
     const passwordResetTokenModal = useOverlayState();
     const roleAssignmentModal = useOverlayState();
@@ -116,7 +116,7 @@ export function UserManagementCard({user}: { user: ExtendedUserInfoDto }) {
                             </Button>
                         </Dropdown.Trigger>
                         <Dropdown.Popover placement="bottom end">
-                            <Dropdown.Menu aria-label="Static Actions" disabledKeys={disabledKeys}
+                            <Dropdown.Menu aria-label="Static Actions" disabledKeys={canDelete ? disabledKeys : [...disabledKeys, "delete"]}
                                            onAction={onDropdownAction}>
                                 {dropdownItems.map((item) => (
                                     <Dropdown.Item

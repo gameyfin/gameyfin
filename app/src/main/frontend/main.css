@@ -150,7 +150,9 @@ html {
     --radius: 0.25rem;
 }
 
-/* Inputs inside modals would blend into the overlay background, so use the "default" surface instead */
+/* Fields share their default background with cards and modals in both light and dark mode.
+   Use the contrasting "default" surface for all field types, including hover and focus. */
+.card,
 .modal__dialog {
     --field-background: var(--default);
     --field-hover: var(--default-hover);

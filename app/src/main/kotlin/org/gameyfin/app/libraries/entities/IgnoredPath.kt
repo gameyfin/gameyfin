@@ -1,6 +1,8 @@
 package org.gameyfin.app.libraries.entities
 
 import jakarta.persistence.*
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.users.entities.User
 
@@ -47,5 +49,6 @@ class IgnoredPathPluginSource(
 @Entity
 class IgnoredPathUserSource(
     @ManyToOne
-    val user: User
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    val user: User?
 ) : IgnoredPathSource()

@@ -43,6 +43,31 @@ databaseChangeLog:
                   type: varchar(100)
 
   - changeSet:
+      id: 2.6.0-preserve-user-contributions-on-deletion
+      author: gameyfin
+      changes:
+        - dropForeignKeyConstraint:
+            baseTableName: GAME_FIELD_SOURCE
+            constraintName: FK_GAME_FIELD_SOURCE_USER
+        - addForeignKeyConstraint:
+            baseTableName: GAME_FIELD_SOURCE
+            baseColumnNames: USER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_GAME_FIELD_SOURCE_USER
+            onDelete: SET NULL
+        - dropForeignKeyConstraint:
+            baseTableName: IGNORED_PATH_SOURCE
+            constraintName: FK_IGNORED_PATH_SOURCE_USER
+        - addForeignKeyConstraint:
+            baseTableName: IGNORED_PATH_SOURCE
+            baseColumnNames: USER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_IGNORED_PATH_SOURCE_USER
+            onDelete: SET NULL
+
+  - changeSet:
       id: 2.6.0-plugin-source-name
       author: gameyfin
       changes:

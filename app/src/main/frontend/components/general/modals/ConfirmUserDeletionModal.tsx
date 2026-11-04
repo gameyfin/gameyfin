@@ -10,6 +10,8 @@ interface ConfirmUserDeletionModalProps {
 }
 
 export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: ConfirmUserDeletionModalProps) {
+    const [isPending, setIsPending] = useState(false);
+    const [error, setError] = useState<string>();
     const [confirmUsername, setConfirmUsername] = useState<string>("");
 
     useEffect(() => {
@@ -17,8 +19,17 @@ export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: C
     }, []);
 
     async function deleteUser() {
-        await UserEndpoint.deleteUserByName(user.username);
-        onOpenChange(false);
+        if (isPending) return;
+        setIsPending(true);
+        setError(undefined);
+        try {
+            await UserEndpoint.deleteUserByName(user.username);
+            window.location.reload();
+        } catch (error) {
+            setError(error instanceof Error ? error.message : "Could not delete user. Please try again.");
+        } finally {
+            setIsPending(false);
+        }
     }
 
     return (
@@ -40,6 +51,7 @@ export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: C
                                         </code>{" "}
                                         by entering the username below
                                     </p>
+                                    {error && <p role="alert" className="text-danger">{error}</p>}
                                     <Input onChange={(e) => setConfirmUsername(e.target.value)}/>
                                 </Modal.Body>
                                 <Modal.Footer>
@@ -49,7 +61,8 @@ export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: C
                                     <Button
                                         variant="danger"
                                         onPress={deleteUser}
-                                        isDisabled={confirmUsername != user.username}
+                                        isPending={isPending}
+                                        isDisabled={isPending || confirmUsername != user.username}
                                     >
                                         Confirm deletion
                                     </Button>

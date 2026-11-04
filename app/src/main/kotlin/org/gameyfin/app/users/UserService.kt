@@ -30,6 +30,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 
 @Service
@@ -297,8 +298,14 @@ class UserService(
         eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
     }
 
+    @Transactional
     fun deleteUser(username: String) {
-        val user = getByUsernameNonNull(username)
+        val users = userRepository.findAllForDeletion()
+        val user = users.find { it.username == username }
+            ?: throw UsernameNotFoundException("Unknown user '$username'")
+        check(users.any { it.id != user.id && Role.SUPERADMIN in it.roles }) {
+            "The last Superadmin account cannot be deleted. Another Superadmin must remain."
+        }
         userRepository.delete(user)
     }
 }
