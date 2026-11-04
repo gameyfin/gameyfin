@@ -26,7 +26,7 @@ fun User.toExtendedUserInfoDto(): ExtendedUserInfoDto {
         hasAvatar = this.avatar != null,
         avatarId = this.avatar?.id,
         managedBySso = this.oidcProviderId != null,
-        roles = this.roles
+        roles = this.roles.toList()
     )
 }
 

@@ -28,11 +28,22 @@ export const downloadSessionState = proxy<DownloadSessionState>({
 });
 
 /** Subscribe to and process download session updates from backend **/
+let generation = 0;
+export function resetDownloadSessionState() {
+    generation++;
+    downloadSessionState.subscription?.cancel();
+    downloadSessionState.subscription = undefined;
+    downloadSessionState.all = [];
+    downloadSessionState.byId = {};
+}
+
 export async function initializeDownloadSessionState() {
     if (downloadSessionState.isLoaded) return;
+    const current = ++generation;
 
     // Fetch initial configuration data
     const initialSessions = await BandwidthMonitoringEndpoint.getActiveSessions();
+    if (current !== generation) return;
     downloadSessionState.all = sortSessions(initialSessions);
     initialSessions.forEach((session: SessionStatsDto) => {
         downloadSessionState.byId[session.sessionId] = session;
@@ -40,6 +51,7 @@ export async function initializeDownloadSessionState() {
 
     // Subscribe to real-time updates
     downloadSessionState.subscription = BandwidthMonitoringEndpoint.subscribe().onNext((downloadSessionUpdate: SessionStatsDto[][]) => {
+        if (current !== generation) return;
         downloadSessionUpdate.forEach((updateBatch: SessionStatsDto[]) => {
             downloadSessionState.all = sortSessions(updateBatch);
             updateBatch.forEach((session: SessionStatsDto) => {

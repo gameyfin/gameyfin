@@ -1,7 +1,7 @@
 import {fetchWithAuth} from "Frontend/util/utils";
 import {toast} from "@heroui/react";
 
-export async function uploadAvatar(avatar: any) {
+export async function uploadAvatar(avatar: File) {
     const formData = new FormData();
     formData.append("file", avatar);
 
@@ -9,9 +9,7 @@ export async function uploadAvatar(avatar: any) {
 
     const result = await response.text();
 
-    if (response.ok) {
-        window.location.reload();
-    } else {
+    if (!response.ok) {
         toast.danger("Error uploading avatar", {
             description: result
         });
@@ -23,9 +21,7 @@ export async function removeAvatar() {
 
     const result = await response.text();
 
-    if (response.ok) {
-        window.location.reload();
-    } else {
+    if (!response.ok) {
         toast.danger("Error removing avatar", {
             description: result
         });
@@ -37,9 +33,7 @@ export async function removeAvatarByName(name: string) {
 
     const result = await response.text();
 
-    if (response.ok) {
-        window.location.reload();
-    } else {
+    if (!response.ok) {
         toast.danger("Error removing avatar", {
             description: result
         });

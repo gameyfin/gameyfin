@@ -1,6 +1,7 @@
 package org.gameyfin.app.users
 
 import org.gameyfin.app.core.security.getCurrentAuth
+import org.gameyfin.app.core.security.LiveUserAuthentication
 import org.gameyfin.app.users.entities.User
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.session.SessionInformation
@@ -11,7 +12,9 @@ import org.springframework.stereotype.Service
 class SessionService(private val sessionRegistry: SessionRegistry) {
 
     fun logoutAllSessions() {
-        val authPrincipal = getCurrentAuth()?.principal ?: return
+        val auth = getCurrentAuth() ?: return
+        val authPrincipal = (auth as? LiveUserAuthentication)?.sessionPrincipal
+            ?: auth.principal ?: return
         val sessions: List<SessionInformation> = sessionRegistry.getAllSessions(authPrincipal, false)
         for (sessionInfo in sessions) {
             sessionInfo.expireNow()

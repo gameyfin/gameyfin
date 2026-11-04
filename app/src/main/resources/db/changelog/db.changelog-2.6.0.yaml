@@ -66,3 +66,14 @@ databaseChangeLog:
             referencedColumnNames: ID
             constraintName: FK_IGNORED_PATH_SOURCE_USER
             onDelete: SET NULL
+
+  - changeSet:
+      id: 2.6.0-plugin-source-name
+      author: gameyfin
+      changes:
+        - addColumn:
+            tableName: PLUGIN_MANAGEMENT_ENTRY
+            columns:
+              - column:
+                  name: NAME
+                  type: varchar(255)

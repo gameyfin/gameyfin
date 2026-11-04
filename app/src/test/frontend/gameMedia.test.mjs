@@ -35,6 +35,28 @@ function game() {
     };
 }
 
+test("media drafts preserve individual sources and fall back to legacy list attribution", () => {
+    const plugin = {type: "PLUGIN", source: "screenshots", updatedAt: "2026-11-03"};
+    const user = {type: "USER", source: "alice", updatedAt: "2026-11-03"};
+    const original = game();
+    original.metadata.fields = {images: plugin, videoUrls: user};
+    const legacy = media.metadataInitialValues(original);
+    assert.deepEqual(legacy.mediaImages.map(image => image.source), [plugin, plugin, plugin]);
+    assert.deepEqual(legacy.mediaVideoSources, [user, user, user]);
+
+    original.metadata.fields = {
+        images: user, "images.items": user, "images.0": plugin, "images.1": user,
+        videoUrls: user, "videoUrls.items": user, "videoUrls.1": plugin
+    };
+    const mixed = media.metadataInitialValues(original);
+    assert.deepEqual(mixed.mediaImages.map(image => image.source), [plugin, user, undefined]);
+    assert.deepEqual(mixed.mediaVideoSources, [undefined, plugin, undefined]);
+    const selected = {...media.remoteImage("https://example.com/new.png"), selection: {url: "https://example.com/new.png", pluginId: "screenshots"}, source: plugin};
+    const update = media.metadataUpdate(mixed, {...mixed, mediaImages: [selected, ...mixed.mediaImages]});
+    assert.equal(update.images[0].pluginId, "screenshots");
+    assert.equal(update.images[0].source, undefined);
+});
+
 test("form snapshots ignore subsequent live updates and reopening discards unsaved changes", () => {
     const live = game();
     const initial = media.metadataInitialValues(live);

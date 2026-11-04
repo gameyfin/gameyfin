@@ -13,6 +13,7 @@ import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
+import org.gameyfin.app.users.dto.UserEvent
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.emailconfirmation.EmailConfirmationService
@@ -118,10 +119,7 @@ class UserService(
             val subject = principal.subject ?: error("OidcUser has no subject claim")
             val user = userRepository.findByOidcProviderId(subject)
                 ?: throw UsernameNotFoundException("Unknown OIDC user with provider ID '$subject'")
-            val userInfoDto = user.toExtendedUserInfoDto()
-            userInfoDto.roles = roleService.extractGrantedAuthorities(principal.authorities)
-                .mapNotNull { Role.safeValueOf(it.authority) }
-            return userInfoDto
+            return user.toExtendedUserInfoDto()
         }
 
         val user = getByUsernameNonNull(auth.name)
@@ -154,13 +152,16 @@ class UserService(
         return user.avatar != null && user.avatar!!.id != null
     }
 
+    @Transactional
     fun registerOrUpdateUser(user: org.gameyfin.app.users.entities.User): org.gameyfin.app.users.entities.User {
         // OIDC users can have null passwords, so we only encode if a password is provided
         if (user.password != null) {
             user.password = passwordEncoder.encode(user.password)
         }
 
-        return userRepository.save(user)
+        return userRepository.save(user).also {
+            eventPublisher.publishEvent(UserStateChanged(UserEvent(it.id!!, it.toExtendedUserInfoDto())))
+        }
     }
 
     fun selfRegisterUser(registration: UserRegistrationDto) {
@@ -247,6 +248,7 @@ class UserService(
         userRepository.save(user)
     }
 
+    @Transactional
     fun assignRoles(username: String, roleNames: List<String>): RoleAssignmentResult {
         if (roleNames.isEmpty()) {
             return RoleAssignmentResult.NO_ROLES_PROVIDED
@@ -271,6 +273,8 @@ class UserService(
 
         targetUser.roles = newAssignedRoles
         userRepository.save(targetUser)
+        // ElementCollection-only updates need not invoke JPA's PostUpdate callback.
+        eventPublisher.publishEvent(UserStateChanged(UserEvent(targetUser.id!!, targetUser.toExtendedUserInfoDto())))
         return RoleAssignmentResult.SUCCESS
     }
 

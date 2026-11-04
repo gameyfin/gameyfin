@@ -9,16 +9,17 @@ import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
-import {initializeTaskState} from "Frontend/state/TaskState";
+import {initializeTaskState, resetTaskState} from "Frontend/state/TaskState";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
 import {useCallback, useEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
-import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
-import {initializeUserState} from "Frontend/state/UserState";
+import {initializeDownloadSessionState, resetDownloadSessionState} from "Frontend/state/DownloadSessionState";
+import {initializeUserState, resetUserState} from "Frontend/state/UserState";
 import {initializeCollectionState} from "Frontend/state/CollectionState";
+import {initializeConfigState, resetConfigState} from "Frontend/state/ConfigState";
 
 // Generate & inject the per-theme CSS custom property overrides once, before first render
 injectThemeStyles();
@@ -58,6 +59,8 @@ export default function App() {
 
 function ViewWithAuth() {
     const auth = useAuth();
+    const navigate = useNavigate();
+    const identity = `${auth.state.user?.id ?? "anonymous"}:${[...(auth.state.user?.roles ?? [])].sort().join(",")}`;
 
     useEffect(() => {
         if (auth.state.initializing || auth.state.loading) return;
@@ -74,11 +77,23 @@ function ViewWithAuth() {
         initializeGameState(cacheIdentity);
 
         if (isAdmin(auth)) {
+            initializeConfigState();
             initializeTaskState();
             initializeDownloadSessionState();
-            initializeUserState();
+            initializeUserState(cacheIdentity);
+        } else {
+            resetUserState();
+            resetTaskState();
+            resetDownloadSessionState();
+            if (window.location.pathname.startsWith("/administration")) navigate("/", {replace: true});
         }
-    }, [auth]);
+        return () => {
+            resetConfigState();
+            resetUserState();
+            resetTaskState();
+            resetDownloadSessionState();
+        };
+    }, [identity, auth.state.initializing, auth.state.loading]);
 
     return <>
         <IconContext.Provider value={{size: 20}}>

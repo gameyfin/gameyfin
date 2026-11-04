@@ -1,5 +1,8 @@
 package org.gameyfin.app.core.backup
 
+import org.gameyfin.app.games.extensions.mediaSources
+import org.gameyfin.app.games.extensions.replaceMediaSources
+
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import org.gameyfin.app.core.tasks.*
@@ -267,8 +270,13 @@ class ImageRecoveryService(
                     game.headerImage = null
                     game.metadata.fields.remove("headerImage")
                 }
-                if (game.images.removeIf { it.id == imageId } && game.images.isEmpty()) {
-                    game.metadata.fields.remove("images")
+                val attribution = game.metadata.fields["images.items"]
+                val retainedSources = if (attribution != null) game.images
+                    .zip(game.mediaSources("images", game.images.size))
+                    .filter { it.first.id != imageId }.map { it.second } else emptyList()
+                if (game.images.removeIf { it.id == imageId }) {
+                    if (attribution != null) game.replaceMediaSources("images", retainedSources, attribution)
+                    if (game.images.isEmpty()) game.metadata.fields.remove("images")
                 }
                 // Changes to collections alone do not mark the game as modified
                 game.updatedAt = Instant.now()

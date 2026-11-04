@@ -1,8 +1,9 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import {Button, Chip, Modal, toast} from "@heroui/react";
-import {ListBox, ListBoxItem, useDragAndDrop} from "react-aria-components";
+import {ListBox, ListBoxItem} from "react-aria-components";
 import {CaretUpDownIcon} from "@phosphor-icons/react";
 import {useListData} from "@react-stately/data";
+import {useAnimatedReorder} from "Frontend/util/useAnimatedReorder";
 
 export interface PrioritizableItem {
     id: number | string;
@@ -32,30 +33,20 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
         getKey: (item) => item.id
     });
 
-    // Track order changes to trigger re-renders
-    const [orderVersion, setOrderVersion] = useState(0);
-
     // Update sortedItems when items change
     useEffect(() => {
         sortedItems.setSelectedKeys(new Set());
         sortedItems.items.forEach(item => sortedItems.remove(item.id));
         items.forEach(item => sortedItems.append(item));
-        setOrderVersion(prev => prev + 1);
     }, [items]);
 
-    let {dragAndDropHooks} = useDragAndDrop({
-        getItems: (keys) =>
-            [...keys].map((key) => ({'text/plain': sortedItems.getItem(key)!.name})),
-        onReorder(e) {
-            if (e.keys.has(e.target.key)) return;
-
-            if (e.target.dropPosition === 'before' || e.target.dropPosition === 'on') {
-                sortedItems.moveBefore(e.target.key, e.keys);
-            } else if (e.target.dropPosition === 'after') {
-                sortedItems.moveAfter(e.target.key, e.keys);
-            }
-            // Trigger re-render after reorder
-            setOrderVersion(prev => prev + 1);
+    const {ref, dragAndDropHooks} = useAnimatedReorder({
+        items: sortedItems.items,
+        getKey: item => item.id,
+        getLabel: item => item.name,
+        onReorder(reordered) {
+            // Move existing items without remounting the collection or losing focus.
+            reordered.slice(1).forEach((item, index) => sortedItems.moveAfter(reordered[index].id, [item.id]));
         }
     });
 
@@ -92,20 +83,27 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
                                 </Modal.Header>
                                 <Modal.Body>
                                     <ListBox items={sortedItems.items}
+                                             dependencies={[sortedItems.items]}
+                                             ref={ref}
+                                             aria-label={title}
                                              dragAndDropHooks={dragAndDropHooks}
-                                             className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1"
-                                             key={orderVersion}>
+                                             className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-1">
                                         {(item: T) => (
                                             <ListBoxItem
                                                 key={item.id}
-                                                className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5">
-                                                <div className="flex flex-row gap-2 items-center">
-                                                    <Chip size="sm" variant="soft" color="accent">
-                                                        {sortedItems.items.findIndex(p => p.id === item.id) + 1}
-                                                    </Chip>
-                                                    <p className="font-normal text-small">{item.name}</p>
+                                                id={item.id}
+                                                textValue={item.name}
+                                                data-reorder-key={String(item.id)}
+                                                className="group/priority rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-accent">
+                                                <div data-reorder-content className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5 group-data-dragging/priority:opacity-40">
+                                                    <div className="flex flex-row gap-2 items-center">
+                                                        <Chip size="sm" variant="soft" color="accent">
+                                                            {sortedItems.items.findIndex(p => p.id === item.id) + 1}
+                                                        </Chip>
+                                                        <p className="font-normal text-small">{item.name}</p>
+                                                    </div>
+                                                    <CaretUpDownIcon/>
                                                 </div>
-                                                <CaretUpDownIcon/>
                                             </ListBoxItem>
                                         )}
                                     </ListBox>
