@@ -123,8 +123,9 @@ export default function ProfileManagement() {
                             <div className="flex flex-row justify-center">
                                 <Avatar className="size-40 m-4 flex flex-row"/>
                             </div>
-                            <div className="flex flex-row gap-2">
-                                <UploadButton label="Upload avatar" accept="image/*" onFilesSelected={uploadSelectedAvatar}
+                            <div className="flex flex-row gap-2 justify-center">
+                                <UploadButton label="Upload avatar" accept="image/*"
+                                              onFilesSelected={uploadSelectedAvatar}
                                               isPending={uploadingAvatar} isDisabled={auth.state.user?.managedBySso}/>
                                 <Tooltip delay={0}>
                                     <Tooltip.Trigger>

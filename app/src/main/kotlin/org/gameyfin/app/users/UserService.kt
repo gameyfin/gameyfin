@@ -13,10 +13,9 @@ import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
+import org.gameyfin.app.users.dto.UserEvent
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.dto.UserUpdateDto
-import org.gameyfin.app.users.dto.UserEvent
-import org.springframework.transaction.annotation.Transactional
 import org.gameyfin.app.users.emailconfirmation.EmailConfirmationService
 import org.gameyfin.app.users.enums.RoleAssignmentResult
 import org.gameyfin.app.users.extensions.toAuthorities

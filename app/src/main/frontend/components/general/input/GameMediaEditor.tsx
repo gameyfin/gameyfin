@@ -77,7 +77,8 @@ function OrderedMediaList({label, items, onChange, onDelete, disabled, layout = 
                      className={layout === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3" : "flex flex-col gap-2"}>
         {item => <GridListItem id={item.key} textValue={item.label} data-reorder-key={item.key}
                                className={`group/media min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-lg ${disabled ? "cursor-default" : "cursor-grab"}`}>
-            <div data-reorder-content className={`flex h-full min-w-0 items-center rounded-lg bg-foreground/5 p-2 group-data-dragging/media:opacity-40 ${layout === "grid" ? "flex-wrap gap-2" : "gap-3"}`}>
+            <div data-reorder-content
+                 className={`flex h-full min-w-0 items-center rounded-lg bg-foreground/5 p-2 group-data-dragging/media:opacity-40 ${layout === "grid" ? "flex-wrap gap-2" : "gap-3"}`}>
                 {item.preview}
                 <Button slot="drag" aria-label={`Reorder ${item.label}`} isDisabled={disabled}
                         isIconOnly size="sm" variant="ghost"
@@ -266,15 +267,17 @@ export default function GameMediaEditor({children, searchOnOpen, sourceIcon}: Ga
                 <h3 className="font-semibold flex items-center flex-wrap">Media
                     {[...gallerySources].map(([key, source]) => <GameMetadataSourceIcon key={key} source={source}/>)}
                 </h3>
-                <Button type="button" size="sm" isDisabled={isSubmitting} onPress={() => setPicker("screenshot")}>Add
-                    screenshots</Button>
+                <Button type="button" size="sm"
+                        isDisabled={isSubmitting}
+                        onPress={() => setPicker("screenshot")}>
+                    Add screenshots
+                </Button>
             </div>
+
             <MediaGallery mediaImages={values.mediaImages} mediaVideos={values.mediaVideos}
                           mediaVideoSources={values.mediaVideoSources}
                           mediaOrder={values.mediaOrder} isSubmitting={isSubmitting} setValues={setValues}/>
-        </section>
-        <section aria-label="Videos" className="flex flex-col gap-2">
-            <h3 className="font-semibold">Videos</h3>
+
             <div className="flex gap-2">
                 <Input aria-label="Video URL" placeholder="Video URL" value={videoUrl} disabled={isSubmitting}
                        className="flex-1 min-w-0"
@@ -285,8 +288,10 @@ export default function GameMediaEditor({children, searchOnOpen, sourceIcon}: Ga
                                addVideo();
                            }
                        }}/>
-                <Button type="button" isDisabled={!videoUrl.trim() || isSubmitting} onPress={addVideo}>Add
-                    video</Button>
+                <Button type="button"
+                        isDisabled={!videoUrl.trim() || isSubmitting}
+                        onPress={addVideo}>
+                    Add video</Button>
             </div>
             {videoError && <p role="alert" className="text-sm text-danger">{videoError}</p>}
         </section>
