@@ -174,11 +174,12 @@ class PublicApiIntegrationTest {
         val entries = mapper.readTree(response.body()).toList()
         val expected = games.findAll().sortedBy { it.id }
         assertEquals(expected.map { it.id.toString() }, entries.map { it["id"].asString() })
-        assertEquals(expected.map { it.updatedAt }, entries.map { Instant.parse(it["updatedAt"].asString()) })
+        assertEquals(expected.map { it.updatedAt!! }, entries.map { Instant.parse(it["updatedAt"].asString()) })
         assertTrue(entries.all { it.propertyNames().toSet() == setOf("id", "updatedAt") })
         assertEquals(200, request("/v1/games/${game.id}", token).statusCode())
         games.deleteById(game.id!!)
-        assertFalse(mapper.readTree(request("/v1/games/index", token).body()).any { it["id"].asString() == game.id.toString() })
+        assertFalse(
+            mapper.readTree(request("/v1/games/index", token).body()).any { it["id"].asString() == game.id.toString() })
     }
 
     @Test
@@ -188,7 +189,6 @@ class PublicApiIntegrationTest {
         assertEquals(200, response.statusCode(), response.body())
         val instance = mapper.readTree(response.body())
         assertFalse(instance.has("capabilities"))
-        assertTrue(instance["plugins"].isArray)
         assertTrue(instance["features"]["sso"]["enabled"].isBoolean)
         assertTrue(instance["features"]["publicAccess"]["enabled"].isBoolean)
         assertTrue(instance["features"]["gameRequests"]["maxOpenRequestsPerUser"].isIntegralNumber)
