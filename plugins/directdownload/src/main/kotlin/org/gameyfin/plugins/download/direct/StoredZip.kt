@@ -9,8 +9,8 @@ import java.nio.file.Path
 import java.util.zip.CRC32
 
 /**
- * Packs a folder into a STORED (uncompressed) ZIP whose exact byte length can be
- * computed up front, so a folder download can advertise a Content-Length.
+ * Packs a folder into a STORED (uncompressed) ZIP. [stream] discovers entries while
+ * writing; [download] snapshots and sorts them first to advertise an exact Content-Length.
  *
  * Why STORED: a DEFLATE stream's length is unknown until it finishes, so the original
  * plugin sent no Content-Length for folder downloads (the browser showed "unknown size").
@@ -19,7 +19,7 @@ import java.util.zip.CRC32
  *
  * ZIP64 is added per-entry **only as needed** (a file >= 4 GiB, or a local-header offset
  * past 4 GiB in a large archive) â€” forcing it onto every entry produces archives that
- * modern unzip tools and JDK 22+ reject. [computeSize] and [stream] share the same layout
+ * modern unzip tools and JDK 22+ reject. [computeSize] and [download] share the same layout
  * helpers ([localExtraLen]/[centralExtraLen]/[needsZip64End]), so the advertised size is
  * correct by construction.
  */
@@ -62,7 +62,7 @@ object StoredZip {
     private fun needsZip64End(count: Long, cdStart: Long, cdSize: Long): Boolean =
         count >= U16_MAX || cdStart >= ZIP64_MAGIC || cdSize >= ZIP64_MAGIC
 
-    /** Exact number of bytes [stream] will emit for [root]. */
+    /** Exact number of bytes [download] will emit for an unchanged [root]. */
     fun computeSize(root: Path): Long {
         val entries = entries(root)
         return plannedSize(entries.map { it.name.size }, entries.map { it.size })
@@ -94,27 +94,33 @@ object StoredZip {
         val snapshot = entries(root)
         val size = plannedSize(snapshot.map { it.name.size }, snapshot.map { it.size })
         return org.gameyfin.pluginapi.download.FileDownload(
-            ArchiveStream.open(root) { writeArchive(it, snapshot) }, "zip", size
+            ArchiveStream.open(root) { output -> writeArchive(output) { consume -> snapshot.forEach(consume) } }, "zip", size
         )
     }
 
-    fun stream(root: Path): InputStream {
-        val snapshot = entries(root)
-        return ArchiveStream.open(root) { writeArchive(it, snapshot) }
-    }
+    fun stream(root: Path): InputStream = stream(root, ArchiveFiles::visit)
+
+    internal fun stream(root: Path, visit: (Path, (Path, Long) -> Unit) -> Unit): InputStream =
+        ArchiveStream.open(root) { output ->
+            writeArchive(output) { consume ->
+                visit(root) { file, size -> consume(Entry(file, zipName(root, file).toByteArray(Charsets.UTF_8), size)) }
+            }
+        }
     private class Central(val name: ByteArray, val crc: Long, val size: Long, val offset: Long)
 
     private const val FLAGS_UTF8 = 0x0800
     private const val FLAG_DATA_DESCRIPTOR = 0x0008
 
-    private fun writeArchive(out: OutputStream, entries: List<Entry>) {
-        val centrals = ArrayList<Central>(entries.size)
+    private fun writeArchive(out: OutputStream, visit: ((Entry) -> Unit) -> Unit) {
+        val centrals = ArrayList<Central>()
+        val buffer = ByteArray(512 * 1024)
         var offset = 0L
 
         // Local headers + file data
-        for (e in entries) {
+        visit { e ->
             writeLocalHeader(out, e)
-            val crc = writeFileData(out, e)
+            if (centrals.isEmpty()) out.flush()
+            val crc = writeFileData(out, e, buffer)
             writeDataDescriptor(out, e.size, crc)
             centrals.add(Central(e.name, crc, e.size, offset))
             offset += LOCAL_HEADER + e.name.size + localExtraLen(e.size) + e.size + descriptorLen(e.size)
@@ -147,20 +153,19 @@ object StoredZip {
         if (zip64) { out.u16(1); out.u16(16); out.u64(e.size); out.u64(e.size) }
     }
 
-    private fun writeFileData(out: OutputStream, e: Entry): Long {
+    private fun writeFileData(out: OutputStream, e: Entry, buffer: ByteArray): Long {
         // Sizes stay in the local header (STORED data can't be delimited otherwise); only the CRC
         // is deferred, so streaming starts immediately.
         val crc = CRC32()
         var copied = 0L
         Files.newInputStream(e.file).use { input ->
-            val buf = ByteArray(512 * 1024)
             while (true) {
-                val n = input.read(buf)
+                val n = input.read(buffer)
                 if (n < 0) break
                 copied += n
                 if (copied > e.size) throw IOException("File grew during archive generation: ${e.file}")
-                crc.update(buf, 0, n)
-                out.write(buf, 0, n)
+                crc.update(buffer, 0, n)
+                out.write(buffer, 0, n)
             }
         }
         if (copied != e.size) throw IOException("File shrank during archive generation: ${e.file}")
@@ -228,12 +233,11 @@ object StoredZip {
 
     /** Regular files under [root], deterministically ordered. Empty directories are not entries. */
     private fun entries(root: Path): List<Entry> {
-        val files = ArrayList<Path>()
-        Files.walk(root).use { stream ->
-            stream.filter { Files.isRegularFile(it) }.forEach { files.add(it) }
+        val files = ArrayList<Entry>()
+        ArchiveFiles.visit(root) { file, size ->
+            files.add(Entry(file, zipName(root, file).toByteArray(Charsets.UTF_8), size))
         }
         return files
-            .map { Entry(it, zipName(root, it).toByteArray(Charsets.UTF_8), Files.size(it)) }
             .sortedWith(compareBy { String(it.name, Charsets.UTF_8) })
     }
 

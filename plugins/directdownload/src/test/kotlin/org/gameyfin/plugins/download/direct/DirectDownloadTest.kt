@@ -31,23 +31,94 @@ class DirectDownloadTest {
         Files.write(folder.resolve("café.txt"), content)
         Files.write(folder.resolve("empty"), byteArrayOf())
         val lengths = mutableMapOf<CompressionMode, Int>()
-        for (mode in CompressionMode.entries) {
-            plugin.loadConfig(mapOf("compressionMode" to mode.name))
-            val download = DirectDownloadPlugin.DirectDownloadProvider().download(folder) as FileDownload
-            val bytes = download.data.use { it.readAllBytes() }
-            lengths[mode] = bytes.size
-            if (mode == CompressionMode.None) assertEquals(bytes.size.toLong(), download.size)
-            else assertNull(download.size)
-            val zip = Files.write(root.resolve("$mode.zip"), bytes)
-            ZipFile(zip.toFile()).use {
-                val entry = it.getEntry("café.txt")
-                assertEquals(if (mode == CompressionMode.None) 0 else 8, entry.method)
-                assertContentEquals(content, it.getInputStream(entry).readAllBytes())
-                assertEquals(0, it.getEntry("empty").size)
+        for (calculateSize in listOf(false, true)) {
+            for (mode in CompressionMode.entries) {
+                plugin.loadConfig(mapOf("compressionMode" to mode.name, "calculateArchiveSize" to calculateSize.toString()))
+                val provider = DirectDownloadPlugin.DirectDownloadProvider()
+                val metadata = provider.describe(folder)
+                val download = DirectDownloadPlugin.DirectDownloadProvider().download(folder) as FileDownload
+                val bytes = download.data.use { it.readAllBytes() }
+                lengths[mode] = bytes.size
+                if (mode == CompressionMode.None && calculateSize) assertEquals(bytes.size.toLong(), download.size)
+                else assertNull(download.size)
+                assertEquals(download.size, metadata.size)
+                val zip = Files.write(root.resolve("$mode.zip"), bytes)
+                ZipFile(zip.toFile()).use {
+                    val entry = it.getEntry("café.txt")
+                    assertEquals(if (mode == CompressionMode.None) 0 else 8, entry.method)
+                    assertContentEquals(content, it.getInputStream(entry).readAllBytes())
+                    assertEquals(0, it.getEntry("empty").size)
+                }
             }
         }
         assertTrue(lengths.getValue(CompressionMode.Fast) < lengths.getValue(CompressionMode.None))
         assertTrue(lengths.getValue(CompressionMode.Best) < lengths.getValue(CompressionMode.None))
+    }
+
+    @Test
+    fun `missing size setting defaults to fast startup and folder metadata omits size`() {
+        val plugin = DirectDownloadPlugin(object : PluginContext {
+            override val pluginId = "direct"
+            override val pluginVersion = "test"
+            override val dataDirectory get() = root
+            override val dataService: GameyfinDataService get() = error("unused")
+        })
+        plugin.loadConfig(emptyMap())
+        val provider = DirectDownloadPlugin.DirectDownloadProvider()
+        assertNull(provider.describe(root).size)
+        val download = provider.download(root) as FileDownload
+        assertNull(download.size)
+        download.data.use { assertTrue(it.readAllBytes().isNotEmpty()) }
+        val file = Files.write(root.resolve("original.zip"), byteArrayOf(1, 2, 3))
+        assertEquals(3L, provider.describe(file).size)
+        (provider.download(file) as FileDownload).let {
+            assertEquals(3L, it.size)
+            it.data.use { input -> assertContentEquals(byteArrayOf(1, 2, 3), input.readAllBytes()) }
+        }
+    }
+
+    @Test
+    @org.junit.jupiter.api.Timeout(15)
+    fun `first ZIP bytes arrive while later traversal is blocked and cancellation stops traversal`() {
+        val file = Files.write(root.resolve("first.txt"), byteArrayOf(1))
+        for (mode in CompressionMode.entries) {
+            val blocked = CountDownLatch(1)
+            val release = CountDownLatch(1)
+            val stopped = CountDownLatch(1)
+            val visit: (Path, (Path, Long) -> Unit) -> Unit = { _, consume ->
+                try {
+                    consume(file, 1)
+                    blocked.countDown()
+                    release.await()
+                } finally { stopped.countDown() }
+            }
+            val input = if (mode == CompressionMode.None) StoredZip.stream(root, visit)
+                else CompressedZip.stream(root, mode, visit)
+            try {
+                assertTrue(blocked.await(3, TimeUnit.SECONDS))
+                // Neither a full pipe nor completed traversal may be needed to receive the header.
+                assertContentEquals(byteArrayOf(80, 75, 3, 4), input.readNBytes(4))
+                input.close()
+                assertTrue(stopped.await(3, TimeUnit.SECONDS))
+            } finally {
+                input.close()
+                release.countDown()
+            }
+        }
+    }
+
+    @Test
+    fun `traversal failure after first entry is not successful EOF`() {
+        val file = Files.write(root.resolve("first.txt"), byteArrayOf(1))
+        for (mode in CompressionMode.entries) {
+            val visit: (Path, (Path, Long) -> Unit) -> Unit = { _, consume ->
+                consume(file, 1)
+                throw IOException("Cannot enumerate next directory")
+            }
+            val input = if (mode == CompressionMode.None) StoredZip.stream(root, visit)
+                else CompressedZip.stream(root, mode, visit)
+            input.use { assertFailsWith<IOException> { it.readAllBytes() } }
+        }
     }
 
     @Test

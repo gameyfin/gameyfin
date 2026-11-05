@@ -8,10 +8,10 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 internal object CompressedZip {
-    fun stream(root: Path, mode: CompressionMode): InputStream {
-        val files = Files.walk(root).use { paths ->
-            paths.filter { Files.isRegularFile(it) }.sorted().map { it to Files.size(it) }.toList()
-        }.toList()
+    fun stream(
+        root: Path, mode: CompressionMode,
+        visit: (Path, (Path, Long) -> Unit) -> Unit = ArchiveFiles::visit
+    ): InputStream {
         return ArchiveStream.open(root) { output ->
             // ArchiveStream owns the pipe: finish the ZIP without closing it before publishing failures.
             val zip = ZipOutputStream(object : java.io.FilterOutputStream(output) {
@@ -20,10 +20,15 @@ internal object CompressedZip {
             })
             zip.setLevel(mode.deflaterLevel())
             zip.use {
-                for ((file, size) in files) {
+                var firstEntry = true
+                visit(root) { file, size ->
                     val entry = ZipEntry(root.relativize(file).toString().replace('\\', '/'))
                     entry.time = 0
                     zip.putNextEntry(entry)
+                    if (firstEntry) {
+                        zip.flush()
+                        firstEntry = false
+                    }
                     val copied = Files.newInputStream(file).use { it.copyTo(zip) }
                     if (copied != size) throw IOException("File size changed during archive generation: $file")
                     zip.closeEntry()

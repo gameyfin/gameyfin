@@ -11,6 +11,7 @@ import org.springframework.web.context.request.async.CallableProcessingIntercept
 import org.springframework.web.context.request.async.WebAsyncUtils
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import java.io.Closeable
+import java.io.FilterOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.Callable
@@ -115,7 +116,28 @@ internal object DownloadResponses {
             private val closed = AtomicBoolean()
             override fun writeTo(outputStream: OutputStream) {
                 use {
-                    transfer(outputStream)
+                    transfer(object : FilterOutputStream(outputStream) {
+                        private var firstWrite = true
+
+                        private fun flushFirstWrite() {
+                            if (!firstWrite) return
+                            firstWrite = false
+                            out.flush()
+                            // Spring's StreamingResponseBody stream suppresses flush(). Commit the
+                            // servlet buffer once so a small ZIP header reaches the client promptly.
+                            if (request.isAsyncStarted) request.asyncContext.response.flushBuffer()
+                        }
+
+                        override fun write(b: Int) {
+                            out.write(b)
+                            flushFirstWrite()
+                        }
+
+                        override fun write(b: ByteArray, off: Int, len: Int) {
+                            out.write(b, off, len)
+                            if (len > 0) flushFirstWrite()
+                        }
+                    })
                 }
             }
 
