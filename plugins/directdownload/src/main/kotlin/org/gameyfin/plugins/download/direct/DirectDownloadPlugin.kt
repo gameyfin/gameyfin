@@ -5,16 +5,14 @@ import org.gameyfin.pluginapi.core.config.PluginConfigMetadata
 import org.gameyfin.pluginapi.core.wrapper.ConfigurableGameyfinPlugin
 import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.download.Download
-import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.FileDownload
+import org.gameyfin.pluginapi.download.DownloadProvider
+import org.gameyfin.pluginapi.download.RangeDownload
+import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.pf4j.Extension
-import java.io.IOException
 import java.io.InputStream
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardOpenOption
 import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.fileSize
@@ -36,7 +34,7 @@ class DirectDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(
             key = "compressionMode",
             type = CompressionMode::class.java,
             label = "Compression mode",
-            description = "Higher compression modes are more resource intensive, but save bandwidth",
+            description = "Compression applies to folders only. Higher modes use more CPU but save bandwidth; single files are unchanged.",
             default = CompressionMode.None
         )
     )
@@ -44,39 +42,26 @@ class DirectDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(
     @Suppress("Unused")
     @Extension(ordinal = 1)
     class DirectDownloadProvider : DownloadProvider {
+        private fun mode() = plugin.config<CompressionMode>("compressionMode")
+
+        override fun describe(path: Path): DownloadMetadata =
+            if (path.isDirectory()) DownloadMetadata("zip", if (mode() == CompressionMode.None) StoredZip.computeSize(path) else null)
+            else DownloadMetadata(path.extension, path.fileSize())
+
+        override fun prepareRangeDownload(path: Path): RangeDownload? =
+            if (path.isDirectory()) null else FileRangeDownload(path)
+
         override fun download(path: Path): Download {
-            if (!path.exists()) throw IllegalArgumentException("Path $path does not exist")
-
-            val isDirectory = path.isDirectory()
-            return FileDownload(
-                // Folders are packed as a STORED zip whose size is known up front, so the
-                // download advertises a Content-Length (browser shows size + progress bar).
-                // See StoredZip for the rationale and the ZIP64 handling.
-                data = if (isDirectory) StoredZip.stream(path) else streamFile(path),
-                fileExtension = if (isDirectory) "zip" else path.extension,
-                size = if (isDirectory) StoredZip.computeSize(path) else path.fileSize()
-            )
-        }
-
-        fun streamFile(path: Path): InputStream {
-            val pipeIn = PipedInputStream(512 * 1024)
-            val pipeOut = PipedOutputStream(pipeIn)
-
-            Thread.ofVirtual().start {
-                try {
-                    Files.newInputStream(path, StandardOpenOption.READ).use { input ->
-                        input.copyTo(pipeOut, 512 * 1024)
-                    }
-                } catch (_: IOException) {
-                } finally {
-                    try {
-                        pipeOut.close()
-                    } catch (_: IOException) {
-                    }
-                }
+            require(path.exists()) { "Path $path does not exist" }
+            if (!path.isDirectory()) {
+                val size = path.fileSize()
+                return FileDownload(streamFile(path), path.extension, size)
             }
-
-            return pipeIn
+            val mode = mode()
+            return if (mode == CompressionMode.None) StoredZip.download(path)
+            else FileDownload(CompressedZip.stream(path, mode), "zip")
         }
+
+        fun streamFile(path: Path): InputStream = Files.newInputStream(path)
     }
 }

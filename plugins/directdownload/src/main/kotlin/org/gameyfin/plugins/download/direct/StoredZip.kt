@@ -1,12 +1,9 @@
 package org.gameyfin.plugins.download.direct
 
-import java.io.BufferedOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.CRC32
@@ -21,7 +18,7 @@ import java.util.zip.CRC32
  * payloads are already-compressed, so dropping DEFLATE costs ~no bandwidth.
  *
  * ZIP64 is added per-entry **only as needed** (a file >= 4 GiB, or a local-header offset
- * past 4 GiB in a large archive) — forcing it onto every entry produces archives that
+ * past 4 GiB in a large archive) â€” forcing it onto every entry produces archives that
  * modern unzip tools and JDK 22+ reject. [computeSize] and [stream] share the same layout
  * helpers ([localExtraLen]/[centralExtraLen]/[needsZip64End]), so the advertised size is
  * correct by construction.
@@ -92,28 +89,19 @@ object StoredZip {
         return cdStart + cdSize + end
     }
 
-    /** Streams [root] as a STORED zip on a virtual thread via a pipe. */
-    fun stream(root: Path): InputStream {
-        val pipeIn = PipedInputStream(512 * 1024)
-        val pipeOut = PipedOutputStream(pipeIn)
-        val entries = entries(root)
-
-        Thread.ofVirtual().start {
-            try {
-                BufferedOutputStream(pipeOut, 512 * 1024).use { out -> writeArchive(out, entries) }
-            } catch (_: IOException) {
-                // Client disconnected mid-download — nothing to do; pipe closed below.
-            } finally {
-                try {
-                    pipeOut.close()
-                } catch (_: IOException) {
-                }
-            }
-        }
-
-        return pipeIn
+    /** A single snapshot drives both the advertised length and the archive writer. */
+    fun download(root: Path): org.gameyfin.pluginapi.download.FileDownload {
+        val snapshot = entries(root)
+        val size = plannedSize(snapshot.map { it.name.size }, snapshot.map { it.size })
+        return org.gameyfin.pluginapi.download.FileDownload(
+            ArchiveStream.open(root) { writeArchive(it, snapshot) }, "zip", size
+        )
     }
 
+    fun stream(root: Path): InputStream {
+        val snapshot = entries(root)
+        return ArchiveStream.open(root) { writeArchive(it, snapshot) }
+    }
     private class Central(val name: ByteArray, val crc: Long, val size: Long, val offset: Long)
 
     private const val FLAGS_UTF8 = 0x0800
@@ -125,40 +113,10 @@ object StoredZip {
 
         // Local headers + file data
         for (e in entries) {
-            val hasDescriptor = e.size > 0
-            val zip64 = e.size >= ZIP64_MAGIC
-            out.u32(0x04034b50)                          // local file header signature
-            out.u16(if (zip64) 45 else 20)               // version needed
-            out.u16(flags(hasDescriptor))                // flags: UTF-8 names (+ data descriptor)
-            out.u16(0)                                   // method: STORED
-            out.u16(0); out.u16(0x21)                    // mod time / date (1980-01-01)
-            out.u32(0)                                   // crc: in the data descriptor (0 for empty files)
-            out.u32(if (zip64) ZIP64_MAGIC else e.size)  // compressed size
-            out.u32(if (zip64) ZIP64_MAGIC else e.size)  // uncompressed size
-            out.u16(e.name.size)
-            out.u16(localExtraLen(e.size).toInt())
-            out.write(e.name)
-            if (zip64) { out.u16(1); out.u16(16); out.u64(e.size); out.u64(e.size) }
-
-            // Sizes stay in the local header (STORED data can't be delimited otherwise); only the CRC
-            // is deferred, so streaming starts immediately.
-            val crc = CRC32()
-            Files.newInputStream(e.file).use { input ->
-                val buf = ByteArray(512 * 1024)
-                while (true) {
-                    val n = input.read(buf)
-                    if (n < 0) break
-                    crc.update(buf, 0, n)
-                    out.write(buf, 0, n)
-                }
-            }
-            if (hasDescriptor) {
-                out.u32(0x08074b50)                      // data descriptor signature
-                out.u32(crc.value)
-                if (zip64) { out.u64(e.size); out.u64(e.size) } else { out.u32(e.size); out.u32(e.size) }
-            }
-
-            centrals.add(Central(e.name, crc.value, e.size, offset))
+            writeLocalHeader(out, e)
+            val crc = writeFileData(out, e)
+            writeDataDescriptor(out, e.size, crc)
+            centrals.add(Central(e.name, crc, e.size, offset))
             offset += LOCAL_HEADER + e.name.size + localExtraLen(e.size) + e.size + descriptorLen(e.size)
         }
 
@@ -166,36 +124,87 @@ object StoredZip {
         val cdStart = offset
         var cdSize = 0L
         for (c in centrals) {
-            val sizeOver = c.size >= ZIP64_MAGIC
-            val offsetOver = c.offset >= ZIP64_MAGIC
-            val extra = centralExtraLen(c.size, c.offset)
-            out.u32(0x02014b50)                              // central file header signature
-            out.u16(45)                                      // version made by
-            out.u16(if (sizeOver || offsetOver) 45 else 20)  // version needed
-            out.u16(flags(c.size > 0))                       // flags: UTF-8 names (+ data descriptor)
-            out.u16(0)                                       // method: STORED
-            out.u16(0); out.u16(0x21)                        // mod time / date
-            out.u32(c.crc)
-            out.u32(if (sizeOver) ZIP64_MAGIC else c.size)   // compressed size
-            out.u32(if (sizeOver) ZIP64_MAGIC else c.size)   // uncompressed size
-            out.u16(c.name.size)
-            out.u16(extra.toInt())
-            out.u16(0)                                       // comment length
-            out.u16(0)                                       // disk number start
-            out.u16(0)                                       // internal attributes
-            out.u32(0)                                       // external attributes
-            out.u32(if (offsetOver) ZIP64_MAGIC else c.offset)
-            out.write(c.name)
-            if (extra > 0) {
-                out.u16(1); out.u16((extra - 4).toInt())
-                if (sizeOver) { out.u64(c.size); out.u64(c.size) }
-                if (offsetOver) out.u64(c.offset)
-            }
-            cdSize += CENTRAL_HEADER + c.name.size + extra
+            cdSize += writeCentralHeader(out, c)
         }
 
-        // End-of-central-directory records
-        val count = centrals.size.toLong()
+        writeEndRecords(out, centrals.size.toLong(), cdStart, cdSize)
+    }
+
+    private fun writeLocalHeader(out: OutputStream, e: Entry) {
+        val hasDescriptor = e.size > 0
+        val zip64 = e.size >= ZIP64_MAGIC
+        out.u32(0x04034b50)                          // local file header signature
+        out.u16(if (zip64) 45 else 20)               // version needed
+        out.u16(flags(hasDescriptor))                // flags: UTF-8 names (+ data descriptor)
+        out.u16(0)                                   // method: STORED
+        out.u16(0); out.u16(0x21)                    // mod time / date (1980-01-01)
+        out.u32(0)                                   // crc: in the data descriptor (0 for empty files)
+        out.u32(if (zip64) ZIP64_MAGIC else e.size)  // compressed size
+        out.u32(if (zip64) ZIP64_MAGIC else e.size)  // uncompressed size
+        out.u16(e.name.size)
+        out.u16(localExtraLen(e.size).toInt())
+        out.write(e.name)
+        if (zip64) { out.u16(1); out.u16(16); out.u64(e.size); out.u64(e.size) }
+    }
+
+    private fun writeFileData(out: OutputStream, e: Entry): Long {
+        // Sizes stay in the local header (STORED data can't be delimited otherwise); only the CRC
+        // is deferred, so streaming starts immediately.
+        val crc = CRC32()
+        var copied = 0L
+        Files.newInputStream(e.file).use { input ->
+            val buf = ByteArray(512 * 1024)
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                copied += n
+                if (copied > e.size) throw IOException("File grew during archive generation: ${e.file}")
+                crc.update(buf, 0, n)
+                out.write(buf, 0, n)
+            }
+        }
+        if (copied != e.size) throw IOException("File shrank during archive generation: ${e.file}")
+        return crc.value
+    }
+
+    private fun writeDataDescriptor(out: OutputStream, size: Long, crc: Long) {
+        if (size == 0L) return
+        val zip64 = size >= ZIP64_MAGIC
+        out.u32(0x08074b50)                      // data descriptor signature
+        out.u32(crc)
+        if (zip64) { out.u64(size); out.u64(size) } else { out.u32(size); out.u32(size) }
+    }
+
+    private fun writeCentralHeader(out: OutputStream, c: Central): Long {
+        val sizeOver = c.size >= ZIP64_MAGIC
+        val offsetOver = c.offset >= ZIP64_MAGIC
+        val extra = centralExtraLen(c.size, c.offset)
+        out.u32(0x02014b50)                              // central file header signature
+        out.u16(45)                                      // version made by
+        out.u16(if (sizeOver || offsetOver) 45 else 20)  // version needed
+        out.u16(flags(c.size > 0))                       // flags: UTF-8 names (+ data descriptor)
+        out.u16(0)                                       // method: STORED
+        out.u16(0); out.u16(0x21)                        // mod time / date
+        out.u32(c.crc)
+        out.u32(if (sizeOver) ZIP64_MAGIC else c.size)   // compressed size
+        out.u32(if (sizeOver) ZIP64_MAGIC else c.size)   // uncompressed size
+        out.u16(c.name.size)
+        out.u16(extra.toInt())
+        out.u16(0)                                       // comment length
+        out.u16(0)                                       // disk number start
+        out.u16(0)                                       // internal attributes
+        out.u32(0)                                       // external attributes
+        out.u32(if (offsetOver) ZIP64_MAGIC else c.offset)
+        out.write(c.name)
+        if (extra > 0) {
+            out.u16(1); out.u16((extra - 4).toInt())
+            if (sizeOver) { out.u64(c.size); out.u64(c.size) }
+            if (offsetOver) out.u64(c.offset)
+        }
+        return CENTRAL_HEADER + c.name.size + extra
+    }
+
+    private fun writeEndRecords(out: OutputStream, count: Long, cdStart: Long, cdSize: Long) {
         if (needsZip64End(count, cdStart, cdSize)) {
             out.u32(0x06064b50)                  // ZIP64 end of central directory record
             out.u64(44)                          // size of remainder of this record
