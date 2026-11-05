@@ -3346,7 +3346,7 @@
         "tags": [
           "Downloads"
         ],
-        "description": "Requires downloads:read. Streams a file or returns a JSON link descriptor. Follow links explicitly without forwarding X-API-Key. Range/resume is not supported; requests receive the complete stream.",
+        "description": "Requires downloads:read. Streams a file or returns a JSON link descriptor. Follow links explicitly without forwarding X-API-Key. Single-file direct downloads support one byte range and ETag-based If-Range resume (206/416). Generated archives and other providers return complete streams. HEAD returns metadata without a body.",
         "operationId": "downloadGame",
         "parameters": [
           {
