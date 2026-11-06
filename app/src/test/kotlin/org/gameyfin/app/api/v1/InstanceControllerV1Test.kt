@@ -7,10 +7,9 @@ import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.CriteriaQuery
 import jakarta.persistence.criteria.Root
 import org.gameyfin.app.api.v1.controller.InstanceControllerV1
-import org.gameyfin.app.api.v1.dto.HealthV1
-import org.gameyfin.app.api.v1.dto.InstanceV1
-import org.gameyfin.app.api.v1.dto.TaskRunV1
-import org.gameyfin.app.api.v1.dto.TaskV1
+import org.gameyfin.app.api.v1.dto.*
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.tasks.TaskRunStatus
 import org.gameyfin.app.core.tasks.TaskService
 import org.gameyfin.app.core.tasks.dto.TaskDto
@@ -38,7 +37,15 @@ class InstanceControllerV1Test {
     private val health = mockk<HealthEndpoint>()
     private val tasks = mockk<TaskService>()
     private val runs = mockk<TaskRunRepository>()
-    private val controller = InstanceControllerV1(allowingAccess(), environment, build, health, tasks, runs)
+    private val config = mockk<ConfigService> {
+        every { get(ConfigProperties.SSO.OIDC.Enabled) } returns false
+        every { get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        every { get(ConfigProperties.Requests.Games.Enabled) } returns true
+        every { get(ConfigProperties.Requests.Games.AllowGuestsToRequestGames) } returns false
+        every { get(ConfigProperties.Requests.Games.MaxOpenRequestsPerUser) } returns 10
+    }
+    private val controller =
+        InstanceControllerV1(allowingAccess(), environment, build, health, tasks, runs, config)
 
     @Test
     fun `instance uses build metadata when available`() {
@@ -55,19 +62,48 @@ class InstanceControllerV1Test {
         assertEquals(time, instance.buildTime)
         assertEquals("abc123", instance.gitCommit)
         assertEquals(listOf("v1"), instance.apiVersions)
-        assertTrue("catalog" in instance.capabilities)
+        assertEquals(
+            GameRequestSettingsV1(true, allowGuests = false, maxOpenRequestsPerUser = 10),
+            instance.features.gameRequests
+        )
     }
 
     @Test
     fun `instance falls back to environment and hides unknown commits`() {
         every { build.ifAvailable } returns null
         every { environment.getProperty("spring.application.version", "unknown") } returns "dev"
-        assertEquals(InstanceV1("dev", null, null), controller.instance())
+        assertEquals(
+            InstanceV1(
+                "dev",
+                null,
+                null,
+                InstanceFeaturesV1(FeatureV1(false), FeatureV1(false), GameRequestSettingsV1(true, false, 10))
+            ), controller.instance()
+        )
 
         every { build.ifAvailable } returns BuildProperties(Properties().apply {
             setProperty("version", "1.0"); setProperty("git.commit", "unknown")
         })
         assertNull(controller.instance().gitCommit)
+    }
+
+    @Test
+    fun `instance exposes current settings`() {
+        every { build.ifAvailable } returns null
+        every { environment.getProperty("spring.application.version", "unknown") } returns "dev"
+        every { config.get(ConfigProperties.SSO.OIDC.Enabled) } returns true
+        every { config.get(ConfigProperties.Security.AllowPublicAccess) } returns true
+        every { config.get(ConfigProperties.Requests.Games.Enabled) } returns false
+        every { config.get(ConfigProperties.Requests.Games.AllowGuestsToRequestGames) } returns true
+        every { config.get(ConfigProperties.Requests.Games.MaxOpenRequestsPerUser) } returns 0
+
+        val result = controller.instance()
+        assertTrue(result.features.sso.enabled)
+        assertTrue(result.features.publicAccess.enabled)
+        assertEquals(
+            GameRequestSettingsV1(false, allowGuests = true, maxOpenRequestsPerUser = 0),
+            result.features.gameRequests
+        )
     }
 
     @Test

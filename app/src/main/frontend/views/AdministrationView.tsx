@@ -12,6 +12,9 @@ import {
     WrenchIcon
 } from "@phosphor-icons/react";
 import withSideMenu, {MenuItem} from "Frontend/components/general/withSideMenu";
+import {useAuth} from "Frontend/util/auth";
+import {isAdmin} from "Frontend/util/utils";
+import {Navigate} from "react-router";
 
 const menuItems: MenuItem[] = [
     {
@@ -71,4 +74,10 @@ const menuItems: MenuItem[] = [
     }
 ]
 
-export const AdministrationView = withSideMenu("/administration", menuItems);
+const AdministrationLayout = withSideMenu("/administration", menuItems);
+
+export function AdministrationView() {
+    const auth = useAuth();
+    if (auth.state.initializing || auth.state.loading) return null;
+    return isAdmin(auth) ? <AdministrationLayout/> : <Navigate to="/" replace/>;
+}

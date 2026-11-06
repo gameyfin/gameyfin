@@ -27,7 +27,7 @@ class UserEndpointTest {
     fun setup() {
         userService = mockk()
         roleService = mockk()
-        userEndpoint = UserEndpoint(userService, roleService)
+        userEndpoint = UserEndpoint(userService, roleService, mockk())
     }
 
     @AfterEach

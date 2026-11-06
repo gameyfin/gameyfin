@@ -41,7 +41,7 @@ class StoredZipTest {
     fun `predicted size equals actual streamed bytes`() {
         val root = sampleTree()
         val predicted = StoredZip.computeSize(root)
-        val actual = countBytes(StoredZip.stream(root))
+        val actual = countBytes(StoredZip.download(root).data)
         assertEquals(actual, predicted, "Content-Length predictor must match the bytes actually emitted")
     }
 
@@ -81,7 +81,7 @@ class StoredZipTest {
     @Test
     fun `empty folder size is predicted exactly`() {
         val root = Files.createTempDirectory("gf-storedzip-empty-")
-        assertEquals(countBytes(StoredZip.stream(root)), StoredZip.computeSize(root))
+        assertEquals(countBytes(StoredZip.download(root).data), StoredZip.computeSize(root))
     }
 
     // --- ZIP64 layout math, exercised with synthetic sizes (no multi-GB I/O) ---
@@ -117,7 +117,7 @@ class StoredZipTest {
         java.io.RandomAccessFile(big.toFile(), "rw").use { it.setLength(4_300_000_000L) } // sparse, > 4 GiB
         root.resolve("after.txt").writeBytes("tail".toByteArray())
 
-        assertEquals(countBytes(StoredZip.stream(root)), StoredZip.computeSize(root))
+        assertEquals(countBytes(StoredZip.download(root).data), StoredZip.computeSize(root))
 
         val names = ZipFile(streamToTempFile(root).toFile()).use { zf -> zf.entries().toList().map { it.name } }
         val seenBig = "big.bin" in names

@@ -6,6 +6,7 @@ export type AutocompleteOption = string | { id: string; label: string };
 
 type AutocompleteInputProps = {
     label?: string;
+    labelSuffix?: React.ReactNode;
     placeholder?: string;
     options: AutocompleteOption[];
     name: string;
@@ -105,6 +106,7 @@ function SelectedTags({ids, labelOf, onRemove}: {
 export default function AutocompleteInput({
                                               options,
                                               label,
+                                              labelSuffix,
                                               placeholder = "Select...",
                                               defaultSelected = [],
                                               name,
@@ -157,7 +159,10 @@ export default function AutocompleteInput({
             >
                 {label && (
                     <div className="flex flex-row justify-between">
-                        <Label>{label}</Label>
+                        <Label className={labelSuffix ? "flex items-center after:order-1" : undefined}>
+                            {label}
+                            {labelSuffix && <span className="order-2 inline-flex">{labelSuffix}</span>}
+                        </Label>
                         {multiple && showCount &&
                             <small>{selectedValues.length} {selectedValues.length === 1 ? "element" : "elements"} selected</small>}
                     </div>

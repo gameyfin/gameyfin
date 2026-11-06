@@ -312,8 +312,8 @@ class SessionMonitoredOutputStreamTest {
             monitoredStream.write(65)
         }
 
-        // recordBytes should still be called before the exception
-        verify(exactly = 1) { sessionTracker.recordBytes(1) }
+        // Failed writes must not be counted as transferred bytes.
+        verify(exactly = 0) { sessionTracker.recordBytes(any()) }
     }
 
     @Test

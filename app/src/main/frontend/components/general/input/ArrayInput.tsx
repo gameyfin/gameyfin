@@ -1,12 +1,13 @@
 import {FieldArray, useField} from "formik";
 import {Button, Chip, CloseButton, FieldError, Input, Label, Popover, TextField} from "@heroui/react";
-import {KeyboardEvent, useState} from "react";
+import {KeyboardEvent, ReactNode, useState} from "react";
 import {CheckIcon, PlusIcon} from "@phosphor-icons/react";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
 interface ArrayInputProps {
     label: string;
+    labelSuffix?: ReactNode;
     name: string;
     type?: string;
     description?: string;
@@ -14,7 +15,7 @@ interface ArrayInputProps {
     isDisabled?: boolean;
 }
 
-export default function ArrayInput({label, description, resetValue, ...props}: ArrayInputProps) {
+export default function ArrayInput({label, labelSuffix, description, resetValue, ...props}: ArrayInputProps) {
     const [field, meta] = useField<string[]>(props.name);
     const [newElementValue, setNewElementValue] = useState<string>("");
     const [isPopoverOpen, setPopoverOpen] = useState(false);
@@ -43,7 +44,7 @@ export default function ArrayInput({label, description, resetValue, ...props}: A
                             <div className="flex flex-col flex-1 gap-2">
                                 <div className="flex flex-row justify-between">
                                     <span className="flex items-center gap-1">
-                                        <p>{label}</p>
+                                        <p>{label}</p>{labelSuffix}
                                         {description && <InfoPopup content={description}/>}
                                         {resetValue !== undefined &&
                                             <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}

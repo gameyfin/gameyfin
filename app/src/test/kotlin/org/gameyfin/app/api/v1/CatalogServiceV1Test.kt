@@ -50,6 +50,20 @@ class CatalogServiceV1Test {
     private val page = PageRequest.of(0, 10)
 
     @Test
+    fun `game index maps only projected ids and timestamps including an empty catalog`() {
+        val timestamp = java.time.Instant.parse("2026-01-02T03:04:05Z")
+        val entry = mockk<org.gameyfin.app.games.repositories.GameIndexEntry> {
+            every { id } returns 42L
+            every { updatedAt } returns timestamp
+        }
+        every { games.findAllIndexEntries() } returns listOf(entry)
+        assertEquals(listOf(GameIndexEntryV1("42", timestamp)), service.gameIndex())
+        every { games.findAllIndexEntries() } returns emptyList()
+        assertEquals(emptyList(), service.gameIndex())
+        verify(exactly = 0) { games.findAll() }
+    }
+
+    @Test
     fun `games reject inconsistent or invalid filters`() {
         assertFailsWith<IllegalArgumentException> { service.games(page, null, null, null, null, "igdb", null) }
         assertFailsWith<IllegalArgumentException> { service.games(page, null, null, null, null, null, "1") }

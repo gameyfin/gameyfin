@@ -1,5 +1,6 @@
 import {useField} from "formik";
-import {Description, FieldError, Label, ListBox, Select, SelectProps} from "@heroui/react";
+import {FieldError, Label, ListBox, Select, SelectProps} from "@heroui/react";
+import {ButtonContext} from "react-aria-components/Button";
 import InfoPopup from "Frontend/components/administration/InfoPopup";
 import ResetToDefaultButton from "Frontend/components/administration/ResetToDefaultButton";
 
@@ -30,11 +31,14 @@ export default function SelectInput({label, values, description, resetValue, ...
                         <Select.Indicator/>
                     </Select.Trigger>
                     {(description || resetValue !== undefined) && (
-                        <span className="flex items-center gap-1">
-                            {description && <InfoPopup content={description}/>}
-                            {resetValue !== undefined &&
-                                <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
-                        </span>
+                        // Auxiliary buttons must not inherit the select's trigger props and anchor ref.
+                        <ButtonContext.Provider value={null}>
+                            <span className="flex w-13 shrink-0 items-center gap-1">
+                                {description && <InfoPopup content={description}/>}
+                                {resetValue !== undefined &&
+                                    <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
+                            </span>
+                        </ButtonContext.Provider>
                     )}
                 </div>
                 <Select.Popover>

@@ -1,6 +1,6 @@
-import React, {useRef, useState} from "react";
+import React, {useState} from "react";
 import {Alert, Button, Modal, Spinner} from "@heroui/react";
-import {UploadSimpleIcon} from "@phosphor-icons/react";
+import UploadButton from "Frontend/components/general/input/UploadButton";
 import {SetupEndpoint} from "Frontend/generated/endpoints";
 import {uploadFile, waitForRestart} from "Frontend/util/restart";
 
@@ -15,7 +15,6 @@ interface RestoreBackupModalProps {
  */
 export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: RestoreBackupModalProps) {
     const [file, setFile] = useState<File>();
-    const fileInput = useRef<HTMLInputElement>(null);
     const [state, setState] = useState<"idle" | "uploading" | "restoring">("idle");
     const [error, setError] = useState<string>();
 
@@ -84,20 +83,10 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                                         you can log in with your existing account.
                                     </p>
                                     <div className="flex flex-row items-center gap-4">
-                                        <Button variant="ghost"
-                                                onPress={() => fileInput.current?.click()}
-                                                isDisabled={busy}>
-                                            <UploadSimpleIcon/>
-                                            Upload backup
-                                        </Button>
+                                        <UploadButton label="Upload backup" variant="ghost" isDisabled={busy}
+                                                      accept=".zip,application/zip" onFilesSelected={files => setFile(files[0])}/>
                                         {file && <span className="truncate">{file.name}</span>}
                                     </div>
-                                    <input ref={fileInput}
-                                           type="file"
-                                           accept=".zip,application/zip"
-                                           className="hidden"
-                                           onChange={(e) => setFile(e.target.files?.[0])}
-                                    />
                                     {error &&
                                         <Alert status="danger">
                                             <Alert.Indicator/>

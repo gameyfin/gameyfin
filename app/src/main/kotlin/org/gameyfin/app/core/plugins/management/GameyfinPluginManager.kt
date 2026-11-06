@@ -194,6 +194,9 @@ class GameyfinPluginManager(
             pluginManagementEntry.enabled = false
         }
 
+        pluginManagementEntry.name = (pluginWrapper.descriptor as? GameyfinPluginDescriptor)?.pluginName
+            ?: pluginWrapper.pluginId
+
         // Inject config after loading and verification, before starting
         // Note: If the plugin is untrusted, we don't want to inject the config
         if (pluginManagementEntry.trustLevel != PluginTrustLevel.UNTRUSTED) configurePlugin(pluginWrapper)
@@ -213,7 +216,10 @@ class GameyfinPluginManager(
         val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
 
         val pluginManagementEntry =
-            PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
+            PluginManagementEntry(
+                pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1,
+                name = (pluginWrapper.descriptor as? GameyfinPluginDescriptor)?.pluginName ?: pluginWrapper.pluginId
+            )
         pluginManagementEntry.trustLevel = verifyTrustLevel(pluginPath)
 
         // If the plugin is official or bundled, we can enable it and start it by default

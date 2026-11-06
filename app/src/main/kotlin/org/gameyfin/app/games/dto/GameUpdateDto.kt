@@ -31,5 +31,6 @@ data class GameUpdateDto(
 data class GameImageSelectionDto(
     val id: Long? = null,
     val url: String? = null,
-    val uploadKey: String? = null
+    val uploadKey: String? = null,
+    val pluginId: String? = null
 )

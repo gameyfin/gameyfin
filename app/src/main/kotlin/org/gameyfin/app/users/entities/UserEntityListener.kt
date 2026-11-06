@@ -3,6 +3,11 @@ package org.gameyfin.app.users.entities
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PostRemove
 import jakarta.persistence.PreRemove
+import jakarta.persistence.PostPersist
+import jakarta.persistence.PostUpdate
+import org.gameyfin.app.users.UserStateChanged
+import org.gameyfin.app.users.dto.UserEvent
+import org.gameyfin.app.users.extensions.toExtendedUserInfoDto
 import org.gameyfin.app.core.Utils
 import org.gameyfin.app.core.events.UserDeletedEvent
 import org.gameyfin.app.requests.entities.GameRequest
@@ -11,9 +16,19 @@ import org.gameyfin.app.util.EventPublisherHolder
 
 class UserEntityListener {
 
+    @PostPersist
+    @PostUpdate
+    fun changed(user: User) {
+        EventPublisherHolder.publish(UserStateChanged(UserEvent(user.id!!, user.toExtendedUserInfoDto())))
+    }
+
     @PreRemove
     fun preRemove(user: User) {
         val entityManager: EntityManager = EntityManagerHolder.getEntityManager()
+
+        entityManager.createQuery("DELETE FROM UserPreference p WHERE p.id.userId = :userId")
+            .setParameter("userId", user.id)
+            .executeUpdate()
 
         // Remove user from all GameRequest voters and requester fields
         val gameRequests = entityManager.createQuery(
@@ -31,6 +46,7 @@ class UserEntityListener {
 
     @PostRemove
     fun postRemove(user: User) {
+        EventPublisherHolder.publish(UserStateChanged(UserEvent(user.id!!)))
         EventPublisherHolder.publish(UserDeletedEvent(this, user, Utils.getBaseUrl()))
     }
 }

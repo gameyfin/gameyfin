@@ -807,6 +807,9 @@ class GameyfinPluginManagerTest {
         existingEntry.trustLevel = PluginTrustLevel.OFFICIAL
 
         every { pluginWrapper.pluginId } returns "re-verified-plugin"
+        every { pluginWrapper.descriptor } returns GameyfinPluginDescriptor(
+            pluginUrl = null, pluginName = "Readable plugin name", pluginShortDescription = null, author = "Author"
+        )
         every { pluginWrapper.plugin } returns plugin
         every { pluginManagementRepository.findByIdOrNull("re-verified-plugin") } returns existingEntry
         every { pluginManager.superLoadPluginFromPath(any()) } returns pluginWrapper
@@ -818,7 +821,8 @@ class GameyfinPluginManagerTest {
         // Re-verification of an unsigned JAR should update trust level to THIRD_PARTY
         verify {
             pluginManagementRepository.save(match {
-                it.pluginId == "re-verified-plugin" && it.trustLevel == PluginTrustLevel.THIRD_PARTY
+                it.pluginId == "re-verified-plugin" && it.trustLevel == PluginTrustLevel.THIRD_PARTY &&
+                    it.name == "Readable plugin name"
             })
         }
     }

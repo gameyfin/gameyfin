@@ -29,6 +29,10 @@
       "description": "Platforms and metadata options supported by the instance."
     },
     {
+      "name": "Metadata",
+      "description": "Search enabled external metadata providers."
+    },
+    {
       "name": "Users",
       "description": "Current user and user lookup."
     },
@@ -1129,6 +1133,119 @@
         }
       }
     },
+    "/v1/metadata/search": {
+      "get": {
+        "tags": [
+          "Metadata"
+        ],
+        "description": "Requires games:read. Searches enabled providers and merges matches.",
+        "operationId": "searchMetadata",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Nonblank search term, maximum 255 characters.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "description": "Platform codes. Repeat this parameter for multiple platforms; omit to search all platforms.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MetadataSearchResultV1"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/metadata-options": {
       "get": {
         "tags": [
@@ -1595,6 +1712,96 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PageV1GameV1"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, expired or revoked key",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflicting change",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "type": "object",
+                  "$ref": "#/components/schemas/ApiProblemV1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/games/index": {
+      "get": {
+        "tags": [
+          "Games"
+        ],
+        "description": "Requires games:read. Complete, unpaginated list ordered by numeric ID.",
+        "operationId": "getGameIndex",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GameIndexEntryV1"
+                  }
                 }
               }
             }
@@ -3346,7 +3553,7 @@
         "tags": [
           "Downloads"
         ],
-        "description": "Requires downloads:read. Streams a file or returns a JSON link descriptor. Follow links explicitly without forwarding X-API-Key. Range/resume is not supported; requests receive the complete stream.",
+        "description": "Requires downloads:read. Streams a file or returns a JSON link descriptor. Follow links explicitly without forwarding X-API-Key. Single-file direct downloads support one byte range and ETag-based If-Range resume (206/416). Generated archives and other providers return complete streams. HEAD returns metadata without a body.",
         "operationId": "downloadGame",
         "parameters": [
           {
@@ -4588,9 +4795,16 @@
               "null"
             ],
             "format": "int64"
+          },
+          "blurhash": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
+          "blurhash",
           "contentType",
           "id",
           "size",
@@ -5251,6 +5465,107 @@
           "name"
         ]
       },
+      "MetadataSearchResultV1": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "platforms": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "release": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "publishers": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "developers": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "coverUrls": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MetadataUrlV1"
+            }
+          },
+          "headerUrls": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MetadataUrlV1"
+            }
+          },
+          "screenshotUrls": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MetadataUrlV1"
+            }
+          },
+          "externalIds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalIdV1"
+            }
+          }
+        },
+        "required": [
+          "coverUrls",
+          "developers",
+          "externalIds",
+          "headerUrls",
+          "platforms",
+          "publishers",
+          "release",
+          "screenshotUrls",
+          "title"
+        ]
+      },
+      "MetadataUrlV1": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "pluginId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pluginId",
+          "url"
+        ]
+      },
       "MeV1": {
         "type": "object",
         "properties": {
@@ -5324,6 +5639,58 @@
           "platforms"
         ]
       },
+      "FeatureV1": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "GameRequestSettingsV1": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "allowGuests": {
+            "type": "boolean",
+            "description": "Instance guest policy. Public API request creation still requires a personal token."
+          },
+          "maxOpenRequestsPerUser": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maximum pending requests per user; 0 means unlimited. Administrators are exempt."
+          }
+        },
+        "required": [
+          "allowGuests",
+          "enabled",
+          "maxOpenRequestsPerUser"
+        ]
+      },
+      "InstanceFeaturesV1": {
+        "type": "object",
+        "properties": {
+          "sso": {
+            "$ref": "#/components/schemas/FeatureV1"
+          },
+          "publicAccess": {
+            "$ref": "#/components/schemas/FeatureV1"
+          },
+          "gameRequests": {
+            "$ref": "#/components/schemas/GameRequestSettingsV1"
+          }
+        },
+        "required": [
+          "gameRequests",
+          "publicAccess",
+          "sso"
+        ]
+      },
       "InstanceV1": {
         "type": "object",
         "properties": {
@@ -5343,13 +5710,10 @@
               "null"
             ]
           },
-          "apiVersions": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "features": {
+            "$ref": "#/components/schemas/InstanceFeaturesV1"
           },
-          "capabilities": {
+          "apiVersions": {
             "type": "array",
             "items": {
               "type": "string"
@@ -5359,7 +5723,7 @@
         "required": [
           "apiVersions",
           "buildTime",
-          "capabilities",
+          "features",
           "gitCommit",
           "version"
         ]
@@ -5417,6 +5781,22 @@
         "required": [
           "kind",
           "url"
+        ]
+      },
+      "GameIndexEntryV1": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "updatedAt"
         ]
       },
       "DownloadProviderV1": {

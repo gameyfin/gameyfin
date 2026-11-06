@@ -1,11 +1,11 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useState} from "react";
+import UploadButton from "Frontend/components/general/input/UploadButton";
 import {Alert, Button, Checkbox, Link, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {
     ArrowCounterClockwiseIcon,
     DatabaseIcon,
     DownloadSimpleIcon,
-    TrashIcon,
-    UploadSimpleIcon
+    TrashIcon
 } from "@phosphor-icons/react";
 import {BackupEndpoint} from "Frontend/generated/endpoints";
 import BackupDto from "Frontend/generated/org/gameyfin/app/core/backup/BackupDto";
@@ -34,7 +34,6 @@ export default function BackupManagement() {
     const [selectedBackup, setSelectedBackup] = useState<BackupDto>();
     const restoreModal = useOverlayState();
     const deleteModal = useOverlayState();
-    const fileInput = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         BackupEndpoint.getLastRestoreStatus().then(setLastRestore);
@@ -71,7 +70,6 @@ export default function BackupManagement() {
             toast.danger("Could not upload backup", {description: e?.message});
         } finally {
             setUploading(false);
-            if (fileInput.current) fileInput.current.value = "";
         }
     }
 
@@ -146,22 +144,9 @@ export default function BackupManagement() {
                     </Checkbox.Content>
                 </Checkbox>
                 <div className="grow"/>
-                <Button variant="ghost"
-                        onPress={() => fileInput.current?.click()}
-                        isPending={uploading}
-                        isDisabled={creating || restoring}>
-                    {uploading ? <Spinner size="sm" color="current"/> : <UploadSimpleIcon/>}
-                    Upload backup
-                </Button>
-                <input ref={fileInput}
-                       type="file"
-                       accept=".zip,application/zip"
-                       className="hidden"
-                       onChange={(e) => {
-                           const file = e.target.files?.[0];
-                           if (file) uploadBackup(file);
-                       }}
-                />
+                <UploadButton label="Upload backup" variant="ghost" accept=".zip,application/zip"
+                              isPending={uploading} isDisabled={creating || restoring}
+                              onFilesSelected={files => uploadBackup(files[0])}/>
             </div>
 
             <Table variant="secondary">
