@@ -1,11 +1,11 @@
 package org.gameyfin.app.core.backup
 
-import org.gameyfin.app.games.extensions.mediaSources
-import org.gameyfin.app.games.extensions.replaceMediaSources
-
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import org.gameyfin.app.core.tasks.*
+import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.games.extensions.mediaSources
+import org.gameyfin.app.games.extensions.replaceMediaSources
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.media.Image
@@ -262,27 +262,35 @@ class ImageRecoveryService(
         val imageId = image.id ?: return
         transactionTemplate.executeWithoutResult {
             gameRepository.findAllByImage(imageId).forEach { game ->
-                if (game.coverImage?.id == imageId) {
-                    game.coverImage = null
-                    game.metadata.fields.remove("coverImage")
-                }
-                if (game.headerImage?.id == imageId) {
-                    game.headerImage = null
-                    game.metadata.fields.remove("headerImage")
-                }
-                val attribution = game.metadata.fields["images.items"]
-                val retainedSources = if (attribution != null) game.images
-                    .zip(game.mediaSources("images", game.images.size))
-                    .filter { it.first.id != imageId }.map { it.second } else emptyList()
-                if (game.images.removeIf { it.id == imageId }) {
-                    if (attribution != null) game.replaceMediaSources("images", retainedSources, attribution)
-                    if (game.images.isEmpty()) game.metadata.fields.remove("images")
-                }
-                // Changes to collections alone do not mark the game as modified
-                game.updatedAt = Instant.now()
+                removeGameImageReferences(game, imageId)
             }
             userRepository.findAllByAvatar(imageId).forEach { it.avatar = null }
         }
         imageService.deleteImageIfUnused(image)
+    }
+
+    private fun removeGameImageReferences(game: Game, imageId: Long) {
+        if (game.coverImage?.id == imageId) {
+            game.coverImage = null
+            game.metadata.fields.remove("coverImage")
+        }
+        if (game.headerImage?.id == imageId) {
+            game.headerImage = null
+            game.metadata.fields.remove("headerImage")
+        }
+        removeScreenshotReference(game, imageId)
+        // Changes to collections alone do not mark the game as modified
+        game.updatedAt = Instant.now()
+    }
+
+    private fun removeScreenshotReference(game: Game, imageId: Long) {
+        val attribution = game.metadata.fields["images.items"]
+        val retainedSources = if (attribution != null) game.images
+            .zip(game.mediaSources("images", game.images.size))
+            .filter { it.first.id != imageId }.map { it.second } else emptyList()
+        if (!game.images.removeIf { it.id == imageId }) return
+
+        if (attribution != null) game.replaceMediaSources("images", retainedSources, attribution)
+        if (game.images.isEmpty()) game.metadata.fields.remove("images")
     }
 }

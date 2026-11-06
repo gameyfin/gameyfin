@@ -47,6 +47,7 @@ import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile
 import reactor.core.publisher.Flux
+import java.net.URI
 import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
@@ -187,6 +188,27 @@ class GameService(
         val existingGame = gameRepository.findByIdOrNull(gameUpdateDto.id)
             ?: throw IllegalArgumentException("Game with ID $gameUpdateDto.id not found")
 
+        val mediaUpdate = validateMediaUpdate(gameUpdateDto, existingGame, uploads)
+        val previousImages = imagesBeforeEdit(gameUpdateDto, existingGame)
+        val newEditingSource = editingSourceFactory()
+
+        applyMediaUpdate(gameUpdateDto, existingGame, uploads, mediaUpdate, newEditingSource)
+        applyFieldUpdates(gameUpdateDto, existingGame, newEditingSource)
+
+        gameRepository.save(existingGame)
+        deleteRemovedImagesAfterCommit(existingGame, previousImages)
+    }
+
+    private data class ValidatedMediaUpdate(
+        val uploadTypes: Map<String, String>,
+        val videoUrls: List<URI>?
+    )
+
+    private fun validateMediaUpdate(
+        gameUpdateDto: GameUpdateDto,
+        existingGame: Game,
+        uploads: Map<String, MultipartFile>
+    ): ValidatedMediaUpdate {
         require(gameUpdateDto.cover == null || gameUpdateDto.coverUrl == null) { "Conflicting cover selections" }
         require(gameUpdateDto.header == null || gameUpdateDto.headerUrl == null) { "Conflicting banner selections" }
         val selections = listOfNotNull(gameUpdateDto.cover, gameUpdateDto.header) + gameUpdateDto.images.orEmpty()
@@ -208,29 +230,38 @@ class GameService(
         gameUpdateDto.coverUrl?.let { GameMediaValidation.httpUrl(it) }
         gameUpdateDto.headerUrl?.let { GameMediaValidation.httpUrl(it) }
         val videoUrls = gameUpdateDto.videoUrls?.map { GameMediaValidation.httpUrl(it) }
+        validateMediaOrder(gameUpdateDto, existingGame)
+        require(uploads.values.sumOf { it.size } <= GameMediaValidation.MAX_REQUEST_SIZE) { "Uploads exceed 100 MiB" }
+        return ValidatedMediaUpdate(uploads.mapValues { GameMediaValidation.upload(it.value) }, videoUrls)
+    }
+
+    private fun validateMediaOrder(gameUpdateDto: GameUpdateDto, existingGame: Game) {
         gameUpdateDto.mediaOrder?.let { order ->
             require(order.all { it == "image" || it == "video" } &&
                     order.count { it == "image" } == (gameUpdateDto.images?.size ?: existingGame.images.size) &&
-                    order.count { it == "video" } == (videoUrls?.size ?: existingGame.videoUrls.size)) {
+                    order.count { it == "video" } == (gameUpdateDto.videoUrls?.size ?: existingGame.videoUrls.size)) {
                 "Media order must include every screenshot and video exactly once"
             }
         }
-        require(uploads.values.sumOf { it.size } <= GameMediaValidation.MAX_REQUEST_SIZE) { "Uploads exceed 100 MiB" }
-        val uploadTypes = uploads.mapValues { GameMediaValidation.upload(it.value) }
+    }
+
+    private fun imagesBeforeEdit(gameUpdateDto: GameUpdateDto, existingGame: Game): List<Image> {
         // Snapshot before replacing collections; Hibernate's dirty state can share collection instances.
-        val previousImages = if (selections.isNotEmpty() || gameUpdateDto.images != null ||
+        return if (gameUpdateDto.cover != null || gameUpdateDto.header != null || gameUpdateDto.images != null ||
             gameUpdateDto.coverUrl != null || gameUpdateDto.headerUrl != null
         ) {
             listOfNotNull(existingGame.coverImage, existingGame.headerImage) + existingGame.images.toList()
         } else emptyList()
+    }
 
-        val newEditingSource = editingSourceFactory()
+    private fun selectedImageSources(
+        gameUpdateDto: GameUpdateDto,
+        existingGame: Game,
+        newEditingSource: () -> GameFieldSource
+    ): List<GameFieldMetadata?>? {
         val previousImageSources = if (gameUpdateDto.images != null) existingGame.images.map { it.id }
             .zip(existingGame.mediaSources("images", existingGame.images.size)).toMap() else emptyMap()
-        val previousVideoSources = if (videoUrls != null) existingGame.videoUrls
-            .zip(existingGame.mediaSources("videoUrls", existingGame.videoUrls.size))
-            .groupBy({ it.first }, { it.second }).mapValues { it.value.toMutableList() } else emptyMap()
-        val selectedImageSources = gameUpdateDto.images?.map { selection ->
+        return gameUpdateDto.images?.map { selection ->
             when {
                 selection.id != null -> previousImageSources[selection.id]
                 selection.pluginId != null -> GameFieldMetadata(
@@ -239,19 +270,41 @@ class GameService(
                 else -> GameFieldMetadata(source = newEditingSource())
             }
         }
-        val selectedVideoSources = videoUrls?.map { url ->
+    }
+
+    private fun selectedVideoSources(
+        videoUrls: List<URI>?,
+        existingGame: Game,
+        newEditingSource: () -> GameFieldSource
+    ): List<GameFieldMetadata?>? {
+        val previousVideoSources = if (videoUrls != null) existingGame.videoUrls
+            .zip(existingGame.mediaSources("videoUrls", existingGame.videoUrls.size))
+            .groupBy({ it.first }, { it.second }).mapValues { it.value.toMutableList() } else emptyMap()
+        return videoUrls?.map { url ->
             val retained = previousVideoSources[url]
             if (!retained.isNullOrEmpty()) retained.removeAt(0) else GameFieldMetadata(source = newEditingSource())
         }
+    }
 
-        fun markMediaEdited(field: String) {
-            val metadata = existingGame.metadata.fields[field]
-            if (metadata == null) {
-                existingGame.metadata.fields[field] = GameFieldMetadata(source = newEditingSource())
-            } else {
-                metadata.source = newEditingSource()
-            }
+    private fun markMediaEdited(existingGame: Game, field: String, newEditingSource: () -> GameFieldSource) {
+        val metadata = existingGame.metadata.fields[field]
+        if (metadata == null) {
+            existingGame.metadata.fields[field] = GameFieldMetadata(source = newEditingSource())
+        } else {
+            metadata.source = newEditingSource()
         }
+    }
+
+    private fun applyMediaUpdate(
+        gameUpdateDto: GameUpdateDto,
+        existingGame: Game,
+        uploads: Map<String, MultipartFile>,
+        mediaUpdate: ValidatedMediaUpdate,
+        newEditingSource: () -> GameFieldSource
+    ) {
+        val (uploadTypes, videoUrls) = mediaUpdate
+        val selectedImageSources = selectedImageSources(gameUpdateDto, existingGame, newEditingSource)
+        val selectedVideoSources = selectedVideoSources(videoUrls, existingGame, newEditingSource)
 
         // Resolve every new image before modifying game associations.
         val cover = gameUpdateDto.cover?.let { resolveImage(it, ImageType.COVER, existingGame, uploads, uploadTypes) }
@@ -260,20 +313,30 @@ class GameService(
         val images =
             gameUpdateDto.images?.map { resolveImage(it, ImageType.SCREENSHOT, existingGame, uploads, uploadTypes) }
         require(images == null || images.map { it.id }.distinct().size == images.size) { "Screenshots must be unique" }
-        cover?.let { existingGame.coverImage = it; markMediaEdited("coverImage") }
-        header?.let { existingGame.headerImage = it; markMediaEdited("headerImage") }
+        cover?.let { existingGame.coverImage = it; markMediaEdited(existingGame, "coverImage", newEditingSource) }
+        header?.let { existingGame.headerImage = it; markMediaEdited(existingGame, "headerImage", newEditingSource) }
         images?.let {
-            existingGame.replaceMediaSources("images", selectedImageSources!!, GameFieldMetadata(source = newEditingSource()))
+            existingGame.replaceMediaSources(
+                "images", selectedImageSources!!, GameFieldMetadata(source = newEditingSource())
+            )
             existingGame.images = it.toMutableList()
-            markMediaEdited("images")
+            markMediaEdited(existingGame, "images", newEditingSource)
         }
         videoUrls?.let {
-            existingGame.replaceMediaSources("videoUrls", selectedVideoSources!!, GameFieldMetadata(source = newEditingSource()))
+            existingGame.replaceMediaSources(
+                "videoUrls", selectedVideoSources!!, GameFieldMetadata(source = newEditingSource())
+            )
             existingGame.videoUrls = it
-            markMediaEdited("videoUrls")
+            markMediaEdited(existingGame, "videoUrls", newEditingSource)
         }
         gameUpdateDto.mediaOrder?.let { existingGame.mediaOrder = it }
+    }
 
+    private fun applyFieldUpdates(
+        gameUpdateDto: GameUpdateDto,
+        existingGame: Game,
+        newEditingSource: () -> GameFieldSource
+    ) {
         // Update only non-null fields
         gameUpdateDto.title?.let {
             existingGame.title = it
@@ -294,7 +357,7 @@ class GameService(
             imageService.downloadIfNew(newCoverImage)
 
             existingGame.coverImage = newCoverImage
-            markMediaEdited("coverImage")
+            markMediaEdited(existingGame, "coverImage", newEditingSource)
         }
         gameUpdateDto.headerUrl?.let {
             val newHeaderImage = imageService.createOrGet(
@@ -303,7 +366,7 @@ class GameService(
             imageService.downloadIfNew(newHeaderImage)
 
             existingGame.headerImage = newHeaderImage
-            markMediaEdited("headerImage")
+            markMediaEdited(existingGame, "headerImage", newEditingSource)
         }
         gameUpdateDto.comment?.let {
             existingGame.comment = it
@@ -345,14 +408,9 @@ class GameService(
             existingGame.perspectives = it.toMutableList()
             existingGame.metadata.fields["perspectives"]?.source = newEditingSource()
         }
-
-
         gameUpdateDto.metadata?.let { metadata ->
             metadata.matchConfirmed?.let { existingGame.metadata.matchConfirmed = it }
         }
-
-        gameRepository.save(existingGame)
-        deleteRemovedImagesAfterCommit(existingGame, previousImages)
     }
 
     private fun deleteRemovedImagesAfterCommit(existingGame: Game, previousImages: List<Image>) {
@@ -1161,13 +1219,11 @@ class GameService(
             metadataMap,
             sourcePlugin
         ) { screenshotUrls ->
-            mergedGame.images = runBlocking {
-                screenshotUrls.map {
-                    imageService.createOrGet(
-                        Image(originalUrl = it.toString(), type = ImageType.SCREENSHOT)
-                    )
-                }.toMutableList()
-            }
+            mergedGame.images = screenshotUrls.map {
+                imageService.createOrGet(
+                    Image(originalUrl = it.toString(), type = ImageType.SCREENSHOT)
+                )
+            }.toMutableList()
         }
         setFieldIfAbsent("videoUrls", metadata.videoUrls?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.videoUrls = it.toList()
