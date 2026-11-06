@@ -7,6 +7,10 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sonar:
     name: Sonar Analysis
@@ -34,10 +38,9 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      - name: Run tests and generate JaCoCo report
-        run: ./gradlew :app:test :app:jacocoTestReport
-
-      - name: SonarCloud Scan
+      # sonar depends on jacocoTestReport, which depends on test. Use one task
+      # graph so changing build-info timestamps cannot trigger a second test run.
+      - name: Run tests, generate coverage and scan SonarCloud
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
