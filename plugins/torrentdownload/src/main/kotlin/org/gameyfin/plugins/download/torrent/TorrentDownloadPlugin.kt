@@ -107,11 +107,9 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
         ConfigMetadata(
             key = "diskIoMode",
             label = "Disk I/O Mode (Linux/macOS)",
-            description = "POSIX reopens files for every block and is slow on network storage. " +
-                    "Memory-mapped is much faster but requires the JVM to run with signal chaining " +
-                    "(LD_PRELOAD=/opt/java/openjdk/lib/libjsig.so), otherwise Gameyfin will crash.",
+            description = "POSIX reopens files for every block and is slow on network storage.\nMemory-mapped is much faster but can crash on certain systems.",
             type = TorrentDiskIoMode::class.java,
-            default = TorrentDiskIoMode.POSIX
+            default = TorrentDiskIoMode.`Memory-mapped`
         ),
         ConfigMetadata(
             key = "externalHost",
@@ -170,20 +168,19 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
                     metadata.gameFile.getLastModifiedTime().toInstant()
                         .isAfter(metadata.torrentFile.getLastModifiedTime().toInstant())
 
-            if (shouldRemove) {
+            shouldRemove || try {
+                // These torrents were created from the files on disk: seed them without a
+                // full re-check, which on large games or network storage can take hours and
+                // blocks seeding of every other torrent in the meantime.
+                client?.addTorrent(metadata.torrentFile, metadata.gameFile, seedMode = true)
+                false
+            } catch (e: Exception) {
+                log.error("Failed to add torrent ${metadata.torrentFile} to session", e)
                 true
-            } else {
-                try {
-                    // These torrents were created from the files on disk: seed them without a
-                    // full re-check, which on large games or network storage can take hours and
-                    // blocks seeding of every other torrent in the meantime.
-                    client?.addTorrent(metadata.torrentFile, metadata.gameFile, seedMode = true)
-                    false
-                } catch (e: Exception) {
-                    log.error("Failed to add torrent ${metadata.torrentFile} to session", e)
-                    true
-                }
             }
+            // These torrents were created from the files on disk: seed them without a
+            // full re-check, which on large games or network storage can take hours and
+            // blocks seeding of every other torrent in the meantime.
         }
 
         saveState(state)
@@ -349,7 +346,12 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
 
             synchronized(state) {
                 if (state.torrentFilesMetadata.none { it.torrentFile == torrentFile }) {
-                    state.torrentFilesMetadata.add(TorrentFileMetadata(torrentFile = torrentFile, gameFile = gameFilesPath))
+                    state.torrentFilesMetadata.add(
+                        TorrentFileMetadata(
+                            torrentFile = torrentFile,
+                            gameFile = gameFilesPath
+                        )
+                    )
                     saveState(state)
                 }
             }
