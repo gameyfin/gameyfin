@@ -4,17 +4,17 @@ runs:
   using: 'composite'
   steps:
     - name: Download digests
-      uses: actions/download-artifact@v8
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
       with:
         path: ${{ runner.temp }}/digests
         pattern: digests-*
         merge-multiple: true
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
       with:
         registry: ghcr.io
         username: ${{ inputs.ghcr_username }}

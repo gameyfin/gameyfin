@@ -26,13 +26,15 @@ class SessionThrottledOutputStream(
     }
 
     override fun write(b: Int) {
-        sessionTracker.throttle(1)
+        sessionTracker.awaitPermits(1)
         out.write(b)
+        sessionTracker.recordBytes(1)
     }
 
     override fun write(b: ByteArray, off: Int, len: Int) {
-        sessionTracker.throttle(len.toLong())
+        sessionTracker.awaitPermits(len.toLong())
         out.write(b, off, len)
+        sessionTracker.recordBytes(len.toLong())
     }
 
     override fun close() {
