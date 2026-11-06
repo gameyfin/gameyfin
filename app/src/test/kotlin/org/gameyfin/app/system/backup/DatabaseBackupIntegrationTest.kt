@@ -18,6 +18,7 @@ import java.sql.Connection
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -201,6 +202,44 @@ class DatabaseBackupIntegrationTest {
         }
         assertEquals(UNICODE_TEXT, game.first)
         assertContentEquals(BLOB_CONTENT, game.second)
+    }
+
+    @Test
+    fun `Postgres timestamp with time zone survives backup and restore on Postgres and H2`() {
+        val source = postgres()
+        migrate(source)
+        val createdAt = OffsetDateTime.parse("2026-11-06T11:29:57.123456+05:30")
+        val expiresAt = OffsetDateTime.parse("2026-12-06T11:29:57.654321-04:00")
+        val credentialId = UUID.randomUUID().toString()
+        source.connection.use { c ->
+            c.prepareStatement(
+                "INSERT INTO API_CREDENTIAL (ID, KIND, NAME, SECRET_DIGEST, CREATED_AT, EXPIRES_AT) " +
+                        "VALUES (?, 'SERVICE', 'Backup test', 'digest', ?, ?)"
+            ).use { ps ->
+                ps.setString(1, credentialId)
+                ps.setObject(2, createdAt)
+                ps.setObject(3, expiresAt)
+                ps.executeUpdate()
+            }
+        }
+        val archive = backup(source)
+
+        for (target in listOf(source, h2("timestamp-target"))) {
+            restorer(target).restore(archive, APP_KEY_FINGERPRINT, null)
+            target.connection.use { c ->
+                c.prepareStatement(
+                    "SELECT CREATED_AT, EXPIRES_AT, REVOKED_AT FROM API_CREDENTIAL WHERE ID = ?"
+                ).use { ps ->
+                    ps.setString(1, credentialId)
+                    ps.executeQuery().use { rs ->
+                        assertTrue(rs.next())
+                        assertEquals(createdAt.toInstant(), rs.getObject(1, OffsetDateTime::class.java).toInstant())
+                        assertEquals(expiresAt.toInstant(), rs.getObject(2, OffsetDateTime::class.java).toInstant())
+                        assertEquals(null, rs.getObject(3, OffsetDateTime::class.java))
+                    }
+                }
+            }
+        }
     }
 
     @Test
