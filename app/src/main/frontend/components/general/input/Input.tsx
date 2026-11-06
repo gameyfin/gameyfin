@@ -51,7 +51,7 @@ export default function Input({
             <div className="flex items-center gap-1">
                 <HeroUiInput className="grow" variant={variant} type={type} autoComplete={autoComplete} placeholder={placeholder}/>
                 {(description || resetValue !== undefined) && (
-                    <span className="flex w-13 shrink-0 items-center gap-1">
+                    <span className="flex items-center gap-1">
                         {description && <InfoPopup content={description as string}/>}
                         {resetValue !== undefined &&
                             <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}

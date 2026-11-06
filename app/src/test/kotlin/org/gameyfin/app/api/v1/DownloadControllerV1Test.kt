@@ -2,6 +2,7 @@ package org.gameyfin.app.api.v1
 
 import io.mockk.*
 import org.gameyfin.app.api.v1.controller.DownloadControllerV1
+import org.gameyfin.app.api.v1.dto.DownloadLinkV1
 import org.gameyfin.app.api.v1.dto.DownloadProviderV1
 import org.gameyfin.app.api.v1.service.CatalogServiceV1
 import org.gameyfin.app.core.download.files.DownloadService
@@ -19,7 +20,6 @@ import org.springframework.http.MediaType
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.web.context.request.ServletWebRequest
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
-import tools.jackson.databind.json.JsonMapper
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.file.Files
@@ -29,43 +29,14 @@ import kotlin.test.assertNull
 
 class DownloadControllerV1Test {
     private val access = allowingAccess()
-    private val downloads = mockk<DownloadService> {
-        every { getRangeDownload(any(), any()) } returns null
-    }
+    private val downloads = mockk<DownloadService>()
     private val catalog = mockk<CatalogServiceV1>()
     private val games = mockk<GameService>(relaxed = true)
     private val images = mockk<ImageService>()
-    private val controller = DownloadControllerV1(access, downloads, catalog, games, images, JsonMapper())
+    private val controller = DownloadControllerV1(access, downloads, catalog, games, images)
 
     private fun provider(key: String = "direct", priority: Int = 1) =
         DownloadProviderDto(key, "Provider $key", priority, "Description $key")
-
-    @Test
-    fun `range requests use partial responses and HEAD does not count or stream`() {
-        val game = testGame(title = "Game")
-        every { catalog.gameEntity("10") } returns game
-        every { downloads.getProviders() } returns listOf(provider())
-        val resource = mockk<org.gameyfin.pluginapi.download.RangeDownload>(relaxed = true)
-        every { resource.metadata } returns org.gameyfin.pluginapi.download.DownloadMetadata("bin", 10)
-        every { resource.etag } returns "\"version\""
-        every { resource.openStream(5, 5) } returns "56789".byteInputStream()
-        every { downloads.getRangeDownload(any(), any()) } returns resource
-        every { downloads.processDownload(any(), any(), any(), any(), any(), any()) } answers {
-            firstArg<InputStream>().copyTo(secondArg())
-        }
-        val request = MockHttpServletRequest("GET", "/").apply { addHeader("Range", "bytes=5-") }
-        val response = controller.download("10", "direct", request)
-        assertEquals(206, response.statusCode.value())
-        assertEquals("bytes 5-9/10", response.headers.getFirst("Content-Range"))
-        val output = ByteArrayOutputStream()
-        (response.body as StreamingResponseBody).writeTo(output)
-        assertEquals("56789", output.toString())
-        val head = controller.download("10", "direct", MockHttpServletRequest("HEAD", "/"))
-        assertNull(head.body)
-        verify(exactly = 1) { games.incrementDownloadCount(game) }
-        verify(exactly = 0) { downloads.getDownload(any(), any()) }
-        verify(exactly = 2) { resource.close() }
-    }
 
     @Test
     fun `providers are sorted by descending priority`() {
@@ -92,7 +63,7 @@ class DownloadControllerV1Test {
         assertEquals(200, response.statusCode.value())
         assertEquals(MediaType.APPLICATION_OCTET_STREAM, response.headers.contentType)
         assertEquals(42, response.headers.contentLength)
-        assertEquals("no-store, no-transform", response.headers.cacheControl)
+        assertEquals("no-store", response.headers.cacheControl)
         assertEquals("BadTitle.zip", response.headers.contentDisposition.filename)
         verify { games.incrementDownloadCount(game) }
 
@@ -135,11 +106,8 @@ class DownloadControllerV1Test {
 
         val response = controller.download("10", "direct", MockHttpServletRequest())
 
-        val output = ByteArrayOutputStream()
-        response.body!!.writeTo(output)
-        val descriptor = JsonMapper().readTree(output.toByteArray())
-        assertEquals("https://example.test/game.zip", descriptor.get("url").asString())
-        assertEquals("link", descriptor.get("kind").asString())
+        assertEquals(DownloadLinkV1(url = "https://example.test/game.zip"), response.body)
+        assertEquals("link", (response.body as DownloadLinkV1).kind)
         assertEquals(MediaType.APPLICATION_JSON, response.headers.contentType)
         verify { games.incrementDownloadCount(game) }
     }

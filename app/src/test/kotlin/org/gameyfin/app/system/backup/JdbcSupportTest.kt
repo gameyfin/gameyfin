@@ -1,13 +1,11 @@
 package org.gameyfin.app.system.backup
 
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.gameyfin.app.core.backup.BackupFormat
 import org.gameyfin.app.core.backup.JdbcValues
 import org.gameyfin.app.core.backup.SchemaInspector
 import org.gameyfin.app.core.backup.ValueKind
-import org.gameyfin.app.core.backup.normalizeJdbcType
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -16,9 +14,7 @@ import java.io.StringWriter
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.PreparedStatement
-import java.sql.ResultSet
 import java.sql.Types
-import java.time.OffsetDateTime
 import java.util.*
 
 class JdbcSupportTest {
@@ -75,56 +71,6 @@ class JdbcSupportTest {
         assertEquals(ValueKind.TIMESTAMP_TZ, ValueKind.fromJdbcType(Types.TIMESTAMP_WITH_TIMEZONE))
         assertEquals(ValueKind.BINARY, ValueKind.fromJdbcType(Types.BLOB))
         assertEquals(ValueKind.OTHER, ValueKind.fromJdbcType(Types.OTHER))
-    }
-
-    @Test
-    fun `timestamp classification uses database type name for PostgreSQL`() {
-        for (typeName in listOf("timestamptz", "TIMESTAMPTZ", "timestamp with time zone")) {
-            assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, normalizeJdbcType(Types.TIMESTAMP, typeName))
-        }
-        assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, "timestamp"))
-        assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, "timestamp without time zone"))
-        assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, null))
-        assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, normalizeJdbcType(Types.TIMESTAMP_WITH_TIMEZONE, "TIMESTAMP WITH TIME ZONE"))
-        assertEquals(Types.VARCHAR, normalizeJdbcType(Types.VARCHAR, "timestamptz"))
-    }
-
-    @Test
-    fun `PostgreSQL timestamptz metadata preserves offset on export and restore`() {
-        val rs = mockk<ResultSet>()
-        val timestamp = OffsetDateTime.parse("2026-11-06T11:29:57.123456+05:30")
-        every { rs.getObject(1, OffsetDateTime::class.java) } returns timestamp
-        val jdbcType = normalizeJdbcType(Types.TIMESTAMP, "timestamptz")
-        val writer = StringWriter()
-        BackupFormat.jsonMapper.createGenerator(writer).use { gen ->
-            JdbcValues.write(rs, 1, ValueKind.fromJdbcType(jdbcType), gen)
-        }
-        assertEquals("\"$timestamp\"", writer.toString())
-        bind(jdbcType, writer.toString()) { verify { it.setObject(1, timestamp) } }
-
-        every { rs.getObject(1, OffsetDateTime::class.java) } returns null
-        val nullWriter = StringWriter()
-        BackupFormat.jsonMapper.createGenerator(nullWriter).use { gen ->
-            JdbcValues.write(rs, 1, ValueKind.fromJdbcType(jdbcType), gen)
-        }
-        assertEquals("null", nullWriter.toString())
-    }
-
-    @Test
-    fun `schema inspector normalizes PostgreSQL timestamptz columns`() {
-        val c = mockk<Connection>()
-        val metadata = mockk<java.sql.DatabaseMetaData>(relaxed = true)
-        val rs = mockk<ResultSet>(relaxed = true)
-        every { c.metaData } returns metadata
-        every { c.catalog } returns "gameyfin"
-        every { c.schema } returns "public"
-        every { metadata.getColumns("gameyfin", "public", "events", "%") } returns rs
-        every { rs.next() } returnsMany listOf(true, false)
-        every { rs.getString("COLUMN_NAME") } returns "created_at"
-        every { rs.getInt("DATA_TYPE") } returns Types.TIMESTAMP
-        every { rs.getString("TYPE_NAME") } returns "timestamptz"
-
-        assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, SchemaInspector(c).columns("events").single().jdbcType)
     }
 
     @Test

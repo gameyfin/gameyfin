@@ -11,9 +11,7 @@ import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.download.Download
-import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.DownloadProvider
-import org.gameyfin.pluginapi.download.RangeDownload
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -25,7 +23,6 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import kotlin.io.path.Path
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DownloadServiceTest {
@@ -123,35 +120,6 @@ class DownloadServiceTest {
 
         assertEquals(expectedDownload, result)
         verify(exactly = 1) { provider.download(Path(path)) }
-    }
-
-    @Test
-    fun `providers implementing only download default to no metadata or resume support`() {
-        val provider = spyk(TestProvider())
-        every { pluginManager.getExtensions(DownloadProvider::class.java) } returns listOf(provider)
-
-        assertNull(service.getRangeDownload("/test/path", provider.javaClass.name))
-        assertNull(service.describeDownload("/test/path", provider.javaClass.name))
-        verify(exactly = 0) { provider.download(any()) }
-    }
-
-    @Test
-    fun `optional metadata and resume support are delegated through DownloadProvider`() {
-        val metadata = DownloadMetadata("bin", 1024)
-        val resource = mockk<RangeDownload>()
-        val path = Path("/test/path")
-        val provider = spyk(object : DownloadProvider {
-            override fun download(path: java.nio.file.Path): Download = error("Full download should not start")
-            override fun describe(path: java.nio.file.Path): DownloadMetadata = metadata
-            override fun prepareRangeDownload(path: java.nio.file.Path): RangeDownload = resource
-        })
-        every { pluginManager.getExtensions(DownloadProvider::class.java) } returns listOf(provider)
-
-        assertEquals(resource, service.getRangeDownload(path.toString(), provider.javaClass.name))
-        assertEquals(metadata, service.describeDownload(path.toString(), provider.javaClass.name))
-        verify(exactly = 1) { provider.prepareRangeDownload(path) }
-        verify(exactly = 1) { provider.describe(path) }
-        verify(exactly = 0) { provider.download(any()) }
     }
 
     @Test
@@ -271,7 +239,7 @@ class DownloadServiceTest {
     }
 
     @Test
-    fun `processDownload should propagate IOException and record failure`() {
+    fun `processDownload should handle IOException gracefully`() {
         val inputStream = object : ByteArrayInputStream("test data".toByteArray()) {
             override fun read(b: ByteArray): Int {
                 throw IOException("Connection reset")
@@ -286,8 +254,8 @@ class DownloadServiceTest {
         every { sessionBandwidthManager.getTracker("session-123", 0) } returns tracker
         every { tracker.activeDownloads } returns mockk { every { get() } returns 0 }
 
-        // A source failure must abort the HTTP response.
-        org.junit.jupiter.api.assertThrows<IOException> {
+        // Should not throw - IOException is caught and logged
+        assertDoesNotThrow {
             service.processDownload(inputStream, outputStream, game, "testuser", "session-123", "192.168.1.1")
         }
     }

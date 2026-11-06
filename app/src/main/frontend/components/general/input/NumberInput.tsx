@@ -43,7 +43,7 @@ export default function NumberInput({
                 <FieldError className="col-span-2">{meta.initialError || meta.error}</FieldError>
             </NumberField>
             {(description || resetValue !== undefined) && (
-                <span className="flex w-13 shrink-0 items-center gap-1">
+                <span className="flex items-center gap-1">
                     {description && <InfoPopup content={description as string}/>}
                     {resetValue !== undefined &&
                         <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}

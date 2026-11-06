@@ -145,9 +145,7 @@ class DatabaseExporter {
             stmt.fetchSize = FETCH_SIZE
             stmt.executeQuery("SELECT * FROM ${schema.quote(table)}").use { rs ->
                 val meta = rs.metaData
-                val kinds = (1..meta.columnCount).map {
-                    ValueKind.fromJdbcType(normalizeJdbcType(meta.getColumnType(it), meta.getColumnTypeName(it)))
-                }
+                val kinds = (1..meta.columnCount).map { ValueKind.fromJdbcType(meta.getColumnType(it)) }
 
                 BackupFormat.jsonMapper.createGenerator(CloseShieldOutputStream.wrap(zip)).use { gen ->
                     gen.writeStartObject()

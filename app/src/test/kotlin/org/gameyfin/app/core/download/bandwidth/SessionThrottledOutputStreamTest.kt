@@ -67,7 +67,7 @@ class SessionThrottledOutputStreamTest {
 
         throttledStream.write(65) // 'A'
 
-        verify(exactly = 1) { sessionTracker.awaitPermits(1) }
+        verify(exactly = 1) { sessionTracker.throttle(1) }
         assertEquals("A", underlyingOutputStream.toString())
     }
 
@@ -82,7 +82,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write(66) // 'B'
         throttledStream.write(67) // 'C'
 
-        verify(exactly = 3) { sessionTracker.awaitPermits(1) }
+        verify(exactly = 3) { sessionTracker.throttle(1) }
         assertEquals("ABC", underlyingOutputStream.toString())
     }
 
@@ -97,7 +97,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write(data)
 
         // Should be called at least once
-        verify(atLeast = 1) { sessionTracker.awaitPermits(any()) }
+        verify(atLeast = 1) { sessionTracker.throttle(any()) }
         assertEquals("Hello World", underlyingOutputStream.toString())
     }
 
@@ -111,7 +111,7 @@ class SessionThrottledOutputStreamTest {
         val data = "Hello World".toByteArray()
         throttledStream.write(data, 6, 5) // "World"
 
-        verify(atLeast = 1) { sessionTracker.awaitPermits(any()) }
+        verify(atLeast = 1) { sessionTracker.throttle(any()) }
         assertEquals("World", underlyingOutputStream.toString())
     }
 
@@ -124,7 +124,7 @@ class SessionThrottledOutputStreamTest {
 
         throttledStream.write(byteArrayOf())
 
-        verify(exactly = 1) { sessionTracker.awaitPermits(0) }
+        verify(exactly = 1) { sessionTracker.throttle(0) }
         assertEquals("", underlyingOutputStream.toString())
     }
 
@@ -138,7 +138,7 @@ class SessionThrottledOutputStreamTest {
         val data = "Hello".toByteArray()
         throttledStream.write(data, 0, 0)
 
-        verify(exactly = 1) { sessionTracker.awaitPermits(0) }
+        verify(exactly = 1) { sessionTracker.throttle(0) }
         assertEquals("", underlyingOutputStream.toString())
     }
 
@@ -154,7 +154,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write(data)
 
         // Should be throttled exactly once for the entire write
-        verify(exactly = 1) { sessionTracker.awaitPermits(1024L * 1024) }
+        verify(exactly = 1) { sessionTracker.throttle(1024L * 1024) }
         assertEquals(1024 * 1024, underlyingOutputStream.size())
     }
 
@@ -226,7 +226,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write("World".toByteArray())
         throttledStream.write(33) // '!'
 
-        verify(atLeast = 3) { sessionTracker.awaitPermits(any()) }
+        verify(atLeast = 3) { sessionTracker.throttle(any()) }
         assertEquals("Hello World!", underlyingOutputStream.toString())
     }
 
@@ -285,8 +285,8 @@ class SessionThrottledOutputStreamTest {
 
         verifyOrder {
             sessionTracker.downloadStarted(null, null, null)
-            sessionTracker.awaitPermits(any())
-            sessionTracker.awaitPermits(any())
+            sessionTracker.throttle(any())
+            sessionTracker.throttle(any())
         }
     }
 
@@ -307,7 +307,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write(data, 5, 5)
         assertEquals("56789", underlyingOutputStream.toString())
 
-        verify(atLeast = 2) { sessionTracker.awaitPermits(any()) }
+        verify(atLeast = 2) { sessionTracker.throttle(any()) }
     }
 
     @Test
@@ -328,8 +328,7 @@ class SessionThrottledOutputStreamTest {
         }
 
         // throttle should still be called before the exception
-        verify(exactly = 0) { sessionTracker.recordBytes(any()) }
-        verify(exactly = 1) { sessionTracker.awaitPermits(1) }
+        verify(exactly = 1) { sessionTracker.throttle(1) }
     }
 
     @Test
@@ -362,7 +361,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write(255)
         throttledStream.write(-1) // Should be treated as 255
 
-        verify(exactly = 3) { sessionTracker.awaitPermits(1) }
+        verify(exactly = 3) { sessionTracker.throttle(1) }
     }
 
     @Test
@@ -376,7 +375,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write(data)
 
         // Small write should be a single throttle call
-        verify(exactly = 1) { sessionTracker.awaitPermits(100) }
+        verify(exactly = 1) { sessionTracker.throttle(100) }
     }
 
     @Test
@@ -391,7 +390,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write(data, 10000, 800000)
 
         // Should throttle exactly once for the specified length
-        verify(exactly = 1) { sessionTracker.awaitPermits(800000L) }
+        verify(exactly = 1) { sessionTracker.throttle(800000L) }
         assertEquals(800000, underlyingOutputStream.size())
     }
 
@@ -424,8 +423,8 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write("EF".toByteArray())
 
         assertEquals("ABCDEF", underlyingOutputStream.toString())
-        verify(exactly = 2) { sessionTracker.awaitPermits(1) }  // Two single bytes
-        verify(exactly = 2) { sessionTracker.awaitPermits(2) }  // Two 2-byte arrays
+        verify(exactly = 2) { sessionTracker.throttle(1) }  // Two single bytes
+        verify(exactly = 2) { sessionTracker.throttle(2) }  // Two 2-byte arrays
     }
 }
 

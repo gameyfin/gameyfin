@@ -26,13 +26,13 @@ class SessionMonitoredOutputStream(
     }
 
     override fun write(b: Int) {
-        out.write(b)
         sessionTracker.recordBytes(1)
+        out.write(b)
     }
 
     override fun write(b: ByteArray, off: Int, len: Int) {
-        out.write(b, off, len)
         sessionTracker.recordBytes(len.toLong())
+        out.write(b, off, len)
     }
 
     override fun close() {

@@ -13,8 +13,6 @@ import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
-import org.gameyfin.pluginapi.download.RangeDownload
-import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.springframework.stereotype.Service
 import java.io.IOException
 import java.io.InputStream
@@ -61,16 +59,6 @@ class DownloadService(
         return provider.download(Path(path))
     }
 
-    fun getRangeDownload(path: String, provider: String): RangeDownload? =
-        findProvider(provider).prepareRangeDownload(Path(path))
-
-    fun describeDownload(path: String, provider: String): DownloadMetadata? =
-        findProvider(provider).describe(Path(path))
-
-    private fun findProvider(provider: String): DownloadProvider =
-        downloadPlugins.firstOrNull { it.javaClass.name == provider }
-            ?: throw IllegalArgumentException("Download provider $provider not found")
-
     fun processDownload(
         data: InputStream,
         outputStream: OutputStream,
@@ -112,28 +100,22 @@ class DownloadService(
 
         downloadMetrics.recordDownloadStarted(throttled)
 
-        var bytesWritten = 0L
         try {
             // Close the source as well, so its resources are released when the client cancels the download
             data.use {
-                // The servlet owns the response stream. Closing it on a source error could
-                // finalize a truncated chunked response before Spring handles the failure.
-                val timeTaken = measureTime {
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        val count = readDownloadSource(data, buffer, game)
-                        if (count < 0) break
-                        finalOutputStream.write(buffer, 0, count)
-                        bytesWritten += count
+                finalOutputStream.use {
+                    val timeTaken = measureTime {
+                        data.copyTo(finalOutputStream)
+                        finalOutputStream.flush()
                     }
-                    finalOutputStream.flush()
-                }
 
-                downloadMetrics.recordDownloadCompleted(bytesWritten)
+                    val bytesWritten = tracker.totalBytesTransferred
+                    downloadMetrics.recordDownloadCompleted(bytesWritten)
 
-                log.debug {
-                    "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
-                            "(session: $sessionId) completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
+                    log.debug {
+                        "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
+                                "(session: $sessionId) completed in ${timeTaken.toString(DurationUnit.SECONDS)}"
+                    }
                 }
             }
         } catch (e: IOException) {
@@ -145,17 +127,7 @@ class DownloadService(
                 "Download of game '${game.title}' [ID ${game.id}] by user '${username ?: "anonymous user"}' " +
                         "(session: $sessionId) was interrupted: ${e.message}"
             }
-            throw e
-        } finally {
-            tracker.downloadCompleted(game.id)
+            // Don't re-throw - this is expected when clients cancel downloads
         }
     }
-
-    private fun readDownloadSource(data: InputStream, buffer: ByteArray, game: Game): Int =
-        try {
-            data.read(buffer)
-        } catch (error: IOException) {
-            log.warn(error) { "Failed reading download source '${game.metadata.path}'" }
-            throw error
-        }
 }

@@ -1,7 +1,6 @@
 package org.gameyfin.app.api.v1
 
 import com.vaadin.hilla.exception.EndpointException
-import jakarta.servlet.http.HttpServletResponse
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
@@ -17,8 +16,7 @@ import org.springframework.web.server.ResponseStatusException
 @RestControllerAdvice(basePackages = ["org.gameyfin.app.api.v1"])
 class ApiErrors {
     @ExceptionHandler(Exception::class)
-    fun handle(error: Exception, response: HttpServletResponse? = null): ResponseEntity<ProblemDetail> {
-        if (response?.isCommitted == true) throw error
+    fun handle(error: Exception): ResponseEntity<ProblemDetail> {
         val status = when (error) {
             is AccessDeniedException -> HttpStatus.FORBIDDEN
             is NoSuchElementException -> HttpStatus.NOT_FOUND
