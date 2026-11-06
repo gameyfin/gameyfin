@@ -27,18 +27,18 @@ class DirectDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin(
 
     override val configMetadata: PluginConfigMetadata = listOf(
         ConfigMetadata(
-            key = "compressionMode",
-            type = CompressionMode::class.java,
-            label = "Compression mode",
-            description = "Compression applies to folders only. Higher modes use more CPU but save bandwidth; single files are unchanged.",
-            default = CompressionMode.None
-        ),
-        ConfigMetadata(
             key = "calculateArchiveSize",
             type = Boolean::class.java,
             label = "Calculate folder download size",
-            description = "Scan folders before downloading to show exact size and percentage progress. This can delay startup for large file trees.",
+            description = "Scan folders before downloading to show exact size and percentage progress.\nThis can delay startup for large file trees.",
             default = false
+        ),
+        ConfigMetadata(
+            key = "compressionMode",
+            type = CompressionMode::class.java,
+            label = "Compression mode",
+            description = "Compression applies to uncompressed folders only.\nHigher modes use more CPU but save bandwidth.",
+            default = CompressionMode.None
         )
     )
 

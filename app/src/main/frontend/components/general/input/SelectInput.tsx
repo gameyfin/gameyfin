@@ -30,7 +30,7 @@ export default function SelectInput({label, values, description, resetValue, ...
                         <Select.Indicator/>
                     </Select.Trigger>
                     {(description || resetValue !== undefined) && (
-                        <span className="flex items-center gap-1">
+                        <span className="flex w-13 shrink-0 items-center gap-1">
                             {description && <InfoPopup content={description}/>}
                             {resetValue !== undefined &&
                                 <ResetToDefaultButton fieldName={field.name} defaultValue={resetValue}/>}
