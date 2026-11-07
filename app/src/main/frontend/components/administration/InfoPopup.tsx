@@ -1,7 +1,6 @@
 import {Tooltip} from "@heroui/react";
-import {ArrowUpRightIcon, InfoIcon} from "@phosphor-icons/react";
-import Markdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import {InfoIcon} from "@phosphor-icons/react";
+import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import React from "react";
 
 interface InfoPopupProps {
@@ -17,20 +16,7 @@ export default function InfoPopup({content}: InfoPopupProps) {
                 </span>
             </Tooltip.Trigger>
             <Tooltip.Content placement="left" className="max-w-xs [word-break:normal] wrap-normal">
-                <Markdown
-                    remarkPlugins={[remarkBreaks]}
-                    components={{
-                        a(props) {
-                            return <a href={props.href}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-foreground underline text-xs inline-flex items-center gap-0.5">
-                                {props.children}
-                                <ArrowUpRightIcon size={12}/>
-                            </a>
-                        }
-                    }}
-                >{content}</Markdown>
+                <MarkdownContent className="text-xs">{content}</MarkdownContent>
             </Tooltip.Content>
         </Tooltip>
     )

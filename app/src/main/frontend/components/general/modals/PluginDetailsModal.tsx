@@ -1,9 +1,8 @@
 import React, {useState} from "react";
-import {Button, Link, Modal, toast, Tooltip, Spinner} from "@heroui/react";
+import {Button, Link, Modal, Spinner, toast, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
 import PluginLogo from "Frontend/components/general/plugin/PluginLogo";
-import Markdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 import {ArrowClockwiseIcon} from "@phosphor-icons/react";
@@ -109,22 +108,11 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                         </table>
                                                     </div>
                                                     <b>Description</b>
-                                                    <Markdown
-                                                        remarkPlugins={[remarkBreaks]}
-                                                        components={{
-                                                            a(props) {
-                                                                return <Link target="_blank" rel="noopener noreferrer"
-                                                                             className="underline text-sm"
-                                                                             href={props.href}>
-                                                                    {props.children}
-                                                                </Link>
-                                                            }
-                                                        }}
-                                                    >{plugin.description}</Markdown>
+                                                    <MarkdownContent>{plugin.description}</MarkdownContent>
                                                 </div>
 
                                                 <div className="flex flex-row items-center mt-4 gap-2">
-                                                    <h4 className="text-l font-bold">Configuration</h4>
+                                                    <b>Configuration</b>
                                                     {(plugin.configMetadata && plugin.configMetadata.length > 0) && <>
                                                         <div className="flex-1"/>
                                                         {(() => {
@@ -156,7 +144,9 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                                             }
                                                                             setTimeout(() => setConfigValidated(ValidationState.UNCHECKED), 5000);
                                                                         }}>
-                                                                    {configValidated === ValidationState.IN_PROGRESS ? <Spinner size="sm" color="current"/> : <ArrowClockwiseIcon/>}
+                                                                    {configValidated === ValidationState.IN_PROGRESS ?
+                                                                        <Spinner size="sm" color="current"/> :
+                                                                        <ArrowClockwiseIcon/>}
                                                                 </Button>
                                                             </Tooltip.Trigger>
                                                             <Tooltip.Content placement="bottom">Re-validate
@@ -185,7 +175,8 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                         isDisabled={formik.isSubmitting || !formik.dirty}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Save"}
+                                                        {formik.isSubmitting ?
+                                                            <Spinner size="sm" color="current"/> : "Save"}
                                                     </Button> : ""}
                                             </Modal.Footer>
                                         </Form>

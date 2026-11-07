@@ -74,3 +74,5 @@ out/
 **/*.trace.db
 /plugins-installed/
 /app/logs/
+# heroui-agents-md
+.heroui-docs/

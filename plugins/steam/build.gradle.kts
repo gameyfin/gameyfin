@@ -3,7 +3,16 @@ plugins {
     kotlin("plugin.serialization")
 }
 
+// The development plugin layout copies dependency classes into the classes directory.
+// The converter locates its native resources relative to that same code source.
+tasks.named<Copy>("copyDependencyClasses") {
+    from(configurations.runtimeClasspath.get().map { zipTree(it) }) {
+        include("natives/**")
+    }
+}
+
 dependencies {
+    implementation("io.xberg:html-to-markdown:3.21.2")
     ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
 
     implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}") {
