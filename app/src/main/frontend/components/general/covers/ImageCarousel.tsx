@@ -2,19 +2,17 @@ import {Autoplay, Navigation} from 'swiper/modules';
 import type {Swiper as SwiperInstance} from 'swiper';
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Card, Modal, useOverlayState} from "@heroui/react";
-import ReactPlayerModule from 'react-player';
+import VideoPlayer from "Frontend/components/general/covers/VideoPlayer";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useMemo, useRef, useState} from "react";
-import {CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon} from "@phosphor-icons/react";
+import {CaretLeftIcon, CaretRightIcon, IconContext} from "@phosphor-icons/react";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 import {orderMedia} from "Frontend/util/mediaOrder";
 
-// Depending on the bundler interop the default import may be the module namespace.
-const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
 
 export interface CarouselImage {
     url: string;
@@ -128,22 +126,7 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                                             return (
                                                 <Card
                                                     className={`w-full h-full aspect-video p-0 rounded-xl overflow-hidden transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}>
-                                                    <ReactPlayer
-                                                        src={e.url}
-                                                        width="100%"
-                                                        height="100%"
-                                                        light={true}
-                                                        controls={true}
-                                                        playing={isActive}
-                                                        playIcon={<PlayIcon weight="fill"/>}
-                                                        config={{
-                                                            youtube: {
-                                                                // Apply the policy to the iframe, not the ReactPlayer wrapper.
-                                                                referrerpolicy: "strict-origin-when-cross-origin",
-                                                                origin: window.location.origin
-                                                            }
-                                                        }}
-                                                    />
+                                                    <VideoPlayer src={e.url} playing={isActive}/>
                                                 </Card>
                                             )
                                         }}

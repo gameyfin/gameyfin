@@ -4,7 +4,7 @@ import Input from "Frontend/components/general/input/Input";
 import React, {useEffect, useState} from "react";
 import GameEnumPropertyValuesDto from "Frontend/generated/org/gameyfin/app/games/dto/GameEnumPropertyValuesDto";
 import {GameEndpoint} from "Frontend/generated/endpoints";
-import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
+import MarkdownInput from "Frontend/components/general/input/MarkdownInput";
 import * as Yup from "yup";
 import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
 import ArrayInput from "Frontend/components/general/input/ArrayInput";
@@ -147,15 +147,15 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                                     name="platforms" label="Platforms"
                                                                     labelSuffix={sourceIcon("platforms")}/>
                                                             </MetadataField>
-                                                            <MetadataField name="summary">
-                                                                <TextAreaInput key="summary" name="summary"
-                                                                               label="Summary (HTML)"
-                                                                               labelSuffix={sourceIcon("summary")}/>
-                                                            </MetadataField>
                                                             <MetadataField name="comment">
-                                                                <TextAreaInput key="comment" name="comment"
-                                                                               label="Comment (Markdown)"
+                                                                <MarkdownInput key="comment" name="comment"
+                                                                               label="Comment"
                                                                                labelSuffix={sourceIcon("comment")}/>
+                                                            </MetadataField>
+                                                            <MetadataField name="summary">
+                                                                <MarkdownInput key="summary" name="summary"
+                                                                               label="Summary"
+                                                                               labelSuffix={sourceIcon("summary")}/>
                                                             </MetadataField>
                                                             {gallery}
                                                             <Accordion variant="default" className="space-y-2">

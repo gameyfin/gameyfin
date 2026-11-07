@@ -1,7 +1,6 @@
 import React from "react";
 import {Alert, Button, Chip, Link, Modal, Spinner, Tooltip} from "@heroui/react";
-import Markdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import moment from "moment-timezone";
 import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 import MarketplacePluginReleaseDto
@@ -18,22 +17,6 @@ interface MarketplacePluginDetailsModalProps {
     onOpenChange: (isOpen: boolean) => void;
     onInstall: (version?: string) => void;
     isPending: boolean;
-}
-
-function MarkdownText({children}: { children?: string }) {
-    return (
-        <Markdown
-            remarkPlugins={[remarkBreaks]}
-            components={{
-                a(props) {
-                    return <Link target="_blank" rel="noopener noreferrer" className="underline text-sm"
-                                 href={props.href}>
-                        {props.children}
-                    </Link>
-                }
-            }}
-        >{children}</Markdown>
-    );
 }
 
 /** Index of the installed version in the (newest first) release list, -1 if unknown */
@@ -150,7 +133,7 @@ export default function MarketplacePluginDetailsModal({
 
                                     <div>
                                         <b>Description</b>
-                                        <MarkdownText>{plugin.description ?? plugin.shortDescription}</MarkdownText>
+                                        <MarkdownContent>{plugin.description ?? plugin.shortDescription}</MarkdownContent>
                                     </div>
 
                                     <div className="flex flex-col gap-2">
@@ -173,7 +156,7 @@ export default function MarketplacePluginDetailsModal({
                                                 </div>
                                                 {release.changelog &&
                                                     <div className="text-xs">
-                                                        <MarkdownText>{release.changelog}</MarkdownText>
+                                                        <MarkdownContent>{release.changelog}</MarkdownContent>
                                                     </div>
                                                 }
                                             </div>

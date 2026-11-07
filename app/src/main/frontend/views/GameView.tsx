@@ -5,7 +5,7 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
-import {Accordion, Button, Chip, Link, toast, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Chip, Link, Surface, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState, useFullGame} from "Frontend/state/GameState";
@@ -26,8 +26,7 @@ import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
-import Markdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import ChipList from "Frontend/components/general/ChipList";
 import {collectionState} from "Frontend/state/CollectionState";
 import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
@@ -142,13 +141,13 @@ export default function GameView() {
             </div>
             <div className="flex min-w-0 flex-col gap-4 mx-4 sm:mx-8 xl:mx-24">
                 <div className="flex flex-wrap items-start gap-4">
-                    <div className="flex min-w-0 flex-1 basis-128 flex-col gap-4 sm:flex-row">
+                    <div className="flex min-w-0 flex-1 basis-lg flex-col gap-4 sm:flex-row">
                         <div className="-mt-65 relative z-10 shrink-0 self-start">
                             <GameCover game={game} size={320} radius="none" showTitle={false}/>
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
                             <div className="flex flex-wrap gap-x-4 gap-y-1 items-baseline">
-                                <p className="min-w-0 [overflow-wrap:anywhere] font-semibold text-2xl sm:text-3xl">
+                                <p className="min-w-0 wrap-anywhere font-semibold text-2xl sm:text-3xl">
                                     {game.title}
                                 </p>
                                 {(game.criticRating || game.userRating) &&
@@ -241,45 +240,24 @@ export default function GameView() {
                         />}
                     </div>
                 </div>
-                <div className="flex min-w-0 flex-col gap-8 [overflow-wrap:anywhere]">
-                    {game.comment &&
-                        <Accordion variant="default" className="space-y-2">
-                            <Accordion.Item id="information" className="-mx-2 rounded-lg bg-surface-secondary">
-                                <Accordion.Heading>
-                                    <Accordion.Trigger className="flex items-center justify-between font-bold">
-                                        <span className="flex items-center gap-2">
-                                            <InfoIcon weight="fill"/>
-                                            Information
-                                        </span>
-                                        <Accordion.Indicator/>
-                                    </Accordion.Trigger>
-                                </Accordion.Heading>
-                                <Accordion.Panel>
-                                    <Accordion.Body className="mx-8 mb-4">
-                                        <Markdown
-                                            remarkPlugins={[remarkBreaks]}
-                                            components={{
-                                                a(props) {
-                                                    return <Link href={props.href}
-                                                                 target="_blank"
-                                                                 rel="noopener noreferrer"
-                                                                 className="text-foreground underline text-sm inline-flex items-center gap-1">
-                                                        {props.children}
-                                                        <Link.Icon/>
-                                                    </Link>;
-                                                }
-                                            }}
-                                        >{game.comment}</Markdown>
-                                    </Accordion.Body>
-                                </Accordion.Panel>
-                            </Accordion.Item>
-                        </Accordion>
+                <div className="flex min-w-0 flex-col gap-8 wrap-anywhere">
+                    {game.comment?.trim() &&
+                        <Surface render={(props) => <section {...props} aria-labelledby="game-information-heading"/>}
+                                 variant="secondary"
+                                 className="min-w-0 rounded-xl p-4 sm:p-5">
+                            <h4 id="game-information-heading"
+                                className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <InfoIcon size={14} weight="fill" aria-hidden="true"/>
+                                Information
+                            </h4>
+                            <MarkdownContent className="text-foreground">{game.comment}</MarkdownContent>
+                        </Surface>
                     }
                     <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
                         <div className="flex min-w-0 flex-col flex-1 gap-2">
                             <p className="text-muted">Summary</p>
                             {game.summary ?
-                                <div className="text-justify" dangerouslySetInnerHTML={{__html: game.summary}}/> :
+                                <MarkdownContent className="text-justify">{game.summary}</MarkdownContent> :
                                 <p>No summary available</p>
                             }
                         </div>

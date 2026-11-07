@@ -29,6 +29,7 @@ import org.gameyfin.plugins.metadata.steam.dto.SteamPlatforms
 import org.gameyfin.plugins.metadata.steam.dto.SteamSearchResult
 import org.gameyfin.plugins.metadata.steam.mapper.Mapper
 import org.gameyfin.plugins.metadata.steam.util.SteamDateSerializer
+import org.gameyfin.plugins.metadata.steam.util.toMarkdown
 import org.jsoup.Jsoup
 import org.pf4j.Extension
 import org.slf4j.LoggerFactory
@@ -229,7 +230,7 @@ class SteamPlugin(context: PluginContext) : GameyfinPlugin(context) {
                 originalId = id.toString(),
                 title = sanitizeTitle(game.name),
                 platforms = gamePlatforms,
-                description = game.shortDescription, // Using short description since the detailed description often contains just some ads for the Battle Pass etc.
+                description = toMarkdown(game.shortDescription), // Using short description since the detailed description often contains just some ads for the Battle Pass etc.
                 coverUrls = game.headerImage?.let { URI(it) }?.let { listOf(it) }?.toSet(),
                 release = parseOriginalReleaseDateFromStorePage(id) ?: game.releaseDate?.date,
                 developedBy = game.developers?.toSet(),

@@ -1,5 +1,5 @@
 import React, {memo, ReactNode, useEffect, useRef, useState} from "react";
-import {Button, Input} from "@heroui/react";
+import {Button} from "@heroui/react";
 import {GridList, GridListItem} from "react-aria-components";
 import {
     CaretUpDownIcon,
@@ -11,7 +11,8 @@ import {
     VideoIcon
 } from "@phosphor-icons/react";
 import {FormikHelpers, useFormikContext} from "formik";
-import ReactPlayerModule from "react-player";
+import VideoPlayer from "Frontend/components/general/covers/VideoPlayer";
+import AddGameVideoModal from "Frontend/components/general/modals/AddGameVideoModal";
 import GameImagePickerModal from "Frontend/components/general/modals/GameImagePickerModal";
 import {allDraftImages, DraftImage, GameMetadataFormValues, MAX_MEDIA_SIZE, MediaKind} from "Frontend/util/gameMedia";
 import {orderMedia} from "Frontend/util/mediaOrder";
@@ -20,7 +21,6 @@ import {GameFieldMetadataDto, GameFieldMetadataType} from "Frontend/dtos/GameDto
 import {useAuth} from "Frontend/util/auth";
 import {useAnimatedReorder} from "Frontend/util/useAnimatedReorder";
 
-const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
 
 const VideoPreview = memo(function VideoPreview({url, label}: { url: string; label: string }) {
     const container = useRef<HTMLDivElement>(null);
@@ -42,7 +42,7 @@ const VideoPreview = memo(function VideoPreview({url, label}: { url: string; lab
     return <div ref={container} role="img" aria-label={label}
                 className="w-full aspect-video overflow-hidden rounded bg-black">
         <div inert className="pointer-events-none flex size-full items-center justify-center text-white">
-            {visible ? <ReactPlayer src={url} width="100%" height="100%" light
+            {visible ? <VideoPlayer src={url} width="100%" height="100%" light
                                     playing={false} controls={false} previewTabIndex={-1}
                                     playIcon={<PlayIcon weight="fill" size={32}/>}/>
                 : <PlayIcon weight="fill" size={32}/>}
@@ -171,8 +171,7 @@ export default function GameMediaEditor({children, searchOnOpen, sourceIcon}: Ga
     const {values, setFieldValue, setValues, isSubmitting} = useFormikContext<GameMetadataFormValues>();
     const {state: auth} = useAuth();
     const [picker, setPicker] = useState<MediaKind>();
-    const [videoUrl, setVideoUrl] = useState("");
-    const [videoError, setVideoError] = useState("");
+    const [videoPickerOpen, setVideoPickerOpen] = useState(false);
     const previews = useRef(new Set<string>());
     const images = allDraftImages(values);
     const gallerySources = new Map<string, GameFieldMetadataDto>();
@@ -208,31 +207,19 @@ export default function GameMediaEditor({children, searchOnOpen, sourceIcon}: Ga
         }
     }
 
-    function addVideo() {
-        const url = videoUrl.trim();
-        try {
-            const parsed = new URL(url);
-            if (!["http:", "https:"].includes(parsed.protocol) || !ReactPlayer.canPlay?.(url)) {
-                throw new Error("Enter an HTTP(S) video URL supported by the video player.");
-            }
-            if (values.mediaVideos.includes(url)) throw new Error("This video has already been added.");
-            void setValues(values => ({
-                ...values, mediaVideos: [...values.mediaVideos, url],
-                mediaVideoSources: [...values.mediaVideos.map((_, index) => values.mediaVideoSources?.[index]),
-                    auth.user ? {
-                        type: GameFieldMetadataType.USER,
-                        source: auth.user.username,
-                        updatedAt: new Date().toISOString()
-                    } : undefined],
-                mediaOrder: [...orderMedia(
-                    values.mediaImages.map(() => "image"), values.mediaVideos.map(() => "video"), values.mediaOrder
-                ), "video"]
-            }));
-            setVideoUrl("");
-            setVideoError("");
-        } catch (error) {
-            setVideoError(error instanceof TypeError ? "Enter a valid video URL." : (error as Error).message);
-        }
+    function addVideo(url: string) {
+        void setValues(values => ({
+            ...values, mediaVideos: [...values.mediaVideos, url],
+            mediaVideoSources: [...values.mediaVideos.map((_, index) => values.mediaVideoSources?.[index]),
+                auth.user ? {
+                    type: GameFieldMetadataType.USER,
+                    source: auth.user.username,
+                    updatedAt: new Date().toISOString()
+                } : undefined],
+            mediaOrder: [...orderMedia(
+                values.mediaImages.map(() => "image"), values.mediaVideos.map(() => "video"), values.mediaOrder
+            ), "video"]
+        }));
     }
 
     const artwork = <div className="flex gap-4">
@@ -267,37 +254,29 @@ export default function GameMediaEditor({children, searchOnOpen, sourceIcon}: Ga
                 <h3 className="font-semibold flex items-center flex-wrap">Media
                     {[...gallerySources].map(([key, source]) => <GameMetadataSourceIcon key={key} source={source}/>)}
                 </h3>
-                <Button type="button" size="sm"
-                        isDisabled={isSubmitting}
-                        onPress={() => setPicker("screenshot")}>
-                    Add screenshots
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm"
+                            isDisabled={isSubmitting}
+                            onPress={() => setPicker("screenshot")}>
+                        Add screenshots
+                    </Button>
+                    <Button type="button" size="sm" isDisabled={isSubmitting}
+                            onPress={() => setVideoPickerOpen(true)}>
+                        Add video
+                    </Button>
+                </div>
             </div>
 
             <MediaGallery mediaImages={values.mediaImages} mediaVideos={values.mediaVideos}
                           mediaVideoSources={values.mediaVideoSources}
                           mediaOrder={values.mediaOrder} isSubmitting={isSubmitting} setValues={setValues}/>
 
-            <div className="flex gap-2">
-                <Input aria-label="Video URL" placeholder="Video URL" value={videoUrl} disabled={isSubmitting}
-                       className="flex-1 min-w-0"
-                       onChange={event => setVideoUrl(event.target.value)}
-                       onKeyDown={event => {
-                           if (event.key === "Enter") {
-                               event.preventDefault();
-                               addVideo();
-                           }
-                       }}/>
-                <Button type="button"
-                        isDisabled={!videoUrl.trim() || isSubmitting}
-                        onPress={addVideo}>
-                    Add video</Button>
-            </div>
-            {videoError && <p role="alert" className="text-sm text-danger">{videoError}</p>}
         </section>
     </div>;
     return <>
         {children({artwork, gallery})}
+        {videoPickerOpen && <AddGameVideoModal existingUrls={values.mediaVideos} onAdd={addVideo}
+                                               onClose={() => setVideoPickerOpen(false)}/>}
         {picker && <GameImagePickerModal key={picker} game={values} kind={picker} onSelect={selectImages}
                                          searchOnOpen={searchOnOpen}
                                          excludedUrls={picker === "screenshot" ? values.mediaImages.map(image => image.selection.url).filter((url): url is string => !!url) : []}
