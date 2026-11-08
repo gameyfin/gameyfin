@@ -38,6 +38,7 @@ internal object GameMediaValidation {
     }
 
     fun selection(selection: GameImageSelectionDto, allowedIds: Set<Long>, uploadKeys: Set<String>) {
+        require(selection.pluginId == null || selection.url != null) { "Plugin attribution requires an image URL" }
         require(listOf(selection.id, selection.url, selection.uploadKey).count { it != null } == 1) {
             "Select exactly one image ID, URL, or upload"
         }

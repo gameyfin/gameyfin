@@ -1,15 +1,17 @@
 import {useField} from "formik";
+import {ReactNode} from "react";
 import {Calendar, DateField, DatePicker, DatePickerProps, DateValue, Description, FieldError, Label} from "@heroui/react";
 import {parseDate} from "@internationalized/date";
 
 interface DatePickerInputProps extends Omit<DatePickerProps<DateValue>, "name" | "children" | "onChange" | "value"> {
     name: string;
     label?: string;
+    labelSuffix?: ReactNode;
     description?: string;
     showErrorUntouched?: boolean;
 }
 
-export default function DatePickerInput({label, description, showErrorUntouched = false, ...props}: DatePickerInputProps) {
+export default function DatePickerInput({label, labelSuffix, description, showErrorUntouched = false, ...props}: DatePickerInputProps) {
     const [field, meta, helpers] = useField<string>(props.name);
     const value: DateValue | null = field.value ? parseDate(field.value) : null;
 
@@ -27,7 +29,10 @@ export default function DatePickerInput({label, description, showErrorUntouched 
             name={field.name}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
         >
-            {label && <Label>{label}</Label>}
+            {label && <Label className={labelSuffix ? "flex items-center after:order-1" : undefined}>
+                {label}
+                {labelSuffix && <span className="order-2 inline-flex">{labelSuffix}</span>}
+            </Label>}
             <DateField.Group fullWidth>
                 <DateField.Input>{(segment) => <DateField.Segment segment={segment}/>}</DateField.Input>
                 <DateField.Suffix>

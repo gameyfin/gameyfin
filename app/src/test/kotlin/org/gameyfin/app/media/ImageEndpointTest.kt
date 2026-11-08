@@ -316,14 +316,13 @@ class ImageEndpointTest {
 
         imageEndpoint.uploadAvatar(file)
 
-        verify(exactly = 1) { userService.hasAvatar("testuser") }
         verify(exactly = 1) { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/png") }
         verify(exactly = 1) { userService.updateAvatar("testuser", newImage) }
         verify(exactly = 0) { imageService.updateFileContent(any(), any(), any()) }
     }
 
     @Test
-    fun `uploadAvatar should update existing avatar when user has avatar`() {
+    fun `uploadAvatar should replace image identity so live clients invalidate their cache`() {
         val auth = mockk<Authentication> {
             every { name } returns "testuser"
         }
@@ -332,21 +331,19 @@ class ImageEndpointTest {
             every { contentType } returns "image/jpeg"
         }
         val existingAvatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/png")
-        val updatedImage = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg")
+        val updatedImage = Image(id = 2L, type = ImageType.AVATAR, mimeType = "image/jpeg")
 
         every { getCurrentAuth() } returns auth
         every { userService.hasAvatar("testuser") } returns true
         every { userService.getAvatar("testuser") } returns existingAvatar
-        every { imageService.updateFileContent(existingAvatar, any(), "image/jpeg") } returns updatedImage
+        every { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/jpeg") } returns updatedImage
         every { userService.updateAvatar("testuser", updatedImage) } just Runs
 
         imageEndpoint.uploadAvatar(file)
 
-        verify(exactly = 1) { userService.hasAvatar("testuser") }
-        verify(exactly = 1) { userService.getAvatar("testuser") }
-        verify(exactly = 1) { imageService.updateFileContent(existingAvatar, any(), "image/jpeg") }
+        verify(exactly = 0) { imageService.updateFileContent(any(), any(), any()) }
         verify(exactly = 1) { userService.updateAvatar("testuser", updatedImage) }
-        verify(exactly = 0) { imageService.createFromInputStream(any(), any(), any()) }
+        verify(exactly = 1) { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/jpeg") }
     }
 
     @Test

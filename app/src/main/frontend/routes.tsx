@@ -71,7 +71,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         {
                             path: 'settings',
                             element: <ProfileView/>,
-                            handle: {title: 'Profile'},
+                            handle: {title: 'Profile', loginRequired: true},
                             children: [
                                 {
                                     path: 'profile',
@@ -98,7 +98,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         {
                             path: 'administration',
                             element: <AdministrationView/>,
-                            handle: {title: 'Administration'},
+                            handle: {title: 'Administration', loginRequired: true},
                             children: [
                                 {
                                     path: 'games',

@@ -1,15 +1,23 @@
 import {useField} from "formik";
+import {ComponentProps, ReactNode, Ref} from "react";
 import {FieldError, Label, TextArea, TextFieldProps, TextField} from "@heroui/react";
 
-interface TextAreaInputProps extends Omit<TextFieldProps, "name" | "children"> {
+export interface TextAreaInputProps extends Omit<TextFieldProps, "name" | "children"> {
+    textareaRef?: Ref<HTMLTextAreaElement>;
+    textareaProps?: ComponentProps<typeof TextArea>;
+    toolbar?: ReactNode;
+    preview?: ReactNode;
+    renderEditor?: (textarea: ReactNode) => ReactNode;
     label?: string;
+    labelSuffix?: ReactNode;
     name: string;
     showErrorUntouched?: boolean;
     placeholder?: string;
 }
 
-export default function TextAreaInput({label, showErrorUntouched = false, placeholder, ...props}: TextAreaInputProps) {
+export default function TextAreaInput({label, labelSuffix, showErrorUntouched = false, placeholder, textareaRef, textareaProps, toolbar, preview, renderEditor, ...props}: TextAreaInputProps) {
     const [field, meta, helpers] = useField(props.name);
+    const textarea = <TextArea ref={textareaRef} placeholder={placeholder} {...textareaProps} hidden={preview != null}/>;
 
     return (
         <TextField
@@ -22,8 +30,13 @@ export default function TextAreaInput({label, showErrorUntouched = false, placeh
             onBlur={field.onBlur}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
         >
-            {label && <Label>{label}</Label>}
-            <TextArea placeholder={placeholder}/>
+            {label && <Label className={labelSuffix ? "flex items-center after:order-1" : undefined}>
+                {label}
+                {labelSuffix && <span className="order-2 inline-flex">{labelSuffix}</span>}
+            </Label>}
+            {toolbar}
+            {renderEditor ? renderEditor(textarea) : textarea}
+            {preview}
             <FieldError>{meta.initialError || meta.error}</FieldError>
         </TextField>
     );

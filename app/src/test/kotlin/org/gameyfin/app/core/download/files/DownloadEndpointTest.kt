@@ -36,6 +36,7 @@ class DownloadEndpointTest {
     @BeforeEach
     fun setup() {
         downloadService = mockk<DownloadService>(relaxed = true)
+        every { downloadService.getRangeDownload(any(), any()) } returns null
         gameService = mockk<GameService>(relaxed = true)
         endpoint = DownloadEndpoint(downloadService, gameService)
 

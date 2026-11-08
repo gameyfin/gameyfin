@@ -1,11 +1,31 @@
 import SelectInput from "Frontend/components/general/input/SelectInput";
 import CheckboxInput from "Frontend/components/general/input/CheckboxInput";
 import Input from "Frontend/components/general/input/Input";
+import NumberInput from "Frontend/components/general/input/NumberInput";
 import React from "react";
 import PluginConfigMetadataDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginConfigMetadataDto";
 
 export default function PluginConfigFormField({pluginConfigMetadata, ...props}: any) {
     function inputElement(metadata: PluginConfigMetadataDto) {
+        let defaultValue = metadata.default;
+        if (defaultValue != null) {
+            switch (metadata.type.toLowerCase()) {
+                case "float":
+                case "int":
+                    defaultValue = Number(defaultValue);
+                    break;
+                case "boolean":
+                    defaultValue = defaultValue === true || defaultValue === "true";
+                    break;
+                default:
+                    defaultValue = String(defaultValue);
+            }
+        }
+        const commonProps = {
+            ...props,
+            description: metadata.description,
+            resetValue: defaultValue ?? undefined
+        };
 
         if (metadata.allowedValues != null && metadata.allowedValues.length > 0) {
             return (
@@ -13,7 +33,7 @@ export default function PluginConfigFormField({pluginConfigMetadata, ...props}: 
                              name={metadata.key}
                              values={metadata.allowedValues}
                              isRequired={metadata.required}
-                             {...props}/>
+                             {...commonProps}/>
             );
         }
 
@@ -22,7 +42,7 @@ export default function PluginConfigFormField({pluginConfigMetadata, ...props}: 
                 return (
                     <CheckboxInput label={metadata.label}
                                    name={metadata.key}
-                                   {...props}/>
+                                   {...commonProps}/>
                 );
             case "string":
                 return (
@@ -30,25 +50,23 @@ export default function PluginConfigFormField({pluginConfigMetadata, ...props}: 
                            name={metadata.key}
                            type={metadata.secret ? "password" : "text"}
                            isRequired={metadata.required}
-                           {...props}/>
+                           {...commonProps}/>
                 );
             case "float":
                 return (
-                    <Input label={metadata.label}
+                    <NumberInput label={metadata.label}
                            name={metadata.key}
-                           type="number"
                            isRequired={metadata.required}
-                           step="0.1"
-                           {...props}/>
+                           step={0.1}
+                           {...commonProps}/>
                 );
             case "int":
                 return (
-                    <Input label={metadata.label}
+                    <NumberInput label={metadata.label}
                            name={metadata.key}
-                           type="number"
                            isRequired={metadata.required}
-                           step="1"
-                           {...props}/>
+                           step={1}
+                           {...commonProps}/>
                 );
             default:
                 return <pre>Unsupported type: {metadata.type} for key {metadata.key}</pre>;

@@ -11,10 +11,7 @@ import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
 import org.gameyfin.app.api.v1.apiId
 import org.gameyfin.app.api.v1.apiPage
-import org.gameyfin.app.api.v1.dto.GameMediaV1
-import org.gameyfin.app.api.v1.dto.GamePatchV1
-import org.gameyfin.app.api.v1.dto.GameV1
-import org.gameyfin.app.api.v1.dto.PageV1
+import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.api.v1.service.CatalogServiceV1
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.libraries.LibraryCoreService
@@ -58,6 +55,16 @@ class GameControllerV1(
             externalProvider,
             externalId
         )
+    }
+
+    @GetMapping("/index")
+    @Operation(
+        operationId = "getGameIndex",
+        description = "Requires games:read. Complete, unpaginated list ordered by numeric ID."
+    )
+    fun index(): List<GameIndexEntryV1> {
+        access.require(ApiScope.GAMES_READ)
+        return catalog.gameIndex()
     }
 
     @GetMapping("/{id}")

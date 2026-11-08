@@ -38,6 +38,9 @@ interface GameRepository : JpaRepository<Game, Long>,
 
     /* Synchronization */
 
+    @Query("SELECT g.id AS id, g.updatedAt AS updatedAt FROM Game g ORDER BY g.id")
+    fun findAllIndexEntries(): List<GameIndexEntry>
+
     fun findAllByUpdatedAtAfter(since: Instant): List<Game>
 
     @Query("SELECT g.id FROM Game g")
@@ -62,4 +65,9 @@ interface GameRepository : JpaRepository<Game, Long>,
     @Modifying
     @Query("UPDATE Game g SET g.updatedAt = :updatedAt WHERE g.id IN :ids")
     fun bumpUpdatedAt(@Param("ids") ids: Collection<Long>, @Param("updatedAt") updatedAt: Instant): Int
+}
+
+interface GameIndexEntry {
+    val id: Long
+    val updatedAt: Instant
 }

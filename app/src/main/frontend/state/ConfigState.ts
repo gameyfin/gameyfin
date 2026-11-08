@@ -22,17 +22,28 @@ export const configState = proxy<ConfigState>({
 });
 
 /** Subscribe to and process state updates from backend **/
+let generation = 0;
+export function resetConfigState() {
+    generation++;
+    configState.subscription?.cancel();
+    configState.subscription = undefined;
+    configState.state = {};
+}
+
 export async function initializeConfigState() {
     if (configState.isLoaded) return;
+    const current = ++generation;
 
     // Fetch initial configuration data
     const initialEntries = await ConfigEndpoint.getAll();
+    if (current !== generation) return;
     initialEntries.forEach((entry) => {
         configState.state[entry.key] = entry;
     });
 
     // Subscribe to real-time updates
     configState.subscription = ConfigEndpoint.subscribe().onNext((updateDtos: ConfigUpdateDto[]) => {
+        if (current !== generation) return;
         updateDtos.forEach((updateDto: ConfigUpdateDto) => {
             Object.entries(updateDto.updates).forEach(([key, value]) => {
                 if (configState.state[key]) {

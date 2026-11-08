@@ -7,6 +7,10 @@ import org.gameyfin.app.core.sync.EntityChangeSet
 import org.gameyfin.app.core.sync.EntityChangeTracker
 import org.gameyfin.app.games.dto.GameField
 import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.games.entities.GameFieldMetadata
+import org.gameyfin.app.games.entities.GameFieldApiSource
+import org.gameyfin.app.games.extensions.mediaSources
+import org.gameyfin.app.games.extensions.replaceMediaSources
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
@@ -29,6 +33,8 @@ import java.util.UUID
 import javax.sql.DataSource
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertNull
+import kotlin.test.assertIs
 
 class GameMediaPersistenceTest {
     @ParameterizedTest
@@ -86,6 +92,16 @@ class GameMediaPersistenceTest {
             }
             migrate(dataSource)
 
+            // Item attribution must persist independently of the list's latest editor.
+            emf.createEntityManager().use { em ->
+                em.transaction.begin()
+                val game = em.find(Game::class.java, gameId)
+                val firstSource = GameFieldMetadata(source = GameFieldApiSource("first", "First importer"))
+                val lastSource = GameFieldMetadata(source = GameFieldApiSource("last", "Last importer"))
+                game.replaceMediaSources("images", listOf(firstSource, null, lastSource), firstSource)
+                em.transaction.commit()
+            }
+
             val changes = mutableListOf<EntityChangeSet>()
             val processor = mockk<EntityChangeProcessor>()
             every { processor.enqueue(capture(changes)) } just Runs
@@ -97,6 +113,8 @@ class GameMediaPersistenceTest {
                 assertEquals(imageIds, game.images.map { it.id })
                 assertEquals(originalVideos.groupingBy { it }.eachCount(), game.videoUrls.groupingBy { it }.eachCount())
                 assertEquals(List(3) { "image" } + List(4) { "video" }, game.mediaOrder)
+                val sources = game.mediaSources("images", 3)
+                game.replaceMediaSources("images", listOf(sources[2], sources[0], sources[1]), sources[0]!!)
                 game.images = listOf(game.images[2], game.images[0], game.images[1]).toMutableList()
                 game.videoUrls = listOf(longVideo, URI("https://example.com/new.mp4"), originalVideos[0])
                 game.mediaOrder = listOf("image", "video", "image", "image", "video", "video")
@@ -110,6 +128,10 @@ class GameMediaPersistenceTest {
                 em.transaction.begin()
                 val game = em.find(Game::class.java, gameId)
                 assertEquals(listOf(imageIds[2], imageIds[0], imageIds[1]), game.images.map { it.id })
+                val sources = game.mediaSources("images", 3)
+                assertEquals("last", assertIs<GameFieldApiSource>(sources[0]!!.source).credentialId)
+                assertEquals("first", assertIs<GameFieldApiSource>(sources[1]!!.source).credentialId)
+                assertNull(sources[2])
                 assertEquals(listOf(longVideo, URI("https://example.com/new.mp4"), originalVideos[0]), game.videoUrls)
                 assertEquals(listOf("image", "video", "image", "image", "video", "video"), game.mediaOrder)
                 val repository = JpaRepositoryFactory(em).getRepository(GameRepository::class.java)
