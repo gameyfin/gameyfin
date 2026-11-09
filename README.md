@@ -47,14 +47,14 @@ Contributions are welcome!
 There are no strict requirements to contribute, but please contact us first if you want to implement a new feature or
 change the design of the application before you start working on it.
 
-### Technical Details
+### Gameyfin Trademark and Attribution Notice
 
-Gameyfin v2 is written in Kotlin and uses the following libraries/frameworks:
-
-* Spring Boot 3 for the backend
-* Vaadin Hilla & React for the frontend
-* PF4J for the plugin system
-* H2 database for persistence
+Gameyfin is free and open-source software licensed under the GNU Affero General Public License version 3.  
+The name "Gameyfin" and the official Gameyfin logos identify the original Gameyfin project.  
+Permission to use, modify, and distribute the source code does not imply official affiliation with, endorsement by, or support from the Gameyfin project.  
+Modified versions and third-party applications must not misrepresent their origin or imply official endorsement by the Gameyfin project.  
+Third-party projects may describe their compatibility with Gameyfin, provided that such descriptions do not mislead users regarding the project's origin or official status.  
+The Gameyfin project reserves any trademark rights it holds in its name and logos.
 
 ### Acknowledgements
 
