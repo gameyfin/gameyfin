@@ -50,10 +50,10 @@ export default function CompactNavigation({randomGame, hasGames, searchValue, on
         <NavigationDrawer title="More" open={open} onOpenChange={setOpen}>
             <div className="flex flex-col gap-2">
                 {auth.state.user && <p className="text-muted wrap-anywhere">Signed in as {auth.state.user.username}</p>}
-                {actions.map(action => <Button key={action.label} aria-current={action.path && location.pathname.startsWith(action.path) ? "page" : undefined} variant="ghost" className={`justify-start ${action.color === "danger" ? "text-danger" : ""}`}
+                {actions.map(action => <Button key={action.label} aria-current={action.path && location.pathname.startsWith(action.path) ? "page" : undefined} variant="ghost" className={`w-full justify-start ${action.color === "danger" ? "text-danger" : ""}`}
                     onPress={() => {setOpen(false); action.onClick();}}>{action.icon}{action.label}</Button>)}
-                {visible.tasks && <Button variant="ghost" className="justify-start" onPress={() => {setOpen(false); navigate("/administration/tasks");}}><ListChecksIcon/>Active tasks</Button>}
-                <Button variant="ghost" className="justify-start" isDisabled={!hasGames} onPress={() => {setOpen(false); randomGame();}}><DiceSixIcon/>I'm feeling lucky</Button>
+                {visible.tasks && <Button variant="ghost" className="w-full justify-start" onPress={() => {setOpen(false); navigate("/administration/tasks");}}><ListChecksIcon/>Active tasks</Button>}
+                <Button variant="ghost" className="w-full justify-start" isDisabled={!hasGames} onPress={() => {setOpen(false); randomGame();}}><DiceSixIcon/>I'm feeling lucky</Button>
             </div>
         </NavigationDrawer>
     </>;
