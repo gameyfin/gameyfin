@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import {Accordion, Button, Modal, Spinner} from "@heroui/react";
 import {FastField, FieldProps, Form, Formik, FormikProvider} from "formik";
 import Input from "Frontend/components/general/input/Input";
@@ -82,7 +83,7 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
     return propertyEnumValues && initialValues && (newGame || initialValues.id === gameId) && isOpen && (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} isDismissable={false} variant="opaque">
-                <Modal.Container size="lg" className="max-w-3xl">
+                <ResponsiveDialog size="lg" className="max-w-3xl">
                     <Modal.Dialog>
                         {({close}) => {
 
@@ -127,7 +128,7 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                                        isDisabled className="mb-0"/>
                                                             </MetadataField>
                                                             {artwork}
-                                                            <div className="flex flex-row gap-4 mt-4">
+                                                            <div className="flex flex-col sm:flex-row gap-4 mt-4">
                                                                 <MetadataField name="title">
                                                                     <Input key="title" name="title" label="Title"
                                                                            labelSuffix={sourceIcon("title")}
@@ -251,7 +252,7 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                             )
                         }}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

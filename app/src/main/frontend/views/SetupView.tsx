@@ -38,7 +38,7 @@ function WelcomeStep() {
 
     return (
         <div className="flex flex-col size-full items-center">
-            <div className="flex flex-col w-1/2 min-w-[468px] gap-12 items-center">
+            <div className="flex flex-col w-full xl:w-1/2 xl:min-w-[468px] gap-12 items-center">
                 <h4>Welcome to Gameyfin 👋</h4>
                 <p className="place-content-center text-justify">
                     Gameyfin is a cutting-edge software tailored for gamers seeking efficient management of their
@@ -106,7 +106,7 @@ function DatabaseStep({info, testResult, onTest, onDatabaseTypeChange}: Database
 
     return (
         <div className="flex flex-row grow justify-center">
-            <div className="flex flex-col w-1/2 min-w-96 gap-6">
+            <div className="flex flex-col w-full xl:w-1/2 xl:min-w-96 gap-6">
                 <p className="text-2xl font-bold text-center">Choose your database</p>
                 {info?.managedExternally ?
                     <Alert status="accent">
@@ -152,7 +152,7 @@ function DatabaseStep({info, testResult, onTest, onDatabaseTypeChange}: Database
 function UserStep() {
     return (
         <div className="flex flex-row grow justify-center">
-            <div className="flex flex-col w-1/3 min-w-96 gap-6 items-center">
+            <div className="flex flex-col w-full xl:w-1/3 xl:min-w-96 gap-6 items-center">
                 <p className="text-2xl font-bold">Create your account</p>
                 <p>This will set up the initial admin user account.</p>
                 <div className="flex flex-col w-full">
@@ -224,8 +224,8 @@ function SetupView() {
     }
 
     return (
-        <div className="flex flex-row size-full items-center justify-center gradient-primary">
-            <Card className="w-3/4 h-3/4 min-w-[500px] p-8">
+        <div className="flex min-h-dvh w-full xl:h-full items-center justify-center p-4 xl:p-0 gradient-primary">
+            <Card className="w-full xl:w-3/4 xl:h-3/4 min-w-0 xl:min-w-[500px] p-4 sm:p-8">
                 <Card.Content className="h-full">
                     <Wizard
                         initialValues={{

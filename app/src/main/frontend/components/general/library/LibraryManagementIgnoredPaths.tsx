@@ -1,3 +1,6 @@
+import CompactRecordList from "Frontend/components/layout/CompactRecordList";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
+import TableScroller from "Frontend/components/layout/TableScroller";
 import {Button, Input, SortDescriptor, Table, Tooltip, useOverlayState} from "@heroui/react";
 import {MagnifyingGlassIcon, PlusIcon, TrashIcon} from "@phosphor-icons/react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
@@ -21,6 +24,7 @@ interface LibraryManagementIgnoredPathsProps {
 }
 
 export default function LibraryManagementIgnoredPaths({library}: LibraryManagementIgnoredPathsProps) {
+    const compact = useMediaQuery(COMPACT_QUERY);
     const plugins = useSnapshot(pluginState).state;
     const users = useSnapshot(userState).state;
 
@@ -88,7 +92,7 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
         } else if (ignoredPath.sourceType === IgnoredPathSourceTypeDto.PLUGIN) {
             const pluginIds: string[] = JSON.parse(ignoredPath.source)
             return pluginIds ?
-                <div className="flex flex-row gap-2 items-center">
+                <div className="flex flex-wrap gap-2 items-center">
                     <p>Automatically added by plugins (</p>
                     {pluginIds.map(id => {
                         const p = plugins[id];
@@ -102,16 +106,59 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
         return ignoredPath.source;
     }
 
+    function pathFields(item: {key: number; path: IgnoredPathDto}) {
+        return [
+            {label: "Path", content: <>
+                {item.path.path}
+            </>},
+            {label: "Source", content: <>
+                {renderSource(item.path)}
+            </>},
+            {label: "Actions", content: <>
+                <div className="flex flex-wrap gap-2">
+                    <Tooltip>
+                        <Button isIconOnly size="sm" aria-label="Match game" onPress={() => {
+                            setSelectedPath(item.path);
+                            matchGameModal.open();
+                        }}>
+                            <MagnifyingGlassIcon/>
+                        </Button>
+                        <Tooltip.Content>Match game</Tooltip.Content>
+                    </Tooltip>
+                    <Tooltip>
+                        <Button isIconOnly size="sm" aria-label="Manual import" onPress={() => {
+                            setSelectedPath(item.path);
+                            manualImportModal.open();
+                        }}>
+                            <PlusIcon/>
+                        </Button>
+                        <Tooltip.Content>Manual import</Tooltip.Content>
+                    </Tooltip>
+                    <Tooltip>
+                        <Button isIconOnly size="sm" variant="danger"
+                                aria-label="Remove entry from list" onPress={() => deleteIgnoredPath(item.path)}
+                                isDisabled={item.path.sourceType !== IgnoredPathSourceTypeDto.USER}
+                        >
+                            <TrashIcon/>
+                        </Button>
+                        <Tooltip.Content>Remove entry from list</Tooltip.Content>
+                    </Tooltip>
+                </div>
+            </>}
+        ];
+    }
+
     return <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">Manage ignored paths</h1>
         <Input
-            className="w-96"
+            className="w-full sm:w-96"
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
         />
-        <Table variant="secondary" className="h-140">
-            <Table.ScrollContainer className="h-140">
+        {compact ? <CompactRecordList label="Ignored paths" items={pagedPaths} itemKey={item => item.key}
+                    fields={pathFields} empty={<p className="p-4 text-muted">No ignored paths available.</p>} sort={{value: sortDescriptor, onChange: setSortDescriptor, options: [{id: "path", label: "Path"}]}}/> : <Table variant="secondary" className="h-140">
+            <TableScroller label="LibraryIgnoredPaths table" className="h-140">
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                     <Table.Header className="sticky top-0 z-10 bg-background">
                         <Table.Column id="path" allowsSorting isRowHeader>
@@ -130,55 +177,13 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
                         items={pagedPaths}>
                         {(item) => (
                             <Table.Row key={item.key}>
-                                <Table.Cell>
-                                    {item.path.path}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {renderSource(item.path)}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <div className="flex flex-row gap-2">
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" onPress={() => {
-                                                    setSelectedPath(item.path);
-                                                    matchGameModal.open();
-                                                }}>
-                                                    <MagnifyingGlassIcon/>
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>Match game</Tooltip.Content>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" aria-label="Manual import" onPress={() => {
-                                                    setSelectedPath(item.path);
-                                                    manualImportModal.open();
-                                                }}>
-                                                    <PlusIcon/>
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>Manual import</Tooltip.Content>
-                                        </Tooltip>
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <Button isIconOnly size="sm" variant="danger"
-                                                        onPress={() => deleteIgnoredPath(item.path)}
-                                                        isDisabled={item.path.sourceType !== IgnoredPathSourceTypeDto.USER}
-                                                >
-                                                    <TrashIcon/>
-                                                </Button>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content>Remove entry from list</Tooltip.Content>
-                                        </Tooltip>
-                                    </div>
-                                </Table.Cell>
+                                {pathFields(item).map(field => <Table.Cell key={field.label}>{field.content}</Table.Cell>)}
                             </Table.Row>
                         )}
                     </Table.Body>
                 </Table.Content>
-            </Table.ScrollContainer>
-        </Table>
+            </TableScroller>
+        </Table>}
         {pagedPaths.length > 0 &&
             <div className="flex w-full justify-center">
                 <SimplePagination page={page} total={pages} onChange={setPage}/>

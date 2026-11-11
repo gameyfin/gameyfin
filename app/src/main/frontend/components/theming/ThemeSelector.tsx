@@ -56,7 +56,7 @@ export function ThemeSelector() {
     }
 
     return (
-        <div className="flex flex-col items-center gap-8">
+        <div className="flex w-full min-w-0 flex-col items-center gap-8">
             <Select className="max-w-xs"
                     value={mode}
                     onChange={(value) => setMode(value as string)}>
@@ -79,7 +79,7 @@ export function ThemeSelector() {
                 </Select.Popover>
             </Select>
             <ColorSwatchPicker
-                className="grid grid-flow-row grid-cols-8 gap-8"
+                className="grid w-full max-w-[calc(80vh+14rem)] grid-flow-row grid-cols-4 sm:grid-cols-8 gap-4 sm:gap-8"
                 variant="square"
                 value={selectedThemeAccent}
                 onChange={onColorChange}
@@ -94,13 +94,13 @@ export function ThemeSelector() {
                 "{toTitleCase(selectedTheme.replaceAll("-", " "))}"
             </p>
             <Separator/>
-            <div className="flex flex-row gap-8 items-baseline">
-                <div className="flex flex-row gap-4">
+            <div className="flex flex-col xl:flex-row gap-8 items-baseline">
+                <div className="flex flex-wrap gap-4">
                     <Button variant="primary">Primary</Button>
                     <Button variant="secondary">Secondary</Button>
                     <Button variant="danger">Danger</Button>
                 </div>
-                <Card className="flex flex-row gap-4 p-4">
+                <Card className="flex flex-row flex-wrap sm:flex-nowrap gap-4 p-4">
                     <Button variant="primary">Primary</Button>
                     <Button variant="secondary">Secondary</Button>
                     <Button variant="danger">Danger</Button>

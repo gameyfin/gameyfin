@@ -32,8 +32,8 @@ export function GameCoverFallback({
             <DiscIcon weight="fill" size={iconSize} aria-hidden="true"
                       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-muted"/>
             {showTitle && (
-                <p className="absolute inset-x-3 text-center wrap-break-word line-clamp-4"
-                   style={{top: "50%", marginTop: iconSize / 2 + 12}}>
+                <p className="absolute inset-x-3 bottom-3 text-center wrap-anywhere line-clamp-2 text-sm"
+>
                     {title}
                 </p>
             )}

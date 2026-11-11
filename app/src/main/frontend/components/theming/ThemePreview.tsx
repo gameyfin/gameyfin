@@ -11,7 +11,7 @@ export default function ThemePreview({theme}: {
             key={theme.name}
             color={theme.colors.accent}
             aria-label={theme.name}
-            className={`${theme.name} size-[10vh] min-h-[50px] min-w-[50px] aspect-square overflow-hidden`}
+            className={`${theme.name} w-full h-auto max-w-[10vh] min-w-0 aspect-square overflow-hidden`}
         >
             <div className="flex flex-col size-full">
                 <ColorSwatchPicker.Swatch className="flex-1 rounded-none!"/>

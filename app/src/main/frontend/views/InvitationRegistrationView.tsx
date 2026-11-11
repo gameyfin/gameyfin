@@ -79,8 +79,8 @@ export default function InvitationRegistrationView() {
     }
 
     return (
-        <div className="flex flex-row grow items-center justify-center size-full gradient-primary">
-            <Card className="p-4 min-w-117">
+        <div className="flex flex-row grow items-center justify-center min-h-dvh w-full p-4 gradient-primary">
+            <Card className="p-4 w-full max-w-[468px]">
                 <Card.Header className="mb-4">
                     <img
                         className="h-28 w-full content-center"

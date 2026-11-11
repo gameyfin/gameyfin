@@ -17,13 +17,13 @@ function UserManagementLayout({getConfig, formik}: any) {
         <div className="flex flex-col grow">
 
             <Section title="Sign-Ups"/>
-            <div className="flex flex-row">
+            <div className="flex flex-col xl:flex-row gap-4">
                 <ConfigFormField configElement={getConfig("users.sign-ups.allow")}/>
                 <ConfigFormField configElement={getConfig("users.sign-ups.confirmation-required")}
                                  isDisabled={!formik.values.users["sign-ups"].allow}/>
             </div>
 
-            <div className="flex flex-row items-baseline justify-between">
+            <div className="flex flex-wrap gap-3 items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Users</h2>
                 <Tooltip delay={0}>
                     <Tooltip.Trigger>

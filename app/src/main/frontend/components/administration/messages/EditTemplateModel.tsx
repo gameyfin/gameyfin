@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useState} from "react";
 import {
     toast,
@@ -46,7 +47,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" className="max-w-5xl">
+                <ResponsiveDialog size="lg" className="max-w-5xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -55,7 +56,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                                     <Modal.Heading>Edit {selectedTemplate?.name} Template</Modal.Heading>
                                 </Modal.Header>
                                 <Modal.Body>
-                                    <div className="flex flex-row justify-between items-end">
+                                    <div className="flex flex-wrap gap-3 justify-between items-end">
                                         <table cellPadding="4rem">
                                             <tbody>
                                             <tr>
@@ -129,7 +130,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

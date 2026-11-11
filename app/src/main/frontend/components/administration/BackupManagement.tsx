@@ -1,3 +1,6 @@
+import CompactRecordList from "Frontend/components/layout/CompactRecordList";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
+import TableScroller from "Frontend/components/layout/TableScroller";
 import React, {useEffect, useState} from "react";
 import UploadButton from "Frontend/components/general/input/UploadButton";
 import {Alert, Button, Checkbox, Link, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
@@ -20,6 +23,7 @@ import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 const BACKUP_TASK_KEY = "backup";
 
 export default function BackupManagement() {
+    const compact = useMediaQuery(COMPACT_QUERY);
     const [backups, setBackups] = useState<BackupDto[]>([]);
     const [lastRestore, setLastRestore] = useState<RestoreStatusDto>();
     const [includeMedia, setIncludeMedia] = useState(false);
@@ -106,6 +110,67 @@ export default function BackupManagement() {
         window.location.reload();
     }
 
+    function backupFields(backup: BackupDto) {
+        return [
+            {label: "Name", content: <>
+                {backup.name}
+            </>},
+            {label: "Created", content: <>
+                {new Date(backup.createdAt).toLocaleString()}
+            </>},
+            {label: "Size", content: <>
+                {humanFileSize(backup.sizeBytes)}
+            </>},
+            {label: "Source", content: <>
+                {[backup.databaseProduct, backup.gameyfinVersion && `Gameyfin ${backup.gameyfinVersion}`]
+                    .filter(Boolean).join(", ") || "Unknown"}
+            </>},
+            {label: "Images", content: <>
+                {backup.includesMedia ? "Included" : "Not included"}
+            </>},
+            {label: "Actions", content: <>
+                <div className="flex flex-wrap gap-2">
+                    <Tooltip>
+                        <Button isIconOnly size="sm" variant="ghost"
+                                aria-label="Download backup" onPress={() => downloadBackup(backup)}>
+                            <DownloadSimpleIcon/>
+                        </Button>
+                        <Tooltip.Content>Download</Tooltip.Content>
+                    </Tooltip>
+                    <Tooltip>
+                        <Tooltip.Trigger>
+                            {/* Wrapper keeps the tooltip working for disabled buttons */}
+                            <span>
+                                <Button isIconOnly size="sm" variant="ghost"
+                                        aria-label="Restore backup" isDisabled={!backup.restorable || restoring || creating || uploading}
+                                        onPress={() => {
+                                            setSelectedBackup(backup);
+                                            restoreModal.open();
+                                        }}>
+                                    <ArrowCounterClockwiseIcon/>
+                                </Button>
+                            </span>
+                        </Tooltip.Trigger>
+                        <Tooltip.Content>
+                            {backup.restorable ? "Restore" : `Can not be restored: ${backup.problem}`}
+                        </Tooltip.Content>
+                    </Tooltip>
+                    <Tooltip>
+                        <Button isIconOnly size="sm" variant="danger"
+                                aria-label="Delete backup" isDisabled={restoring}
+                                onPress={() => {
+                                    setSelectedBackup(backup);
+                                    deleteModal.open();
+                                }}>
+                            <TrashIcon/>
+                        </Button>
+                        <Tooltip.Content>Delete</Tooltip.Content>
+                    </Tooltip>
+                </div>
+            </>}
+        ];
+    }
+
     return (
         <div className="flex flex-col">
             <Section title="Backup & restore"/>
@@ -149,8 +214,9 @@ export default function BackupManagement() {
                               onFilesSelected={files => uploadBackup(files[0])}/>
             </div>
 
-            <Table variant="secondary">
-                <Table.ScrollContainer>
+            {compact ? <CompactRecordList label="Backups" items={backups} itemKey={backup => backup.name}
+                    fields={backupFields} empty={<p className="p-4 text-muted">No backups available.</p>}/> : <Table variant="secondary">
+                <TableScroller label="Backups">
                     <Table.Content aria-label="Backups">
                         <Table.Header>
                             <Table.Column id="name" isRowHeader>Name</Table.Column>
@@ -165,64 +231,13 @@ export default function BackupManagement() {
                                         <p className="text-center text-muted p-4">No backups available.</p>}>
                             {({backup}) => (
                                 <Table.Row key={backup.name}>
-                                    <Table.Cell>{backup.name}</Table.Cell>
-                                    <Table.Cell>{new Date(backup.createdAt).toLocaleString()}</Table.Cell>
-                                    <Table.Cell>{humanFileSize(backup.sizeBytes)}</Table.Cell>
-                                    <Table.Cell>
-                                        {[backup.databaseProduct, backup.gameyfinVersion && `Gameyfin ${backup.gameyfinVersion}`]
-                                            .filter(Boolean).join(", ") || "Unknown"}
-                                    </Table.Cell>
-                                    <Table.Cell>{backup.includesMedia ? "Included" : "Not included"}</Table.Cell>
-                                    <Table.Cell>
-                                        <div className="flex flex-row gap-2">
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="ghost"
-                                                            onPress={() => downloadBackup(backup)}>
-                                                        <DownloadSimpleIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Download</Tooltip.Content>
-                                            </Tooltip>
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    {/* Wrapper keeps the tooltip working for disabled buttons */}
-                                                    <span>
-                                                        <Button isIconOnly size="sm" variant="ghost"
-                                                                isDisabled={!backup.restorable || restoring || creating || uploading}
-                                                                onPress={() => {
-                                                                    setSelectedBackup(backup);
-                                                                    restoreModal.open();
-                                                                }}>
-                                                            <ArrowCounterClockwiseIcon/>
-                                                        </Button>
-                                                    </span>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>
-                                                    {backup.restorable ? "Restore" : `Can not be restored: ${backup.problem}`}
-                                                </Tooltip.Content>
-                                            </Tooltip>
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="danger"
-                                                            isDisabled={restoring}
-                                                            onPress={() => {
-                                                                setSelectedBackup(backup);
-                                                                deleteModal.open();
-                                                            }}>
-                                                        <TrashIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Delete</Tooltip.Content>
-                                            </Tooltip>
-                                        </div>
-                                    </Table.Cell>
-                                </Table.Row>
+                                {backupFields(backup).map(field => <Table.Cell key={field.label}>{field.content}</Table.Cell>)}
+                            </Table.Row>
                             )}
                         </Table.Body>
                     </Table.Content>
-                </Table.ScrollContainer>
-            </Table>
+                </TableScroller>
+            </Table>}
 
             {selectedBackup &&
                 <ConfirmModal isOpen={restoreModal.isOpen}

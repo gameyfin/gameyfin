@@ -167,7 +167,7 @@ export default function DatabaseManagement() {
                                                                  isDisabled={switching}
                                                                  onTypeChange={() => setTestResult(undefined)}/>
                                         {testResult && <ConnectionTestResult result={testResult}/>}
-                                        <div className="flex flex-row gap-4">
+                                        <div className="flex flex-wrap gap-4">
                                             <Button variant="ghost"
                                                     onPress={() => testConnection(formik)}
                                                     isPending={testing}

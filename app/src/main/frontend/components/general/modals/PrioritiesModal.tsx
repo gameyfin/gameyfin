@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect} from "react";
 import {Button, Chip, Modal, toast} from "@heroui/react";
 import {ListBox, ListBoxItem} from "react-aria-components";
@@ -72,7 +73,7 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque">
-                <Modal.Container>
+                <ResponsiveDialog>
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -120,7 +121,7 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

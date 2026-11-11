@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useState} from "react";
 import {Button, Link, Modal, Spinner, toast, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
@@ -60,7 +61,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container>
+                <ResponsiveDialog>
                     <Modal.Dialog>
                         {({close}) => {
 
@@ -82,7 +83,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                             </Modal.Header>
                                             <Modal.Body>
                                                 <div className="flex flex-col text-sm">
-                                                    <div className="flex flex-row items-center gap-8 mb-4">
+                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 mb-4">
                                                         <PluginLogo plugin={plugin}/>
                                                         <table className="text-left table-auto">
                                                             <tbody>
@@ -100,7 +101,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                                 return (
                                                                     <tr key={key}>
                                                                         <td className="text-muted w-0 min-w-20">{key}</td>
-                                                                        <td className="flex flex-row gap-1">{value}</td>
+                                                                        <td className="flex flex-wrap gap-1">{value}</td>
                                                                     </tr>
                                                                 )
                                                             })}
@@ -111,7 +112,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                     <MarkdownContent>{plugin.description}</MarkdownContent>
                                                 </div>
 
-                                                <div className="flex flex-row items-center mt-4 gap-2">
+                                                <div className="flex flex-wrap items-center mt-4 gap-2">
                                                     <b>Configuration</b>
                                                     {(plugin.configMetadata && plugin.configMetadata.length > 0) && <>
                                                         <div className="flex-1"/>
@@ -186,7 +187,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                             )
                         }}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

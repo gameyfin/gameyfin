@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useState} from "react";
 import {
     Alert,
@@ -37,7 +38,7 @@ export default function PluginMarketplacesModal({isOpen, onOpenChange}: PluginMa
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" scroll="inside">
+                <ResponsiveDialog size="lg" scroll="inside">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -63,7 +64,7 @@ export default function PluginMarketplacesModal({isOpen, onOpenChange}: PluginMa
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

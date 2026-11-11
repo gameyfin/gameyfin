@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useRef, useState} from "react";
 import {Button, Input, Modal, Spinner} from "@heroui/react";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
@@ -126,7 +127,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
         <Modal.Backdrop isOpen onOpenChange={open => {
             if (!open) onClose();
         }}>
-            <Modal.Container size="lg" className="max-w-3xl">
+            <ResponsiveDialog size="lg" className="max-w-3xl">
                 <Modal.Dialog>
                     <Modal.CloseTrigger/>
                     <Modal.Header><Modal.Heading>Choose {multiple ? "screenshots" : `a ${label}`}</Modal.Heading></Modal.Header>
@@ -211,7 +212,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                             ({selected.length})</Button>}
                     </Modal.Footer>
                 </Modal.Dialog>
-            </Modal.Container>
+            </ResponsiveDialog>
         </Modal.Backdrop>
     </Modal>;
 }

@@ -181,3 +181,98 @@ html {
         display: none;
     }
 }
+
+/* Responsive shell: Tailwind sm = 40rem, xl = 80rem. Navigation stays below overlays. */
+:root {
+    --compact-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+body { min-height: 100dvh; }
+.app-shell { min-width: 0; }
+.app-shell main { overflow-wrap: anywhere; }
+.compact-bottom-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    background: var(--background);
+    border-top: 1px solid var(--separator);
+    padding: 0.25rem max(0.5rem, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(0.5rem, env(safe-area-inset-left));
+    min-height: var(--compact-nav-height);
+}
+.compact-nav-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 3.5rem;
+    height: auto;
+    font-size: 0.75rem;
+    border-radius: var(--radius);
+}
+.compact-nav-item[aria-current="page"] { color: var(--accent); }
+.compact-nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Explicit local scrollers keep dense tables discoverable and keyboard reachable. */
+.table-region { min-width: 0; max-width: 100%; }
+.table-region-hint { display: none; }
+.table-scroll-region { max-width: 100%; overflow-x: auto; }
+.table-scroll-region:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.modal__heading, .drawer__heading { overflow-wrap: anywhere; }
+.modal__body { min-width: 0; }
+.modal__footer { flex-wrap: wrap; }
+
+@media (width < 80rem) {
+    .app-shell { padding-bottom: var(--compact-nav-height); }
+    .app-shell > header { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+    .compact-header { padding-top: max(1rem, env(safe-area-inset-top)); }
+    .app-shell main {
+        scroll-margin-top: 9rem;
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+    }
+    .toast-region--bottom-end { bottom: calc(var(--compact-nav-height) + 1rem); }
+    .table-region-hint { display: block; margin-bottom: 0.5rem; color: var(--muted); font-size: 0.875rem; }
+    .table-scroll-region .table__content { min-width: 44rem; }
+    button, .button { scroll-margin-block: 6rem; }
+    input, textarea, select { scroll-margin-block: 9rem; }
+    .compact-game-actions .button { min-width: 2.75rem; min-height: 2.75rem; }
+}
+@media (width >= 80rem) {
+    .compact-bottom-nav { display: none; }
+}
+@media (width < 40rem) {
+    .responsive-editor.modal__container {
+        padding: 0;
+        width: 100%;
+        max-width: none;
+        height: var(--visual-viewport-height, 100dvh);
+    }
+    .responsive-editor .modal__dialog {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        padding-top: max(1.5rem, env(safe-area-inset-top));
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    }
+    .responsive-editor .modal__dialog > form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .responsive-editor .modal__body { overflow-y: auto; min-height: 0; }
+    .responsive-editor .modal__footer { flex-shrink: 0; }
+    .grid-cols-300px { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 300px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .shine::before { animation: none !important; }
+    *, *::before, *::after { scroll-behavior: auto !important; }
+}
+
+/* Outside the header's backdrop-filter containing block, below modal overlays. */
+.compact-section-menu {
+    position: fixed;
+    top: max(1rem, env(safe-area-inset-top));
+    right: max(1rem, env(safe-area-inset-right));
+    z-index: 20;
+}
+.compact-record-actions .button { min-height: 2.75rem; min-width: 2.75rem; }

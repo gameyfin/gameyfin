@@ -292,7 +292,7 @@ function SearchViewContent() {
                     <SearchField.ClearButton/>
                 </SearchField.Group>
             </SearchField>
-            <div className="flex flex-row items-center gap-2">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                 <AutocompleteInput
                     name="sortBy"
                     options={SORT_OPTIONS}

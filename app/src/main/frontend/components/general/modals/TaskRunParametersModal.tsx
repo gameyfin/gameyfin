@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
 import {Button, Modal, Spinner} from "@heroui/react";
 import {Form, Formik, FormikErrors, getIn, setIn} from "formik";
@@ -57,7 +58,7 @@ export default function TaskRunParametersModal({task, isOpen, onOpenChange, onRu
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg">
+                <ResponsiveDialog size="lg">
                     <Modal.Dialog>
                         {({close}) => (
                             <Formik initialValues={initialValues()}
@@ -92,7 +93,7 @@ export default function TaskRunParametersModal({task, isOpen, onOpenChange, onRu
                             </Formik>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

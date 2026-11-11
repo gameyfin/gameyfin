@@ -22,7 +22,7 @@ export default function AddGameVideoModal({onAdd, onClose, existingUrls}: {
 
     return <Modal>
         <Modal.Backdrop isOpen onOpenChange={open => { if (!open) onClose(); }} variant="opaque">
-            <Modal.Container size="lg">
+            <Modal.Container size="md" placement="center">
                 <Modal.Dialog>
                     <Modal.CloseTrigger/>
                     <Modal.Header><Modal.Heading>Add video</Modal.Heading></Modal.Header>

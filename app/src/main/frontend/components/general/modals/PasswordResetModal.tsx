@@ -31,7 +31,7 @@ export default function PasswordResetModal({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" className="max-w-xl">
+                <Modal.Container size="md" placement="center" className="max-w-xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <>

@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useState} from "react";
 import {Alert, Button, Modal, Spinner} from "@heroui/react";
 import UploadButton from "Frontend/components/general/input/UploadButton";
@@ -64,7 +65,7 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                             onOpenChange={(open) => !busy && onOpenChange(open)}
                             variant="opaque"
                             isDismissable={!busy}>
-                <Modal.Container size="lg">
+                <ResponsiveDialog size="lg">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -114,7 +115,7 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

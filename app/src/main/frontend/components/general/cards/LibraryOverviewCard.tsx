@@ -38,7 +38,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     }
 
     return (
-        <Card className="flex flex-col justify-between w-[353px] p-0 overflow-hidden">
+        <Card className="flex flex-col justify-between w-full max-w-[353px] p-0 overflow-hidden">
             <div className="flex flex-1 justify-center items-center">
                 <div className="flex flex-1 opacity-10 min-h-[100px]">
                     <IconBackgroundPattern/>
@@ -51,7 +51,7 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                     }
                 </div>
 
-                <p className="mt-6 absolute text-2xl text-center font-bold">{library.name}</p>
+                <p className="mt-6 absolute max-w-full px-3 wrap-anywhere text-center text-2xl text-center font-bold">{library.name}</p>
 
                 <div className="absolute right-0 top-0 flex flex-row">
                     <Tooltip delay={0}>

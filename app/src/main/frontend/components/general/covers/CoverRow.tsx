@@ -79,7 +79,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
             const newPosition = Math.max(0, scrollPosition - scrollAmount);
             gridElement.scrollTo({
                 left: newPosition,
-                behavior: "smooth"
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
             });
         }
     };
@@ -92,7 +92,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
             const newPosition = Math.min(maxScroll, scrollPosition + scrollAmount);
             gridElement.scrollTo({
                 left: newPosition,
-                behavior: "smooth"
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
             });
         }
     };
@@ -120,7 +120,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
 
     return (
         <div className="flex flex-col mb-4">
-            <div className="flex flex-row justify-between items-baseline mb-4">
+            <div className="flex flex-wrap gap-2 justify-between items-baseline mb-4">
                 <Link href={link}
                       className="flex flex-row gap-1 w-fit items-baseline text-foreground hover:underline underline-offset-2">
                     <p className="text-2xl font-bold">{title}</p>

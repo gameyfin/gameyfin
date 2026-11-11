@@ -1,11 +1,11 @@
-import {Button, Input, Modal, Spinner, Table, Tooltip} from "@heroui/react";
+import GameSearchResults from "./GameSearchResults";
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
+import {Button, Input, Modal, Spinner, Tooltip} from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
-import PluginIcon from "../plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
-import {pluginState} from "Frontend/state/PluginState";
 import {libraryState} from "Frontend/state/LibraryState";
 import LibraryAdminDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibraryAdminDto";
 
@@ -31,7 +31,6 @@ export default function MatchGameModal({
     const [isSearching, setIsSearching] = useState(false);
     const [isMatching, setIsMatching] = useState<string | null>(null);
 
-    const state = useSnapshot(pluginState).state;
     const librariesState = useSnapshot(libraryState).state;
 
     useEffect(() => {
@@ -54,15 +53,15 @@ export default function MatchGameModal({
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}
                             isDismissable={!isSearching && !isMatching}>
-                <Modal.Container size="lg" className="max-w-5xl">
+                <ResponsiveDialog size="lg" className="max-w-5xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <Modal.Body className="my-4">
                                 <div className="flex flex-col items-center">
-                                    <pre>{path}</pre>
+                                    <pre className="max-w-full whitespace-pre-wrap wrap-anywhere">{path}</pre>
                                 </div>
                                 <div className="flex flex-row gap-2 mb-4">
-                                    <Input value={searchTerm}
+                                    <Input aria-label="Search games" value={searchTerm}
                                            onChange={(e) => setSearchTerm(e.target.value)}
                                            onKeyDown={async (e) => {
                                                if (e.key === "Enter") {
@@ -72,85 +71,33 @@ export default function MatchGameModal({
                                            }}
                                            className="flex-1"
                                     />
-                                    <Button isIconOnly onPress={search} variant="primary" isPending={isSearching}>
+                                    <Button isIconOnly aria-label="Search games" onPress={search} variant="primary" isPending={isSearching}>
                                         {isSearching ? <Spinner size="sm" color="current"/> : <MagnifyingGlassIcon/>}
                                     </Button>
                                 </div>
 
                                 <div>
-                                    <Table variant="secondary" className="h-80">
-                                        <Table.ScrollContainer className="h-80">
-                                            <Table.Content>
-                                                <Table.Header className="sticky top-0 z-10 bg-background">
-                                                    <Table.Column id="title" isRowHeader>Title & Release</Table.Column>
-                                                    <Table.Column id="developers">Developer(s)</Table.Column>
-                                                    <Table.Column id="publishers">Publisher(s)</Table.Column>
-                                                    <Table.Column id="sources">Sources</Table.Column>
-                                                    <Table.Column id="actions"> </Table.Column>
-                                                </Table.Header>
-                                                <Table.Body renderEmptyState={() => <p
-                                                    className="text-center text-muted p-4">Your filter did not match any
-                                                    games.</p>}
-                                                            items={searchResults}>
-                                                    {(item) => (
-                                                        <Table.Row key={item.id}>
-                                                            <Table.Cell>
-                                                                {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <div className="flex flex-col">
-                                                                    {item.developers ? item.developers.map(
-                                                                        developer => <p>{developer}</p>
-                                                                    ) : "unknown"}
-                                                                </div>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <div className="flex flex-col">
-                                                                    {item.publishers ? item.publishers.map(
-                                                                        publisher => <p>{publisher}</p>
-                                                                    ) : "unknown"}
-                                                                </div>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <div className="flex flex-row gap-2">
-                                                                    {Object.values(item.originalIds).map(
-                                                                        originalId => <PluginIcon
-                                                                            plugin={state[originalId.pluginId]}/>
-                                                                    )}
-                                                                </div>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <Tooltip>
-                                                                    <Tooltip.Trigger>
-                                                                        <Button isIconOnly size="sm"
-                                                                                isDisabled={isMatching !== null}
-                                                                                isPending={isMatching === item.id}
-                                                                                onPress={async () => {
-                                                                                    setIsMatching(item.id);
-                                                                                    await matchGame(item);
-                                                                                    setIsMatching(null);
-                                                                                    close();
-                                                                                }}>
-                                                                            {isMatching === item.id ?
-                                                                                <Spinner size="sm" color="current"/> :
-                                                                                <ArrowRightIcon/>}
-                                                                        </Button>
-                                                                    </Tooltip.Trigger>
-                                                                    <Tooltip.Content placement="bottom">Pick this
-                                                                        result</Tooltip.Content>
-                                                                </Tooltip>
-                                                            </Table.Cell>
-                                                        </Table.Row>
-                                                    )}
-                                                </Table.Body>
-                                            </Table.Content>
-                                        </Table.ScrollContainer>
-                                    </Table>
+                                    <GameSearchResults results={searchResults} actions={item => (
+                                        <Tooltip>
+                                            <Button isIconOnly size="sm" aria-label={`Pick ${item.title}`}
+                                                    isDisabled={isMatching !== null}
+                                                    isPending={isMatching === item.id}
+                                                    onPress={async () => {
+                                                        setIsMatching(item.id);
+                                                        await matchGame(item);
+                                                        setIsMatching(null);
+                                                        close();
+                                                    }}>
+                                                {isMatching === item.id ? <Spinner size="sm" color="current"/> : <ArrowRightIcon/>}
+                                            </Button>
+                                            <Tooltip.Content placement="bottom">Pick this result</Tooltip.Content>
+                                        </Tooltip>
+                                    )}/>
                                 </div>
                             </Modal.Body>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

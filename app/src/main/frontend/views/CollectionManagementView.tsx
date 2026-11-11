@@ -94,7 +94,7 @@ export default function CollectionManagementView() {
             >
                 {(formik) => (
                     <Form>
-                        <div className="flex flex-row grow justify-between mb-4">
+                        <div className="flex flex-wrap gap-3 grow justify-between mb-4">
                             <h1 className="text-2xl font-bold">Edit collection details</h1>
                             <Button
                                 variant="primary"

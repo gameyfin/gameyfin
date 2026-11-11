@@ -66,7 +66,7 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque" isDismissable={false}>
-                <Modal.Container size="lg">
+                <Modal.Container size="md" placement="center">
                     <Modal.Dialog>
                         {({close}) => (
                             <>

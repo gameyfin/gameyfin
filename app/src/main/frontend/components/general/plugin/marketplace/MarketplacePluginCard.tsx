@@ -28,7 +28,7 @@ export default function MarketplacePluginCard({plugin}: { plugin: MarketplacePlu
                     <div className="flex h-16 w-full items-center justify-center">
                         <MarketplacePluginLogo plugin={plugin} glow={true}/>
                     </div>
-                    <p className="flex flex-row items-center gap-1 font-semibold text-center">
+                    <p className="flex flex-wrap justify-center wrap-anywhere items-center gap-1 font-semibold text-center">
                         {plugin.name}
                         <MarketplaceSourceBadge plugin={plugin}/>
                     </p>

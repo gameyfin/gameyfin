@@ -41,13 +41,13 @@ function DownloadManagementLayout({getConfig, formik}: any) {
             </Alert>
             <Section title="Bandwidth limiting"/>
             <div className="flex flex-col gap-4">
-                <div className="flex flex-row items-start gap-4">
-                    <ConfigFormField className="pt-8" configElement={getConfig("downloads.bandwidth-limit.enabled")}/>
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                    <ConfigFormField className="sm:pt-8" configElement={getConfig("downloads.bandwidth-limit.enabled")}/>
                     <ConfigFormField configElement={getConfig("downloads.bandwidth-limit.mbps")}
                                      isDisabled={!formik.values.downloads["bandwidth-limit"].enabled}/>
                 </div>
             </div>
-            <div className="flex flex-row justify-between items-end">
+            <div className="flex flex-wrap gap-3 justify-between items-end">
                 <h2 className="text-xl font-bold mt-8 mb-1">Live View</h2>
                 <Tooltip delay={0}>
                     <Tooltip.Trigger>

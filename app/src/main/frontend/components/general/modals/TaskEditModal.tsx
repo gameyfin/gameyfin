@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
 import {Button, Modal, Spinner, toast} from "@heroui/react";
 import {Form, Formik, getIn, setIn} from "formik";
@@ -80,7 +81,7 @@ export default function TaskEditModal({task, isOpen, onOpenChange, onSaved}: Tas
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg">
+                <ResponsiveDialog size="lg">
                     <Modal.Dialog>
                         {({close}) => (
                             <Formik initialValues={initialValues()}
@@ -129,7 +130,7 @@ export default function TaskEditModal({task, isOpen, onOpenChange, onSaved}: Tas
                             </Formik>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

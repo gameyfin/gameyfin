@@ -303,11 +303,11 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                         </Tooltip.Content>
                     </Tooltip>
                 </div>
-                <div className="flex flex-1 flex-col items-center gap-2">
+                <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                     <div className="flex h-16 w-full items-center justify-center">
                         <PluginLogo plugin={plugin} glow={true}/>
                     </div>
-                    <p className="flex flex-row items-center gap-1 font-semibold">
+                    <p className="flex flex-wrap justify-center wrap-anywhere items-center gap-1 font-semibold">
                         {plugin.name}
                         <IconContext.Provider value={{size: 18, weight: "fill"}}>
                             {trustLevelToBadge(plugin.trustLevel)}
@@ -339,7 +339,7 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                             }
                         </IconContext.Provider>
                     </p>
-                    <div className="flex flex-row items-center gap-2 mt-auto">
+                    <div className="flex flex-wrap justify-center items-center gap-2 mt-auto">
                         <Chip size="sm" className="text-xs rounded-xl h-6">{plugin.version}</Chip>
                         <Chip size="sm"
                               className={`text-xs rounded-xl h-6 ${CHIP_CLASSES[stateToColor(plugin.state)]}`}>

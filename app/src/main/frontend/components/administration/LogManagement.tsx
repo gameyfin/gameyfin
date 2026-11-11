@@ -41,7 +41,7 @@ function LogManagementLayout({getConfig, formik}: any) {
 
     return (
         <div className="flex flex-col mt-4">
-            <div className="flex flex-row gap-4">
+            <div className="flex flex-col xl:flex-row gap-4">
                 <ConfigFormField configElement={getConfig("logs.folder")}/>
                 <ConfigFormField configElement={getConfig("logs.max-history-days")}/>
                 <ConfigFormField configElement={getConfig("logs.level.gameyfin")}/>
@@ -49,31 +49,29 @@ function LogManagementLayout({getConfig, formik}: any) {
             </div>
 
             <div className="flex flex-col">
-                <div className="flex flex-row grow justify-between items-baseline">
+                <div className="flex flex-wrap gap-3 grow justify-between items-baseline">
                     <h2 className={"text-xl font-bold mt-8 mb-1"}>Application logs</h2>
-                    <div className="flex flex-row gap-1">
+                    <div className="flex flex-col sm:flex-row gap-2">
                         <Tooltip delay={0}>
-                            <Tooltip.Trigger>
-                                <Button isIconOnly
+                            <Button isIconOnly
+                                        aria-label="Soft-wrap" aria-pressed={softWrap}
                                         onPress={() => setSoftWrap(!softWrap)}
                                         variant={softWrap ? "primary" : "ghost"}
                                 >
                                     <ArrowUDownLeftIcon/>
                                 </Button>
-                            </Tooltip.Trigger>
                             <Tooltip.Content placement="bottom">
                                 <p>Soft-wrap</p>
                             </Tooltip.Content>
                         </Tooltip>
                         <Tooltip delay={0}>
-                            <Tooltip.Trigger>
-                                <Button isIconOnly
+                            <Button isIconOnly
+                                        aria-label="Auto-scroll" aria-pressed={autoScroll}
                                         onPress={() => setAutoScroll(!autoScroll)}
                                         variant={autoScroll ? "primary" : "ghost"}
                                 >
                                     <SortAscendingIcon/>
                                 </Button>
-                            </Tooltip.Trigger>
                             <Tooltip.Content placement="bottom">
                                 <p>Auto-scroll</p>
                             </Tooltip.Content>

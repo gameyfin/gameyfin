@@ -132,7 +132,7 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
                         </Dropdown.Popover>
                     </Dropdown>
                 </div>
-                <div className="flex flex-row items-center gap-4">
+                <div className="flex min-w-0 flex-wrap items-center gap-4">
                     <Avatar username={user.username} hasAvatar={user.hasAvatar} avatarId={user.avatarId}
                             className="gradient-primary size-20 text-background/80 text-5xl"/>
                     <div className="flex flex-col gap-1">
