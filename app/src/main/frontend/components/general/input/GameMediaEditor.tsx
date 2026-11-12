@@ -222,7 +222,7 @@ export default function GameMediaEditor({children, searchOnOpen, sourceIcon}: Ga
         }));
     }
 
-    const artwork = <div className="flex gap-4">
+    const artwork = <div className="flex flex-col sm:flex-row gap-4">
         {(["cover", "header"] as const).map(kind => {
             const image = kind === "cover" ? values.mediaCover : values.mediaHeader;
             const label = kind === "cover" ? "cover" : "banner";
@@ -250,7 +250,7 @@ export default function GameMediaEditor({children, searchOnOpen, sourceIcon}: Ga
     </div>;
     const gallery = <div className="flex flex-col gap-5 my-4">
         <section aria-label="Media" className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-semibold flex items-center flex-wrap">Media
                     {[...gallerySources].map(([key, source]) => <GameMetadataSourceIcon key={key} source={source}/>)}
                 </h3>

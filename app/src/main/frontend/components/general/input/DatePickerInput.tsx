@@ -1,6 +1,15 @@
 import {useField} from "formik";
 import {ReactNode} from "react";
-import {Calendar, DateField, DatePicker, DatePickerProps, DateValue, Description, FieldError, Label} from "@heroui/react";
+import {
+    Calendar,
+    DateField,
+    DatePicker,
+    DatePickerProps,
+    DateValue,
+    Description,
+    FieldError,
+    Label
+} from "@heroui/react";
 import {parseDate} from "@internationalized/date";
 
 interface DatePickerInputProps extends Omit<DatePickerProps<DateValue>, "name" | "children" | "onChange" | "value"> {
@@ -11,7 +20,13 @@ interface DatePickerInputProps extends Omit<DatePickerProps<DateValue>, "name" |
     showErrorUntouched?: boolean;
 }
 
-export default function DatePickerInput({label, labelSuffix, description, showErrorUntouched = false, ...props}: DatePickerInputProps) {
+export default function DatePickerInput({
+                                            label,
+                                            labelSuffix,
+                                            description,
+                                            showErrorUntouched = false,
+                                            ...props
+                                        }: DatePickerInputProps) {
     const [field, meta, helpers] = useField<string>(props.name);
     const value: DateValue | null = field.value ? parseDate(field.value) : null;
 

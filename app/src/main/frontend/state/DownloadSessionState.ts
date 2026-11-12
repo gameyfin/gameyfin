@@ -29,6 +29,7 @@ export const downloadSessionState = proxy<DownloadSessionState>({
 
 /** Subscribe to and process download session updates from backend **/
 let generation = 0;
+
 export function resetDownloadSessionState() {
     generation++;
     downloadSessionState.subscription?.cancel();

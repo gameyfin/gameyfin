@@ -1,3 +1,5 @@
+import CompactGameList, {GameDetailsDialog} from "Frontend/components/layout/CompactGameList";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import {useSnapshot} from "valtio/react";
 import {
     Button,
@@ -24,6 +26,8 @@ interface CollectionGamesTableProps {
 }
 
 export default function CollectionGamesTable({collectionId}: CollectionGamesTableProps) {
+    const compact = useMediaQuery(COMPACT_QUERY);
+    const [selectedDetails, setSelectedDetails] = useState<GameSummaryDto | null>(null);
     const gamesState = useSnapshot(gameState);
     const games = gamesState.games;
     const librariesState = useSnapshot(libraryState);
@@ -99,19 +103,44 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
         await CollectionEndpoint.removeGameFromCollection(collectionId, game.id);
     }
 
+    function renderActions(game: GameSummaryDto) {
+        return (
+            <div className="flex flex-row gap-2">
+                <Tooltip delay={0}>
+                    <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
+                            variant="tertiary" aria-label="Add game to collection"
+                            onPress={() => addGameToCollection(game)} isDisabled={isGameInCollection(game)}>
+                        <PlusIcon/>
+                    </Button>
+                    <Tooltip.Content>Add game to collection</Tooltip.Content>
+                </Tooltip>
+                <Tooltip delay={0}>
+                    <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
+                            variant="tertiary" aria-label="Remove game from collection"
+                            onPress={() => removeGameFromCollection(game)} isDisabled={!isGameInCollection(game)}>
+                        <MinusIcon/>
+                    </Button>
+                    <Tooltip.Content>Remove game from collection</Tooltip.Content>
+                </Tooltip>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex flex-row gap-2 justify-between">
-                <div className="w-96 relative">
+            <div className="flex flex-wrap gap-2 justify-between">
+                <div className="w-full sm:w-96 relative">
                     <Input
                         className="w-full pr-8"
                         placeholder="Search"
+                        aria-label="Search collection games"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     {searchTerm && (
                         <button
                             type="button"
+                            aria-label="Clear search"
                             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted"
                             onClick={() => setSearchTerm("")}
                         >
@@ -119,9 +148,9 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                         </button>
                     )}
                 </div>
-                <Select value={filter}
+                <Select aria-label="Collection membership" value={filter}
                         onChange={(value) => setFilter(value as "all" | "inCollection" | "notInCollection")}
-                        className="w-64">
+                        className="w-full sm:w-64">
                     <Select.Trigger>
                         <Select.Value/>
                         <Select.Indicator/>
@@ -145,7 +174,21 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                 </Select>
             </div>
             {/* Virtualized, so that only the visible rows are rendered (collections can contain thousands of games) */}
-            <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 52}}>
+            {compact ? <CompactGameList
+                games={sortedGames}
+                label="Games in collection"
+                sortDescriptor={sortDescriptor}
+                onSortChange={setSortDescriptor}
+                sortOptions={[
+                    {id: "path", label: "Original order"},
+                    {id: "title", label: "Title"},
+                    {id: "library", label: "Library"},
+                    {id: "dateAdded", label: "Date added"},
+                ]}
+                status={game => `${libraryName(game)} · ${isGameInCollection(game) ? "In collection" : "Not in collection"}`}
+                onDetails={setSelectedDetails}
+                actions={renderActions}
+            /> : <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 52}}>
                 <Table variant="secondary">
                     <Table.ScrollContainer>
                         <Table.Content aria-label="Games in collection"
@@ -182,13 +225,13 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                     <Table.Row key={`${game.id}-${game._inCollection}`}>
                                         <Table.Cell>
                                             <Link href={`/game/${game.id}`}
-                                                  className="text-sm text-foreground hover:underline">
+                                                  className="line-clamp-1 text-sm text-foreground hover:underline">
                                                 {game.title} ({game.release ? new Date(game.release).getFullYear() : "unknown"})
                                             </Link>
                                         </Table.Cell>
                                         <Table.Cell>
                                             <Link href={`/administration/games/library/${game.libraryId}`}
-                                                  className="text-sm text-foreground hover:underline">
+                                                  className="line-clamp-1 text-sm text-foreground hover:underline">
                                                 {libraryName(game)}
                                             </Link>
                                         </Table.Cell>
@@ -196,32 +239,7 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                                             {new Date(game.createdAt).toLocaleString()}
                                         </Table.Cell>
                                         <Table.Cell>
-                                            <div className="flex flex-row gap-2">
-                                                <Tooltip delay={0}>
-                                                    <Tooltip.Trigger>
-                                                    <span className="inline-flex">
-                                                        <Button isIconOnly size="sm" variant="tertiary"
-                                                                onPress={() => addGameToCollection(game)}
-                                                                isDisabled={game._inCollection}>
-                                                            <PlusIcon/>
-                                                        </Button>
-                                                    </span>
-                                                    </Tooltip.Trigger>
-                                                    <Tooltip.Content>Add game to collection</Tooltip.Content>
-                                                </Tooltip>
-                                                <Tooltip delay={0}>
-                                                    <Tooltip.Trigger>
-                                                    <span className="inline-flex">
-                                                        <Button isIconOnly size="sm" variant="tertiary"
-                                                                onPress={() => removeGameFromCollection(game)}
-                                                                isDisabled={!game._inCollection}>
-                                                            <MinusIcon/>
-                                                        </Button>
-                                                    </span>
-                                                    </Tooltip.Trigger>
-                                                    <Tooltip.Content>Remove game from collection</Tooltip.Content>
-                                                </Tooltip>
-                                            </div>
+                                            {renderActions(game)}
                                         </Table.Cell>
                                     </Table.Row>
                                 )}
@@ -229,7 +247,8 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
                         </Table.Content>
                     </Table.ScrollContainer>
                 </Table>
-            </Virtualizer>
+            </Virtualizer>}
+            <GameDetailsDialog game={selectedDetails} onClose={() => setSelectedDetails(null)}/>
         </div>
     );
 }

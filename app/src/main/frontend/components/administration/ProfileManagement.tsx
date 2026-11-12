@@ -95,7 +95,7 @@ export default function ProfileManagement() {
         >
             {(formik: FormikProps<ProfileFormValues>) => (
                 <Form>
-                    <div className="flex flex-row grow justify-between mb-8">
+                    <div className="flex flex-wrap gap-3 grow justify-between mb-8">
                         <h2 className="text-2xl font-bold">My Profile</h2>
                         {auth.state.user?.managedBySso &&
                             <p className="text-warning">Your account is managed externally.</p>}
@@ -118,7 +118,7 @@ export default function ProfileManagement() {
                         </div>
                     </div>
 
-                    <div className="flex flex-row flex-1 justify-between gap-16">
+                    <div className="flex flex-col xl:flex-row flex-1 justify-between gap-6 xl:gap-16">
                         <div className="flex flex-col basis-1/4 mt-8 gap-4">
                             <div className="flex flex-row justify-center">
                                 <Avatar className="size-40 m-4 flex flex-row"/>
@@ -143,7 +143,7 @@ export default function ProfileManagement() {
                             <Section title="Personal information"/>
                             <Input name="username" label="Username" type="text" autoComplete="username"
                                    isDisabled={auth.state.user?.managedBySso}/>
-                            <div className="flex flex-row gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
                                 <Input name="email" label="Email" type="email" autoComplete="email"
                                        isDisabled={auth.state.user?.managedBySso || !messagesEnabled}/>
                                 {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&

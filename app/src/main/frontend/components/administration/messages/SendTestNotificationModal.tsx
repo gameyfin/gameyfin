@@ -1,6 +1,7 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
 import {Form, Formik} from "formik";
-import {toast, Button, Modal} from "@heroui/react";
+import {Button, Modal, toast} from "@heroui/react";
 import Input from "Frontend/components/general/input/Input";
 import {MessageEndpoint} from "Frontend/generated/endpoints";
 import * as Yup from "yup";
@@ -29,7 +30,7 @@ export default function SendTestNotificationModal({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" className="max-w-3xl">
+                <ResponsiveDialog size="lg" className="max-w-3xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -74,7 +75,7 @@ export default function SendTestNotificationModal({
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

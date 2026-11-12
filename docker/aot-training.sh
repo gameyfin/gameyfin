@@ -33,6 +33,7 @@ esac
 
 echo "▶ Starting application for AOT training …"
 java -XX:AOTCacheOutput=app.aot \
+     --enable-native-access=ALL-UNNAMED \
      -XX:+UseCompactObjectHeaders \
      $ARCH_OPTS \
      -jar application.jar --spring.profiles.active=aot-training &

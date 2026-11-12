@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import {Button, Modal, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import React, {useEffect, useState} from "react";
@@ -19,7 +20,7 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque">
-                <Modal.Container size="lg" className="max-w-3xl">
+                <ResponsiveDialog size="lg" className="max-w-3xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -73,7 +74,8 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                                                         isDisabled={formik.isSubmitting}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Select"}
+                                                        {formik.isSubmitting ?
+                                                            <Spinner size="sm" color="current"/> : "Select"}
                                                     </Button>
                                                 </Modal.Footer>
                                             </Form>
@@ -83,7 +85,7 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     )

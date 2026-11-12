@@ -9,18 +9,22 @@ const auth = configureAuth(UserEndpoint.getUserInfo);
 
 // Both application consumers and Hilla's protected routes use the same context.
 export const useAuth = auth.useAuth;
+
 export function AuthProvider({children}: PropsWithChildren) {
     return createElement(auth.AuthProvider, null, createElement(LiveAuthProvider, null, children));
 }
 
 function LiveAuthProvider({children}: PropsWithChildren) {
     const base = auth.useAuth();
-    const [live, setLive] = useState<{identity: number; user?: ExtendedUserInfoDto}>();
+    const [live, setLive] = useState<{ identity: number; user?: ExtendedUserInfoDto }>();
     const identity = base.state.user?.id;
     const user = live?.identity === identity ? live?.user : base.state.user;
 
     useEffect(() => {
-        if (identity === undefined) { setLive(undefined); return; }
+        if (identity === undefined) {
+            setLive(undefined);
+            return;
+        }
         return liveSubscription({
             subscribe: () => UserEndpoint.subscribeCurrentUser(),
             fetch: () => UserEndpoint.getUserInfo(),

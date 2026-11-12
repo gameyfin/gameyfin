@@ -21,13 +21,18 @@ export default function AddGameVideoModal({onAdd, onClose, existingUrls}: {
     }
 
     return <Modal>
-        <Modal.Backdrop isOpen onOpenChange={open => { if (!open) onClose(); }} variant="opaque">
-            <Modal.Container size="lg">
+        <Modal.Backdrop isOpen onOpenChange={open => {
+            if (!open) onClose();
+        }} variant="opaque">
+            <Modal.Container size="md" placement="center">
                 <Modal.Dialog>
                     <Modal.CloseTrigger/>
                     <Modal.Header><Modal.Heading>Add video</Modal.Heading></Modal.Header>
                     <Modal.Body className="flex flex-col gap-4">
-                        <TextField value={value} onChange={next => { setValue(next); setFailedUrl(""); }}
+                        <TextField value={value} onChange={next => {
+                            setValue(next);
+                            setFailedUrl("");
+                        }}
                                    isInvalid={!!error} autoFocus>
                             <Label>Video URL</Label>
                             <Input placeholder="Paste a video URL" onKeyDown={event => {

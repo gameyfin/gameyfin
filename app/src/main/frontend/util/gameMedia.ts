@@ -13,7 +13,7 @@ export type MediaKind = "cover" | "header" | "screenshot";
 
 export interface DraftImage {
     key: string;
-    selection: GameImageSelectionDto & {pluginId?: string};
+    selection: GameImageSelectionDto & { pluginId?: string };
     previewUrl: string;
     file?: File;
     source?: GameFieldMetadataDto;

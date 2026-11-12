@@ -35,7 +35,7 @@ function GameManagementLayout({getConfig, formik}: any) {
 
     return (
         <div className="flex flex-col">
-            <div className="flex flex-row items-baseline justify-between">
+            <div className="flex flex-wrap gap-3 items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
                 <div className="flex flex-row gap-2">
                     <Tooltip delay={0}>
@@ -87,7 +87,8 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {libraries.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <div id="library-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
+                <div id="library-cards"
+                     className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {libraries.sorted.map((library) =>
                         // @ts-ignore
                         <LibraryOverviewCard library={library} key={library.name}/>
@@ -96,7 +97,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <p className="mt-4 text-center text-muted">No libraries found</p>
             }
 
-            <div className="flex flex-row items-baseline justify-between">
+            <div className="flex flex-wrap gap-3 items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Collections</h2>
                 <div className="flex flex-row gap-2">
                     <Tooltip delay={0}>
@@ -124,7 +125,8 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {collections.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <div id="collection-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
+                <div id="collection-cards"
+                     className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {collections.sorted.map((collection) =>
                         // @ts-ignore
                         <CollectionOverviewCard collection={collection} key={collection.name}/>
@@ -137,8 +139,8 @@ function GameManagementLayout({getConfig, formik}: any) {
             <div className="flex flex-col gap-4">
                 <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
                 <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
-                <div className="flex flex-row gap-4 items-start">
-                    <ConfigFormField className="pt-8"
+                <div className="flex flex-col xl:flex-row gap-4 items-start">
+                    <ConfigFormField className="xl:pt-8"
                                      configElement={getConfig("library.scan.extract-title-using-regex")}/>
                     <ConfigFormField configElement={getConfig("library.scan.title-extraction-regex")}
                                      isDisabled={!formik.values.library.scan["extract-title-using-regex"]}/>

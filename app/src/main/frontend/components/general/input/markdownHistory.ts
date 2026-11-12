@@ -1,6 +1,6 @@
 export interface EditorSnapshot {
     value: string;
-    selection: {start: number; end: number};
+    selection: { start: number; end: number };
 }
 
 /** Shared history for native textarea edits and programmatic formatting. */

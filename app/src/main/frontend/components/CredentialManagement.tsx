@@ -1,6 +1,10 @@
+import CompactRecordList from "Frontend/components/layout/CompactRecordList";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
+import TableScroller from "Frontend/components/layout/TableScroller";
 import React, {useEffect, useState} from "react";
 import {
     Button,
+    Card,
     Checkbox,
     CheckboxGroup,
     Description,
@@ -40,6 +44,7 @@ function expiryDay(value: string): string {
 }
 
 export default function CredentialManagement({service = false}: { service?: boolean }) {
+    const compact = useMediaQuery(COMPACT_QUERY);
     const auth = useAuth();
     const [credentials, setCredentials] = useState<CredentialView[]>([]);
     const [availableScopes, setAvailableScopes] = useState<string[]>([]);
@@ -166,9 +171,87 @@ export default function CredentialManagement({service = false}: { service?: bool
         .filter(action => !["read", "write", "delete"].includes(action)))];
     const permissionLabel = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+    function permissionCheckbox(category: string, action: string) {
+        const scope = `${category}:${action}`;
+        return <Checkbox value={scope} className="mt-0! min-h-11 xl:min-h-0"
+                         aria-label={`${permissionLabel(category)}: ${action}`}>
+            <Checkbox.Content>
+                <Checkbox.Control><Checkbox.Indicator/></Checkbox.Control>
+                {compact && permissionLabel(action)}
+            </Checkbox.Content>
+        </Checkbox>;
+    }
+
     if (!allowed) return <p className="py-4">
         {service ? "Administrator access is required." : "Sign in to manage your personal access tokens."}
     </p>;
+
+    function credentialFields(item: CredentialView) {
+        return [
+            {
+                label: "Name", tableClassName: "", content: <>
+                    <span className="font-medium">{item.name}</span>{" "}
+                    <code className="whitespace-nowrap">({item.prefix}…)</code>
+                </>
+            },
+            {
+                label: "Permissions", tableClassName: "", content: <>
+                    <div className="text-default-500 max-w-sm wrap-break-word">
+                        {service ? item.scopes.join(", ") : "Current account permissions"}
+                    </div>
+                </>
+            },
+            {
+                label: "Status", tableClassName: "", content: <>
+                    <p className="capitalize">{item.status.toLowerCase()}</p>
+                </>
+            },
+            {
+                label: "Created", tableClassName: "", content: <>
+                    {date(item.createdAt)}
+                </>
+            },
+            {
+                label: "Expires", tableClassName: "", content: <>
+                    {item.expiresAt ? new Date(new Date(item.expiresAt).getTime() - 1).toLocaleDateString() : "—"}
+                </>
+            },
+            {
+                label: "Last used", tableClassName: "", content: <>
+                    {date(item.lastUsedAt)}
+                </>
+            },
+            {
+                label: "Actions", tableClassName: "", content: <>
+                    {item.revokedAt ?
+                        <Button type="button" size="sm" variant="danger" isDisabled={busy}
+                                onPress={() => setConfirmation({action: "delete", item})}>Delete</Button> :
+                        <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="secondary" isDisabled={busy}
+                                    onPress={() => edit(item)}>Edit</Button>
+                            <Button type="button" size="sm" variant="secondary"
+                                    isDisabled={busy || !!secret}
+                                    onPress={() => setConfirmation({
+                                        action: "regenerate",
+                                        item
+                                    })}>Regenerate</Button>
+                            {revokeId === item.id ? <>
+                                    <Button type="button" size="sm" variant="danger"
+                                            isDisabled={busy}
+                                            onPress={() => revoke(item.id)}>Confirm
+                                        revoke</Button>
+                                    <Button type="button" size="sm"
+                                            onPress={() => setRevokeId(undefined)}>Cancel
+                                    </Button>
+                                </>
+                                : <Button type="button" size="sm" variant="danger" isDisabled={busy}
+                                          onPress={() => setRevokeId(item.id)}>Revoke</Button>}
+                        </div>}
+                </>
+            }
+        ];
+    }
+
     return <FormikProvider value={formik}>
         <section className="space-y-5">
             <h1 className="text-2xl font-bold">{service ? "API keys" : "Personal access tokens"}</h1>
@@ -191,7 +274,7 @@ export default function CredentialManagement({service = false}: { service?: bool
                 </pre>
                     <CopyButton text={secret} label={service ? "Copy API key" : "Copy personal access token"}/>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="secondary" onPress={() => setSecret(undefined)}>I've saved
                         it</Button>
                 </div>
@@ -202,7 +285,7 @@ export default function CredentialManagement({service = false}: { service?: bool
                     <Input name="name" label="Name" isRequired placeholder="e.g. Playnite"
                            isDisabled={busy} className="min-w-0 flex-1"/>
                     <DatePickerInput name="expiry" label="Expires at (optional)" granularity="day" isDisabled={busy}
-                                     className="w-68 shrink-0"/>
+                                     className="w-full md:w-68 shrink-0"/>
                 </div>
                 {service && <CheckboxGroup name="scopes" value={formik.values.scopes}
                                            onChange={value => void formik.setFieldValue("scopes", value)}
@@ -212,8 +295,17 @@ export default function CredentialManagement({service = false}: { service?: bool
                     <Label>Permissions</Label>
                     <Description className="mb-4">Select each permission needed. Write does not include read or
                         delete.</Description>
-                    <Table variant="secondary">
-                        <Table.ScrollContainer>
+                    {compact ? <div className="grid gap-3 sm:grid-cols-2">
+                        {permissionCategories.map(category => <Card key={category} role="group"
+                                                                    aria-label={`${permissionLabel(category)} permissions`}>
+                            <Card.Header><Card.Title>{permissionLabel(category)}</Card.Title></Card.Header>
+                            <Card.Content className="flex flex-col gap-1">
+                                {permissionActions.filter(action => availableScopes.includes(`${category}:${action}`))
+                                    .map(action => <div key={action}>{permissionCheckbox(category, action)}</div>)}
+                            </Card.Content>
+                        </Card>)}
+                    </div> : <Table variant="secondary">
+                        <TableScroller label="Credential permissions">
                             <Table.Content aria-label="Credential permissions">
                                 <Table.Header>
                                     <Table.Column id="category" isRowHeader>Category</Table.Column>
@@ -228,12 +320,7 @@ export default function CredentialManagement({service = false}: { service?: bool
                                             const scope = `${category}:${action}`;
                                             return <Table.Cell key={action}>
                                                 {availableScopes.includes(scope) ?
-                                                    <Checkbox value={scope} className="mt-0!"
-                                                              aria-label={`${permissionLabel(category)}: ${action}`}>
-                                                        <Checkbox.Content>
-                                                            <Checkbox.Control><Checkbox.Indicator/></Checkbox.Control>
-                                                        </Checkbox.Content>
-                                                    </Checkbox> :
+                                                    permissionCheckbox(category, action) :
                                                     <span aria-label="Not available">—</span>
                                                 }
                                             </Table.Cell>;
@@ -241,11 +328,11 @@ export default function CredentialManagement({service = false}: { service?: bool
                                     </Table.Row>)}
                                 </Table.Body>
                             </Table.Content>
-                        </Table.ScrollContainer>
-                    </Table>
+                        </TableScroller>
+                    </Table>}
                     <FieldError className="-ml-1.5 mt-4">{formik.errors.scopes}</FieldError>
                 </CheckboxGroup>}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     {service && <>
                         <Button type="button" variant="secondary" isDisabled={busy || !loaded}
                                 onPress={() => void formik.setFieldValue("scopes", [...availableScopes])}>
@@ -272,60 +359,29 @@ export default function CredentialManagement({service = false}: { service?: bool
             </Form>
             {!loaded ? <Spinner aria-label="Loading credentials"/> : credentials.length === 0 ?
                 <p>No {service ? "API keys" : "tokens"} yet.</p> :
-                <Table variant="secondary">
-                    <Table.ScrollContainer>
-                        <Table.Content aria-label={service ? "API keys" : "Personal access tokens"}>
-                            <Table.Header>
-                                <Table.Column id="name" isRowHeader>Name</Table.Column>
-                                <Table.Column id="permissions">Permissions</Table.Column>
-                                <Table.Column id="status">Status</Table.Column>
-                                <Table.Column id="created">Created</Table.Column>
-                                <Table.Column id="expires">Expires</Table.Column>
-                                <Table.Column id="last-used">Last used</Table.Column>
-                                <Table.Column id="actions">Actions</Table.Column>
-                            </Table.Header>
-                            <Table.Body>{credentials.map(item => <Table.Row key={item.id} id={item.id}>
-                                <Table.Cell>
-                                    <span className="font-medium">{item.name}</span>{" "}
-                                    <code className="whitespace-nowrap">({item.prefix}…)</code>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <div className="text-default-500 max-w-sm wrap-break-word">
-                                        {service ? item.scopes.join(", ") : "Current account permissions"}
-                                    </div>
-                                </Table.Cell>
-                                <Table.Cell><p className="capitalize">{item.status.toLowerCase()}</p></Table.Cell>
-                                <Table.Cell>{date(item.createdAt)}</Table.Cell>
-                                <Table.Cell>{item.expiresAt ? new Date(new Date(item.expiresAt).getTime() - 1).toLocaleDateString() : "—"}</Table.Cell>
-                                <Table.Cell>{date(item.lastUsedAt)}</Table.Cell>
-                                <Table.Cell>{item.revokedAt ?
-                                    <Button type="button" size="sm" variant="danger" isDisabled={busy}
-                                            onPress={() => setConfirmation({action: "delete", item})}>Delete</Button> :
-                                    <div className="flex gap-2">
-                                        <Button type="button" size="sm" variant="secondary" isDisabled={busy}
-                                                onPress={() => edit(item)}>Edit</Button>
-                                        <Button type="button" size="sm" variant="secondary"
-                                                isDisabled={busy || !!secret}
-                                                onPress={() => setConfirmation({
-                                                    action: "regenerate",
-                                                    item
-                                                })}>Regenerate</Button>
-                                        {revokeId === item.id ? <>
-                                                <Button type="button" size="sm" variant="danger"
-                                                        isDisabled={busy}
-                                                        onPress={() => revoke(item.id)}>Confirm
-                                                    revoke</Button>
-                                                <Button type="button" size="sm"
-                                                        onPress={() => setRevokeId(undefined)}>Cancel
-                                                </Button>
-                                            </>
-                                            : <Button type="button" size="sm" variant="danger" isDisabled={busy}
-                                                      onPress={() => setRevokeId(item.id)}>Revoke</Button>}
-                                    </div>}</Table.Cell>
-                            </Table.Row>)}</Table.Body>
-                        </Table.Content>
-                    </Table.ScrollContainer>
-                </Table>}
+                compact ? <CompactRecordList label={service ? "API keys" : "Personal access tokens"} items={credentials}
+                                             itemKey={item => item.id} fields={credentialFields} empty={null}/> :
+                    <Table variant="secondary">
+                        <TableScroller label="Credential permissions">
+                            <Table.Content aria-label={service ? "API keys" : "Personal access tokens"}>
+                                <Table.Header>
+                                    <Table.Column id="name" isRowHeader>Name</Table.Column>
+                                    <Table.Column id="permissions">Permissions</Table.Column>
+                                    <Table.Column id="status">Status</Table.Column>
+                                    <Table.Column id="created">Created</Table.Column>
+                                    <Table.Column id="expires">Expires</Table.Column>
+                                    <Table.Column id="last-used">Last used</Table.Column>
+                                    <Table.Column id="actions">Actions</Table.Column>
+                                </Table.Header>
+                                <Table.Body>{credentials.map(item => <Table.Row key={item.id} id={item.id}>
+                                    {credentialFields(item).map(field => <Table.Cell key={field.label}
+                                                                                     className={field.tableClassName}>
+                                        {field.content}
+                                    </Table.Cell>)}
+                                </Table.Row>)}</Table.Body>
+                            </Table.Content>
+                        </TableScroller>
+                    </Table>}
             <Modal>
                 <Modal.Backdrop isOpen={!!confirmation} onOpenChange={open => {
                     if (!open && !busy) setConfirmation(undefined);

@@ -1,5 +1,16 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
-import {Autocomplete, Chip, EmptyState, Key, Label, ListBox, SearchField, Tag, TagGroup, useFilter} from "@heroui/react";
+import {
+    Autocomplete,
+    Chip,
+    EmptyState,
+    Key,
+    Label,
+    ListBox,
+    SearchField,
+    Tag,
+    TagGroup,
+    useFilter
+} from "@heroui/react";
 import {useField} from "formik";
 
 export type AutocompleteOption = string | { id: string; label: string };
@@ -76,28 +87,35 @@ function SelectedTags({ids, labelOf, onRemove}: {
 
     // w-0 + min-w-full: fill the available width without letting the tags widen any ancestor (e.g. flex/grid items)
     return (
-        <div ref={containerRef} className="relative flex flex-row flex-nowrap items-center gap-1 w-0 min-w-full overflow-hidden whitespace-nowrap"
+        <div ref={containerRef}
+             className="relative flex flex-row flex-nowrap items-center gap-1 w-0 min-w-full overflow-hidden whitespace-nowrap"
              title={ids.map(labelOf).join(", ")}>
             {visible.length > 0 && (
                 <TagGroup size="sm" className="shrink-0" onRemove={onRemove}>
                     <TagGroup.List className="flex-nowrap">
-                        {visible.map((id) => <Tag key={id} id={id} className="shrink-0 whitespace-nowrap bg-default text-default-foreground border border-solid border-muted">{labelOf(id)}</Tag>)}
+                        {visible.map((id) => <Tag key={id} id={id}
+                                                  className="shrink-0 whitespace-nowrap bg-default text-default-foreground border border-solid border-muted">{labelOf(id)}</Tag>)}
                     </TagGroup.List>
                 </TagGroup>
             )}
-            {hiddenCount > 0 && <Chip size="sm" color="default" variant="secondary" className="shrink-0 whitespace-nowrap border border-solid border-muted">+{hiddenCount}</Chip>}
+            {hiddenCount > 0 && <Chip size="sm" color="default" variant="secondary"
+                                      className="shrink-0 whitespace-nowrap border border-solid border-muted">+{hiddenCount}</Chip>}
 
             {/* Invisible copy used only to measure the natural width of the tags */}
-            <div aria-hidden inert className="absolute left-0 top-0 invisible pointer-events-none flex flex-row gap-1 w-max">
+            <div aria-hidden inert
+                 className="absolute left-0 top-0 invisible pointer-events-none flex flex-row gap-1 w-max">
                 <div ref={measureListRef}>
                     <TagGroup size="sm" aria-label="Measure" onRemove={() => {
                     }}>
                         <TagGroup.List className="flex-nowrap">
-                            {ids.map((id) => <Tag key={id} id={id} className="shrink-0 whitespace-nowrap bg-default text-default-foreground border border-solid border-muted">{labelOf(id)}</Tag>)}
+                            {ids.map((id) => <Tag key={id} id={id}
+                                                  className="shrink-0 whitespace-nowrap bg-default text-default-foreground border border-solid border-muted">{labelOf(id)}</Tag>)}
                         </TagGroup.List>
                     </TagGroup>
                 </div>
-                <div ref={measureChipRef}><Chip size="sm" color="default" variant="secondary" className="whitespace-nowrap border border-solid border-muted">+{ids.length >= 10 ? 99 : 9}</Chip></div>
+                <div ref={measureChipRef}><Chip size="sm" color="default" variant="secondary"
+                                                className="whitespace-nowrap border border-solid border-muted">+{ids.length >= 10 ? 99 : 9}</Chip>
+                </div>
             </div>
         </div>
     );

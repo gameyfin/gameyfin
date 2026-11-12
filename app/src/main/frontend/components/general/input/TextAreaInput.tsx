@@ -1,6 +1,6 @@
 import {useField} from "formik";
 import {ComponentProps, ReactNode, Ref} from "react";
-import {FieldError, Label, TextArea, TextFieldProps, TextField} from "@heroui/react";
+import {FieldError, Label, TextArea, TextField, TextFieldProps} from "@heroui/react";
 
 export interface TextAreaInputProps extends Omit<TextFieldProps, "name" | "children"> {
     textareaRef?: Ref<HTMLTextAreaElement>;
@@ -15,9 +15,21 @@ export interface TextAreaInputProps extends Omit<TextFieldProps, "name" | "child
     placeholder?: string;
 }
 
-export default function TextAreaInput({label, labelSuffix, showErrorUntouched = false, placeholder, textareaRef, textareaProps, toolbar, preview, renderEditor, ...props}: TextAreaInputProps) {
+export default function TextAreaInput({
+                                          label,
+                                          labelSuffix,
+                                          showErrorUntouched = false,
+                                          placeholder,
+                                          textareaRef,
+                                          textareaProps,
+                                          toolbar,
+                                          preview,
+                                          renderEditor,
+                                          ...props
+                                      }: TextAreaInputProps) {
     const [field, meta, helpers] = useField(props.name);
-    const textarea = <TextArea ref={textareaRef} placeholder={placeholder} {...textareaProps} hidden={preview != null}/>;
+    const textarea = <TextArea ref={textareaRef} placeholder={placeholder} {...textareaProps}
+                               hidden={preview != null}/>;
 
     return (
         <TextField

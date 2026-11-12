@@ -1,3 +1,4 @@
+import Popup from "Frontend/components/general/Popup";
 import {Button, Card, Chip, Spinner, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {
     ArrowCircleUpIcon,
@@ -125,42 +126,42 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
         switch (validationResult?.result) {
             case PluginConfigValidationResultType.VALID:
                 return <Chip size="sm" className={`text-xs rounded-xl h-6 ${CHIP_CLASSES.success}`}>
-                    <Tooltip delay={0}>
-                        <Tooltip.Trigger className="flex">
+                    <Popup>
+                        <Popup.Trigger className="flex">
                             <span className="inline-flex">
                                 <CheckCircleIcon/>
                             </span>
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        </Popup.Trigger>
+                        <Popup.Content placement="bottom" className="bg-foreground text-background">
                             Config valid
-                        </Tooltip.Content>
-                    </Tooltip>
+                        </Popup.Content>
+                    </Popup>
                 </Chip>
             case PluginConfigValidationResultType.INVALID:
                 return <Chip size="sm" className={`text-xs rounded-xl h-6 ${CHIP_CLASSES.danger}`}>
-                    <Tooltip delay={0}>
-                        <Tooltip.Trigger className="flex">
+                    <Popup>
+                        <Popup.Trigger className="flex">
                             <span className="inline-flex">
                                 <WarningCircleIcon/>
                             </span>
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        </Popup.Trigger>
+                        <Popup.Content placement="bottom" className="bg-foreground text-background">
                             Config invalid
-                        </Tooltip.Content>
-                    </Tooltip>
+                        </Popup.Content>
+                    </Popup>
                 </Chip>;
             default:
                 return <Chip size="sm" className="text-xs rounded-xl h-6">
-                    <Tooltip delay={0}>
-                        <Tooltip.Trigger className="flex">
+                    <Popup>
+                        <Popup.Trigger className="flex">
                             <span className="inline-flex">
                                 <QuestionIcon/>
                             </span>
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        </Popup.Trigger>
+                        <Popup.Content placement="bottom" className="bg-foreground text-background">
                             Config could not be validated
-                        </Tooltip.Content>
-                    </Tooltip>
+                        </Popup.Content>
+                    </Popup>
                 </Chip>
         }
     }
@@ -168,60 +169,60 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     function trustLevelToBadge(trustLevel: PluginTrustLevel | undefined): React.ReactNode {
         switch (trustLevel) {
             case PluginTrustLevel.OFFICIAL:
-                return <Tooltip delay={0}>
-                    <Tooltip.Trigger className="flex">
+                return <Popup>
+                    <Popup.Trigger className="flex">
                         <span className="inline-flex">
                             <SealCheckIcon className="fill-success"/>
                         </span>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                    </Popup.Trigger>
+                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                         Official plugin
-                    </Tooltip.Content>
-                </Tooltip>;
+                    </Popup.Content>
+                </Popup>;
             case PluginTrustLevel.BUNDLED:
-                return <Tooltip delay={0}>
-                    <Tooltip.Trigger className="flex">
+                return <Popup>
+                    <Popup.Trigger className="flex">
                         <span className="inline-flex">
                             <SealCheckIcon/>
                         </span>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                    </Popup.Trigger>
+                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                         Bundled plugin
-                    </Tooltip.Content>
-                </Tooltip>;
+                    </Popup.Content>
+                </Popup>;
             case PluginTrustLevel.THIRD_PARTY:
-                return <Tooltip delay={0}>
-                    <Tooltip.Trigger className="flex">
+                return <Popup>
+                    <Popup.Trigger className="flex">
                         <span className="inline-flex">
                             <SealWarningIcon/>
                         </span>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                    </Popup.Trigger>
+                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                         3rd party plugin
-                    </Tooltip.Content>
-                </Tooltip>;
+                    </Popup.Content>
+                </Popup>;
             case PluginTrustLevel.UNTRUSTED:
-                return <Tooltip delay={0}>
-                    <Tooltip.Trigger className="flex">
+                return <Popup>
+                    <Popup.Trigger className="flex">
                         <span className="inline-flex">
                             <SealWarningIcon className="fill-danger"/>
                         </span>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                    </Popup.Trigger>
+                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                         Invalid plugin signature
-                    </Tooltip.Content>
-                </Tooltip>;
+                    </Popup.Content>
+                </Popup>;
             default:
-                return <Tooltip delay={0}>
-                    <Tooltip.Trigger className="flex">
+                return <Popup>
+                    <Popup.Trigger className="flex">
                         <span className="inline-flex">
                             <SealQuestionIcon/>
                         </span>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                    </Popup.Trigger>
+                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                         Unknown verification status
-                    </Tooltip.Content>
-                </Tooltip>;
+                    </Popup.Content>
+                </Popup>;
         }
     }
 
@@ -303,56 +304,56 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                         </Tooltip.Content>
                     </Tooltip>
                 </div>
-                <div className="flex flex-1 flex-col items-center gap-2">
+                <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                     <div className="flex h-16 w-full items-center justify-center">
                         <PluginLogo plugin={plugin} glow={true}/>
                     </div>
-                    <p className="flex flex-row items-center gap-1 font-semibold">
+                    <p className="flex flex-wrap justify-center wrap-anywhere items-center gap-1 font-semibold">
                         {plugin.name}
                         <IconContext.Provider value={{size: 18, weight: "fill"}}>
                             {trustLevelToBadge(plugin.trustLevel)}
                             {isMarketplacePlugin &&
-                                <Tooltip delay={0}>
-                                    <Tooltip.Trigger className="flex">
+                                <Popup>
+                                    <Popup.Trigger className="flex">
                                         <span className="inline-flex">
                                             <StorefrontIcon/>
                                         </span>
-                                    </Tooltip.Trigger>
-                                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                    </Popup.Trigger>
+                                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                                         {sourceMarketplace
                                             ? `Installed from marketplace "${sourceMarketplace.name}"`
                                             : "Installed from a marketplace"}
-                                    </Tooltip.Content>
-                                </Tooltip>
+                                    </Popup.Content>
+                                </Popup>
                             }
                             {!plugin.compatible &&
-                                <Tooltip delay={0}>
-                                    <Tooltip.Trigger className="flex">
+                                <Popup>
+                                    <Popup.Trigger className="flex">
                                         <span className="inline-flex">
                                             <WarningIcon className="fill-danger"/>
                                         </span>
-                                    </Tooltip.Trigger>
-                                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                    </Popup.Trigger>
+                                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                                         {`Incompatible with this Gameyfin version (requires ${plugin.requires})`}
-                                    </Tooltip.Content>
-                                </Tooltip>
+                                    </Popup.Content>
+                                </Popup>
                             }
                         </IconContext.Provider>
                     </p>
-                    <div className="flex flex-row items-center gap-2 mt-auto">
+                    <div className="flex flex-wrap justify-center items-center gap-2 mt-auto">
                         <Chip size="sm" className="text-xs rounded-xl h-6">{plugin.version}</Chip>
                         <Chip size="sm"
                               className={`text-xs rounded-xl h-6 ${CHIP_CLASSES[stateToColor(plugin.state)]}`}>
-                            <Tooltip delay={0}>
-                                <Tooltip.Trigger className="flex">
+                            <Popup>
+                                <Popup.Trigger className="flex">
                                    <span className="inline-flex">
                                        {stateToIcon(plugin.state)}
                                    </span>
-                                </Tooltip.Trigger>
-                                <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                </Popup.Trigger>
+                                <Popup.Content placement="bottom" className="bg-foreground text-background">
                                     {`Plugin ${plugin.state?.toLowerCase()}`}
-                                </Tooltip.Content>
-                            </Tooltip>
+                                </Popup.Content>
+                            </Popup>
                         </Chip>
                         {configValidationResultToChip(plugin.configValidation)}
                     </div>

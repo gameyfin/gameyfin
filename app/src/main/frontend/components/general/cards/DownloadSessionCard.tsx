@@ -1,3 +1,4 @@
+import Popup from "Frontend/components/general/Popup";
 import {useSnapshot} from "valtio/react";
 import {downloadSessionState} from "Frontend/state/DownloadSessionState";
 import {Card, Chip, Tooltip} from "@heroui/react";
@@ -83,28 +84,28 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
         <Card
             className={`flex flex-col gap-2 m-0.5 p-4 border-2
             ${(session.currentBytesPerSecond > 0) ? "border-accent bg-accent/10" : "border-default"}`}>
-            <div className="flex flex-row items-center">
-                <p className="flex flex-row items-center flex-1">
+            <div className="flex flex-col xl:flex-row gap-2 xl:gap-0 items-start xl:items-center">
+                <p className="flex min-w-0 flex-wrap items-center flex-1">
                     <b>User:</b>&nbsp;
                     {session.username ?? "Anonymous User"}&nbsp;
-                    <Tooltip delay={0}>
-                        <Tooltip.Trigger>
+                    <Popup>
+                        <Popup.Trigger>
                             <span className="inline-flex">
                                 <InfoIcon size={18}/>
                             </span>
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="right" className="bg-foreground text-background">
+                        </Popup.Trigger>
+                        <Popup.Content placement="right" className="bg-foreground text-background">
                             <pre>Session ID: {session.sessionId}</pre>
-                        </Tooltip.Content>
-                    </Tooltip>
+                        </Popup.Content>
+                    </Popup>
                 </p>
-                <div className="flex-1 flex justify-center">Remote IP:&nbsp;
+                <div className="min-w-0 flex-1 flex flex-wrap justify-center">Remote IP:&nbsp;
                     {<Chip size="sm" className="rounded-sm">
                         <pre>{session.remoteIp}</pre>
                     </Chip>}
                 </div>
                 <div
-                    className="flex-1 flex justify-end">{session.activeGameIds.length > 0 ? "Session active since" : "Session inactive since"}&nbsp;
+                    className="min-w-0 flex-1 flex flex-wrap justify-end">{session.activeGameIds.length > 0 ? "Session active since" : "Session inactive since"}&nbsp;
                     {<Chip size="sm" className="rounded-sm">
                         {timeUntil(session.startTime, undefined, true)}
                     </Chip>}
@@ -113,7 +114,7 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
             {/* Only render chart when downloads are active or have been active within the last minute */}
             {(session.activeGameIds.length > 0 || (currentTime.getTime() - new Date(session.startTime).getTime() < 60000)) &&
                 <div className="flex flex-col items-center">
-                    <div className="flex flex-row gap-2">
+                    <div className="flex flex-wrap gap-2">
                         Active downloads:
                         {session.activeGameIds.length === 0 && <p>No active downloads</p>}
                         {session.activeGameIds.map(gameId =>

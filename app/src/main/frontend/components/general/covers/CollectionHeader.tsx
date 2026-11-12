@@ -37,7 +37,7 @@ export default function CollectionHeader({collection, className}: CollectionHead
                 ))}
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-                <h2 className="text-white text-3xl font-bold">{collection.name}</h2>
+                <h2 className="px-4 text-center wrap-anywhere text-white text-2xl sm:text-3xl font-bold">{collection.name}</h2>
             </div>
         </Card>
     );

@@ -32,8 +32,11 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
                 if (!user.hasAvatar) keys.push("removeAvatar");
                 if (!canManage) keys.push("assignRole", "enableUser", "disableUser", "delete");
                 setDisabledKeys(keys);
-            }).catch(() => { /* Keep actions disabled when permissions could not be checked. */ });
-        return () => { cancelled = true; };
+            }).catch(() => { /* Keep actions disabled when permissions could not be checked. */
+        });
+        return () => {
+            cancelled = true;
+        };
     }, [user.username, user.hasAvatar, user.roles.join(","), auth.state.user?.roles.join(",")]);
 
     async function resetPassword() {
@@ -116,7 +119,8 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
                             </Button>
                         </Dropdown.Trigger>
                         <Dropdown.Popover placement="bottom end">
-                            <Dropdown.Menu aria-label="Static Actions" disabledKeys={canDelete ? disabledKeys : [...disabledKeys, "delete"]}
+                            <Dropdown.Menu aria-label="Static Actions"
+                                           disabledKeys={canDelete ? disabledKeys : [...disabledKeys, "delete"]}
                                            onAction={onDropdownAction}>
                                 {dropdownItems.map((item) => (
                                     <Dropdown.Item
@@ -132,7 +136,7 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
                         </Dropdown.Popover>
                     </Dropdown>
                 </div>
-                <div className="flex flex-row items-center gap-4">
+                <div className="flex min-w-0 flex-wrap items-center gap-4">
                     <Avatar username={user.username} hasAvatar={user.hasAvatar} avatarId={user.avatarId}
                             className="gradient-primary size-20 text-background/80 text-5xl"/>
                     <div className="flex flex-col gap-1">

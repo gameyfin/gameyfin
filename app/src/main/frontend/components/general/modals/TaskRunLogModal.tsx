@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useRef, useState} from "react";
 import {Button, Modal, Spinner, Tooltip} from "@heroui/react";
 import {ArrowUDownLeftIcon, DownloadSimpleIcon} from "@phosphor-icons/react";
@@ -71,7 +72,7 @@ export default function TaskRunLogModal({run, isOpen, onOpenChange}: TaskRunLogM
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" className="max-w-5xl">
+                <ResponsiveDialog size="lg" className="max-w-5xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -130,7 +131,7 @@ export default function TaskRunLogModal({run, isOpen, onOpenChange}: TaskRunLogM
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

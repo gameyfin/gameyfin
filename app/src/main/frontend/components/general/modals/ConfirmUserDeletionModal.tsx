@@ -35,7 +35,7 @@ export default function ConfirmUserDeletionModal({isOpen, onOpenChange, user}: C
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque" isDismissable={false}>
-                <Modal.Container size="lg">
+                <Modal.Container size="md" placement="center">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
