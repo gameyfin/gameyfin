@@ -32,8 +32,11 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
                 if (!user.hasAvatar) keys.push("removeAvatar");
                 if (!canManage) keys.push("assignRole", "enableUser", "disableUser", "delete");
                 setDisabledKeys(keys);
-            }).catch(() => { /* Keep actions disabled when permissions could not be checked. */ });
-        return () => { cancelled = true; };
+            }).catch(() => { /* Keep actions disabled when permissions could not be checked. */
+        });
+        return () => {
+            cancelled = true;
+        };
     }, [user.username, user.hasAvatar, user.roles.join(","), auth.state.user?.roles.join(",")]);
 
     async function resetPassword() {
@@ -116,7 +119,8 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
                             </Button>
                         </Dropdown.Trigger>
                         <Dropdown.Popover placement="bottom end">
-                            <Dropdown.Menu aria-label="Static Actions" disabledKeys={canDelete ? disabledKeys : [...disabledKeys, "delete"]}
+                            <Dropdown.Menu aria-label="Static Actions"
+                                           disabledKeys={canDelete ? disabledKeys : [...disabledKeys, "delete"]}
                                            onAction={onDropdownAction}>
                                 {dropdownItems.map((item) => (
                                     <Dropdown.Item

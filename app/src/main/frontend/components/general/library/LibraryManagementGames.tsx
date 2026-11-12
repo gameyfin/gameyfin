@@ -114,7 +114,8 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                     <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
                             variant="tertiary" aria-label={item.matchConfirmed ? "Unconfirm match" : "Confirm match"}
                             onPress={() => toggleMatchConfirmed(item)}>
-                        {item.matchConfirmed ? <CheckCircleIcon weight="fill" className="fill-success"/> : <CheckCircleIcon/>}
+                        {item.matchConfirmed ? <CheckCircleIcon weight="fill" className="fill-success"/> :
+                            <CheckCircleIcon/>}
                     </Button>
                     <Tooltip.Content>{item.matchConfirmed ? "Unconfirm match" : "Confirm match"}</Tooltip.Content>
                 </Tooltip>

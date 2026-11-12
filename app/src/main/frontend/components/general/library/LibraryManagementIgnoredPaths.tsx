@@ -106,45 +106,51 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
         return ignoredPath.source;
     }
 
-    function pathFields(item: {key: number; path: IgnoredPathDto}) {
+    function pathFields(item: { key: number; path: IgnoredPathDto }) {
         return [
-            {label: "Path", content: <>
-                {item.path.path}
-            </>},
-            {label: "Source", content: <>
-                {renderSource(item.path)}
-            </>},
-            {label: "Actions", content: <>
-                <div className="flex flex-wrap gap-2">
-                    <Tooltip>
-                        <Button isIconOnly size="sm" aria-label="Match game" onPress={() => {
-                            setSelectedPath(item.path);
-                            matchGameModal.open();
-                        }}>
-                            <MagnifyingGlassIcon/>
-                        </Button>
-                        <Tooltip.Content>Match game</Tooltip.Content>
-                    </Tooltip>
-                    <Tooltip>
-                        <Button isIconOnly size="sm" aria-label="Manual import" onPress={() => {
-                            setSelectedPath(item.path);
-                            manualImportModal.open();
-                        }}>
-                            <PlusIcon/>
-                        </Button>
-                        <Tooltip.Content>Manual import</Tooltip.Content>
-                    </Tooltip>
-                    <Tooltip>
-                        <Button isIconOnly size="sm" variant="danger"
-                                aria-label="Remove entry from list" onPress={() => deleteIgnoredPath(item.path)}
-                                isDisabled={item.path.sourceType !== IgnoredPathSourceTypeDto.USER}
-                        >
-                            <TrashIcon/>
-                        </Button>
-                        <Tooltip.Content>Remove entry from list</Tooltip.Content>
-                    </Tooltip>
-                </div>
-            </>}
+            {
+                label: "Path", content: <>
+                    {item.path.path}
+                </>
+            },
+            {
+                label: "Source", content: <>
+                    {renderSource(item.path)}
+                </>
+            },
+            {
+                label: "Actions", content: <>
+                    <div className="flex flex-wrap gap-2">
+                        <Tooltip>
+                            <Button isIconOnly size="sm" aria-label="Match game" onPress={() => {
+                                setSelectedPath(item.path);
+                                matchGameModal.open();
+                            }}>
+                                <MagnifyingGlassIcon/>
+                            </Button>
+                            <Tooltip.Content>Match game</Tooltip.Content>
+                        </Tooltip>
+                        <Tooltip>
+                            <Button isIconOnly size="sm" aria-label="Manual import" onPress={() => {
+                                setSelectedPath(item.path);
+                                manualImportModal.open();
+                            }}>
+                                <PlusIcon/>
+                            </Button>
+                            <Tooltip.Content>Manual import</Tooltip.Content>
+                        </Tooltip>
+                        <Tooltip>
+                            <Button isIconOnly size="sm" variant="danger"
+                                    aria-label="Remove entry from list" onPress={() => deleteIgnoredPath(item.path)}
+                                    isDisabled={item.path.sourceType !== IgnoredPathSourceTypeDto.USER}
+                            >
+                                <TrashIcon/>
+                            </Button>
+                            <Tooltip.Content>Remove entry from list</Tooltip.Content>
+                        </Tooltip>
+                    </div>
+                </>
+            }
         ];
     }
 
@@ -157,7 +163,12 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
             onChange={(e) => setSearchTerm(e.target.value)}
         />
         {compact ? <CompactRecordList label="Ignored paths" items={pagedPaths} itemKey={item => item.key}
-                    fields={pathFields} empty={<p className="p-4 text-muted">No ignored paths available.</p>} sort={{value: sortDescriptor, onChange: setSortDescriptor, options: [{id: "path", label: "Path"}]}}/> : <Table variant="secondary" className="h-140">
+                                      fields={pathFields}
+                                      empty={<p className="p-4 text-muted">No ignored paths available.</p>} sort={{
+            value: sortDescriptor,
+            onChange: setSortDescriptor,
+            options: [{id: "path", label: "Path"}]
+        }}/> : <Table variant="secondary" className="h-140">
             <TableScroller label="LibraryIgnoredPaths table" className="h-140">
                 <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                     <Table.Header className="sticky top-0 z-10 bg-background">
@@ -177,7 +188,8 @@ export default function LibraryManagementIgnoredPaths({library}: LibraryManageme
                         items={pagedPaths}>
                         {(item) => (
                             <Table.Row key={item.key}>
-                                {pathFields(item).map(field => <Table.Cell key={field.label}>{field.content}</Table.Cell>)}
+                                {pathFields(item).map(field => <Table.Cell
+                                    key={field.label}>{field.content}</Table.Cell>)}
                             </Table.Row>
                         )}
                     </Table.Body>

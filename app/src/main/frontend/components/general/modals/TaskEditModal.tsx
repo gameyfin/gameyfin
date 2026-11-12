@@ -94,7 +94,8 @@ export default function TaskEditModal({task, isOpen, onOpenChange, onSaved}: Tas
                                             <Modal.Heading>{task.name}</Modal.Heading>
                                         </Modal.Header>
                                         <Modal.Body className="flex flex-col gap-2">
-                                            {task.description && <p className="text-sm text-muted">{task.description}</p>}
+                                            {task.description &&
+                                                <p className="text-sm text-muted">{task.description}</p>}
 
                                             {task.schedulable && <>
                                                 <h4 className="text-l font-bold mt-2">Schedule</h4>

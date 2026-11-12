@@ -125,10 +125,10 @@ function DatabaseStep({info, testResult, onTest, onDatabaseTypeChange}: Database
                             transferred automatically.
                         </p>
                         <DatabaseSettingsFields name="database"
-                                               onTypeChange={() => {
-                                                   onDatabaseTypeChange();
-                                                   formik.setFieldValue("overwriteDatabase", false);
-                                               }}/>
+                                                onTypeChange={() => {
+                                                    onDatabaseTypeChange();
+                                                    formik.setFieldValue("overwriteDatabase", false);
+                                                }}/>
                         {formik.values.database?.type !== info?.type &&
                             <div className="flex flex-col gap-4">
                                 <Button variant="ghost" className="self-start" onPress={test} isPending={testing}>
@@ -281,8 +281,8 @@ function SetupView() {
                         >
                             <DatabaseStep info={databaseInfo}
                                           testResult={databaseTestResult}
-                                           onTest={testDatabase}
-                                           onDatabaseTypeChange={() => setDatabaseTestResult(undefined)}/>
+                                          onTest={testDatabase}
+                                          onDatabaseTypeChange={() => setDatabaseTestResult(undefined)}/>
                         </WizardStep>
                         <WizardStep
                             validationSchema={Yup.object({

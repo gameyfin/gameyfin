@@ -1,4 +1,4 @@
-import {Tooltip} from "@heroui/react";
+import Popup from "Frontend/components/general/Popup";
 import {PlugIcon} from "@phosphor-icons/react";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 
@@ -25,9 +25,9 @@ export default function PluginIcon({
         : <PlugIcon size={size} weight="fill"/>;
 
     return showTooltip
-        ? <Tooltip>
-            <Tooltip.Trigger>{icon}</Tooltip.Trigger>
-            <Tooltip.Content>{plugin.name}</Tooltip.Content>
-        </Tooltip>
+        ? <Popup>
+            <Popup.Trigger>{icon}</Popup.Trigger>
+            <Popup.Content>{plugin.name}</Popup.Content>
+        </Popup>
         : icon;
 }

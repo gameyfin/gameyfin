@@ -54,18 +54,19 @@ export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
         }
 
         const menu = (
-                    <ListBox aria-label="Sections" className="w-full">
-                        {menuItems.map((i) => (
-                            <ListBox.Item key={key(i.url)} id={key(i.url)} href={link(i.url)} onAction={() => setMenuOpen(false)}
-                                          aria-current={key(i.url) === selectedItem ? "page" : undefined}
-                                          className={`h-12 ${key(i.url) === selectedItem ? "bg-accent text-accent-foreground" : ""}`}>
-                                <div className="flex flex-row gap-2 items-center">
-                                    {i.icon}
-                                    <p>{i.title}</p>
-                                </div>
-                            </ListBox.Item>
-                        ))}
-                    </ListBox>
+            <ListBox aria-label="Sections" className="w-full">
+                {menuItems.map((i) => (
+                    <ListBox.Item key={key(i.url)} id={key(i.url)} href={link(i.url)}
+                                  onAction={() => setMenuOpen(false)}
+                                  aria-current={key(i.url) === selectedItem ? "page" : undefined}
+                                  className={`h-12 ${key(i.url) === selectedItem ? "bg-accent text-accent-foreground" : ""}`}>
+                        <div className="flex flex-row gap-2 items-center">
+                            {i.icon}
+                            <p>{i.title}</p>
+                        </div>
+                    </ListBox.Item>
+                ))}
+            </ListBox>
         );
 
         return (
@@ -77,7 +78,8 @@ export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
                         <ListIcon aria-hidden="true"/>
                     </Button>, headerActions
                 )}
-                {compact && <NavigationDrawer title="Sections" open={menuOpen} onOpenChange={setMenuOpen}>{menu}</NavigationDrawer>}
+                {compact && <NavigationDrawer title="Sections" open={menuOpen}
+                                              onOpenChange={setMenuOpen}>{menu}</NavigationDrawer>}
                 <div className="hidden xl:flex flex-col w-68 shrink-0 pr-8 sticky self-start"
                      style={{top: (stickyHeader ? headerHeight : 0) + CONTENT_TOP_GAP}}>
                     {!compact && menu}

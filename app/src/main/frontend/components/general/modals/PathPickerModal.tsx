@@ -74,7 +74,8 @@ export default function PathPickerModal({returnSelectedPath, isOpen, onOpenChang
                                                         isDisabled={formik.isSubmitting}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Select"}
+                                                        {formik.isSubmitting ?
+                                                            <Spinner size="sm" color="current"/> : "Select"}
                                                     </Button>
                                                 </Modal.Footer>
                                             </Form>

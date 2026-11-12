@@ -1,13 +1,6 @@
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useState} from "react";
-import {
-    toast,
-    Button,
-    Chip,
-    Link,
-    Modal,
-    TextArea
-} from "@heroui/react";
+import {Button, Chip, Link, Modal, TextArea, toast} from "@heroui/react";
 import {MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
 import TemplateType from "Frontend/generated/org/gameyfin/app/messages/templates/TemplateType";

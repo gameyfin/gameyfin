@@ -49,7 +49,8 @@ export default function Input({
                 {labelSuffix && <span className="order-2 inline-flex">{labelSuffix}</span>}
             </Label>}
             <div className="flex items-center gap-1">
-                <HeroUiInput className="min-w-0 grow" variant={variant} type={type} autoComplete={autoComplete} placeholder={placeholder}/>
+                <HeroUiInput className="min-w-0 grow" variant={variant} type={type} autoComplete={autoComplete}
+                             placeholder={placeholder}/>
                 {(description || resetValue !== undefined) && (
                     <span className="flex w-13 shrink-0 items-center gap-1">
                         {description && <InfoPopup content={description as string}/>}

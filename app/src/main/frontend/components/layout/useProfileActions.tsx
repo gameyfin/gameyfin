@@ -1,6 +1,6 @@
 import {navigationVisibility} from "./navigationVisibility";
 import {useAuth} from "Frontend/util/auth";
-import {GearFineIcon, QuestionIcon, SignOutIcon, SignInIcon, UserIcon} from "@phosphor-icons/react";
+import {GearFineIcon, QuestionIcon, SignInIcon, SignOutIcon, UserIcon} from "@phosphor-icons/react";
 import {useNavigate} from "react-router";
 import {isAdmin} from "Frontend/util/utils";
 
@@ -36,7 +36,11 @@ export function useProfileActions() {
             showIf: visible.signOut,
             color: "danger"
         },
-        {label: "Sign in", icon: <SignInIcon/>, onClick: () => {window.location.href = "/loginredirect";}, showIf: visible.signIn},
+        {
+            label: "Sign in", icon: <SignInIcon/>, onClick: () => {
+                window.location.href = "/loginredirect";
+            }, showIf: visible.signIn
+        },
     ].filter(item => item.showIf !== false);
 
 }

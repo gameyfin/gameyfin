@@ -1,3 +1,4 @@
+import Popup from "Frontend/components/general/Popup";
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useState} from "react";
 import {
@@ -18,13 +19,9 @@ import {
 import {SealCheckIcon, TrashIcon, WarningCircleIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import moment from "moment-timezone";
-import PluginMarketplaceDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/PluginMarketplaceDto";
-import {
-    addMarketplace,
-    marketplaceState,
-    removeMarketplace,
-    updateMarketplace
-} from "Frontend/state/MarketplaceState";
+import PluginMarketplaceDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/PluginMarketplaceDto";
+import {addMarketplace, marketplaceState, removeMarketplace, updateMarketplace} from "Frontend/state/MarketplaceState";
 import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 
 interface PluginMarketplacesModalProps {
@@ -105,24 +102,25 @@ function MarketplaceRow({marketplace}: { marketplace: PluginMarketplaceDto }) {
                 <div className="flex flex-row items-center gap-1 font-semibold">
                     {marketplace.name}
                     {marketplace.official &&
-                        <Tooltip delay={0}>
-                            <Tooltip.Trigger className="flex">
-                                <span className="inline-flex"><SealCheckIcon className="fill-success" weight="fill"/></span>
-                            </Tooltip.Trigger>
-                            <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                        <Popup>
+                            <Popup.Trigger className="flex">
+                                <span className="inline-flex"><SealCheckIcon className="fill-success"
+                                                                             weight="fill"/></span>
+                            </Popup.Trigger>
+                            <Popup.Content placement="bottom" className="bg-foreground text-background">
                                 Official Gameyfin marketplace
-                            </Tooltip.Content>
-                        </Tooltip>
+                            </Popup.Content>
+                        </Popup>
                     }
                     {marketplace.lastError &&
-                        <Tooltip delay={0}>
-                            <Tooltip.Trigger className="flex">
+                        <Popup>
+                            <Popup.Trigger className="flex">
                                 <span className="inline-flex"><WarningCircleIcon className="fill-danger" weight="fill"/></span>
-                            </Tooltip.Trigger>
-                            <Tooltip.Content placement="bottom" className="bg-foreground text-background max-w-md">
+                            </Popup.Trigger>
+                            <Popup.Content placement="bottom" className="bg-foreground text-background max-w-md">
                                 {marketplace.lastError}
-                            </Tooltip.Content>
-                        </Tooltip>
+                            </Popup.Content>
+                        </Popup>
                     }
                 </div>
                 <span className="text-xs text-muted truncate" title={marketplace.url}>{marketplace.url}</span>

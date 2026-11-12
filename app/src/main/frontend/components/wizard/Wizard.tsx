@@ -82,8 +82,10 @@ const Wizard = ({children, initialValues, onSubmit}: WizardProps) => {
                             >
                                 <ArrowLeftIcon/>
                             </Button>
-                            <Button aria-label={isLastStep ? "Finish setup" : "Next step"} variant="primary" isPending={formik.isSubmitting} type="submit">
-                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
+                            <Button aria-label={isLastStep ? "Finish setup" : "Next step"} variant="primary"
+                                    isPending={formik.isSubmitting} type="submit">
+                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ?
+                                    <CheckIcon/> : <ArrowRightIcon/>}
                             </Button>
                         </div>
                     </div>

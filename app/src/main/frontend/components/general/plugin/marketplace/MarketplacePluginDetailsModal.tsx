@@ -1,9 +1,11 @@
+import Popup from "Frontend/components/general/Popup";
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
-import {Alert, Button, Chip, Link, Modal, Spinner, Tooltip} from "@heroui/react";
+import {Alert, Button, Chip, Link, Modal, Spinner} from "@heroui/react";
 import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import moment from "moment-timezone";
-import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
+import MarketplacePluginDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 import MarketplacePluginReleaseDto
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginReleaseDto";
 import MarketplacePluginStatus
@@ -50,14 +52,14 @@ export default function MarketplacePluginDetailsModal({
 
         if (!release.compatible) {
             return (
-                <Tooltip delay={0}>
-                    <Tooltip.Trigger>
+                <Popup>
+                    <Popup.Trigger>
                         <Chip size="sm" variant="soft" color="danger">Incompatible</Chip>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                    </Popup.Trigger>
+                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                         {`Requires Gameyfin ${release.requires ?? "(unknown)"}`}
-                    </Tooltip.Content>
-                </Tooltip>
+                    </Popup.Content>
+                </Popup>
             );
         }
 
@@ -94,7 +96,8 @@ export default function MarketplacePluginDetailsModal({
                                         </Alert>
                                     }
 
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
+                                    <div
+                                        className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
                                         <MarketplacePluginLogo plugin={plugin}/>
                                         <table className="text-left table-auto">
                                             <tbody>

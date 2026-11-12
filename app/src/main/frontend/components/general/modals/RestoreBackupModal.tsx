@@ -85,7 +85,8 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                                     </p>
                                     <div className="flex flex-row items-center gap-4">
                                         <UploadButton label="Upload backup" variant="ghost" isDisabled={busy}
-                                                      accept=".zip,application/zip" onFilesSelected={files => setFile(files[0])}/>
+                                                      accept=".zip,application/zip"
+                                                      onFilesSelected={files => setFile(files[0])}/>
                                         {file && <span className="truncate">{file.name}</span>}
                                     </div>
                                     {error &&

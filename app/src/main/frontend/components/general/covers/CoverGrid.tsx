@@ -1,4 +1,4 @@
-import {coverGridLayout, COVER_GAP as GAP} from "Frontend/util/coverGridLayout";
+import {COVER_GAP as GAP, coverGridLayout} from "Frontend/util/coverGridLayout";
 import {NARROW_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {GameCover} from "Frontend/components/general/covers/GameCover";

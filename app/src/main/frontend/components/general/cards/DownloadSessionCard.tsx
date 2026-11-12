@@ -1,3 +1,4 @@
+import Popup from "Frontend/components/general/Popup";
 import {useSnapshot} from "valtio/react";
 import {downloadSessionState} from "Frontend/state/DownloadSessionState";
 import {Card, Chip, Tooltip} from "@heroui/react";
@@ -87,16 +88,16 @@ export function DownloadSessionCard({sessionId}: { sessionId: string }) {
                 <p className="flex min-w-0 flex-wrap items-center flex-1">
                     <b>User:</b>&nbsp;
                     {session.username ?? "Anonymous User"}&nbsp;
-                    <Tooltip delay={0}>
-                        <Tooltip.Trigger>
+                    <Popup>
+                        <Popup.Trigger>
                             <span className="inline-flex">
                                 <InfoIcon size={18}/>
                             </span>
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="right" className="bg-foreground text-background">
+                        </Popup.Trigger>
+                        <Popup.Content placement="right" className="bg-foreground text-background">
                             <pre>Session ID: {session.sessionId}</pre>
-                        </Tooltip.Content>
-                    </Tooltip>
+                        </Popup.Content>
+                    </Popup>
                 </p>
                 <div className="min-w-0 flex-1 flex flex-wrap justify-center">Remote IP:&nbsp;
                     {<Chip size="sm" className="rounded-sm">

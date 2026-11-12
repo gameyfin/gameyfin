@@ -114,7 +114,8 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<Con
                                             isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
                                             type="submit"
                                         >
-                                            {formik.isSubmitting ? <Spinner size="sm" color="current"/> : configSaved ? <CheckIcon/> : "Save"}
+                                            {formik.isSubmitting ? <Spinner size="sm" color="current"/> : configSaved ?
+                                                <CheckIcon/> : "Save"}
                                         </Button>
                                     </div>
                                 </div>

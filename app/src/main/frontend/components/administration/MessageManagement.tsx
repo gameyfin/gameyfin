@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {toast, Button, Card, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Card, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import {PaperPlaneRightIcon, PencilIcon} from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";

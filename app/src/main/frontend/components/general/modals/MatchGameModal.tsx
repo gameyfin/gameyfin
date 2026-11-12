@@ -71,7 +71,8 @@ export default function MatchGameModal({
                                            }}
                                            className="flex-1"
                                     />
-                                    <Button isIconOnly aria-label="Search games" onPress={search} variant="primary" isPending={isSearching}>
+                                    <Button isIconOnly aria-label="Search games" onPress={search} variant="primary"
+                                            isPending={isSearching}>
                                         {isSearching ? <Spinner size="sm" color="current"/> : <MagnifyingGlassIcon/>}
                                     </Button>
                                 </div>
@@ -88,7 +89,8 @@ export default function MatchGameModal({
                                                         setIsMatching(null);
                                                         close();
                                                     }}>
-                                                {isMatching === item.id ? <Spinner size="sm" color="current"/> : <ArrowRightIcon/>}
+                                                {isMatching === item.id ? <Spinner size="sm" color="current"/> :
+                                                    <ArrowRightIcon/>}
                                             </Button>
                                             <Tooltip.Content placement="bottom">Pick this result</Tooltip.Content>
                                         </Tooltip>

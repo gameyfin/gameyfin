@@ -1,6 +1,13 @@
 import {Button, Tooltip} from "@heroui/react";
 import {useLocation, useNavigate} from "react-router";
-import {ArrowLeftIcon, DiceSixIcon, HouseIcon, ListMagnifyingGlassIcon, ShootingStarIcon, SignInIcon} from "@phosphor-icons/react";
+import {
+    ArrowLeftIcon,
+    DiceSixIcon,
+    HouseIcon,
+    ListMagnifyingGlassIcon,
+    ShootingStarIcon,
+    SignInIcon
+} from "@phosphor-icons/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import SearchBar from "Frontend/components/general/SearchBar";
 import ActiveTaskPopover from "Frontend/components/general/ActiveTaskPopover";
@@ -8,14 +15,20 @@ import ProfileMenu from "Frontend/components/ProfileMenu";
 import {useAuth} from "Frontend/util/auth";
 import {isAdmin} from "Frontend/util/utils";
 
-export default function DesktopNavigation({randomGame, hasGames, searchValue, onSearchChange}: {randomGame: () => void; hasGames: boolean; searchValue: string; onSearchChange: (value: string) => void}) {
+export default function DesktopNavigation({randomGame, hasGames, searchValue, onSearchChange}: {
+    randomGame: () => void;
+    hasGames: boolean;
+    searchValue: string;
+    onSearchChange: (value: string) => void
+}) {
     const location = useLocation();
     const navigate = useNavigate();
     const auth = useAuth();
     const isHomePage = location.pathname === "/";
     const isSearchPage = location.pathname.startsWith("/search");
     return (
-        <nav aria-label="Desktop navigation" className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 [&_button>svg]:size-5">
+        <nav aria-label="Desktop navigation"
+             className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 [&_button>svg]:size-5">
             <div className="flex flex-1 items-center gap-2 h-10">
                 {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
                     <div className="flex flex-row gap-2">
@@ -48,7 +61,8 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
                     <SearchBar inputValue={searchValue} onInputChange={onSearchChange}/>
                     <Tooltip>
                         <Tooltip.Trigger>
-                            <Button isIconOnly aria-label="Advanced search" variant="ghost" onPress={() => navigate("/search")}>
+                            <Button isIconOnly aria-label="Advanced search" variant="ghost"
+                                    onPress={() => navigate("/search")}>
                                 <ListMagnifyingGlassIcon/>
                             </Button>
                         </Tooltip.Trigger>

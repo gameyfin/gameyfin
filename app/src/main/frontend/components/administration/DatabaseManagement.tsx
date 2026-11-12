@@ -164,8 +164,8 @@ export default function DatabaseManagement() {
                                         </p>
                                         <DatabaseSettingsFields name="database"
                                                                 passwordSet={info.passwordSet}
-                                                                 isDisabled={switching}
-                                                                 onTypeChange={() => setTestResult(undefined)}/>
+                                                                isDisabled={switching}
+                                                                onTypeChange={() => setTestResult(undefined)}/>
                                         {testResult && <ConnectionTestResult result={testResult}/>}
                                         <div className="flex flex-wrap gap-4">
                                             <Button variant="ghost"

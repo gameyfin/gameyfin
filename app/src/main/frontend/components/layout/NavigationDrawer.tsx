@@ -9,7 +9,9 @@ export default function NavigationDrawer({title, open, onOpenChange, children}: 
 }) {
     const {key} = useLocation();
     const compact = useMediaQuery(COMPACT_QUERY);
-    useEffect(() => { onOpenChange(false); }, [key, compact, onOpenChange]);
+    useEffect(() => {
+        onOpenChange(false);
+    }, [key, compact, onOpenChange]);
     return <Drawer isOpen={open} onOpenChange={onOpenChange}>
         <Drawer.Backdrop>
             <Drawer.Content placement="right">

@@ -7,7 +7,10 @@ import type {Key} from "react-aria-components";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 
-export default function SearchBar({inputValue, onInputChange}: {inputValue: string; onInputChange: (value: string) => void}) {
+export default function SearchBar({inputValue, onInputChange}: {
+    inputValue: string;
+    onInputChange: (value: string) => void
+}) {
 
     const navigate = useNavigate();
     const state = useSnapshot(gameState);

@@ -71,7 +71,8 @@ export default function TaskRunParametersModal({task, isOpen, onOpenChange, onRu
                                             <Modal.Heading>Run {task.name}</Modal.Heading>
                                         </Modal.Header>
                                         <Modal.Body className="flex flex-col gap-2">
-                                            {task.description && <p className="text-sm text-muted">{task.description}</p>}
+                                            {task.description &&
+                                                <p className="text-sm text-muted">{task.description}</p>}
                                             <h4 className="text-l font-bold mt-2">Parameters</h4>
                                             {task.parametersMetadata.map(meta => (
                                                 <TaskConfigFormField key={meta.key}

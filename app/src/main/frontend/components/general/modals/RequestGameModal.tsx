@@ -1,6 +1,6 @@
 import GameSearchResults from "./GameSearchResults";
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
-import {Button, ComboBox, Input, ListBox, Modal, toast, Tooltip, Spinner} from "@heroui/react";
+import {Button, ComboBox, Input, ListBox, Modal, Spinner, toast, Tooltip} from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import {GameEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
@@ -125,7 +125,8 @@ export default function RequestGameModal({
                                                         setIsRequesting(null);
                                                         close();
                                                     }}>
-                                                {isRequesting === item.id ? <Spinner size="sm" color="current"/> : <ArrowRightIcon/>}
+                                                {isRequesting === item.id ? <Spinner size="sm" color="current"/> :
+                                                    <ArrowRightIcon/>}
                                             </Button>
                                             <Tooltip.Content placement="bottom">Pick this result</Tooltip.Content>
                                         </Tooltip>

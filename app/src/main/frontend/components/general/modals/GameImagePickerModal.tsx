@@ -93,10 +93,12 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
             onSelect(urls.map(url => {
                 const image = remoteImage(url);
                 const pluginId = results.find(result => result.url === url)?.pluginId;
-                return {...image, selection: {...image.selection, pluginId}, source: pluginId ? {
-                    type: GameFieldMetadataType.PLUGIN, source: pluginId, sourceName: plugins[pluginId]?.name,
-                    updatedAt: new Date().toISOString()
-                } : userSource};
+                return {
+                    ...image, selection: {...image.selection, pluginId}, source: pluginId ? {
+                        type: GameFieldMetadataType.PLUGIN, source: pluginId, sourceName: plugins[pluginId]?.name,
+                        updatedAt: new Date().toISOString()
+                    } : userSource
+                };
             }));
             onClose();
         } catch (error) {

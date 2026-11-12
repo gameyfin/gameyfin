@@ -96,7 +96,8 @@ export default function PrioritiesModal<T extends PrioritizableItem>({
                                                 textValue={item.name}
                                                 data-reorder-key={String(item.id)}
                                                 className="group/priority rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-accent">
-                                                <div data-reorder-content className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5 group-data-dragging/priority:opacity-40">
+                                                <div data-reorder-content
+                                                     className="flex flex-row p-2 rounded-lg justify-between items-center bg-foreground/5 group-data-dragging/priority:opacity-40">
                                                     <div className="flex flex-row gap-2 items-center">
                                                         <Chip size="sm" variant="soft" color="accent">
                                                             {sortedItems.items.findIndex(p => p.id === item.id) + 1}

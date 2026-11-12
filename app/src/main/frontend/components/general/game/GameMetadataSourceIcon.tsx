@@ -1,4 +1,4 @@
-import {Tooltip} from "@heroui/react";
+import Popup from "Frontend/components/general/Popup";
 import {KeyIcon, UserCircleIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {GameFieldMetadataDto, GameFieldMetadataType} from "Frontend/dtos/GameDtos";
@@ -25,11 +25,11 @@ export default function GameMetadataSourceIcon({source}: { source?: GameFieldMet
     const description = source.type === GameFieldMetadataType.API_KEY ? `API key: ${source.source}` : source.source;
 
     return <span className={sourceIconClassName}>
-        <Tooltip>
-            <Tooltip.Trigger aria-label={description} className="inline-flex items-center cursor-default">
+        <Popup>
+            <Popup.Trigger aria-label={description} className="inline-flex items-center cursor-default">
                 <Icon size={14} weight="fill"/>
-            </Tooltip.Trigger>
-            <Tooltip.Content>{description}</Tooltip.Content>
-        </Tooltip>
+            </Popup.Trigger>
+            <Popup.Content>{description}</Popup.Content>
+        </Popup>
     </span>;
 }

@@ -87,7 +87,8 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {libraries.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <div id="library-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
+                <div id="library-cards"
+                     className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {libraries.sorted.map((library) =>
                         // @ts-ignore
                         <LibraryOverviewCard library={library} key={library.name}/>
@@ -124,7 +125,8 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {collections.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <div id="collection-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
+                <div id="collection-cards"
+                     className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {collections.sorted.map((collection) =>
                         // @ts-ignore
                         <CollectionOverviewCard collection={collection} key={collection.name}/>

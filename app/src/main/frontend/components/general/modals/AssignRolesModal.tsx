@@ -1,10 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {
-    Button,
-    ListBox,
-    Modal,
-    Select,
-} from "@heroui/react";
+import {Button, ListBox, Modal, Select,} from "@heroui/react";
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import RoleChip from "Frontend/components/general/RoleChip";
 import RoleAssignmentResult from "Frontend/generated/org/gameyfin/app/users/enums/RoleAssignmentResult";

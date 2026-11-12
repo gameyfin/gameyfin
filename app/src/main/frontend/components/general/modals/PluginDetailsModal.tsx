@@ -83,7 +83,8 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                             </Modal.Header>
                                             <Modal.Body>
                                                 <div className="flex flex-col text-sm">
-                                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 mb-4">
+                                                    <div
+                                                        className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 mb-4">
                                                         <PluginLogo plugin={plugin}/>
                                                         <table className="text-left table-auto">
                                                             <tbody>

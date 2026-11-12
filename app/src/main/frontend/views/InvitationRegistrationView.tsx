@@ -37,7 +37,9 @@ export default function InvitationRegistrationView() {
                 });
             });
 
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     }, [token]);
 
     async function register(values: any, formik: any) {
@@ -90,54 +92,56 @@ export default function InvitationRegistrationView() {
                 </Card.Header>
                 <Card.Content>
                     {error ?
-                        <p role="alert" className="flex flex-row grow justify-center items-center gap-2 text-danger text-2xl font-bold">
+                        <p role="alert"
+                           className="flex flex-row grow justify-center items-center gap-2 text-danger text-2xl font-bold">
                             <WarningIcon weight="fill"/>
                             {error}
                         </p>
                         : email ?
-                        <Formik
-                            enableReinitialize={true}
-                            initialValues={{
-                                username: "",
-                                email: email,
-                                password: "",
-                                passwordRepeat: ""
-                            }}
-                            validationSchema={Yup.object({
-                                username: Yup.string()
-                                    .required('Required'),
-                                password: Yup.string()
-                                    .min(8, 'Password must be at least 8 characters long')
-                                    .required('Required'),
-                                email: Yup.string()
-                                    .email()
-                                    .required('Required'),
-                                passwordRepeat: Yup.string()
-                                    .equals([Yup.ref('password')], 'Passwords do not match')
-                                    .required('Required')
-                            })}
-                            onSubmit={register}>
-                            {(formik: { isSubmitting: any; isValid: boolean; }) => (
-                                <Form>
-                                    <p className="text-xl text-center mb-8">Register a new account</p>
-                                    <Input label="Email" name="email" type="email" value={email} isDisabled/>
-                                    <Input label="Username" name="username" autoComplete="username"/>
-                                    <Input label="Password" name="password" type="password"
-                                           autoComplete="new-password"/>
-                                    <Input label="Password (repeat)" name="passwordRepeat" type="password"
-                                           autoComplete="new-password"/>
-                                    <Button type="submit" className="w-full mt-4" variant="primary"
-                                            isDisabled={!formik.isValid || formik.isSubmitting}
-                                            isPending={formik.isSubmitting}>
-                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Create account"}
-                                    </Button>
-                                </Form>
-                            )}
-                        </Formik>
-                        :
-                        <div role="status" aria-label="Validating invitation" className="flex justify-center">
-                            <Spinner/>
-                        </div>
+                            <Formik
+                                enableReinitialize={true}
+                                initialValues={{
+                                    username: "",
+                                    email: email,
+                                    password: "",
+                                    passwordRepeat: ""
+                                }}
+                                validationSchema={Yup.object({
+                                    username: Yup.string()
+                                        .required('Required'),
+                                    password: Yup.string()
+                                        .min(8, 'Password must be at least 8 characters long')
+                                        .required('Required'),
+                                    email: Yup.string()
+                                        .email()
+                                        .required('Required'),
+                                    passwordRepeat: Yup.string()
+                                        .equals([Yup.ref('password')], 'Passwords do not match')
+                                        .required('Required')
+                                })}
+                                onSubmit={register}>
+                                {(formik: { isSubmitting: any; isValid: boolean; }) => (
+                                    <Form>
+                                        <p className="text-xl text-center mb-8">Register a new account</p>
+                                        <Input label="Email" name="email" type="email" value={email} isDisabled/>
+                                        <Input label="Username" name="username" autoComplete="username"/>
+                                        <Input label="Password" name="password" type="password"
+                                               autoComplete="new-password"/>
+                                        <Input label="Password (repeat)" name="passwordRepeat" type="password"
+                                               autoComplete="new-password"/>
+                                        <Button type="submit" className="w-full mt-4" variant="primary"
+                                                isDisabled={!formik.isValid || formik.isSubmitting}
+                                                isPending={formik.isSubmitting}>
+                                            {formik.isSubmitting ?
+                                                <Spinner size="sm" color="current"/> : "Create account"}
+                                        </Button>
+                                    </Form>
+                                )}
+                            </Formik>
+                            :
+                            <div role="status" aria-label="Validating invitation" className="flex justify-center">
+                                <Spinner/>
+                            </div>
                     }
                 </Card.Content>
             </Card>

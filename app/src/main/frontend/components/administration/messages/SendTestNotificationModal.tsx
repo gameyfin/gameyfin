@@ -1,7 +1,7 @@
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
 import {Form, Formik} from "formik";
-import {toast, Button, Modal} from "@heroui/react";
+import {Button, Modal, toast} from "@heroui/react";
 import Input from "Frontend/components/general/input/Input";
 import {MessageEndpoint} from "Frontend/generated/endpoints";
 import * as Yup from "yup";

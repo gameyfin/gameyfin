@@ -1,12 +1,12 @@
 import {useTheme} from "next-themes";
 import React, {useEffect, useMemo, useRef, useState} from "react";
+import type {Color} from "@heroui/react";
 import {Button, Card, ColorSwatchPicker, Label, ListBox, Select, Separator} from "@heroui/react";
-import {themes, themeNames, applyAccentTheme} from "Frontend/theming/themes";
+import {applyAccentTheme, themeNames, themes} from "Frontend/theming/themes";
 import {Theme} from "Frontend/theming/theme";
 import ThemePreview from "Frontend/components/theming/ThemePreview";
 import {toTitleCase} from "Frontend/util/utils";
 import {useUserPreferenceService} from "Frontend/util/user-preference-service";
-import type {Color} from "@heroui/react";
 
 export function ThemeSelector() {
 

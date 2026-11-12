@@ -54,7 +54,8 @@ export default function ArrayInput({label, labelSuffix, description, resetValue,
 
                                 <div className="flex flex-row flex-wrap gap-2 items-center">
                                     {field.value.map((element: string, index: number) => (
-                                        <Chip key={index} className={`items-center ${props.isDisabled ? "opacity-50" : "pr-0"}`}>
+                                        <Chip key={index}
+                                              className={`items-center ${props.isDisabled ? "opacity-50" : "pr-0"}`}>
                                             {element}
                                             {!props.isDisabled &&
                                                 <CloseButton

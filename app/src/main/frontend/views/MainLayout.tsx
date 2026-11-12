@@ -27,7 +27,9 @@ export default function MainLayout() {
     const games = useSnapshot(gameState).games;
     const {stickyHeader} = useSnapshot(layoutState);
     const compact = useMediaQuery(COMPACT_QUERY);
-    const randomGame = () => { if (games.length) navigate("/game/" + getRandomGameId()); };
+    const randomGame = () => {
+        if (games.length) navigate("/game/" + getRandomGameId());
+    };
     const headerRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
@@ -90,10 +92,15 @@ export default function MainLayout() {
 
             <header ref={headerRef}
                     className={`2xl:px-[12.5%] ${stickyHeader ? "sm:sticky sm:top-0 sm:z-20 sm:bg-background/75 sm:backdrop-blur-md sm:shadow-sm" : ""}`}>
-                {compact ? <CompactNavigation sectionMenuRef={setHeaderActions} randomGame={randomGame} hasGames={games.length > 0} searchValue={quickSearch} onSearchChange={setQuickSearch}/> : <DesktopNavigation randomGame={randomGame} hasGames={games.length > 0} searchValue={quickSearch} onSearchChange={setQuickSearch}/>}
+                {compact ? <CompactNavigation sectionMenuRef={setHeaderActions} randomGame={randomGame}
+                                              hasGames={games.length > 0} searchValue={quickSearch}
+                                              onSearchChange={setQuickSearch}/> :
+                    <DesktopNavigation randomGame={randomGame} hasGames={games.length > 0} searchValue={quickSearch}
+                                       onSearchChange={setQuickSearch}/>}
             </header>
 
-            <main id="main-content" tabIndex={-1} className="flex flex-col grow min-w-0 2xl:px-[12.5%] mt-4 px-4 2xl:mt-4">
+            <main id="main-content" tabIndex={-1}
+                  className="flex flex-col grow min-w-0 2xl:px-[12.5%] mt-4 px-4 2xl:mt-4">
                 <CompactHeaderActionsContext.Provider value={headerActions}>
                     <Outlet/>
                 </CompactHeaderActionsContext.Provider>

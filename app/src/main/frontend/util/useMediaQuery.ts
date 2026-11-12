@@ -1,4 +1,4 @@
-import {useSyncExternalStore, useCallback} from "react";
+import {useCallback, useSyncExternalStore} from "react";
 
 // Match Tailwind's default sm/xl breakpoints. Keep responsive-layout.md in sync.
 export const NARROW_QUERY = "(width < 40rem)";

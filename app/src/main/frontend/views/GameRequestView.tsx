@@ -149,33 +149,46 @@ export default function GameRequestView() {
 
     function requestFields(item: GameRequestDto) {
         return [
-            {label: "Title & Release", tableClassName: "", content: <>
-                {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
-            </>},
-            {label: "Platform", tableClassName: "", content: <>
-                <Chip size="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
-            </>},
-            {label: "Submitted by", tableClassName: "", content: <>
-                <p className="text-muted">
-                    {item.requester ?
-                        item.requester.username :
-                        "Guest"
-                    }
-                </p>
-            </>},
-            {label: "Submitted", tableClassName: "", content: <>
-                {new Date(item.createdAt).toLocaleDateString()}
-            </>},
-            {label: "Updated", tableClassName: "", content: <>
-                {new Date(item.updatedAt).toLocaleDateString()}
-            </>},
-            {label: "Status", tableClassName: "min-w-24", content: <>
-                {statusToBadge(item.status)}
-            </>},
-            {label: "Votes and actions", tableClassName: "", content: <>
-                <div className="flex flex-wrap gap-2">
-                    <Tooltip>
-                        <Button
+            {
+                label: "Title & Release", tableClassName: "", content: <>
+                    {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                </>
+            },
+            {
+                label: "Platform", tableClassName: "", content: <>
+                    <Chip size="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
+                </>
+            },
+            {
+                label: "Submitted by", tableClassName: "", content: <>
+                    <p className="text-muted">
+                        {item.requester ?
+                            item.requester.username :
+                            "Guest"
+                        }
+                    </p>
+                </>
+            },
+            {
+                label: "Submitted", tableClassName: "", content: <>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                </>
+            },
+            {
+                label: "Updated", tableClassName: "", content: <>
+                    {new Date(item.updatedAt).toLocaleDateString()}
+                </>
+            },
+            {
+                label: "Status", tableClassName: "min-w-24", content: <>
+                    {statusToBadge(item.status)}
+                </>
+            },
+            {
+                label: "Votes and actions", tableClassName: "", content: <>
+                    <div className="flex flex-wrap gap-2">
+                        <Tooltip>
+                            <Button
                                 size="sm"
                                 aria-label="Vote for this request"
                                 variant={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "outline"}
@@ -185,15 +198,15 @@ export default function GameRequestView() {
                                 <ArrowUpIcon/>
                                 {item.voters.length}
                             </Button>
-                        <Tooltip.Content placement="left">
-                            {auth.state.user
-                                ? (item.status === GameRequestStatus.FULFILLED ? "You cannot vote on closed requests" : "Vote for this request")
-                                : "You must be logged in to vote"}
-                        </Tooltip.Content>
-                    </Tooltip>
-                    {isAdmin(auth) && <div className="flex flex-wrap gap-2">
-                        <Tooltip>
-                            <Button
+                            <Tooltip.Content placement="left">
+                                {auth.state.user
+                                    ? (item.status === GameRequestStatus.FULFILLED ? "You cannot vote on closed requests" : "Vote for this request")
+                                    : "You must be logged in to vote"}
+                            </Tooltip.Content>
+                        </Tooltip>
+                        {isAdmin(auth) && <div className="flex flex-wrap gap-2">
+                            <Tooltip>
+                                <Button
                                     size="sm"
                                     isIconOnly
                                     aria-label="Approve this request"
@@ -203,10 +216,10 @@ export default function GameRequestView() {
                                 >
                                     <CheckIcon/>
                                 </Button>
-                            <Tooltip.Content>Approve this request</Tooltip.Content>
-                        </Tooltip>
-                        <Tooltip>
-                            <Button
+                                <Tooltip.Content>Approve this request</Tooltip.Content>
+                            </Tooltip>
+                            <Tooltip>
+                                <Button
                                     size="sm"
                                     isIconOnly
                                     aria-label="Reject this request"
@@ -216,20 +229,21 @@ export default function GameRequestView() {
                                 >
                                     <XIcon/>
                                 </Button>
-                            <Tooltip.Content>Reject this request</Tooltip.Content>
-                        </Tooltip>
-                    </div>}
-                    {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
-                        <Tooltip>
-                            <Button size="sm" isIconOnly variant="danger" aria-label="Delete this request"
+                                <Tooltip.Content>Reject this request</Tooltip.Content>
+                            </Tooltip>
+                        </div>}
+                        {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
+                            <Tooltip>
+                                <Button size="sm" isIconOnly variant="danger" aria-label="Delete this request"
                                         onPress={async () => await deleteRequest(item.id)}>
                                     <TrashIcon/>
                                 </Button>
-                            <Tooltip.Content>Delete this request</Tooltip.Content>
-                        </Tooltip>
-                    }
-                </div>
-            </>}
+                                <Tooltip.Content>Delete this request</Tooltip.Content>
+                            </Tooltip>
+                        }
+                    </div>
+                </>
+            }
         ];
     }
 
@@ -305,57 +319,69 @@ export default function GameRequestView() {
             </Select>
         </div>
 
-        {compact ? <CompactRecordList label="Game requests" items={pagedItems} itemKey={item => item.id} fields={requestFields} empty={<p className="p-4 text-muted">Your search did not match any requests.</p>} sort={{value: sortDescriptor, onChange: setSortDescriptor, options: [{id: "title", label: "Title & Release"}, {id: "createdAt", label: "Submitted"}, {id: "updatedAt", label: "Updated"}, {id: "status", label: "Status"}, {id: "votes", label: "Votes"}]}} /> : <Table variant="secondary">
-            <TableScroller label="GameRequestView table">
-                <Table.Content aria-label="Game requests" sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                    <Table.Header className="sticky top-0 z-10 bg-background">
-                        <Table.Column id="title" allowsSorting isRowHeader>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader sortDirection={sortDirection}>Title &
-                                    Release</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="platform">Platform</Table.Column>
-                        <Table.Column id="requester">Submitted by</Table.Column>
-                        <Table.Column id="createdAt" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Submitted</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="updatedAt" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Updated</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="status" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Status</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="votes" allowsSorting width={1}>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Votes</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                    </Table.Header>
-                    <Table.Body
-                        renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match any
-                            requests.</p>} items={pagedItems}>
-                        {(item) => (
-                            <Table.Row key={item.id}>
-                                    {requestFields(item).map(field => <Table.Cell key={field.label} className={field.tableClassName}>
+        {compact ?
+            <CompactRecordList label="Game requests" items={pagedItems} itemKey={item => item.id} fields={requestFields}
+                               empty={<p className="p-4 text-muted">Your search did not match any requests.</p>} sort={{
+                value: sortDescriptor,
+                onChange: setSortDescriptor,
+                options: [{id: "title", label: "Title & Release"}, {
+                    id: "createdAt",
+                    label: "Submitted"
+                }, {id: "updatedAt", label: "Updated"}, {id: "status", label: "Status"}, {id: "votes", label: "Votes"}]
+            }}/> : <Table variant="secondary">
+                <TableScroller label="GameRequestView table">
+                    <Table.Content aria-label="Game requests" sortDescriptor={sortDescriptor}
+                                   onSortChange={setSortDescriptor}>
+                        <Table.Header className="sticky top-0 z-10 bg-background">
+                            <Table.Column id="title" allowsSorting isRowHeader>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader sortDirection={sortDirection}>Title &
+                                        Release</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="platform">Platform</Table.Column>
+                            <Table.Column id="requester">Submitted by</Table.Column>
+                            <Table.Column id="createdAt" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Submitted</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="updatedAt" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Updated</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="status" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Status</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="votes" allowsSorting width={1}>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Votes</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                        </Table.Header>
+                        <Table.Body
+                            renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match
+                                any
+                                requests.</p>} items={pagedItems}>
+                            {(item) => (
+                                <Table.Row key={item.id}>
+                                    {requestFields(item).map(field => <Table.Cell key={field.label}
+                                                                                  className={field.tableClassName}>
                                         {field.content}
                                     </Table.Cell>)}
                                 </Table.Row>
-                        )}
-                    </Table.Body>
-                </Table.Content>
-            </TableScroller>
-        </Table>}
+                            )}
+                        </Table.Body>
+                    </Table.Content>
+                </TableScroller>
+            </Table>}
         {pagedItems.length > 0 &&
             <div className="flex w-full justify-center sticky">
                 <SimplePagination

@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Button, Input as NextInput, Modal, toast} from "@heroui/react";
-import { WarningCircleIcon } from "@phosphor-icons/react";
+import {WarningCircleIcon} from "@phosphor-icons/react";
 import {MessageEndpoint, PasswordResetEndpoint} from "Frontend/generated/endpoints";
 
 interface PasswordResetModalProps {

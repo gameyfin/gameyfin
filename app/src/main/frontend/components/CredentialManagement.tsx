@@ -185,55 +185,70 @@ export default function CredentialManagement({service = false}: { service?: bool
     if (!allowed) return <p className="py-4">
         {service ? "Administrator access is required." : "Sign in to manage your personal access tokens."}
     </p>;
+
     function credentialFields(item: CredentialView) {
         return [
-            {label: "Name", tableClassName: "", content: <>
-                <span className="font-medium">{item.name}</span>{" "}
-                <code className="whitespace-nowrap">({item.prefix}…)</code>
-            </>},
-            {label: "Permissions", tableClassName: "", content: <>
-                <div className="text-default-500 max-w-sm wrap-break-word">
-                    {service ? item.scopes.join(", ") : "Current account permissions"}
-                </div>
-            </>},
-            {label: "Status", tableClassName: "", content: <>
-                <p className="capitalize">{item.status.toLowerCase()}</p>
-            </>},
-            {label: "Created", tableClassName: "", content: <>
-                {date(item.createdAt)}
-            </>},
-            {label: "Expires", tableClassName: "", content: <>
-                {item.expiresAt ? new Date(new Date(item.expiresAt).getTime() - 1).toLocaleDateString() : "—"}
-            </>},
-            {label: "Last used", tableClassName: "", content: <>
-                {date(item.lastUsedAt)}
-            </>},
-            {label: "Actions", tableClassName: "", content: <>
-                {item.revokedAt ?
-                <Button type="button" size="sm" variant="danger" isDisabled={busy}
-                        onPress={() => setConfirmation({action: "delete", item})}>Delete</Button> :
-                <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant="secondary" isDisabled={busy}
-                            onPress={() => edit(item)}>Edit</Button>
-                    <Button type="button" size="sm" variant="secondary"
-                            isDisabled={busy || !!secret}
-                            onPress={() => setConfirmation({
-                                action: "regenerate",
-                                item
-                            })}>Regenerate</Button>
-                    {revokeId === item.id ? <>
-                            <Button type="button" size="sm" variant="danger"
-                                    isDisabled={busy}
-                                    onPress={() => revoke(item.id)}>Confirm
-                                revoke</Button>
-                            <Button type="button" size="sm"
-                                    onPress={() => setRevokeId(undefined)}>Cancel
-                            </Button>
-                        </>
-                        : <Button type="button" size="sm" variant="danger" isDisabled={busy}
-                                  onPress={() => setRevokeId(item.id)}>Revoke</Button>}
-                </div>}
-            </>}
+            {
+                label: "Name", tableClassName: "", content: <>
+                    <span className="font-medium">{item.name}</span>{" "}
+                    <code className="whitespace-nowrap">({item.prefix}…)</code>
+                </>
+            },
+            {
+                label: "Permissions", tableClassName: "", content: <>
+                    <div className="text-default-500 max-w-sm wrap-break-word">
+                        {service ? item.scopes.join(", ") : "Current account permissions"}
+                    </div>
+                </>
+            },
+            {
+                label: "Status", tableClassName: "", content: <>
+                    <p className="capitalize">{item.status.toLowerCase()}</p>
+                </>
+            },
+            {
+                label: "Created", tableClassName: "", content: <>
+                    {date(item.createdAt)}
+                </>
+            },
+            {
+                label: "Expires", tableClassName: "", content: <>
+                    {item.expiresAt ? new Date(new Date(item.expiresAt).getTime() - 1).toLocaleDateString() : "—"}
+                </>
+            },
+            {
+                label: "Last used", tableClassName: "", content: <>
+                    {date(item.lastUsedAt)}
+                </>
+            },
+            {
+                label: "Actions", tableClassName: "", content: <>
+                    {item.revokedAt ?
+                        <Button type="button" size="sm" variant="danger" isDisabled={busy}
+                                onPress={() => setConfirmation({action: "delete", item})}>Delete</Button> :
+                        <div className="flex flex-wrap gap-2">
+                            <Button type="button" size="sm" variant="secondary" isDisabled={busy}
+                                    onPress={() => edit(item)}>Edit</Button>
+                            <Button type="button" size="sm" variant="secondary"
+                                    isDisabled={busy || !!secret}
+                                    onPress={() => setConfirmation({
+                                        action: "regenerate",
+                                        item
+                                    })}>Regenerate</Button>
+                            {revokeId === item.id ? <>
+                                    <Button type="button" size="sm" variant="danger"
+                                            isDisabled={busy}
+                                            onPress={() => revoke(item.id)}>Confirm
+                                        revoke</Button>
+                                    <Button type="button" size="sm"
+                                            onPress={() => setRevokeId(undefined)}>Cancel
+                                    </Button>
+                                </>
+                                : <Button type="button" size="sm" variant="danger" isDisabled={busy}
+                                          onPress={() => setRevokeId(item.id)}>Revoke</Button>}
+                        </div>}
+                </>
+            }
         ];
     }
 
@@ -282,7 +297,7 @@ export default function CredentialManagement({service = false}: { service?: bool
                         delete.</Description>
                     {compact ? <div className="grid gap-3 sm:grid-cols-2">
                         {permissionCategories.map(category => <Card key={category} role="group"
-                                                                   aria-label={`${permissionLabel(category)} permissions`}>
+                                                                    aria-label={`${permissionLabel(category)} permissions`}>
                             <Card.Header><Card.Title>{permissionLabel(category)}</Card.Title></Card.Header>
                             <Card.Content className="flex flex-col gap-1">
                                 {permissionActions.filter(action => availableScopes.includes(`${category}:${action}`))
@@ -344,26 +359,29 @@ export default function CredentialManagement({service = false}: { service?: bool
             </Form>
             {!loaded ? <Spinner aria-label="Loading credentials"/> : credentials.length === 0 ?
                 <p>No {service ? "API keys" : "tokens"} yet.</p> :
-                compact ? <CompactRecordList label={service ? "API keys" : "Personal access tokens"} items={credentials} itemKey={item => item.id} fields={credentialFields} empty={null} /> : <Table variant="secondary">
-                    <TableScroller label="Credential permissions">
-                        <Table.Content aria-label={service ? "API keys" : "Personal access tokens"}>
-                            <Table.Header>
-                                <Table.Column id="name" isRowHeader>Name</Table.Column>
-                                <Table.Column id="permissions">Permissions</Table.Column>
-                                <Table.Column id="status">Status</Table.Column>
-                                <Table.Column id="created">Created</Table.Column>
-                                <Table.Column id="expires">Expires</Table.Column>
-                                <Table.Column id="last-used">Last used</Table.Column>
-                                <Table.Column id="actions">Actions</Table.Column>
-                            </Table.Header>
-                            <Table.Body>{credentials.map(item => <Table.Row key={item.id} id={item.id}>
-                                    {credentialFields(item).map(field => <Table.Cell key={field.label} className={field.tableClassName}>
+                compact ? <CompactRecordList label={service ? "API keys" : "Personal access tokens"} items={credentials}
+                                             itemKey={item => item.id} fields={credentialFields} empty={null}/> :
+                    <Table variant="secondary">
+                        <TableScroller label="Credential permissions">
+                            <Table.Content aria-label={service ? "API keys" : "Personal access tokens"}>
+                                <Table.Header>
+                                    <Table.Column id="name" isRowHeader>Name</Table.Column>
+                                    <Table.Column id="permissions">Permissions</Table.Column>
+                                    <Table.Column id="status">Status</Table.Column>
+                                    <Table.Column id="created">Created</Table.Column>
+                                    <Table.Column id="expires">Expires</Table.Column>
+                                    <Table.Column id="last-used">Last used</Table.Column>
+                                    <Table.Column id="actions">Actions</Table.Column>
+                                </Table.Header>
+                                <Table.Body>{credentials.map(item => <Table.Row key={item.id} id={item.id}>
+                                    {credentialFields(item).map(field => <Table.Cell key={field.label}
+                                                                                     className={field.tableClassName}>
                                         {field.content}
                                     </Table.Cell>)}
                                 </Table.Row>)}</Table.Body>
-                        </Table.Content>
-                    </TableScroller>
-                </Table>}
+                            </Table.Content>
+                        </TableScroller>
+                    </Table>}
             <Modal>
                 <Modal.Backdrop isOpen={!!confirmation} onOpenChange={open => {
                     if (!open && !busy) setConfirmation(undefined);

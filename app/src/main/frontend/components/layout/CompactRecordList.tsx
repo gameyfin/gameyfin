@@ -6,12 +6,12 @@ interface Props<T> {
     label: string;
     items: readonly T[];
     itemKey: (item: T) => string | number;
-    fields: (item: T) => {label: string; content: ReactNode}[];
+    fields: (item: T) => { label: string; content: ReactNode }[];
     empty: ReactNode;
     sort?: {
         value: SortDescriptor;
         onChange: (value: SortDescriptor) => void;
-        options: {id: string; label: string}[];
+        options: { id: string; label: string }[];
     };
 }
 
@@ -32,9 +32,12 @@ export default function CompactRecordList<T>({label, items, itemKey, fields, emp
             <Tooltip>
                 <Button isIconOnly variant="secondary" className="min-h-11 min-w-11 shrink-0"
                         aria-label={sort.value.direction === "ascending" ? "Ascending" : "Descending"}
-                        onPress={() => sort.onChange({...sort.value,
-                    direction: sort.value.direction === "ascending" ? "descending" : "ascending"})}>
-                    {sort.value.direction === "ascending" ? <SortAscendingIcon aria-hidden="true"/> : <SortDescendingIcon aria-hidden="true"/>}
+                        onPress={() => sort.onChange({
+                            ...sort.value,
+                            direction: sort.value.direction === "ascending" ? "descending" : "ascending"
+                        })}>
+                    {sort.value.direction === "ascending" ? <SortAscendingIcon aria-hidden="true"/> :
+                        <SortDescendingIcon aria-hidden="true"/>}
                 </Button>
                 <Tooltip.Content>{sort.value.direction === "ascending" ? "Sort descending" : "Sort ascending"}</Tooltip.Content>
             </Tooltip>
@@ -45,11 +48,14 @@ export default function CompactRecordList<T>({label, items, itemKey, fields, emp
                 const actions = details.pop();
                 return <li key={itemKey(item)} className="min-w-0">
                     <Card className="h-full min-w-0 wrap-anywhere">
-                        <Card.Header><div className="font-semibold">{title.content}</div></Card.Header>
+                        <Card.Header>
+                            <div className="font-semibold">{title.content}</div>
+                        </Card.Header>
                         <Card.Content>
                             <dl className="space-y-2 text-sm">
                                 {details.map(field => <div key={field.label}>
-                                    <dt className="text-muted">{field.label}</dt><dd>{field.content}</dd>
+                                    <dt className="text-muted">{field.label}</dt>
+                                    <dd>{field.content}</dd>
                                 </div>)}
                             </dl>
                         </Card.Content>

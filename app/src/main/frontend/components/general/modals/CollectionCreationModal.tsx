@@ -1,6 +1,6 @@
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
-import {Button, Modal, toast, Spinner} from "@heroui/react";
+import {Button, Modal, Spinner, toast} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
