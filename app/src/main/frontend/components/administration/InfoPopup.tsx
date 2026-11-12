@@ -1,4 +1,4 @@
-import {Tooltip} from "@heroui/react";
+import Popup from "Frontend/components/general/Popup";
 import {InfoIcon} from "@phosphor-icons/react";
 import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import React from "react";
@@ -9,15 +9,15 @@ interface InfoPopupProps {
 
 export default function InfoPopup({content}: InfoPopupProps) {
     return (
-        <Tooltip delay={0}>
-            <Tooltip.Trigger className="flex">
+        <Popup>
+            <Popup.Trigger aria-label="More information" className="flex">
                 <span className="ml-1 relative z-50 inline-flex">
                     <InfoIcon size={16} weight="fill" className="block"/>
                 </span>
-            </Tooltip.Trigger>
-            <Tooltip.Content placement="left" className="max-w-xs [word-break:normal] wrap-normal">
+            </Popup.Trigger>
+            <Popup.Content placement="left" className="max-w-xs [word-break:normal] wrap-normal">
                 <MarkdownContent className="text-xs">{content}</MarkdownContent>
-            </Tooltip.Content>
-        </Tooltip>
+            </Popup.Content>
+        </Popup>
     )
 }
