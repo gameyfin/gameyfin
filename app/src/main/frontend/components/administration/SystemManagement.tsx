@@ -1,7 +1,7 @@
 import React from "react";
 import {SystemEndpoint} from "Frontend/generated/endpoints";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
-import {toast, Button} from "@heroui/react";
+import {Button, toast} from "@heroui/react";
 import Section from "Frontend/components/general/Section";
 import BackupManagement from "Frontend/components/administration/BackupManagement";
 import DatabaseManagement from "Frontend/components/administration/DatabaseManagement";

@@ -55,18 +55,18 @@ export default function PluginConfigFormField({pluginConfigMetadata, ...props}: 
             case "float":
                 return (
                     <NumberInput label={metadata.label}
-                           name={metadata.key}
-                           isRequired={metadata.required}
-                           step={0.1}
-                           {...commonProps}/>
+                                 name={metadata.key}
+                                 isRequired={metadata.required}
+                                 step={0.1}
+                                 {...commonProps}/>
                 );
             case "int":
                 return (
                     <NumberInput label={metadata.label}
-                           name={metadata.key}
-                           isRequired={metadata.required}
-                           step={1}
-                           {...commonProps}/>
+                                 name={metadata.key}
+                                 isRequired={metadata.required}
+                                 step={1}
+                                 {...commonProps}/>
                 );
             default:
                 return <pre>Unsupported type: {metadata.type} for key {metadata.key}</pre>;

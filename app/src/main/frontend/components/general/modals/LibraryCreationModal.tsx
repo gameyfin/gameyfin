@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useState} from "react";
 import {Alert, Button, Checkbox, Link, Modal, Spinner, toast} from "@heroui/react";
 import {Form, Formik} from "formik";
@@ -37,7 +38,7 @@ export default function LibraryCreationModal({
         <>
             <Modal>
                 <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                    <Modal.Container size="lg" className="max-w-xl">
+                    <ResponsiveDialog size="lg" className="max-w-xl">
                         <Modal.Dialog>
                             {({close}) => (
                                 <Formik
@@ -127,7 +128,7 @@ export default function LibraryCreationModal({
                                 </Formik>
                             )}
                         </Modal.Dialog>
-                    </Modal.Container>
+                    </ResponsiveDialog>
                 </Modal.Backdrop>
             </Modal>
         </>

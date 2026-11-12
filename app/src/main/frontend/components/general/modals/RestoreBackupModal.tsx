@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useState} from "react";
 import {Alert, Button, Modal, Spinner} from "@heroui/react";
 import UploadButton from "Frontend/components/general/input/UploadButton";
@@ -64,7 +65,7 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                             onOpenChange={(open) => !busy && onOpenChange(open)}
                             variant="opaque"
                             isDismissable={!busy}>
-                <Modal.Container size="lg">
+                <ResponsiveDialog size="lg">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -84,7 +85,8 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                                     </p>
                                     <div className="flex flex-row items-center gap-4">
                                         <UploadButton label="Upload backup" variant="ghost" isDisabled={busy}
-                                                      accept=".zip,application/zip" onFilesSelected={files => setFile(files[0])}/>
+                                                      accept=".zip,application/zip"
+                                                      onFilesSelected={files => setFile(files[0])}/>
                                         {file && <span className="truncate">{file.name}</span>}
                                     </div>
                                     {error &&
@@ -114,7 +116,7 @@ export default function RestoreBackupModal({isOpen, onOpenChange, onRestored}: R
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

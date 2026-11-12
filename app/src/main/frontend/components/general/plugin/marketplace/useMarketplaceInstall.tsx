@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import {toast, useOverlayState} from "@heroui/react";
-import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
+import MarketplacePluginDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 import {installPlugin} from "Frontend/state/MarketplaceState";
 import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 

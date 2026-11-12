@@ -41,7 +41,7 @@ export default function Input({
             value={field.value}
             onChange={(value) => helpers.setValue(value)}
             onBlur={field.onBlur}
-            className={`min-h-20 grow ${className ?? ""}`}
+            className={`min-h-20 min-w-0 grow ${className ?? ""}`}
             isInvalid={(meta.touched || showErrorUntouched) && !!meta.error}
         >
             {label && <Label className={labelSuffix ? "flex items-center after:order-1" : undefined}>
@@ -49,7 +49,8 @@ export default function Input({
                 {labelSuffix && <span className="order-2 inline-flex">{labelSuffix}</span>}
             </Label>}
             <div className="flex items-center gap-1">
-                <HeroUiInput className="grow" variant={variant} type={type} autoComplete={autoComplete} placeholder={placeholder}/>
+                <HeroUiInput className="min-w-0 grow" variant={variant} type={type} autoComplete={autoComplete}
+                             placeholder={placeholder}/>
                 {(description || resetValue !== undefined) && (
                     <span className="flex w-13 shrink-0 items-center gap-1">
                         {description && <InfoPopup content={description as string}/>}

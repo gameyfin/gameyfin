@@ -11,13 +11,14 @@ export interface ComboButtonOption {
 }
 
 export interface ComboButtonProps {
+    className?: string;
     description?: string;
     icon?: ReactElement<IconProps>;
     options: Record<string, ComboButtonOption>;
     preferredOptionKey?: string;
 }
 
-export default function ComboButton({options, preferredOptionKey, description, icon}: ComboButtonProps) {
+export default function ComboButton({options, preferredOptionKey, description, icon, className}: ComboButtonProps) {
     const [selectedOption, setSelectedOption] = useState(new Set([Object.keys(options)[0]]));
     const selectedOptionValue = Array.from(selectedOption)[0];
     const hasMultipleOptions = Object.keys(options).length > 1;
@@ -48,8 +49,8 @@ export default function ComboButton({options, preferredOptionKey, description, i
     }
 
     return options[selectedOptionValue] && (
-        <ButtonGroup className="gap-px items-stretch">
-            <Button variant="primary" className="w-52 h-auto active:scale-[0.97] transition-[scale]"
+        <ButtonGroup className={`gap-px items-stretch ${className ?? ""}`}>
+            <Button variant="primary" className="w-52 min-w-0 grow h-auto active:scale-[0.97] transition-[scale]"
                     onPress={options[selectedOptionValue].action}>
                 <div className="flex items-center gap-3 py-1 px-2 w-full">
                     {icon && (
@@ -66,7 +67,7 @@ export default function ComboButton({options, preferredOptionKey, description, i
             </Button>
             {hasMultipleOptions && (
                 <Dropdown>
-                    <Button isIconOnly variant="primary"
+                    <Button isIconOnly variant="primary" aria-label="Download options"
                             className="h-auto self-stretch active:scale-[0.97] transition-[scale]">
                         <CaretDownIcon/>
                     </Button>

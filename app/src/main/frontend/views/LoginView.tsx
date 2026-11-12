@@ -1,6 +1,6 @@
 import {useAuth} from "Frontend/util/auth";
 import {useEffect, useState} from "react";
-import {Button, Card, Link, useOverlayState, Spinner} from "@heroui/react";
+import {Button, Card, Link, Spinner, useOverlayState} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import PasswordResetModal from "Frontend/components/general/modals/PasswordResetModal";
@@ -38,8 +38,8 @@ export default function LoginView() {
     }
 
     return (
-        <div className="flex size-full gradient-primary">
-            <Card className="m-auto p-12">
+        <div className="flex min-h-dvh w-full p-4 gradient-primary">
+            <Card className="m-auto w-full max-w-[480px] p-4 sm:p-12">
                 <Card.Header>
                     <img
                         className="h-28 w-full content-center"
@@ -47,7 +47,7 @@ export default function LoginView() {
                         alt="Gameyfin Logo"
                     />
                 </Card.Header>
-                <Card.Content className="mt-8 mb-2 w-80 max-w-(--breakpoint-lg) sm:w-96">
+                <Card.Content className="mt-8 mb-2 w-full sm:w-96 sm:max-w-full">
                     <Formik
                         initialValues={{}}
                         onSubmit={tryLogin}>

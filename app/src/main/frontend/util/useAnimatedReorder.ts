@@ -14,7 +14,7 @@ export function useAnimatedReorder<T>({items, getKey, getLabel, onReorder, disab
     const ref = useRef<HTMLDivElement>(null);
     const draggedKeys = useRef<Set<Key>>(new Set());
     const [target, setTarget] = useState<ItemDropTarget | null>(null);
-    const previousSlots = useRef(new Map<string, {x: number; y: number}>());
+    const previousSlots = useRef(new Map<string, { x: number; y: number }>());
     const animations = useRef(new Map<HTMLElement, Animation>());
     const isPreviewing = !disabled && target !== null && draggedKeys.current.size > 0;
     const preview = isPreviewing ? reorderItems(items, draggedKeys.current, target, getKey) : items;
@@ -25,7 +25,9 @@ export function useAnimatedReorder<T>({items, getKey, getLabel, onReorder, disab
         getAllowedDropOperations: () => ["move"],
         // The animated items show the destination; retain only the accessible drop targets.
         renderDropIndicator: target => createElement(DropIndicator, {target, className: "sr-only"}),
-        onDragStart: event => { draggedKeys.current = event.keys; },
+        onDragStart: event => {
+            draggedKeys.current = event.keys;
+        },
         onDropEnter: event => setTarget(event.target.type === "item" ? event.target : null),
         onDropExit: () => setTarget(null),
         onDragEnd: () => {
@@ -52,7 +54,7 @@ export function useAnimatedReorder<T>({items, getKey, getLabel, onReorder, disab
         const collectionCommitted = cards.length === items.length && cards.every(
             (card, index) => card.dataset.reorderKey === String(getKey(items[index]))
         );
-        const nextSlots = new Map<string, {x: number; y: number}>();
+        const nextSlots = new Map<string, { x: number; y: number }>();
 
         cards.forEach((card, index) => {
             const key = card.dataset.reorderKey!;

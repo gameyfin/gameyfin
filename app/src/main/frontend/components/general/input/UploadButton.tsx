@@ -1,4 +1,4 @@
-import {useRef, ComponentProps} from "react";
+import {ComponentProps, useRef} from "react";
 import {Button, Spinner} from "@heroui/react";
 import {UploadSimpleIcon} from "@phosphor-icons/react";
 
@@ -9,7 +9,16 @@ type Props = Omit<ComponentProps<typeof Button>, "onPress" | "type" | "children"
     onFilesSelected: (files: File[]) => void | Promise<void>;
 };
 
-export default function UploadButton({label, accept, multiple, onFilesSelected, isDisabled, isPending, variant = "primary", ...props}: Props) {
+export default function UploadButton({
+                                         label,
+                                         accept,
+                                         multiple,
+                                         onFilesSelected,
+                                         isDisabled,
+                                         isPending,
+                                         variant = "primary",
+                                         ...props
+                                     }: Props) {
     const input = useRef<HTMLInputElement>(null);
     return <>
         <Button {...props} type="button" variant={variant} isDisabled={isDisabled || isPending}

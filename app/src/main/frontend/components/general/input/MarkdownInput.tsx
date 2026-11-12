@@ -2,14 +2,22 @@ import {useEffect, useRef, useState} from "react";
 import {useField} from "formik";
 import {Button, Tabs, Toolbar, Tooltip} from "@heroui/react";
 import {
-    CodeBlockIcon, CodeIcon, LinkSimpleIcon, ListBulletsIcon, ListNumbersIcon,
-    QuotesIcon, TextBIcon, TextHTwoIcon, TextItalicIcon, type Icon
+    CodeBlockIcon,
+    CodeIcon,
+    type Icon,
+    LinkSimpleIcon,
+    ListBulletsIcon,
+    ListNumbersIcon,
+    QuotesIcon,
+    TextBIcon,
+    TextHTwoIcon,
+    TextItalicIcon
 } from "@phosphor-icons/react";
 import TextAreaInput, {TextAreaInputProps} from "./TextAreaInput";
 import MarkdownContent from "../MarkdownContent";
 
-import {formatMarkdown, type Action} from "./markdownFormatting";
-import {MarkdownHistory, type EditorSnapshot} from "./markdownHistory";
+import {type Action, formatMarkdown} from "./markdownFormatting";
+import {type EditorSnapshot, MarkdownHistory} from "./markdownHistory";
 
 const actions: [Action, string, Icon][] = [
     ["bold", "Bold", TextBIcon], ["italic", "Italic", TextItalicIcon], ["heading", "Heading", TextHTwoIcon],

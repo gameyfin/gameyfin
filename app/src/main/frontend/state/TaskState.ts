@@ -36,6 +36,7 @@ export function isRunActive(run: TaskRunDto): boolean {
 
 /** Subscribe to and process state updates from backend **/
 let generation = 0;
+
 export function initializeTaskState() {
     if (taskState.subscription) return;
     const current = ++generation;

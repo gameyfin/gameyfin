@@ -110,7 +110,7 @@ export default function HomeView() {
                             <p className="text-2xl font-bold mb-4">All games</p>
                             <CaretRightIcon weight="bold" size={16}/>
                         </Link>
-                        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
+                        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                             {filteredAndSortedLibraries.length > 0 &&
                                 filteredAndSortedLibraries.map((library: LibrarySummaryDto) => (
                                     <StartPageDisplayCard key={library.id} item={library}/>

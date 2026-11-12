@@ -1,3 +1,4 @@
+import Popup from "Frontend/components/general/Popup";
 import React, {useEffect, useState} from "react";
 import {DownloadProviderEndpoint, GameEndpoint} from "Frontend/generated/endpoints";
 import {useNavigate, useParams} from "react-router";
@@ -163,18 +164,18 @@ export default function GameView() {
                                         <span className="text-muted">no data</span>}
                                 </p>
                                 <ChipList items={game.platforms} maxVisible={1}/>
-                                <Tooltip>
-                                    <Tooltip.Trigger>
+                                <Popup>
+                                    <Popup.Trigger>
                                         <InfoIcon/>
-                                    </Tooltip.Trigger>
-                                    <Tooltip.Content placement="right">
+                                    </Popup.Trigger>
+                                    <Popup.Content placement="right">
                                         {`Last update: ${new Date(game.updatedAt).toLocaleString()}`}
-                                    </Tooltip.Content>
-                                </Tooltip>
+                                    </Popup.Content>
+                                </Popup>
                             </div>
                         </div>
                     </div>
-                    <div className="flex max-w-full flex-wrap items-center gap-4 xl:gap-8">
+                    <div className="flex w-full sm:w-auto max-w-full flex-wrap items-center gap-4 xl:gap-8">
                         <div className="flex shrink-0 flex-row gap-2">
                             <Tooltip>
                                 <Tooltip.Trigger>
@@ -233,11 +234,12 @@ export default function GameView() {
                                 <Tooltip.Content>Remove from library</Tooltip.Content>
                             </Tooltip>
                         </div>}
-                        {downloadOptions && <ComboButton icon={<DownloadSimpleIcon size={24}/>}
-                                                         description={humanFileSize(game.metadata.fileSize)}
-                                                         options={downloadOptions}
-                                                         preferredOptionKey="preferred-download-method"
-                        />}
+                        {downloadOptions &&
+                            <ComboButton className="w-full sm:w-auto" icon={<DownloadSimpleIcon size={24}/>}
+                                         description={humanFileSize(game.metadata.fileSize)}
+                                         options={downloadOptions}
+                                         preferredOptionKey="preferred-download-method"
+                            />}
                     </div>
                 </div>
                 <div className="flex min-w-0 flex-col gap-8 wrap-anywhere">

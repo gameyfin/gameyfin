@@ -1,3 +1,5 @@
+import CompactGameList, {GameDetailsDialog} from "Frontend/components/layout/CompactGameList";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import LibrarySummaryDto from "Frontend/generated/org/gameyfin/app/libraries/dto/LibrarySummaryDto";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {
@@ -30,6 +32,8 @@ interface LibraryManagementGamesProps {
 }
 
 export default function LibraryManagementGames({library}: LibraryManagementGamesProps) {
+    const compact = useMediaQuery(COMPACT_QUERY);
+    const [selectedDetails, setSelectedDetails] = useState<GameSummaryDto | null>(null);
     const state = useSnapshot(gameState);
     const games = state.gamesByLibraryId[library.id] ? state.gamesByLibraryId[library.id] : [];
     const [searchTerm, setSearchTerm] = useState("");
@@ -103,18 +107,64 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         await GameEndpoint.deleteGame(game.id);
     }
 
-    return <div className="flex flex-col gap-4">
+    function renderActions(item: GameSummaryDto) {
+        return (
+            <div className="flex flex-row flex-wrap gap-2">
+                <Tooltip>
+                    <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
+                            variant="tertiary" aria-label={item.matchConfirmed ? "Unconfirm match" : "Confirm match"}
+                            onPress={() => toggleMatchConfirmed(item)}>
+                        {item.matchConfirmed ? <CheckCircleIcon weight="fill" className="fill-success"/> :
+                            <CheckCircleIcon/>}
+                    </Button>
+                    <Tooltip.Content>{item.matchConfirmed ? "Unconfirm match" : "Confirm match"}</Tooltip.Content>
+                </Tooltip>
+                <Tooltip>
+                    <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
+                            variant="tertiary" aria-label="Edit metadata"
+                            onPress={() => {
+                                setSelectedGame(item);
+                                editGameModal.open();
+                            }}>
+                        <PencilIcon/>
+                    </Button>
+                    <Tooltip.Content>Edit metadata</Tooltip.Content>
+                </Tooltip>
+                <Tooltip>
+                    <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
+                            variant="tertiary" aria-label="Match game"
+                            onPress={() => {
+                                setSelectedGame(item);
+                                matchGameModal.open();
+                            }}>
+                        <MagnifyingGlassIcon/>
+                    </Button>
+                    <Tooltip.Content>Match game</Tooltip.Content>
+                </Tooltip>
+                <Tooltip>
+                    <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
+                            variant="danger" aria-label="Remove from library" onPress={() => deleteGame(item)}>
+                        <TrashIcon/>
+                    </Button>
+                    <Tooltip.Content>Remove from library</Tooltip.Content>
+                </Tooltip>
+            </div>
+        );
+    }
+
+    return <div className="flex flex-col gap-4 min-w-0">
         <h1 className="text-2xl font-bold">Manage games in library</h1>
-        <div className="flex flex-row gap-2 justify-between">
+        <div className="flex flex-wrap gap-2 justify-between">
             <Input
-                className="w-96"
+                className="w-full sm:w-96"
+                aria-label="Search library games"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Select value={filter}
+            <Select aria-label="Match status" value={filter}
                     onChange={(value) => setFilter(value as "all" | "confirmed" | "nonConfirmed")}
-                    className="w-64">
+                    className="w-full sm:w-64">
                 <Select.Trigger>
                     <Select.Value/>
                     <Select.Indicator/>
@@ -137,7 +187,21 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 </Select.Popover>
             </Select>
         </div>
-        <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 56}}>
+        {compact ? <CompactGameList
+            games={sortedItems}
+            label="Games in library"
+            sortDescriptor={sortDescriptor}
+            onSortChange={setSortDescriptor}
+            sortOptions={[
+                {id: "title", label: "Title"},
+                {id: "addedToLibrary", label: "Added to library"},
+                {id: "downloadCount", label: "Download count"},
+                {id: "completeness", label: "Completeness"},
+            ]}
+            status={game => game.matchConfirmed ? "Confirmed match" : "Unconfirmed match"}
+            onDetails={setSelectedDetails}
+            actions={renderActions}
+        /> : <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 56}}>
             <Table variant="secondary">
                 <Table.ScrollContainer>
                     <Table.Content aria-label="Games in library" className="h-[35rem] min-w-[1100px] overflow-auto"
@@ -179,7 +243,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                 <Table.Row key={item.id}>
                                     <Table.Cell>
                                         <Link href={`/game/${item.id}`}
-                                              className="text-sm text-foreground hover:underline">
+                                              className="line-clamp-2 text-sm text-foreground hover:underline">
                                             {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
                                         </Link>
                                     </Table.Cell>
@@ -202,54 +266,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                                         <MetadataCompletenessIndicator game={item}/>
                                     </Table.Cell>
                                     <Table.Cell>
-                                        <div className="flex flex-row gap-2">
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="tertiary"
-                                                            onPress={() => toggleMatchConfirmed(item)}>
-                                                        {item.matchConfirmed ?
-                                                            <CheckCircleIcon weight="fill" className="fill-success"/> :
-                                                            <CheckCircleIcon/>}
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>
-                                                    {item.matchConfirmed ? "Unconfirm match" : "Confirm match"}
-                                                </Tooltip.Content>
-                                            </Tooltip>
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="tertiary"
-                                                            onPress={() => {
-                                                                setSelectedGame(item);
-                                                                editGameModal.open();
-                                                            }}>
-                                                        <PencilIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Edit metadata</Tooltip.Content>
-                                            </Tooltip>
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="tertiary"
-                                                            onPress={() => {
-                                                                setSelectedGame(item);
-                                                                matchGameModal.open();
-                                                            }}>
-                                                        <MagnifyingGlassIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Match game</Tooltip.Content>
-                                            </Tooltip>
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="danger"
-                                                            onPress={() => deleteGame(item)}>
-                                                        <TrashIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Remove from library</Tooltip.Content>
-                                            </Tooltip>
-                                        </div>
+                                        {renderActions(item)}
                                     </Table.Cell>
                                 </Table.Row>
                             )}
@@ -257,7 +274,8 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                     </Table.Content>
                 </Table.ScrollContainer>
             </Table>
-        </Virtualizer>
+        </Virtualizer>}
+        <GameDetailsDialog game={selectedDetails} onClose={() => setSelectedDetails(null)}/>
         {selectedGame && <>
             <EditGameMetadataModal gameId={selectedGame.id}
                                    isOpen={editGameModal.isOpen}

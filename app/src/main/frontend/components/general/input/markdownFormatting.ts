@@ -1,6 +1,6 @@
 export type Action = "bold" | "italic" | "heading" | "link" | "bullet" | "number" | "quote" | "code" | "block";
 
-export function formatMarkdown(value: string, selection: {start: number; end: number}, action: Action) {
+export function formatMarkdown(value: string, selection: { start: number; end: number }, action: Action) {
     let {start, end} = selection;
     let replacement: string;
     let offset = 0;
@@ -24,5 +24,8 @@ export function formatMarkdown(value: string, selection: {start: number; end: nu
         offset = action === "link" ? (text ? text.length + 3 : 1) : marker.length;
         length = action === "link" && text ? "https://example.com".length : text.length;
     }
-    return {value: value.slice(0, start) + replacement + value.slice(end), selection: {start: start + offset, end: start + offset + length}};
+    return {
+        value: value.slice(0, start) + replacement + value.slice(end),
+        selection: {start: start + offset, end: start + offset + length}
+    };
 }

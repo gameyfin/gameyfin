@@ -13,9 +13,13 @@ export function liveSubscription<T, E>(options: {
     let rerun = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
     let subscription: Subscription<E[]> | undefined;
+
     async function sync() {
         if (disposed) return;
-        if (running) { rerun = true; return; }
+        if (running) {
+            rerun = true;
+            return;
+        }
         running = true;
         buffer ??= [];
         try {
@@ -32,9 +36,13 @@ export function liveSubscription<T, E>(options: {
             }
         } finally {
             running = false;
-            if (rerun && !disposed) { rerun = false; void sync(); }
+            if (rerun && !disposed) {
+                rerun = false;
+                void sync();
+            }
         }
     }
+
     function connect() {
         if (disposed) return;
         subscription = options.subscribe()
@@ -59,6 +67,11 @@ export function liveSubscription<T, E>(options: {
             });
         void sync();
     }
+
     connect();
-    return () => { disposed = true; clearTimeout(retry); subscription?.cancel(); };
+    return () => {
+        disposed = true;
+        clearTimeout(retry);
+        subscription?.cancel();
+    };
 }

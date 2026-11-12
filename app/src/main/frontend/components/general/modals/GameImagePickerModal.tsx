@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useRef, useState} from "react";
 import {Button, Input, Modal, Spinner} from "@heroui/react";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
@@ -92,10 +93,12 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
             onSelect(urls.map(url => {
                 const image = remoteImage(url);
                 const pluginId = results.find(result => result.url === url)?.pluginId;
-                return {...image, selection: {...image.selection, pluginId}, source: pluginId ? {
-                    type: GameFieldMetadataType.PLUGIN, source: pluginId, sourceName: plugins[pluginId]?.name,
-                    updatedAt: new Date().toISOString()
-                } : userSource};
+                return {
+                    ...image, selection: {...image.selection, pluginId}, source: pluginId ? {
+                        type: GameFieldMetadataType.PLUGIN, source: pluginId, sourceName: plugins[pluginId]?.name,
+                        updatedAt: new Date().toISOString()
+                    } : userSource
+                };
             }));
             onClose();
         } catch (error) {
@@ -126,7 +129,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
         <Modal.Backdrop isOpen onOpenChange={open => {
             if (!open) onClose();
         }}>
-            <Modal.Container size="lg" className="max-w-3xl">
+            <ResponsiveDialog size="lg" className="max-w-3xl">
                 <Modal.Dialog>
                     <Modal.CloseTrigger/>
                     <Modal.Header><Modal.Heading>Choose {multiple ? "screenshots" : `a ${label}`}</Modal.Heading></Modal.Header>
@@ -211,7 +214,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                             ({selected.length})</Button>}
                     </Modal.Footer>
                 </Modal.Dialog>
-            </Modal.Container>
+            </ResponsiveDialog>
         </Modal.Backdrop>
     </Modal>;
 }

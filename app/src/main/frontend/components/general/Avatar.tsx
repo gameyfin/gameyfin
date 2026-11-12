@@ -31,7 +31,10 @@ const Avatar = ({username: usernameProp, className, avatarId, hasAvatar}: Avatar
         <HeroUiAvatar className={className}>
             {/* TODO: Check if avatar can be loaded from SSO */}
             {showImage && (
-                <HeroUiAvatar.Image key={`${username}:${imageId}`} src={`/images/avatar?${new URLSearchParams({username: username ?? "", v: String(imageId ?? "")})}`}/>
+                <HeroUiAvatar.Image key={`${username}:${imageId}`} src={`/images/avatar?${new URLSearchParams({
+                    username: username ?? "",
+                    v: String(imageId ?? "")
+                })}`}/>
             )}
             <HeroUiAvatar.Fallback className={`bg-transparent ${className ?? ""}`}>
                 <UserIcon/>

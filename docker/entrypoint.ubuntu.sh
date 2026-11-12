@@ -36,7 +36,9 @@ fi
 # MaxMetaspaceSize     – bounds class-metadata growth (Vaadin/Spring load many).
 # MaxDirectMemorySize  – caps NIO direct buffers.
 # AOT Cache reduces startup time and memory footprint.
+# Allow classpath libraries such as Netty to load native code without JVM warnings.
 DEFAULT_JVM_OPTS="\
+  --enable-native-access=ALL-UNNAMED \
   -Xms128m \
   -Xmx512m \
   -XX:+UseG1GC \

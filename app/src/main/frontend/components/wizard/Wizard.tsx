@@ -72,17 +72,20 @@ const Wizard = ({children, initialValues, onSubmit}: WizardProps) => {
                         />
                     </div>
                     <div className="flex grow">{step}</div>
-                    <div className="left-8 right-8 absolute bottom-8">
+                    <div className="mt-6 xl:mt-0 xl:left-8 xl:right-8 xl:absolute xl:bottom-8">
                         <div className="flex justify-between">
                             <Button
                                 variant="primary"
+                                aria-label="Previous step"
                                 onPress={() => previous(formik.values)}
                                 isDisabled={isFirstStep || formik.isSubmitting}
                             >
                                 <ArrowLeftIcon/>
                             </Button>
-                            <Button variant="primary" isPending={formik.isSubmitting} type="submit">
-                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ? <CheckIcon/> : <ArrowRightIcon/>}
+                            <Button aria-label={isLastStep ? "Finish setup" : "Next step"} variant="primary"
+                                    isPending={formik.isSubmitting} type="submit">
+                                {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ?
+                                    <CheckIcon/> : <ArrowRightIcon/>}
                             </Button>
                         </div>
                     </div>

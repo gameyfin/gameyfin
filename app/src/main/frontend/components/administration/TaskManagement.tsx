@@ -1,3 +1,7 @@
+import Popup from "Frontend/components/general/Popup";
+import CompactRecordList from "Frontend/components/layout/CompactRecordList";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
+import TableScroller from "Frontend/components/layout/TableScroller";
 import React, {useEffect, useMemo, useState} from "react";
 import {Button, Chip, Label, ListBox, Select, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {ClockCounterClockwiseIcon, FileTextIcon, GearIcon, PlayIcon, StopIcon} from "@phosphor-icons/react";
@@ -17,6 +21,7 @@ const PAGE_SIZE = 25;
 const ALL_TASKS = "__all__";
 
 export function TaskManagement() {
+    const compact = useMediaQuery(COMPACT_QUERY);
     const [tasks, setTasks] = useState<TaskDto[]>();
     const [history, setHistory] = useState<TaskRunDto[]>([]);
     const [hasMore, setHasMore] = useState(false);
@@ -120,6 +125,161 @@ export function TaskManagement() {
         return <code className="text-sm">{cron}</code>;
     }
 
+    function taskFields(task: TaskDto) {
+        return [
+            {
+                label: "Task", tableClassName: "", content: <>
+                    <div className="flex flex-col">
+                        <div className="flex flex-row items-center gap-2">
+                            <span className="font-semibold">{task.name}</span>
+                            {task.source === TaskSource.PLUGIN &&
+                                <Chip size="sm" variant="soft">
+                                    {task.pluginName ?? task.pluginId}
+                                </Chip>}
+                        </div>
+                        <span className="text-sm text-muted">{task.description}</span>
+                    </div>
+                </>
+            },
+            {
+                label: "Schedule", tableClassName: "whitespace-nowrap", content: <>
+                    {scheduleDescription(task)}
+                </>
+            },
+            {
+                label: "Next run", tableClassName: "whitespace-nowrap", content: <>
+                    {task.nextExecution ?
+                        <Popup>
+                            <Popup.Trigger>
+                                <span>{timeUntil(task.nextExecution)}</span>
+                            </Popup.Trigger>
+                            <Popup.Content>
+                                {new Date(task.nextExecution).toLocaleString()}
+                            </Popup.Content>
+                        </Popup> :
+                        <span className="text-muted">-</span>}
+                </>
+            },
+            {
+                label: "Last run", tableClassName: "whitespace-nowrap", content: <>
+                    {task.lastRun ?
+                        <div className="flex flex-row items-center gap-2">
+                            <TaskRunStatusChip run={liveRuns[task.lastRun.id] ?? task.lastRun}/>
+                            <span className="text-sm text-muted">
+                        {timeUntil(task.lastRun.finishedAt ?? task.lastRun.startedAt)}
+                    </span>
+                        </div> :
+                        <span className="text-muted">Never</span>}
+                </>
+            },
+            {
+                label: "Actions", tableClassName: "", content: <>
+                    <div className="flex flex-wrap gap-2">
+                        {task.manuallyTriggerable &&
+                            <Tooltip>
+                                <Button isIconOnly size="sm" variant="ghost"
+                                        aria-label="Run now"
+                                        isPending={starting[task.key]}
+                                        onPress={() => requestRun(task)}>
+                                    {starting[task.key] ?
+                                        <Spinner size="sm" color="current"/> :
+                                        <PlayIcon/>}
+                                </Button>
+                                <Tooltip.Content>Run now</Tooltip.Content>
+                            </Tooltip>}
+                        {(task.schedulable || task.settingsMetadata.length > 0) &&
+                            <Tooltip>
+                                <Button isIconOnly size="sm" variant="ghost"
+                                        aria-label="Configure"
+                                        onPress={() => {
+                                            setSelectedTask(task);
+                                            editModal.open();
+                                        }}>
+                                    <GearIcon/>
+                                </Button>
+                                <Tooltip.Content>Configure</Tooltip.Content>
+                            </Tooltip>}
+                        <Tooltip>
+                            <Button isIconOnly size="sm" variant="ghost"
+                                    aria-label="Show history"
+                                    onPress={() => setFilter(task.key)}>
+                                <ClockCounterClockwiseIcon/>
+                            </Button>
+                            <Tooltip.Content>Show history</Tooltip.Content>
+                        </Tooltip>
+                    </div>
+                </>
+            }
+        ];
+    }
+
+    function runFields(run: TaskRunDto) {
+        return [
+            {
+                label: "Run", tableClassName: "", content: <>
+                    <div className="flex flex-col">
+                        <span>{run.displayName}</span>
+                        {run.displayName !== run.taskName &&
+                            <span className="text-sm text-muted">{run.taskName}</span>}
+                    </div>
+                </>
+            },
+            {
+                label: "Trigger", tableClassName: "", content: <>
+                    {triggerLabel(run.trigger)}
+                </>
+            },
+            {
+                label: "Status", tableClassName: "", content: <>
+                    <TaskRunStatusChip run={run}/>
+                </>
+            },
+            {
+                label: "Started", tableClassName: "", content: <>
+                    {new Date(run.startedAt).toLocaleString()}
+                </>
+            },
+            {
+                label: "Duration", tableClassName: "", content: <>
+                    {run.finishedAt ? timeBetween(run.startedAt, run.finishedAt) :
+                        <span className="text-muted">-</span>}
+                </>
+            },
+            {
+                label: "Result", tableClassName: "max-w-md", content: <>
+                    {isRunActive(run) ? <TaskRunProgress run={run}/> :
+                        run.errorMessage ?
+                            <span className="text-danger text-sm">{run.errorMessage}</span> :
+                            <span className="text-sm">{run.summary}</span>}
+                </>
+            },
+            {
+                label: "Actions", tableClassName: "", content: <>
+                    <div className="flex flex-wrap gap-2">
+                        <Tooltip>
+                            <Button isIconOnly size="sm" variant="ghost"
+                                    aria-label="Show log"
+                                    onPress={() => showLog(run)}>
+                                <FileTextIcon/>
+                            </Button>
+                            <Tooltip.Content>Show log</Tooltip.Content>
+                        </Tooltip>
+                        {isRunActive(run) && run.cancellable &&
+                            <Tooltip>
+                                <Button isIconOnly size="sm" variant="danger"
+                                        aria-label="Cancel"
+                                        isDisabled={run.cancelRequested}
+                                        onPress={() => cancelRun(run)}>
+                                    <StopIcon/>
+                                </Button>
+                                <Tooltip.Content>Cancel</Tooltip.Content>
+                            </Tooltip>}
+                    </div>
+                </>
+            }
+        ];
+    }
+
     return (
         <div className="flex flex-col">
             <h1 className="text-2xl font-bold">Tasks</h1>
@@ -127,110 +287,37 @@ export function TaskManagement() {
                 Background tasks of Gameyfin and its plugins. Configure their schedule and settings, start them
                 manually and inspect the logs of previous runs.
             </p>
-            <Table variant="secondary">
-                <Table.ScrollContainer>
-                    <Table.Content aria-label="Tasks">
-                        <Table.Header>
-                            <Table.Column id="name" isRowHeader>Task</Table.Column>
-                            <Table.Column id="schedule">Schedule</Table.Column>
-                            <Table.Column id="next">Next run</Table.Column>
-                            <Table.Column id="last">Last run</Table.Column>
-                            <Table.Column id="actions">Actions</Table.Column>
-                        </Table.Header>
-                        <Table.Body items={(tasks ?? []).map(task => ({key: task.key, task}))}
-                                    renderEmptyState={() =>
-                                        <div className="flex justify-center p-4">
+            {compact ?
+                <CompactRecordList label="Tasks" items={tasks ?? []} itemKey={task => task.key} fields={taskFields}
+                                   empty={tasks ? <p>No tasks available.</p> :
+                                       <Spinner aria-label="Loading tasks"/>}/> : <Table variant="secondary">
+                    <TableScroller label="Tasks">
+                        <Table.Content aria-label="Tasks">
+                            <Table.Header>
+                                <Table.Column id="name" isRowHeader>Task</Table.Column>
+                                <Table.Column id="schedule">Schedule</Table.Column>
+                                <Table.Column id="next">Next run</Table.Column>
+                                <Table.Column id="last">Last run</Table.Column>
+                                <Table.Column id="actions">Actions</Table.Column>
+                            </Table.Header>
+                            <Table.Body items={(tasks ?? []).map(task => ({key: task.key, task}))}
+                                        renderEmptyState={() => <div className="flex justify-center p-4">
                                             {tasks ? <p className="text-muted">No tasks available.</p> : <Spinner/>}
                                         </div>}>
-                            {({task}) => (
-                                <Table.Row key={task.key}>
-                                    <Table.Cell>
-                                        <div className="flex flex-col">
-                                            <div className="flex flex-row items-center gap-2">
-                                                <span className="font-semibold">{task.name}</span>
-                                                {task.source === TaskSource.PLUGIN &&
-                                                    <Chip size="sm" variant="soft">
-                                                        {task.pluginName ?? task.pluginId}
-                                                    </Chip>}
-                                            </div>
-                                            <span className="text-sm text-muted">{task.description}</span>
-                                        </div>
-                                    </Table.Cell>
-                                    <Table.Cell className="whitespace-nowrap">{scheduleDescription(task)}</Table.Cell>
-                                    <Table.Cell className="whitespace-nowrap">
-                                        {task.nextExecution ?
-                                            <Tooltip delay={500}>
-                                                <Tooltip.Trigger>
-                                                    <span>{timeUntil(task.nextExecution)}</span>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>
-                                                    {new Date(task.nextExecution).toLocaleString()}
-                                                </Tooltip.Content>
-                                            </Tooltip> :
-                                            <span className="text-muted">-</span>}
-                                    </Table.Cell>
-                                    <Table.Cell className="whitespace-nowrap">
-                                        {task.lastRun ?
-                                            <div className="flex flex-row items-center gap-2">
-                                                <TaskRunStatusChip run={liveRuns[task.lastRun.id] ?? task.lastRun}/>
-                                                <span className="text-sm text-muted">
-                                                    {timeUntil(task.lastRun.finishedAt ?? task.lastRun.startedAt)}
-                                                </span>
-                                            </div> :
-                                            <span className="text-muted">Never</span>}
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <div className="flex flex-row gap-2">
-                                            {task.manuallyTriggerable &&
-                                                <Tooltip>
-                                                    <Tooltip.Trigger>
-                                                        <Button isIconOnly size="sm" variant="ghost"
-                                                                aria-label="Run now"
-                                                                isPending={starting[task.key]}
-                                                                onPress={() => requestRun(task)}>
-                                                            {starting[task.key] ?
-                                                                <Spinner size="sm" color="current"/> :
-                                                                <PlayIcon/>}
-                                                        </Button>
-                                                    </Tooltip.Trigger>
-                                                    <Tooltip.Content>Run now</Tooltip.Content>
-                                                </Tooltip>}
-                                            {(task.schedulable || task.settingsMetadata.length > 0) &&
-                                                <Tooltip>
-                                                    <Tooltip.Trigger>
-                                                        <Button isIconOnly size="sm" variant="ghost"
-                                                                aria-label="Configure"
-                                                                onPress={() => {
-                                                                    setSelectedTask(task);
-                                                                    editModal.open();
-                                                                }}>
-                                                            <GearIcon/>
-                                                        </Button>
-                                                    </Tooltip.Trigger>
-                                                    <Tooltip.Content>Configure</Tooltip.Content>
-                                                </Tooltip>}
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="ghost"
-                                                            aria-label="Show history"
-                                                            onPress={() => setFilter(task.key)}>
-                                                        <ClockCounterClockwiseIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Show history</Tooltip.Content>
-                                            </Tooltip>
-                                        </div>
-                                    </Table.Cell>
-                                </Table.Row>
-                            )}
-                        </Table.Body>
-                    </Table.Content>
-                </Table.ScrollContainer>
-            </Table>
+                                {({task}) => <Table.Row key={task.key}>
+                                    {taskFields(task).map(field => <Table.Cell key={field.label}
+                                                                               className={field.tableClassName}>
+                                        {field.content}
+                                    </Table.Cell>)}
+                                </Table.Row>}
+                            </Table.Body>
+                        </Table.Content>
+                    </TableScroller>
+                </Table>}
 
-            <div className="flex flex-row items-end justify-between mt-8 mb-1 gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mt-8 mb-1 gap-4">
                 <h2 className="text-xl font-bold">Run history</h2>
-                <Select className="w-64"
+                <Select className="w-full sm:w-64"
                         aria-label="Filter by task"
                         value={filter}
                         onChange={(value) => setFilter((value as string) ?? ALL_TASKS)}>
@@ -255,78 +342,39 @@ export function TaskManagement() {
                     </Select.Popover>
                 </Select>
             </div>
-            <Table variant="secondary" className="mt-3">
-                <Table.ScrollContainer>
-                    <Table.Content aria-label="Task runs">
-                        <Table.Header>
-                            <Table.Column id="name" isRowHeader>Run</Table.Column>
-                            <Table.Column id="trigger">Trigger</Table.Column>
-                            <Table.Column id="status">Status</Table.Column>
-                            <Table.Column id="started">Started</Table.Column>
-                            <Table.Column id="duration">Duration</Table.Column>
-                            <Table.Column id="result">Result</Table.Column>
-                            <Table.Column id="actions">Actions</Table.Column>
-                        </Table.Header>
-                        <Table.Body items={runs.map(run => ({key: run.id, run}))}
-                                    renderEmptyState={() =>
-                                        <div className="flex justify-center p-4">
-                                            {loadingHistory ? <Spinner/> :
-                                                <p className="text-muted">No task runs available.</p>}
-                                        </div>}>
-                            {({run}) => (
-                                <Table.Row key={run.id}>
-                                    <Table.Cell>
-                                        <div className="flex flex-col">
-                                            <span>{run.displayName}</span>
-                                            {run.displayName !== run.taskName &&
-                                                <span className="text-sm text-muted">{run.taskName}</span>}
-                                        </div>
-                                    </Table.Cell>
-                                    <Table.Cell>{triggerLabel(run.trigger)}</Table.Cell>
-                                    <Table.Cell><TaskRunStatusChip run={run}/></Table.Cell>
-                                    <Table.Cell>{new Date(run.startedAt).toLocaleString()}</Table.Cell>
-                                    <Table.Cell>
-                                        {run.finishedAt ? timeBetween(run.startedAt, run.finishedAt) :
-                                            <span className="text-muted">-</span>}
-                                    </Table.Cell>
-                                    <Table.Cell className="max-w-md">
-                                        {isRunActive(run) ? <TaskRunProgress run={run}/> :
-                                            run.errorMessage ?
-                                                <span className="text-danger text-sm">{run.errorMessage}</span> :
-                                                <span className="text-sm">{run.summary}</span>}
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        <div className="flex flex-row gap-2">
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button isIconOnly size="sm" variant="ghost"
-                                                            aria-label="Show log"
-                                                            onPress={() => showLog(run)}>
-                                                        <FileTextIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Show log</Tooltip.Content>
-                                            </Tooltip>
-                                            {isRunActive(run) && run.cancellable &&
-                                                <Tooltip>
-                                                    <Tooltip.Trigger>
-                                                        <Button isIconOnly size="sm" variant="danger"
-                                                                aria-label="Cancel"
-                                                                isDisabled={run.cancelRequested}
-                                                                onPress={() => cancelRun(run)}>
-                                                            <StopIcon/>
-                                                        </Button>
-                                                    </Tooltip.Trigger>
-                                                    <Tooltip.Content>Cancel</Tooltip.Content>
-                                                </Tooltip>}
-                                        </div>
-                                    </Table.Cell>
-                                </Table.Row>
-                            )}
-                        </Table.Body>
-                    </Table.Content>
-                </Table.ScrollContainer>
-            </Table>
+            {compact ? <CompactRecordList label="Task runs" items={runs} itemKey={run => run.id} fields={runFields}
+                                          empty={loadingHistory ? <Spinner aria-label="Loading history"/> :
+                                              <p>No task runs available.</p>}/> :
+                <Table variant="secondary" className="mt-3">
+                    <TableScroller label="Tasks">
+                        <Table.Content aria-label="Task runs">
+                            <Table.Header>
+                                <Table.Column id="name" isRowHeader>Run</Table.Column>
+                                <Table.Column id="trigger">Trigger</Table.Column>
+                                <Table.Column id="status">Status</Table.Column>
+                                <Table.Column id="started">Started</Table.Column>
+                                <Table.Column id="duration">Duration</Table.Column>
+                                <Table.Column id="result">Result</Table.Column>
+                                <Table.Column id="actions">Actions</Table.Column>
+                            </Table.Header>
+                            <Table.Body items={runs.map(run => ({key: run.id, run}))}
+                                        renderEmptyState={() =>
+                                            <div className="flex justify-center p-4">
+                                                {loadingHistory ? <Spinner/> :
+                                                    <p className="text-muted">No task runs available.</p>}
+                                            </div>}>
+                                {({run}) => (
+                                    <Table.Row key={run.id}>
+                                        {runFields(run).map(field => <Table.Cell key={field.label}
+                                                                                 className={field.tableClassName}>
+                                            {field.content}
+                                        </Table.Cell>)}
+                                    </Table.Row>
+                                )}
+                            </Table.Body>
+                        </Table.Content>
+                    </TableScroller>
+                </Table>}
             {hasMore &&
                 <div className="flex justify-center mt-4">
                     <Button variant="ghost"

@@ -23,6 +23,7 @@ export const configState = proxy<ConfigState>({
 
 /** Subscribe to and process state updates from backend **/
 let generation = 0;
+
 export function resetConfigState() {
     generation++;
     configState.subscription?.cancel();
