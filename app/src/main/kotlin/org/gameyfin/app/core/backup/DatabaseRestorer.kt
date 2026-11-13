@@ -137,7 +137,7 @@ class DatabaseRestorer(
                 connection.autoCommit = false
                 try {
                     val schema = SchemaInspector(connection)
-                    val targetTables = schema.tables()
+                    val targetTables = schema.sortByDependencies(schema.tables())
                     val backupTables = manifest.tables.associateBy { it.name.uppercase() }
 
                     val unknownTables = backupTables.keys - targetTables.map { it.uppercase() }.toSet()
@@ -145,7 +145,15 @@ class DatabaseRestorer(
                         log.warn { "Skipping tables from backup which do not exist in the database: $unknownTables" }
                     }
 
-                    for (table in schema.sortByDependencies(targetTables)) {
+                    // Migrations may seed application data. Replace it with the backup's exact contents,
+                    // deleting dependent rows first so foreign key constraints remain enforced.
+                    connection.createStatement().use { statement ->
+                        for (table in targetTables.asReversed()) {
+                            statement.executeUpdate("DELETE FROM ${schema.quote(table)}")
+                        }
+                    }
+
+                    for (table in targetTables) {
                         val backupTable = backupTables[table.uppercase()] ?: continue
                         rows += importTable(connection, schema, table, zip, backupTable)
                         tables++

@@ -117,19 +117,20 @@ class GameMediaControllerTest {
         authenticate(Role.Names.ADMIN)
         val library = libraryAt(tempDir)
         val path = Files.createDirectory(tempDir.resolve("manual")).toString()
+        val canonicalPath = Path.of(path).toRealPath().toString()
         val game = mockk<org.gameyfin.app.games.entities.Game> { every { id } returns 42L }
         val metadata = update.copy(title = "Manual title", summary = "Custom summary")
         val file = MockMultipartFile("cover", byteArrayOf(1))
         val request = MockMultipartHttpServletRequest().apply { addFile(file) }
         every { libraries.getWithGamesAndIgnoredPaths(2L) } returns library
-        every { service.createManually("Manual title", path, library) } returns game
+        every { service.createManually("Manual title", canonicalPath, library) } returns game
         every { service.edit(any(), any()) } just Runs
         every { libraries.addGamesToLibrary(listOf(game), library, true) } returns library
 
         controller.importGame(metadata, path, 2L, request)
 
         verifyOrder {
-            service.createManually("Manual title", path, library)
+            service.createManually("Manual title", canonicalPath, library)
             service.edit(metadata.copy(id = 42L), mapOf("cover" to file))
             libraries.addGamesToLibrary(listOf(game), library, true)
         }
@@ -174,10 +175,11 @@ class GameMediaControllerTest {
         authenticate(Role.Names.ADMIN)
         val root = Files.createDirectory(tempDir.resolve("library"))
         val directory = Files.createDirectory(root.resolve("manual"))
+        val canonicalPath = directory.toRealPath().toString()
         val library = libraryAt(root)
         val game = mockk<org.gameyfin.app.games.entities.Game> { every { id } returns 42L }
         every { libraries.getWithGamesAndIgnoredPaths(2L) } returns library
-        every { service.createManually("Manual title", directory.toString(), library) } returns game
+        every { service.createManually("Manual title", canonicalPath, library) } returns game
         every { service.edit(any(), any()) } just Runs
         every { libraries.addGamesToLibrary(listOf(game), library, true) } returns library
 
@@ -186,7 +188,7 @@ class GameMediaControllerTest {
             directory.resolve("../manual/.").toString(), 2L, MockMultipartHttpServletRequest()
         )
 
-        verify(exactly = 1) { service.createManually("Manual title", directory.toString(), library) }
+        verify(exactly = 1) { service.createManually("Manual title", canonicalPath, library) }
     }
 
     private fun libraryAt(root: Path): Library = mockk {
