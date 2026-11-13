@@ -11,17 +11,17 @@ import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.Library
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Path
-import java.nio.file.Files
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FilesystemServiceTest {
@@ -603,9 +603,11 @@ class FilesystemServiceTest {
 
         assertEquals(directory.toRealPath(), filesystemService.validateGamePath(directory.toString(), library))
         assertEquals(file.toRealPath(), filesystemService.validateGamePath(file.toString(), library))
-        assertEquals(file.toRealPath(), filesystemService.validateGamePath(
-            directory.resolve("../game/./game.zip").toString(), library
-        ))
+        assertEquals(
+            file.toRealPath(), filesystemService.validateGamePath(
+                directory.resolve("../game/./game.zip").toString(), library
+            )
+        )
     }
 
     @Test

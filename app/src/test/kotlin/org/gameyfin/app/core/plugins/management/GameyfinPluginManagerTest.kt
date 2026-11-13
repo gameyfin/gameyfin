@@ -1,20 +1,21 @@
 package org.gameyfin.app.core.plugins.management
 
-import org.gameyfin.pluginapi.data.GameyfinDataService
-import org.springframework.beans.factory.ObjectProvider
 import io.mockk.*
+import org.gameyfin.app.core.notifications.NotificationService
 import org.gameyfin.app.core.plugins.config.PluginConfigEntry
 import org.gameyfin.app.core.plugins.config.PluginConfigEntryKey
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
+import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.pf4j.*
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.data.repository.findByIdOrNull
 import java.nio.file.Path
 import java.util.jar.JarEntry
@@ -29,6 +30,7 @@ class GameyfinPluginManagerTest {
     private lateinit var pluginConfigRepository: PluginConfigRepository
     private lateinit var pluginManagementRepository: PluginManagementRepository
     private lateinit var pluginManager: GameyfinPluginManager
+    private val notificationService = mockk<ObjectProvider<NotificationService>>(relaxed = true)
     private val pluginDataService = mockk<ObjectProvider<GameyfinDataService>>(relaxed = true)
 
     @TempDir
@@ -76,7 +78,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         assertNotNull(pluginManager)
@@ -92,7 +95,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -118,7 +122,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -150,13 +155,14 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
         val configurablePlugin = mockk<TestConfigurablePlugin>(relaxed = true)
         val pluginWrapper = mockk<PluginWrapper>()
-        val untrustedEntry = PluginManagementEntry("test-plugin", enabled = false, priority = 1)
+        val untrustedEntry = PluginManagementEntry("test-plugin", priority = 1)
         untrustedEntry.trustLevel = PluginTrustLevel.UNTRUSTED
 
         every { pluginWrapper.pluginId } returns "test-plugin"
@@ -182,7 +188,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -212,7 +219,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -233,7 +241,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -262,7 +271,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -297,7 +307,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -318,7 +329,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -345,7 +357,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -368,7 +381,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -390,7 +404,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         val entry = PluginManagementEntry("test-plugin", enabled = true, priority = 10)
@@ -410,7 +425,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         every { pluginManagementRepository.findByIdOrNull("non-existent-plugin") } returns null
@@ -432,7 +448,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -459,7 +476,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -484,7 +502,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         // Create a simple mock plugin that can actually be loaded
@@ -522,7 +541,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         val result = pluginManager.startPlugin(null)
@@ -540,11 +560,12 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
-        val entry = PluginManagementEntry("untrusted-plugin", enabled = false, priority = 1)
+        val entry = PluginManagementEntry("untrusted-plugin", priority = 1)
         entry.trustLevel = PluginTrustLevel.UNTRUSTED
 
         val pluginWrapper = mockk<PluginWrapper>()
@@ -569,7 +590,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -597,7 +619,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         // Verify the plugin manager initializes properly
@@ -615,7 +638,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         val loader = invokeCreatePluginLoader(pluginManager)
@@ -638,7 +662,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
 
             val loader = invokeCreatePluginLoader(pluginManager)
@@ -664,7 +689,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -710,7 +736,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -759,7 +786,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -797,7 +825,8 @@ class GameyfinPluginManagerTest {
                 dbPluginStatusProvider,
                 pluginConfigRepository,
                 pluginManagementRepository,
-                pluginDataService
+                pluginDataService,
+                notificationService
             )
         )
 
@@ -822,7 +851,7 @@ class GameyfinPluginManagerTest {
         verify {
             pluginManagementRepository.save(match {
                 it.pluginId == "re-verified-plugin" && it.trustLevel == PluginTrustLevel.THIRD_PARTY &&
-                    it.name == "Readable plugin name"
+                        it.name == "Readable plugin name"
             })
         }
     }
@@ -842,6 +871,7 @@ class GameyfinPluginManagerTest {
             pluginConfigRepository,
             pluginManagementRepository,
             pluginDataService,
+            notificationService,
             installedPluginsDirectory.toString(),
             applicationVersion
         )
@@ -856,7 +886,8 @@ class GameyfinPluginManagerTest {
             dbPluginStatusProvider,
             pluginConfigRepository,
             pluginManagementRepository,
-            pluginDataService
+            pluginDataService,
+            notificationService
         )
 
         assertEquals(
@@ -882,7 +913,10 @@ class GameyfinPluginManagerTest {
     fun `constructor should normalize installed plugins root`() {
         pluginManager = createManager(installedPluginsDirectory = tempPluginsDir.resolve("a/../installed"))
 
-        assertEquals(tempPluginsDir.resolve("installed").toAbsolutePath().normalize(), pluginManager.installedPluginsRoot)
+        assertEquals(
+            tempPluginsDir.resolve("installed").toAbsolutePath().normalize(),
+            pluginManager.installedPluginsRoot
+        )
     }
 
     @Test
@@ -895,6 +929,7 @@ class GameyfinPluginManagerTest {
             pluginConfigRepository,
             pluginManagementRepository,
             pluginDataService,
+            notificationService,
             tempPluginsDir.resolve("installed").toString(),
             "2.6.0"
         )
@@ -926,7 +961,7 @@ class GameyfinPluginManagerTest {
 
     @Test
     fun `isCompatible should accept everything when system version is unknown`() {
-        pluginManager = createManager(applicationVersion = "")
+        pluginManager = createManager()
 
         assertTrue(pluginManager.isCompatible(null))
         assertTrue(pluginManager.isCompatible(">=99.0.0"))
@@ -1311,7 +1346,8 @@ class GameyfinPluginManagerTest {
     }
 
     private fun firePluginStateEvent(event: PluginStateEvent) {
-        val method = AbstractPluginManager::class.java.getDeclaredMethod("firePluginStateEvent", PluginStateEvent::class.java)
+        val method =
+            AbstractPluginManager::class.java.getDeclaredMethod("firePluginStateEvent", PluginStateEvent::class.java)
         method.isAccessible = true
         method.invoke(pluginManager, event)
     }

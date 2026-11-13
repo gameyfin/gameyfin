@@ -32,7 +32,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class RequestControllerV1Test {
-    private val access = allowingAccess(personalPrincipal(7))
+    private val access = allowingAccess(personalPrincipal())
     private val repository = mockk<GameRequestRepository>(relaxed = true)
     private val service = mockk<GameRequestService>(relaxed = true)
     private val users = mockk<UserRepository>()

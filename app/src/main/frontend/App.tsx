@@ -18,6 +18,7 @@ import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
 import {initializeDownloadSessionState, resetDownloadSessionState} from "Frontend/state/DownloadSessionState";
 import {initializeUserState, resetUserState} from "Frontend/state/UserState";
+import {initializeNotificationState, resetNotificationState} from "Frontend/state/NotificationState";
 import {initializeCollectionState} from "Frontend/state/CollectionState";
 import {initializeConfigState, resetConfigState} from "Frontend/state/ConfigState";
 
@@ -75,6 +76,8 @@ function ViewWithAuth() {
         initializeGameRequestState();
         initializePluginState();
         initializeGameState(cacheIdentity);
+        if (user) initializeNotificationState(cacheIdentity);
+        else resetNotificationState();
 
         if (isAdmin(auth)) {
             initializeConfigState();
@@ -88,6 +91,7 @@ function ViewWithAuth() {
             if (window.location.pathname.startsWith("/administration")) navigate("/", {replace: true});
         }
         return () => {
+            resetNotificationState();
             resetConfigState();
             resetUserState();
             resetTaskState();

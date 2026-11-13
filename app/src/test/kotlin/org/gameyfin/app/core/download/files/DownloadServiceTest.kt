@@ -1,7 +1,7 @@
 package org.gameyfin.app.core.download.files
 
-import io.mockk.*
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.*
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.download.bandwidth.SessionBandwidthManager

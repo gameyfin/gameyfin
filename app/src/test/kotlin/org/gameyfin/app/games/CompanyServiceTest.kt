@@ -1,13 +1,13 @@
 package org.gameyfin.app.games
 
 import io.mockk.*
-import org.junit.jupiter.api.assertThrows
 import org.gameyfin.app.games.entities.Company
 import org.gameyfin.app.games.entities.CompanyType
 import org.gameyfin.app.games.repositories.CompanyRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.transaction.PlatformTransactionManager
 import kotlin.test.assertEquals

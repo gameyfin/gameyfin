@@ -1,7 +1,7 @@
 package org.gameyfin.app.users
 
-import org.gameyfin.app.users.dto.UserEvent
 import org.gameyfin.app.core.security.LiveUserAuthentication
+import org.gameyfin.app.users.dto.UserEvent
 import org.springframework.stereotype.Service
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener

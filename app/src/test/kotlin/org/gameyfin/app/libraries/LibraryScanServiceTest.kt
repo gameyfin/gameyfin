@@ -1,18 +1,18 @@
 package org.gameyfin.app.libraries
 
-import io.mockk.*
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.*
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemScanResult
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.metrics.ScanMetrics
 import org.gameyfin.app.core.plugins.PluginService
+import org.gameyfin.app.core.plugins.dto.PluginDto
 import org.gameyfin.app.core.tasks.TaskRegistry
 import org.gameyfin.app.core.tasks.TaskRunService
 import org.gameyfin.app.core.tasks.TaskSettingsService
 import org.gameyfin.app.core.tasks.persistence.TaskRunRepository
-import org.gameyfin.app.core.plugins.dto.PluginDto
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
@@ -33,9 +33,9 @@ import java.time.Instant
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.Path
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.io.path.Path
 
 class LibraryScanServiceTest {
 
@@ -316,7 +316,7 @@ class LibraryScanServiceTest {
         libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
 
         Thread.sleep(200)
-        verify(atLeast = 1) { libraryCoreService.addGamesToLibrary(any(), library, false) }
+        verify(atLeast = 1) { libraryCoreService.addGamesToLibrary(any(), library) }
     }
 
     @Test
@@ -335,7 +335,7 @@ class LibraryScanServiceTest {
         libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
 
         assertTrue(saved.await(5, TimeUnit.SECONDS))
-        verify(exactly = 1) { libraryCoreService.addGamesToLibrary(listOf(game), library, false) }
+        verify(exactly = 1) { libraryCoreService.addGamesToLibrary(listOf(game), library) }
     }
 
     @Test
@@ -468,7 +468,7 @@ class LibraryScanServiceTest {
         )
         every { libraryRepository.save(library) } returns library
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
-        every { libraryCoreService.addGamesToLibrary(any(), library, false) } returns library
+        every { libraryCoreService.addGamesToLibrary(any(), library) } returns library
     }
 
     private fun setupDelayedQuickScan(library: Library) {
@@ -482,7 +482,7 @@ class LibraryScanServiceTest {
         }
         every { libraryRepository.save(library) } returns library
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
-        every { libraryCoreService.addGamesToLibrary(any(), library, false) } returns library
+        every { libraryCoreService.addGamesToLibrary(any(), library) } returns library
     }
 
     private fun setupSuccessfulFullScan(library: Library) {
@@ -494,7 +494,7 @@ class LibraryScanServiceTest {
         every { libraryGameProcessor.processExistingGame(any()) } returns null
         every { libraryRepository.save(library) } returns library
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
-        every { libraryCoreService.addGamesToLibrary(any(), library, false) } returns library
+        every { libraryCoreService.addGamesToLibrary(any(), library) } returns library
     }
 
     private fun setupQuickScanWithNewGames(library: Library, newPaths: List<Path>, newGame: Game) {
@@ -506,7 +506,7 @@ class LibraryScanServiceTest {
         )
         every { libraryGameProcessor.processNewGame(any(), library) } returns newGame
         every { gameRepository.findAllById(listOf(newGameId)) } returns listOf(newGame)
-        every { libraryCoreService.addGamesToLibrary(listOf(newGame), library, false) } returns library
+        every { libraryCoreService.addGamesToLibrary(listOf(newGame), library) } returns library
         every { libraryRepository.save(library) } returns library
     }
 
@@ -518,7 +518,7 @@ class LibraryScanServiceTest {
         )
         every { libraryGameProcessor.processNewGame(any(), library) } throws IllegalStateException("Could not match")
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
-        every { libraryCoreService.addGamesToLibrary(emptyList(), library, false) } returns library
+        every { libraryCoreService.addGamesToLibrary(emptyList(), library) } returns library
         every { libraryRepository.save(library) } returns library
     }
 
@@ -530,7 +530,7 @@ class LibraryScanServiceTest {
         )
         every { libraryGameProcessor.processExistingGame(existingGame) } returns existingGame
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
-        every { libraryCoreService.addGamesToLibrary(emptyList(), library, false) } returns library
+        every { libraryCoreService.addGamesToLibrary(emptyList(), library) } returns library
         every { libraryRepository.save(library) } returns library
     }
 
@@ -541,7 +541,7 @@ class LibraryScanServiceTest {
             removedIgnoredPaths = emptyList()
         )
         every { gameRepository.findAllById(emptyList<Long>()) } returns emptyList()
-        every { libraryCoreService.addGamesToLibrary(emptyList(), library, false) } returns library
+        every { libraryCoreService.addGamesToLibrary(emptyList(), library) } returns library
         every { libraryRepository.save(library) } returns library
     }
 }

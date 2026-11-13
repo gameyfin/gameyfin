@@ -39,11 +39,7 @@ import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class GameServiceTest {
 
@@ -131,19 +127,35 @@ class GameServiceTest {
     fun `manual creation rejects duplicate paths and blank fields`() {
         val path = Path.of("manual-game").toAbsolutePath().normalize().toString()
         every { filesystemService.validateGamePath(path, library) } returns Path.of(path)
-        every { filesystemService.validateGamePath("relative/path", library) } throws IllegalArgumentException("Path must be absolute")
+        every {
+            filesystemService.validateGamePath(
+                "relative/path",
+                library
+            )
+        } throws IllegalArgumentException("Path must be absolute")
         every { gameRepository.existsByMetadataPath(path) } returns true
 
         assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", path, library) }
         assertThrows(IllegalArgumentException::class.java) { gameService.createManually(" ", path, library) }
         assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", " ", library) }
-        assertThrows(IllegalArgumentException::class.java) { gameService.createManually("Title", "relative/path", library) }
+        assertThrows(IllegalArgumentException::class.java) {
+            gameService.createManually(
+                "Title",
+                "relative/path",
+                library
+            )
+        }
         verify(exactly = 0) { gameRepository.save(any()) }
     }
 
     @Test
     fun `manual creation rejects invalid library path before sizing or persistence`() {
-        every { filesystemService.validateGamePath(any(), library) } throws IllegalArgumentException("Invalid library path")
+        every {
+            filesystemService.validateGamePath(
+                any(),
+                library
+            )
+        } throws IllegalArgumentException("Invalid library path")
 
         assertThrows(IllegalArgumentException::class.java) {
             gameService.createManually("Title", "/outside/game", library)
@@ -626,7 +638,7 @@ class GameServiceTest {
 
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns emptyList()
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, library, persist = false)
 
         assertNull(result)
     }
@@ -859,9 +871,7 @@ class GameServiceTest {
             originalId = "123",
             title = "Test Game",
             platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
-            release = null,
             coverUrls = setOf(java.net.URI("https://example.com/cover1.jpg")),
-            headerUrls = null,
             publishedBy = setOf("Publisher1"),
             developedBy = setOf("Developer1")
         )
@@ -870,11 +880,8 @@ class GameServiceTest {
             originalId = "456",
             title = "Test Game",
             platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
-            release = null,
             coverUrls = setOf(java.net.URI("https://example.com/cover2.jpg")),
-            headerUrls = setOf(java.net.URI("https://example.com/header2.jpg")),
-            publishedBy = null,
-            developedBy = null
+            headerUrls = setOf(java.net.URI("https://example.com/header2.jpg"))
         )
 
         val provider1 = spyk(TestProvider(metadata1))
@@ -910,15 +917,13 @@ class GameServiceTest {
         val metadata1 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
             originalId = "123",
             title = "PC Game",
-            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
-            release = null
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
         )
 
         val metadata2 = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
             originalId = "456",
             title = "Console Game",
-            platforms = setOf(Platform.PLAYSTATION_5),
-            release = null
+            platforms = setOf(Platform.PLAYSTATION_5)
         )
 
         val provider = mockk<GameMetadataProvider>(relaxed = true) {
@@ -947,8 +952,7 @@ class GameServiceTest {
         val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
             originalId = "123",
             title = "Test Game",
-            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS),
-            release = null
+            platforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
         )
 
         val workingProvider = spyk(TestProvider(metadata))
@@ -1184,7 +1188,7 @@ class GameServiceTest {
 
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns emptyList()
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, library, persist = false)
 
         assertNull(result)
     }
@@ -1207,7 +1211,7 @@ class GameServiceTest {
             every { priority } returns 1
         }
 
-        val savedGame = createTestGame(10L, "Test Game")
+        val savedGame = createTestGame(10L)
 
         every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
         every { pluginService.getPluginManagementEntry(provider.javaClass) } returns pluginEntry
@@ -1217,7 +1221,7 @@ class GameServiceTest {
         every { filesystemService.calculateFileSize(any(), any()) } returns 1000L
         every { gameRepository.save(any()) } returns savedGame
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = true)
+        val result = gameService.matchManually(originalIds, path, library)
 
         assertNotNull(result)
         verify(exactly = 1) { gameRepository.save(any()) }
@@ -1271,7 +1275,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any(), any()) } returns 1000L
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, library, persist = false)
 
         assertNotNull(result)
         // High priority values should be used
@@ -1315,7 +1319,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any(), any()) } returns 1000L
 
-        val result = gameService.matchManually(originalIds, path, restrictedLibrary, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, restrictedLibrary, persist = false)
 
         assertNotNull(result)
         assertEquals("Multi-Platform Game", result.title)
@@ -1357,7 +1361,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any(), any()) } returns 1000L
 
-        val result = gameService.matchManually(originalIds, path, pcOnlyLibrary, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, pcOnlyLibrary, persist = false)
 
         assertNotNull(result)
         assertEquals("Console Exclusive Game", result.title)
@@ -1395,7 +1399,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any(), any()) } returns 1000L
 
-        val result = gameService.matchManually(originalIds, path, unrestrictedLibrary, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, unrestrictedLibrary, persist = false)
 
         assertNotNull(result)
         assertEquals("Multi-Platform Game", result.title)
@@ -2119,7 +2123,7 @@ class GameServiceTest {
         every { filesystemService.calculateFileSize(any(), any()) } returns 2000L
         every { gameRepository.save(any()) } answers { firstArg() }
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = true)
+        val result = gameService.matchManually(originalIds, path, library)
 
         assertNotNull(result)
         verify(atLeast = 1) { imageService.downloadIfNew(any()) }
@@ -2157,7 +2161,7 @@ class GameServiceTest {
         every { filesystemService.calculateFileSize(any(), any()) } returns 2000L
         every { gameRepository.save(any()) } answers { firstArg() }
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = true)
+        val result = gameService.matchManually(originalIds, path, library)
 
         // Should still succeed despite image download error
         assertNotNull(result)
@@ -2224,7 +2228,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any(), any()) } returns 5000L
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, library, persist = false)
 
         assertNotNull(result)
         assertEquals("Fully Populated Game", result.title)
@@ -2255,12 +2259,6 @@ class GameServiceTest {
             title = "Sparse Game",
             description = "",           // blank description
             platforms = emptySet(),      // empty platforms
-            coverUrls = null,
-            headerUrls = null,
-            screenshotUrls = null,
-            release = null,
-            userRating = null,
-            criticRating = null,
             publishedBy = emptySet(),    // empty publishers
             developedBy = emptySet(),    // empty developers
             genres = emptySet(),         // empty genres
@@ -2287,7 +2285,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any(), any()) } returns 1000L
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, library, persist = false)
 
         assertNotNull(result)
         // Title should still be set (it's non-blank)
@@ -2376,7 +2374,7 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } returns mockk(relaxed = true)
         every { filesystemService.calculateFileSize(any(), any()) } returns 3000L
 
-        val result = gameService.matchManually(originalIds, path, library, null, persist = false)
+        val result = gameService.matchManually(originalIds, path, library, persist = false)
 
         assertNotNull(result)
         // All fields should come from the high-priority plugin

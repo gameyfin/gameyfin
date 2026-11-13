@@ -165,7 +165,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
     @Test
     fun `uses preferred_username fallback when UsernameAttribute config is null`() {
-        val oidcUser = oidcUser(preferredUsername = "alice")
+        val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns null
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username

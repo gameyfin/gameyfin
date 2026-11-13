@@ -2,8 +2,8 @@ package org.gameyfin.app.libraries
 
 import io.mockk.*
 import org.gameyfin.app.core.security.isCurrentUserAdmin
-import org.gameyfin.app.core.tasks.DeletionTaskService
 import org.gameyfin.app.core.sync.EntityEventType
+import org.gameyfin.app.core.tasks.DeletionTaskService
 import org.gameyfin.app.libraries.dto.*
 import org.gameyfin.app.libraries.enums.ScanType
 import org.gameyfin.pluginapi.gamemetadata.Platform
@@ -118,7 +118,7 @@ class LibraryEndpointTest {
 
     @Test
     fun `getById should return full library from service`() {
-        val dto = createAdminDto(1L)
+        val dto = createAdminDto()
         every { libraryService.getAdminDtoById(1L) } returns dto
 
         assertEquals(dto, libraryEndpoint.getById(1L))
@@ -166,7 +166,7 @@ class LibraryEndpointTest {
         val dto = createAdminDto(name = "New Library")
         every { libraryService.create(dto, true) } just Runs
 
-        libraryEndpoint.createLibrary(dto, scanAfterCreation = true)
+        libraryEndpoint.createLibrary(dto)
 
         verify(exactly = 1) { libraryService.create(dto, true) }
     }

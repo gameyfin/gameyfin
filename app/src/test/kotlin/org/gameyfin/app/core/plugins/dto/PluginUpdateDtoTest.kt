@@ -6,10 +6,10 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
 import org.junit.jupiter.api.Test
 import org.pf4j.PluginState
+import tools.jackson.databind.json.JsonMapper
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
-import tools.jackson.databind.json.JsonMapper
 
 class PluginUpdateDtoTest {
 
@@ -36,11 +36,7 @@ class PluginUpdateDtoTest {
     @Test
     fun `dto should handle null optional fields`() {
         val dto = PluginUpdateDto(
-            id = "test-plugin",
-            state = null,
-            config = null,
-            configValidation = null,
-            priority = null
+            id = "test-plugin"
         )
 
         assertEquals("test-plugin", dto.id)

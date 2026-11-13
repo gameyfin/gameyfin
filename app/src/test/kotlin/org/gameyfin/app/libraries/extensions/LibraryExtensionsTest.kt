@@ -4,11 +4,7 @@ import io.mockk.*
 import org.gameyfin.app.libraries.dto.DirectoryMappingDto
 import org.gameyfin.app.libraries.dto.LibraryField
 import org.gameyfin.app.libraries.dto.LibraryMetadataDto
-import org.gameyfin.app.libraries.entities.DirectoryMapping
-import org.gameyfin.app.libraries.entities.IgnoredPath
-import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
-import org.gameyfin.app.libraries.entities.Library
-import org.gameyfin.app.libraries.entities.LibraryMetadata
+import org.gameyfin.app.libraries.entities.*
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -231,7 +227,7 @@ class LibraryExtensionsTest {
             every { this@mockk.platforms } returns platforms
             every { this@mockk.games } returns mutableListOf()
             every { this@mockk.ignoredPaths } returns ignoredPaths
-            every { this@mockk.metadata } returns LibraryMetadata(displayOnHomepage = true, displayOrder = 3)
+            every { this@mockk.metadata } returns LibraryMetadata(displayOrder = 3)
         }
     }
 

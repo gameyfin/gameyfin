@@ -1,7 +1,7 @@
 package org.gameyfin.app.users
 
-import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.core.security.LiveUserAuthentication
+import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.users.entities.User
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.session.SessionInformation

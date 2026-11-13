@@ -221,7 +221,7 @@ class GameRequestEndpointTest {
             release = Instant.parse("2024-01-01T00:00:00Z"),
             platform = Platform.PC_MICROSOFT_WINDOWS,
             status = status,
-            requester = UserInfoDto(1L, "testuser", false, null),
+            requester = UserInfoDto(1L, "testuser", false),
             voters = emptyList(),
             createdAt = Instant.now(),
             updatedAt = Instant.now()

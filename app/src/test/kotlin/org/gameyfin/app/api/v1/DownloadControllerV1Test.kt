@@ -42,7 +42,7 @@ class DownloadControllerV1Test {
 
     @Test
     fun `range requests use partial responses and HEAD does not count or stream`() {
-        val game = testGame(title = "Game")
+        val game = testGame()
         every { catalog.gameEntity("10") } returns game
         every { downloads.getProviders() } returns listOf(provider())
         val resource = mockk<org.gameyfin.pluginapi.download.RangeDownload>(relaxed = true)
@@ -69,7 +69,7 @@ class DownloadControllerV1Test {
 
     @Test
     fun `providers are sorted by descending priority`() {
-        every { downloads.getProviders() } returns listOf(provider("low", 1), provider("high", 10))
+        every { downloads.getProviders() } returns listOf(provider("low"), provider("high", 10))
 
         val result = controller.providers()
 

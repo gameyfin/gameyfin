@@ -24,11 +24,7 @@ import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.core.tasks.logging.submitWithMdc
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.games.entities.*
-import org.gameyfin.app.games.extensions.toDto
-import org.gameyfin.app.games.extensions.toDtos
-import org.gameyfin.app.games.extensions.toSummaryDto
-import org.gameyfin.app.games.extensions.mediaSources
-import org.gameyfin.app.games.extensions.replaceMediaSources
+import org.gameyfin.app.games.extensions.*
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
@@ -267,6 +263,7 @@ class GameService(
                 selection.pluginId != null -> GameFieldMetadata(
                     source = GameFieldPluginSource(pluginService.getPluginManagementEntry(selection.pluginId))
                 )
+
                 else -> GameFieldMetadata(source = newEditingSource())
             }
         }
@@ -689,8 +686,10 @@ class GameService(
             game.images,
             updatedGame.images,
             {
-                game.replaceMediaSources("images", updatedGame.mediaSources("images", updatedGame.images.size),
-                    updatedGame.metadata.fields.getValue("images"))
+                game.replaceMediaSources(
+                    "images", updatedGame.mediaSources("images", updatedGame.images.size),
+                    updatedGame.metadata.fields.getValue("images")
+                )
                 game.images = it ?: mutableListOf()
             },
             updatedGame.metadata.fields["images"]
@@ -702,8 +701,10 @@ class GameService(
             game.videoUrls,
             updatedGame.videoUrls,
             {
-                game.replaceMediaSources("videoUrls", updatedGame.mediaSources("videoUrls", updatedGame.videoUrls.size),
-                    updatedGame.metadata.fields.getValue("videoUrls"))
+                game.replaceMediaSources(
+                    "videoUrls", updatedGame.mediaSources("videoUrls", updatedGame.videoUrls.size),
+                    updatedGame.metadata.fields.getValue("videoUrls")
+                )
                 game.videoUrls = it ?: emptyList()
             },
             updatedGame.metadata.fields["videoUrls"]

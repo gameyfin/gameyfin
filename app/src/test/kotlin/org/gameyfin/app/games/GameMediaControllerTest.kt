@@ -16,9 +16,9 @@ import org.springframework.mock.web.MockMultipartHttpServletRequest
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.web.server.ResponseStatusException
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.server.ResponseStatusException
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.assertEquals
@@ -28,6 +28,7 @@ class GameMediaControllerTest {
     private val service = mockk<GameService>()
     private val libraries = mockk<org.gameyfin.app.libraries.LibraryCoreService>()
     private val controller = GameMediaController(service, libraries, FilesystemService(mockk()))
+
     @TempDir
     lateinit var tempDir: Path
     private val update = GameUpdateDto(
@@ -43,9 +44,15 @@ class GameMediaControllerTest {
     @Test
     fun `anonymous and regular users cannot save uploaded media`() {
         val request = MockMultipartHttpServletRequest()
-        assertEquals(HttpStatus.FORBIDDEN, assertFailsWith<ResponseStatusException> { controller.save(update, request) }.statusCode)
+        assertEquals(
+            HttpStatus.FORBIDDEN,
+            assertFailsWith<ResponseStatusException> { controller.save(update, request) }.statusCode
+        )
         authenticate(Role.Names.USER)
-        assertEquals(HttpStatus.FORBIDDEN, assertFailsWith<ResponseStatusException> { controller.save(update, request) }.statusCode)
+        assertEquals(
+            HttpStatus.FORBIDDEN,
+            assertFailsWith<ResponseStatusException> { controller.save(update, request) }.statusCode
+        )
         verify { service wasNot Called }
     }
 
@@ -71,7 +78,10 @@ class GameMediaControllerTest {
             addFile(MockMultipartFile("cover", byteArrayOf(1)))
             addFile(MockMultipartFile("cover", byteArrayOf(2)))
         }
-        assertEquals(HttpStatus.BAD_REQUEST, assertFailsWith<ResponseStatusException> { controller.save(update, duplicate) }.statusCode)
+        assertEquals(
+            HttpStatus.BAD_REQUEST,
+            assertFailsWith<ResponseStatusException> { controller.save(update, duplicate) }.statusCode
+        )
         every { service.edit(any(), any()) } throws IllegalArgumentException("Missing uploaded image: cover")
         assertEquals(HttpStatus.BAD_REQUEST, assertFailsWith<ResponseStatusException> {
             controller.save(update, MockMultipartHttpServletRequest())
@@ -83,13 +93,23 @@ class GameMediaControllerTest {
         authenticate(Role.Names.ADMIN)
         every { service.edit(any(), any()) } just Runs
         val mvc = MockMvcBuilders.standaloneSetup(controller).build()
-        val response = mvc.perform(multipart("/game-media/metadata")
-            .file(MockMultipartFile("metadata", "metadata", "application/json",
-                """{"id":1,"cover":{"uploadKey":"cover"}}""".toByteArray()))
-            .file(MockMultipartFile("cover", "cover.png", "image/png", byteArrayOf(1))))
+        val response = mvc.perform(
+            multipart("/game-media/metadata")
+                .file(
+                    MockMultipartFile(
+                        "metadata", "metadata", "application/json",
+                        """{"id":1,"cover":{"uploadKey":"cover"}}""".toByteArray()
+                    )
+                )
+                .file(MockMultipartFile("cover", "cover.png", "image/png", byteArrayOf(1)))
+        )
             .andReturn().response
         assertEquals(204, response.status, response.contentAsString)
-        verify(exactly = 1) { service.edit(match { it.id == 1L && it.cover?.uploadKey == "cover" }, match { it.keys == setOf("cover") }) }
+        verify(exactly = 1) {
+            service.edit(
+                match { it.id == 1L && it.cover?.uploadKey == "cover" },
+                match { it.keys == setOf("cover") })
+        }
     }
 
     @Test
@@ -130,11 +150,17 @@ class GameMediaControllerTest {
             siblingFile.toString(), root.resolve("../outside.zip").toString(),
             root.resolve("missing.zip").toString()
         )) {
-            val response = mvc.perform(multipart("/game-media/import")
-                .file(MockMultipartFile("metadata", "metadata", "application/json",
-                    """{"id":0,"title":"Manual title"}""".toByteArray()))
-                .param("path", path)
-                .param("libraryId", "2"))
+            val response = mvc.perform(
+                multipart("/game-media/import")
+                    .file(
+                        MockMultipartFile(
+                            "metadata", "metadata", "application/json",
+                            """{"id":0,"title":"Manual title"}""".toByteArray()
+                        )
+                    )
+                    .param("path", path)
+                    .param("libraryId", "2")
+            )
                 .andReturn().response
 
             assertEquals(400, response.status, response.contentAsString)
@@ -155,8 +181,10 @@ class GameMediaControllerTest {
         every { service.edit(any(), any()) } just Runs
         every { libraries.addGamesToLibrary(listOf(game), library, true) } returns library
 
-        controller.importGame(update.copy(title = "Manual title"),
-            directory.resolve("../manual/.").toString(), 2L, MockMultipartHttpServletRequest())
+        controller.importGame(
+            update.copy(title = "Manual title"),
+            directory.resolve("../manual/.").toString(), 2L, MockMultipartHttpServletRequest()
+        )
 
         verify(exactly = 1) { service.createManually("Manual title", directory.toString(), library) }
     }
@@ -175,6 +203,7 @@ class GameMediaControllerTest {
     }
 
     private fun authenticate(role: String) {
-        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken("user", "unused", listOf(SimpleGrantedAuthority(role)))
+        SecurityContextHolder.getContext().authentication =
+            UsernamePasswordAuthenticationToken("user", "unused", listOf(SimpleGrantedAuthority(role)))
     }
 }

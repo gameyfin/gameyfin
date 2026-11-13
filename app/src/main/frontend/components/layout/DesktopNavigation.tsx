@@ -12,6 +12,7 @@ import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import SearchBar from "Frontend/components/general/SearchBar";
 import ActiveTaskPopover from "Frontend/components/general/ActiveTaskPopover";
 import ProfileMenu from "Frontend/components/ProfileMenu";
+import NotificationPopover from "Frontend/components/general/NotificationPopover";
 import {useAuth} from "Frontend/util/auth";
 import {isAdmin} from "Frontend/util/utils";
 
@@ -87,6 +88,18 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
                         <Tooltip.Content placement="bottom">Request a game</Tooltip.Content>
                     </Tooltip>
                 </li>
+                {auth.state.user && (
+                    <li>
+                        <Tooltip>
+                            <Tooltip.Trigger>
+                                <div>
+                                    <NotificationPopover/>
+                                </div>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content placement="bottom">View notifications</Tooltip.Content>
+                        </Tooltip>
+                    </li>
+                )}
                 {isAdmin(auth) && (
                     <li>
                         <Tooltip>
