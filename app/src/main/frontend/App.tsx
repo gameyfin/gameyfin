@@ -1,4 +1,4 @@
-import {Outlet, useHref, useNavigate} from 'react-router';
+import {Outlet, useHref, useLocation, useNavigate} from 'react-router';
 import "./main.css";
 import {RouterProvider, Toast} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
@@ -61,10 +61,13 @@ export default function App() {
 function ViewWithAuth() {
     const auth = useAuth();
     const navigate = useNavigate();
+    const {pathname} = useLocation();
+    const isSetupRoute = pathname === "/setup" || pathname === "/setup/";
     const identity = `${auth.state.user?.id ?? "anonymous"}:${[...(auth.state.user?.roles ?? [])].sort().join(",")}`;
 
     useEffect(() => {
-        if (auth.state.initializing || auth.state.loading) return;
+        // Setup has no user yet; protected synchronization would send it back through login.
+        if (isSetupRoute || auth.state.initializing || auth.state.loading) return;
 
         // The persistent cache is bound to the user and its roles, so cached data never leaks between users
         const user = auth.state.user;
@@ -97,7 +100,7 @@ function ViewWithAuth() {
             resetTaskState();
             resetDownloadSessionState();
         };
-    }, [identity, auth.state.initializing, auth.state.loading]);
+    }, [identity, auth.state.initializing, auth.state.loading, isSetupRoute]);
 
     return <>
         <IconContext.Provider value={{size: 20}}>

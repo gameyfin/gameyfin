@@ -1,4 +1,5 @@
 import {Button, Tooltip} from "@heroui/react";
+import {redirectToLogin} from "Frontend/util/login";
 import {useLocation, useNavigate} from "react-router";
 import {
     ArrowLeftIcon,
@@ -126,7 +127,7 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
                                     aria-label="Sign in"
                                     isIconOnly
                                     className="gradient-primary rounded-full"
-                                    onPress={() => window.location.href = "/loginredirect"}
+                                    onPress={() => redirectToLogin()}
                                 >
                                     <SignInIcon className="text-accent-foreground"/>
                                 </Button>

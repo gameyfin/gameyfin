@@ -1,5 +1,5 @@
 import {useAuth} from "Frontend/util/auth";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Button, Card, Link, Spinner, useOverlayState} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
@@ -9,6 +9,7 @@ import {RegistrationEndpoint} from "Frontend/generated/endpoints";
 
 export default function LoginView() {
     const {state, login} = useAuth();
+    const redirecting = useRef(false);
 
     const passwordResetModal = useOverlayState();
     const signUpModal = useOverlayState();
@@ -24,17 +25,19 @@ export default function LoginView() {
     }, [state.user]);
 
     async function tryLogin(values: any, formik: any) {
-        const {defaultUrl, error, redirectUrl} = await login(values.username, values.password);
+        const {error} = await login(values.username, values.password, {navigate: () => {}});
         if (error) {
             formik.setFieldError("username", " ");
             formik.setFieldError("password", "Invalid username and/or password.");
         } else {
-            redirectAfterLogin(redirectUrl, defaultUrl);
+            redirectAfterLogin();
         }
     }
 
-    function redirectAfterLogin(redirectUrl?: string, defaultUrl?: string) {
-        window.location.href = redirectUrl ?? defaultUrl ?? '/';
+    function redirectAfterLogin() {
+        if (redirecting.current) return;
+        redirecting.current = true;
+        window.location.href = '/login/success';
     }
 
     return (

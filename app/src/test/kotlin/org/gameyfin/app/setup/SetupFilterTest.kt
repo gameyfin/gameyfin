@@ -25,7 +25,7 @@ class SetupFilterTest {
     private val filter = SetupFilter(setupService)
 
     @ParameterizedTest
-    @CsvSource("/login,false,/setup", "/loginredirect,false,/setup", "/setup,true,/login")
+    @CsvSource("/login,false,/setup", "/setup,true,/loginredirect")
     fun `redirect stops the filter chain`(uri: String, setupComplete: Boolean, target: String) {
         every { setupService.isSetupCompleted() } returns setupComplete
         val request = MockHttpServletRequest("GET", uri)
@@ -39,7 +39,7 @@ class SetupFilterTest {
     }
 
     @ParameterizedTest
-    @CsvSource("/setup,false", "/login,true", "/loginredirect,true", "/,false", "/,true", "/VAADIN/test.js,false")
+    @CsvSource("/setup,false", "/login,true", "/loginredirect,true", "/loginredirect,false", "/login/oauth2/code/oidc,false", "/setup-other,true", "/login-other,false", "/,false", "/,true", "/VAADIN/test.js,false")
     fun `allowed requests continue without a redirect`(uri: String, setupComplete: Boolean) {
         every { setupService.isSetupCompleted() } returns setupComplete
         val request = MockHttpServletRequest("GET", uri)
@@ -54,10 +54,10 @@ class SetupFilterTest {
     }
 
     @Test
-    fun `login redirect on a new instance redirects to setup without invoking the controller`() {
+    fun `login gateway on a new instance redirects to setup before reading SSO configuration`() {
         every { setupService.isSetupCompleted() } returns false
         val config = mockk<ConfigService>()
-        val mvc = MockMvcBuilders.standaloneSetup(LoginRedirectController(config))
+        val mvc = MockMvcBuilders.standaloneSetup(LoginRedirectController(config, setupService))
             .addFilters<StandaloneMockMvcBuilder>(filter)
             .build()
 

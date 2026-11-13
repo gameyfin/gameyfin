@@ -95,6 +95,22 @@ class SecurityErrorDispatchTest {
     }
 
     @Test
+    fun `browser authentication failures use gateway and login success requires authentication`() {
+        runner.run { context ->
+            val security = context.getBean(FilterChainProxy::class.java)
+            for (path in listOf("/download/1", "/login/success")) {
+                val response = MockHttpServletResponse()
+                var reachedHandler = false
+                security.doFilter(MockHttpServletRequest("GET", path), response) { _, _ -> reachedHandler = true }
+                assertFalse(reachedHandler)
+                assertEquals(302, response.status)
+                assertEquals("/loginredirect?continue=" + java.net.URLEncoder.encode(path, Charsets.UTF_8),
+                    response.redirectedUrl)
+            }
+        }
+    }
+
+    @Test
     fun `ordinary requests remain protected and public download setting is respected`() {
         runner.run { context ->
             val security = context.getBean(FilterChainProxy::class.java)

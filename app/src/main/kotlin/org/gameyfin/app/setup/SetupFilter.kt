@@ -19,8 +19,9 @@ class SetupFilter(
         val req = servletRequest as HttpServletRequest
         val res = servletResponse as HttpServletResponse
 
-        val isSetupUri = req.requestURI.startsWith("/setup")
-        val isLoginUri = req.requestURI.startsWith("/login")
+        val path = req.requestURI.removePrefix(req.contextPath).trimEnd('/')
+        val isSetupUri = path == "/setup"
+        val isLoginUri = path == "/login"
 
         // Skip this filter if the urls don't match
         if (!(isSetupUri || isLoginUri)) {
@@ -31,7 +32,7 @@ class SetupFilter(
         val isSetupComplete = setupService.isSetupCompleted()
 
         if (isSetupUri && isSetupComplete) {
-            res.sendRedirect("/login")
+            res.sendRedirect("/loginredirect")
             return
         } else if (isLoginUri && !isSetupComplete) {
             res.sendRedirect("/setup")
