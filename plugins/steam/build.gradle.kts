@@ -12,7 +12,7 @@ tasks.named<Copy>("copyDependencyClasses") {
 }
 
 dependencies {
-    implementation("io.xberg:html-to-markdown:3.21.2")
+    implementation("io.xberg:html-to-markdown:${rootProject.extra["htmlToMarkdownVersion"]}")
     ksp("care.better.pf4j:pf4j-kotlin-symbol-processing:${rootProject.extra["pf4jKspVersion"]}")
 
     implementation("io.ktor:ktor-client-core:${rootProject.extra["ktorVersion"]}") {

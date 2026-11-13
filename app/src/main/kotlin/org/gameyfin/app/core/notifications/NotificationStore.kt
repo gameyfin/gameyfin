@@ -51,8 +51,8 @@ class NotificationStore(
                 "size" to size,
                 "offset" to page.toLong() * size,
                 "severity" to severity?.name
-            ), ::row
-        )
+            )
+        ) { rs, _ -> row(rs) }
     }
 
     internal fun count(actor: NotificationActor, archived: Boolean, severity: NotificationSeverity? = null): Long =
@@ -127,12 +127,12 @@ class NotificationStore(
     internal fun mutate(actor: NotificationActor, ids: Set<String>?, delete: Boolean) {
         require(ids == null || ids.size <= 100) { "Select at most 100 notifications" }
         if (ids?.isEmpty() == true) return
-        val entries = jdbc.query(
+        val entries: List<InboxEntry> = jdbc.query(
             "$select WHERE i.RECIPIENT IN (:recipients)" +
                     (if (ids == null) " AND i.READ_AT IS ${if (delete) "NOT " else ""}NULL AND i.EXECUTION_STATE <> 'RUNNING'"
                     else " AND i.ID IN (:ids)") + " ORDER BY i.ID FOR UPDATE",
-            mapOf("recipients" to actor.recipients, "ids" to ids), ::row
-        )
+            mapOf("recipients" to actor.recipients, "ids" to ids)
+        ) { rs, _ -> row(rs) }
         if (ids != null && entries.map { it.id }.toSet() != ids) throw AccessDeniedException("Notification unavailable")
         require(entries.none { it.executionState == "RUNNING" }) { "An action is still running" }
         if (delete) require(entries.all { it.readAt != null }) { "Only archived notifications can be deleted" }
@@ -149,8 +149,8 @@ class NotificationStore(
 
     internal fun entry(actor: NotificationActor, id: String, lock: Boolean = false): InboxEntry = jdbc.query(
         "$select WHERE i.ID = :id AND i.RECIPIENT IN (:recipients)${if (lock) " FOR UPDATE" else ""}",
-        mapOf("id" to id, "recipients" to actor.recipients), ::row
-    ).singleOrNull()
+        mapOf("id" to id, "recipients" to actor.recipients)
+    ) { rs, _ -> row(rs) }.singleOrNull()
         ?: throw AccessDeniedException("Notification unavailable")
 
     /** Persist the claim before any plugin or restart side effect. Retries retain the same execution ID. */
@@ -235,7 +235,7 @@ class NotificationStore(
         )
     }
 
-    private fun row(rs: ResultSet, ignored: Int) = InboxEntry(
+    private fun row(rs: ResultSet) = InboxEntry(
         rs.getString("ID"),
         rs.getString("NOTIFICATION_ID"),
         rs.getString("RECIPIENT"),

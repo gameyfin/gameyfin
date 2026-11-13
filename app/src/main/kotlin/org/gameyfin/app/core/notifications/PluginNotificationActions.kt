@@ -40,7 +40,8 @@ class PluginNotificationActions(
 
     private fun register(id: String) {
         try {
-            val handlers = manager.getObject().getExtensions(NotificationActionHandler::class.java, id)
+            val handlers: List<NotificationActionHandler> =
+                manager.getObject().getExtensions(NotificationActionHandler::class.java, id)
             require(handlers.map { it.key }
                 .distinct().size == handlers.size) { "Duplicate notification action in plugin $id" }
             registrations[id] = Registration(handlers.associateBy { it.key })

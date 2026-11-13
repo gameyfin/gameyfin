@@ -145,13 +145,7 @@ class DatabaseRestorer(
                         log.warn { "Skipping tables from backup which do not exist in the database: $unknownTables" }
                     }
 
-                    // Migrations may seed application data. Replace it with the backup's exact contents,
-                    // deleting dependent rows first so foreign key constraints remain enforced.
-                    connection.createStatement().use { statement ->
-                        for (table in targetTables.asReversed()) {
-                            statement.executeUpdate("DELETE FROM ${schema.quote(table)}")
-                        }
-                    }
+                    clearSeededData(connection, schema, targetTables)
 
                     for (table in targetTables) {
                         val backupTable = backupTables[table.uppercase()] ?: continue
@@ -173,6 +167,16 @@ class DatabaseRestorer(
 
             log.info { "Restored $rows rows in $tables tables and $mediaFiles media files" }
             return RestoreSummary(tables, rows, mediaFiles)
+        }
+    }
+
+    private fun clearSeededData(connection: Connection, schema: SchemaInspector, targetTables: List<String>) {
+        // Migrations may seed application data. Replace it with the backup's exact contents,
+        // deleting dependent rows first so foreign key constraints remain enforced.
+        connection.createStatement().use { statement ->
+            for (table in targetTables.asReversed()) {
+                statement.executeUpdate("DELETE FROM ${schema.quote(table)}")
+            }
         }
     }
 
@@ -315,6 +319,10 @@ class DatabaseRestorer(
             execute(connection, "ALTER SEQUENCE ${schema.quote(sequence.name)} RESTART WITH $next")
         }
 
+        resetIdentityColumns(connection, schema, tables)
+    }
+
+    private fun resetIdentityColumns(connection: Connection, schema: SchemaInspector, tables: List<String>) {
         for (table in tables) {
             for (column in schema.columns(table).filter { it.autoIncrement }) {
                 val max = maxValue(connection, schema, table, column.name) ?: continue

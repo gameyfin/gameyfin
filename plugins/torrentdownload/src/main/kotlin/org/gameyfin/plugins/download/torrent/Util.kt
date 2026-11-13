@@ -25,6 +25,7 @@ fun getContainerOS(): String {
             }
         }
     } catch (_: Exception) {
+        // Non-container environments may not expose /etc/os-release.
     }
     return "unknown"
 }

@@ -17,12 +17,17 @@ class SystemNotifications(
     private val store: NotificationStore,
     @param:Value($$"${spring.application.version:unknown}") private val installedVersion: String
 ) {
+    companion object {
+        private const val SSO_SOURCE = "core:sso"
+        private const val RELEASE_SOURCE = "core:release"
+    }
+
     @EventListener
     fun ssoChanged(event: SsoConfigurationChanged) {
         store.producerState("sso") // Serialize concurrent saves and startup cleanup.
-        store.resolve("core:sso")
+        store.resolve(SSO_SOURCE)
         store.publish(
-            "core:sso", NotificationRequest(
+            SSO_SOURCE, NotificationRequest(
                 "Restart required",
                 "The SSO configuration changed. **Restart Gameyfin** to apply it.",
                 NotificationSeverity.INFO,
@@ -35,10 +40,10 @@ class SystemNotifications(
     @EventListener(ApplicationReadyEvent::class)
     fun onReady() {
         val sso = store.producerState("sso")
-        if (sso["BOOT_ID"] != store.bootId) store.resolve("core:sso")
+        if (sso["BOOT_ID"] != store.bootId) store.resolve(SSO_SOURCE)
         val release = store.producerState("release")["LAST_VERSION"] as String?
         if (release != null && releaseTag(release) == releaseTag(installedVersion)) {
-            store.resolve("core:release")
+            store.resolve(RELEASE_SOURCE)
         }
         store.recoverInterrupted()
     }
@@ -46,15 +51,15 @@ class SystemNotifications(
     fun announceRelease(release: GithubRelease, installed: GithubRelease): Boolean {
         val previous = store.producerState("release")["LAST_VERSION"] as String?
         if (release.publishedAt <= installed.publishedAt) {
-            store.resolve("core:release")
+            store.resolve(RELEASE_SOURCE)
             return false
         }
         if (previous != null && releaseTag(previous) == releaseTag(release.version)) return false
         val version = release.version
         val url = release.url
-        store.resolve("core:release")
+        store.resolve(RELEASE_SOURCE)
         store.publish(
-            "core:release", NotificationRequest(
+            RELEASE_SOURCE, NotificationRequest(
                 "Gameyfin $version is available",
                 "A new version of Gameyfin is available. Installed version: **$installedVersion**.",
                 actions = listOf(

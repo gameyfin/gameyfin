@@ -29,6 +29,7 @@ export APP_KEY="bknLhYui9N21X2z3sIR+HR9LHI9STMMOZRz5K8nFzJY="
 ARCH_OPTS=""
 case "$(uname -m)" in
     x86_64|amd64) ARCH_OPTS="-XX:UseAVX=0" ;;
+    *) ARCH_OPTS="" ;;
 esac
 
 echo "▶ Starting application for AOT training …"
@@ -47,7 +48,7 @@ until curl -sf "${HEALTH_URL}" 2>/dev/null | grep -q '"status":"UP"'; do
         echo "✗ Application exited prematurely (PID ${APP_PID})."
         exit 1
     fi
-    if [ "$elapsed" -ge "$MAX_WAIT" ]; then
+    if [[ "$elapsed" -ge "$MAX_WAIT" ]]; then
         echo "✗ Timed out after ${MAX_WAIT}s waiting for the app to start."
         kill "$APP_PID" 2>/dev/null || true
         exit 1
@@ -116,7 +117,7 @@ else
 fi
 
 # ── Verify the AOT cache was produced ─────────────────────────────────────────
-if [ -s app.aot ]; then
+if [[ -s app.aot ]]; then
     echo "✓ AOT cache written ($(du -h app.aot | cut -f1))."
 else
     echo "✗ AOT cache file is missing or empty!"
