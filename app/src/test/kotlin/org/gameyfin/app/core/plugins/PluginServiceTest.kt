@@ -17,12 +17,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.pf4j.ExtensionPoint
-import org.pf4j.Plugin
-import org.pf4j.PluginState
-import org.pf4j.PluginStateEvent
-import org.pf4j.PluginStateListener
-import org.pf4j.PluginWrapper
+import org.pf4j.*
 import org.springframework.data.repository.findByIdOrNull
 import reactor.test.StepVerifier
 import kotlin.test.*
@@ -190,7 +185,7 @@ class PluginServiceTest {
         every { pluginManager.getExtensionTypes("started-plugin") } returns listOf("GameMetadataProviderStub")
         every { pluginManagementRepository.findByIdOrNull("started-plugin") } returns entry
 
-        val result = service.getPluginManagementEntries(GameMetadataProviderStub::class.java, enabledOnly = true)
+        val result = service.getPluginManagementEntries(GameMetadataProviderStub::class.java)
 
         assertEquals(1, result.size)
         assertEquals(entry, result[0])
@@ -199,7 +194,7 @@ class PluginServiceTest {
     @Test
     fun `getPluginManagementEntries with enabledOnly false should include non-started plugins`() {
         val stoppedWrapper = buildFullPluginWrapper("stopped-plugin", PluginState.STOPPED)
-        val entry = PluginManagementEntry("stopped-plugin", enabled = false)
+        val entry = PluginManagementEntry("stopped-plugin")
 
         every { pluginManager.plugins } returns listOf(stoppedWrapper)
         every { pluginManager.getExtensionTypes("stopped-plugin") } returns listOf("GameMetadataProviderStub")
@@ -220,7 +215,7 @@ class PluginServiceTest {
         every { pluginManagementRepository.findByIdOrNull("no-entry-plugin") } returns null
 
         assertFailsWith<IllegalArgumentException> {
-            service.getPluginManagementEntries(GameMetadataProviderStub::class.java, enabledOnly = true)
+            service.getPluginManagementEntries(GameMetadataProviderStub::class.java)
         }
     }
 
@@ -341,7 +336,6 @@ class PluginServiceTest {
             label = "API Key",
             description = "Your API key",
             isSecret = true,
-            isRequired = true,
         )
 
         val configurablePlugin = mockk<TestConfigurablePlugin>()
@@ -463,7 +457,7 @@ class PluginServiceTest {
 
         every { pluginManager.validatePluginConfig(pluginId) } returns result
 
-        service.validatePluginConfig(pluginId, forceRevalidation = false)
+        service.validatePluginConfig(pluginId)
         service.validatePluginConfig(pluginId, forceRevalidation = true)
 
         verify(exactly = 2) { pluginManager.validatePluginConfig(pluginId) }
@@ -509,7 +503,8 @@ class PluginServiceTest {
     private fun createServiceCapturingListener(): Pair<PluginService, CapturingSlot<PluginStateListener>> {
         val listenerSlot = slot<PluginStateListener>()
         every { pluginManager.addPluginStateListener(capture(listenerSlot)) } just Runs
-        val serviceWithListener = PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository, updateManager)
+        val serviceWithListener =
+            PluginService(pluginManager, pluginManagementRepository, pluginConfigRepository, updateManager)
         assertTrue(listenerSlot.isCaptured)
         return serviceWithListener to listenerSlot
     }

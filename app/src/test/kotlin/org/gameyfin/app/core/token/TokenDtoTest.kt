@@ -71,8 +71,7 @@ class TokenDtoTest {
         val token = Token(
             secret = "test-secret",
             type = TokenType.PasswordReset,
-            creator = user,
-            createdOn = null
+            creator = user
         )
 
         val dto = TokenDto(token)
@@ -88,8 +87,7 @@ class TokenDtoTest {
         val token = Token(
             secret = "test-secret",
             type = TokenType.Invitation,
-            creator = user,
-            createdOn = null
+            creator = user
         )
 
         val dto = TokenDto(token)

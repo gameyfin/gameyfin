@@ -1,6 +1,9 @@
 package org.gameyfin.app.api.v1
 
-import io.mockk.*
+import io.mockk.Called
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.gameyfin.app.api.security.ApiScope
 import org.gameyfin.app.api.v1.controller.MetadataControllerV1
 import org.gameyfin.app.api.v1.dto.ExternalIdV1
@@ -57,8 +60,10 @@ class MetadataControllerV1Test {
     @Test
     fun `missing provider metadata remains nullable`() {
         every { games.getPotentialMatches(any(), any()) } returns listOf(
-            GameSearchResultDto(title = "Game", platforms = null, coverUrls = null, headerUrls = null,
-                release = null, publishers = null, developers = null, originalIds = emptyMap())
+            GameSearchResultDto(
+                title = "Game", platforms = null, coverUrls = null, headerUrls = null,
+                release = null, publishers = null, developers = null, originalIds = emptyMap()
+            )
         )
         val result = controller.search("Game", null)
         val json = tools.jackson.databind.json.JsonMapper.builder().build().writeValueAsString(result)

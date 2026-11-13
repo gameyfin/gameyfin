@@ -3,6 +3,7 @@ package org.gameyfin.plugins.download.direct
 import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.gameyfin.pluginapi.download.FileDownload
+import org.gameyfin.pluginapi.notifications.GameyfinNotificationService
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.IOException
@@ -25,6 +26,7 @@ class DirectDownloadTest {
             override val pluginVersion = "test"
             override val dataDirectory get() = root
             override val dataService: GameyfinDataService get() = error("unused")
+            override val notificationService: GameyfinNotificationService get() = error("unused")
         })
         val folder = Files.createDirectory(root.resolve("game"))
         val content = "game data ".repeat(100_000).toByteArray()
@@ -62,6 +64,7 @@ class DirectDownloadTest {
             override val pluginVersion = "test"
             override val dataDirectory get() = root
             override val dataService: GameyfinDataService get() = error("unused")
+            override val notificationService: GameyfinNotificationService get() = error("unused")
         })
         plugin.loadConfig(emptyMap())
         val provider = DirectDownloadPlugin.DirectDownloadProvider()

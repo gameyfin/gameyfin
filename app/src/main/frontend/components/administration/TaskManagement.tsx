@@ -174,7 +174,7 @@ export function TaskManagement() {
             },
             {
                 label: "Actions", tableClassName: "", content: <>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex w-max flex-nowrap gap-2">
                         {task.manuallyTriggerable &&
                             <Tooltip>
                                 <Button isIconOnly size="sm" variant="ghost"
@@ -255,7 +255,7 @@ export function TaskManagement() {
             },
             {
                 label: "Actions", tableClassName: "", content: <>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex w-max flex-nowrap gap-2">
                         <Tooltip>
                             <Button isIconOnly size="sm" variant="ghost"
                                     aria-label="Show log"

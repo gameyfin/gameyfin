@@ -54,7 +54,7 @@ class PluginEndpointTest {
     fun `getAll should delegate to pluginService and sort by priority descending`() {
         val plugin1 = createMockPluginDto("plugin1", priority = 5)
         val plugin2 = createMockPluginDto("plugin2", priority = 10)
-        val plugin3 = createMockPluginDto("plugin3", priority = 1)
+        val plugin3 = createMockPluginDto("plugin3")
         val plugins = listOf(plugin1, plugin2, plugin3)
 
         every { pluginService.getAll() } returns plugins

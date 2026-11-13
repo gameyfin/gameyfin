@@ -13,7 +13,6 @@ import {
     Switch,
     TextField,
     toast,
-    Tooltip,
     useOverlayState
 } from "@heroui/react";
 import {SealCheckIcon, TrashIcon, WarningCircleIcon} from "@phosphor-icons/react";

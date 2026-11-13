@@ -16,7 +16,6 @@ import org.pf4j.update.FileVerifier
 import org.pf4j.update.VerifyException
 import java.io.IOException
 import java.net.InetSocketAddress
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -132,7 +131,7 @@ class MarketplaceFileVerifiersTest {
         @Test
         fun `missing checksum fails`() {
             val file = createJar()
-            val e = assertFailsWith<VerifyException> { verifier.verify(context(sha512sum = null), file) }
+            val e = assertFailsWith<VerifyException> { verifier.verify(context(), file) }
             assertTrue(e.message!!.contains("does not provide a SHA-512 checksum"))
         }
 
@@ -179,7 +178,12 @@ class MarketplaceFileVerifiersTest {
         fun `checksum file with mismatching checksum fails`() {
             val file = createJar()
             serve("/plugin.sha512", 200, "${"f".repeat(128)}  plugin.jar\n")
-            val e = assertFailsWith<VerifyException> { verifier.verify(context(sha512sum = "$baseUrl/plugin.sha512"), file) }
+            val e = assertFailsWith<VerifyException> {
+                verifier.verify(
+                    context(sha512sum = "$baseUrl/plugin.sha512"),
+                    file
+                )
+            }
             assertTrue(e.message!!.contains("checksum mismatch"))
         }
 
@@ -187,7 +191,12 @@ class MarketplaceFileVerifiersTest {
         fun `checksum file without valid checksum fails`() {
             val file = createJar()
             serve("/plugin.sha512", 200, "this is not a checksum")
-            val e = assertFailsWith<VerifyException> { verifier.verify(context(sha512sum = "$baseUrl/plugin.sha512"), file) }
+            val e = assertFailsWith<VerifyException> {
+                verifier.verify(
+                    context(sha512sum = "$baseUrl/plugin.sha512"),
+                    file
+                )
+            }
             assertTrue(e.message!!.contains("does not contain a valid SHA-512 checksum"))
         }
 
@@ -202,7 +211,12 @@ class MarketplaceFileVerifiersTest {
         fun `checksum file over the size limit fails`() {
             val file = createJar()
             serve("/plugin.sha512", 200, sha512Hex(file) + " ".repeat(MarketplaceHttpClient.MAX_CHECKSUM_SIZE.toInt()))
-            val e = assertFailsWith<VerifyException> { verifier.verify(context(sha512sum = "$baseUrl/plugin.sha512"), file) }
+            val e = assertFailsWith<VerifyException> {
+                verifier.verify(
+                    context(sha512sum = "$baseUrl/plugin.sha512"),
+                    file
+                )
+            }
             assertIs<IOException>(e.cause)
         }
 
@@ -210,7 +224,12 @@ class MarketplaceFileVerifiersTest {
         fun `unavailable checksum file fails`() {
             val file = createJar()
             serve("/plugin.sha512", 404, "")
-            val e = assertFailsWith<VerifyException> { verifier.verify(context(sha512sum = "$baseUrl/plugin.sha512"), file) }
+            val e = assertFailsWith<VerifyException> {
+                verifier.verify(
+                    context(sha512sum = "$baseUrl/plugin.sha512"),
+                    file
+                )
+            }
             assertIs<IOException>(e.cause)
         }
 
@@ -310,7 +329,7 @@ class MarketplaceFileVerifiersTest {
             every { versionManager.compareVersions(any(), any()) } throws IllegalArgumentException("invalid")
             every { pluginManager.versionManager } returns versionManager
 
-            verifier.verify(context(version = "1.0.0"), createJar())
+            verifier.verify(context(), createJar())
 
             val e = assertFailsWith<VerifyException> { verifier.verify(context(version = "1.0"), createJar()) }
             assertTrue(e.message!!.contains("Version mismatch"))
@@ -319,7 +338,11 @@ class MarketplaceFileVerifiersTest {
         @Test
         fun `incompatible plugin requires fails`() {
             val file = createJar(
-                attributes = mapOf("Plugin-Id" to "test-plugin", "Plugin-Version" to "1.0.0", "Plugin-Requires" to ">=3.0.0")
+                attributes = mapOf(
+                    "Plugin-Id" to "test-plugin",
+                    "Plugin-Version" to "1.0.0",
+                    "Plugin-Requires" to ">=3.0.0"
+                )
             )
             val e = assertFailsWith<VerifyException> { verifier.verify(context(), file) }
             assertTrue(e.message!!.contains("requires Gameyfin version '>=3.0.0'"))
@@ -329,9 +352,13 @@ class MarketplaceFileVerifiersTest {
         @Test
         fun `compatibility is checked against the manifest and not the index`() {
             val file = createJar(
-                attributes = mapOf("Plugin-Id" to "test-plugin", "Plugin-Version" to "1.0.0", "Plugin-Requires" to ">=3.0.0")
+                attributes = mapOf(
+                    "Plugin-Id" to "test-plugin",
+                    "Plugin-Version" to "1.0.0",
+                    "Plugin-Requires" to ">=3.0.0"
+                )
             )
-            assertFailsWith<VerifyException> { verifier.verify(context(requires = "*"), file) }
+            assertFailsWith<VerifyException> { verifier.verify(context(), file) }
             verify { pluginManager.isCompatible(">=3.0.0") }
         }
     }
@@ -371,7 +398,7 @@ class MarketplaceFileVerifiersTest {
         @Test
         fun `missing checksum fails before descriptor verification`() {
             val file = createJar()
-            val e = assertFailsWith<VerifyException> { verifier.verify(context(sha512sum = null), file) }
+            val e = assertFailsWith<VerifyException> { verifier.verify(context(), file) }
             assertTrue(e.message!!.contains("SHA-512"))
             verify(exactly = 0) { pluginManager.isCompatible(any<String>()) }
         }

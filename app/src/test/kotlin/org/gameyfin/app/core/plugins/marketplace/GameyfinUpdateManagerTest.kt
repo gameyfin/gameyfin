@@ -148,7 +148,8 @@ class GameyfinUpdateManagerTest {
         loaded[id] = wrapper
         if (entries[id] == null) {
             val entry = PluginManagementEntry(id, priority = entries.size + 1, trustLevel = newEntryTrustLevel)
-            entry.enabled = newEntryTrustLevel == PluginTrustLevel.OFFICIAL || newEntryTrustLevel == PluginTrustLevel.BUNDLED
+            entry.enabled =
+                newEntryTrustLevel == PluginTrustLevel.OFFICIAL || newEntryTrustLevel == PluginTrustLevel.BUNDLED
             entries[id] = entry
         }
         return id
@@ -442,7 +443,11 @@ class GameyfinUpdateManagerTest {
     fun `findPluginInfo should fall back to first marketplace if source marketplace does not list the plugin`() {
         val officialInfo = pluginInfo("official", release("1.0.0"))
         val thirdPartyInfo = pluginInfo("third", release("1.0.0"))
-        setRepositories(repository("removed"), repository("official", officialInfo), repository("third", thirdPartyInfo))
+        setRepositories(
+            repository("removed"),
+            repository("official", officialInfo),
+            repository("third", thirdPartyInfo)
+        )
         entries[PLUGIN_ID] = PluginManagementEntry(PLUGIN_ID, sourceMarketplaceId = "removed")
 
         assertSame(officialInfo, updateManager.findPluginInfo(PLUGIN_ID))
@@ -1157,7 +1162,13 @@ class GameyfinUpdateManagerTest {
         val bundled = writePluginFile(localRoot.resolve("bundled.jar"), PLUGIN_ID, "1.0.0")
         localPluginPath = bundled
         val installed = installedFile("1.1.0")
-        preload(installed, "1.1.0", enabled = true, trustLevel = PluginTrustLevel.BUNDLED, sourceMarketplaceId = "official")
+        preload(
+            installed,
+            "1.1.0",
+            enabled = true,
+            trustLevel = PluginTrustLevel.BUNDLED,
+            sourceMarketplaceId = "official"
+        )
 
         val state = updateManager.uninstall(PLUGIN_ID)
 

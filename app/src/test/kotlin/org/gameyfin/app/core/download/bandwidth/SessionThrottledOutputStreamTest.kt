@@ -284,7 +284,7 @@ class SessionThrottledOutputStreamTest {
         throttledStream.write("Second".toByteArray())
 
         verifyOrder {
-            sessionTracker.downloadStarted(null, null, null)
+            sessionTracker.downloadStarted(null, null)
             sessionTracker.awaitPermits(any())
             sessionTracker.awaitPermits(any())
         }

@@ -15,8 +15,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.context.ApplicationEventPublisher
-import java.time.Instant
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -62,9 +62,10 @@ class TaskRunServiceTest {
         service.shutdown()
         service = TaskRunService(registry, repository, settingsService)
         service.init()
-        registry.register(TaskDefinition(
-            key = "hidden", name = "Hidden", visibleInOverview = false, action = TaskAction.Run { null }
-        ))
+        registry.register(
+            TaskDefinition(
+                key = "hidden", name = "Hidden", visibleInOverview = false, action = TaskAction.Run { null }
+            ))
 
         val snapshot = assertNotNull(service.subscribe().blockFirst(Duration.ofSeconds(5)))
 
@@ -238,7 +239,8 @@ class TaskRunServiceTest {
     fun `exclusive runs should not be started while the task is running`() {
         registry.register(taskDefinition("test"))
         val latch = CountDownLatch(1)
-        val first = service.start("test", TaskTrigger.MANUAL, exclusive = true) { latch.await(5, TimeUnit.SECONDS); null }
+        val first =
+            service.start("test", TaskTrigger.MANUAL, exclusive = true) { latch.await(5, TimeUnit.SECONDS); null }
 
         assertThrows<TaskAlreadyRunningException> {
             service.start("test", TaskTrigger.MANUAL, exclusive = true) { null }
@@ -352,7 +354,7 @@ class TaskRunServiceTest {
         val definition = taskDefinition("test")
         registry.register(definition)
         every { settingsService.get<Int>(definition, "limit") } returns 42
-        service.minEmitInterval = java.time.Duration.ZERO
+        service.minEmitInterval = Duration.ZERO
         var step: TaskStepDto? = null
         var limit: Int? = null
 

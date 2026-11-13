@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {mkdtemp, writeFile, rm} from "node:fs/promises";
+import {mkdtemp, rm, writeFile} from "node:fs/promises";
 import {fileURLToPath} from "node:url";
 import {resolve} from "node:path";
 import {createServer} from "vite";

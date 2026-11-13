@@ -4,8 +4,10 @@ import com.sun.net.httpserver.HttpServer
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import org.gameyfin.app.core.notifications.NotificationService
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.app.core.plugins.management.*
+import org.gameyfin.app.core.plugins.marketplace.MarketplaceInstallIntegrationTest.Companion.PLUGIN_ID
 import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -103,6 +105,7 @@ class MarketplaceInstallIntegrationTest {
             pluginConfigRepository,
             pluginManagementRepository,
             mockk<ObjectProvider<GameyfinDataService>>(relaxed = true),
+            mockk<ObjectProvider<NotificationService>>(relaxed = true),
             installedPluginsDirectory = installedDir.toString(),
             applicationVersion = "2.0.0"
         )
@@ -245,6 +248,7 @@ class MarketplaceInstallIntegrationTest {
             mockk<PluginConfigRepository> { every { findAllByPluginId(any()) } returns emptyList() },
             pluginManagementRepository,
             mockk<ObjectProvider<GameyfinDataService>>(relaxed = true),
+            mockk<ObjectProvider<NotificationService>>(relaxed = true),
             installedPluginsDirectory = installedDir.toString(),
             applicationVersion = "2.0.0"
         )
@@ -352,7 +356,11 @@ class MarketplaceInstallIntegrationTest {
         val staleFile = Files.createDirectories(installedDir.resolve(".download")).resolve("plugin-123.jar.part")
         Files.writeString(staleFile, "partial")
 
-        GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(allowInsecureUrls = true), pluginManagementRepository)
+        GameyfinUpdateManager(
+            pluginManager,
+            MarketplaceHttpClient(allowInsecureUrls = true),
+            pluginManagementRepository
+        )
 
         assertFalse(staleFile.exists())
         assertFalse(installedDir.resolve(".download").exists())

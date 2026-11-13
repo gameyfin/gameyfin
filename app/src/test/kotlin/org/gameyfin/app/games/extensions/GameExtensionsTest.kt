@@ -6,11 +6,7 @@ import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.games.dto.GameAdminDto
 import org.gameyfin.app.games.dto.GameField
 import org.gameyfin.app.games.dto.GameUserDto
-import org.gameyfin.app.games.entities.Company
-import org.gameyfin.app.games.entities.CompanyType
-import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.GameFieldMetadata
-import org.gameyfin.app.games.entities.GameFieldPluginSource
+import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageType
@@ -269,8 +265,7 @@ class GameExtensionsTest {
         val metadata = org.gameyfin.app.games.entities.GameMetadata(
             path = "/test/path",
             fileSize = 2000L,
-            downloadCount = 10,
-            matchConfirmed = false
+            downloadCount = 10
         )
 
         val result = metadata.toUserDto()
@@ -281,9 +276,11 @@ class GameExtensionsTest {
     @Test
     fun `plugin source includes stored display name without an installed plugin`() {
         val plugin = PluginManagementEntry("removed-plugin", name = "Original plugin name")
-        val metadata = org.gameyfin.app.games.entities.GameMetadata(path = "/test/path", fields = mutableMapOf(
-            "title" to GameFieldMetadata(source = GameFieldPluginSource(plugin))
-        ))
+        val metadata = org.gameyfin.app.games.entities.GameMetadata(
+            path = "/test/path", fields = mutableMapOf(
+                "title" to GameFieldMetadata(source = GameFieldPluginSource(plugin))
+            )
+        )
         val source = metadata.toAdminDto().fields!!.getValue("title")
         assertEquals("removed-plugin", source.source)
         assertEquals("Original plugin name", source.sourceName)
@@ -295,8 +292,7 @@ class GameExtensionsTest {
     @Test
     fun `GameMetadata toAdminDto should handle null fileSize as 0`() {
         val metadata = org.gameyfin.app.games.entities.GameMetadata(
-            path = "/test/path",
-            fileSize = null
+            path = "/test/path"
         )
 
         val result = metadata.toAdminDto()
@@ -373,7 +369,8 @@ class GameExtensionsTest {
     fun `toPatchDto should drop admin-only fields for users`() {
         game = createTestGame()
 
-        val result = game.toPatchDto(setOf(GameField.PATH, GameField.DOWNLOAD_COUNT, GameField.FILE_SIZE), admin = false)
+        val result =
+            game.toPatchDto(setOf(GameField.PATH, GameField.DOWNLOAD_COUNT, GameField.FILE_SIZE), admin = false)
 
         assertNotNull(result)
         assertEquals(listOf(GameField.FILE_SIZE), result.fields)

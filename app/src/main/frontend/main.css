@@ -54,14 +54,28 @@ h1, h2, h3, h4, h5, h6 {
    (dark gray), which hides HeroUI's --background. Make it follow HeroUI's background instead. */
 :root {
     --aura-app-background: var(--background);
+
+    /* Root variable overrides */
+    /* Overwrite default Hilla styles (e.g. loading indicator) */
+    --lumo-primary-color: var(--accent);
+
+    /* Overwrite SwiperJS styles */
+    --swiper-theme-color: var(--accent);
+    --swiper-navigation-color: var(--accent);
+    --swiper-pagination-color: var(--accent);
+
+    --radius: 0.25rem;
+
+    /* Responsive shell: Tailwind sm = 40rem, xl = 80rem. Navigation stays below overlays. */
+    --compact-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* In production builds Aura's (nested, conditional) gradient variants can still win the cascade,
    so paint the page background explicitly as well. */
 html:root,
 html:root body {
-    background: var(--background) !important;
-    background-image: none !important;
+    background: var(--background);
+    background-image: none;
 }
 
 /* Reserve scrollbar space so the page doesn't shift when a scrollbar appears/disappears */
@@ -131,23 +145,9 @@ html {
     outline: 1px solid var(--accent);
 }
 
-/* Root variable overrides */
-:root {
-    /* Overwrite default Hilla styles (e.g. loading indicator) */
-    --lumo-primary-color: var(--accent);
-
-    /* Overwrite SwiperJS styles */
-    --swiper-theme-color: var(--accent);
-    --swiper-navigation-color: var(--accent);
-    --swiper-pagination-color: var(--accent);
-
-    /* Overwrite SwiperJS styles */
-
-    .swiper-pagination-bullet {
-        background-color: var(--accent);
-    }
-
-    --radius: 0.25rem;
+/* Overwrite SwiperJS styles */
+:root .swiper-pagination-bullet {
+    background-color: var(--accent);
 }
 
 /* Fields share their default background with cards and modals in both light and dark mode.
@@ -176,15 +176,10 @@ html {
 @utility scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-        display: none;
-    }
 }
 
-/* Responsive shell: Tailwind sm = 40rem, xl = 80rem. Navigation stays below overlays. */
-:root {
-    --compact-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px));
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
 }
 
 body {
@@ -359,12 +354,19 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .shine::before {
-        animation: none !important;
+    .shine::before,
+    .shine:hover::before,
+    .shine:focus::before {
+        animation: none;
     }
 
-    *, *::before, *::after {
-        scroll-behavior: auto !important;
+    :root,
+    :root::before,
+    :root::after,
+    :root *,
+    :root *::before,
+    :root *::after {
+        scroll-behavior: auto;
     }
 }
 

@@ -297,12 +297,12 @@ class GameEndpointTest {
         val game = mockk<Game>()
 
         every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
-        every { gameService.matchManually(any(), any(), library, null) } returns game
+        every { gameService.matchManually(any(), any(), library) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
         gameEndpoint.matchManually(originalIds, path, libraryId, null)
 
-        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library, null) }
+        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library) }
     }
 
     @Test
@@ -314,12 +314,12 @@ class GameEndpointTest {
         val game = mockk<Game>()
 
         every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
-        every { gameService.matchManually(any(), any(), library, null) } returns game
+        every { gameService.matchManually(any(), any(), library) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
         gameEndpoint.matchManually(originalIds, path, libraryId, null)
 
-        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library, null) }
+        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library) }
     }
 
     @Test

@@ -3,11 +3,7 @@ package org.gameyfin.app.core.tasks
 import io.mockk.*
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
-import org.gameyfin.pluginapi.tasks.GameSelection
-import org.gameyfin.pluginapi.tasks.GameyfinTask
-import org.gameyfin.pluginapi.tasks.TaskContext
-import org.gameyfin.pluginapi.tasks.TaskResult
-import org.gameyfin.pluginapi.tasks.TaskTrigger
+import org.gameyfin.pluginapi.tasks.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.pf4j.PluginState
@@ -24,7 +20,8 @@ class PluginTaskRegistrarTest {
         override val description = "Synchronizes something"
         override val defaultSchedule = "0 0 3 * * *"
         override val cancellable = false
-        override val parameters = listOf(ConfigMetadata("games", GameSelection::class.java, "Games", "", isRequired = false))
+        override val parameters =
+            listOf(ConfigMetadata("games", GameSelection::class.java, "Games", "", isRequired = false))
         var executions = 0
 
         override fun execute(context: TaskContext): TaskResult {

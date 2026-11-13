@@ -58,7 +58,7 @@ class LibraryCoreServiceTest {
         val library = createTestLibrary(games = mutableListOf(existingGame))
         val gamesToAdd = listOf(existingGame, newGame1, newGame2)
 
-        val result = libraryCoreService.addGamesToLibrary(gamesToAdd, library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(gamesToAdd, library)
 
         assertEquals(3, result.games.size)
         assertTrue(result.games.contains(existingGame))
@@ -81,7 +81,7 @@ class LibraryCoreServiceTest {
 
         every { libraryRepository.save(library) } returns library
 
-        val result = libraryCoreService.addGamesToLibrary(listOf(game1, game2), library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(listOf(game1, game2), library)
 
         assertEquals(1, result.ignoredPaths.size)
         assertTrue(result.ignoredPaths.map { it.path }.contains("/path/other"))
@@ -98,7 +98,7 @@ class LibraryCoreServiceTest {
 
         every { libraryRepository.save(library) } returns library
 
-        libraryCoreService.addGamesToLibrary(listOf(game), library, persist = false)
+        libraryCoreService.addGamesToLibrary(listOf(game), library)
 
         verify(exactly = 1) { libraryRepository.save(library) }
     }
@@ -120,7 +120,7 @@ class LibraryCoreServiceTest {
         val game = createTestGame(1L, "/path/game1")
         val library = createTestLibrary()
 
-        libraryCoreService.addGamesToLibrary(listOf(game), library, persist = false)
+        libraryCoreService.addGamesToLibrary(listOf(game), library)
 
         verify(exactly = 0) { libraryRepository.save(any()) }
     }
@@ -130,7 +130,7 @@ class LibraryCoreServiceTest {
         val library = createTestLibrary()
         val initialGamesSize = library.games.size
 
-        val result = libraryCoreService.addGamesToLibrary(emptyList(), library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(emptyList(), library)
 
         assertEquals(initialGamesSize, result.games.size)
     }
@@ -142,7 +142,7 @@ class LibraryCoreServiceTest {
 
         val library = createTestLibrary(games = mutableListOf(existingGame))
 
-        val result = libraryCoreService.addGamesToLibrary(listOf(duplicateGame), library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(listOf(duplicateGame), library)
 
         assertEquals(1, result.games.size)
         assertEquals(existingGame, result.games[0])

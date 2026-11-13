@@ -5,8 +5,12 @@ import org.gameyfin.app.config.dto.ConfigEntryDto
 import org.gameyfin.app.config.dto.ConfigUpdateDto
 import org.gameyfin.app.config.entities.ConfigEntry
 import org.gameyfin.app.config.persistence.ConfigRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import tools.jackson.core.JacksonException
@@ -18,7 +22,8 @@ import kotlin.time.toJavaDuration
 @Service
 class ConfigService(
     private val appConfigRepository: ConfigRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
     companion object {
         private val log = KotlinLogging.logger {}
@@ -112,6 +117,7 @@ class ConfigService(
      * @param value: Value to set the config property to
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
      */
+    @Transactional
     fun <T : Serializable> set(configProperty: ConfigProperties<T>, value: T) {
         return set(configProperty.key, value)
     }
@@ -126,6 +132,7 @@ class ConfigService(
      * @throws IllegalArgumentException if the value can't be cast to the type defined for the config property
      */
     @Suppress("UNCHECKED_CAST")
+    @Transactional
     fun <T : Serializable> set(key: String, value: T) {
         log.debug { "Set config value '$key'" }
 
@@ -134,6 +141,7 @@ class ConfigService(
         var configEntry = appConfigRepository.findByIdOrNull(key)
 
         val serializedValue = serializeValue(value, key)
+        val previousValue = configEntry?.value ?: objectMapper.writeValueAsString(configProperty.default)
 
         if (configEntry == null) {
             configEntry = ConfigEntry(configProperty.key, serializedValue)
@@ -142,6 +150,12 @@ class ConfigService(
         }
 
         appConfigRepository.save(configEntry)
+        if (key.startsWith("sso.") && objectMapper.readTree(previousValue.toString()) != objectMapper.readTree(
+                serializedValue
+            )
+        ) {
+            eventPublisher.publishEvent(SsoConfigurationChanged())
+        }
     }
 
     /**
@@ -150,6 +164,7 @@ class ConfigService(
      *
      * @param update: A [ConfigUpdateDto] containing a map of key-value pairs to set
      */
+    @Transactional
     fun update(update: ConfigUpdateDto) {
         update.updates.forEach { (key, value) ->
             if (value == null) {
@@ -158,7 +173,11 @@ class ConfigService(
                 set(key, value)
             }
         }
-        emit(update)
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCommit() = emit(update)
+            })
+        } else emit(update)
     }
 
     /**
@@ -167,12 +186,20 @@ class ConfigService(
      *
      * @param key: Key of the config property
      */
+    @Transactional
     fun delete(key: String) {
 
         log.debug { "Delete config value '$key'" }
 
         val configKey = findConfigProperty(key)
+        val previous = if (key.startsWith("sso.")) get(configKey) else null
         appConfigRepository.deleteById(configKey.key)
+        if (key.startsWith("sso.") && objectMapper.writeValueAsString(previous) != objectMapper.writeValueAsString(
+                configKey.default
+            )
+        ) {
+            eventPublisher.publishEvent(SsoConfigurationChanged())
+        }
     }
 
     /**
@@ -232,4 +259,7 @@ class ConfigService(
             ?: throw IllegalArgumentException("Unknown configuration key: $key")
     }
 }
+
+/** Contains no configuration values or secrets. Delivered inside the configuration transaction. */
+class SsoConfigurationChanged
 

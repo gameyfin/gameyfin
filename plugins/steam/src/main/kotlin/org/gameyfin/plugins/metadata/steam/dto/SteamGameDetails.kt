@@ -59,13 +59,13 @@ data class Movie(
 
 @Serializable
 data class Webm(
-    val `480`: String? = null,
+    @SerialName("480") val resolution480: String? = null,
     val max: String
 )
 
 @Serializable
 data class Mp4(
-    val `480`: String? = null,
+    @SerialName("480") val resolution480: String? = null,
     val max: String? = null
 )
 
