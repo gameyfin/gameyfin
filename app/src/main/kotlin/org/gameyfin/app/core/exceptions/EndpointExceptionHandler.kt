@@ -1,15 +1,21 @@
 package org.gameyfin.app.core.exceptions
 
 import com.vaadin.hilla.exception.EndpointException
+import com.vaadin.hilla.EndpointInvocationException.EndpointForbiddenException
+import com.vaadin.hilla.EndpointInvocationException.EndpointUnauthorizedException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
+import org.gameyfin.app.core.security.getCurrentAuth
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.authentication.AuthenticationTrustResolverImpl
 import org.springframework.stereotype.Component
 
 /**
  * Aspect that intercepts all Vaadin Hilla endpoint method calls.
- * Catches all exceptions thrown from endpoint methods, logs them with full stack trace,
+ * Translates access denials to Hilla HTTP errors without logging expected denials.
+ * Logs other exceptions thrown from endpoint methods with full stack trace,
  * and re-throws them as EndpointException to be displayed nicely in the frontend.
  */
 @Aspect
@@ -25,6 +31,11 @@ class EndpointExceptionHandler {
     fun handleEndpointException(joinPoint: ProceedingJoinPoint): Any? {
         return try {
             joinPoint.proceed()
+        } catch (ex: AccessDeniedException) {
+            if (AuthenticationTrustResolverImpl().isAuthenticated(getCurrentAuth())) {
+                throw EndpointForbiddenException(ex.message)
+            }
+            throw EndpointUnauthorizedException(ex.message)
         } catch (ex: EndpointException) {
             // If it's already an EndpointException, just log and re-throw
             log.error(ex) { "Endpoint exception: ${ex.message}" }
