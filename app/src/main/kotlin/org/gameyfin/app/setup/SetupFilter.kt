@@ -32,11 +32,12 @@ class SetupFilter(
 
         if (isSetupUri && isSetupComplete) {
             res.sendRedirect("/login")
+            return
         } else if (isLoginUri && !isSetupComplete) {
             res.sendRedirect("/setup")
+            return
         }
 
-        // took me longer than I want to admit to realize you always need to call doFilter() at the end
         filterChain.doFilter(req, res)
     }
 }
