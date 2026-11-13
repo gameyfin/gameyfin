@@ -97,6 +97,55 @@ class NotificationIntegrationTest {
     }
 
     @Test
+    fun `invalid paging bulk sizes empty selections and missing recipients preserve inbox`() {
+        store.publish("core:test", NotificationRequest("Existing", "Body"))
+        listOf(-1 to 25, 100_001 to 25, 0 to 0, 0 to 101).forEach { (page, size) ->
+            assertFailsWith<IllegalArgumentException> { store.page(admin, false, page, size) }
+        }
+        assertFailsWith<IllegalArgumentException> { store.mutate(admin, (1..101).map { "$it" }.toSet(), false) }
+        store.mutate(admin, emptySet(), false)
+        store.mutate(admin, emptySet(), true)
+        assertEquals(1, store.count(admin, false))
+        assertFailsWith<AccessDeniedException> { store.entry(user, store.page(admin, false, 0, 25).single().id) }
+        assertFailsWith<IllegalArgumentException> {
+            store.publish("core:test", NotificationRequest("Unknown", "Body",
+                recipients = NotificationRecipients(NotificationAudience.USERS, setOf(1, 999))))
+        }
+        assertEquals(1, store.count(admin, false))
+    }
+
+    @Test
+    fun `broadcast with no users creates no notification and source resolution removes all matching entries`() {
+        jdbc.update("DELETE FROM USERS", emptyMap<String, Any>())
+        store.publish("plugin:empty", NotificationRequest("Empty", "Body",
+            recipients = NotificationRecipients(NotificationAudience.ALL_USERS)))
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM APP_NOTIFICATION", emptyMap<String, Any>(), Int::class.java))
+        repeat(2) { store.publish("plugin:first", NotificationRequest("First $it", "Body")) }
+        store.publish("plugin:second", NotificationRequest("Second", "Body"))
+        store.resolve("plugin:first")
+        assertEquals(listOf("Second"), store.page(admin, false, 0, 25).map { it.title })
+    }
+
+    @Test
+    fun `running entries survive bulk mutations and cleanup and retries stay bound to original action`() {
+        store.publish("plugin:test", NotificationRequest("Action", "Body"))
+        val entry = store.page(admin, false, 0, 25).single()
+        store.claim(admin, entry.id, "original")
+        store.mutate(admin, null, false)
+        assertEquals(null, store.entry(admin, entry.id).readAt)
+        jdbc.update("UPDATE NOTIFICATION_INBOX SET READ_AT = :old WHERE ID = :id",
+            mapOf("id" to entry.id, "old" to java.time.OffsetDateTime.now().minusDays(31)))
+        store.mutate(admin, null, true)
+        assertEquals(0, store.cleanup(30))
+        store.finish(entry, false)
+        assertFailsWith<IllegalArgumentException> { store.claim(admin, entry.id, "different") }
+        assertEquals("FAILED", store.entry(admin, entry.id).executionState)
+        assertEquals(entry.executionId, store.claim(admin, entry.id, "original").executionId)
+        store.invalidatePlugin("test")
+        assertEquals(1, store.count(admin, true))
+    }
+
+    @Test
     fun `severity filtering applies before pagination and preserves recipient isolation`() {
         repeat(3) { store.publish("core:test", NotificationRequest("Info $it", "Body")) }
         store.publish("core:test", NotificationRequest("Warning", "Body", NotificationSeverity.WARNING))

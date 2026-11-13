@@ -3,6 +3,8 @@ package org.gameyfin.app.notifications
 import io.mockk.*
 import org.gameyfin.app.core.notifications.*
 import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskAction
+import org.gameyfin.app.core.tasks.TaskDefinition
 import org.gameyfin.pluginapi.notifications.NotificationAudience
 import org.gameyfin.pluginapi.notifications.NotificationRecipients
 import org.gameyfin.pluginapi.notifications.NotificationRequest
@@ -10,6 +12,10 @@ import org.gameyfin.pluginapi.tasks.TaskContext
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
 import java.net.http.HttpTimeoutException
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import org.springframework.test.util.ReflectionTestUtils
 import java.time.Instant
 import kotlin.test.*
 
@@ -21,6 +27,66 @@ class NotificationTasksTest {
         tag, "https://github.com/gameyfin/gameyfin/releases/tag/$tag",
         Instant.parse("2026-11-${day.toString().padStart(2, '0')}T12:00:00Z"), prerelease
     )
+
+    private val releaseJson = """{"draft":false,"prerelease":false,"tag_name":"v2.7.0","published_at":"2026-11-01T12:00:00Z","html_url":"https://github.com/gameyfin/gameyfin/releases/tag/v2.7.0"}"""
+
+    @Test
+    fun `published releases paginate and skip drafts using GitHub request headers`() {
+        val http = mockk<HttpClient>()
+        ReflectionTestUtils.setField(client, "client", http)
+        val requests = mutableListOf<HttpRequest>()
+        val first = mockk<HttpResponse<String>>()
+        val second = mockk<HttpResponse<String>>()
+        every { first.statusCode() } returns 200
+        every { first.body() } returns List(100) { releaseJson }.joinToString(",", "[", "]")
+        every { second.statusCode() } returns 200
+        every { second.body() } returns "[${releaseJson.replace("\"draft\":false", "\"draft\":true")}]"
+        every { http.send(capture(requests), any<HttpResponse.BodyHandler<String>>()) } returnsMany listOf(first, second)
+
+        assertEquals(List(100) { release("v2.7.0", 1) }, client.published())
+        assertEquals(listOf("per_page=100&page=1", "per_page=100&page=2"), requests.map { it.uri().query })
+        requests.forEach {
+            assertEquals("GET", it.method())
+            assertEquals("api.github.com", it.uri().host)
+            assertEquals("application/vnd.github+json", it.headers().firstValue("Accept").orElseThrow())
+            assertEquals("2022-11-28", it.headers().firstValue("X-GitHub-Api-Version").orElseThrow())
+            assertEquals("Gameyfin/2.7.0-preview", it.headers().firstValue("User-Agent").orElseThrow())
+        }
+    }
+
+    @Test
+    fun `release HTTP errors and malformed responses fail while missing repository is empty`() {
+        val http = mockk<HttpClient>()
+        val response = mockk<HttpResponse<String>>()
+        ReflectionTestUtils.setField(client, "client", http)
+        every { http.send(any(), any<HttpResponse.BodyHandler<String>>()) } returns response
+        every { response.statusCode() } returns 404
+        assertTrue(client.published().isEmpty())
+        every { response.statusCode() } returns 403
+        assertEquals("GitHub release check failed (HTTP 403)", assertFailsWith<IllegalStateException> { client.published() }.message)
+        every { response.statusCode() } returns 200
+        every { response.body() } returns "{}"
+        assertFailsWith<IllegalArgumentException> { client.published() }
+        every { response.body() } returns "[]"
+        assertTrue(client.published().isEmpty())
+    }
+
+    @Test
+    fun `registered cleanup action uses configured retention or default and reports count`() {
+        val definitions = mutableListOf<TaskDefinition>()
+        val registry = mockk<TaskRegistry>()
+        val store = mockk<NotificationStore>()
+        val context = mockk<TaskContext>()
+        every { registry.register(capture(definitions)) } just Runs
+        every { store.cleanup(any()) } returns 4
+        every { context.setting<Int>("retentionDays") } returnsMany listOf(null, 7)
+        NotificationTasks(registry, store, mockk(), mockk(), "unknown").register()
+        val action = definitions.single { it.key == "notification-archive-cleanup" }.action as TaskAction.Run
+        repeat(2) { assertEquals("4 archived notification(s) deleted", action.execute(context)?.summary) }
+        verify { store.cleanup(30); store.cleanup(7) }
+        val update = definitions.single { it.key == "check-for-updates" }.action as TaskAction.Run
+        assertEquals("Skipped: installed version is unknown", update.execute(context)?.summary)
+    }
 
     @Test
     fun `release parser accepts arbitrary tags and validates publication dates and URLs`() {
