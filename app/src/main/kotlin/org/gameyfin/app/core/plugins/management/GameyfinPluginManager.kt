@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.plugins.management
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.notifications.NotificationService
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -30,6 +31,7 @@ class GameyfinPluginManager(
     private val pluginConfigRepository: PluginConfigRepository,
     private val pluginManagementRepository: PluginManagementRepository,
     private val pluginDataService: ObjectProvider<GameyfinDataService>,
+    private val notificationService: ObjectProvider<NotificationService>,
     @Value($$"${gameyfin.plugins.install-directory:$$DEFAULT_INSTALLED_PLUGINS_DIR}")
     installedPluginsDirectory: String = DEFAULT_INSTALLED_PLUGINS_DIR,
     @Value($$"${spring.application.version:}")
@@ -129,7 +131,8 @@ class GameyfinPluginManager(
             pluginId = pluginWrapper.pluginId,
             pluginVersion = pluginWrapper.descriptor.version,
             dataDirectory = GameyfinPluginContext.dataDirectoryOf(pluginWrapper.pluginId),
-            dataServiceProvider = { pluginDataService.getObject() }
+            dataServiceProvider = { pluginDataService.getObject() },
+            notificationServiceProvider = { notificationService.getObject().forPlugin(pluginWrapper.pluginId) }
         )
     }
 

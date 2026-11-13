@@ -96,7 +96,7 @@ class EntityChangeSetTest {
 
     @Test
     fun `changedGameMetadataFields should only return changed fields`() {
-        val previous = GameMetadata(path = "/a", fileSize = 1L, downloadCount = 0)
+        val previous = GameMetadata(path = "/a", fileSize = 1L)
         val current = GameMetadata(path = "/a", fileSize = 2L, downloadCount = 1)
 
         assertEquals(
@@ -115,7 +115,7 @@ class EntityChangeSetTest {
 
     @Test
     fun `changedGameFields should map dirty properties`() {
-        val previous = GameMetadata(path = "/a", matchConfirmed = false)
+        val previous = GameMetadata(path = "/a")
         val current = GameMetadata(path = "/a", matchConfirmed = true)
 
         val result = EntityFieldMappings.changedGameFields(

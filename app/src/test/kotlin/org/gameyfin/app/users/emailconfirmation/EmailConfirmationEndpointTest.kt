@@ -76,8 +76,7 @@ class EmailConfirmationEndpointTest {
         val user = User(
             id = 1L,
             username = "testuser",
-            email = "test@example.com",
-            emailConfirmed = false
+            email = "test@example.com"
         )
         val auth = mockk<Authentication> {
             every { name } returns "testuser"
@@ -127,8 +126,7 @@ class EmailConfirmationEndpointTest {
         val user = User(
             id = 1L,
             username = "testuser",
-            email = "test@example.com",
-            emailConfirmed = false
+            email = "test@example.com"
         )
         val auth = mockk<Authentication> {
             every { name } returns "testuser"

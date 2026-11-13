@@ -2,10 +2,10 @@ package org.gameyfin.app.api.v1.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
@@ -113,7 +113,10 @@ class LibraryControllerV1(
         description = "Requires libraries:scan or an administrator personal token. Acknowledges queue acceptance; task runs are created when the queue processes the scan."
     )
     @ApiResponse(responseCode = "202", description = "Accepted")
-    fun scan(@Parameter(description = "Library ID.") @PathVariable id: String, @RequestBody input: ScanV1): ResponseEntity<AcceptedScanV1> {
+    fun scan(
+        @Parameter(description = "Library ID.") @PathVariable id: String,
+        @RequestBody input: ScanV1
+    ): ResponseEntity<AcceptedScanV1> {
         access.require(ApiScope.LIBRARIES_SCAN); catalog.library(id)
         require(input.type in setOf("QUICK", "FULL")) { "Scan type must be QUICK or FULL" }
         scans.triggerScan(ScanType.valueOf(input.type), listOf(apiId(id)))

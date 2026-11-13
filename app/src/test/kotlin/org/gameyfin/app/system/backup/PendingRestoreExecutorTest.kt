@@ -63,7 +63,10 @@ class PendingRestoreExecutorTest {
             .withProperty("spring.datasource.username", "sa")
             .withProperty("spring.datasource.password", "")
             .withProperty("spring.liquibase.change-log", CHANGELOG)
-            .withProperty(DatabaseSettingsInitializer.SETTINGS_FILE_PROPERTY, (tempDir / "db" / "database.json").toString())
+            .withProperty(
+                DatabaseSettingsInitializer.SETTINGS_FILE_PROPERTY,
+                (tempDir / "db" / "database.json").toString()
+            )
         databaseStore = DatabaseSettingsInitializer.store(environment)
     }
 

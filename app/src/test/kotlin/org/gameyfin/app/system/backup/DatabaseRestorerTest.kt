@@ -130,6 +130,51 @@ class DatabaseRestorerTest {
     }
 
     @Test
+    fun `restore replaces migration seed rows with backed up state`() {
+        source.connection.use { c ->
+            c.createStatement().use {
+                it.executeUpdate("DELETE FROM NOTIFICATION_PRODUCER_STATE WHERE ID = 'sso'")
+                it.executeUpdate(
+                    "UPDATE NOTIFICATION_PRODUCER_STATE SET LAST_VERSION = '2.7.0', BOOT_ID = 'backup-boot' WHERE ID = 'release'"
+                )
+            }
+        }
+        Files.newOutputStream(archive).use {
+            DatabaseExporter().writeArchive(source, it, Instant.now(), FINGERPRINT, "test", null)
+        }
+        val target = h2("target-seeded")
+
+        restoreInto(archive, target)
+
+        assertEquals(1, count(target, "NOTIFICATION_PRODUCER_STATE"))
+        target.connection.use { c ->
+            c.createStatement().use { s ->
+                s.executeQuery("SELECT ID, LAST_VERSION, BOOT_ID FROM NOTIFICATION_PRODUCER_STATE").use {
+                    assertTrue(it.next())
+                    assertEquals("release", it.getString(1))
+                    assertEquals("2.7.0", it.getString(2))
+                    assertEquals("backup-boot", it.getString(3))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `restore keeps seeded table empty when backup has no rows`() {
+        source.connection.use { c ->
+            c.createStatement().use { it.executeUpdate("DELETE FROM NOTIFICATION_PRODUCER_STATE") }
+        }
+        Files.newOutputStream(archive).use {
+            DatabaseExporter().writeArchive(source, it, Instant.now(), FINGERPRINT, "test", null)
+        }
+        val target = h2("target-empty-seed")
+
+        restoreInto(archive, target)
+
+        assertEquals(0, count(target, "NOTIFICATION_PRODUCER_STATE"))
+    }
+
+    @Test
     fun `manifest problems are reported`() {
         val malformed = rewrite("malformed.zip", rawManifest = "{not json")
         assertTrue(assertThrows(InvalidBackupException::class.java) { DatabaseRestorer.readManifest(malformed) }

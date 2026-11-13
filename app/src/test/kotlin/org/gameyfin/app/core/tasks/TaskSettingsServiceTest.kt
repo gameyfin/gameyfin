@@ -168,7 +168,8 @@ class TaskSettingsServiceTest {
 
     @Test
     fun `toDto should represent game selections as strings`() {
-        val withDefault = ConfigMetadata("games", GameSelection::class.java, "Games", "", default = GameSelection(listOf(1L, 2L)))
+        val withDefault =
+            ConfigMetadata("games", GameSelection::class.java, "Games", "", default = GameSelection(listOf(1L, 2L)))
 
         assertEquals("GameSelection", TaskSettingsService.toDto(withDefault).type)
         assertEquals("1,2", TaskSettingsService.toDto(withDefault).default)

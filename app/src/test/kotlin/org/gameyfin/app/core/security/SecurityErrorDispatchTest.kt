@@ -31,31 +31,46 @@ class SecurityErrorDispatchTest {
     @Configuration(proxyBeanMethods = false)
     @Import(SecurityConfig::class)
     class Config {
-        @Bean fun config(): ConfigService = mockk<ConfigService>().also {
+        @Bean
+        fun config(): ConfigService = mockk<ConfigService>().also {
             every { it.get(ConfigProperties.SSO.OIDC.Enabled) } returns false
             every { it.get(ConfigProperties.Security.AllowPublicAccess) } returns false
         }
-        @Bean fun ssoHandler(): SsoAuthenticationSuccessHandler = mockk()
-        @Bean fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
-        @Bean fun users(): UserRepository = mockk()
-        @Bean fun roleHierarchy(): RoleHierarchy = mockk()
+
+        @Bean
+        fun ssoHandler(): SsoAuthenticationSuccessHandler = mockk()
+
+        @Bean
+        fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
+
+        @Bean
+        fun users(): UserRepository = mockk()
+
+        @Bean
+        fun roleHierarchy(): RoleHierarchy = mockk()
     }
 
     // Register UI collaborators as ready instances so Spring does not autowire their internals.
-    private val runner = WebApplicationContextRunner().withUserConfiguration(Config::class.java).withInitializer { context ->
-        context.beanFactory.registerSingleton("routeUtil", mockk<RouteUtil>().also {
-            every { it.isRouteAllowed(any()) } returns false
-        })
-        context.beanFactory.registerSingleton("requestUtil", mockk<RequestUtil>(relaxed = true).also {
-            every { it.urlMapping } returns "/*"
-            every { it.applyUrlMapping(any<String>()) } answers { firstArg<String>().ifEmpty { "/" } }
-        })
-        context.beanFactory.registerSingleton("authenticationContext", mockk<AuthenticationContext>(relaxed = true))
-        context.beanFactory.registerSingleton("navigationAccessControl", mockk<NavigationAccessControl>(relaxed = true))
-        context.beanFactory.registerSingleton("requestCache", mockk<VaadinDefaultRequestCache>(relaxed = true).also {
-            every { it.getMatchingRequest(any(), any()) } returns null
-        })
-    }
+    private val runner =
+        WebApplicationContextRunner().withUserConfiguration(Config::class.java).withInitializer { context ->
+            context.beanFactory.registerSingleton("routeUtil", mockk<RouteUtil>().also {
+                every { it.isRouteAllowed(any()) } returns false
+            })
+            context.beanFactory.registerSingleton("requestUtil", mockk<RequestUtil>(relaxed = true).also {
+                every { it.urlMapping } returns "/*"
+                every { it.applyUrlMapping(any<String>()) } answers { firstArg<String>().ifEmpty { "/" } }
+            })
+            context.beanFactory.registerSingleton("authenticationContext", mockk<AuthenticationContext>(relaxed = true))
+            context.beanFactory.registerSingleton(
+                "navigationAccessControl",
+                mockk<NavigationAccessControl>(relaxed = true)
+            )
+            context.beanFactory.registerSingleton(
+                "requestCache",
+                mockk<VaadinDefaultRequestCache>(relaxed = true).also {
+                    every { it.getMatchingRequest(any(), any()) } returns null
+                })
+        }
 
     @Test
     fun `error dispatch after a committed download reaches error handler without security exception`() {
@@ -80,6 +95,22 @@ class SecurityErrorDispatchTest {
     }
 
     @Test
+    fun `browser authentication failures use gateway and login success requires authentication`() {
+        runner.run { context ->
+            val security = context.getBean(FilterChainProxy::class.java)
+            for (path in listOf("/download/1", "/login/success")) {
+                val response = MockHttpServletResponse()
+                var reachedHandler = false
+                security.doFilter(MockHttpServletRequest("GET", path), response) { _, _ -> reachedHandler = true }
+                assertFalse(reachedHandler)
+                assertEquals(302, response.status)
+                assertEquals("/loginredirect?continue=" + java.net.URLEncoder.encode(path, Charsets.UTF_8),
+                    response.redirectedUrl)
+            }
+        }
+    }
+
+    @Test
     fun `ordinary requests remain protected and public download setting is respected`() {
         runner.run { context ->
             val security = context.getBean(FilterChainProxy::class.java)
@@ -91,7 +122,9 @@ class SecurityErrorDispatchTest {
                 assertFalse(reachedHandler, "$path must not bypass authorization")
             }
 
-            every { context.getBean(ConfigService::class.java).get(ConfigProperties.Security.AllowPublicAccess) } returns true
+            every {
+                context.getBean(ConfigService::class.java).get(ConfigProperties.Security.AllowPublicAccess)
+            } returns true
             var reachedDownload = false
             security.doFilter(MockHttpServletRequest("GET", "/download/1"), MockHttpServletResponse()) { _, _ ->
                 reachedDownload = true

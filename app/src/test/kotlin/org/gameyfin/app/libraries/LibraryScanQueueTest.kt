@@ -1,18 +1,22 @@
 package org.gameyfin.app.libraries
 
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.gameyfin.app.libraries.enums.ScanType
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.*
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class LibraryScanQueueTest {
     private class Timer(val action: Runnable) {
         var cancelled = false
         val future = mockk<ScheduledFuture<*>>()
+
         init {
             every { future.cancel(false) } answers { cancelled = true; true }
         }
@@ -38,10 +42,17 @@ class LibraryScanQueueTest {
     }
 
     @AfterEach
-    fun tearDown() { queue.close() }
+    fun tearDown() {
+        queue.close()
+    }
 
-    private fun runScan() { workers.removeAt(0).run() }
-    private fun fireTimer() { timers.last { !it.cancelled }.action.run() }
+    private fun runScan() {
+        workers.removeAt(0).run()
+    }
+
+    private fun fireTimer() {
+        timers.last { !it.cancelled }.action.run()
+    }
 
     @Test
     fun `watcher burst resets quiet period and runs only one scan`() {

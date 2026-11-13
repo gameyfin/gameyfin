@@ -63,7 +63,7 @@ ENV RUNTIME_ENV=docker
 
 # Install necessary packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini gosu libjemalloc2 && \
+    apt-get install -y --no-install-recommends gosu libjemalloc2 tini && \
     rm -rf /var/lib/apt/lists/*
 
 # Fixed runtime user/group
@@ -80,7 +80,7 @@ RUN groupadd -g "$GID" "$USER" && \
     chown -R "$UID:$GID" .
 
 # Copy entrypoint script with proper perms and ownership
-COPY --link --chown=${UID}:${GID} --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
+COPY --link --chown=0:0 --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
 
 # Copy application layers from extractor stage
 COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/dependencies/ ./

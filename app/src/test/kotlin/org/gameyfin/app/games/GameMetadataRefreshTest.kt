@@ -1,10 +1,6 @@
 package org.gameyfin.app.games
 
-import io.mockk.clearAllMocks
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.unmockkAll
-import io.mockk.verify
+import io.mockk.*
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.plugins.PluginService
@@ -87,10 +83,12 @@ class GameMetadataRefreshTest {
 
     @Test
     fun `title recovery chooses the saved ID among similarly named editions`() {
-        val provider = RefreshProvider(listOf(
-            metadata(id = "different-edition", description = "Wrong edition"),
-            metadata(description = "Correct edition")
-        ))
+        val provider = RefreshProvider(
+            listOf(
+                metadata(id = "different-edition", description = "Wrong edition"),
+                metadata(description = "Correct edition")
+            )
+        )
         install(provider)
 
         assertNotNull(service.updateMetadata(game))
@@ -181,7 +179,8 @@ class GameMetadataRefreshTest {
 
     @Test
     fun `recovery preserves service key supplied fields`() {
-        val source = GameFieldMetadata(source = org.gameyfin.app.games.entities.GameFieldApiSource("key-id", "Import service"))
+        val source =
+            GameFieldMetadata(source = org.gameyfin.app.games.entities.GameFieldApiSource("key-id", "Import service"))
         game.summary = "Integration notes"
         game.metadata.fields["summary"] = source
         val provider = RefreshProvider(listOf(metadata().copy(userRating = 90)))
@@ -210,7 +209,11 @@ class GameMetadataRefreshTest {
         var failSearch = false
         override val supportedPlatforms = setOf(Platform.PC_MICROSOFT_WINDOWS)
         override fun fetchById(id: String): PluginMetadata? = cache[id]
-        override fun fetchByTitle(gameTitle: String, platformFilter: Set<Platform>, maxResults: Int): List<PluginMetadata> {
+        override fun fetchByTitle(
+            gameTitle: String,
+            platformFilter: Set<Platform>,
+            maxResults: Int
+        ): List<PluginMetadata> {
             titleSearches.add(gameTitle)
             if (failSearch) throw IllegalStateException("Provider unavailable")
             return searchResults.take(maxResults).also { matches ->

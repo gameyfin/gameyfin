@@ -42,7 +42,10 @@ class DatabaseServiceTest {
             .withProperty("spring.datasource.url", url)
             .withProperty("spring.datasource.username", "sa")
             .withProperty("spring.datasource.password", "")
-            .withProperty(DatabaseSettingsInitializer.SETTINGS_FILE_PROPERTY, (tempDir / "db" / "database.json").toString())
+            .withProperty(
+                DatabaseSettingsInitializer.SETTINGS_FILE_PROPERTY,
+                (tempDir / "db" / "database.json").toString()
+            )
         store = DatabaseSettingsInitializer.store(environment)
         service = service(environment)
     }

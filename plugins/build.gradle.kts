@@ -77,6 +77,8 @@ subprojects {
     }
 
     tasks.register<Copy>("copyDependencyClasses") {
+        group = "build"
+        description = "Copies dependency classes into the plugin class directory"
         dependsOn(tasks.jar)
 
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -93,6 +95,8 @@ subprojects {
 
 
     tasks.register<Exec>("signJar") {
+        group = "build"
+        description = "Signs the plugin JAR with the configured keystore"
         dependsOn(tasks.jar)
 
         val keystorePassword = keystorePasswordProvider.get()

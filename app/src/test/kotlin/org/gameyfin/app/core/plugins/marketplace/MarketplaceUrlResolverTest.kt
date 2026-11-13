@@ -260,7 +260,12 @@ class MarketplaceUrlResolverTest {
     @ParameterizedTest
     @ValueSource(strings = ["ftp://example.com/market", "javascript:alert(1)", "mailto:someone@example.com"])
     fun `other schemes are rejected even when insecure URLs are allowed`(input: String) {
-        assertFailsWith<IllegalArgumentException> { MarketplaceUrlResolver.resolveIndexUrl(input, allowInsecure = true) }
+        assertFailsWith<IllegalArgumentException> {
+            MarketplaceUrlResolver.resolveIndexUrl(
+                input,
+                allowInsecure = true
+            )
+        }
     }
 
     // --- Invalid input ---

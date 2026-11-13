@@ -4,7 +4,9 @@ import {test} from "node:test";
 import {runInThisContext} from "node:vm";
 import ts from "typescript";
 
-function loadModule(name, require = () => { throw new Error("Unexpected dependency"); }) {
+function loadModule(name, require = () => {
+    throw new Error("Unexpected dependency");
+}) {
     const source = readFileSync(new URL(`../../main/frontend/util/${name}.ts`, import.meta.url), "utf8");
     const exports = {};
     runInThisContext(`(function(require, exports) {${ts.transpileModule(source, {
@@ -36,47 +38,75 @@ function setup(t, reducedMotion = true) {
 
     const slots = [{left: 0, top: 0}, {left: 100, top: 0}, {left: 0, top: 100}];
     const cards = ["a", "b", "c"].map(key => {
-        const content = {style: {}, animations: [], animate(frames) {
-            const animation = {frames, cancelled: false, cancel() { this.cancelled = true; }};
-            this.animations.push(animation);
-            return animation;
-        }};
-        const card = {dataset: {reorderKey: key}, content, querySelector: () => content,
-            getBoundingClientRect: () => slots[container.cards.indexOf(card)]};
+        const content = {
+            style: {}, animations: [], animate(frames) {
+                const animation = {
+                    frames, cancelled: false, cancel() {
+                        this.cancelled = true;
+                    }
+                };
+                this.animations.push(animation);
+                return animation;
+            }
+        };
+        const card = {
+            dataset: {reorderKey: key}, content, querySelector: () => content,
+            getBoundingClientRect: () => slots[container.cards.indexOf(card)]
+        };
         return card;
     });
     const container = {
         cards: [...cards], scrollLeft: 0, scrollTop: 0,
         getBoundingClientRect: () => ({left: 0, top: 0}),
-        querySelectorAll() { return this.cards; },
+        querySelectorAll() {
+            return this.cards;
+        },
         contains: () => true
     };
     const state = [];
     let cursor, effects, options, items = ["a", "b", "c"];
     const react = {
         createElement: () => null,
-        useRef(initial) { const index = cursor++; return state[index] ??= {current: initial}; },
+        useRef(initial) {
+            const index = cursor++;
+            return state[index] ??= {current: initial};
+        },
         useState(initial) {
             const index = cursor++;
             if (!(index in state)) state[index] = initial;
-            return [state[index], value => { state[index] = value; }];
+            return [state[index], value => {
+                state[index] = value;
+            }];
         },
-        useLayoutEffect(effect, deps) { if (!deps) effects.push(effect); }
+        useLayoutEffect(effect, deps) {
+            if (!deps) effects.push(effect);
+        }
     };
     const {useAnimatedReorder} = loadModule("useAnimatedReorder", name => {
         if (name === "react") return react;
-        if (name === "react-aria-components") return {useDragAndDrop(value) { options = value; return {dragAndDropHooks: {}}; }};
+        if (name === "react-aria-components") return {
+            useDragAndDrop(value) {
+                options = value;
+                return {dragAndDropHooks: {}};
+            }
+        };
         if (name === "./reorderItems") return ordering;
         throw new Error(`Unexpected dependency: ${name}`);
     });
+
     function render() {
         cursor = 0;
         effects = [];
-        const result = useAnimatedReorder({items, getKey: item => item, getLabel: item => item,
-            onReorder: reordered => { items = reordered; }});
+        const result = useAnimatedReorder({
+            items, getKey: item => item, getLabel: item => item,
+            onReorder: reordered => {
+                items = reordered;
+            }
+        });
         result.ref.current = container;
         effects.forEach(effect => effect());
     }
+
     render();
     const target = {type: "item", key: "c", dropPosition: "after"};
     options.onDragStart({keys: new Set(["a"])});
@@ -85,8 +115,13 @@ function setup(t, reducedMotion = true) {
     assert.equal(cards[0].content.style.transform, "translate(0px, 100px)");
     return {
         cards, container, render,
-        drop() { options.onReorder({keys: new Set(["a"]), target}); options.onDragEnd(); },
-        cancel() { options.onDragEnd(); }
+        drop() {
+            options.onReorder({keys: new Set(["a"]), target});
+            options.onDragEnd();
+        },
+        cancel() {
+            options.onDragEnd();
+        }
     };
 }
 

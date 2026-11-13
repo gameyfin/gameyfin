@@ -293,7 +293,7 @@ class CatalogServiceV1Test {
 
     @Test
     fun `membership changes are idempotent`() {
-        val member = testGame(10)
+        val member = testGame()
         val other = testGame(11)
         val collection = Collection(id = 3, name = "C", games = mutableSetOf(member))
         every { collections.findById(3) } returns Optional.of(collection)

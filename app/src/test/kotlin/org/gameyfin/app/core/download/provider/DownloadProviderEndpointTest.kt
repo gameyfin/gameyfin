@@ -141,7 +141,7 @@ class DownloadProviderEndpointTest {
     @Test
     fun `getProviders should handle null shortDescription`() {
         val providers = listOf(
-            DownloadProviderDto("key1", "Provider 1", 5, "Description 1", null)
+            DownloadProviderDto("key1", "Provider 1", 5, "Description 1")
         )
 
         every { downloadService.getProviders() } returns providers

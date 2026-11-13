@@ -29,8 +29,7 @@ class DownloadProviderDtoTest {
             key = "org.example.Provider",
             name = "Example Provider",
             priority = 10,
-            description = "This is a test provider",
-            shortDescription = null
+            description = "This is a test provider"
         )
 
         assertNull(dto.shortDescription)
@@ -205,16 +204,14 @@ class DownloadProviderDtoTest {
             key = "org.example.Provider",
             name = "Example Provider",
             priority = 10,
-            description = "This is a test provider",
-            shortDescription = null
+            description = "This is a test provider"
         )
 
         val dto2 = DownloadProviderDto(
             key = "org.example.Provider",
             name = "Example Provider",
             priority = 10,
-            description = "This is a test provider",
-            shortDescription = null
+            description = "This is a test provider"
         )
 
         assertEquals(dto1, dto2)
@@ -226,8 +223,7 @@ class DownloadProviderDtoTest {
             key = "org.example.Provider",
             name = "Example Provider",
             priority = 10,
-            description = "This is a test provider",
-            shortDescription = null
+            description = "This is a test provider"
         )
 
         val dto2 = DownloadProviderDto(

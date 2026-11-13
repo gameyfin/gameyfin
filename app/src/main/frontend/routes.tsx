@@ -1,4 +1,5 @@
 import LoginView from "Frontend/views/LoginView";
+import LoginRedirectView from "Frontend/views/LoginRedirectView";
 import MainLayout from "Frontend/views/MainLayout";
 import HomeView from "Frontend/views/HomeView";
 import SetupView from "Frontend/views/SetupView";
@@ -39,6 +40,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
             element: <App/>,
             errorElement: <ErrorView/>,
             children: [
+                {path: 'loginredirect', element: <LoginRedirectView/>},
                 {
                     element: <MainLayout/>,
                     children: [
@@ -202,5 +204,5 @@ export const {router, routes} = new RouterConfigurationBuilder()
             ]
         }
     ])
-    .protect("/login")
+    .protect("/loginredirect")
     .build();

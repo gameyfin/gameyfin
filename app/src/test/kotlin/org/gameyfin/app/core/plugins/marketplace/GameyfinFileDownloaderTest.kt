@@ -1,12 +1,7 @@
 package org.gameyfin.app.core.plugins.marketplace
 
 import com.sun.net.httpserver.HttpServer
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.runs
-import io.mockk.slot
-import io.mockk.verify
+import io.mockk.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.IOException
@@ -14,11 +9,7 @@ import java.net.InetSocketAddress
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
-import kotlin.io.path.readBytes
+import kotlin.io.path.*
 import kotlin.test.*
 
 class GameyfinFileDownloaderTest {
@@ -45,7 +36,7 @@ class GameyfinFileDownloaderTest {
         assertTrue(result.exists())
         assertEquals(URI("https://example.com/files/plugin-1.0.0.jar"), uri.captured)
         assertEquals(result, target.captured)
-        verify(exactly = 1) { httpClient.download(any(), any(), MarketplaceHttpClient.MAX_PLUGIN_SIZE) }
+        verify(exactly = 1) { httpClient.download(any(), any()) }
     }
 
     @Test
@@ -98,7 +89,8 @@ class GameyfinFileDownloaderTest {
         server.start()
         try {
             val downloadDirectory = tempDir.resolve(".download")
-            val downloader = GameyfinFileDownloader(MarketplaceHttpClient(allowInsecureUrls = true)) { downloadDirectory }
+            val downloader =
+                GameyfinFileDownloader(MarketplaceHttpClient(allowInsecureUrls = true)) { downloadDirectory }
 
             val result = downloader.downloadFile(URI("http://127.0.0.1:${server.address.port}/plugin.jar").toURL())
 
@@ -119,7 +111,8 @@ class GameyfinFileDownloaderTest {
         server.start()
         try {
             val downloadDirectory = tempDir.resolve(".download")
-            val downloader = GameyfinFileDownloader(MarketplaceHttpClient(allowInsecureUrls = true)) { downloadDirectory }
+            val downloader =
+                GameyfinFileDownloader(MarketplaceHttpClient(allowInsecureUrls = true)) { downloadDirectory }
 
             assertFailsWith<IOException> {
                 downloader.downloadFile(URI("http://127.0.0.1:${server.address.port}/plugin.jar").toURL())

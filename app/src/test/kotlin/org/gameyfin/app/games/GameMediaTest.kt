@@ -1,17 +1,13 @@
 package org.gameyfin.app.games
 
 import io.mockk.*
-import org.gameyfin.app.games.dto.GameImageSelectionDto
-import org.gameyfin.app.games.dto.GameUpdateDto
-import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.GameFieldUserSource
-import org.gameyfin.app.games.entities.GameFieldMetadata
-import org.gameyfin.app.games.entities.GameFieldPluginSource
-import org.gameyfin.app.games.entities.GameFieldApiSource
-import org.gameyfin.app.games.extensions.mediaSources
-import org.gameyfin.app.games.extensions.replaceMediaSources
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
+import org.gameyfin.app.games.dto.GameImageSelectionDto
+import org.gameyfin.app.games.dto.GameUpdateDto
+import org.gameyfin.app.games.entities.*
+import org.gameyfin.app.games.extensions.mediaSources
+import org.gameyfin.app.games.extensions.replaceMediaSources
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
@@ -24,7 +20,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.core.userdetails.User as SecurityUser
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.awt.image.BufferedImage
@@ -33,13 +28,15 @@ import java.net.URI
 import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.test.*
+import org.springframework.security.core.userdetails.User as SecurityUser
 
 class GameMediaTest {
     private val repository = mockk<GameRepository>()
     private val imageService = mockk<ImageService>()
     private val userService = mockk<UserService>()
     private val pluginService = mockk<PluginService>()
-    private val service = GameService(repository, mockk(), pluginService, mockk(), mockk(), userService, imageService, mockk())
+    private val service =
+        GameService(repository, mockk(), pluginService, mockk(), mockk(), userService, imageService, mockk())
     private val first = Image(id = 11, type = ImageType.SCREENSHOT)
     private val second = Image(id = 12, type = ImageType.SCREENSHOT)
     private lateinit var game: Game
@@ -87,7 +84,12 @@ class GameMediaTest {
     @Test
     fun `reorder existing screenshots and videos and create user metadata`() {
         val urls = listOf("https://example.com/second.mp4", "https://youtu.be/abcdefghijk")
-        service.edit(update(images = listOf(GameImageSelectionDto(id = 12), GameImageSelectionDto(id = 11)), videos = urls))
+        service.edit(
+            update(
+                images = listOf(GameImageSelectionDto(id = 12), GameImageSelectionDto(id = 11)),
+                videos = urls
+            )
+        )
         assertEquals(listOf(second, first), game.images)
         assertEquals(urls, game.videoUrls.map { it.toString() })
         assertIs<GameFieldUserSource>(game.metadata.fields.getValue("images").source)
@@ -113,9 +115,15 @@ class GameMediaTest {
         every { imageService.createFromInputStream(ImageType.SCREENSHOT, any(), "image/png") } returns uploaded
         every { imageService.createOrGet(match { it.originalUrl == searched.originalUrl }) } returns searched
         every { imageService.downloadIfNew(searched) } just Runs
-        service.edit(update(images = listOf(
-            GameImageSelectionDto(uploadKey = "new"), GameImageSelectionDto(url = searched.originalUrl), GameImageSelectionDto(id = 11)
-        )), mapOf("new" to file))
+        service.edit(
+            update(
+                images = listOf(
+                    GameImageSelectionDto(uploadKey = "new"),
+                    GameImageSelectionDto(url = searched.originalUrl),
+                    GameImageSelectionDto(id = 11)
+                )
+            ), mapOf("new" to file)
+        )
         assertEquals(listOf(uploaded, searched, first), game.images)
     }
 
@@ -125,8 +133,13 @@ class GameMediaTest {
         val banner = Image(id = 21, type = ImageType.HEADER)
         every { imageService.createFromInputStream(ImageType.COVER, any(), "image/png") } returns cover
         every { imageService.createFromInputStream(ImageType.HEADER, any(), "image/png") } returns banner
-        service.edit(update(cover = GameImageSelectionDto(uploadKey = "cover"), header = GameImageSelectionDto(uploadKey = "banner")),
-            mapOf("cover" to png(), "banner" to png()))
+        service.edit(
+            update(
+                cover = GameImageSelectionDto(uploadKey = "cover"),
+                header = GameImageSelectionDto(uploadKey = "banner")
+            ),
+            mapOf("cover" to png(), "banner" to png())
+        )
         assertSame(cover, game.coverImage)
         assertSame(banner, game.headerImage)
         assertIs<GameFieldUserSource>(game.metadata.fields.getValue("coverImage").source)
@@ -163,9 +176,11 @@ class GameMediaTest {
     @Test
     fun `reject non-image files even with an image content type`() {
         assertFailsWith<IllegalArgumentException> {
-            service.edit(update(cover = GameImageSelectionDto(uploadKey = "cover")), mapOf(
-                "cover" to MockMultipartFile("cover", "cover.png", "image/png", "not an image".toByteArray())
-            ))
+            service.edit(
+                update(cover = GameImageSelectionDto(uploadKey = "cover")), mapOf(
+                    "cover" to MockMultipartFile("cover", "cover.png", "image/png", "not an image".toByteArray())
+                )
+            )
         }
         assertEquals(10L, game.coverImage?.id)
         verify(exactly = 0) { imageService.createFromInputStream(any(), any(), any()) }
@@ -193,10 +208,16 @@ class GameMediaTest {
         every { imageService.createOrGet(any()) } returns added
         every { imageService.downloadIfNew(any()) } just Runs
 
-        service.edit(update(
-            images = listOf(GameImageSelectionDto(id = 12), GameImageSelectionDto(url = "https://example.com/new.png"), GameImageSelectionDto(id = 11)),
-            videos = listOf("https://example.com/new.mp4", "https://example.com/old.mp4")
-        ))
+        service.edit(
+            update(
+                images = listOf(
+                    GameImageSelectionDto(id = 12),
+                    GameImageSelectionDto(url = "https://example.com/new.png"),
+                    GameImageSelectionDto(id = 11)
+                ),
+                videos = listOf("https://example.com/new.mp4", "https://example.com/old.mp4")
+            )
+        )
         val sources = game.mediaSources("images", 3)
         assertEquals("screenshots", assertIs<GameFieldPluginSource>(sources[0]!!.source).plugin.pluginId)
         assertIs<GameFieldUserSource>(sources[1]!!.source)
@@ -216,8 +237,20 @@ class GameMediaTest {
         every { pluginService.getPluginManagementEntry("screenshots") } returns plugin
         every { imageService.createOrGet(any()) } returns Image(id = 13, type = ImageType.SCREENSHOT)
         every { imageService.downloadIfNew(any()) } just Runs
-        service.edit(update(images = listOf(GameImageSelectionDto(url = "https://example.com/new.png", pluginId = "screenshots"))))
-        assertEquals("screenshots", assertIs<GameFieldPluginSource>(game.mediaSources("images", 1)[0]!!.source).plugin.pluginId)
+        service.edit(
+            update(
+                images = listOf(
+                    GameImageSelectionDto(
+                        url = "https://example.com/new.png",
+                        pluginId = "screenshots"
+                    )
+                )
+            )
+        )
+        assertEquals(
+            "screenshots",
+            assertIs<GameFieldPluginSource>(game.mediaSources("images", 1)[0]!!.source).plugin.pluginId
+        )
     }
 
     @Test
@@ -226,14 +259,21 @@ class GameMediaTest {
         game.videoUrls = listOf(url, url)
         val source = GameFieldMetadata(source = GameFieldApiSource("key", "Importer"))
         game.replaceMediaSources("videoUrls", listOf(null, source), source)
-        service.edit(update(videos = listOf(url.toString(), url.toString()), images = listOf(GameImageSelectionDto(id = 12))))
+        service.edit(
+            update(
+                videos = listOf(url.toString(), url.toString()),
+                images = listOf(GameImageSelectionDto(id = 12))
+            )
+        )
         assertNull(game.mediaSources("videoUrls", 2)[0])
         assertIs<GameFieldApiSource>(game.mediaSources("videoUrls", 2)[1]!!.source)
         assertNull(game.mediaSources("images", 1)[0])
     }
 
     private fun png(): MockMultipartFile {
-        val bytes = ByteArrayOutputStream().also { ImageIO.write(BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "png", it) }.toByteArray()
+        val bytes =
+            ByteArrayOutputStream().also { ImageIO.write(BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "png", it) }
+                .toByteArray()
         return MockMultipartFile("file", "image.png", "text/plain", bytes)
     }
 

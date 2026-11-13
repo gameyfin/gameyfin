@@ -69,10 +69,6 @@ class SecurityConfig(
             // Prevent unnecessary redirects
             http.logout { logout -> logout.logoutSuccessHandler((HttpStatusReturningLogoutSuccessHandler(HttpStatus.OK))) }
 
-            // Custom authentication entry point to support SSO and direct login
-            http.exceptionHandling { exceptionHandling ->
-                exceptionHandling.authenticationEntryPoint(CustomAuthenticationEntryPoint())
-            }
         } else {
             // Use default Vaadin login URLs
             http.with(VaadinSecurityConfigurer.vaadin()) { configurer ->
@@ -80,10 +76,14 @@ class SecurityConfig(
             }
         }
 
+        // Both login modes use the same gateway for setup and provider selection.
+        http.exceptionHandling { it.authenticationEntryPoint(CustomAuthenticationEntryPoint()) }
+
         http.authorizeHttpRequests { auth ->
             // A canceled stream can dispatch to /error after the response is committed.
             // Allow container error handling without trying to authorize a second response.
             auth.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+            auth.requestMatchers("/login/success").authenticated()
             // Set default security policy that permits Hilla internal requests and denies all other
             auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
                 // Gameyfin static resources and public endpoints

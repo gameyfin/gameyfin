@@ -219,7 +219,8 @@ class GameyfinUpdateRepositoryTest {
     @Test
     fun `default error retry interval is one minute`() {
         every { httpClient.getString(indexUrl, any()) } throws IOException("server down")
-        val repository = GameyfinUpdateRepository("market", indexUrl, httpClient, fileDownloader, fileVerifier, Duration.ZERO)
+        val repository =
+            GameyfinUpdateRepository("market", indexUrl, httpClient, fileDownloader, fileVerifier, Duration.ZERO)
 
         repository.plugins
         repository.plugins
