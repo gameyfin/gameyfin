@@ -85,7 +85,11 @@ class DownloadHttpTest {
         }
         every { service.getRangeDownload(any(), "slow") } returns null
         every { service.describeDownload(any(), "slow") } returns DownloadMetadata("zip", null)
-        every { service.getProviders() } returns listOf("direct", "broken", "slow", "cancel").map {
+        val magnet = "magnet:?xt=urn:btih:1234&dn=Game%20Title&tr=http%3A%2F%2Ftracker.test%2Fannounce"
+        every { service.getRangeDownload(any(), "magnet") } returns null
+        every { service.describeDownload(any(), "magnet") } returns null
+        every { service.getDownload(any(), "magnet") } returns org.gameyfin.pluginapi.download.LinkDownload(magnet)
+        every { service.getProviders() } returns listOf("direct", "broken", "slow", "cancel", "magnet").map {
             org.gameyfin.app.core.download.provider.DownloadProviderDto(it, it, 1, it)
         }
         val catalog = mockk<org.gameyfin.app.api.v1.service.CatalogServiceV1>()
@@ -233,7 +237,31 @@ class DownloadHttpTest {
                         )
                     }
                 }
-                verify(exactly = 10) { games.incrementDownloadCount(game) }
+                for (path in listOf("/download/1", "/v1/games/1/download")) {
+                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=magnet")
+                    val head = client.send(
+                        HttpRequest.newBuilder(url).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+                        HttpResponse.BodyHandlers.ofByteArray()
+                    )
+                    assertEquals(200, head.statusCode())
+                    assertTrue(head.body().isEmpty())
+                    val response = client.send(
+                        HttpRequest.newBuilder(url).GET().build(), HttpResponse.BodyHandlers.ofByteArray()
+                    )
+                    if (path == "/download/1") {
+                        assertEquals(302, response.statusCode())
+                        assertEquals(magnet, response.headers().firstValue("Location").orElseThrow())
+                        assertEquals("no-store", response.headers().firstValue("Cache-Control").orElseThrow())
+                        assertFalse(response.headers().firstValue("Content-Disposition").isPresent)
+                        assertTrue(response.body().isEmpty())
+                    } else {
+                        assertEquals(200, response.statusCode())
+                        val descriptor = JsonMapper().readTree(response.body())
+                        assertEquals(magnet, descriptor.get("url").asString())
+                    }
+                }
+                verify(exactly = 12) { games.incrementDownloadCount(game) }
+                verify(exactly = 2) { service.getDownload(any(), "magnet") }
                 verify(exactly = 2) { service.getDownload(any(), "slow") }
             }
         } finally {

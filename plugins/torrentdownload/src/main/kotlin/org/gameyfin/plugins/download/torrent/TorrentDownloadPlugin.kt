@@ -12,8 +12,8 @@ import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.FileDownload
+import org.gameyfin.pluginapi.download.LinkDownload
 import org.pf4j.Extension
-import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.net.URI
 import java.nio.file.Files
@@ -421,28 +421,45 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
         return builderResult.entry().bencode()
     }
 
-    @Extension(ordinal = 2)
-    class TorrentDownloadProvider : DownloadProvider {
-        private val log = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
-
-        override fun download(path: Path): Download {
+    private fun <T : Download> preparedTorrent(path: Path, download: (Path) -> T): T {
+        val torrentFile = torrentFileFor(path)
+        return synchronized(lockFor(torrentFile)) {
             log.info("Providing torrent for '${path.name}'...")
 
             val (result, timeTaken) = measureTimedValue {
-                plugin.ensureTorrent(path)
+                ensureTorrent(path)
             }
-            val torrentFile = plugin.torrentFileFor(path)
 
             when (result) {
                 TorrentGenerationResult.UP_TO_DATE -> log.info("Using existing torrent '${torrentFile.name}'")
                 else -> log.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
             }
 
-            return FileDownload(
+            download(torrentFile)
+        }
+    }
+
+    @Extension(ordinal = 2)
+    class TorrentDownloadProvider : DownloadProvider {
+        override fun download(path: Path): Download = plugin.preparedTorrent(path) { torrentFile ->
+            FileDownload(
                 data = torrentFile.inputStream(),
                 fileExtension = "torrent",
                 size = torrentFile.fileSize()
             )
+        }
+    }
+
+    @Extension(ordinal = 1)
+    class MagnetDownloadProvider : DownloadProvider {
+        override val name = "Magnet Link"
+        override val description = "Open in your torrent client"
+        override val shortDescription = description
+
+        override fun download(path: Path): Download = plugin.preparedTorrent(path) { torrentFile ->
+            val magnet = TorrentInfo(torrentFile.toFile()).makeMagnetUri()
+            check(!magnet.isNullOrBlank()) { "Failed to generate magnet link for '${path.name}'" }
+            LinkDownload(magnet)
         }
     }
 }

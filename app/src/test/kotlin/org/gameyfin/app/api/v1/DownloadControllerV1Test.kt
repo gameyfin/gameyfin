@@ -131,14 +131,15 @@ class DownloadControllerV1Test {
         val game = testGame()
         every { catalog.gameEntity("10") } returns game
         every { downloads.getProviders() } returns listOf(provider())
-        every { downloads.getDownload(any(), any()) } returns LinkDownload("https://example.test/game.zip")
+        val magnet = "magnet:?xt=urn:btih:1234&dn=Game&tr=http%3A%2F%2Ftracker.test%2Fannounce"
+        every { downloads.getDownload(any(), any()) } returns LinkDownload(magnet)
 
         val response = controller.download("10", "direct", MockHttpServletRequest())
 
         val output = ByteArrayOutputStream()
         response.body!!.writeTo(output)
         val descriptor = JsonMapper().readTree(output.toByteArray())
-        assertEquals("https://example.test/game.zip", descriptor.get("url").asString())
+        assertEquals(magnet, descriptor.get("url").asString())
         assertEquals("link", descriptor.get("kind").asString())
         assertEquals(MediaType.APPLICATION_JSON, response.headers.contentType)
         verify { games.incrementDownloadCount(game) }

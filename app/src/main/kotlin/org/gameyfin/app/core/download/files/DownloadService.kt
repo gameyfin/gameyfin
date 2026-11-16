@@ -46,10 +46,10 @@ class DownloadService(
 
             DownloadProviderDto(
                 key = it.javaClass.name,
-                name = descriptor.pluginName,
+                name = it.name ?: descriptor.pluginName,
                 priority = managementEntry.priority,
-                description = descriptor.pluginDescription,
-                shortDescription = descriptor.pluginShortDescription,
+                description = it.description ?: descriptor.pluginDescription,
+                shortDescription = it.shortDescription ?: descriptor.pluginShortDescription,
             )
         }
     }
