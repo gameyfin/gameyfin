@@ -17,6 +17,7 @@ import org.gameyfin.app.games.entities.*
 import org.gameyfin.app.games.extensions.toDtos
 import org.gameyfin.app.games.extensions.toSummaryDto
 import org.gameyfin.app.games.repositories.GameRepository
+import org.gameyfin.app.games.uploads.uploadDraft
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
@@ -2181,6 +2182,65 @@ class GameServiceTest {
     // ========================
     // applyMetadataFields — all fields populated
     // ========================
+
+    @Test
+    fun `upload metadata preparation merges full provider fields without persisting references`() {
+        val metadata = org.gameyfin.pluginapi.gamemetadata.GameMetadata(
+            originalId = "preview", title = "Preview game", description = "Full description",
+            coverUrls = setOf(java.net.URI("https://example.com/cover.png")),
+            screenshotUrls = setOf(java.net.URI("https://example.com/screenshot.png")),
+            publishedBy = setOf("Publisher"), developedBy = setOf("Developer"), genres = setOf(Genre.ACTION)
+        )
+        val provider = spyk(TestProvider(metadata))
+        val plugin = PluginManagementEntry("test-plugin", priority = 1)
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns listOf(provider)
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } returns plugin
+        val prepared = gameService.prepareMetadata(
+            mapOf(provider.javaClass.name to ExternalProviderIdDto("test-plugin", "preview")), Path.of("/games/original.iso"), library
+        )
+        assertEquals("Full description", prepared.draft.summary)
+        assertEquals(listOf(Genre.ACTION), prepared.draft.genres)
+        assertEquals("Publisher", prepared.draft.publishers.single().name)
+        assertEquals("https://example.com/cover.png", prepared.draft.coverImage?.originalUrl)
+        assertNull(prepared.draft.images.single().id)
+        assertEquals(mapOf(plugin to "preview"), prepared.draft.metadata.originalIds)
+        verify { listOf(companyService, imageService, gameRepository) wasNot Called }
+
+        val path = Path.of("/games/original.iso")
+        every { filesystemService.validateGamePath(path.toString(), library) } returns path
+        every { filesystemService.calculateFileSize(path.toString(), library) } returns 3L
+        every { gameRepository.existsByMetadataPath(path.toString()) } returns false
+        every { gameRepository.save(any()) } answers { firstArg<Game>().also { it.id = 42L } }
+        every { companyService.createOrGet(any()) } answers { firstArg() }
+        every { imageService.createOrGet(any()) } answers { firstArg<Image>().also { it.id = 10L } }
+        every { imageService.downloadIfNew(any()) } just Runs
+        every { pluginService.getPluginManagementEntry(provider.javaClass) } throws IllegalStateException("Provider unloaded during upload")
+        val published = gameService.createPrepared(prepared, path, library)
+        assertEquals(mapOf(plugin to "preview"), published.metadata.originalIds)
+        assertIs<GameFieldPluginSource>(published.metadata.fields.getValue("summary").source)
+        assertEquals("Full description", published.summary)
+        verify(exactly = 1) { provider.fetchById("preview") }
+
+        every { gameRepository.findById(42L) } returns java.util.Optional.of(published)
+        every { authentication.principal } returns mockk<UserDetails> { every { username } returns "testuser" }
+        every { userService.getByUsernameNonNull("testuser") } returns mockUser
+        gameService.edit(prepared.draft.uploadDraft().copy(
+            id = 42L, title = "User title", summary = null, genres = null, developers = null, publishers = null,
+            cover = null, images = null, header = null, videoUrls = null, mediaOrder = null
+        ))
+        assertEquals("User title", published.title)
+        assertIs<GameFieldUserSource>(published.metadata.fields.getValue("title").source)
+        assertIs<GameFieldPluginSource>(published.metadata.fields.getValue("summary").source)
+    }
+
+    @Test
+    fun `upload manual metadata preparation works without enabled providers`() {
+        every { pluginManager.getExtensions(GameMetadataProvider::class.java) } returns emptyList()
+        val prepared = gameService.prepareMetadata(emptyMap(), Path.of("/games/Original.iso"), library)
+        assertEquals("Original.iso", prepared.draft.title)
+        assertTrue(prepared.draft.metadata.originalIds.isEmpty())
+        verify { listOf(companyService, imageService, gameRepository) wasNot Called }
+    }
 
     @Test
     fun `matchManually should populate all metadata fields when fully-populated metadata is provided`() {

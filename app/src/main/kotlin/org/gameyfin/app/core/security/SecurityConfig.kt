@@ -103,6 +103,7 @@ class SecurityConfig(
                 // Backup downloads/uploads (admin role is checked in BackupController)
                 .requestMatchers("/backups/**").authenticated()
                 .requestMatchers("/game-media/**").authenticated()
+                .requestMatchers("/game-uploads", "/game-uploads/**").authenticated()
                 // Task run log downloads (admin role is checked in TaskRunLogController)
                 .requestMatchers("/task-runs/**").authenticated()
                 // Client-side SPA routes - these need to pass through to serve index.html

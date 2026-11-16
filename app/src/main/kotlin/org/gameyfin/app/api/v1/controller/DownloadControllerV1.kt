@@ -13,6 +13,7 @@ import org.gameyfin.app.api.v1.apiId
 import org.gameyfin.app.api.v1.dto.DownloadLinkV1
 import org.gameyfin.app.api.v1.dto.DownloadProviderV1
 import org.gameyfin.app.api.v1.service.CatalogServiceV1
+import org.gameyfin.app.core.download.files.GameDownloadLifecycle
 import org.gameyfin.app.core.LookupPolicy
 import org.gameyfin.app.core.download.files.DownloadResponses
 import org.gameyfin.app.core.download.files.DownloadService
@@ -71,49 +72,50 @@ class DownloadControllerV1(
         request: HttpServletRequest
     ): ResponseEntity<StreamingResponseBody> {
         val actor = access.require(ApiScope.DOWNLOADS_READ)
-        val game = catalog.gameEntity(id)
-        require(downloads.getProviders().any { it.key == provider }) { "Unknown download provider" }
-        val ip = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
-        val safeTitle = game.title.orEmpty().replace(Regex("[\\\\/:*?\"<>|\r\n]"), "").ifBlank { "download" }
-        fun disposition(extension: String?) = ContentDisposition.attachment()
-            .filename(safeTitle + (extension?.let { ".$it" } ?: ""), StandardCharsets.UTF_8).build().toString()
+        return GameDownloadLifecycle.prepare(apiId(id), request, { catalog.gameEntity(id) }) { game, lifetime ->
+            require(downloads.getProviders().any { it.key == provider }) { "Unknown download provider" }
+            val ip = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
+            val safeTitle = game.title.orEmpty().replace(Regex("[\\\\/:*?\"<>|\r\n]"), "").ifBlank { "download" }
+            fun disposition(extension: String?) = ContentDisposition.attachment()
+                .filename(safeTitle + (extension?.let { ".$it" } ?: ""), StandardCharsets.UTF_8).build().toString()
 
-        val onStart = { games.incrementDownloadCount(game); }
-        val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
-            downloads.processDownload(input, output, game, actor.name, "api:${actor.credentialId}", ip)
-        }
-        val resource = downloads.getRangeDownload(game.metadata.path, provider)
-        if (resource != null) {
-            return DownloadResponses.range(
-                resource,
-                request,
-                disposition(resource.metadata.fileExtension),
-                onStart,
-                transfer
-            )
-        }
-        if (request.method == "HEAD") {
-            val metadata = downloads.describeDownload(game.metadata.path, provider)
-            return DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
-        }
-        return when (val download = downloads.getDownload(game.metadata.path, provider)) {
-            is FileDownload -> DownloadResponses.file(
-                download,
-                request,
-                disposition(download.fileExtension),
-                onStart,
-                transfer
-            )
+            val onStart = { lifetime.whileActive { games.incrementDownloadCount(game) }; }
+            val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
+                downloads.processDownload(input, output, game, actor.name, "api:${actor.credentialId}", ip)
+            }
+            val resource = downloads.getRangeDownload(game.metadata.path, provider)?.also { lifetime.own(it) }
+            if (resource != null) {
+                return@prepare DownloadResponses.range(
+                    resource,
+                    request,
+                    disposition(resource.metadata.fileExtension),
+                    onStart,
+                    transfer
+                )
+            }
+            if (request.method == "HEAD") {
+                val metadata = downloads.describeDownload(game.metadata.path, provider)
+                return@prepare DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
+            }
+            when (val download = downloads.getDownload(game.metadata.path, provider)) {
+                is FileDownload -> DownloadResponses.file(
+                    download.also { lifetime.own(it.data) },
+                    request,
+                    disposition(download.fileExtension),
+                    onStart,
+                    transfer
+                )
 
-            is LinkDownload -> {
-                onStart()
-                ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.APPLICATION_JSON)
-                    .body(StreamingResponseBody { output ->
-                        objectMapper.writeValue(
-                            output,
-                            DownloadLinkV1(url = download.url)
-                        )
-                    })
+                is LinkDownload -> {
+                    onStart()
+                    ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.APPLICATION_JSON)
+                        .body(StreamingResponseBody { output ->
+                            objectMapper.writeValue(
+                                output,
+                                DownloadLinkV1(url = download.url)
+                            )
+                        })
+                }
             }
         }
     }

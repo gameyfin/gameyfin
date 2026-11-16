@@ -17,6 +17,7 @@ import {CollectionOverviewCard} from "Frontend/components/general/cards/Collecti
 import CollectionCreationModal from "Frontend/components/general/modals/CollectionCreationModal";
 import CollectionPrioritiesModal from "Frontend/components/general/modals/CollectionPrioritiesModal";
 import {pluginState} from "Frontend/state/PluginState";
+import UploadGameButton from "Frontend/components/general/modals/UploadGameButton";
 
 function GameManagementLayout({getConfig, formik}: any) {
     const libraries = useSnapshot(libraryState);
@@ -192,4 +193,4 @@ const validationSchema = Yup.object({
     })
 });
 
-export const GameManagement = withConfigPage(GameManagementLayout, "Games", validationSchema);
+export const GameManagement = withConfigPage(GameManagementLayout, "Games", validationSchema, <UploadGameButton/>);

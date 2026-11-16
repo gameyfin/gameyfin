@@ -25,6 +25,7 @@ import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMe
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
 import {metadataCompleteness} from "Frontend/util/utils";
+import RemoveGameModal from "Frontend/components/general/modals/RemoveGameModal";
 import ChipList from "Frontend/components/general/ChipList";
 
 interface LibraryManagementGamesProps {
@@ -43,6 +44,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const [selectedGame, setSelectedGame] = useState<GameSummaryDto | undefined>(undefined);
     const editGameModal = useOverlayState();
     const matchGameModal = useOverlayState();
+    const removeGameModal = useOverlayState();
 
     const filteredItems = useMemo(() => {
         return getFilteredGames();
@@ -103,10 +105,6 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         )
     }
 
-    async function deleteGame(game: GameSummaryDto) {
-        await GameEndpoint.deleteGame(game.id);
-    }
-
     function renderActions(item: GameSummaryDto) {
         return (
             <div className="flex flex-row flex-wrap gap-2">
@@ -143,7 +141,10 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 </Tooltip>
                 <Tooltip>
                     <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
-                            variant="danger" aria-label="Remove from library" onPress={() => deleteGame(item)}>
+                            variant="danger" aria-label="Remove from library" onPress={() => {
+                                setSelectedGame(item);
+                                removeGameModal.open();
+                            }}>
                         <TrashIcon/>
                     </Button>
                     <Tooltip.Content>Remove from library</Tooltip.Content>
@@ -277,6 +278,8 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         </Virtualizer>}
         <GameDetailsDialog game={selectedDetails} onClose={() => setSelectedDetails(null)}/>
         {selectedGame && <>
+            <RemoveGameModal game={selectedGame} isOpen={removeGameModal.isOpen}
+                             onOpenChange={removeGameModal.setOpen}/>
             <EditGameMetadataModal gameId={selectedGame.id}
                                    isOpen={editGameModal.isOpen}
                                    onOpenChange={editGameModal.setOpen}/>

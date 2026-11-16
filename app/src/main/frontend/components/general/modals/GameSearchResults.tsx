@@ -21,7 +21,10 @@ export default function GameSearchResults({results, actions}: {
         return [
             {
                 label: "Title & Release",
-                content: <>{item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})</>
+                content: <div className="min-w-0">
+                    <p className="font-medium wrap-anywhere">{item.title}</p>
+                    <p className="text-xs text-muted mt-1">{item.release ? new Date(item.release).getFullYear() : "Release unknown"}</p>
+                </div>
             },
             {
                 label: "Developer(s)",
@@ -34,10 +37,12 @@ export default function GameSearchResults({results, actions}: {
                     key={publisher}>{publisher}</p>) ?? "unknown"}</div>
             },
             {
-                label: "Sources", content: <div className="flex flex-wrap gap-2">
-                    {Object.values(item.originalIds).map(originalId => plugins[originalId.pluginId]
-                        ? <PluginIcon key={originalId.pluginId} plugin={plugins[originalId.pluginId]}/>
-                        : <span key={originalId.pluginId}>{originalId.pluginId}</span>)}
+                label: "Sources", content: <div className="flex w-max flex-nowrap items-center gap-2 whitespace-nowrap">
+                    {[...new Set(Object.values(item.originalIds).map(id => id.pluginId))].map(pluginId =>
+                        <span key={pluginId} className="inline-flex shrink-0">
+                            {plugins[pluginId] ? <PluginIcon plugin={plugins[pluginId]} size={20}/>
+                                : <span>{pluginId}</span>}
+                        </span>)}
                 </div>
             },
             {label: "Actions", content: actions(item)}
@@ -49,17 +54,17 @@ export default function GameSearchResults({results, actions}: {
                              empty={empty}/>
         : <Table variant="secondary" className="h-80">
             <TableScroller label="Search results" className="h-80">
-                <Table.Content aria-label="Search results">
+                <Table.Content aria-label="Search results" className="table-auto">
                     <Table.Header className="sticky top-0 z-10 bg-background">
-                        <Table.Column id="title" isRowHeader>Title & Release</Table.Column>
+                        <Table.Column id="title" isRowHeader className="w-[34%]">Title & Release</Table.Column>
                         <Table.Column id="developers">Developer(s)</Table.Column>
                         <Table.Column id="publishers">Publisher(s)</Table.Column>
-                        <Table.Column id="sources">Sources</Table.Column>
-                        <Table.Column id="actions">Actions</Table.Column>
+                        <Table.Column id="sources" className="w-px whitespace-nowrap">Sources</Table.Column>
+                        <Table.Column id="actions" className="w-px whitespace-nowrap">Actions</Table.Column>
                     </Table.Header>
                     <Table.Body items={results} renderEmptyState={() => empty}>
                         {item => <Table.Row key={item.id}>
-                            {fields(item).map(field => <Table.Cell key={field.label}>{field.content}</Table.Cell>)}
+                            {fields(item).map(field => <Table.Cell key={field.label} className="align-middle">{field.content}</Table.Cell>)}
                         </Table.Row>}
                     </Table.Body>
                 </Table.Content>

@@ -111,6 +111,22 @@ class SecurityErrorDispatchTest {
     }
 
     @Test
+    fun `upload routes require authentication and unsafe methods require csrf`() {
+        runner.run { context ->
+            val security = context.getBean(FilterChainProxy::class.java)
+            for (path in listOf("/game-uploads", "/game-uploads/session/metadata", "/game-uploads/session/complete")) {
+                for (method in listOf("GET", "POST", "PUT", "DELETE")) {
+                    var reachedHandler = false
+                    val response = MockHttpServletResponse()
+                    security.doFilter(MockHttpServletRequest(method, path), response) { _, _ -> reachedHandler = true }
+                    assertFalse(reachedHandler)
+                    assertEquals(if (method == "GET") 302 else 403, response.status, "$method $path")
+                }
+            }
+        }
+    }
+
+    @Test
     fun `ordinary requests remain protected and public download setting is respected`() {
         runner.run { context ->
             val security = context.getBean(FilterChainProxy::class.java)

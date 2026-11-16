@@ -121,11 +121,13 @@ class DownloadService(
                 val timeTaken = measureTime {
                     val buffer = ByteArray(64 * 1024)
                     while (true) {
+                        GameDownloadLifecycle.checkCancelled()
                         val count = readDownloadSource(data, buffer, game)
                         if (count < 0) break
                         finalOutputStream.write(buffer, 0, count)
                         bytesWritten += count
                     }
+                    GameDownloadLifecycle.checkCancelled()
                     finalOutputStream.flush()
                 }
 

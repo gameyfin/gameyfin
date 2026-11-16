@@ -40,43 +40,46 @@ class DownloadEndpoint(
 
         downloadExecutor.execute {
             try {
-                val game = gameService.getById(gameId)
-                val sessionId = request.session.id
-                val remoteIp = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
+                val result = GameDownloadLifecycle.prepare(gameId, request, { gameService.getById(gameId) }) { game, lifetime ->
+                    val sessionId = request.session.id
+                    val remoteIp = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
 
-                val baseFilename = game.title?.replace("[\\\\/:*?\"<>|\r\n]".toRegex(), "")
-                    ?.ifBlank { "download" } ?: "download"
+                    val baseFilename = game.title?.replace("[\\\\/:*?\"<>|\r\n]".toRegex(), "")
+                        ?.ifBlank { "download" } ?: "download"
 
-                fun disposition(extension: String?) = createContentDispositionHeader(
-                    baseFilename + (extension?.let { ".$it" } ?: "")
-                )
-
-                val onStart = { gameService.incrementDownloadCount(game); }
-                val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
-                    downloadService.processDownload(input, output, game, username, sessionId, remoteIp)
-                }
-                val resource = downloadService.getRangeDownload(game.metadata.path, provider)
-                val result = if (resource != null) {
-                    DownloadResponses.range(
-                        resource,
-                        request,
-                        disposition(resource.metadata.fileExtension),
-                        onStart,
-                        transfer
-                    )
-                } else if (request.method == "HEAD") {
-                    val metadata = downloadService.describeDownload(game.metadata.path, provider)
-                    DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
-                } else when (val download = downloadService.getDownload(game.metadata.path, provider)) {
-                    is FileDownload -> DownloadResponses.file(
-                        download,
-                        request,
-                        disposition(download.fileExtension),
-                        onStart,
-                        transfer
+                    fun disposition(extension: String?) = createContentDispositionHeader(
+                        baseFilename + (extension?.let { ".$it" } ?: "")
                     )
 
-                    is LinkDownload -> TODO("Handle download link")
+                    val onStart = { lifetime.whileActive { gameService.incrementDownloadCount(game) }; }
+                    val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
+                        downloadService.processDownload(input, output, game, username, sessionId, remoteIp)
+                    }
+                    val resource = downloadService.getRangeDownload(game.metadata.path, provider)
+                        ?.also { lifetime.own(it) }
+                    val result = if (resource != null) {
+                        DownloadResponses.range(
+                            resource,
+                            request,
+                            disposition(resource.metadata.fileExtension),
+                            onStart,
+                            transfer
+                        )
+                    } else if (request.method == "HEAD") {
+                        val metadata = downloadService.describeDownload(game.metadata.path, provider)
+                        DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
+                    } else when (val download = downloadService.getDownload(game.metadata.path, provider)) {
+                        is FileDownload -> DownloadResponses.file(
+                            download.also { lifetime.own(it.data) },
+                            request,
+                            disposition(download.fileExtension),
+                            onStart,
+                            transfer
+                        )
+
+                        is LinkDownload -> TODO("Handle download link")
+                    }
+                    result
                 }
                 deferredResult.onCompletion { (result.body as? java.io.Closeable)?.close() }
                 if (!deferredResult.setResult(result)) (result.body as? java.io.Closeable)?.close()

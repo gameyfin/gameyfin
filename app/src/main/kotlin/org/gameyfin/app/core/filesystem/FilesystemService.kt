@@ -11,6 +11,8 @@ import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import kotlin.io.path.*
 
+internal const val GAME_UPLOAD_DIRECTORY = ".gameyfin-uploads"
+
 @Service
 class FilesystemService(
     private val config: ConfigService
@@ -90,11 +92,14 @@ class FilesystemService(
                     true
                 }
             }
+            .mapNotNull { runCatching { it.toRealPath() }.getOrNull() }
+            .distinct()
 
         // Get all paths that are directories or match the game file extensions
         // Also check if the directory is empty and if empty directories should be included
         val currentFilesystemPaths = validPaths.flatMap { validDirectory ->
             safeReadDirectoryContents(validDirectory)
+                .filter { it.fileName.toString() != GAME_UPLOAD_DIRECTORY }
                 .filter { it.isDirectory() || it.extension.lowercase() in gamefileExtensions }
                 .filter {
                     if (!it.isDirectory()) return@filter true
@@ -112,7 +117,8 @@ class FilesystemService(
         // Get all paths already in the library as game files or as ignored paths
         val currentLibraryGamePaths = library.games.map { Path(it.metadata.path) }
         val currentLibraryIgnoredPaths = library.ignoredPaths.map { Path(it.path) }
-        val allCurrentLibraryPaths = currentLibraryGamePaths + currentLibraryIgnoredPaths
+        val allCurrentLibraryPaths = (currentLibraryGamePaths + currentLibraryIgnoredPaths)
+            .map { runCatching { it.toRealPath() }.getOrDefault(it) }
 
         //Get all paths that are on the filesystem, but not in the library (either as game or as ignored path)
         val newPaths = currentFilesystemPaths.filter { path ->
@@ -122,13 +128,15 @@ class FilesystemService(
 
         //Get all paths that are in the library (either as game or as ignored path), but not on the filesystem
         val removedGamePaths = currentLibraryGamePaths.filter { path ->
-            val isOnFilesystem = currentFilesystemPaths.any { it == path }
+            // Registered games need not match the discovery extension filter.
+            val isOnFilesystem = Files.exists(path)
             !isOnFilesystem
         }
 
         val removedIgnoredPaths = library.ignoredPaths.filter { ignoredPath ->
             val path = Path(ignoredPath.path)
-            val isOnFilesystem = currentFilesystemPaths.any { it == path }
+            val canonicalPath = runCatching { path.toRealPath() }.getOrDefault(path)
+            val isOnFilesystem = currentFilesystemPaths.any { it == canonicalPath }
             !isOnFilesystem
         }
 
@@ -161,6 +169,37 @@ class FilesystemService(
             throw IllegalArgumentException("Path must refer to an accessible file or directory inside the library", e)
         }
         throw IllegalArgumentException("Path must refer to an accessible file or directory inside the library")
+    }
+
+    /** Delete only a validated game path; never follow symlinks during recursive deletion. */
+    fun deleteGameFiles(path: String, library: Library) {
+        require(!Files.isSymbolicLink(Path(path))) { "Cannot delete game files through a symbolic link" }
+        val target = validateGamePath(path, library)
+        require(library.directories.none {
+            Path(it.internalPath).toRealPath().startsWith(target)
+        }) { "Cannot delete a library directory" }
+        require(library.games.count { it.metadata.path == path } <= 1) {
+            "Cannot delete files shared with another game"
+        }
+        require(library.games.none { game ->
+            game.metadata.path != path && runCatching {
+                val other = Path(game.metadata.path).toRealPath()
+                other.startsWith(target) || target.startsWith(other)
+            }.getOrDefault(false)
+        }) { "Cannot delete files shared with another game" }
+
+        Files.walkFileTree(target, object : SimpleFileVisitor<Path>() {
+            override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                Files.delete(file)
+                return FileVisitResult.CONTINUE
+            }
+
+            override fun postVisitDirectory(dir: Path, exc: IOException?): FileVisitResult {
+                if (exc != null) throw exc
+                Files.delete(dir)
+                return FileVisitResult.CONTINUE
+            }
+        })
     }
 
     /** Recheck the library boundary at use time, including paths loaded from stored game metadata. */

@@ -85,7 +85,7 @@ class DownloadHttpTest {
         }
         every { service.getRangeDownload(any(), "slow") } returns null
         every { service.describeDownload(any(), "slow") } returns DownloadMetadata("zip", null)
-        every { service.getProviders() } returns listOf("direct", "broken", "slow").map {
+        every { service.getProviders() } returns listOf("direct", "broken", "slow", "cancel").map {
             org.gameyfin.app.core.download.provider.DownloadProviderDto(it, it, 1, it)
         }
         val catalog = mockk<org.gameyfin.app.api.v1.service.CatalogServiceV1>()
@@ -166,6 +166,40 @@ class DownloadHttpTest {
                     } finally {
                         release.countDown()
                     }
+                    val cancelled = CountDownLatch(1)
+                    every { service.getRangeDownload(any(), "cancel") } returns null
+                    every { service.getDownload(any(), "cancel") } answers {
+                        org.gameyfin.pluginapi.download.FileDownload(object : InputStream() {
+                            var first = true
+                            override fun read(): Int = error("Bulk reads expected")
+                            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                                if (first) {
+                                    first = false
+                                    b[off] = 1
+                                    return 1
+                                }
+                                try {
+                                    cancelled.await(10, TimeUnit.SECONDS)
+                                } catch (_: InterruptedException) {
+                                    throw java.io.IOException("Download cancelled")
+                                }
+                                throw java.io.IOException("Source closed")
+                            }
+                            override fun close() { cancelled.countDown() }
+                        }, "bin", 1024)
+                    }
+                    val cancelUrl = URI("http://localhost:${tomcat.connector.localPort}$path?provider=cancel")
+                    val cancelResponse = client.send(
+                        HttpRequest.newBuilder(cancelUrl).GET().build(), HttpResponse.BodyHandlers.ofInputStream()
+                    )
+                    cancelResponse.body().use { body ->
+                        assertEquals(1, body.read())
+                        GameDownloadLifecycle.remove(1) { assertEquals(0L, cancelled.count) }
+                        val failure = java.util.concurrent.CompletableFuture.supplyAsync {
+                            runCatching { body.readAllBytes() }.exceptionOrNull()
+                        }.get(5, TimeUnit.SECONDS)
+                        assertTrue(failure is java.io.IOException, "Cancellation must abort the HTTP download through $path")
+                    }
                     val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=direct")
                     val first = client.send(
                         HttpRequest.newBuilder(url).GET().build(),
@@ -199,7 +233,7 @@ class DownloadHttpTest {
                         )
                     }
                 }
-                verify(exactly = 8) { games.incrementDownloadCount(game) }
+                verify(exactly = 10) { games.incrementDownloadCount(game) }
                 verify(exactly = 2) { service.getDownload(any(), "slow") }
             }
         } finally {
