@@ -1,17 +1,50 @@
 package org.gameyfin.app.core.download.files
 
 import org.gameyfin.pluginapi.download.DownloadMetadata
+import org.gameyfin.pluginapi.download.LinkDownload
 import org.gameyfin.pluginapi.download.RangeDownload
 import org.junit.jupiter.api.Test
 import org.springframework.mock.web.MockHttpServletRequest
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DownloadResponsesTest {
+    @Test
+    fun `browser links are escaped inert HTML instead of redirects`() {
+        val url = "custom-client:game?name=\"</a><script>alert('x')</script>&other=ü"
+        // URL syntax itself must be valid; encoded characters remain encoded in the result.
+        val link = LinkDownload(url.replace("\"", "%22").replace("<", "%3C").replace(">", "%3E"))
+        val request = MockHttpServletRequest("GET", "/download/1").apply { setParameter("client", "browser") }
+        val response = DownloadResponses.link(link, request)
+        val output = ByteArrayOutputStream()
+        response.body!!.writeTo(output)
+        val html = output.toString(Charsets.UTF_8)
+        assertEquals(200, response.statusCode.value())
+        assertEquals("text/html", response.headers.contentType.toString())
+        assertEquals("SAMEORIGIN", response.headers.getFirst("X-Frame-Options"))
+        assertEquals("no-store", response.headers.cacheControl)
+        assertTrue(response.headers.getFirst("Content-Security-Policy")!!.contains("default-src 'none'"))
+        assertTrue(html.contains("id=\"download-link\""))
+        assertTrue(html.contains("&amp;other=ü"))
+        assertFalse(html.contains("<script"))
+        assertFalse(response.headers.containsHeader("Content-Disposition"))
+        assertNull(response.headers.location)
+    }
+
+    @Test
+    fun `link responses reject executable document schemes`() {
+        for (scheme in listOf("javascript", "JAVASCRIPT", "data", "vbscript")) {
+            assertFailsWith<IllegalArgumentException> {
+                DownloadResponses.link(LinkDownload("$scheme:payload"), MockHttpServletRequest())
+            }
+        }
+    }
+
     private class Resource(val bytes: ByteArray = "0123456789".toByteArray()) : RangeDownload {
         override val metadata = DownloadMetadata("bin", bytes.size.toLong())
         override val etag = "\"version1\""

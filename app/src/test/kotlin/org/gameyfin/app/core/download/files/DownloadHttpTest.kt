@@ -204,7 +204,7 @@ class DownloadHttpTest {
                         }.get(5, TimeUnit.SECONDS)
                         assertTrue(failure is java.io.IOException, "Cancellation must abort the HTTP download through $path")
                     }
-                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=direct")
+                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=direct&client=browser")
                     val first = client.send(
                         HttpRequest.newBuilder(url).GET().build(),
                         HttpResponse.BodyHandlers.ofInputStream()
@@ -260,8 +260,16 @@ class DownloadHttpTest {
                         assertEquals(magnet, descriptor.get("url").asString())
                     }
                 }
-                verify(exactly = 12) { games.incrementDownloadCount(game) }
-                verify(exactly = 2) { service.getDownload(any(), "magnet") }
+                val browserLink = client.send(
+                    HttpRequest.newBuilder(URI("http://localhost:${tomcat.connector.localPort}/download/1?provider=magnet&client=browser"))
+                        .GET().build(), HttpResponse.BodyHandlers.ofString()
+                )
+                assertEquals(200, browserLink.statusCode())
+                assertEquals("text/html", browserLink.headers().firstValue("Content-Type").orElseThrow())
+                assertEquals("SAMEORIGIN", browserLink.headers().firstValue("X-Frame-Options").orElseThrow())
+                assertTrue(browserLink.body().contains("href=\"${magnet.replace("&", "&amp;")}\""))
+                verify(exactly = 13) { games.incrementDownloadCount(game) }
+                verify(exactly = 3) { service.getDownload(any(), "magnet") }
                 verify(exactly = 2) { service.getDownload(any(), "slow") }
             }
         } finally {

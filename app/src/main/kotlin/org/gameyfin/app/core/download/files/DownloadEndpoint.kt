@@ -9,13 +9,10 @@ import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.GameService
 import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.LinkDownload
-import org.springframework.http.CacheControl
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.context.request.async.DeferredResult
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
-import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executor
@@ -81,12 +78,9 @@ class DownloadEndpoint(
                         )
 
                         is LinkDownload -> {
-                            val location = URI.create(download.url)
+                            val response = DownloadResponses.link(download, request)
                             onStart()
-                            ResponseEntity.status(HttpStatus.FOUND)
-                                .location(location)
-                                .cacheControl(CacheControl.noStore())
-                                .build()
+                            response
                         }
                     }
                     result
