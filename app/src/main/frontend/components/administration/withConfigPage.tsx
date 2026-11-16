@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useId, useState} from "react";
 import {ConfigEndpoint} from "Frontend/generated/endpoints";
 import ConfigEntryDto from "Frontend/generated/org/gameyfin/app/config/dto/ConfigEntryDto";
 import {Form, Formik, FormikProps} from "formik";
@@ -15,10 +15,11 @@ export interface ConfigPageProps {
     setSaveMessage: (message: string | undefined) => void;
 }
 
-export default function withConfigPage(WrappedComponent: React.ComponentType<ConfigPageProps>, title: string, validationSchema?: Yup.ObjectSchema<Record<string, unknown>>) {
+export default function withConfigPage(WrappedComponent: React.ComponentType<ConfigPageProps>, title: string, validationSchema?: Yup.ObjectSchema<Record<string, unknown>>, headerActions?: React.ReactNode) {
     return function ConfigPage(props: Record<string, never>) {
         const [configSaved, setConfigSaved] = useState(false);
         const [saveMessage, setSaveMessage] = useState<string>();
+        const formId = useId();
 
         const state = useSnapshot(configState);
 
@@ -98,8 +99,8 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<Con
                         enableReinitialize={true}
                     >
                         {(formik) => (
-                            <Form>
-                                <div className="flex flex-row grow justify-between">
+                            <>
+                                <div className="flex flex-wrap gap-3 grow justify-between">
                                     <h1 className="text-2xl font-bold">{title}</h1>
 
                                     <div className="flex flex-row items-center gap-4">
@@ -107,23 +108,28 @@ export default function withConfigPage(WrappedComponent: React.ComponentType<Con
                                                                         message={saveMessage}
                                                                         className="text-warning"/>}
 
+                                        {headerActions}
                                         <Button
+                                            form={formId}
                                             variant="primary"
                                             className="min-w-20"
                                             isPending={formik.isSubmitting}
                                             isDisabled={formik.isSubmitting || configSaved || !formik.dirty}
                                             type="submit"
                                         >
-                                            {formik.isSubmitting ? <Spinner size="sm" color="current"/> : configSaved ? <CheckIcon/> : "Save"}
+                                            {formik.isSubmitting ? <Spinner size="sm" color="current"/> : configSaved ?
+                                                <CheckIcon/> : "Save"}
                                         </Button>
                                     </div>
                                 </div>
 
-                                <WrappedComponent {...props}
-                                                  getConfig={getConfig}
-                                                  formik={formik}
-                                                  setSaveMessage={setSaveMessage}/>
-                            </Form>
+                                <Form id={formId}>
+                                    <WrappedComponent {...props}
+                                                      getConfig={getConfig}
+                                                      formik={formik}
+                                                      setSaveMessage={setSaveMessage}/>
+                                </Form>
+                            </>
                         )}
                     </Formik> :
                     [...Array(4)].map((_e, i) =>

@@ -19,7 +19,16 @@ class CredentialEndpointTest {
     private val response = MockHttpServletResponse()
 
     private val view = CredentialView(
-        "id", CredentialKind.SERVICE, "name", "gf_key_id", setOf("games:read"), Instant.EPOCH, null, null, null, "ACTIVE"
+        "id",
+        CredentialKind.SERVICE,
+        "name",
+        "gf_key_id",
+        setOf("games:read"),
+        Instant.EPOCH,
+        null,
+        null,
+        null,
+        "ACTIVE"
     )
     private val input = CredentialInput("name", scopes = setOf("games:read"))
     private val created = CreatedCredential(view, "secret")

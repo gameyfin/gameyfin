@@ -12,7 +12,7 @@ export type StepDescriptor = {
 
 export type StepperColor = "default" | "primary" | "secondary" | "success" | "warning" | "danger";
 
-export interface StepperProps extends React.HTMLAttributes<HTMLButtonElement> {
+export interface StepperProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     steps?: StepDescriptor[];
     color?: StepperColor;
     currentStep?: number;
@@ -56,6 +56,7 @@ const Stepper = React.forwardRef<HTMLButtonElement, StepperProps>(
             stepClassName,
             className,
             allowFutureNavigation = false,
+            disabled = false,
             ...props
         },
         ref
@@ -128,6 +129,8 @@ const Stepper = React.forwardRef<HTMLButtonElement, StepperProps>(
                                     <button
                                         ref={ref}
                                         aria-current={status === "active" ? "step" : undefined}
+                                        aria-label={typeof step.title === "string" ? step.title : `Step ${idx + 1}`}
+                                        disabled={disabled || !canNavigate}
                                         type="button"
                                         onClick={() => canNavigate && setCurrentStep(idx)}
                                         className={cn(
@@ -179,12 +182,11 @@ const Stepper = React.forwardRef<HTMLButtonElement, StepperProps>(
                         })}
                     </div>
                     {/* Titles row */}
-                    <div className={cn("mt-2 grid w-full")}
-                         style={{gridTemplateColumns: `repeat(${steps.length}, minmax(0,1fr))`}}>
+                    <div className="mt-2 flex w-full justify-between">
                         {steps.map((step, idx) => {
                             const status = statuses[idx];
                             return (
-                                <div key={idx} className="flex justify-center px-1 text-center">
+                                <div key={idx} className="flex w-[38px] shrink-0 justify-center px-1 text-center">
                                     {step.title && (
                                         <span
                                             className={cn(

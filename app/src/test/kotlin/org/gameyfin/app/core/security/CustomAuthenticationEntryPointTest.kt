@@ -1,116 +1,33 @@
 package org.gameyfin.app.core.security
 
-import io.mockk.*
-import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException
+import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.security.authentication.BadCredentialsException
-import org.springframework.security.core.AuthenticationException
+import java.net.URI
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import kotlin.test.assertEquals
 
 class CustomAuthenticationEntryPointTest {
-
-    private lateinit var entryPoint: CustomAuthenticationEntryPoint
-    private lateinit var request: HttpServletRequest
-    private lateinit var response: HttpServletResponse
-    private lateinit var authException: AuthenticationException
-
-    @BeforeEach
-    fun setup() {
-        entryPoint = CustomAuthenticationEntryPoint()
-        request = mockk<HttpServletRequest>()
-        response = mockk<HttpServletResponse>()
-        authException = BadCredentialsException("Test exception")
-    }
-
-    @AfterEach
-    fun tearDown() {
-        unmockkAll()
-        clearAllMocks()
+    @Test
+    fun `browser failures go to gateway with original path and encoded query`() {
+        val request = MockHttpServletRequest("GET", "/game/42").apply {
+            queryString = "search=a%2Bb&sort=name"
+        }
+        val response = MockHttpServletResponse()
+        CustomAuthenticationEntryPoint().commence(request, response, BadCredentialsException("Login required"))
+        val target = URI(response.redirectedUrl!!)
+        assertEquals("/loginredirect", target.path)
+        assertEquals("continue=/game/42?search=a%2Bb&sort=name",
+            URLDecoder.decode(target.rawQuery, StandardCharsets.UTF_8))
     }
 
     @Test
-    fun `commence should redirect to login when direct parameter is 1`() {
-        every { request.getParameter("direct") } returns "1"
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, authException)
-
-        verify(exactly = 1) { response.sendRedirect("/login") }
-    }
-
-    @Test
-    fun `commence should redirect to SSO when direct parameter is not 1`() {
-        every { request.getParameter("direct") } returns "0"
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, authException)
-
-        verify(exactly = 1) { response.sendRedirect("/oauth2/authorization/${SecurityConfig.SSO_PROVIDER_KEY}") }
-    }
-
-    @Test
-    fun `commence should redirect to SSO when direct parameter is null`() {
-        every { request.getParameter("direct") } returns null
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, authException)
-
-        verify(exactly = 1) { response.sendRedirect("/oauth2/authorization/${SecurityConfig.SSO_PROVIDER_KEY}") }
-    }
-
-    @Test
-    fun `commence should redirect to SSO when direct parameter is empty string`() {
-        every { request.getParameter("direct") } returns ""
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, authException)
-
-        verify(exactly = 1) { response.sendRedirect("/oauth2/authorization/${SecurityConfig.SSO_PROVIDER_KEY}") }
-    }
-
-    @Test
-    fun `commence should redirect to SSO when direct parameter is 2`() {
-        every { request.getParameter("direct") } returns "2"
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, authException)
-
-        verify(exactly = 1) { response.sendRedirect("/oauth2/authorization/${SecurityConfig.SSO_PROVIDER_KEY}") }
-    }
-
-    @Test
-    fun `commence should redirect to SSO when direct parameter is any non-1 value`() {
-        every { request.getParameter("direct") } returns "true"
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, authException)
-
-        verify(exactly = 1) { response.sendRedirect("/oauth2/authorization/${SecurityConfig.SSO_PROVIDER_KEY}") }
-    }
-
-    @Test
-    fun `commence should work with null authException`() {
-        every { request.getParameter("direct") } returns "1"
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, AuthenticationCredentialsNotFoundException("Test"))
-
-        verify(exactly = 1) { response.sendRedirect("/login") }
-    }
-
-    @Test
-    fun `commence should use correct SSO provider key`() {
-        every { request.getParameter("direct") } returns null
-        every { response.sendRedirect(any()) } just Runs
-
-        entryPoint.commence(request, response, authException)
-
-        val expectedUrl = "/oauth2/authorization/${SecurityConfig.SSO_PROVIDER_KEY}"
-        verify(exactly = 1) { response.sendRedirect(expectedUrl) }
-        assertEquals("oidc", SecurityConfig.SSO_PROVIDER_KEY)
+    fun `direct login override reaches gateway without selecting a provider`() {
+        val request = MockHttpServletRequest("GET", "/library/1").apply { addParameter("direct", "1") }
+        val response = MockHttpServletResponse()
+        CustomAuthenticationEntryPoint().commence(request, response, BadCredentialsException("Login required"))
+        assertEquals("/loginredirect?continue=%2Flibrary%2F1&direct=1", response.redirectedUrl)
     }
 }

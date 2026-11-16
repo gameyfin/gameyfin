@@ -1,4 +1,5 @@
 import {Button, Card, Tooltip} from "@heroui/react";
+import {GridListItem} from "react-aria-components";
 import React, {useMemo} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
@@ -23,46 +24,49 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
 
 
     return (
-        <Card className="flex flex-col justify-between w-[353px] p-0 overflow-hidden">
-            <div className="flex flex-1 justify-center items-center">
-                <div className="flex flex-1 opacity-10 min-h-[100px]">
-                    <IconBackgroundPattern/>
-                    {randomGames.length > 0 &&
-                        <div className="absolute flex flex-row">
-                            {randomGames.map((game) => (
-                                <GameCover game={game} size={100} radius="none" key={game.cover?.id}/>
-                            ))}
-                        </div>
-                    }
+        <GridListItem id={collection.id} textValue={collection.name}
+                      className="max-w-[353px] rounded-xl cursor-pointer outline-none data-[selected]:ring-2 data-[selected]:ring-accent data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-4 data-[focus-visible]:outline-accent">
+            <Card className="flex flex-col justify-between w-full max-w-[353px] p-0 overflow-hidden">
+                <div className="flex flex-1 justify-center items-center">
+                    <div className="flex flex-1 opacity-10 min-h-[100px]">
+                        <IconBackgroundPattern/>
+                        {randomGames.length > 0 &&
+                            <div className="absolute flex flex-row">
+                                {randomGames.map((game) => (
+                                    <GameCover game={game} size={100} radius="none" key={game.cover?.id}/>
+                                ))}
+                            </div>
+                        }
+                    </div>
+
+                    <p className="absolute max-w-full px-3 wrap-anywhere text-center text-2xl font-bold">{collection.name}</p>
+
+                    <div className="absolute right-0 top-0 flex flex-row">
+                        <Tooltip delay={0}>
+                            <Tooltip.Trigger>
+                                <Button isIconOnly variant="ghost" aria-label="Configuration" onPress={() => navigate('collection/' + collection.id)}>
+                                    <SlidersHorizontalIcon/>
+                                </Button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                                Configuration
+                            </Tooltip.Content>
+                        </Tooltip>
+                    </div>
                 </div>
 
-                <p className="absolute text-2xl font-bold">{collection.name}</p>
-
-                <div className="absolute right-0 top-0 flex flex-row">
-                    <Tooltip delay={0}>
-                        <Tooltip.Trigger>
-                            <Button isIconOnly variant="ghost" onPress={() => navigate('collection/' + collection.id)}>
-                                <SlidersHorizontalIcon/>
-                            </Button>
-                        </Tooltip.Trigger>
-                        <Tooltip.Content placement="bottom" className="bg-foreground text-background">
-                            Configuration
-                        </Tooltip.Content>
-                    </Tooltip>
-                </div>
-            </div>
-
-            {stats &&
-                <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
-                    <p>Games</p>
-                    <p>Downloads</p>
-                    <p>Platforms</p>
-                    <p className="font-bold">{stats.gamesCount}</p>
-                    <p className="font-bold">{stats.downloadCount}</p>
-                    <ChipList items={stats.gamePlatforms} maxVisible={0}
-                              defaultContent={stats.gamesCount > 0 ? "All" : "None"}/>
-                </div>
-            }
-        </Card>
+                {stats &&
+                    <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
+                        <p>Games</p>
+                        <p>Downloads</p>
+                        <p>Platforms</p>
+                        <p className="font-bold">{stats.gamesCount}</p>
+                        <p className="font-bold">{stats.downloadCount}</p>
+                        <ChipList items={stats.gamePlatforms} maxVisible={0}
+                                  defaultContent={stats.gamesCount > 0 ? "All" : "None"}/>
+                    </div>
+                }
+            </Card>
+        </GridListItem>
     );
 }

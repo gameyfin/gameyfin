@@ -3,7 +3,11 @@
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :plugins:steam:dependencies --write-locks
 care.better.pf4j:pf4j-kotlin-symbol-processing:2.4.0-1.0.5=kspKotlinProcessorClasspath
-com.fasterxml.jackson.core:jackson-annotations:2.22=testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-annotations:2.22=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-core:2.22.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-databind:2.22.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson:jackson-bom:2.22.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.zafarkhaja:java-semver:0.10.2=compileClasspath,kspKotlinProcessorClasspath,testCompileClasspath,testRuntimeClasspath
 com.google.devtools.ksp:symbol-processing-api:2.3.11=kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,kspPluginClasspath,kspPluginClasspathNonEmbeddable
 com.google.devtools.ksp:symbol-processing-api:2.3.6=kspKotlinProcessorClasspath
@@ -52,6 +56,7 @@ io.ktor:ktor-websockets:3.4.3=compileClasspath,runtimeClasspath,testCompileClass
 io.micrometer:micrometer-commons:1.16.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.micrometer:micrometer-core:1.16.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.micrometer:micrometer-observation:1.16.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+io.xberg:html-to-markdown:3.21.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 javax.cache:cache-api:1.1.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 me.xdrop:fuzzywuzzy:1.4.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
@@ -107,7 +112,7 @@ org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0=compileClasspath,runtimeC
 org.jetbrains:annotations:13.0=kotlinAbiValidationCompatClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,kotlinKlibCommonizerClasspath,kspKotlinProcessorClasspath,kspPluginClasspath,kspPluginClasspathNonEmbeddable
 org.jetbrains:annotations:23.0.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.jsoup:jsoup:1.23.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.jspecify:jspecify:1.0.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.jspecify:jspecify:1.0.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-api:6.1.2=testCompileClasspath,testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-engine:6.1.2=testRuntimeClasspath
 org.junit.jupiter:junit-jupiter-params:6.1.2=testCompileClasspath,testRuntimeClasspath

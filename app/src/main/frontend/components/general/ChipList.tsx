@@ -1,5 +1,6 @@
+import Popup from "Frontend/components/general/Popup";
 import React from "react";
-import {Chip, Tooltip} from "@heroui/react";
+import {Chip} from "@heroui/react";
 
 interface ChipListProps {
     items: string[];
@@ -25,20 +26,20 @@ export default function ChipList({items, maxVisible = 1, size = "sm", defaultCon
                 </Chip>
             ))}
             {hasMore && (
-                <Tooltip>
-                    <Tooltip.Trigger>
+                <Popup>
+                    <Popup.Trigger>
                         <Chip size={size}>
                             {maxVisible > 0 && "+"}{remainingItems.length}
                         </Chip>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="right">
+                    </Popup.Trigger>
+                    <Popup.Content placement="right">
                         <div className="flex flex-col gap-1">
                             {remainingItems.map(item => (
                                 <div key={item}>{item}</div>
                             ))}
                         </div>
-                    </Tooltip.Content>
-                </Tooltip>
+                    </Popup.Content>
+                </Popup>
             )}
         </div>
     );

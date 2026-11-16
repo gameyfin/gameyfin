@@ -1,9 +1,9 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useState} from "react";
-import {Button, Link, Modal, toast, Tooltip, Spinner} from "@heroui/react";
+import {Button, Link, Modal, Spinner, toast, Tooltip} from "@heroui/react";
 import {Form, Formik} from "formik";
 import PluginLogo from "Frontend/components/general/plugin/PluginLogo";
-import Markdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import {PluginEndpoint} from "Frontend/generated/endpoints";
 import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 import {ArrowClockwiseIcon} from "@phosphor-icons/react";
@@ -61,7 +61,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container>
+                <ResponsiveDialog scroll="inside">
                     <Modal.Dialog>
                         {({close}) => {
 
@@ -77,13 +77,14 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                         onSubmit={handleSubmit}
                                 >
                                     {(formik: any) => (
-                                        <Form>
+                                        <Form className="flex min-h-0 flex-col">
                                             <Modal.Header>
                                                 <Modal.Heading>Plugin configuration for {plugin.name}</Modal.Heading>
                                             </Modal.Header>
                                             <Modal.Body>
                                                 <div className="flex flex-col text-sm">
-                                                    <div className="flex flex-row items-center gap-8 mb-4">
+                                                    <div
+                                                        className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 mb-4">
                                                         <PluginLogo plugin={plugin}/>
                                                         <table className="text-left table-auto">
                                                             <tbody>
@@ -101,7 +102,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                                 return (
                                                                     <tr key={key}>
                                                                         <td className="text-muted w-0 min-w-20">{key}</td>
-                                                                        <td className="flex flex-row gap-1">{value}</td>
+                                                                        <td className="flex flex-wrap gap-1">{value}</td>
                                                                     </tr>
                                                                 )
                                                             })}
@@ -109,22 +110,11 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                         </table>
                                                     </div>
                                                     <b>Description</b>
-                                                    <Markdown
-                                                        remarkPlugins={[remarkBreaks]}
-                                                        components={{
-                                                            a(props) {
-                                                                return <Link target="_blank" rel="noopener noreferrer"
-                                                                             className="underline text-sm"
-                                                                             href={props.href}>
-                                                                    {props.children}
-                                                                </Link>
-                                                            }
-                                                        }}
-                                                    >{plugin.description}</Markdown>
+                                                    <MarkdownContent>{plugin.description}</MarkdownContent>
                                                 </div>
 
-                                                <div className="flex flex-row items-center mt-4 gap-2">
-                                                    <h4 className="text-l font-bold">Configuration</h4>
+                                                <div className="flex flex-wrap items-center mt-4 gap-2">
+                                                    <b>Configuration</b>
                                                     {(plugin.configMetadata && plugin.configMetadata.length > 0) && <>
                                                         <div className="flex-1"/>
                                                         {(() => {
@@ -156,7 +146,9 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                                             }
                                                                             setTimeout(() => setConfigValidated(ValidationState.UNCHECKED), 5000);
                                                                         }}>
-                                                                    {configValidated === ValidationState.IN_PROGRESS ? <Spinner size="sm" color="current"/> : <ArrowClockwiseIcon/>}
+                                                                    {configValidated === ValidationState.IN_PROGRESS ?
+                                                                        <Spinner size="sm" color="current"/> :
+                                                                        <ArrowClockwiseIcon/>}
                                                                 </Button>
                                                             </Tooltip.Trigger>
                                                             <Tooltip.Content placement="bottom">Re-validate
@@ -174,7 +166,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                     )) : "This plugin has no configuration options."
                                                 }
                                             </Modal.Body>
-                                            <Modal.Footer>
+                                            <Modal.Footer className="shrink-0">
                                                 <Button variant="ghost" onPress={close}>
                                                     Cancel
                                                 </Button>
@@ -185,7 +177,8 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                         isDisabled={formik.isSubmitting || !formik.dirty}
                                                         type="submit"
                                                     >
-                                                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : "Save"}
+                                                        {formik.isSubmitting ?
+                                                            <Spinner size="sm" color="current"/> : "Save"}
                                                     </Button> : ""}
                                             </Modal.Footer>
                                         </Form>
@@ -195,7 +188,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                             )
                         }}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

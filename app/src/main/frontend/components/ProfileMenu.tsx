@@ -1,42 +1,15 @@
+import {useProfileActions} from "Frontend/components/layout/useProfileActions";
 import {useAuth} from "Frontend/util/auth";
-import {GearFineIcon, QuestionIcon, SignOutIcon, UserIcon} from "@phosphor-icons/react";
 import {Dropdown, Label} from "@heroui/react";
-import {useNavigate} from "react-router";
 import Avatar from "Frontend/components/general/Avatar";
-import {isAdmin} from "Frontend/util/utils";
 
 export default function ProfileMenu() {
     const auth = useAuth();
-    const navigate = useNavigate();
-
-    const profileMenuItems = [
-        {
-            label: "My Profile",
-            icon: <UserIcon/>,
-            onClick: () => navigate("/settings/profile")
-        },
-        {
-            label: "Administration",
-            icon: <GearFineIcon/>,
-            onClick: () => navigate("/administration/games"),
-            showIf: isAdmin(auth)
-        },
-        {
-            label: "Help",
-            icon: <QuestionIcon/>,
-            onClick: () => window.open("https://gameyfin.org", "_blank")
-        },
-        {
-            label: "Sign Out",
-            icon: <SignOutIcon/>,
-            onClick: auth.logout,
-            color: "danger"
-        },
-    ];
+    const profileMenuItems = useProfileActions();
 
     return (
         <Dropdown>
-            <Dropdown.Trigger className="rounded-full">
+            <Dropdown.Trigger aria-label="Profile menu" className="rounded-full">
                 <Avatar className="transition-transform size-8 rounded-full gradient-primary text-accent-foreground"/>
             </Dropdown.Trigger>
             <Dropdown.Popover placement="bottom end">

@@ -1,4 +1,29 @@
-import { AlienIcon, BaseballIcon, BasketballIcon, CastleTurretIcon, DiceFiveIcon, GameControllerIcon, GhostIcon, IconContext, JoystickIcon, LegoIcon, MedalIcon, PuzzlePieceIcon, RocketIcon, SkullIcon, SoccerBallIcon, StarIcon, StrategyIcon, SwordIcon, TargetIcon, ThumbsUpIcon, TreasureChestIcon, TrophyIcon, UserIcon, VolleyballIcon } from "@phosphor-icons/react";
+import {
+    AlienIcon,
+    BaseballIcon,
+    BasketballIcon,
+    CastleTurretIcon,
+    DiceFiveIcon,
+    GameControllerIcon,
+    GhostIcon,
+    IconContext,
+    JoystickIcon,
+    LegoIcon,
+    MedalIcon,
+    PuzzlePieceIcon,
+    RocketIcon,
+    SkullIcon,
+    SoccerBallIcon,
+    StarIcon,
+    StrategyIcon,
+    SwordIcon,
+    TargetIcon,
+    ThumbsUpIcon,
+    TreasureChestIcon,
+    TrophyIcon,
+    UserIcon,
+    VolleyballIcon
+} from "@phosphor-icons/react";
 import React, {useEffect} from "react";
 
 export default function IconBackgroundPattern() {

@@ -36,6 +36,7 @@ class DownloadEndpointTest {
     @BeforeEach
     fun setup() {
         downloadService = mockk<DownloadService>(relaxed = true)
+        every { downloadService.getRangeDownload(any(), any()) } returns null
         gameService = mockk<GameService>(relaxed = true)
         endpoint = DownloadEndpoint(downloadService, gameService)
 
@@ -312,27 +313,35 @@ class DownloadEndpointTest {
     }
 
     @Test
-    fun `downloadGame should throw TODO for LinkDownload`() {
-        val gameId = 1L
-        val provider = "TestProvider"
-        val gamePath = "/path/to/game"
-        val game = createTestGame(gameId, "Test Game", gamePath, fileSize = 1024L)
-        val linkDownload = LinkDownload("https://example.com/download")
+    fun `downloadGame redirects link downloads without streaming`() {
+        for (url in listOf("magnet:?xt=urn:btih:1234&dn=Test%20Game&tr=http%3A%2F%2Ftracker.test%2Fannounce", "https://example.com/download")) {
+            clearMocks(gameService, downloadService, answers = false)
+            val gameId = 1L
+            val provider = "TestProvider"
+            val gamePath = "/path/to/game"
+            val game = createTestGame(gameId, "Test Game", gamePath, fileSize = 1024L)
+            val linkDownload = LinkDownload(url)
 
-        mockkStatic("org.gameyfin.app.core.UtilsKt")
-        every { request.getRemoteIp(any()) } returns "192.168.1.1"
+            mockkStatic("org.gameyfin.app.core.UtilsKt")
+            every { request.getRemoteIp(any()) } returns "192.168.1.1"
 
-        mockkStatic("org.gameyfin.app.core.security.SecurityUtilsKt")
-        every { getCurrentAuth() } returns null
+            mockkStatic("org.gameyfin.app.core.security.SecurityUtilsKt")
+            every { getCurrentAuth() } returns null
 
-        every { gameService.getById(gameId) } returns game
-        every { gameService.incrementDownloadCount(game) } just Runs
-        every { downloadService.getDownload(gamePath, provider) } returns linkDownload
+            every { gameService.getById(gameId) } returns game
+            every { gameService.incrementDownloadCount(game) } just Runs
+            every { downloadService.getDownload(gamePath, provider) } returns linkDownload
 
-        val deferredResult = endpoint.downloadGame(gameId, provider, request)
+            val deferredResult = endpoint.downloadGame(gameId, provider, request)
 
-        assertThrows(AssertionError::class.java) {
-            awaitDeferredResult(deferredResult)
+            val response = awaitDeferredResult(deferredResult)
+            assertEquals(HttpStatus.FOUND, response.statusCode)
+            assertEquals(url, response.headers.location.toString())
+            assertEquals("no-store", response.headers.cacheControl)
+            assertEquals(null, response.body)
+            assertFalse(response.headers.containsHeader("Content-Disposition"))
+            verify(exactly = 1) { gameService.incrementDownloadCount(game) }
+            verify(exactly = 0) { downloadService.processDownload(any(), any(), any(), any(), any(), any()) }
         }
     }
 

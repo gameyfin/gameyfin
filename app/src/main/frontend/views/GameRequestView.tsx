@@ -1,3 +1,6 @@
+import CompactRecordList from "Frontend/components/layout/CompactRecordList";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
+import TableScroller from "Frontend/components/layout/TableScroller";
 import {Button, Chip, Input, ListBox, Select, SortDescriptor, Table, Tooltip, useOverlayState,} from "@heroui/react";
 import RequestGameModal from "Frontend/components/general/modals/RequestGameModal";
 import {ArrowUpIcon, CheckIcon, InfoIcon, PlusCircleIcon, TrashIcon, XIcon} from "@phosphor-icons/react";
@@ -13,6 +16,7 @@ import {isAdmin} from "Frontend/util/utils";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 
 export default function GameRequestView() {
+    const compact = useMediaQuery(COMPACT_QUERY);
     const rowsPerPage = 25;
 
     const auth = useAuth();
@@ -143,10 +147,110 @@ export default function GameRequestView() {
         }
     }
 
+    function requestFields(item: GameRequestDto) {
+        return [
+            {
+                label: "Title & Release", tableClassName: "", content: <>
+                    {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
+                </>
+            },
+            {
+                label: "Platform", tableClassName: "", content: <>
+                    <Chip size="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
+                </>
+            },
+            {
+                label: "Submitted by", tableClassName: "", content: <>
+                    <p className="text-muted">
+                        {item.requester ?
+                            item.requester.username :
+                            "Guest"
+                        }
+                    </p>
+                </>
+            },
+            {
+                label: "Submitted", tableClassName: "", content: <>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                </>
+            },
+            {
+                label: "Updated", tableClassName: "", content: <>
+                    {new Date(item.updatedAt).toLocaleDateString()}
+                </>
+            },
+            {
+                label: "Status", tableClassName: "min-w-24", content: <>
+                    {statusToBadge(item.status)}
+                </>
+            },
+            {
+                label: "Votes and actions", tableClassName: "", content: <>
+                    <div className="flex flex-wrap gap-2">
+                        <Tooltip>
+                            <Button
+                                size="sm"
+                                aria-label="Vote for this request"
+                                variant={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "outline"}
+                                isDisabled={!auth.state.user || item.status === GameRequestStatus.FULFILLED}
+                                onPress={async () => await toggleVote(item.id)}
+                            >
+                                <ArrowUpIcon/>
+                                {item.voters.length}
+                            </Button>
+                            <Tooltip.Content placement="left">
+                                {auth.state.user
+                                    ? (item.status === GameRequestStatus.FULFILLED ? "You cannot vote on closed requests" : "Vote for this request")
+                                    : "You must be logged in to vote"}
+                            </Tooltip.Content>
+                        </Tooltip>
+                        {isAdmin(auth) && <div className="flex flex-wrap gap-2">
+                            <Tooltip>
+                                <Button
+                                    size="sm"
+                                    isIconOnly
+                                    aria-label="Approve this request"
+                                    variant={item.status === GameRequestStatus.APPROVED ? "primary" : "outline"}
+                                    isDisabled={item.status === GameRequestStatus.FULFILLED}
+                                    onPress={async () => await toggleApprove(item as GameRequestDto)}
+                                >
+                                    <CheckIcon/>
+                                </Button>
+                                <Tooltip.Content>Approve this request</Tooltip.Content>
+                            </Tooltip>
+                            <Tooltip>
+                                <Button
+                                    size="sm"
+                                    isIconOnly
+                                    aria-label="Reject this request"
+                                    variant={item.status === GameRequestStatus.REJECTED ? "primary" : "outline"}
+                                    isDisabled={item.status === GameRequestStatus.FULFILLED}
+                                    onPress={async () => await toggleReject(item as GameRequestDto)}
+                                >
+                                    <XIcon/>
+                                </Button>
+                                <Tooltip.Content>Reject this request</Tooltip.Content>
+                            </Tooltip>
+                        </div>}
+                        {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
+                            <Tooltip>
+                                <Button size="sm" isIconOnly variant="danger" aria-label="Delete this request"
+                                        onPress={async () => await deleteRequest(item.id)}>
+                                    <TrashIcon/>
+                                </Button>
+                                <Tooltip.Content>Delete this request</Tooltip.Content>
+                            </Tooltip>
+                        }
+                    </div>
+                </>
+            }
+        ];
+    }
+
     return (<>
-        <div className="flex flex-row justify-between mb-8">
+        <div className="flex flex-wrap gap-3 justify-between mb-8">
             <h1 className="text-2xl font-bold">Game Requests</h1>
-            <div className="flex flex-row items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
                 {!areGameRequestsEnabled &&
                     <SmallInfoField icon={InfoIcon}
                                     message="Request submission is disabled"
@@ -164,8 +268,8 @@ export default function GameRequestView() {
             </div>
         </div>
 
-        <div className="flex flex-row gap-2 justify-between mb-4">
-            <div className="flex w-96 items-center gap-2 rounded-lg">
+        <div className="flex flex-wrap gap-2 justify-between mb-4">
+            <div className="flex w-full sm:w-96 items-center gap-2 rounded-lg">
                 <Input
                     className="grow"
                     placeholder="Search"
@@ -182,7 +286,7 @@ export default function GameRequestView() {
                 value={filters}
                 onChange={(value) => setFilters(value as GameRequestStatus[])}
                 selectionMode="multiple"
-                className="w-80"
+                className="w-full sm:w-80"
             >
                 <Select.Trigger>
                     <Select.Value/>
@@ -215,146 +319,69 @@ export default function GameRequestView() {
             </Select>
         </div>
 
-        <Table variant="secondary">
-            <Table.ScrollContainer>
-                <Table.Content sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
-                    <Table.Header className="sticky top-0 z-10 bg-background">
-                        <Table.Column id="title" allowsSorting isRowHeader>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader sortDirection={sortDirection}>Title &
-                                    Release</Table.SortableColumnHeader>
+        {compact ?
+            <CompactRecordList label="Game requests" items={pagedItems} itemKey={item => item.id} fields={requestFields}
+                               empty={<p className="p-4 text-muted">Your search did not match any requests.</p>} sort={{
+                value: sortDescriptor,
+                onChange: setSortDescriptor,
+                options: [{id: "title", label: "Title & Release"}, {
+                    id: "createdAt",
+                    label: "Submitted"
+                }, {id: "updatedAt", label: "Updated"}, {id: "status", label: "Status"}, {id: "votes", label: "Votes"}]
+            }}/> : <Table variant="secondary">
+                <TableScroller label="GameRequestView table">
+                    <Table.Content aria-label="Game requests" sortDescriptor={sortDescriptor}
+                                   onSortChange={setSortDescriptor}>
+                        <Table.Header className="sticky top-0 z-10 bg-background">
+                            <Table.Column id="title" allowsSorting isRowHeader>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader sortDirection={sortDirection}>Title &
+                                        Release</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="platform">Platform</Table.Column>
+                            <Table.Column id="requester">Submitted by</Table.Column>
+                            <Table.Column id="createdAt" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Submitted</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="updatedAt" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Updated</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="status" allowsSorting>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Status</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                            <Table.Column id="votes" allowsSorting width={1}>
+                                {({sortDirection}) => (
+                                    <Table.SortableColumnHeader
+                                        sortDirection={sortDirection}>Votes</Table.SortableColumnHeader>
+                                )}
+                            </Table.Column>
+                        </Table.Header>
+                        <Table.Body
+                            renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match
+                                any
+                                requests.</p>} items={pagedItems}>
+                            {(item) => (
+                                <Table.Row key={item.id}>
+                                    {requestFields(item).map(field => <Table.Cell key={field.label}
+                                                                                  className={field.tableClassName}>
+                                        {field.content}
+                                    </Table.Cell>)}
+                                </Table.Row>
                             )}
-                        </Table.Column>
-                        <Table.Column id="platform">Platform</Table.Column>
-                        <Table.Column id="requester">Submitted by</Table.Column>
-                        <Table.Column id="createdAt" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Submitted</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="updatedAt" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Updated</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="status" allowsSorting>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Status</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                        <Table.Column id="votes" allowsSorting width={1}>
-                            {({sortDirection}) => (
-                                <Table.SortableColumnHeader
-                                    sortDirection={sortDirection}>Votes</Table.SortableColumnHeader>
-                            )}
-                        </Table.Column>
-                    </Table.Header>
-                    <Table.Body
-                        renderEmptyState={() => <p className="text-center text-muted p-4">Your search did not match any
-                            requests.</p>} items={pagedItems}>
-                        {(item) => (
-                            <Table.Row key={item.id}>
-                                <Table.Cell>
-                                    {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <Chip size="sm" className="text-xs max-w-32 truncate">{item.platform}</Chip>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <p className="text-muted">
-                                        {item.requester ?
-                                            item.requester.username :
-                                            "Guest"
-                                        }
-                                    </p>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {new Date(item.createdAt).toLocaleDateString()}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    {new Date(item.updatedAt).toLocaleDateString()}
-                                </Table.Cell>
-                                <Table.Cell className="min-w-24">
-                                    {statusToBadge(item.status)}
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <div className="flex flex-row gap-2">
-                                        <Tooltip>
-                                            <Tooltip.Trigger>
-                                                <div>
-                                                    <Button
-                                                        size="sm"
-                                                        variant={hasUserVotedForRequest(item as GameRequestDto) ? "primary" : "outline"}
-                                                        isDisabled={!auth.state.user || item.status === GameRequestStatus.FULFILLED}
-                                                        onPress={async () => await toggleVote(item.id)}
-                                                    >
-                                                        <ArrowUpIcon/>
-                                                        {item.voters.length}
-                                                    </Button>
-                                                </div>
-                                            </Tooltip.Trigger>
-                                            <Tooltip.Content placement="left">
-                                                {auth.state.user
-                                                    ? (item.status === GameRequestStatus.FULFILLED ? "You cannot vote on closed requests" : "Vote for this request")
-                                                    : "You must be logged in to vote"}
-                                            </Tooltip.Content>
-                                        </Tooltip>
-                                        {isAdmin(auth) && <div className="flex flex-row gap-2">
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <div>
-                                                        <Button
-                                                            size="sm"
-                                                            isIconOnly
-                                                            variant={item.status === GameRequestStatus.APPROVED ? "primary" : "outline"}
-                                                            isDisabled={item.status === GameRequestStatus.FULFILLED}
-                                                            onPress={async () => await toggleApprove(item as GameRequestDto)}
-                                                        >
-                                                            <CheckIcon/>
-                                                        </Button>
-                                                    </div>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Approve this request</Tooltip.Content>
-                                            </Tooltip>
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <div>
-                                                        <Button
-                                                            size="sm"
-                                                            isIconOnly
-                                                            variant={item.status === GameRequestStatus.REJECTED ? "primary" : "outline"}
-                                                            isDisabled={item.status === GameRequestStatus.FULFILLED}
-                                                            onPress={async () => await toggleReject(item as GameRequestDto)}
-                                                        >
-                                                            <XIcon/>
-                                                        </Button>
-                                                    </div>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Reject this request</Tooltip.Content>
-                                            </Tooltip>
-                                        </div>}
-                                        {(isAdmin(auth) || (auth.state.user && item.requester && auth.state.user.id === item.requester.id)) &&
-                                            <Tooltip>
-                                                <Tooltip.Trigger>
-                                                    <Button size="sm" isIconOnly variant="danger"
-                                                            onPress={async () => await deleteRequest(item.id)}>
-                                                        <TrashIcon/>
-                                                    </Button>
-                                                </Tooltip.Trigger>
-                                                <Tooltip.Content>Delete this request</Tooltip.Content>
-                                            </Tooltip>
-                                        }
-                                    </div>
-                                </Table.Cell>
-                            </Table.Row>
-                        )}
-                    </Table.Body>
-                </Table.Content>
-            </Table.ScrollContainer>
-        </Table>
+                        </Table.Body>
+                    </Table.Content>
+                </TableScroller>
+            </Table>}
         {pagedItems.length > 0 &&
             <div className="flex w-full justify-center sticky">
                 <SimplePagination

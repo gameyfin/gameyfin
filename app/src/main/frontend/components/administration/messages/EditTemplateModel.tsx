@@ -1,12 +1,6 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useState} from "react";
-import {
-    toast,
-    Button,
-    Chip,
-    Link,
-    Modal,
-    TextArea
-} from "@heroui/react";
+import {Button, Chip, Link, Modal, TextArea, toast} from "@heroui/react";
 import {MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
 import TemplateType from "Frontend/generated/org/gameyfin/app/messages/templates/TemplateType";
@@ -46,7 +40,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" className="max-w-5xl">
+                <ResponsiveDialog size="lg" className="max-w-5xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -55,7 +49,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                                     <Modal.Heading>Edit {selectedTemplate?.name} Template</Modal.Heading>
                                 </Modal.Header>
                                 <Modal.Body>
-                                    <div className="flex flex-row justify-between items-end">
+                                    <div className="flex flex-wrap gap-3 justify-between items-end">
                                         <table cellPadding="4rem">
                                             <tbody>
                                             <tr>
@@ -105,7 +99,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                                         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
                                             setTemplateContent(e.target.value)
                                         }}
-                                        className="resize-y min-h-[500px] w-full rounded-md border border-border bg-surface px-3 py-2"
+                                        className="resize-y min-h-[500px] w-full rounded-md border border-border px-3 py-2"
                                     />
                                 </Modal.Body>
                                 <Modal.Footer>
@@ -129,7 +123,7 @@ export default function EditTemplateModal({isOpen, onOpenChange, selectedTemplat
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

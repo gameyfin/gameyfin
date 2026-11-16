@@ -65,7 +65,13 @@ class ImageEndpointTest {
     @Test
     fun `getScreenshot should return image content when image exists`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = 1024L, contentId = "abc")
+        val image = Image(
+            id = imageId,
+            type = ImageType.SCREENSHOT,
+            mimeType = "image/jpeg",
+            contentLength = 1024L,
+            contentId = "abc"
+        )
         val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
@@ -114,7 +120,13 @@ class ImageEndpointTest {
     @Test
     fun `getCover should return image content when image exists`() {
         val imageId = 2L
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = "def")
+        val image = Image(
+            id = imageId,
+            type = ImageType.COVER,
+            mimeType = "image/png",
+            contentLength = 2048L,
+            contentId = "def"
+        )
         val filePath = createTempFile("cover data")
 
         every { imageService.getImage(imageId) } returns image
@@ -146,7 +158,13 @@ class ImageEndpointTest {
     @Test
     fun `getHeader should return image content when image exists`() {
         val imageId = 3L
-        val image = Image(id = imageId, type = ImageType.HEADER, mimeType = "image/webp", contentLength = 4096L, contentId = "ghi")
+        val image = Image(
+            id = imageId,
+            type = ImageType.HEADER,
+            mimeType = "image/webp",
+            contentLength = 4096L,
+            contentId = "ghi"
+        )
         val filePath = createTempFile("header data")
 
         every { imageService.getImage(imageId) } returns image
@@ -251,7 +269,13 @@ class ImageEndpointTest {
     @Test
     fun `getAvatarByUsername should return avatar when user has avatar`() {
         val username = "testuser"
-        val avatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg", contentLength = 512L, contentId = "avatar-id")
+        val avatar = Image(
+            id = 1L,
+            type = ImageType.AVATAR,
+            mimeType = "image/jpeg",
+            contentLength = 512L,
+            contentId = "avatar-id"
+        )
         val filePath = createTempFile("avatar data")
 
         every { userService.getAvatar(username) } returns avatar
@@ -316,14 +340,13 @@ class ImageEndpointTest {
 
         imageEndpoint.uploadAvatar(file)
 
-        verify(exactly = 1) { userService.hasAvatar("testuser") }
         verify(exactly = 1) { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/png") }
         verify(exactly = 1) { userService.updateAvatar("testuser", newImage) }
         verify(exactly = 0) { imageService.updateFileContent(any(), any(), any()) }
     }
 
     @Test
-    fun `uploadAvatar should update existing avatar when user has avatar`() {
+    fun `uploadAvatar should replace image identity so live clients invalidate their cache`() {
         val auth = mockk<Authentication> {
             every { name } returns "testuser"
         }
@@ -332,21 +355,19 @@ class ImageEndpointTest {
             every { contentType } returns "image/jpeg"
         }
         val existingAvatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/png")
-        val updatedImage = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg")
+        val updatedImage = Image(id = 2L, type = ImageType.AVATAR, mimeType = "image/jpeg")
 
         every { getCurrentAuth() } returns auth
         every { userService.hasAvatar("testuser") } returns true
         every { userService.getAvatar("testuser") } returns existingAvatar
-        every { imageService.updateFileContent(existingAvatar, any(), "image/jpeg") } returns updatedImage
+        every { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/jpeg") } returns updatedImage
         every { userService.updateAvatar("testuser", updatedImage) } just Runs
 
         imageEndpoint.uploadAvatar(file)
 
-        verify(exactly = 1) { userService.hasAvatar("testuser") }
-        verify(exactly = 1) { userService.getAvatar("testuser") }
-        verify(exactly = 1) { imageService.updateFileContent(existingAvatar, any(), "image/jpeg") }
+        verify(exactly = 0) { imageService.updateFileContent(any(), any(), any()) }
         verify(exactly = 1) { userService.updateAvatar("testuser", updatedImage) }
-        verify(exactly = 0) { imageService.createFromInputStream(any(), any(), any()) }
+        verify(exactly = 1) { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/jpeg") }
     }
 
     @Test
@@ -402,7 +423,12 @@ class ImageEndpointTest {
     @Test
     fun `getImageContent should handle image without content length`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = null, contentId = "abc")
+        val image = Image(
+            id = imageId,
+            type = ImageType.SCREENSHOT,
+            mimeType = "image/jpeg",
+            contentId = "abc"
+        )
         val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
@@ -419,7 +445,8 @@ class ImageEndpointTest {
     @Test
     fun `getImageContent should handle image without mime type`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = null, contentLength = 1024L, contentId = "abc")
+        val image =
+            Image(id = imageId, type = ImageType.SCREENSHOT, contentLength = 1024L, contentId = "abc")
         val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
@@ -437,7 +464,8 @@ class ImageEndpointTest {
     @Test
     fun `getImageContent should handle image without content length and mime type`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = null, contentLength = null, contentId = "abc")
+        val image =
+            Image(id = imageId, type = ImageType.SCREENSHOT, contentId = "abc")
         val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
@@ -477,7 +505,13 @@ class ImageEndpointTest {
     fun `getScreenshot should handle large content length`() {
         val imageId = 1L
         val largeSize = Long.MAX_VALUE
-        val image = Image(id = imageId, type = ImageType.SCREENSHOT, mimeType = "image/jpeg", contentLength = largeSize, contentId = "abc")
+        val image = Image(
+            id = imageId,
+            type = ImageType.SCREENSHOT,
+            mimeType = "image/jpeg",
+            contentLength = largeSize,
+            contentId = "abc"
+        )
         val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
@@ -494,7 +528,8 @@ class ImageEndpointTest {
     @Test
     fun `getCover should handle zero content length`() {
         val imageId = 1L
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 0L, contentId = "abc")
+        val image =
+            Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 0L, contentId = "abc")
         val filePath = createTempFile("")
 
         every { imageService.getImage(imageId) } returns image
@@ -511,7 +546,13 @@ class ImageEndpointTest {
     @Test
     fun `getAvatarByUsername should handle empty username`() {
         val username = ""
-        val avatar = Image(id = 1L, type = ImageType.AVATAR, mimeType = "image/jpeg", contentLength = 512L, contentId = "avatar-id")
+        val avatar = Image(
+            id = 1L,
+            type = ImageType.AVATAR,
+            mimeType = "image/jpeg",
+            contentLength = 512L,
+            contentId = "avatar-id"
+        )
         val filePath = createTempFile("avatar data")
 
         every { userService.getAvatar(username) } returns avatar
@@ -577,7 +618,13 @@ class ImageEndpointTest {
     fun `should return 304 Not Modified when ETag matches If-None-Match`() {
         val imageId = 1L
         val contentId = "abc-123"
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = contentId)
+        val image = Image(
+            id = imageId,
+            type = ImageType.COVER,
+            mimeType = "image/png",
+            contentLength = 2048L,
+            contentId = contentId
+        )
         val requestWithEtag = mockk<HttpServletRequest> {
             every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns "\"$contentId\""
         }
@@ -597,7 +644,13 @@ class ImageEndpointTest {
     fun `should return 200 with ETag when If-None-Match does not match`() {
         val imageId = 1L
         val contentId = "abc-123"
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = contentId)
+        val image = Image(
+            id = imageId,
+            type = ImageType.COVER,
+            mimeType = "image/png",
+            contentLength = 2048L,
+            contentId = contentId
+        )
         val filePath = createTempFile("cover data")
         val requestWithOldEtag = mockk<HttpServletRequest> {
             every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns "\"old-etag\""
@@ -620,7 +673,13 @@ class ImageEndpointTest {
     fun `should include ETag and Cache-Control headers in response`() {
         val imageId = 1L
         val contentId = "content-uuid-456"
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/jpeg", contentLength = 1024L, contentId = contentId)
+        val image = Image(
+            id = imageId,
+            type = ImageType.COVER,
+            mimeType = "image/jpeg",
+            contentLength = 1024L,
+            contentId = contentId
+        )
         val filePath = createTempFile()
 
         every { imageService.getImage(imageId) } returns image
@@ -638,7 +697,13 @@ class ImageEndpointTest {
     fun `should return 304 for weak ETag match`() {
         val imageId = 1L
         val contentId = "abc-123"
-        val image = Image(id = imageId, type = ImageType.COVER, mimeType = "image/png", contentLength = 2048L, contentId = contentId)
+        val image = Image(
+            id = imageId,
+            type = ImageType.COVER,
+            mimeType = "image/png",
+            contentLength = 2048L,
+            contentId = contentId
+        )
         val requestWithWeakEtag = mockk<HttpServletRequest> {
             every { getHeader(HttpHeaders.IF_NONE_MATCH) } returns "W/\"$contentId\""
         }

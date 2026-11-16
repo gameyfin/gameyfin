@@ -58,7 +58,7 @@ export function PluginManagementSection({type, searchTerm}: PluginManagementSect
 
     return (
         <div className="flex flex-col gap-2">
-            <div className="flex flex-row grow justify-between">
+            <div className="flex flex-wrap gap-3 grow justify-between">
                 <h2 className="text-xl font-bold">{camelCaseToTitle(type)}</h2>
 
                 <Tooltip>

@@ -1,20 +1,16 @@
 package org.gameyfin.app.system.backup
 
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.gameyfin.app.core.backup.BackupFormat
-import org.gameyfin.app.core.backup.JdbcValues
-import org.gameyfin.app.core.backup.SchemaInspector
-import org.gameyfin.app.core.backup.ValueKind
+import org.gameyfin.app.core.backup.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.StringWriter
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.PreparedStatement
-import java.sql.Types
+import java.sql.*
+import java.time.OffsetDateTime
 import java.util.*
 
 class JdbcSupportTest {
@@ -74,6 +70,59 @@ class JdbcSupportTest {
     }
 
     @Test
+    fun `timestamp classification uses database type name for PostgreSQL`() {
+        for (typeName in listOf("timestamptz", "TIMESTAMPTZ", "timestamp with time zone")) {
+            assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, normalizeJdbcType(Types.TIMESTAMP, typeName))
+        }
+        assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, "timestamp"))
+        assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, "timestamp without time zone"))
+        assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, null))
+        assertEquals(
+            Types.TIMESTAMP_WITH_TIMEZONE,
+            normalizeJdbcType(Types.TIMESTAMP_WITH_TIMEZONE, "TIMESTAMP WITH TIME ZONE")
+        )
+        assertEquals(Types.VARCHAR, normalizeJdbcType(Types.VARCHAR, "timestamptz"))
+    }
+
+    @Test
+    fun `PostgreSQL timestamptz metadata preserves offset on export and restore`() {
+        val rs = mockk<ResultSet>()
+        val timestamp = OffsetDateTime.parse("2026-11-06T11:29:57.123456+05:30")
+        every { rs.getObject(1, OffsetDateTime::class.java) } returns timestamp
+        val jdbcType = normalizeJdbcType(Types.TIMESTAMP, "timestamptz")
+        val writer = StringWriter()
+        BackupFormat.jsonMapper.createGenerator(writer).use { gen ->
+            JdbcValues.write(rs, 1, ValueKind.fromJdbcType(jdbcType), gen)
+        }
+        assertEquals("\"$timestamp\"", writer.toString())
+        bind(jdbcType, writer.toString()) { verify { it.setObject(1, timestamp) } }
+
+        every { rs.getObject(1, OffsetDateTime::class.java) } returns null
+        val nullWriter = StringWriter()
+        BackupFormat.jsonMapper.createGenerator(nullWriter).use { gen ->
+            JdbcValues.write(rs, 1, ValueKind.fromJdbcType(jdbcType), gen)
+        }
+        assertEquals("null", nullWriter.toString())
+    }
+
+    @Test
+    fun `schema inspector normalizes PostgreSQL timestamptz columns`() {
+        val c = mockk<Connection>()
+        val metadata = mockk<DatabaseMetaData>(relaxed = true)
+        val rs = mockk<ResultSet>(relaxed = true)
+        every { c.metaData } returns metadata
+        every { c.catalog } returns "gameyfin"
+        every { c.schema } returns "public"
+        every { metadata.getColumns("gameyfin", "public", "events", "%") } returns rs
+        every { rs.next() } returnsMany listOf(true, false)
+        every { rs.getString("COLUMN_NAME") } returns "created_at"
+        every { rs.getInt("DATA_TYPE") } returns Types.TIMESTAMP
+        every { rs.getString("TYPE_NAME") } returns "timestamptz"
+
+        assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, SchemaInspector(c).columns("events").single().jdbcType)
+    }
+
+    @Test
     fun `write serializes values and nulls`() {
         assertEquals("[42]", json(ValueKind.INTEGER, "I", "INSERT INTO VALS (I) VALUES (42)"))
         assertEquals("[null]", json(ValueKind.INTEGER, "I", "INSERT INTO VALS (I) VALUES (NULL)"))
@@ -124,10 +173,10 @@ class JdbcSupportTest {
         }
         bind(Types.TIMESTAMP, "\"2026-01-02T03:04:05Z\"") { verify { it.setObject(1, any<java.time.LocalDateTime>()) } }
         bind(Types.TIMESTAMP_WITH_TIMEZONE, "\"2026-01-02T03:04:05Z\"") {
-            verify { it.setObject(1, java.time.OffsetDateTime.parse("2026-01-02T03:04:05Z")) }
+            verify { it.setObject(1, OffsetDateTime.parse("2026-01-02T03:04:05Z")) }
         }
         bind(Types.TIMESTAMP_WITH_TIMEZONE, "\"2026-01-02T03:04:05\"") {
-            verify { it.setObject(1, any<java.time.OffsetDateTime>()) }
+            verify { it.setObject(1, any<OffsetDateTime>()) }
         }
         bind(Types.VARBINARY, "\"AQID\"") { verify { it.setBytes(1, byteArrayOf(1, 2, 3)) } }
         bind(Types.OTHER, "\"v\"") { verify { it.setObject(1, "v", Types.OTHER) } }

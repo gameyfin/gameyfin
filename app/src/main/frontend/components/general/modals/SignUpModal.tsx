@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
 import {Button, Modal, toast} from "@heroui/react";
 import {RegistrationEndpoint} from "Frontend/generated/endpoints";
@@ -40,7 +41,7 @@ export default function SignUpModal({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" className="max-w-xl">
+                <ResponsiveDialog size="lg" className="max-w-xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <Formik initialValues={{}}
@@ -104,7 +105,7 @@ export default function SignUpModal({
                             </Formik>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

@@ -1,3 +1,5 @@
+import {COVER_GAP as GAP, coverGridLayout} from "Frontend/util/coverGridLayout";
+import {NARROW_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import {Grid} from "react-window";
@@ -16,13 +18,8 @@ interface GridCellProps {
     coverHeight: number;
 }
 
-// Constants for grid layout
-const MIN_COLUMN_WIDTH = 180; // Minimum width per item (minmax value from original)
-const MAX_COLUMN_WIDTH = 212; // Maximum width per item (minmax value from original)
-const GAP = 16; // gap-4 = 1rem = 16px
-const ASPECT_RATIO = 12 / 17; // Game cover aspect ratio (width/height)
-
 export default function CoverGrid({games}: CoverGridProps) {
+    const narrow = useMediaQuery(NARROW_QUERY);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
 
@@ -44,18 +41,7 @@ export default function CoverGrid({games}: CoverGridProps) {
         return () => resizeObserver.disconnect();
     }, []);
 
-    // Calculate how many columns can fit
-    const columnCount = Math.max(1, Math.floor((containerWidth + GAP) / (MIN_COLUMN_WIDTH + GAP)));
-
-    // Calculate actual column width to distribute space evenly (up to MAX_COLUMN_WIDTH)
-    const actualColumnWidth = Math.min(
-        MAX_COLUMN_WIDTH,
-        Math.floor((containerWidth - (columnCount - 1) * GAP) / columnCount)
-    );
-
-    // Calculate cover height based on width and aspect ratio
-    // GameCover's size prop is the height, so we need to calculate height from width
-    const coverHeight = Math.floor(actualColumnWidth / ASPECT_RATIO);
+    const {columnCount, actualColumnWidth, coverHeight} = coverGridLayout(containerWidth, narrow);
 
     // Calculate row count
     const rowCount = Math.ceil(games.length / columnCount);

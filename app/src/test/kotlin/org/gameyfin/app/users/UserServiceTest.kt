@@ -136,7 +136,6 @@ class UserServiceTest {
         val user = User(
             id = 1L,
             username = "oidcuser",
-            password = null,
             email = "oidc@example.com",
             oidcProviderId = "oidc123",
             enabled = true,
@@ -170,7 +169,6 @@ class UserServiceTest {
             username = "disabled",
             password = "pass",
             email = "disabled@example.com",
-            enabled = false,
             roles = listOf(Role.USER)
         )
 
@@ -345,7 +343,6 @@ class UserServiceTest {
             emailConfirmed = false,
             enabled = true,
             hasAvatar = false,
-            avatarId = null,
             managedBySso = false,
             roles = listOf(Role.USER)
         )
@@ -383,7 +380,6 @@ class UserServiceTest {
             emailConfirmed = true,
             enabled = true,
             hasAvatar = false,
-            avatarId = null,
             managedBySso = true,
             roles = listOf(Role.USER)
         )
@@ -437,7 +433,6 @@ class UserServiceTest {
             id = 1L,
             username = "testuser",
             email = "test@example.com",
-            avatar = null,
             roles = listOf(Role.USER)
         )
 
@@ -495,7 +490,6 @@ class UserServiceTest {
             id = 1L,
             username = "testuser",
             email = "test@example.com",
-            avatar = null,
             roles = listOf(Role.USER)
         )
 
@@ -533,7 +527,6 @@ class UserServiceTest {
             id = 1L,
             username = "testuser",
             email = "test@example.com",
-            avatar = null,
             roles = listOf(Role.USER)
         )
 
@@ -589,7 +582,6 @@ class UserServiceTest {
         val user = User(
             id = 1L,
             username = "oidcuser",
-            password = null,
             email = "oidc@example.com",
             oidcProviderId = "oidc123",
             roles = listOf(Role.USER)
@@ -993,7 +985,6 @@ class UserServiceTest {
             id = 1L,
             username = "testuser",
             email = "test@example.com",
-            enabled = false,
             roles = listOf(Role.USER)
         )
 
@@ -1039,7 +1030,9 @@ class UserServiceTest {
             roles = listOf(Role.USER)
         )
 
-        every { userRepository.findByUsername("testuser") } returns user
+        every { userRepository.findAllForDeletion() } returns listOf(
+            user, User(id = 2L, username = "superadmin", email = "admin@example.com", roles = listOf(Role.SUPERADMIN))
+        )
         every { userRepository.delete(user) } just Runs
 
         userService.deleteUser("testuser")
@@ -1064,5 +1057,27 @@ class UserServiceTest {
 
         assertFalse(result)
     }
-}
 
+    @Test
+    fun `deleteUser must reject deleting the last Superadmin`() {
+        val user = User(id = 1L, username = "admin", email = "admin@example.com", roles = listOf(Role.SUPERADMIN))
+        every { userRepository.findAllForDeletion() } returns listOf(user)
+
+        val error = assertThrows(IllegalStateException::class.java) { userService.deleteUser("admin") }
+
+        assertTrue(error.message!!.contains("last Superadmin"))
+        verify(exactly = 0) { userRepository.delete(any()) }
+    }
+
+    @Test
+    fun `deleteUser allows deleting a Superadmin when another remains`() {
+        val user = User(id = 1L, username = "admin", email = "admin@example.com", roles = listOf(Role.SUPERADMIN))
+        val other = User(id = 2L, username = "other", email = "other@example.com", roles = listOf(Role.SUPERADMIN))
+        every { userRepository.findAllForDeletion() } returns listOf(user, other)
+        every { userRepository.delete(user) } just Runs
+
+        userService.deleteUser("admin")
+
+        verify(exactly = 1) { userRepository.delete(user) }
+    }
+}

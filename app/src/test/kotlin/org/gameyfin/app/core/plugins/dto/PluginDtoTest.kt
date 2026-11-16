@@ -6,12 +6,7 @@ import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResultType
 import org.junit.jupiter.api.Test
 import org.pf4j.PluginState
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class PluginDtoTest {
 
@@ -68,16 +63,10 @@ class PluginDtoTest {
             types = emptyList(),
             name = "Test Plugin",
             description = "Test Description",
-            shortDescription = null,
             version = "1.0.0",
             author = "Test Author",
-            license = null,
-            url = null,
             hasLogo = false,
             state = PluginState.CREATED,
-            configMetadata = null,
-            config = null,
-            configValidation = null,
             priority = 1,
             trustLevel = PluginTrustLevel.UNKNOWN
         )

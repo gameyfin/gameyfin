@@ -1,8 +1,10 @@
 import {proxy, subscribe} from "valtio/index";
 import {toast} from "@heroui/react";
 import {PluginMarketplaceEndpoint} from "Frontend/generated/endpoints";
-import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
-import PluginMarketplaceDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/PluginMarketplaceDto";
+import MarketplacePluginDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
+import PluginMarketplaceDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/PluginMarketplaceDto";
 import MarketplacePluginStatus
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginStatus";
 import PluginMarketplaceCreateDto
@@ -77,6 +79,7 @@ async function withPending(pluginId: string, action: () => Promise<TaskRunDto>):
         trackRun(run);
         // Keep the controls pending after the request returns, until the background work finishes.
         const unsubscribe = subscribe(taskState.runs, checkFinished);
+
         function checkFinished() {
             const current = taskState.runs[run.id];
             if (!current || isRunActive(current)) return;
@@ -87,6 +90,7 @@ async function withPending(pluginId: string, action: () => Promise<TaskRunDto>):
                 delete marketplaceState.pending[pluginId];
             });
         }
+
         checkFinished();
         return run;
     } catch (e) {

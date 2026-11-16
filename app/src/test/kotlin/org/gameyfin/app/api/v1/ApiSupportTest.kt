@@ -1,5 +1,6 @@
 package org.gameyfin.app.api.v1
 
+import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.games.entities.Company
@@ -18,7 +19,6 @@ import java.net.URI
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.*
-import org.gameyfin.app.api.v1.dto.*
 
 class ApiSupportTest {
     @Test
@@ -62,7 +62,13 @@ class ApiSupportTest {
         val game = Game(
             id = 9, createdAt = created, updatedAt = created, library = library,
             platforms = mutableListOf(Platform.entries.first()), title = "Title",
-            coverImage = Image(id = 1, type = ImageType.COVER, mimeType = "image/png", contentLength = 10),
+            coverImage = Image(
+                id = 1,
+                type = ImageType.COVER,
+                mimeType = "image/png",
+                contentLength = 10,
+                blurhash = "cover-hash"
+            ),
             headerImage = Image(id = 2, type = ImageType.HEADER),
             comment = "Comment", summary = "Summary", release = Instant.parse("2020-05-06T23:00:00Z"),
             userRating = 80, criticRating = 70,
@@ -71,7 +77,7 @@ class ApiSupportTest {
             genres = listOf(Genre.entries.first()), themes = listOf(Theme.entries.first()),
             keywords = listOf("keyword"), features = listOf(GameFeature.entries.first()),
             perspectives = listOf(PlayerPerspective.entries.first()),
-            images = mutableListOf(Image(id = 3, type = ImageType.SCREENSHOT)),
+            images = mutableListOf(Image(id = 3, type = ImageType.SCREENSHOT, blurhash = "gallery-hash")),
             videoUrls = listOf(URI("https://video.test/1")),
             metadata = GameMetadata(
                 "/private/path", fileSize = 1234,
@@ -91,8 +97,10 @@ class ApiSupportTest {
         assertEquals(listOf(Theme.entries.first().name), public.themes)
         assertEquals(listOf(GameFeature.entries.first().name), public.features)
         assertEquals(listOf(PlayerPerspective.entries.first().name), public.perspectives)
-        assertEquals(ImageV1("1", "/v1/games/9/images/1", "image/png", 10), public.cover)
-        assertEquals("/v1/games/9/images/2", public.header!!.url)
+        assertEquals(ImageV1("1", "/v1/games/9/images/1", "image/png", 10, "cover-hash"), public.cover)
+        assertNull(public.header!!.blurhash)
+        assertEquals("gallery-hash", public.images.single().blurhash)
+        assertEquals("/v1/games/9/images/2", public.header.url)
         assertEquals(listOf("3"), public.images.map { it.id })
         assertEquals(listOf("https://video.test/1"), public.videoUrls)
         assertEquals(listOf("image", "video"), public.mediaOrder)
@@ -150,7 +158,7 @@ class ApiSupportTest {
         assertEquals(CollectionPatchV1(), CollectionPatchV1(name = null))
         assertEquals(
             UserV1("1", "user", false, null),
-            UserV1("1", "user", false, null, null, null, null, null, null)
+            UserV1("1", "user", false, null, null, null, null, null)
         )
         assertEquals(setOf("games:read"), MeV1("1", "user", setOf("games:read")).permissions)
     }

@@ -1,7 +1,9 @@
 package org.gameyfin.app.games
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.mockk.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.games.repositories.ImageRepository
 import org.gameyfin.app.media.FileStorageService
@@ -18,10 +20,14 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
 import javax.imageio.ImageIO
-import kotlin.test.*
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class GameMediaStorageTest {
-    @TempDir lateinit var directory: Path
+    @TempDir
+    lateinit var directory: Path
 
     @AfterEach
     fun cleanup() {
@@ -35,9 +41,14 @@ class GameMediaStorageTest {
         val cache = Caffeine.newBuilder().build<Long, Image>()
         val service = ImageService(repository, storage, mockk(), mockk(), cache)
         every { repository.save(any<Image>()) } answers { firstArg<Image>().apply { id = 1 } }
-        val bytes = ByteArrayOutputStream().also { ImageIO.write(BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "png", it) }.toByteArray()
+        val bytes =
+            ByteArrayOutputStream().also { ImageIO.write(BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), "png", it) }
+                .toByteArray()
 
-        for (status in listOf(TransactionSynchronization.STATUS_COMMITTED, TransactionSynchronization.STATUS_ROLLED_BACK)) {
+        for (status in listOf(
+            TransactionSynchronization.STATUS_COMMITTED,
+            TransactionSynchronization.STATUS_ROLLED_BACK
+        )) {
             TransactionSynchronizationManager.initSynchronization()
             val image = service.createFromInputStream(ImageType.SCREENSHOT, bytes.inputStream(), "image/png")
             assertTrue(storage.fileExists(image.contentId))
@@ -59,7 +70,8 @@ class GameMediaStorageTest {
         TransactionSynchronizationManager.initSynchronization()
         service.createOrGet(Image(originalUrl = "https://example.com/unavailable.png", type = ImageType.COVER))
         assertNotNull(cache.getIfPresent(1))
-        TransactionSynchronizationManager.getSynchronizations().forEach { it.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK) }
+        TransactionSynchronizationManager.getSynchronizations()
+            .forEach { it.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK) }
         assertNull(cache.getIfPresent(1))
     }
 
@@ -71,7 +83,8 @@ class GameMediaStorageTest {
         val storage = FileStorageService(directory.toString())
         val cache = Caffeine.newBuilder().build<Long, Image>()
         val service = ImageService(repository, storage, games, users, cache)
-        val image = Image(id = 1, type = ImageType.SCREENSHOT, contentId = storage.saveFile(byteArrayOf(1, 2, 3).inputStream()))
+        val image =
+            Image(id = 1, type = ImageType.SCREENSHOT, contentId = storage.saveFile(byteArrayOf(1, 2, 3).inputStream()))
         every { games.existsByImage(1) } returns true
         service.deleteImageIfUnused(image)
         assertTrue(storage.fileExists(image.contentId))

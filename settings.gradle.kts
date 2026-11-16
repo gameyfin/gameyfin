@@ -11,11 +11,12 @@ pluginManagement {
         id("io.spring.dependency-management") version extra["springDependencyManagementVersion"] as String
         id("com.google.devtools.ksp") version extra["kspVersion"] as String
         id("org.sonarqube") version extra["sonarVersion"] as String
+        id("com.vanniktech.maven.publish") version extra["mavenPublishVersion"] as String
         kotlin("jvm") version extra["kotlinVersion"] as String
         kotlin("plugin.spring") version extra["kotlinVersion"] as String
         kotlin("plugin.jpa") version extra["kotlinVersion"] as String
         kotlin("plugin.serialization") version extra["kotlinVersion"] as String
-        kotlin("kapt") version "2.4.10"
+        kotlin("kapt") version "2.4.21"
     }
 }
 

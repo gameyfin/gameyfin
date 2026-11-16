@@ -2,19 +2,17 @@ import {Autoplay, Navigation} from 'swiper/modules';
 import type {Swiper as SwiperInstance} from 'swiper';
 import {Swiper, SwiperSlide} from "swiper/react";
 import {Card, Modal, useOverlayState} from "@heroui/react";
-import ReactPlayerModule from 'react-player';
+import VideoPlayer from "Frontend/components/general/covers/VideoPlayer";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/autoplay";
 import {useMemo, useRef, useState} from "react";
-import {CaretLeftIcon, CaretRightIcon, IconContext, PlayIcon} from "@phosphor-icons/react";
+import {CaretLeftIcon, CaretRightIcon, IconContext} from "@phosphor-icons/react";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 import {orderMedia} from "Frontend/util/mediaOrder";
 
-// Depending on the bundler interop the default import may be the module namespace.
-const ReactPlayer = ((ReactPlayerModule as any).default ?? ReactPlayerModule) as typeof ReactPlayerModule;
 
 export interface CarouselImage {
     url: string;
@@ -44,7 +42,7 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
         blurhash?: string;
     }
 
-    const DEFAULT_SLIDES_PER_VIEW = 3;
+    const MAX_SLIDES_PER_VIEW = 3;
 
     const swiperRef = useRef<SwiperInstance | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -66,9 +64,7 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
     }, [images, videosUrls, mediaOrder]);
 
     const canLoop = elements.length > 1;
-    // Centered loop mode needs the visible slides plus a buffer on either side.
-    // Repeat complete sequences so wrapping preserves the original media order.
-    const minimumLoopSlides = DEFAULT_SLIDES_PER_VIEW + Math.ceil(DEFAULT_SLIDES_PER_VIEW / 2);
+    const minimumLoopSlides = MAX_SLIDES_PER_VIEW + Math.ceil(MAX_SLIDES_PER_VIEW / 2);
     const slides = canLoop && elements.length < minimumLoopSlides
         ? Array.from({length: Math.ceil(minimumLoopSlides / elements.length)}, () => elements).flat()
         : elements;
@@ -84,11 +80,15 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                 <div className="w-full flex flex-col gap-2 items-center">
                     <div className="w-full flex flex-row items-center">
                         <IconContext.Provider value={{size: 50}}>
-                            <CaretLeftIcon className={`swiper-custom-button-prev cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
+                            <CaretLeftIcon
+                                className={`swiper-custom-button-prev cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
                             <Swiper
                                 key={JSON.stringify(elements)}
                                 modules={[Navigation, Autoplay]}
-                                slidesPerView={DEFAULT_SLIDES_PER_VIEW}
+                                slidesPerView={1}
+                                breakpoints={{
+                                    960: {slidesPerView: MAX_SLIDES_PER_VIEW}
+                                }}
                                 onSwiper={(swiper) => {
                                     swiperRef.current = swiper;
                                     setActiveIndex(swiper.realIndex % elements.length);
@@ -126,22 +126,7 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                                             return (
                                                 <Card
                                                     className={`w-full h-full aspect-video p-0 rounded-xl overflow-hidden transition-transform duration-300 ease-in-out ${!isActive ? "scale-90" : ""}`}>
-                                                    <ReactPlayer
-                                                        src={e.url}
-                                                        width="100%"
-                                                        height="100%"
-                                                        light={true}
-                                                        controls={true}
-                                                        playing={isActive}
-                                                        playIcon={<PlayIcon weight="fill"/>}
-                                                        config={{
-                                                            youtube: {
-                                                                // Apply the policy to the iframe, not the ReactPlayer wrapper.
-                                                                referrerpolicy: "strict-origin-when-cross-origin",
-                                                                origin: window.location.origin
-                                                            }
-                                                        }}
-                                                    />
+                                                    <VideoPlayer src={e.url} playing={isActive}/>
                                                 </Card>
                                             )
                                         }}
@@ -152,11 +137,13 @@ export default function ImageCarousel({images, videosUrls, mediaOrder, className
                                             onOpenChange={imagePopup.setOpen}
                                             onClose={imagePopup.close}/>
                             </Swiper>
-                            <CaretRightIcon className={`swiper-custom-button-next cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
+                            <CaretRightIcon
+                                className={`swiper-custom-button-next cursor-pointer fill-accent ${!canLoop ? "invisible" : ""}`}/>
                         </IconContext.Provider>
                     </div>
                     <div>
-                        <div className="swiper-custom-pagination swiper-pagination-bullets swiper-pagination-clickable swiper-pagination-horizontal">
+                        <div
+                            className="swiper-custom-pagination swiper-pagination-bullets swiper-pagination-clickable swiper-pagination-horizontal">
                             {elements.map((_, index) => (
                                 <button
                                     key={index}

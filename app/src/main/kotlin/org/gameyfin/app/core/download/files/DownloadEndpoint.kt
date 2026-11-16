@@ -35,61 +35,59 @@ class DownloadEndpoint(
         @RequestParam provider: String,
         request: HttpServletRequest
     ): DeferredResult<ResponseEntity<StreamingResponseBody>> {
+        val username = getCurrentAuth()?.name
         val deferredResult = DeferredResult<ResponseEntity<StreamingResponseBody>>()
 
         downloadExecutor.execute {
             try {
-                val game = gameService.getById(gameId)
-                gameService.incrementDownloadCount(game)
-                val sessionId = request.session.id
-                val remoteIp = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
+                val result =
+                    GameDownloadLifecycle.prepare(gameId, request, { gameService.getById(gameId) }) { game, lifetime ->
+                        val sessionId = request.session.id
+                        val remoteIp = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
 
-                val result = when (val download = downloadService.getDownload(game.metadata.path, provider)) {
-                    is FileDownload -> {
-                        val baseFilename =
-                            game.title?.replace("[\\\\/:*?\"<>|]".toRegex(), "") // Remove common invalid filename chars
-                                ?: "download"
+                        val baseFilename = game.title?.replace("[\\\\/:*?\"<>|\r\n]".toRegex(), "")
+                            ?.ifBlank { "download" } ?: "download"
 
-                        val filename = if (download.fileExtension != null) {
-                            "$baseFilename.${download.fileExtension}"
-                        } else {
-                            baseFilename
+                        fun disposition(extension: String?) = createContentDispositionHeader(
+                            baseFilename + (extension?.let { ".$it" } ?: "")
+                        )
+
+                        val onStart = { lifetime.whileActive { gameService.incrementDownloadCount(game) }; }
+                        val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
+                            downloadService.processDownload(input, output, game, username, sessionId, remoteIp)
                         }
-
-                        val responseBuilder = ResponseEntity.ok()
-                            .header(
-                                "Content-Disposition",
-                                createContentDispositionHeader(filename)
+                        val resource = downloadService.getRangeDownload(game.metadata.path, provider)
+                            ?.also { lifetime.own(it) }
+                        val result = if (resource != null) {
+                            DownloadResponses.range(
+                                resource,
+                                request,
+                                disposition(resource.metadata.fileExtension),
+                                onStart,
+                                transfer
                             )
-                            .header(
-                                "Content-Type",
-                                "application/octet-stream"
+                        } else if (request.method == "HEAD") {
+                            val metadata = downloadService.describeDownload(game.metadata.path, provider)
+                            DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
+                        } else when (val download = downloadService.getDownload(game.metadata.path, provider)) {
+                            is FileDownload -> DownloadResponses.file(
+                                download.also { lifetime.own(it.data) },
+                                request,
+                                disposition(download.fileExtension),
+                                onStart,
+                                transfer
                             )
 
-                        val downloadSize = download.size
-                        if (downloadSize != null) {
-                            responseBuilder.contentLength(downloadSize)
+                            is LinkDownload -> {
+                                val response = DownloadResponses.link(download, request)
+                                onStart()
+                                response
+                            }
                         }
-
-                        responseBuilder.body(StreamingResponseBody { outputStream ->
-                            downloadService.processDownload(
-                                download.data,
-                                outputStream,
-                                game,
-                                getCurrentAuth()?.name,
-                                sessionId,
-                                remoteIp
-                            )
-                        })
+                        result
                     }
-
-                    is LinkDownload -> {
-                        TODO("Handle download link")
-                    }
-                }
-
-                @Suppress("UsePropertyAccessSyntax")
-                deferredResult.setResult(result)
+                deferredResult.onCompletion { (result.body as? java.io.Closeable)?.close() }
+                if (!deferredResult.setResult(result)) (result.body as? java.io.Closeable)?.close()
             } catch (e: Exception) {
                 deferredResult.setErrorResult(e)
             }

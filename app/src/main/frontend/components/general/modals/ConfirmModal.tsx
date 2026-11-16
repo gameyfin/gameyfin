@@ -28,7 +28,7 @@ export default function ConfirmModal({
                             onOpenChange={(open) => !isPending && onOpenChange(open)}
                             variant="opaque"
                             isDismissable={!isPending}>
-                <Modal.Container size="lg">
+                <Modal.Container size="md" placement="center">
                     <Modal.Dialog>
                         {({close}) => (
                             <>

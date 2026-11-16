@@ -12,8 +12,8 @@ import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.FileDownload
+import org.gameyfin.pluginapi.download.LinkDownload
 import org.pf4j.Extension
-import org.slf4j.LoggerFactory
 import java.net.InetAddress
 import java.net.URI
 import java.nio.file.Files
@@ -107,11 +107,9 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
         ConfigMetadata(
             key = "diskIoMode",
             label = "Disk I/O Mode (Linux/macOS)",
-            description = "POSIX reopens files for every block and is slow on network storage. " +
-                    "Memory-mapped is much faster but requires the JVM to run with signal chaining " +
-                    "(LD_PRELOAD=/opt/java/openjdk/lib/libjsig.so), otherwise Gameyfin will crash.",
+            description = "POSIX reopens files for every block and is slow on network storage.\nMemory-mapped is much faster but can crash on certain systems.",
             type = TorrentDiskIoMode::class.java,
-            default = TorrentDiskIoMode.POSIX
+            default = TorrentDiskIoMode.`Memory-mapped`
         ),
         ConfigMetadata(
             key = "externalHost",
@@ -170,20 +168,19 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
                     metadata.gameFile.getLastModifiedTime().toInstant()
                         .isAfter(metadata.torrentFile.getLastModifiedTime().toInstant())
 
-            if (shouldRemove) {
+            shouldRemove || try {
+                // These torrents were created from the files on disk: seed them without a
+                // full re-check, which on large games or network storage can take hours and
+                // blocks seeding of every other torrent in the meantime.
+                client?.addTorrent(metadata.torrentFile, metadata.gameFile, seedMode = true)
+                false
+            } catch (e: Exception) {
+                log.error("Failed to add torrent ${metadata.torrentFile} to session", e)
                 true
-            } else {
-                try {
-                    // These torrents were created from the files on disk: seed them without a
-                    // full re-check, which on large games or network storage can take hours and
-                    // blocks seeding of every other torrent in the meantime.
-                    client?.addTorrent(metadata.torrentFile, metadata.gameFile, seedMode = true)
-                    false
-                } catch (e: Exception) {
-                    log.error("Failed to add torrent ${metadata.torrentFile} to session", e)
-                    true
-                }
             }
+            // These torrents were created from the files on disk: seed them without a
+            // full re-check, which on large games or network storage can take hours and
+            // blocks seeding of every other torrent in the meantime.
         }
 
         saveState(state)
@@ -229,22 +226,20 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
         val errors = mutableMapOf<String, String>()
 
         // Plugin is not compatible with Alpine Docker images due to missing glibc
-        if (System.getenv("RUNTIME_ENV") == "docker") {
-            if (getContainerOS() == "alpine") {
-                errors["stopSeedingWhenComplete"] = " "
-                errors["privateMode"] = " "
-                errors["dhtEnabled"] = " "
-                errors["lsdEnabled"] = " "
-                errors["torrentVersions"] = " "
-                errors["performanceMode"] = " "
-                errors["diskIoMode"] = " "
-                errors["externalHost"] = " "
-                errors["listenPort"] = " "
-                errors["trackerPort"] = " "
-                errors["announceInterval"] =
-                    "The torrent plugin is not compatible with the Alpine-based Docker image. Please use the Ubuntu-based Docker image if you want to use the Torrent plugin."
-                return PluginConfigValidationResult.INVALID(errors)
-            }
+        if (System.getenv("RUNTIME_ENV") == "docker" && getContainerOS() == "alpine") {
+            errors["stopSeedingWhenComplete"] = " "
+            errors["privateMode"] = " "
+            errors["dhtEnabled"] = " "
+            errors["lsdEnabled"] = " "
+            errors["torrentVersions"] = " "
+            errors["performanceMode"] = " "
+            errors["diskIoMode"] = " "
+            errors["externalHost"] = " "
+            errors["listenPort"] = " "
+            errors["trackerPort"] = " "
+            errors["announceInterval"] =
+                "The torrent plugin is not compatible with the Alpine-based Docker image. Please use the Ubuntu-based Docker image if you want to use the Torrent plugin."
+            return PluginConfigValidationResult.INVALID(errors)
         }
 
         val configValidationResult = super.validateConfig(config)
@@ -349,7 +344,12 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
 
             synchronized(state) {
                 if (state.torrentFilesMetadata.none { it.torrentFile == torrentFile }) {
-                    state.torrentFilesMetadata.add(TorrentFileMetadata(torrentFile = torrentFile, gameFile = gameFilesPath))
+                    state.torrentFilesMetadata.add(
+                        TorrentFileMetadata(
+                            torrentFile = torrentFile,
+                            gameFile = gameFilesPath
+                        )
+                    )
                     saveState(state)
                 }
             }
@@ -421,28 +421,45 @@ class TorrentDownloadPlugin(context: PluginContext) : ConfigurableGameyfinPlugin
         return builderResult.entry().bencode()
     }
 
-    @Extension(ordinal = 2)
-    class TorrentDownloadProvider : DownloadProvider {
-        private val log = LoggerFactory.getLogger(TorrentDownloadProvider::class.java)
-
-        override fun download(path: Path): Download {
+    private fun <T : Download> preparedTorrent(path: Path, download: (Path) -> T): T {
+        val torrentFile = torrentFileFor(path)
+        return synchronized(lockFor(torrentFile)) {
             log.info("Providing torrent for '${path.name}'...")
 
             val (result, timeTaken) = measureTimedValue {
-                plugin.ensureTorrent(path)
+                ensureTorrent(path)
             }
-            val torrentFile = plugin.torrentFileFor(path)
 
             when (result) {
                 TorrentGenerationResult.UP_TO_DATE -> log.info("Using existing torrent '${torrentFile.name}'")
                 else -> log.info("Created torrent '${torrentFile.name}' in ${timeTaken.asHumanReadable()}")
             }
 
-            return FileDownload(
+            download(torrentFile)
+        }
+    }
+
+    @Extension(ordinal = 2)
+    class TorrentDownloadProvider : DownloadProvider {
+        override fun download(path: Path): Download = plugin.preparedTorrent(path) { torrentFile ->
+            FileDownload(
                 data = torrentFile.inputStream(),
                 fileExtension = "torrent",
                 size = torrentFile.fileSize()
             )
+        }
+    }
+
+    @Extension(ordinal = 1)
+    class MagnetDownloadProvider : DownloadProvider {
+        override val name = "Magnet Link"
+        override val description = "Open in your torrent client"
+        override val shortDescription = description
+
+        override fun download(path: Path): Download = plugin.preparedTorrent(path) { torrentFile ->
+            val magnet = TorrentInfo(torrentFile.toFile()).makeMagnetUri()
+            check(!magnet.isNullOrBlank()) { "Failed to generate magnet link for '${path.name}'" }
+            LinkDownload(magnet)
         }
     }
 }

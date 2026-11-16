@@ -16,6 +16,7 @@ export interface GameMetadataAdminDto {
 export interface GameFieldMetadataDto {
     type: GameFieldMetadataType;
     source: string;
+    sourceName?: string;
     updatedAt: string;
 }
 

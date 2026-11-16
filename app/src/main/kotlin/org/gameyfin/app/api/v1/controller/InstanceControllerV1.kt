@@ -2,15 +2,17 @@ package org.gameyfin.app.api.v1.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
 import org.gameyfin.app.api.v1.apiPage
 import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.api.v1.publicPage
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.tasks.TaskService
 import org.gameyfin.app.core.tasks.persistence.TaskRunEntry
 import org.gameyfin.app.core.tasks.persistence.TaskRunRepository
@@ -26,9 +28,13 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/v1")
 class InstanceControllerV1(
-    private val access: ApiAccess, private val environment: Environment,
-    private val build: ObjectProvider<BuildProperties>, private val health: HealthEndpoint,
-    private val tasks: TaskService, private val runs: TaskRunRepository
+    private val access: ApiAccess,
+    private val environment: Environment,
+    private val build: ObjectProvider<BuildProperties>,
+    private val health: HealthEndpoint,
+    private val tasks: TaskService,
+    private val runs: TaskRunRepository,
+    private val config: ConfigService
 ) {
 
     @GetMapping("/instance")
@@ -41,7 +47,17 @@ class InstanceControllerV1(
         val properties = build.ifAvailable
         return InstanceV1(
             properties?.version ?: environment.getProperty("spring.application.version", "unknown"),
-            properties?.time, properties?.get("git.commit")?.takeUnless { it.isBlank() || it == "unknown" })
+            properties?.time, properties?.get("git.commit")?.takeUnless { it.isBlank() || it == "unknown" },
+            InstanceFeaturesV1(
+                FeatureV1(config.get(ConfigProperties.SSO.OIDC.Enabled) == true),
+                FeatureV1(config.get(ConfigProperties.Security.AllowPublicAccess) == true),
+                GameRequestSettingsV1(
+                    config.get(ConfigProperties.Requests.Games.Enabled) == true,
+                    config.get(ConfigProperties.Requests.Games.AllowGuestsToRequestGames) == true,
+                    config.get(ConfigProperties.Requests.Games.MaxOpenRequestsPerUser) ?: 0
+                )
+            )
+        )
     }
 
     @GetMapping("/health")

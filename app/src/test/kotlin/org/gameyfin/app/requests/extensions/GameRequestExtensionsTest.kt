@@ -34,7 +34,7 @@ class GameRequestExtensionsTest {
 
     @Test
     fun `toDto should handle null requester`() {
-        val gameRequest = createTestGameRequest(1L, "Guest Game", null)
+        val gameRequest = createTestGameRequest(1L, "Guest Game")
 
         val dto = gameRequest.toDto()
 
@@ -45,7 +45,7 @@ class GameRequestExtensionsTest {
 
     @Test
     fun `toDto should handle null release date`() {
-        val gameRequest = createTestGameRequest(1L, "No Release Game", null, null)
+        val gameRequest = createTestGameRequest(1L, "No Release Game", release = null)
 
         val dto = gameRequest.toDto()
 
@@ -115,9 +115,7 @@ class GameRequestExtensionsTest {
                 release = Instant.parse("2024-01-01T00:00:00Z"),
                 platform = platform,
                 status = GameRequestStatus.PENDING,
-                requester = null,
                 voters = mutableSetOf(),
-                linkedGameId = null,
                 createdAt = Instant.now(),
                 updatedAt = Instant.now()
             )
@@ -167,7 +165,7 @@ class GameRequestExtensionsTest {
     fun `toDtos should convert multiple items collection`() {
         val user = createTestUser(1L, "testuser")
         val request1 = createTestGameRequest(1L, "Game 1", user)
-        val request2 = createTestGameRequest(2L, "Game 2", null)
+        val request2 = createTestGameRequest(2L, "Game 2")
         val request3 = createTestGameRequest(3L, "Game 3", user)
         val collection = listOf(request1, request2, request3)
 
@@ -211,7 +209,7 @@ class GameRequestExtensionsTest {
         val user1 = createTestUser(1L, "user1")
         val user2 = createTestUser(2L, "user2")
         val request1 = createTestGameRequest(1L, "Game 1", user1)
-        val request2 = createTestGameRequest(2L, "Game 2", null)
+        val request2 = createTestGameRequest(2L, "Game 2")
         val request3 = createTestGameRequest(3L, "Game 3", user2)
         val collection = listOf(request1, request2, request3)
 
@@ -248,9 +246,7 @@ class GameRequestExtensionsTest {
             release = Instant.parse("2024-01-01T00:00:00Z"),
             platform = Platform.PC_MICROSOFT_WINDOWS,
             status = GameRequestStatus.PENDING,
-            requester = null,
             voters = mutableSetOf(),
-            linkedGameId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -260,9 +256,7 @@ class GameRequestExtensionsTest {
             release = Instant.parse("2024-01-01T00:00:00Z"),
             platform = Platform.PLAYSTATION_5,
             status = GameRequestStatus.PENDING,
-            requester = null,
             voters = mutableSetOf(),
-            linkedGameId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -272,9 +266,7 @@ class GameRequestExtensionsTest {
             release = Instant.parse("2024-01-01T00:00:00Z"),
             platform = Platform.NINTENDO_SWITCH,
             status = GameRequestStatus.PENDING,
-            requester = null,
             voters = mutableSetOf(),
-            linkedGameId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -322,7 +314,6 @@ class GameRequestExtensionsTest {
             status = GameRequestStatus.PENDING,
             requester = requester,
             voters = mutableSetOf(),
-            linkedGameId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )

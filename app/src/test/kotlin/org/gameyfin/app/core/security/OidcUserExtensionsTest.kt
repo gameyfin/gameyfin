@@ -45,7 +45,7 @@ class OidcUserExtensionsTest {
     @Test
     fun `returns preferred_username when it is configured and present`() {
         val user = oidcUser(preferredUsername = "alice")
-        assertEquals("alice", user.resolvedUsername("preferred_username"))
+        assertEquals("alice", user.resolvedUsername())
     }
 
     // ── configured attribute absent, fallback chain ───────────────────────────
@@ -62,20 +62,20 @@ class OidcUserExtensionsTest {
 
     @Test
     fun `falls back to name when preferred_username is absent`() {
-        val user = oidcUser(preferredUsername = null, name = "Alice Smith")
-        assertEquals("Alice Smith", user.resolvedUsername("preferred_username"))
+        val user = oidcUser(name = "Alice Smith")
+        assertEquals("Alice Smith", user.resolvedUsername())
     }
 
     @Test
     fun `falls back to email when preferred_username and name are absent`() {
-        val user = oidcUser(preferredUsername = null, name = null, email = "alice@example.com")
-        assertEquals("alice@example.com", user.resolvedUsername("preferred_username"))
+        val user = oidcUser(email = "alice@example.com")
+        assertEquals("alice@example.com", user.resolvedUsername())
     }
 
     @Test
     fun `falls back to sub when all other claims are absent`() {
-        val user = oidcUser(preferredUsername = null, name = null, email = null, subject = "sub-99")
-        assertEquals("sub-99", user.resolvedUsername("preferred_username"))
+        val user = oidcUser(subject = "sub-99")
+        assertEquals("sub-99", user.resolvedUsername())
     }
 
     // ── blank / empty strings are treated as absent ───────────────────────────
@@ -83,19 +83,19 @@ class OidcUserExtensionsTest {
     @Test
     fun `skips blank preferred_username and falls back to name`() {
         val user = oidcUser(preferredUsername = "   ", name = "Bob")
-        assertEquals("Bob", user.resolvedUsername("preferred_username"))
+        assertEquals("Bob", user.resolvedUsername())
     }
 
     @Test
     fun `skips empty preferred_username and falls back to name`() {
         val user = oidcUser(preferredUsername = "", name = "Bob")
-        assertEquals("Bob", user.resolvedUsername("preferred_username"))
+        assertEquals("Bob", user.resolvedUsername())
     }
 
     @Test
     fun `skips blank name and falls back to email`() {
-        val user = oidcUser(preferredUsername = null, name = "", email = "bob@example.com")
-        assertEquals("bob@example.com", user.resolvedUsername("preferred_username"))
+        val user = oidcUser(name = "", email = "bob@example.com")
+        assertEquals("bob@example.com", user.resolvedUsername())
     }
 
     // ── default parameter ─────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ class OidcUserExtensionsTest {
     fun `does not duplicate lookup when configured attribute is preferred_username`() {
         val user = oidcUser(preferredUsername = "dave")
         // should still work correctly without doubling up
-        assertEquals("dave", user.resolvedUsername("preferred_username"))
+        assertEquals("dave", user.resolvedUsername())
     }
 
     @Test

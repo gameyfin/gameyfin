@@ -54,10 +54,10 @@ process_titles() {
   done
 }
 
-while [ "$COLLECTED" -lt "$NUM_GAMES" ]; do
+while [[ "$COLLECTED" -lt "$NUM_GAMES" ]]; do
   REMAINING=$((NUM_GAMES - COLLECTED))
   LIMIT=$PAGE_SIZE
-  if [ "$REMAINING" -lt "$PAGE_SIZE" ]; then
+  if [[ "$REMAINING" -lt "$PAGE_SIZE" ]]; then
     LIMIT=$REMAINING
   fi
 
@@ -73,7 +73,7 @@ while [ "$COLLECTED" -lt "$NUM_GAMES" ]; do
   COLLECTED=$((COLLECTED + COUNT))
 
   # Stop if we've reached the last available page
-  if [ "$CURRENT_PAGE" -ge "$TOTAL_PAGES" ]; then
+  if [[ "$CURRENT_PAGE" -ge "$TOTAL_PAGES" ]]; then
     break
   fi
 

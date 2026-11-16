@@ -1,5 +1,6 @@
-import React from "react";
-import {LibraryEndpoint} from "Frontend/generated/endpoints";
+import React, {useState} from "react";
+import {GridList, Selection} from "react-aria-components";
+import {CollectionEndpoint, LibraryEndpoint} from "Frontend/generated/endpoints";
 import ScanType from "Frontend/generated/org/gameyfin/app/libraries/enums/ScanType";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
@@ -17,8 +18,12 @@ import {CollectionOverviewCard} from "Frontend/components/general/cards/Collecti
 import CollectionCreationModal from "Frontend/components/general/modals/CollectionCreationModal";
 import CollectionPrioritiesModal from "Frontend/components/general/modals/CollectionPrioritiesModal";
 import {pluginState} from "Frontend/state/PluginState";
+import UploadGameButton from "Frontend/components/general/modals/UploadGameButton";
+import BulkDeleteButton from "Frontend/components/general/BulkDeleteButton";
 
 function GameManagementLayout({getConfig, formik}: any) {
+    const [selectedLibraries, setSelectedLibraries] = useState<Selection>(new Set());
+    const [selectedCollections, setSelectedCollections] = useState<Selection>(new Set());
     const libraries = useSnapshot(libraryState);
     const libraryCreationModal = useOverlayState();
     const libraryOrderModal = useOverlayState();
@@ -35,9 +40,16 @@ function GameManagementLayout({getConfig, formik}: any) {
 
     return (
         <div className="flex flex-col">
-            <div className="flex flex-row items-baseline justify-between">
+            <div className="flex flex-wrap gap-3 items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
                 <div className="flex flex-row gap-2">
+                    <BulkDeleteButton entityLabel="libraries"
+                                      selectedItems={libraries.sorted.filter(item => selectedLibraries === "all" || selectedLibraries.has(item.id))}
+                                      deleteItem={id => LibraryEndpoint.deleteLibrary(id)}
+                                      onStarted={ids => setSelectedLibraries(current => new Set(
+                                          libraries.sorted.filter(item => (current === "all" || current.has(item.id)) && !ids.includes(item.id))
+                                              .map(item => item.id)
+                                      ))}/>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
                             <Button isIconOnly variant="ghost"
@@ -87,18 +99,28 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {libraries.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <div id="library-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
+                <GridList id="library-cards" aria-label="Libraries" layout="grid"
+                          selectionMode="multiple" selectionBehavior="toggle"
+                          selectedKeys={selectedLibraries} onSelectionChange={setSelectedLibraries}
+                          className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {libraries.sorted.map((library) =>
                         // @ts-ignore
-                        <LibraryOverviewCard library={library} key={library.name}/>
+                        <LibraryOverviewCard library={library} key={library.id}/>
                     )}
-                </div> :
+                </GridList> :
                 <p className="mt-4 text-center text-muted">No libraries found</p>
             }
 
-            <div className="flex flex-row items-baseline justify-between">
+            <div className="flex flex-wrap gap-3 items-baseline justify-between">
                 <h2 className="text-xl font-bold mt-8 mb-1">Collections</h2>
                 <div className="flex flex-row gap-2">
+                    <BulkDeleteButton entityLabel="collections"
+                                      selectedItems={collections.sorted.filter(item => selectedCollections === "all" || selectedCollections.has(item.id))}
+                                      deleteItem={id => CollectionEndpoint.deleteCollection(id)}
+                                      onStarted={ids => setSelectedCollections(current => new Set(
+                                          collections.sorted.filter(item => (current === "all" || current.has(item.id)) && !ids.includes(item.id))
+                                              .map(item => item.id)
+                                      ))}/>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
                             <Button isIconOnly variant="ghost" onPress={collectionOrderModal.open}>
@@ -124,12 +146,15 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {collections.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <div id="collection-cards" className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(353px,1fr))]">
+                <GridList id="collection-cards" aria-label="Collections" layout="grid"
+                          selectionMode="multiple" selectionBehavior="toggle"
+                          selectedKeys={selectedCollections} onSelectionChange={setSelectedCollections}
+                          className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {collections.sorted.map((collection) =>
                         // @ts-ignore
-                        <CollectionOverviewCard collection={collection} key={collection.name}/>
+                        <CollectionOverviewCard collection={collection} key={collection.id}/>
                     )}
-                </div> :
+                </GridList> :
                 <p className="mt-4 text-center text-muted">No collections found</p>
             }
 
@@ -137,8 +162,8 @@ function GameManagementLayout({getConfig, formik}: any) {
             <div className="flex flex-col gap-4">
                 <ConfigFormField configElement={getConfig("library.scan.enable-filesystem-watcher")}/>
                 <ConfigFormField configElement={getConfig("library.scan.scan-empty-directories")}/>
-                <div className="flex flex-row gap-4 items-start">
-                    <ConfigFormField className="pt-8"
+                <div className="flex flex-col xl:flex-row gap-4 items-start">
+                    <ConfigFormField className="xl:pt-8"
                                      configElement={getConfig("library.scan.extract-title-using-regex")}/>
                     <ConfigFormField configElement={getConfig("library.scan.title-extraction-regex")}
                                      isDisabled={!formik.values.library.scan["extract-title-using-regex"]}/>
@@ -190,4 +215,4 @@ const validationSchema = Yup.object({
     })
 });
 
-export const GameManagement = withConfigPage(GameManagementLayout, "Games", validationSchema);
+export const GameManagement = withConfigPage(GameManagementLayout, "Games", validationSchema, <UploadGameButton/>);

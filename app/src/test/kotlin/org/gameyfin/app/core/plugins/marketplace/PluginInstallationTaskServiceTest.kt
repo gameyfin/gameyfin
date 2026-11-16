@@ -3,8 +3,11 @@ package org.gameyfin.app.core.plugins.marketplace
 import io.mockk.every
 import io.mockk.mockk
 import org.gameyfin.app.core.plugins.dto.PluginDto
-import org.gameyfin.app.core.tasks.*
+import org.gameyfin.app.core.tasks.TaskRegistry
+import org.gameyfin.app.core.tasks.TaskRunService
+import org.gameyfin.app.core.tasks.TaskRunStatus
 import org.gameyfin.app.core.tasks.dto.TaskRunDto
+import org.gameyfin.app.core.tasks.inMemoryTaskRunRepository
 import org.gameyfin.app.core.tasks.persistence.TaskRunEntry
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach

@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import {PlugIcon} from "@phosphor-icons/react";
-import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
+import MarketplacePluginDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 
 interface MarketplacePluginLogoProps {
     plugin: MarketplacePluginDto;

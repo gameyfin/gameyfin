@@ -1,6 +1,7 @@
 package org.gameyfin.app.libraries
 
 import io.mockk.*
+import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
@@ -24,6 +25,7 @@ class LibraryCoreServiceTest {
     private lateinit var libraryCoreService: LibraryCoreService
     private lateinit var ignoredPathRepository: IgnoredPathRepository
     private lateinit var userService: UserService
+    private lateinit var filesystemService: FilesystemService
     private lateinit var pluginService: PluginService
 
     @BeforeEach
@@ -33,13 +35,15 @@ class LibraryCoreServiceTest {
         ignoredPathRepository = mockk()
         userService = mockk()
         pluginService = mockk()
+        filesystemService = mockk(relaxed = true)
 
         libraryCoreService = LibraryCoreService(
             libraryRepository,
             gameService,
             ignoredPathRepository,
             userService,
-            pluginService
+            pluginService,
+            filesystemService
         )
     }
 
@@ -58,7 +62,7 @@ class LibraryCoreServiceTest {
         val library = createTestLibrary(games = mutableListOf(existingGame))
         val gamesToAdd = listOf(existingGame, newGame1, newGame2)
 
-        val result = libraryCoreService.addGamesToLibrary(gamesToAdd, library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(gamesToAdd, library)
 
         assertEquals(3, result.games.size)
         assertTrue(result.games.contains(existingGame))
@@ -81,7 +85,7 @@ class LibraryCoreServiceTest {
 
         every { libraryRepository.save(library) } returns library
 
-        val result = libraryCoreService.addGamesToLibrary(listOf(game1, game2), library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(listOf(game1, game2), library)
 
         assertEquals(1, result.ignoredPaths.size)
         assertTrue(result.ignoredPaths.map { it.path }.contains("/path/other"))
@@ -98,7 +102,7 @@ class LibraryCoreServiceTest {
 
         every { libraryRepository.save(library) } returns library
 
-        libraryCoreService.addGamesToLibrary(listOf(game), library, persist = false)
+        libraryCoreService.addGamesToLibrary(listOf(game), library)
 
         verify(exactly = 1) { libraryRepository.save(library) }
     }
@@ -120,7 +124,7 @@ class LibraryCoreServiceTest {
         val game = createTestGame(1L, "/path/game1")
         val library = createTestLibrary()
 
-        libraryCoreService.addGamesToLibrary(listOf(game), library, persist = false)
+        libraryCoreService.addGamesToLibrary(listOf(game), library)
 
         verify(exactly = 0) { libraryRepository.save(any()) }
     }
@@ -130,7 +134,7 @@ class LibraryCoreServiceTest {
         val library = createTestLibrary()
         val initialGamesSize = library.games.size
 
-        val result = libraryCoreService.addGamesToLibrary(emptyList(), library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(emptyList(), library)
 
         assertEquals(initialGamesSize, result.games.size)
     }
@@ -142,7 +146,7 @@ class LibraryCoreServiceTest {
 
         val library = createTestLibrary(games = mutableListOf(existingGame))
 
-        val result = libraryCoreService.addGamesToLibrary(listOf(duplicateGame), library, persist = false)
+        val result = libraryCoreService.addGamesToLibrary(listOf(duplicateGame), library)
 
         assertEquals(1, result.games.size)
         assertEquals(existingGame, result.games[0])
@@ -164,6 +168,7 @@ class LibraryCoreServiceTest {
         libraryCoreService.deleteGameFromLibrary(gameId)
 
         assertEquals(0, library.games.size)
+        verify(exactly = 0) { filesystemService.deleteGameFiles(any(), any()) }
         verify(exactly = 1) { libraryRepository.save(library) }
     }
 
@@ -203,6 +208,25 @@ class LibraryCoreServiceTest {
 
         assertEquals(1, library.games.size)
         assertEquals(game2, library.games[0])
+    }
+
+    @Test
+    fun `requested file deletion happens before removing game from library`() {
+        val library = createTestLibrary()
+        val game = createTestGame(1L, "/path/game1", library)
+        library.games.add(game)
+        every { gameService.getById(1L) } returns game
+        every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath("/path/game1") } returns null
+        every { pluginService.getPluginManagementEntries(any()) } returns emptyList()
+        every { filesystemService.deleteGameFiles("/path/game1", library) } answers {
+            assertTrue(library.games.contains(game))
+        }
+
+        libraryCoreService.deleteGameFromLibrary(1L, true)
+
+        assertTrue(library.games.isEmpty())
+        verify(exactly = 1) { filesystemService.deleteGameFiles("/path/game1", library) }
     }
 
     private fun createTestGame(id: Long, path: String, library: Library? = null): Game {

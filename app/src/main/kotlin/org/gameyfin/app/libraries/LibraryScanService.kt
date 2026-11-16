@@ -137,6 +137,10 @@ class LibraryScanService(
     }
 
     private fun runQueuedScan(libraryId: Long, scanType: ScanType) {
+        LibraryOperationLock.withLibrary(libraryId) { runScan(libraryId, scanType) }
+    }
+
+    private fun runScan(libraryId: Long, scanType: ScanType) {
         val trigger = requestedTriggers.remove(libraryId) ?: TaskTrigger.MANUAL
         // Follow-up scans must use current library contents, not the previous scan's entity graph.
         val library = libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) ?: return

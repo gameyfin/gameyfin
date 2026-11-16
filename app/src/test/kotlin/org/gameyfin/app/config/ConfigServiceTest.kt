@@ -19,12 +19,42 @@ class ConfigServiceTest {
     private lateinit var configRepository: ConfigRepository
     private lateinit var objectMapper: ObjectMapper
     private lateinit var configService: ConfigService
+    private val publisher = mockk<org.springframework.context.ApplicationEventPublisher>(relaxed = true)
 
     @BeforeEach
     fun setup() {
         configRepository = mockk()
         objectMapper = ObjectMapper()
-        configService = ConfigService(configRepository, objectMapper)
+        clearMocks(publisher)
+        configService = ConfigService(configRepository, objectMapper, publisher)
+    }
+
+    @Test
+    fun `SSO events describe only actual saved changes including reset`() {
+        val key = ConfigProperties.SSO.OIDC.Enabled.key
+        var entry: ConfigEntry? = null
+        every { configRepository.findByIdOrNull(key) } answers { entry }
+        every { configRepository.save(any()) } answers { firstArg<ConfigEntry>().also { entry = it } }
+        every { configRepository.deleteById(key) } answers { entry = null }
+        configService.set(key, false)
+        verify(exactly = 0) { publisher.publishEvent(any<SsoConfigurationChanged>()) }
+        configService.set(key, true)
+        verify(exactly = 1) { publisher.publishEvent(any<SsoConfigurationChanged>()) }
+        configService.set(key, true)
+        verify(exactly = 1) { publisher.publishEvent(any<SsoConfigurationChanged>()) }
+        configService.delete(key)
+        verify(exactly = 2) { publisher.publishEvent(any<SsoConfigurationChanged>()) }
+        configService.delete(key)
+        verify(exactly = 2) { publisher.publishEvent(any<SsoConfigurationChanged>()) }
+    }
+
+    @Test
+    fun `failed SSO save does not publish change`() {
+        val key = ConfigProperties.SSO.OIDC.Enabled.key
+        every { configRepository.findByIdOrNull(key) } returns null
+        every { configRepository.save(any()) } throws IllegalStateException("Write failed")
+        assertThrows<IllegalStateException> { configService.set(key, true) }
+        verify(exactly = 0) { publisher.publishEvent(any<SsoConfigurationChanged>()) }
     }
 
     // ========== String Type Tests ==========

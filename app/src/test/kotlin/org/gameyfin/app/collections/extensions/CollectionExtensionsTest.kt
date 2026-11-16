@@ -9,7 +9,10 @@ import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.libraries.entities.Library
 import java.time.Instant
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class CollectionExtensionsTest {
 

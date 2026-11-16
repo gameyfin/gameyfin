@@ -81,3 +81,5 @@ out/
 /env.local
 /enable-plugins.sh
 /app/logs/
+# heroui-agents-md
+.heroui-docs/

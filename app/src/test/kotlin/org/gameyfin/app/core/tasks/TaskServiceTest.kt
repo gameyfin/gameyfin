@@ -68,9 +68,10 @@ class TaskServiceTest {
     @Test
     fun `hidden tasks should be excluded from task list and paginated history`() {
         registry.register(taskDefinition("visible"))
-        registry.register(TaskDefinition(
-            key = "hidden", name = "Hidden", visibleInOverview = false, action = TaskAction.Run { null }
-        ))
+        registry.register(
+            TaskDefinition(
+                key = "hidden", name = "Hidden", visibleInOverview = false, action = TaskAction.Run { null }
+            ))
         val pageable = PageRequest.of(0, 25)
         every { runRepository.findAllByTaskKeyNotInOrderByStartedAtDesc(listOf("hidden"), pageable) } returns
                 SliceImpl(emptyList(), pageable, true)

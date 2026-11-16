@@ -138,15 +138,15 @@ export function DatabaseSettingsFields({name, passwordSet, isDisabled, onTypeCha
 
             {typeField.value === DatabaseType.POSTGRESQL &&
                 <div className="flex flex-col">
-                    <div className="flex flex-row gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <Input label="Host" name={`${name}.host`} placeholder="e.g. localhost"
                                isDisabled={isDisabled}/>
-                        <NumberInput label="Port" name={`${name}.port`} className="w-40"
+                        <NumberInput label="Port" name={`${name}.port`} className="w-full sm:w-40"
                                      formatOptions={{useGrouping: false}}
                                      isDisabled={isDisabled}/>
                     </div>
                     <Input label="Database name" name={`${name}.database`} isDisabled={isDisabled}/>
-                    <div className="flex flex-row gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <Input label="Username" name={`${name}.username`} autoComplete="off"
                                isDisabled={isDisabled}/>
                         <Input label="Password" name={`${name}.password`} type="password"

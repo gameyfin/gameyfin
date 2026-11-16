@@ -216,9 +216,13 @@ class SessionBandwidthTracker(
      */
     fun throttle(bytes: Long) {
         updateMonitoringStatistics(bytes)
+        awaitPermits(bytes)
+    }
 
+    /** Reserve bandwidth before writing; recordBytes is called only after a successful write. */
+    fun awaitPermits(bytes: Long) {
         // Only throttle if RateLimiter exists (bandwidth limit is set)
-        rateLimiter?.acquire(bytes.toInt())
+        if (bytes > 0) rateLimiter?.acquire(bytes.toInt())
     }
 
     /**

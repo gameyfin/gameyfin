@@ -30,7 +30,8 @@ import kotlin.test.*
 class PluginMarketplaceServiceTest {
 
     companion object {
-        private const val OFFICIAL_INDEX_URL = "https://raw.githubusercontent.com/gameyfin/plugin-marketplace/HEAD/plugins.json"
+        private const val OFFICIAL_INDEX_URL =
+            "https://raw.githubusercontent.com/gameyfin/plugin-marketplace/HEAD/plugins.json"
         private const val THIRD_URL = "https://github.com/example/marketplace"
         private const val THIRD_INDEX_URL = "https://raw.githubusercontent.com/example/marketplace/HEAD/plugins.json"
         private const val SYSTEM_VERSION = "2.0.0"
@@ -651,7 +652,10 @@ class PluginMarketplaceServiceTest {
     fun `refresh should refresh update manager and return plugins`() {
         officialEntry()
         activeRepositories = listOf(
-            repository(OFFICIAL_MARKETPLACE_ID, plugins = mapOf("a" to pluginInfo("a", OFFICIAL_MARKETPLACE_ID, release("1.0.0"))))
+            repository(
+                OFFICIAL_MARKETPLACE_ID,
+                plugins = mapOf("a" to pluginInfo("a", OFFICIAL_MARKETPLACE_ID, release("1.0.0")))
+            )
         )
 
         val result = service().refresh()
@@ -817,7 +821,7 @@ class PluginMarketplaceServiceTest {
             pluginInfo(
                 "p",
                 OFFICIAL_MARKETPLACE_ID,
-                release("1.0.0", requires = "*", date = Date(0), changelog = "Initial"),
+                release("1.0.0", date = Date(0), changelog = "Initial"),
                 release("1.1.0", requires = ">=1.0.0", date = Date(1_700_000_000_000)),
                 release("1.2.0", requires = "  ", date = null),
                 plainRelease
@@ -848,7 +852,10 @@ class PluginMarketplaceServiceTest {
         officialEntry()
         addMarketplaceEntry("third", name = "Third")
         activeRepositories = listOf(
-            repository(OFFICIAL_MARKETPLACE_ID, plugins = mapOf("a" to pluginInfo("a", OFFICIAL_MARKETPLACE_ID, release("1.0.0")))),
+            repository(
+                OFFICIAL_MARKETPLACE_ID,
+                plugins = mapOf("a" to pluginInfo("a", OFFICIAL_MARKETPLACE_ID, release("1.0.0")))
+            ),
             repository("ghost", plugins = mapOf("g" to pluginInfo("g", "ghost", release("1.0.0")))),
             repository(
                 "third",

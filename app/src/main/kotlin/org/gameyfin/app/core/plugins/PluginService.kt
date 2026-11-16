@@ -106,6 +106,10 @@ class PluginService(
             ?: throw IllegalArgumentException("Plugin with class $clazz not found")
     }
 
+    fun getPluginManagementEntry(pluginId: String): PluginManagementEntry =
+        pluginManagementRepository.findByIdOrNull(pluginId)
+            ?: throw IllegalArgumentException("Plugin $pluginId not found")
+
     fun getPluginManagementEntries(
         type: Class<out ExtensionPoint>,
         enabledOnly: Boolean = true

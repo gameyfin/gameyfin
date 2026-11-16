@@ -5,6 +5,7 @@ import org.gameyfin.plugins.download.torrent.TorrentDownloadPlugin.Companion.loc
 import org.gameyfin.plugins.download.torrent.TorrentDownloadPlugin.Companion.plugin
 import org.gameyfin.plugins.download.torrent.TorrentDownloadPlugin.Companion.state
 import org.gameyfin.pluginapi.core.config.ConfigMetadata
+import org.gameyfin.pluginapi.data.GameInfo
 import org.gameyfin.pluginapi.tasks.GameSelection
 import org.gameyfin.pluginapi.tasks.GameyfinTask
 import org.gameyfin.pluginapi.tasks.TaskContext
@@ -169,11 +170,8 @@ class PregenerateTorrentsTask : GameyfinTask {
         )
     )
 
-    override fun execute(context: TaskContext): TaskResult {
-        val regenerateOutdated = context.setting<Boolean>("regenerateOutdated") ?: true
-        val selection = context.parameter<GameSelection>("games")
-
-        val games = if (selection == null || selection.isEmpty()) {
+    private fun selectedGames(selection: GameSelection?): List<GameInfo> {
+        return if (selection == null || selection.isEmpty()) {
             plugin.dataService.getGames()
         } else {
             plugin.dataService.getGames(selection.gameIds).also { found ->
@@ -181,6 +179,12 @@ class PregenerateTorrentsTask : GameyfinTask {
                 if (missing.isNotEmpty()) log.warn("Games with IDs ${missing.joinToString()} do not exist")
             }
         }
+    }
+
+    override fun execute(context: TaskContext): TaskResult {
+        val regenerateOutdated = context.setting<Boolean>("regenerateOutdated") ?: true
+        val selection = context.parameter<GameSelection>("games")
+        val games = selectedGames(selection)
 
         log.info("Generating torrent files for ${games.size} games")
         val results = mutableMapOf<TorrentGenerationResult, Int>()

@@ -1,6 +1,7 @@
 import {proxy} from "valtio";
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
+import {liveSubscription} from "Frontend/state/sync/liveSubscription";
 
 type UserState = {
     isLoaded: boolean;
@@ -16,17 +17,31 @@ export const userState = proxy<UserState>({
     }
 });
 
-/** Fetch and cache all users **/
-export async function initializeUserState() {
-    if (userState.isLoaded) return;
+let identity: string | undefined;
+let stop: (() => void) | undefined;
 
-    try {
-        const allUsers = await UserEndpoint.getAllUsers();
-        allUsers.forEach((user: ExtendedUserInfoDto) => {
-            userState.state[user.id] = user;
-        });
-        userState.isLoaded = true;
-    } catch (error) {
-        console.error("Failed to load users:", error);
-    }
+export function resetUserState() {
+    stop?.();
+    stop = undefined;
+    identity = undefined;
+    userState.state = {};
+    userState.isLoaded = false;
+}
+
+export function initializeUserState(newIdentity: string) {
+    if (identity === newIdentity) return;
+    resetUserState();
+    identity = newIdentity;
+    stop = liveSubscription({
+        subscribe: () => UserEndpoint.subscribe(),
+        fetch: () => UserEndpoint.getAllUsers(),
+        replace: users => {
+            userState.state = Object.fromEntries(users.map(user => [user.id, user]));
+            userState.isLoaded = true;
+        },
+        apply: events => events.forEach(event => {
+            if (event.user) userState.state[event.id] = event.user;
+            else delete userState.state[event.id];
+        })
+    });
 }

@@ -1,6 +1,7 @@
 package org.gameyfin.pluginapi.core.wrapper
 
 import org.gameyfin.pluginapi.data.GameyfinDataService
+import org.gameyfin.pluginapi.notifications.GameyfinNotificationService
 import java.nio.file.Path
 
 /**
@@ -30,4 +31,9 @@ interface PluginContext {
      * Read-only access to games, libraries and collections of Gameyfin.
      */
     val dataService: GameyfinDataService
+
+    /**
+     * In-app notifications scoped to this plugin.
+     * */
+    val notificationService: GameyfinNotificationService
 }

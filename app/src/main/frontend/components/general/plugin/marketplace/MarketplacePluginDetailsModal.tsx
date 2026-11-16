@@ -1,9 +1,11 @@
+import Popup from "Frontend/components/general/Popup";
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
-import {Alert, Button, Chip, Link, Modal, Spinner, Tooltip} from "@heroui/react";
-import Markdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
+import {Alert, Button, Chip, Link, Modal, Spinner} from "@heroui/react";
+import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import moment from "moment-timezone";
-import MarketplacePluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
+import MarketplacePluginDto
+    from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 import MarketplacePluginReleaseDto
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginReleaseDto";
 import MarketplacePluginStatus
@@ -18,22 +20,6 @@ interface MarketplacePluginDetailsModalProps {
     onOpenChange: (isOpen: boolean) => void;
     onInstall: (version?: string) => void;
     isPending: boolean;
-}
-
-function MarkdownText({children}: { children?: string }) {
-    return (
-        <Markdown
-            remarkPlugins={[remarkBreaks]}
-            components={{
-                a(props) {
-                    return <Link target="_blank" rel="noopener noreferrer" className="underline text-sm"
-                                 href={props.href}>
-                        {props.children}
-                    </Link>
-                }
-            }}
-        >{children}</Markdown>
-    );
 }
 
 /** Index of the installed version in the (newest first) release list, -1 if unknown */
@@ -66,14 +52,14 @@ export default function MarketplacePluginDetailsModal({
 
         if (!release.compatible) {
             return (
-                <Tooltip delay={0}>
-                    <Tooltip.Trigger>
+                <Popup>
+                    <Popup.Trigger>
                         <Chip size="sm" variant="soft" color="danger">Incompatible</Chip>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content placement="bottom" className="bg-foreground text-background">
+                    </Popup.Trigger>
+                    <Popup.Content placement="bottom" className="bg-foreground text-background">
                         {`Requires Gameyfin ${release.requires ?? "(unknown)"}`}
-                    </Tooltip.Content>
-                </Tooltip>
+                    </Popup.Content>
+                </Popup>
             );
         }
 
@@ -88,7 +74,7 @@ export default function MarketplacePluginDetailsModal({
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" scroll="inside">
+                <ResponsiveDialog size="lg" scroll="inside">
                     <Modal.Dialog>
                         {({close}) => (
                             <>
@@ -110,7 +96,8 @@ export default function MarketplacePluginDetailsModal({
                                         </Alert>
                                     }
 
-                                    <div className="flex flex-row items-center gap-8">
+                                    <div
+                                        className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
                                         <MarketplacePluginLogo plugin={plugin}/>
                                         <table className="text-left table-auto">
                                             <tbody>
@@ -134,7 +121,7 @@ export default function MarketplacePluginDetailsModal({
                                                 return (
                                                     <tr key={key}>
                                                         <td className="text-muted w-0 min-w-28">{key}</td>
-                                                        <td className="flex flex-row gap-1">{value}</td>
+                                                        <td className="flex flex-wrap gap-1">{value}</td>
                                                     </tr>
                                                 );
                                             })}
@@ -150,7 +137,7 @@ export default function MarketplacePluginDetailsModal({
 
                                     <div>
                                         <b>Description</b>
-                                        <MarkdownText>{plugin.description ?? plugin.shortDescription}</MarkdownText>
+                                        <MarkdownContent>{plugin.description ?? plugin.shortDescription}</MarkdownContent>
                                     </div>
 
                                     <div className="flex flex-col gap-2">
@@ -173,7 +160,7 @@ export default function MarketplacePluginDetailsModal({
                                                 </div>
                                                 {release.changelog &&
                                                     <div className="text-xs">
-                                                        <MarkdownText>{release.changelog}</MarkdownText>
+                                                        <MarkdownContent>{release.changelog}</MarkdownContent>
                                                     </div>
                                                 }
                                             </div>
@@ -194,7 +181,7 @@ export default function MarketplacePluginDetailsModal({
                             </>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

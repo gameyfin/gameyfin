@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.plugins.management
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.notifications.NotificationService
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -30,6 +31,7 @@ class GameyfinPluginManager(
     private val pluginConfigRepository: PluginConfigRepository,
     private val pluginManagementRepository: PluginManagementRepository,
     private val pluginDataService: ObjectProvider<GameyfinDataService>,
+    private val notificationService: ObjectProvider<NotificationService>,
     @Value($$"${gameyfin.plugins.install-directory:$$DEFAULT_INSTALLED_PLUGINS_DIR}")
     installedPluginsDirectory: String = DEFAULT_INSTALLED_PLUGINS_DIR,
     @Value($$"${spring.application.version:}")
@@ -129,7 +131,8 @@ class GameyfinPluginManager(
             pluginId = pluginWrapper.pluginId,
             pluginVersion = pluginWrapper.descriptor.version,
             dataDirectory = GameyfinPluginContext.dataDirectoryOf(pluginWrapper.pluginId),
-            dataServiceProvider = { pluginDataService.getObject() }
+            dataServiceProvider = { pluginDataService.getObject() },
+            notificationServiceProvider = { notificationService.getObject().forPlugin(pluginWrapper.pluginId) }
         )
     }
 
@@ -194,6 +197,9 @@ class GameyfinPluginManager(
             pluginManagementEntry.enabled = false
         }
 
+        pluginManagementEntry.name = (pluginWrapper.descriptor as? GameyfinPluginDescriptor)?.pluginName
+            ?: pluginWrapper.pluginId
+
         // Inject config after loading and verification, before starting
         // Note: If the plugin is untrusted, we don't want to inject the config
         if (pluginManagementEntry.trustLevel != PluginTrustLevel.UNTRUSTED) configurePlugin(pluginWrapper)
@@ -213,7 +219,10 @@ class GameyfinPluginManager(
         val currentMaxPriority = pluginManagementRepository.findMaxPriority() ?: 0
 
         val pluginManagementEntry =
-            PluginManagementEntry(pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1)
+            PluginManagementEntry(
+                pluginId = pluginWrapper.pluginId, priority = currentMaxPriority + 1,
+                name = (pluginWrapper.descriptor as? GameyfinPluginDescriptor)?.pluginName ?: pluginWrapper.pluginId
+            )
         pluginManagementEntry.trustLevel = verifyTrustLevel(pluginPath)
 
         // If the plugin is official or bundled, we can enable it and start it by default

@@ -1,4 +1,4 @@
-import {Outlet, useHref, useNavigate} from 'react-router';
+import {Outlet, useHref, useLocation, useNavigate} from 'react-router';
 import "./main.css";
 import {RouterProvider, Toast} from "@heroui/react";
 import {ThemeProvider as NextThemesProvider} from "next-themes";
@@ -9,16 +9,18 @@ import client from "Frontend/generated/connect-client.default";
 import {ErrorHandlingMiddleware} from "Frontend/util/middleware";
 import {initializeLibraryState} from "Frontend/state/LibraryState";
 import {initializeGameState} from "Frontend/state/GameState";
-import {initializeTaskState} from "Frontend/state/TaskState";
+import {initializeTaskState, resetTaskState} from "Frontend/state/TaskState";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
 import {useCallback, useEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
-import {initializeDownloadSessionState} from "Frontend/state/DownloadSessionState";
-import {initializeUserState} from "Frontend/state/UserState";
+import {initializeDownloadSessionState, resetDownloadSessionState} from "Frontend/state/DownloadSessionState";
+import {initializeUserState, resetUserState} from "Frontend/state/UserState";
+import {initializeNotificationState, resetNotificationState} from "Frontend/state/NotificationState";
 import {initializeCollectionState} from "Frontend/state/CollectionState";
+import {initializeConfigState, resetConfigState} from "Frontend/state/ConfigState";
 
 // Generate & inject the per-theme CSS custom property overrides once, before first render
 injectThemeStyles();
@@ -58,9 +60,14 @@ export default function App() {
 
 function ViewWithAuth() {
     const auth = useAuth();
+    const navigate = useNavigate();
+    const {pathname} = useLocation();
+    const isSetupRoute = pathname === "/setup" || pathname === "/setup/";
+    const identity = `${auth.state.user?.id ?? "anonymous"}:${[...(auth.state.user?.roles ?? [])].sort().join(",")}`;
 
     useEffect(() => {
-        if (auth.state.initializing || auth.state.loading) return;
+        // Setup has no user yet; protected synchronization would send it back through login.
+        if (isSetupRoute || auth.state.initializing || auth.state.loading) return;
 
         // The persistent cache is bound to the user and its roles, so cached data never leaks between users
         const user = auth.state.user;
@@ -72,13 +79,28 @@ function ViewWithAuth() {
         initializeGameRequestState();
         initializePluginState();
         initializeGameState(cacheIdentity);
+        if (user) initializeNotificationState(cacheIdentity);
+        else resetNotificationState();
 
         if (isAdmin(auth)) {
+            initializeConfigState();
             initializeTaskState();
             initializeDownloadSessionState();
-            initializeUserState();
+            initializeUserState(cacheIdentity);
+        } else {
+            resetUserState();
+            resetTaskState();
+            resetDownloadSessionState();
+            if (window.location.pathname.startsWith("/administration")) navigate("/", {replace: true});
         }
-    }, [auth]);
+        return () => {
+            resetNotificationState();
+            resetConfigState();
+            resetUserState();
+            resetTaskState();
+            resetDownloadSessionState();
+        };
+    }, [identity, auth.state.initializing, auth.state.loading, isSetupRoute]);
 
     return <>
         <IconContext.Provider value={{size: 20}}>

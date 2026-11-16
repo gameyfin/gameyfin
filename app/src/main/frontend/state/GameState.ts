@@ -111,7 +111,11 @@ const gamePatchMapping: PatchMapping<GameField> = {
     [GameField.FILE_SIZE]: [{value: "fileSize", summary: "fileSize", full: "metadata.fileSize"}],
     [GameField.PATH]: [{value: "path", summary: "path", full: "metadata.path"}],
     [GameField.DOWNLOAD_COUNT]: [{value: "downloadCount", summary: "downloadCount", full: "metadata.downloadCount"}],
-    [GameField.MATCH_CONFIRMED]: [{value: "matchConfirmed", summary: "matchConfirmed", full: "metadata.matchConfirmed"}],
+    [GameField.MATCH_CONFIRMED]: [{
+        value: "matchConfirmed",
+        summary: "matchConfirmed",
+        full: "metadata.matchConfirmed"
+    }],
     [GameField.FIELD_METADATA]: [{value: "fieldMetadata", full: "metadata.fields"}],
     [GameField.ORIGINAL_IDS]: [{value: "originalIds", full: "metadata.originalIds"}]
 };

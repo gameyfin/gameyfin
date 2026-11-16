@@ -1,6 +1,7 @@
 import Section from "Frontend/components/general/Section";
 import Input from "Frontend/components/general/input/Input";
-import {Button, Input as HeroUiInput, Spinner, toast, Tooltip} from "@heroui/react";
+import {Button, Spinner, toast, Tooltip} from "@heroui/react";
+import UploadButton from "Frontend/components/general/input/UploadButton";
 import {Form, Formik, FormikProps} from "formik";
 import {ArrowCounterClockwiseIcon, CheckIcon, InfoIcon, TrashIcon} from "@phosphor-icons/react";
 import React, {useEffect, useState} from "react";
@@ -21,7 +22,7 @@ interface ProfileFormValues {
 
 export default function ProfileManagement() {
     const auth = useAuth();
-    const [avatar, setAvatar] = useState<File>();
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [configSaved, setConfigSaved] = useState(false);
     const [messagesEnabled, setMessagesEnabled] = useState(false);
 
@@ -36,8 +37,15 @@ export default function ProfileManagement() {
     }, [configSaved])
 
 
-    function onFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
-        setAvatar(event.target.files?.[0]);
+    async function uploadSelectedAvatar(files: File[]) {
+        setUploadingAvatar(true);
+        try {
+            await uploadAvatar(files[0]);
+        } catch (error) {
+            toast.danger("Error uploading avatar", {description: error instanceof Error ? error.message : "Please try again"});
+        } finally {
+            setUploadingAvatar(false);
+        }
     }
 
     async function handleSubmit(values: ProfileFormValues) {
@@ -87,7 +95,7 @@ export default function ProfileManagement() {
         >
             {(formik: FormikProps<ProfileFormValues>) => (
                 <Form>
-                    <div className="flex flex-row grow justify-between mb-8">
+                    <div className="flex flex-wrap gap-3 grow justify-between mb-8">
                         <h2 className="text-2xl font-bold">My Profile</h2>
                         {auth.state.user?.managedBySso &&
                             <p className="text-warning">Your account is managed externally.</p>}
@@ -110,16 +118,15 @@ export default function ProfileManagement() {
                         </div>
                     </div>
 
-                    <div className="flex flex-row flex-1 justify-between gap-16">
+                    <div className="flex flex-col xl:flex-row flex-1 justify-between gap-6 xl:gap-16">
                         <div className="flex flex-col basis-1/4 mt-8 gap-4">
                             <div className="flex flex-row justify-center">
                                 <Avatar className="size-40 m-4 flex flex-row"/>
                             </div>
-                            <div className="flex flex-row gap-2">
-                                <HeroUiInput type="file" accept="image/*" onChange={onFileSelected}
-                                             disabled={auth.state.user?.managedBySso}/>
-                                <Button onPress={() => uploadAvatar(avatar)} isDisabled={avatar == null}
-                                        variant="primary">Upload</Button>
+                            <div className="flex flex-row gap-2 justify-center">
+                                <UploadButton label="Upload avatar" accept="image/*"
+                                              onFilesSelected={uploadSelectedAvatar}
+                                              isPending={uploadingAvatar} isDisabled={auth.state.user?.managedBySso}/>
                                 <Tooltip delay={0}>
                                     <Tooltip.Trigger>
                                         <Button onPress={removeAvatar} isIconOnly variant="danger"
@@ -136,7 +143,7 @@ export default function ProfileManagement() {
                             <Section title="Personal information"/>
                             <Input name="username" label="Username" type="text" autoComplete="username"
                                    isDisabled={auth.state.user?.managedBySso}/>
-                            <div className="flex flex-row gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
                                 <Input name="email" label="Email" type="email" autoComplete="email"
                                        isDisabled={auth.state.user?.managedBySso || !messagesEnabled}/>
                                 {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&

@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
 import {Button, Input, Modal, ScrollShadow, Spinner} from "@heroui/react";
 import React, {useEffect, useState} from "react";
@@ -41,7 +42,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <Modal.Container size="lg" className="max-w-2xl">
+                <ResponsiveDialog size="lg" className="max-w-2xl">
                     <Modal.Dialog>
                         {({close}) => (<>
                             <Modal.Header>
@@ -129,7 +130,7 @@ export function GameCoverPickerModal({game, isOpen, onOpenChange, setCoverUrl}: 
                             </Modal.Body>
                         </>)}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

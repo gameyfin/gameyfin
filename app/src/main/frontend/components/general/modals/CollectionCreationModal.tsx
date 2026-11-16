@@ -1,5 +1,6 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React from "react";
-import {Button, Modal, toast, Spinner} from "@heroui/react";
+import {Button, Modal, Spinner, toast} from "@heroui/react";
 import {Form, Formik} from "formik";
 import Input from "Frontend/components/general/input/Input";
 import {CollectionEndpoint} from "Frontend/generated/endpoints";
@@ -28,7 +29,7 @@ export default function CollectionCreationModal({
     return (<>
             <Modal>
                 <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                    <Modal.Container size="lg" className="max-w-xl">
+                    <ResponsiveDialog size="lg" className="max-w-xl">
                         <Modal.Dialog>
                             {({close}) => (
                                 <Formik
@@ -85,7 +86,7 @@ export default function CollectionCreationModal({
                                 </Formik>
                             )}
                         </Modal.Dialog>
-                    </Modal.Container>
+                    </ResponsiveDialog>
                 </Modal.Backdrop>
             </Modal>
         </>

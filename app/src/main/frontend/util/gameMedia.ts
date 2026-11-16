@@ -4,6 +4,7 @@ import GameImageSelectionDto from "Frontend/generated/org/gameyfin/app/games/dto
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import {getCsrfToken} from "Frontend/util/auth";
 import {orderMedia} from "./mediaOrder";
+import type {GameFieldMetadataDto, GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
 
 export const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 export const MAX_MEDIA_SIZE = 100 * 1024 * 1024;
@@ -12,9 +13,10 @@ export type MediaKind = "cover" | "header" | "screenshot";
 
 export interface DraftImage {
     key: string;
-    selection: GameImageSelectionDto;
+    selection: GameImageSelectionDto & { pluginId?: string };
     previewUrl: string;
     file?: File;
+    source?: GameFieldMetadataDto;
 }
 
 export interface MediaDraft {
@@ -22,10 +24,16 @@ export interface MediaDraft {
     mediaHeader?: DraftImage;
     mediaImages: DraftImage[];
     mediaVideos: string[];
+    mediaVideoSources?: (GameFieldMetadataDto | undefined)[];
     mediaOrder?: string[];
 }
 
 export type GameMetadataFormValues = GameDto & MediaDraft;
+
+export function mediaSource(game: GameDto, field: "images" | "videoUrls", index: number): GameFieldMetadataDto | undefined {
+    const fields = (game.metadata as GameMetadataAdminDto).fields;
+    return fields?.[`${field}.items`] ? fields[`${field}.${index}`] : fields?.[field];
+}
 
 export function metadataInitialValues(game: GameDto): GameMetadataFormValues {
     // Valtio updates must not reinitialize an open form.
@@ -44,8 +52,11 @@ export function metadataInitialValues(game: GameDto): GameMetadataFormValues {
         keywords: snapshot.keywords ?? [],
         mediaCover: snapshot.cover ? existing(snapshot.cover.id, "cover") : undefined,
         mediaHeader: snapshot.header ? existing(snapshot.header.id, "header") : undefined,
-        mediaImages: (snapshot.images ?? []).map(image => existing(image.id, "screenshot")),
-        mediaVideos: [...(snapshot.videoUrls ?? [])]
+        mediaImages: (snapshot.images ?? []).map((image, index) => ({
+            ...existing(image.id, "screenshot"), source: mediaSource(snapshot, "images", index)
+        })),
+        mediaVideos: [...(snapshot.videoUrls ?? [])],
+        mediaVideoSources: (snapshot.videoUrls ?? []).map((_, index) => mediaSource(snapshot, "videoUrls", index))
     };
 }
 
@@ -125,9 +136,7 @@ export async function saveMetadata(update: GameUpdateDto, values: MediaDraft, ne
     if (files.reduce((size, image) => size + image.file!.size, 0) > MAX_MEDIA_SIZE) {
         throw new Error("The selected uploads exceed 100 MiB. Save fewer images at a time.");
     }
-    const body = new FormData();
-    body.append("metadata", new Blob([JSON.stringify(update)], {type: "application/json"}));
-    files.forEach(image => body.append(image.selection.uploadKey!, image.file!));
+    const body = metadataFormData(update, values);
     if (newGame) {
         body.append("path", newGame.path);
         body.append("libraryId", String(newGame.libraryId));
@@ -140,4 +149,17 @@ export async function saveMetadata(update: GameUpdateDto, values: MediaDraft, ne
         const detail = await response.json().catch(() => undefined);
         throw new Error(detail?.detail ?? detail?.message ?? `Saving metadata failed (HTTP ${response.status}).`);
     }
+}
+
+/** Shared multipart payload for metadata edits, manual import, and game upload publication. */
+export function metadataFormData(update: GameUpdateDto, values: MediaDraft): FormData {
+    const files = allDraftImages(values).filter(image => image.file);
+    if (files.some(image => image.file!.size > MAX_IMAGE_SIZE) ||
+        files.reduce((size, image) => size + image.file!.size, 0) > MAX_MEDIA_SIZE) {
+        throw new Error("Images must be at most 20 MiB each and 100 MiB in total.");
+    }
+    const body = new FormData();
+    body.append("metadata", new Blob([JSON.stringify(update)], {type: "application/json"}));
+    files.forEach(image => body.append(image.selection.uploadKey!, image.file!));
+    return body;
 }

@@ -5,7 +5,8 @@ import java.time.Instant
 class GameFieldMetadataDto(
     val type: GameFieldMetadataType,
     val source: String,
-    val updatedAt: Instant
+    val updatedAt: Instant,
+    val sourceName: String? = null
 )
 
 enum class GameFieldMetadataType {

@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
 import Section from "Frontend/components/general/Section";
-import {toast, Button, Card, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Card, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {MessageEndpoint, MessageTemplateEndpoint} from "Frontend/generated/endpoints";
 import {PaperPlaneRightIcon, PencilIcon} from "@phosphor-icons/react";
 import MessageTemplateDto from "Frontend/generated/org/gameyfin/app/messages/templates/MessageTemplateDto";
@@ -59,9 +59,9 @@ function MessageManagementLayout({getConfig, formik}: any) {
     return (
         <div className="flex flex-col">
             <div className="flex flex-row">
-                <div className="flex flex-col flex-1">
-                    <div className="flex flex-row gap-8">
-                        <div className="flex flex-col flex-1 h-fit">
+                <div className="flex min-w-0 flex-col flex-1">
+                    <div className="flex flex-col xl:flex-row gap-8">
+                        <div className="flex min-w-0 flex-col flex-1 h-fit">
                             <Section title="E-Mail"/>
                             <ConfigFormField configElement={getConfig("messages.providers.email.enabled")}
                                              className="mb-2"/>
@@ -81,7 +81,7 @@ function MessageManagementLayout({getConfig, formik}: any) {
                                         formik.values.messages.providers.email.port &&
                                         formik.values.messages.providers.email.username)}>Test</Button>
                         </div>
-                        <div className="flex flex-col flex-1 h-fit">
+                        <div className="flex min-w-0 flex-col flex-1 h-fit">
                             <Section title="Message Templates"/>
                             <div className="flex flex-col gap-4">
                                 {availableTemplates.map((template: MessageTemplateDto) =>

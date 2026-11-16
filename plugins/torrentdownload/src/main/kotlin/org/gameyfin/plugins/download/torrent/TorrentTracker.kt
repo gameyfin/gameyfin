@@ -22,6 +22,10 @@ class TorrentTracker(
     private val port: Int,
     private val announceInterval: Int
 ) {
+    private companion object {
+        const val INTERNAL_SERVER_ERROR = "Internal server error"
+    }
+
     private val log = LoggerFactory.getLogger(TorrentTracker::class.java)
     private var server: HttpServer? = null
 
@@ -52,7 +56,7 @@ class TorrentTracker(
                 } catch (e: Exception) {
                     log.error("Unhandled error in announce handler", e)
                     try {
-                        respondBencodedError(exchange, "Internal server error")
+                        respondBencodedError(exchange, INTERNAL_SERVER_ERROR)
                     } catch (_: Exception) {
                         // Ignore errors when trying to send error response
                     }
@@ -67,7 +71,7 @@ class TorrentTracker(
                 } catch (e: Exception) {
                     log.error("Unhandled error in scrape handler", e)
                     try {
-                        respondBencodedError(exchange, "Internal server error")
+                        respondBencodedError(exchange, INTERNAL_SERVER_ERROR)
                     } catch (_: Exception) {
                         // Ignore errors when trying to send error response
                     }
@@ -169,56 +173,18 @@ class TorrentTracker(
             }
 
             // Handle event
-            when (event) {
-                "stopped" -> {
-                    peers.removeIf { it.peerId == peerId }
-                    log.debug("Removed peer $peerId ($ip) from torrent ${bytesToHex(infoHash)}")
-
-                    // Also remove from related hybrid torrent swarms if key is provided
-                    if (!key.isNullOrBlank()) {
-                        hybridTorrentGroups[key]?.forEach { relatedHash ->
-                            if (relatedHash != infoHash) {
-                                torrents[relatedHash]?.removeIf { it.peerId == peerId && it.key == key }
-                            }
-                        }
-                    }
-                }
-
-                else -> {
-                    val existingPeer = peers.find { it.peerId == peerId }
-
-                    if (existingPeer != null) {
-                        peers.remove(existingPeer)
-                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
-                        log.debug("Updated peer $peerId ($ip) for torrent ${bytesToHex(infoHash)}")
-                    } else {
-                        peers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
-                        log.debug("Added peer $peerId ($ip) to torrent ${bytesToHex(infoHash)}")
-                    }
-
-                    // Sync peer to related hybrid torrent swarms if key is provided
-                    if (!key.isNullOrBlank()) {
-                        hybridTorrentGroups[key]?.forEach { relatedHash ->
-                            if (relatedHash != infoHash) {
-                                val relatedPeers = torrents.computeIfAbsent(relatedHash) {
-                                    ConcurrentHashMap.newKeySet()
-                                }
-                                relatedPeers.removeIf { it.peerId == peerId && it.key == key }
-                                relatedPeers.add(Peer(peerId, ip, port, uploaded, downloaded, left, key = key))
-                            }
-                        }
-                    }
-                }
-            }
+            val peer = Peer(peerId, ip, port, uploaded, downloaded, left, key = key)
+            updatePeer(infoHash, peers, peer, event)
 
             // Build peer list from this swarm and related hybrid swarms
-            val allPeers = mutableSetOf<Peer>()
-            allPeers.addAll(peers)
+            val allPeers = buildSet {
+                addAll(peers)
 
-            // Include peers from related hybrid torrent swarms
-            if (!key.isNullOrBlank()) {
-                hybridTorrentGroups[key]?.forEach { relatedHash ->
-                    torrents[relatedHash]?.let { allPeers.addAll(it) }
+                // Include peers from related hybrid torrent swarms
+                if (!key.isNullOrBlank()) {
+                    hybridTorrentGroups[key]?.forEach { relatedHash ->
+                        torrents[relatedHash]?.let { addAll(it) }
+                    }
                 }
             }
 
@@ -242,7 +208,55 @@ class TorrentTracker(
 
         } catch (e: Exception) {
             log.error("Error handling announce", e)
-            respondBencodedError(exchange, "Internal server error")
+            respondBencodedError(exchange, INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    private fun updatePeer(infoHash: String, peers: MutableSet<Peer>, peer: Peer, event: String?) {
+        if (event == "stopped") {
+            peers.removeIf { it.peerId == peer.peerId }
+            log.debug("Removed peer ${peer.peerId} (${peer.ip}) from torrent ${bytesToHex(infoHash)}")
+
+            // Also remove from related hybrid torrent swarms if key is provided
+            removeFromRelatedSwarms(infoHash, peer)
+            return
+        }
+
+        val existingPeer = peers.find { it.peerId == peer.peerId }
+        if (existingPeer != null) {
+            peers.remove(existingPeer)
+            peers.add(peer)
+            log.debug("Updated peer ${peer.peerId} (${peer.ip}) for torrent ${bytesToHex(infoHash)}")
+        } else {
+            peers.add(peer)
+            log.debug("Added peer ${peer.peerId} (${peer.ip}) to torrent ${bytesToHex(infoHash)}")
+        }
+
+        // Sync peer to related hybrid torrent swarms if key is provided
+        syncToRelatedSwarms(infoHash, peer)
+    }
+
+    private fun removeFromRelatedSwarms(infoHash: String, peer: Peer) {
+        val key = peer.key
+        if (key.isNullOrBlank()) return
+        hybridTorrentGroups[key]?.forEach { relatedHash ->
+            if (relatedHash != infoHash) {
+                torrents[relatedHash]?.removeIf { it.peerId == peer.peerId && it.key == key }
+            }
+        }
+    }
+
+    private fun syncToRelatedSwarms(infoHash: String, peer: Peer) {
+        val key = peer.key
+        if (key.isNullOrBlank()) return
+        hybridTorrentGroups[key]?.forEach { relatedHash ->
+            if (relatedHash != infoHash) {
+                val relatedPeers = torrents.computeIfAbsent(relatedHash) {
+                    ConcurrentHashMap.newKeySet()
+                }
+                relatedPeers.removeIf { it.peerId == peer.peerId && it.key == key }
+                relatedPeers.add(peer.copy(lastSeen = System.currentTimeMillis()))
+            }
         }
     }
 
@@ -258,13 +272,13 @@ class TorrentTracker(
 
                 if (infoHashes.isEmpty()) {
                     // Scrape all torrents
-                    torrents.forEach { (infoHash, peers) ->
+                    torrents.forEach { (infoHash, peers): Map.Entry<String, Set<Peer>> ->
                         appendTorrentStats(infoHash, peers)
                     }
                 } else {
                     // Scrape specific torrents
                     infoHashes.forEach { infoHash ->
-                        torrents[infoHash]?.let { peers ->
+                        torrents[infoHash]?.let { peers: Set<Peer> ->
                             appendTorrentStats(infoHash, peers)
                         }
                     }
@@ -277,7 +291,7 @@ class TorrentTracker(
 
         } catch (e: Exception) {
             log.error("Error handling scrape", e)
-            respondBencodedError(exchange, "Internal server error")
+            respondBencodedError(exchange, INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -334,7 +348,7 @@ class TorrentTracker(
     }
 
     private fun respondBytes(exchange: HttpExchange, bytes: ByteArray) {
-        exchange.responseHeaders.set("Content-Type", "text/plain")
+        exchange.responseHeaders["Content-Type"] = listOf("text/plain")
         exchange.sendResponseHeaders(200, bytes.size.toLong())
         exchange.responseBody.write(bytes)
         exchange.responseBody.flush()
@@ -368,27 +382,28 @@ class TorrentTracker(
      * Unlike URLDecoder.decode(), this uses ISO-8859-1 to preserve binary data.
      */
     private fun urlDecodeToBytes(encoded: String): String {
-        val bytes = mutableListOf<Byte>()
-        var i = 0
-        while (i < encoded.length) {
-            when {
-                encoded[i] == '%' && i + 2 < encoded.length -> {
-                    // Decode %XX to a byte
-                    val hex = encoded.substring(i + 1, i + 3)
-                    bytes.add(hex.toInt(16).toByte())
-                    i += 3
-                }
+        val bytes = buildList {
+            var i = 0
+            while (i < encoded.length) {
+                when {
+                    encoded[i] == '%' && i + 2 < encoded.length -> {
+                        // Decode %XX to a byte
+                        val hex = encoded.substring(i + 1, i + 3)
+                        add(hex.toInt(16).toByte())
+                        i += 3
+                    }
 
-                encoded[i] == '+' -> {
-                    // Plus sign represents space in URL encoding
-                    bytes.add(' '.code.toByte())
-                    i++
-                }
+                    encoded[i] == '+' -> {
+                        // Plus sign represents space in URL encoding
+                        add(' '.code.toByte())
+                        i++
+                    }
 
-                else -> {
-                    // Regular character
-                    bytes.add(encoded[i].code.toByte())
-                    i++
+                    else -> {
+                        // Regular character
+                        add(encoded[i].code.toByte())
+                        i++
+                    }
                 }
             }
         }

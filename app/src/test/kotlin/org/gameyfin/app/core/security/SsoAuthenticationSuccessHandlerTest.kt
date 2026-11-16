@@ -20,6 +20,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
+import org.springframework.mock.web.MockHttpSession
 import kotlin.test.assertEquals
 
 class SsoAuthenticationSuccessHandlerTest {
@@ -45,6 +46,9 @@ class SsoAuthenticationSuccessHandlerTest {
         handler = SsoAuthenticationSuccessHandler(userService, roleService, config, roleHierarchy)
 
         request = mockk()
+        val session = MockHttpSession()
+        every { request.getSession(false) } returns session
+        every { request.getSession(true) } returns session
         response = mockk(relaxed = true)
         authentication = mockk()
         securityContext = mockk(relaxed = true)
@@ -165,7 +169,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
     @Test
     fun `uses preferred_username fallback when UsernameAttribute config is null`() {
-        val oidcUser = oidcUser(preferredUsername = "alice")
+        val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns null
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
@@ -375,14 +379,14 @@ class SsoAuthenticationSuccessHandlerTest {
     }
 
     @Test
-    fun `redirects to continue URL when it starts with slash`() {
+    fun `redirects to session destination after OIDC callback without continue parameter`() {
         val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
         every { authentication.principal } returns oidcUser
         every { authentication.credentials } returns null
-        every { request.getParameter("continue") } returns "/collection/games"
+        LoginReturnUrl.save(request, "/collection/games")
 
         every { userService.findByOidcProviderId(any()) } returns null
         every { userService.getByUsername(any()) } returns null
@@ -391,6 +395,7 @@ class SsoAuthenticationSuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication)
 
         verify { response.sendRedirect("/collection/games") }
+        assertEquals("/", LoginReturnUrl.consume(request))
     }
 
     @Test

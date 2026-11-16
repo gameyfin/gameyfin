@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2.7.0-in-app-notifications
+      author: gameyfin
+      changes:
+        - sql:
+            sql: >
+              CREATE TABLE APP_NOTIFICATION (
+                ID VARCHAR(36) PRIMARY KEY,
+                SOURCE VARCHAR(255) NOT NULL,
+                TITLE VARCHAR(250) NOT NULL,
+                BODY TEXT NOT NULL,
+                SEVERITY VARCHAR(20) NOT NULL,
+                ACTIONS TEXT NOT NULL,
+                CREATED_AT TIMESTAMP WITH TIME ZONE NOT NULL
+              )
+        - sql:
+            sql: >
+              CREATE TABLE NOTIFICATION_INBOX (
+                ID VARCHAR(36) PRIMARY KEY,
+                NOTIFICATION_ID VARCHAR(36) NOT NULL REFERENCES APP_NOTIFICATION(ID) ON DELETE CASCADE,
+                RECIPIENT VARCHAR(64) NOT NULL,
+                USER_ID BIGINT REFERENCES USERS(ID) ON DELETE CASCADE,
+                READ_AT TIMESTAMP WITH TIME ZONE,
+                EXECUTION_ID VARCHAR(36) NOT NULL,
+                EXECUTION_STATE VARCHAR(20) NOT NULL DEFAULT 'READY',
+                EXECUTION_ACTION VARCHAR(100),
+                EXECUTION_BOOT VARCHAR(36),
+                CONSTRAINT UQ_NOTIFICATION_RECIPIENT UNIQUE (NOTIFICATION_ID, RECIPIENT),
+                CONSTRAINT CK_NOTIFICATION_RECIPIENT CHECK
+                  ((RECIPIENT = 'admins' AND USER_ID IS NULL) OR (RECIPIENT <> 'admins' AND USER_ID IS NOT NULL))
+              )
+        - createIndex:
+            tableName: NOTIFICATION_INBOX
+            indexName: IDX_NOTIFICATION_INBOX_RECIPIENT
+            columns:
+              - column:
+                  name: RECIPIENT
+              - column:
+                  name: READ_AT
+        - sql:
+            sql: >
+              CREATE TABLE NOTIFICATION_PRODUCER_STATE (
+                ID VARCHAR(50) PRIMARY KEY,
+                LAST_VERSION VARCHAR(255),
+                BOOT_ID VARCHAR(36)
+              )
+        - sql:
+            sql: INSERT INTO NOTIFICATION_PRODUCER_STATE (ID) VALUES ('sso'), ('release')
+      rollback:
+        - dropTable:
+            tableName: NOTIFICATION_INBOX
+        - dropTable:
+            tableName: APP_NOTIFICATION
+        - dropTable:
+            tableName: NOTIFICATION_PRODUCER_STATE

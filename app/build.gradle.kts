@@ -133,6 +133,15 @@ dependencyManagement {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // Separate JVMs isolate MockK static/object mocks and other process-wide state.
+    // Keep JUnit execution sequential inside each worker. Cap the default to avoid
+    // competing with compilation and container-based tests for CI runner memory.
+    maxParallelForks = providers.gradleProperty("testForks").map {
+        require(it.toIntOrNull()?.let { forks -> forks > 0 } == true) {
+            "testForks must be a positive integer"
+        }
+        it.toInt()
+    }.getOrElse(Runtime.getRuntime().availableProcessors().coerceAtMost(4))
     // Isolated integration databases always use a disposable test key, never a deployment secret.
     environment("APP_KEY", Base64.getEncoder().encodeToString(ByteArray(32) { (it + 1).toByte() }))
     finalizedBy(tasks.jacocoTestReport)

@@ -7,20 +7,30 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
+import org.gameyfin.app.users.dto.UserEvent
 import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.enums.RoleAssignmentResult
 import org.springframework.security.core.Authentication
+import reactor.core.publisher.Flux
 
 
 @Endpoint
 class UserEndpoint(
     private val userService: UserService,
-    private val roleService: RoleService
+    private val roleService: RoleService,
+    private val userEvents: UserEvents
 ) {
 
     companion object {
         private const val NO_AUTH_FOUND = "No authentication found"
     }
+
+    @RolesAllowed(Role.Names.ADMIN)
+    fun subscribe(): Flux<List<UserEvent>> = userEvents.subscribe()
+
+    @PermitAll
+    fun subscribeCurrentUser(): Flux<List<UserEvent>> =
+        userEvents.subscribeCurrentUser(userService.getUserInfo().id)
 
     @AnonymousAllowed
     fun getUserInfo(): ExtendedUserInfoDto? {

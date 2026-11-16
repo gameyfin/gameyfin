@@ -2,16 +2,16 @@
 # https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
 
 [versions]
-com-h2database-h2 = "2.2.224"
-dev-hilla-hilla-react = "2.5.6"
-dev-hilla-hilla-spring-boot-starter = "2.5.6"
-org-parttio-line-awesome = "2.0.0"
-org-springframework-boot-spring-boot-devtools = "3.2.2"
-org-springframework-boot-spring-boot-starter-data-jpa = "3.2.2"
-org-springframework-boot-spring-boot-starter-oauth2-resource-server = "3.2.2"
-org-springframework-boot-spring-boot-starter-security = "3.2.2"
-org-springframework-boot-spring-boot-starter-test = "3.2.2"
-org-springframework-boot-spring-boot-starter-validation = "3.2.2"
+com-h2database-h2 = "2.5.252"
+dev-hilla-hilla-react = "2.5.8"
+dev-hilla-hilla-spring-boot-starter = "2.5.8"
+org-parttio-line-awesome = "2.1.0"
+org-springframework-boot-spring-boot-devtools = "4.1.2"
+org-springframework-boot-spring-boot-starter-data-jpa = "4.1.2"
+org-springframework-boot-spring-boot-starter-oauth2-resource-server = "4.1.2"
+org-springframework-boot-spring-boot-starter-security = "4.1.2"
+org-springframework-boot-spring-boot-starter-test = "4.1.2"
+org-springframework-boot-spring-boot-starter-validation = "4.1.2"
 
 [libraries]
 com-h2database-h2 = { module = "com.h2database:h2", version.ref = "com-h2database-h2" }

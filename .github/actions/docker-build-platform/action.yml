@@ -11,10 +11,10 @@ runs:
         echo "platform_pair=${platform//\//-}" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
     - name: Log in to GHCR
-      uses: docker/login-action@v3
+      uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
       with:
         registry: ghcr.io
         username: ${{ inputs.ghcr_username }}
@@ -22,7 +22,7 @@ runs:
 
     - name: Build and push by digest
       id: build
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
       env:
         BUILDKIT_PROGRESS: plain
       with:
@@ -41,7 +41,7 @@ runs:
         touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
     - name: Upload digest
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: digests-${{ steps.prepare.outputs.platform_pair }}
         path: ${{ runner.temp }}/digests/*

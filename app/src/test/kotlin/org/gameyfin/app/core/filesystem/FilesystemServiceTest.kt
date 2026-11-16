@@ -11,17 +11,17 @@ import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.IgnoredPathPluginSource
 import org.gameyfin.app.libraries.entities.Library
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.nio.file.Path
-import java.nio.file.Files
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FilesystemServiceTest {
@@ -580,6 +580,63 @@ class FilesystemServiceTest {
         assertTrue(result.newPaths.isEmpty())
     }
 
+    @Test
+    fun `delete game file keeps sibling files`() {
+        val game = tempDir.resolve("game.zip").createFile()
+        val sibling = tempDir.resolve("keep.zip").createFile()
+        val library = Library(name = "Test", directories = mutableListOf(DirectoryMapping(internalPath = tempDir.toString())))
+
+        filesystemService.deleteGameFiles(game.toString(), library)
+
+        assertFalse(game.exists())
+        assertTrue(sibling.exists())
+    }
+
+    @Test
+    fun `delete game folder removes nested contents without following links`() {
+        val outside = tempDir.resolve("outside").createDirectory()
+        val keep = outside.resolve("keep.txt").createFile()
+        val root = tempDir.resolve("library").createDirectory()
+        val game = root.resolve("game").createDirectory()
+        game.resolve("nested").createDirectory().resolve("game.bin").createFile()
+        symbolicLink(game.resolve("link"), outside)
+        val library = Library(name = "Test", directories = mutableListOf(DirectoryMapping(internalPath = root.toString())))
+
+        filesystemService.deleteGameFiles(game.toString(), library)
+
+        assertFalse(game.exists())
+        assertTrue(keep.exists())
+    }
+
+    @Test
+    fun `delete refuses library root outside paths and symlink escapes`() {
+        val root = tempDir.resolve("library").createDirectory()
+        val outside = tempDir.resolve("outside.zip").createFile()
+        val link = symbolicLink(root.resolve("link.zip"), outside)
+        val library = Library(name = "Test", directories = mutableListOf(DirectoryMapping(internalPath = root.toString())))
+
+        for (path in listOf(root, outside, link)) {
+            assertFailsWith<IllegalArgumentException> { filesystemService.deleteGameFiles(path.toString(), library) }
+        }
+        assertTrue(outside.exists())
+        assertTrue(root.exists())
+    }
+
+    @Test
+    fun `delete refuses folders containing another game or library directory`() {
+        val game = tempDir.resolve("game").createDirectory()
+        val child = game.resolve("other.zip").createFile()
+        val library = Library(name = "Test", directories = mutableListOf(DirectoryMapping(internalPath = tempDir.toString())))
+        val other = mockk<Game> { every { metadata.path } returns child.toString() }
+        library.games.add(other)
+
+        assertFailsWith<IllegalArgumentException> { filesystemService.deleteGameFiles(game.toString(), library) }
+        library.games.clear()
+        library.directories.add(DirectoryMapping(internalPath = game.toString()))
+        assertFailsWith<IllegalArgumentException> { filesystemService.deleteGameFiles(game.toString(), library) }
+        assertTrue(child.exists())
+    }
+
     private fun libraryAt(root: Path): Library = mockk {
         every { directories } returns mutableListOf(DirectoryMapping(internalPath = root.toString()))
     }
@@ -603,9 +660,11 @@ class FilesystemServiceTest {
 
         assertEquals(directory.toRealPath(), filesystemService.validateGamePath(directory.toString(), library))
         assertEquals(file.toRealPath(), filesystemService.validateGamePath(file.toString(), library))
-        assertEquals(file.toRealPath(), filesystemService.validateGamePath(
-            directory.resolve("../game/./game.zip").toString(), library
-        ))
+        assertEquals(
+            file.toRealPath(), filesystemService.validateGamePath(
+                directory.resolve("../game/./game.zip").toString(), library
+            )
+        )
     }
 
     @Test

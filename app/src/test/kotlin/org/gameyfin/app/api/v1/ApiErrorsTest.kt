@@ -17,6 +17,16 @@ import org.springframework.web.server.ResponseStatusException
 import kotlin.test.assertEquals
 
 class ApiErrorsTest {
+    @Test
+    fun `committed download errors are propagated instead of appending JSON`() {
+        val response = org.springframework.mock.web.MockHttpServletResponse()
+        response.flushBuffer()
+        val error = java.io.IOException("source failed")
+        kotlin.test.assertSame(
+            error,
+            kotlin.test.assertFailsWith<java.io.IOException> { ApiErrors().handle(error, response) })
+    }
+
     private val errors = ApiErrors()
 
     private fun assertProblem(error: Exception, status: Int, code: String, detail: String? = null) {
@@ -85,6 +95,11 @@ class ApiErrorsTest {
 
     @Test
     fun `unexpected errors do not leak details`() {
-        assertProblem(RuntimeException("database password"), 500, "request_failed", "The request could not be completed")
+        assertProblem(
+            RuntimeException("database password"),
+            500,
+            "request_failed",
+            "The request could not be completed"
+        )
     }
 }

@@ -118,7 +118,7 @@ class GameRequestEntityListenerTest {
 
     @Test
     fun `created should handle guest requester`() {
-        val gameRequest = createTestGameRequest(1L, "Guest Game", null)
+        val gameRequest = createTestGameRequest(1L, "Guest Game")
         val capturedEvents = mutableListOf<GameRequestEvent>()
 
         every { GameRequestService.emit(capture(capturedEvents)) } just Runs
@@ -154,9 +154,7 @@ class GameRequestEntityListenerTest {
             release = null,
             platform = Platform.PC_MICROSOFT_WINDOWS,
             status = GameRequestStatus.PENDING,
-            requester = null,
             voters = mutableSetOf(),
-            linkedGameId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -213,7 +211,6 @@ class GameRequestEntityListenerTest {
             status = GameRequestStatus.PENDING,
             requester = requester,
             voters = mutableSetOf(),
-            linkedGameId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )

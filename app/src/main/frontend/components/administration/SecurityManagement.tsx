@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
@@ -6,15 +6,7 @@ import Section from "Frontend/components/general/Section";
 import {Button, toast} from "@heroui/react";
 import {MagicWandIcon} from "@phosphor-icons/react";
 
-function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
-
-    useEffect(() => {
-        if (JSON.stringify(formik.values.sso) !== JSON.stringify(formik.initialValues.sso)) {
-            setSaveMessage("Gameyfin must be restarted for changes in the SSO configuration to take effect");
-        } else {
-            setSaveMessage(null);
-        }
-    }, [formik.values.sso, formik.initialValues.sso]);
+function SecurityManagementLayout({getConfig, formik}: any) {
 
     function isAutoPopulateDisabled() {
         return !formik.values.sso.oidc.enabled || !formik.values.sso.oidc["issuer-url"];
@@ -48,7 +40,7 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
             <ConfigFormField configElement={getConfig("security.swagger-ui-enabled")}/>
 
             <Section title="Single Sign-On"/>
-            <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 items-start gap-8">
                 <div className="flex flex-col">
                     <h2 className="text-xl font-bold mb-4">General configuration</h2>
                     <ConfigFormField className="mb-4" configElement={getConfig("sso.oidc.enabled")}/>
@@ -62,14 +54,14 @@ function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
                     <ConfigFormField configElement={getConfig("sso.oidc.oauth-scopes")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                 </div>
-                <div className="flex flex-col lg:col-span-2">
+                <div className="flex flex-col xl:col-span-2">
                     <h2 className="text-xl font-bold mb-4">SSO Provider Configuration</h2>
                     <ConfigFormField configElement={getConfig("sso.oidc.client-id")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.client-secret")}
                                      type="password"
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
-                    <div className="flex flex-row items-start gap-2">
+                    <div className="flex flex-col sm:flex-row items-start gap-2">
                         <ConfigFormField configElement={getConfig("sso.oidc.issuer-url")}
                                          isDisabled={!formik.values.sso.oidc.enabled}/>
                         <Button

@@ -1,14 +1,10 @@
 import React, {useEffect, useState} from "react";
-import {
-    Button,
-    ListBox,
-    Modal,
-    Select,
-} from "@heroui/react";
+import {Button, ListBox, Modal, Select,} from "@heroui/react";
 import {UserEndpoint} from "Frontend/generated/endpoints";
 import RoleChip from "Frontend/components/general/RoleChip";
 import RoleAssignmentResult from "Frontend/generated/org/gameyfin/app/users/enums/RoleAssignmentResult";
 import ExtendedUserInfoDto from "Frontend/generated/org/gameyfin/app/users/dto/ExtendedUserInfoDto";
+import {useAuth} from "Frontend/util/auth";
 
 interface AssignRolesModalProps {
     isOpen: boolean;
@@ -21,16 +17,19 @@ interface Role {
 }
 
 export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRolesModalProps) {
+    const auth = useAuth();
     const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
     const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
     const [error, setError] = useState<string>();
 
     useEffect(() => {
+        if (!isOpen) return;
+        setError(undefined);
         setSelectedRoles(rolesToSelection(user.roles));
         UserEndpoint.getRolesBelow().then((availableRoles) => {
             setAvailableRoles(availableRoles.map((role) => ({id: role.toString()})));
         });
-    }, []);
+    }, [isOpen, user.id, user.roles.join(","), auth.state.user?.roles.join(",")]);
 
     function rolesToSelection(roles: Array<string>): string[] {
         return roles.map((role) => role.toString());
@@ -42,7 +41,7 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
         let result = await UserEndpoint.assignRoles(user.username, selectedRoles);
         switch (result) {
             case RoleAssignmentResult.SUCCESS:
-                window.location.reload();
+                onOpenChange(false);
                 break;
             case RoleAssignmentResult.NO_ROLES_PROVIDED:
                 setError("Select at least one role");
@@ -62,7 +61,7 @@ export default function AssignRolesModal({isOpen, onOpenChange, user}: AssignRol
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque" isDismissable={false}>
-                <Modal.Container size="lg">
+                <Modal.Container size="md" placement="center">
                     <Modal.Dialog>
                         {({close}) => (
                             <>

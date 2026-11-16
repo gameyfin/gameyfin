@@ -6,6 +6,15 @@ import java.sql.*
 import java.time.*
 import java.util.*
 
+/** PostgreSQL reports timestamptz as TIMESTAMP in both result-set and schema metadata.
+ *  @see https://github.com/pgjdbc/pgjdbc/issues/1381
+ *  */
+internal fun normalizeJdbcType(jdbcType: Int, typeName: String?): Int =
+    if (jdbcType == Types.TIMESTAMP &&
+        (typeName.equals("timestamptz", ignoreCase = true) ||
+                typeName.equals("timestamp with time zone", ignoreCase = true))
+    ) Types.TIMESTAMP_WITH_TIMEZONE else jdbcType
+
 /**
  * Vendor-neutral classification of JDBC column types used to (de)serialize table data.
  */
@@ -144,7 +153,7 @@ internal class SchemaInspector(private val connection: Connection) {
                     add(
                         Column(
                             name = rs.getString("COLUMN_NAME"),
-                            jdbcType = rs.getInt("DATA_TYPE"),
+                            jdbcType = normalizeJdbcType(rs.getInt("DATA_TYPE"), rs.getString("TYPE_NAME")),
                             autoIncrement = rs.getString("IS_AUTOINCREMENT").equals("YES", ignoreCase = true)
                         )
                     )

@@ -1,0 +1,137 @@
+{
+  "version": 2,
+  "skills": {
+    "cavecrew": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/cavecrew/SKILL.md",
+      "computedHash": "e851caf8480d3ddf5de7fe490cbb2cda8840df760b3851510a24d605147d29e2"
+    },
+    "caveman": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "b51af74aacdadbc3c2d6bb79f05db58dc521854b87f7ffabd48faf286a81ed31"
+    },
+    "caveman-commit": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-commit/SKILL.md",
+      "computedHash": "2c1472fb59eedd3cfba0b6512dc470a00287343ade421db55c21a6fb52afbe86"
+    },
+    "caveman-compress": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-compress/SKILL.md",
+      "computedHash": "6b12806f8e4b84b79b360dfe5eba92647e7134e15484e7532efd3d4999dda89c"
+    },
+    "caveman-discover": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-discover/SKILL.md",
+      "computedHash": "6f0f9bc37b6c5c8c7944a57f6e671ff3b6e58a9ca7ef1557a93b19645a5f1191"
+    },
+    "caveman-evidence-review": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-evidence-review/SKILL.md",
+      "computedHash": "cd258392c713b9cf77d2dd92f1a407a7dccaa54ced28c92192e67d76a0cfe9c6"
+    },
+    "caveman-explore": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-explore/SKILL.md",
+      "computedHash": "b508768e6afc649bf828ea3d68df66740fa238c869f8bb87083081b9ead18b85"
+    },
+    "caveman-help": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-help/SKILL.md",
+      "computedHash": "6a3e3d37fa03b4aa0622a6aec14446a243619c1539ad419e065dc8b1cd70aacd"
+    },
+    "caveman-learn": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-learn/SKILL.md",
+      "computedHash": "bd8f0bedab21b580cddee401846aa81723378334548f41863fc131c58d612556"
+    },
+    "caveman-manage": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-manage/SKILL.md",
+      "computedHash": "2dd0ef43e4a5412913967513a494c2db2219fa34630378730409205f3a0b883a"
+    },
+    "caveman-optimize": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-optimize/SKILL.md",
+      "computedHash": "dc5eb46a2918c7250a069b1bcda3c5f385715801d42c317c251ba5208ccd685e"
+    },
+    "caveman-review": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-review/SKILL.md",
+      "computedHash": "c55908f8ee0dca0e59690e939dfd4a877bd9361897ae5fced096274a77509154"
+    },
+    "caveman-setup": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-setup/SKILL.md",
+      "computedHash": "e0fe84073dee9da687de4b1fc27a5bd06601c2bfb9bcb71121e60e55f32ac7e4"
+    },
+    "caveman-stats": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman-stats/SKILL.md",
+      "computedHash": "d47db80af9353f411b5840fa207ac10c883f04576cd280b135e3a44a0ff86285"
+    },
+    "investigate-first": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/investigate-first/SKILL.md",
+      "computedHash": "129b1eba6d106c1d095baefd30578c6303b93119fcd21bd5583ebd34592f3acc"
+    },
+    "lean-build": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/lean-build/SKILL.md",
+      "computedHash": "aee8fbb86c5e1e5066089293423f71dd6a87ab37486c360cd4488ef2fe96c7a7"
+    },
+    "megacave": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/megacave/SKILL.md",
+      "computedHash": "d38301dd11ffdbf9c876cb5a15ff245a31fe7806a29f7800e7fbe44fc306fd62"
+    },
+    "migration": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/migration/SKILL.md",
+      "computedHash": "e7c6efc84ff8f85d0242e7f29f51c09fd333c294cc3123ef8ee4b2aca2a93192"
+    },
+    "safe-refactor": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/safe-refactor/SKILL.md",
+      "computedHash": "709db1dfde3fe3baa362ecdb3f1f3c0be27587358242737dfa4ca82a23744269"
+    },
+    "surgical-patch": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/surgical-patch/SKILL.md",
+      "computedHash": "5fa48d8d44e476bd633b0dc856b8342a715b5d5416b01778df5d6245b360c9df"
+    },
+    "ultracave": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/ultracave/SKILL.md",
+      "computedHash": "b9814ef35fbc9f4359f682c7f2e4944b30428f8c8d79463efa070f99fffaa453"
+    },
+    "verify-and-stop": {
+      "source": "JuliusBrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/verify-and-stop/SKILL.md",
+      "computedHash": "130048a85c3d028f9e8bb9fa923143b11b55511c9c43ab3f155b6c8022e48f56"
+    }
+  }
+}

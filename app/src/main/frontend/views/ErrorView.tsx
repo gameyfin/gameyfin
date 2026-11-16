@@ -11,7 +11,8 @@ export default function ErrorView() {
     // The route error boundary replaces App, including its theme provider.
     return (
         <ThemeProvider attribute="class" defaultTheme="dark">
-            <main className="relative isolate flex min-h-full flex-col items-center justify-center gap-4 overflow-hidden p-6 text-center">
+            <main
+                className="relative isolate flex min-h-full flex-col items-center justify-center gap-4 overflow-hidden p-6 text-center">
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
                     <IconBackgroundPattern/>
                 </div>

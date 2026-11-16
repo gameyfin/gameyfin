@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useState} from "react";
 import {Button, Modal, Spinner, toast} from "@heroui/react";
 import {MessageEndpoint, RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
@@ -48,7 +49,7 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange} variant="opaque">
-                <Modal.Container size="lg" className="max-w-4xl">
+                <ResponsiveDialog size="lg" className="max-w-4xl">
                     <Modal.Dialog>
                         {({close}) => {
                             const invitationLink = token
@@ -119,7 +120,7 @@ export default function InviteUserModal({isOpen, onOpenChange}: InviteUserModalP
                             );
                         }}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );

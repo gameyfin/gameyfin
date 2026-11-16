@@ -86,15 +86,13 @@ class ImageEndpoint(
 
     @PermitAll
     @PostMapping("/avatar/upload")
+    @org.springframework.transaction.annotation.Transactional
     fun uploadAvatar(@RequestParam("file") file: MultipartFile) {
         val auth = getCurrentAuth() ?: error("No authentication found")
 
-        val image: Image = if (!userService.hasAvatar(auth.name)) {
-            imageService.createFromInputStream(ImageType.AVATAR, file.inputStream, file.contentType!!)
-        } else {
-            val existingAvatar = userService.getAvatar(auth.name)!!
-            imageService.updateFileContent(existingAvatar, file.inputStream, file.contentType!!)
-        }
+        // A new image identity triggers the user update and changes the browser cache key.
+        // The existing user-update listener removes the previous image after commit.
+        val image = imageService.createFromInputStream(ImageType.AVATAR, file.inputStream, file.contentType!!)
 
         userService.updateAvatar(auth.name, image)
     }

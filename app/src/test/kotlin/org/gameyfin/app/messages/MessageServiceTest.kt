@@ -153,7 +153,7 @@ class MessageServiceTest {
         val result = messageService.testCredentials(providerKey, credentials)
 
         assertTrue(result)
-        verify { mockProvider1.testCredentials(match { it.isEmpty() }) }
+        verify { mockProvider1.testCredentials(match { it.isEmpty }) }
     }
 
     @Test
@@ -434,7 +434,7 @@ class MessageServiceTest {
 
     @Test
     fun `onAccountStatusChanged should send disabled notification when user is disabled`() {
-        val user = User(username = "testuser", email = "user@example.com", password = "hash", enabled = false)
+        val user = User(username = "testuser", email = "user@example.com", password = "hash")
         val event = AccountStatusChangedEvent(this, user, "http://example.com")
         val filledContent = "<html>Account disabled</html>"
 

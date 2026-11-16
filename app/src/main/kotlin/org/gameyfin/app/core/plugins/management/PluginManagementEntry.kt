@@ -18,4 +18,7 @@ data class PluginManagementEntry(
      * ID of the marketplace the plugin was installed from (null if the plugin was not installed via a marketplace)
      */
     var sourceMarketplaceId: String? = null,
+
+    /** Last known display name, retained when the plugin is uninstalled. */
+    var name: String? = null,
 )

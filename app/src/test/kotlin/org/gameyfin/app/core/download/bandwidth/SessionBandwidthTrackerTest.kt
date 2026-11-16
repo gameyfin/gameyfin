@@ -68,7 +68,7 @@ class SessionBandwidthTrackerTest {
 
     @Test
     fun `downloadStarted should handle null parameters gracefully`() {
-        tracker.downloadStarted(gameId = null, username = null, remoteIp = null)
+        tracker.downloadStarted()
 
         assertEquals(1, tracker.activeDownloads.get())
         assertNull(tracker.username)
@@ -111,7 +111,7 @@ class SessionBandwidthTrackerTest {
     @Test
     fun `downloadCompleted should handle null gameId`() {
         tracker.downloadStarted()
-        tracker.downloadCompleted(gameId = null)
+        tracker.downloadCompleted()
 
         assertEquals(0, tracker.activeDownloads.get())
     }

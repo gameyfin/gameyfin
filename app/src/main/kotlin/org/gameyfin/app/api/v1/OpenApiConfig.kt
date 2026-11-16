@@ -54,7 +54,9 @@ class OpenApiConfig {
     }
 
     private fun methodRank(item: PathItem): Int =
-        item.readOperationsMap().keys.minOfOrNull { methodOrder.indexOf(it.name).takeIf { i -> i >= 0 } ?: methodOrder.size }
+        item.readOperationsMap().keys.minOfOrNull {
+            methodOrder.indexOf(it.name).takeIf { i -> i >= 0 } ?: methodOrder.size
+        }
             ?: methodOrder.size
 
     private val errorResponses = mapOf(

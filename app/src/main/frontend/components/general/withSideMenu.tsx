@@ -1,7 +1,11 @@
+import {createPortal} from "react-dom";
+import {CompactHeaderActionsContext} from "Frontend/components/layout/CompactHeaderActionsContext";
+import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
+import NavigationDrawer from "Frontend/components/layout/NavigationDrawer";
 import {Outlet, useLocation} from "react-router";
-import {Icon} from "@phosphor-icons/react";
-import {ListBox} from "@heroui/react";
-import {ReactElement} from "react";
+import {Icon, ListIcon} from "@phosphor-icons/react";
+import {Button, ListBox} from "@heroui/react";
+import {ReactElement, useContext, useState} from "react";
 import {useSnapshot} from "valtio/react";
 import {layoutState} from "Frontend/state/LayoutState";
 
@@ -16,7 +20,10 @@ const CONTENT_TOP_GAP = 16;
 
 export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
     return function PageWithSideMenu() {
+        const headerActions = useContext(CompactHeaderActionsContext);
+        const compact = useMediaQuery(COMPACT_QUERY);
         const location = useLocation();
+        const [menuOpen, setMenuOpen] = useState(false);
         const selectedItem = selectedFromPath(location.pathname);
         const {stickyHeader, headerHeight} = useSnapshot(layoutState);
 
@@ -46,23 +53,39 @@ export default function withSideMenu(baseUrl: string, menuItems: MenuItem[]) {
             return afterBase.replace(/^\/+/, "").split("/")[0] || "";
         }
 
+        const menu = (
+            <ListBox aria-label="Sections" className="w-full">
+                {menuItems.map((i) => (
+                    <ListBox.Item key={key(i.url)} id={key(i.url)} href={link(i.url)}
+                                  onAction={() => setMenuOpen(false)}
+                                  aria-current={key(i.url) === selectedItem ? "page" : undefined}
+                                  className={`h-12 ${key(i.url) === selectedItem ? "bg-accent text-accent-foreground" : ""}`}>
+                        <div className="flex flex-row gap-2 items-center">
+                            {i.icon}
+                            <p>{i.title}</p>
+                        </div>
+                    </ListBox.Item>
+                ))}
+            </ListBox>
+        );
+
         return (
-            <div className="flex flex-row">
-                <div className="flex flex-col shrink-0 pr-8 sticky self-start"
+            <div className="flex flex-col xl:flex-row min-w-0">
+                {compact && headerActions && createPortal(
+                    <Button isIconOnly variant="secondary" className="min-h-11 min-w-11 shrink-0"
+                            aria-label="Open section menu" aria-haspopup="dialog" aria-expanded={menuOpen}
+                            onPress={() => setMenuOpen(true)}>
+                        <ListIcon aria-hidden="true"/>
+                    </Button>, headerActions
+                )}
+                {compact && <NavigationDrawer title="Sections" open={menuOpen}
+                                              onOpenChange={setMenuOpen}>{menu}</NavigationDrawer>}
+                <div className="hidden xl:flex flex-col w-68 shrink-0 pr-8 sticky self-start"
                      style={{top: (stickyHeader ? headerHeight : 0) + CONTENT_TOP_GAP}}>
-                    <ListBox className="w-60">
-                        {menuItems.map((i) => (
-                            <ListBox.Item key={key(i.url)} id={key(i.url)} href={link(i.url)}
-                                          className={`h-12 ${key(i.url) === selectedItem ? "bg-accent" : ""}`}>
-                                <div className="flex flex-row gap-2 items-center">
-                                    {i.icon}
-                                    <p>{i.title}</p>
-                                </div>
-                            </ListBox.Item>
-                        ))}
-                    </ListBox>
+                    {!compact && menu}
+
                 </div>
-                <div className="flex-1 min-w-0 overflow-auto">
+                <div className="flex-1 min-w-0">
                     <Outlet/>
                 </div>
             </div>

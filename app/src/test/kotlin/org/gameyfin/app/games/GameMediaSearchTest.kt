@@ -16,14 +16,24 @@ class GameMediaSearchTest {
     fun `search merges screenshots with plugin attribution and deduplicates URLs`() {
         val manager = mockk<GameyfinPluginManager>()
         val plugins = mockk<PluginService>()
-        val first = object : GameMetadataProvider by TestProvider(GameMetadata(
-            originalId = "first", title = "Game",
-            screenshotUrls = linkedSetOf(URI("https://example.com/shared.png"), URI("https://example.com/first.png"))
-        )) {}
-        val second = object : GameMetadataProvider by TestProvider(GameMetadata(
-            originalId = "second", title = "Game",
-            screenshotUrls = linkedSetOf(URI("https://example.com/shared.png"), URI("https://example.com/second.png"))
-        )) {}
+        val first = object : GameMetadataProvider by TestProvider(
+            GameMetadata(
+                originalId = "first", title = "Game",
+                screenshotUrls = linkedSetOf(
+                    URI("https://example.com/shared.png"),
+                    URI("https://example.com/first.png")
+                )
+            )
+        ) {}
+        val second = object : GameMetadataProvider by TestProvider(
+            GameMetadata(
+                originalId = "second", title = "Game",
+                screenshotUrls = linkedSetOf(
+                    URI("https://example.com/shared.png"),
+                    URI("https://example.com/second.png")
+                )
+            )
+        ) {}
         every { manager.getExtensions(GameMetadataProvider::class.java) } returns listOf(first, second)
         every { plugins.getPluginManagementEntry(first.javaClass) } returns mockk<PluginManagementEntry> {
             every { pluginId } returns "first-plugin"
@@ -36,10 +46,11 @@ class GameMediaSearchTest {
         val service = GameService(mockk(), manager, plugins, mockk(), mockk(), mockk(), mockk(), mockk())
         val results = service.getPotentialMatches("Game", emptySet())
         assertEquals(1, results.size)
-        assertEquals(mapOf(
-            "https://example.com/shared.png" to "first-plugin",
-            "https://example.com/first.png" to "first-plugin",
-            "https://example.com/second.png" to "second-plugin"
-        ), results.single().screenshotUrls!!.associate { it.url to it.pluginId })
+        assertEquals(
+            mapOf(
+                "https://example.com/shared.png" to "first-plugin",
+                "https://example.com/first.png" to "first-plugin",
+                "https://example.com/second.png" to "second-plugin"
+            ), results.single().screenshotUrls!!.associate { it.url to it.pluginId })
     }
 }

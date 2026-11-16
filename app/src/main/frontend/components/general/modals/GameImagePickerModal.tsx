@@ -1,3 +1,4 @@
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import React, {useEffect, useRef, useState} from "react";
 import {Button, Input, Modal, Spinner} from "@heroui/react";
 import GameDto from "Frontend/generated/org/gameyfin/app/games/dto/GameDto";
@@ -6,7 +7,10 @@ import {DraftImage, IMAGE_ACCEPT, MediaKind, remoteImage, uploadedImages} from "
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
-import {ArrowRightIcon, CheckIcon, UploadSimpleIcon} from "@phosphor-icons/react";
+import {ArrowRightIcon, CheckIcon} from "@phosphor-icons/react";
+import UploadButton from "Frontend/components/general/input/UploadButton";
+import {useAuth} from "Frontend/util/auth";
+import {GameFieldMetadataDto, GameFieldMetadataType} from "Frontend/dtos/GameDtos";
 
 interface Props {
     game: GameDto;
@@ -34,11 +38,14 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
     const [hasSearched, setHasSearched] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
-    const fileInput = useRef<HTMLInputElement>(null);
     const request = useRef(0);
     const mounted = useRef(true);
     const searchInFlight = useRef(false);
     const plugins = useSnapshot(pluginState).state;
+    const {state: auth} = useAuth();
+    const userSource: GameFieldMetadataDto | undefined = auth.user ? {
+        type: GameFieldMetadataType.USER, source: auth.user.username, updatedAt: new Date().toISOString()
+    } : undefined;
 
     useEffect(() => {
         mounted.current = true;
@@ -83,7 +90,16 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
 
     function selectUrls(urls: string[]) {
         try {
-            onSelect(urls.map(remoteImage));
+            onSelect(urls.map(url => {
+                const image = remoteImage(url);
+                const pluginId = results.find(result => result.url === url)?.pluginId;
+                return {
+                    ...image, selection: {...image.selection, pluginId}, source: pluginId ? {
+                        type: GameFieldMetadataType.PLUGIN, source: pluginId, sourceName: plugins[pluginId]?.name,
+                        updatedAt: new Date().toISOString()
+                    } : userSource
+                };
+            }));
             onClose();
         } catch (error) {
             setError(error instanceof Error ? error.message : "Enter a valid image URL.");
@@ -100,7 +116,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                 drafts.forEach(image => URL.revokeObjectURL(image.previewUrl));
                 return;
             }
-            onSelect(drafts);
+            onSelect(drafts.map(image => ({...image, source: userSource})));
             onClose();
         } catch (error) {
             if (mounted.current) setError(error instanceof Error ? error.message : "Image upload failed.");
@@ -113,7 +129,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
         <Modal.Backdrop isOpen onOpenChange={open => {
             if (!open) onClose();
         }}>
-            <Modal.Container size="lg" className="max-w-3xl">
+            <ResponsiveDialog size="lg" className="max-w-3xl">
                 <Modal.Dialog>
                     <Modal.CloseTrigger/>
                     <Modal.Header><Modal.Heading>Choose {multiple ? "screenshots" : `a ${label}`}</Modal.Heading></Modal.Header>
@@ -123,17 +139,8 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                             <div className="flex flex-row items-center gap-2">
                                 <span
                                     className="text-sm text-muted"> JPEG, PNG, WebP or GIF. Up to 20 MiB per image.</span>
-                                <Button type="button" variant="primary" onPress={() => fileInput.current?.click()}
-                                        isPending={uploading}>
-                                    {uploading ? <Spinner size="sm" color="current"/> : <UploadSimpleIcon/>}
-                                    Upload {multiple ? "images" : "an image"}
-                                </Button>
-                                <input ref={fileInput} type="file" accept={IMAGE_ACCEPT} multiple={multiple}
-                                       className="hidden" disabled={uploading}
-                                       onChange={event => {
-                                           void upload(Array.from(event.target.files ?? []));
-                                           event.target.value = "";
-                                       }}/>
+                                <UploadButton label={`Upload ${multiple ? "images" : "an image"}`} accept={IMAGE_ACCEPT}
+                                              multiple={multiple} isPending={uploading} onFilesSelected={upload}/>
                             </div>
                         </div>
                         <div className="flex gap-2">
@@ -207,7 +214,7 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                             ({selected.length})</Button>}
                     </Modal.Footer>
                 </Modal.Dialog>
-            </Modal.Container>
+            </ResponsiveDialog>
         </Modal.Backdrop>
     </Modal>;
 }

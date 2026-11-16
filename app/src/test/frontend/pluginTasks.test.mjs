@@ -25,12 +25,21 @@ function fixture() {
     let receive;
     let reloads = 0;
     const endpoints = {
-        TaskEndpoint: {subscribeToTaskRuns: () => ({onNext: handler => { receive = handler; }})},
+        TaskEndpoint: {
+            subscribeToTaskRuns: () => ({
+                onNext: handler => {
+                    receive = handler;
+                }
+            })
+        },
         PluginMarketplaceEndpoint: {
             install: async () => run(),
             update: async () => run(),
             uninstall: async () => run(),
-            getPlugins: async () => { reloads++; return [{id: "plugin", status: "INSTALLED"}]; }
+            getPlugins: async () => {
+                reloads++;
+                return [{id: "plugin", status: "INSTALLED"}];
+            }
         }
     };
     const tasks = loadModule("../../main/frontend/state/TaskState.ts", {
@@ -53,12 +62,21 @@ function fixture() {
         },
         "Frontend/state/TaskState": tasks
     });
-    return {marketplace, tasks, endpoints, notifications, receive: (...args) => receive(...args), reloads: () => reloads};
+    return {
+        marketplace,
+        tasks,
+        endpoints,
+        notifications,
+        receive: (...args) => receive(...args),
+        reloads: () => reloads
+    };
 }
 
 function run(status = "IN_PROGRESS") {
-    return {id: "run", taskKey: "core.plugin.install", displayName: "Install plugin", status,
-        visibleInOverview: false, summary: "Installed", errorMessage: "Download failed"};
+    return {
+        id: "run", taskKey: "core.plugin.install", displayName: "Install plugin", status,
+        visibleInOverview: false, summary: "Installed", errorMessage: "Download failed"
+    };
 }
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
@@ -114,7 +132,9 @@ test("a finished subscription update before the response is announced once", asy
 
 test("failure to start the task clears pending state and propagates the error", async () => {
     const f = fixture();
-    f.endpoints.PluginMarketplaceEndpoint.install = async () => { throw new Error("Unavailable"); };
+    f.endpoints.PluginMarketplaceEndpoint.install = async () => {
+        throw new Error("Unavailable");
+    };
     await assert.rejects(f.marketplace.installPlugin("market", "plugin"), /Unavailable/);
     assert.equal(f.marketplace.marketplaceState.pending.plugin, undefined);
 });

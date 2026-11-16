@@ -1,12 +1,11 @@
-import {Button, ComboBox, Input, ListBox, Modal, Table, toast, Tooltip, Spinner} from "@heroui/react";
+import GameSearchResults from "./GameSearchResults";
+import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
+import {Button, ComboBox, Input, ListBox, Modal, Spinner, toast, Tooltip} from "@heroui/react";
 import React, {useEffect, useState} from "react";
 import {ArrowRightIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import {GameEndpoint, GameRequestEndpoint} from "Frontend/generated/endpoints";
 import GameSearchResultDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSearchResultDto";
-import PluginIcon from "../plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
-import {pluginState} from "Frontend/state/PluginState";
-import PluginDto from "Frontend/generated/org/gameyfin/app/core/plugins/dto/PluginDto";
 import GameRequestCreationDto from "Frontend/generated/org/gameyfin/app/requests/dto/GameRequestCreationDto";
 import Platform from "Frontend/generated/org/gameyfin/pluginapi/gamemetadata/Platform";
 import {platformState} from "Frontend/state/PlatformState";
@@ -29,7 +28,6 @@ export default function RequestGameModal({
     const [isSearching, setIsSearching] = useState(false);
     const [isRequesting, setIsRequesting] = useState<string | null>(null);
 
-    const plugins = useSnapshot(pluginState).state;
     const availablePlatforms = useSnapshot(platformState).available;
 
     useEffect(() => {
@@ -68,7 +66,7 @@ export default function RequestGameModal({
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}
                             isDismissable={!isSearching && !isRequesting}>
-                <Modal.Container size="lg" className="max-w-5xl">
+                <ResponsiveDialog size="lg" className="max-w-5xl">
                     <Modal.Dialog>
                         {({close}) => (
                             <Modal.Body className="my-4">
@@ -97,7 +95,7 @@ export default function RequestGameModal({
                                     </ComboBox.Popover>
                                 </ComboBox>
                                 <div className="flex flex-row gap-2 my-4">
-                                    <Input value={searchTerm}
+                                    <Input aria-label="Search games" value={searchTerm}
                                            className="flex-1"
                                            onChange={(e) => setSearchTerm(e.target.value)}
                                            onKeyDown={async (e) => {
@@ -107,7 +105,7 @@ export default function RequestGameModal({
                                                }
                                            }}
                                     />
-                                    <Button isIconOnly
+                                    <Button isIconOnly aria-label="Search games"
                                             variant="primary"
                                             onPress={search}
                                             isPending={isSearching}>
@@ -116,77 +114,28 @@ export default function RequestGameModal({
                                 </div>
 
                                 <div>
-                                    <Table variant="secondary" className="h-80">
-                                        <Table.ScrollContainer className="h-80">
-                                            <Table.Content>
-                                                <Table.Header className="sticky top-0 z-10 bg-background">
-                                                    <Table.Column id="title" isRowHeader>Title & Release</Table.Column>
-                                                    <Table.Column id="developers">Developer(s)</Table.Column>
-                                                    <Table.Column id="publishers">Publisher(s)</Table.Column>
-                                                    <Table.Column id="sources">Sources</Table.Column>
-                                                    <Table.Column id="actions"> </Table.Column>
-                                                </Table.Header>
-                                                <Table.Body renderEmptyState={() => <p
-                                                    className="text-center text-muted p-4">Your search did not match any
-                                                    games.</p>}
-                                                            items={searchResults}>
-                                                    {(item) => (
-                                                        <Table.Row key={item.id}>
-                                                            <Table.Cell>
-                                                                {item.title} ({item.release ? new Date(item.release).getFullYear() : "unknown"})
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <div className="flex flex-col">
-                                                                    {item.developers ? item.developers.map(
-                                                                        developer => <p>{developer}</p>
-                                                                    ) : "unknown"}
-                                                                </div>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <div className="flex flex-col">
-                                                                    {item.publishers ? item.publishers.map(
-                                                                        publisher => <p>{publisher}</p>
-                                                                    ) : "unknown"}
-                                                                </div>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <div className="flex flex-row gap-2">
-                                                                    {Object.values(item.originalIds).map(
-                                                                        originalId => <PluginIcon
-                                                                            plugin={plugins[originalId.pluginId] as PluginDto}/>
-                                                                    )}
-                                                                </div>
-                                                            </Table.Cell>
-                                                            <Table.Cell>
-                                                                <Tooltip>
-                                                                    <Tooltip.Trigger>
-                                                                        <Button isIconOnly size="sm"
-                                                                                isDisabled={isRequesting !== null}
-                                                                                isPending={isRequesting === item.id}
-                                                                                onPress={async () => {
-                                                                                    setIsRequesting(item.id);
-                                                                                    await requestGame(item);
-                                                                                    setIsRequesting(null);
-                                                                                    close();
-                                                                                }}>
-                                                                            {isRequesting === item.id ? <Spinner size="sm" color="current"/> : <ArrowRightIcon/>}
-                                                                        </Button>
-                                                                    </Tooltip.Trigger>
-                                                                    <Tooltip.Content placement="bottom">Pick this
-                                                                        result</Tooltip.Content>
-                                                                </Tooltip>
-                                                            </Table.Cell>
-                                                        </Table.Row>
-                                                    )}
-                                                </Table.Body>
-                                            </Table.Content>
-                                        </Table.ScrollContainer>
-                                    </Table>
+                                    <GameSearchResults results={searchResults} actions={item => (
+                                        <Tooltip>
+                                            <Button isIconOnly size="sm" aria-label={`Pick ${item.title}`}
+                                                    isDisabled={isRequesting !== null}
+                                                    isPending={isRequesting === item.id}
+                                                    onPress={async () => {
+                                                        setIsRequesting(item.id);
+                                                        await requestGame(item);
+                                                        setIsRequesting(null);
+                                                        close();
+                                                    }}>
+                                                {isRequesting === item.id ? <Spinner size="sm" color="current"/> :
+                                                    <ArrowRightIcon/>}
+                                            </Button>
+                                            <Tooltip.Content placement="bottom">Pick this result</Tooltip.Content>
+                                        </Tooltip>
+                                    )}/>
                                 </div>
                             </Modal.Body>
                         )}
                     </Modal.Dialog>
-                </Modal.Container>
+                </ResponsiveDialog>
             </Modal.Backdrop>
         </Modal>
     );
