@@ -1,8 +1,8 @@
 package org.gameyfin.app.core.exceptions
 
-import com.vaadin.hilla.exception.EndpointException
 import com.vaadin.hilla.EndpointInvocationException.EndpointForbiddenException
 import com.vaadin.hilla.EndpointInvocationException.EndpointUnauthorizedException
+import com.vaadin.hilla.exception.EndpointException
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around

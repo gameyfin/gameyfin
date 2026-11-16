@@ -13,10 +13,10 @@ import org.gameyfin.app.api.v1.apiId
 import org.gameyfin.app.api.v1.dto.DownloadLinkV1
 import org.gameyfin.app.api.v1.dto.DownloadProviderV1
 import org.gameyfin.app.api.v1.service.CatalogServiceV1
-import org.gameyfin.app.core.download.files.GameDownloadLifecycle
 import org.gameyfin.app.core.LookupPolicy
 import org.gameyfin.app.core.download.files.DownloadResponses
 import org.gameyfin.app.core.download.files.DownloadService
+import org.gameyfin.app.core.download.files.GameDownloadLifecycle
 import org.gameyfin.app.core.getRemoteIp
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.media.ImageService

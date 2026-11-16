@@ -869,7 +869,11 @@ class GameService(
         internal val providers: Map<GameMetadataProvider, PluginManagementEntry?> = emptyMap()
     )
 
-    fun prepareMetadata(originalIds: Map<String, ExternalProviderIdDto>, path: Path, library: Library): PreparedMetadata {
+    fun prepareMetadata(
+        originalIds: Map<String, ExternalProviderIdDto>,
+        path: Path,
+        library: Library
+    ): PreparedMetadata {
         val results = fetchMetadataByOriginalIds(originalIds, null).filterValuesNotNull()
         require(originalIds.isEmpty() || results.isNotEmpty()) { "No metadata returned. Choose another result or enter metadata manually." }
         // Uploads can take hours. Keep the exact provider priorities and sources shown in the form.
@@ -1191,6 +1195,7 @@ class GameService(
         fun image(url: String, type: ImageType): Image = Image(originalUrl = url, type = type).let {
             if (persistReferences) imageService.createOrGet(it) else it
         }
+
         fun company(name: String, type: CompanyType): Company = Company(name = name, type = type).let {
             if (persistReferences) companyService.createOrGet(it) else it
         }

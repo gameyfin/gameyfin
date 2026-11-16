@@ -28,7 +28,8 @@ object LoginReturnUrl {
         if (uri.isAbsolute || uri.rawAuthority != null || !path.startsWith("/") || path.startsWith("//")) return null
         if (path.any { it.isISOControl() } || '\\' in path || ';' in path) return null
         if (path.trimEnd('/') in setOf("/login", "/loginredirect", "/login/success", "/setup", "/logout") ||
-            path.startsWith("/oauth2/") || path.startsWith("/login/")) return null
+            path.startsWith("/oauth2/") || path.startsWith("/login/")
+        ) return null
         return target
     }
 }

@@ -11,8 +11,8 @@ import org.gameyfin.app.core.events.LibraryDeletedEvent
 import org.gameyfin.app.core.events.LibraryFilesystemWatcherConfigUpdatedEvent
 import org.gameyfin.app.core.events.LibraryUpdatedEvent
 import org.gameyfin.app.core.filesystem.FilesystemService
-import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.core.filesystem.GAME_UPLOAD_DIRECTORY
+import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
 import org.springframework.context.event.EventListener

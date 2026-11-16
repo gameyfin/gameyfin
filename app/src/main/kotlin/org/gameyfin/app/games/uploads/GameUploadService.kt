@@ -1,8 +1,8 @@
 package org.gameyfin.app.games.uploads
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.filesystem.GAME_UPLOAD_DIRECTORY
+import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.dto.GameUpdateDto
 import org.gameyfin.app.libraries.LibraryCoreService
@@ -23,7 +23,7 @@ import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
@@ -48,9 +48,15 @@ class GameUploadService(
         val cancelled = AtomicBoolean()
         val completed = mutableSetOf<Int>()
         var prepared: GameService.PreparedMetadata? = null
-        @Volatile var touched: Instant = Instant.now()
-        @Volatile var gameId: Long? = null
-        @Volatile var input: InputStream? = null
+
+        @Volatile
+        var touched: Instant = Instant.now()
+
+        @Volatile
+        var gameId: Long? = null
+
+        @Volatile
+        var input: InputStream? = null
         val payload: Path get() = staging.resolve("payload")
     }
 
@@ -58,6 +64,10 @@ class GameUploadService(
     private val transaction = TransactionTemplate(transactionManager)
     private val log = KotlinLogging.logger {}
     private val marker = "gameyfin-upload-staging-v1"
+
+    companion object {
+        const val OWNER_DIR = ".owner"
+    }
 
     /** Preflight checks are read-only; creation and publication recheck before changing files. */
     fun validateDestination(request: GameUploadDestinationDto) {
@@ -134,7 +144,12 @@ class GameUploadService(
         }
     }
 
-    fun complete(owner: String, id: UUID, metadata: GameUpdateDto, media: Map<String, MultipartFile>): GameUploadStatus =
+    fun complete(
+        owner: String,
+        id: UUID,
+        metadata: GameUpdateDto,
+        media: Map<String, MultipartFile>
+    ): GameUploadStatus =
         withSession(owner, id) { session ->
             if (session.gameId == null) {
                 require(session.completed.size == session.request.files.size) { "Upload every file before publishing" }
@@ -146,7 +161,11 @@ class GameUploadService(
                     checkDestination(session, library)
                     val target = session.root.resolve(session.request.name)
                     conflictIfExists(target)
-                    val payloadKey = Files.readAttributes(session.payload, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS).fileKey()
+                    val payloadKey = Files.readAttributes(
+                        session.payload,
+                        BasicFileAttributes::class.java,
+                        LinkOption.NOFOLLOW_LINKS
+                    ).fileKey()
                     var published = false
                     try {
                         val gameId = transaction.execute {
@@ -167,7 +186,11 @@ class GameUploadService(
                         if (published) {
                             // Keep completed files available for a fresh submission if persistence fails.
                             runCatching {
-                                val currentKey = Files.readAttributes(target, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS).fileKey()
+                                val currentKey = Files.readAttributes(
+                                    target,
+                                    BasicFileAttributes::class.java,
+                                    LinkOption.NOFOLLOW_LINKS
+                                ).fileKey()
                                 check(payloadKey != null && payloadKey == currentKey) { "Published files changed; preserving them for recovery" }
                                 Files.move(target, session.payload)
                             }.onFailure { e.addSuppressed(it) }
@@ -266,7 +289,7 @@ class GameUploadService(
         val staging = root.resolve(GAME_UPLOAD_DIRECTORY)
         if (!Files.exists(staging, LinkOption.NOFOLLOW_LINKS)) {
             Files.createDirectory(staging)
-            Files.writeString(staging.resolve(".owner"), marker, StandardOpenOption.CREATE_NEW)
+            Files.writeString(staging.resolve(OWNER_DIR), marker, StandardOpenOption.CREATE_NEW)
         }
         require(ownedStagingRoot(staging)) { "Reserved upload directory already exists or is unsafe" }
         return staging
@@ -274,8 +297,8 @@ class GameUploadService(
 
     private fun ownedStagingRoot(path: Path): Boolean =
         Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS) && !Files.isSymbolicLink(path) &&
-            Files.isRegularFile(path.resolve(".owner"), LinkOption.NOFOLLOW_LINKS) &&
-            Files.readString(path.resolve(".owner")) == marker
+                Files.isRegularFile(path.resolve(OWNER_DIR), LinkOption.NOFOLLOW_LINKS) &&
+                Files.readString(path.resolve(OWNER_DIR)) == marker
 
     private fun validateManifest(request: GameUploadRequest) {
         component(request.name)
@@ -302,12 +325,13 @@ class GameUploadService(
     }
 
     private fun component(name: String) {
-        require(name.isNotEmpty() && name != "." && name != ".." &&
-            name.none { it == '/' || it == '\\' || it == ':' || it.code < 32 || it.code == 127 }) { "Invalid file or folder name" }
+        require(
+            name.isNotEmpty() && name != "." && name != ".." &&
+                    name.none { it == '/' || it == '\\' || it == ':' || it.code < 32 || it.code == 127 }) { "Invalid file or folder name" }
         // Reject rather than silently normalize names on Windows.
         if (System.getProperty("os.name").lowercase().contains("win")) {
             require(name.none { it in "<>\"|?*" } && !name.endsWith('.') && !name.endsWith(' ') &&
-                !name.substringBefore('.').uppercase().matches(Regex("CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]"))) {
+                    !name.substringBefore('.').uppercase().matches(Regex("CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]"))) {
                 "Unsupported file or folder name"
             }
         }
@@ -344,6 +368,7 @@ class GameUploadService(
                 Files.delete(file)
                 return FileVisitResult.CONTINUE
             }
+
             override fun postVisitDirectory(dir: Path, exc: java.io.IOException?): FileVisitResult {
                 if (exc != null) throw exc
                 Files.delete(dir)

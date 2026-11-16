@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest
 import org.springframework.web.server.ResponseStatusException
 import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
-import java.util.UUID
+import java.util.*
 
 @RestController
 @RequestMapping("/game-uploads")

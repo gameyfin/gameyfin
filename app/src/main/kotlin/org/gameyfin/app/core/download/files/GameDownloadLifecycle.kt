@@ -108,7 +108,8 @@ internal object GameDownloadLifecycle {
     }
 
     class Transfer internal constructor(private val gameId: Long) : Closeable {
-        @Volatile private var cancelled = false
+        @Volatile
+        private var cancelled = false
         private var resource: Closeable? = null
         private var worker: Thread? = null
         private var closed = false

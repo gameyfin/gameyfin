@@ -5,11 +5,7 @@ import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.LinkDownload
 import org.gameyfin.pluginapi.download.RangeDownload
-import org.springframework.http.CacheControl
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.context.request.async.CallableProcessingInterceptor
 import org.springframework.web.context.request.async.WebAsyncUtils
@@ -35,7 +31,12 @@ internal object DownloadResponses {
             return ResponseEntity.status(HttpStatus.FOUND).location(location)
                 .cacheControl(CacheControl.noStore()).build()
         }
-        val html = """<!doctype html><html><head><meta charset="utf-8"></head><body><a id="download-link" href="${HtmlUtils.htmlEscape(download.url, "UTF-8")}">Open link</a></body></html>"""
+        val html = """<!doctype html><html><head><meta charset="utf-8"></head><body><a id="download-link" href="${
+            HtmlUtils.htmlEscape(
+                download.url,
+                "UTF-8"
+            )
+        }">Open link</a></body></html>"""
         return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).cacheControl(CacheControl.noStore())
             .header("X-Frame-Options", "SAMEORIGIN")
             .header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'self'; base-uri 'none'")
