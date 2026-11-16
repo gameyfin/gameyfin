@@ -55,8 +55,8 @@ export interface SyncedStore<F> {
     /** Returns the full DTO, from the in-memory tier, the persistent cache or the server (in this order) */
     loadFull(id: number, force?: boolean): Promise<F | undefined>;
 
-    /** Requests a (delta) synchronization with the server */
-    resync(): void;
+    /** Synchronizes with the server, including any run already in progress. */
+    resync(): Promise<void>;
 }
 
 /**
@@ -385,7 +385,7 @@ export function createSyncedStore<
     return {
         start,
         loadFull,
-        resync: () => scheduleResync(0)
+        resync: () => sync(generation)
     };
 }
 

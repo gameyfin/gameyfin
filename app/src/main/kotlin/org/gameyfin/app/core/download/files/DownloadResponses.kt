@@ -3,22 +3,46 @@ package org.gameyfin.app.core.download.files
 import jakarta.servlet.http.HttpServletRequest
 import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.FileDownload
+import org.gameyfin.pluginapi.download.LinkDownload
 import org.gameyfin.pluginapi.download.RangeDownload
-import org.springframework.http.HttpHeaders
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.context.request.async.CallableProcessingInterceptor
 import org.springframework.web.context.request.async.WebAsyncUtils
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
+import org.springframework.web.util.HtmlUtils
 import java.io.Closeable
 import java.io.FilterOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.URI
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicBoolean
 
 /** Shared HTTP framing for browser and API downloads. */
 internal object DownloadResponses {
+    /** The browser frame reads the actual link result; direct HTTP callers retain redirects. */
+    fun link(download: LinkDownload, request: HttpServletRequest): ResponseEntity<StreamingResponseBody> {
+        val location = URI.create(download.url)
+        require(location.scheme?.lowercase() !in setOf("javascript", "data", "vbscript")) {
+            "Unsupported download link scheme"
+        }
+        if (request.getParameter("client") != "browser") {
+            return ResponseEntity.status(HttpStatus.FOUND).location(location)
+                .cacheControl(CacheControl.noStore()).build()
+        }
+        val html = """<!doctype html><html><head><meta charset="utf-8"></head><body><a id="download-link" href="${
+            HtmlUtils.htmlEscape(
+                download.url,
+                "UTF-8"
+            )
+        }">Open link</a></body></html>"""
+        return ResponseEntity.ok().contentType(MediaType.TEXT_HTML).cacheControl(CacheControl.noStore())
+            .header("X-Frame-Options", "SAMEORIGIN")
+            .header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'self'; base-uri 'none'")
+            .body(StreamingResponseBody { it.write(html.toByteArray(Charsets.UTF_8)) })
+    }
+
     private sealed interface Selection {
         data object Full : Selection
         data object Unsatisfiable : Selection

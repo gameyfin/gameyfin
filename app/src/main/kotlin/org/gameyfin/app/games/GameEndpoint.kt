@@ -5,10 +5,12 @@ import com.vaadin.hilla.Endpoint
 import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.annotations.DynamicPublicAccess
+import org.gameyfin.app.core.download.files.GameDownloadLifecycle
 import org.gameyfin.app.core.plugins.dto.ExternalProviderIdDto
 import org.gameyfin.app.core.security.isCurrentUserAdmin
 import org.gameyfin.app.games.dto.*
 import org.gameyfin.app.libraries.LibraryCoreService
+import org.gameyfin.app.libraries.LibraryOperationLock
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import reactor.core.publisher.Flux
 import java.nio.file.Path
@@ -54,9 +56,17 @@ class GameEndpoint(
     fun updateGame(game: GameUpdateDto) = gameService.edit(game)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun deleteGame(gameId: Long) {
-        libraryCoreService.deleteGameFromLibrary(gameId)
-        gameService.delete(gameId)
+    fun deleteGame(gameId: Long, deleteFiles: Boolean? = false) = GameDownloadLifecycle.remove(gameId) {
+        if (deleteFiles == true) {
+            val libraryId = gameService.getById(gameId).library.id!!
+            LibraryOperationLock.withLibrary(libraryId) {
+                libraryCoreService.deleteGameFromLibrary(gameId, deleteFiles = true)
+                gameService.delete(gameId)
+            }
+        } else {
+            libraryCoreService.deleteGameFromLibrary(gameId)
+            gameService.delete(gameId)
+        }
     }
 
     @RolesAllowed(Role.Names.ADMIN)

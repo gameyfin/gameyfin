@@ -1,5 +1,6 @@
 package org.gameyfin.app.libraries
 
+import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.GameService
@@ -25,7 +26,8 @@ class LibraryCoreService(
     private val gameService: GameService,
     private val ignoredPathRepository: IgnoredPathRepository,
     private val userService: UserService,
-    private val pluginService: PluginService
+    private val pluginService: PluginService,
+    private val filesystemService: FilesystemService
 ) {
     /**
      * Loads a library with its (lazy) games and ignored paths initialized, so the returned (detached) entity graph
@@ -68,9 +70,13 @@ class LibraryCoreService(
     }
 
     @Transactional
-    fun deleteGameFromLibrary(gameId: Long) {
+    fun deleteGameFromLibrary(gameId: Long, deleteFiles: Boolean = false) {
         val game = gameService.getById(gameId)
         val library = game.library
+
+        if (deleteFiles) {
+            filesystemService.deleteGameFiles(game.metadata.path, library)
+        }
 
         library.games.removeIf { it.id == gameId }
 

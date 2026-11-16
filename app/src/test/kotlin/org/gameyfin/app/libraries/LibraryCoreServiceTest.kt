@@ -1,6 +1,7 @@
 package org.gameyfin.app.libraries
 
 import io.mockk.*
+import org.gameyfin.app.core.filesystem.FilesystemService
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
@@ -24,6 +25,7 @@ class LibraryCoreServiceTest {
     private lateinit var libraryCoreService: LibraryCoreService
     private lateinit var ignoredPathRepository: IgnoredPathRepository
     private lateinit var userService: UserService
+    private lateinit var filesystemService: FilesystemService
     private lateinit var pluginService: PluginService
 
     @BeforeEach
@@ -33,13 +35,15 @@ class LibraryCoreServiceTest {
         ignoredPathRepository = mockk()
         userService = mockk()
         pluginService = mockk()
+        filesystemService = mockk(relaxed = true)
 
         libraryCoreService = LibraryCoreService(
             libraryRepository,
             gameService,
             ignoredPathRepository,
             userService,
-            pluginService
+            pluginService,
+            filesystemService
         )
     }
 
@@ -164,6 +168,7 @@ class LibraryCoreServiceTest {
         libraryCoreService.deleteGameFromLibrary(gameId)
 
         assertEquals(0, library.games.size)
+        verify(exactly = 0) { filesystemService.deleteGameFiles(any(), any()) }
         verify(exactly = 1) { libraryRepository.save(library) }
     }
 
@@ -203,6 +208,25 @@ class LibraryCoreServiceTest {
 
         assertEquals(1, library.games.size)
         assertEquals(game2, library.games[0])
+    }
+
+    @Test
+    fun `requested file deletion happens before removing game from library`() {
+        val library = createTestLibrary()
+        val game = createTestGame(1L, "/path/game1", library)
+        library.games.add(game)
+        every { gameService.getById(1L) } returns game
+        every { libraryRepository.save(library) } returns library
+        every { ignoredPathRepository.findByPath("/path/game1") } returns null
+        every { pluginService.getPluginManagementEntries(any()) } returns emptyList()
+        every { filesystemService.deleteGameFiles("/path/game1", library) } answers {
+            assertTrue(library.games.contains(game))
+        }
+
+        libraryCoreService.deleteGameFromLibrary(1L, true)
+
+        assertTrue(library.games.isEmpty())
+        verify(exactly = 1) { filesystemService.deleteGameFiles("/path/game1", library) }
     }
 
     private fun createTestGame(id: Long, path: String, library: Library? = null): Game {

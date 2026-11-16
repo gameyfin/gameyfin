@@ -862,6 +862,43 @@ class GameService(
         persist: Boolean = true
     ): Game? = matchByOriginalIds(originalIds, path, library, replaceGameId, persist)
 
+    /** Provider results are retained for publication; preparing a form must not create database records. */
+    class PreparedMetadata internal constructor(
+        internal val results: Map<GameMetadataProvider, PluginApiMetadata?>,
+        val draft: Game,
+        internal val providers: Map<GameMetadataProvider, PluginManagementEntry?> = emptyMap()
+    )
+
+    fun prepareMetadata(
+        originalIds: Map<String, ExternalProviderIdDto>,
+        path: Path,
+        library: Library
+    ): PreparedMetadata {
+        val results = fetchMetadataByOriginalIds(originalIds, null).filterValuesNotNull()
+        require(originalIds.isEmpty() || results.isNotEmpty()) { "No metadata returned. Choose another result or enter metadata manually." }
+        // Uploads can take hours. Keep the exact provider priorities and sources shown in the form.
+        val providers = results.keys.associateWith { pluginService.getPluginManagementEntry(it.javaClass).copy() }
+        val draft = mergeResults(results, path, library, persistReferences = false, providers = providers)
+        if (originalIds.isEmpty()) {
+            draft.title = path.fileName.toString()
+            draft.platforms = library.platforms.toMutableList()
+        } else {
+            draft.platforms = library.platforms.intersect(draft.platforms.toSet()).toMutableList()
+        }
+        return PreparedMetadata(results, draft, providers)
+    }
+
+    @Transactional
+    fun createPrepared(prepared: PreparedMetadata, path: Path, library: Library): Game {
+        val normalized = filesystemService.validateGamePath(path.toString(), library)
+        require(!gameRepository.existsByMetadataPath(normalized.toString())) { "A game already exists at this path" }
+        val game = mergeResults(prepared.results, normalized, library, providers = prepared.providers)
+        game.title = prepared.draft.title
+        game.platforms = prepared.draft.platforms.toMutableList()
+        game.metadata.matchConfirmed = true
+        return create(game)
+    }
+
     private fun matchByOriginalIds(
         originalIds: Map<String, ExternalProviderIdDto>,
         path: Path,
@@ -1100,27 +1137,26 @@ class GameService(
     private fun mergeResults(
         results: Map<GameMetadataProvider, PluginApiMetadata?>,
         path: Path,
-        library: Library
+        library: Library,
+        persistReferences: Boolean = true,
+        providers: Map<GameMetadataProvider, PluginManagementEntry?> =
+            results.keys.associateWith { pluginService.getPluginManagementEntry(it.javaClass) }
     ): Game {
         val mergedGame = Game(path = path, library = library)
         val metadataMap = mutableMapOf<String, GameFieldMetadata>()
         val originalIdsMap = mutableMapOf<PluginManagementEntry, String>()
 
-        // Cache the plugin management entries for each provider
-        val providerToManagementEntry =
-            results.entries.associate { it.key to pluginService.getPluginManagementEntry(it.key.javaClass) }
-
         // Sort results by plugin priority
         val sortedResults = results.entries.sortedByDescending {
-            providerToManagementEntry[it.key]?.priority
+            providers[it.key]?.priority
         }
 
         sortedResults.forEach { (provider, metadata) ->
-            val sourcePlugin = providerToManagementEntry[provider] ?: return@forEach
+            val sourcePlugin = providers[provider] ?: return@forEach
             if (metadata == null) return@forEach
 
             originalIdsMap[sourcePlugin] = metadata.originalId
-            applyMetadataFields(metadata, sourcePlugin, mergedGame, metadataMap)
+            applyMetadataFields(metadata, sourcePlugin, mergedGame, metadataMap, persistReferences)
         }
 
         mergedGame.metadata.fields = metadataMap
@@ -1153,8 +1189,16 @@ class GameService(
         metadata: PluginApiMetadata,
         sourcePlugin: PluginManagementEntry,
         mergedGame: Game,
-        metadataMap: MutableMap<String, GameFieldMetadata>
+        metadataMap: MutableMap<String, GameFieldMetadata>,
+        persistReferences: Boolean = true
     ) {
+        fun image(url: String, type: ImageType): Image = Image(originalUrl = url, type = type).let {
+            if (persistReferences) imageService.createOrGet(it) else it
+        }
+
+        fun company(name: String, type: CompanyType): Company = Company(name = name, type = type).let {
+            if (persistReferences) companyService.createOrGet(it) else it
+        }
         setFieldIfAbsent("platforms", metadata.platforms?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.platforms = it.toMutableList()
         }
@@ -1165,14 +1209,10 @@ class GameService(
             mergedGame.summary = it
         }
         setFieldIfAbsent("coverImage", metadata.coverUrls?.firstOrNull(), metadataMap, sourcePlugin) {
-            mergedGame.coverImage = imageService.createOrGet(
-                Image(originalUrl = it.toString(), type = ImageType.COVER)
-            )
+            mergedGame.coverImage = image(it.toString(), ImageType.COVER)
         }
         setFieldIfAbsent("headerImage", metadata.headerUrls?.firstOrNull(), metadataMap, sourcePlugin) {
-            mergedGame.headerImage = imageService.createOrGet(
-                Image(originalUrl = it.toString(), type = ImageType.HEADER)
-            )
+            mergedGame.headerImage = image(it.toString(), ImageType.HEADER)
         }
         setFieldIfAbsent("release", metadata.release, metadataMap, sourcePlugin) {
             mergedGame.release = it
@@ -1185,19 +1225,11 @@ class GameService(
         }
         setFieldIfAbsent("publishers", metadata.publishedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.publishers =
-                it.map { name ->
-                    companyService.createOrGet(
-                        Company(name = name, type = CompanyType.PUBLISHER)
-                    )
-                }.toMutableList()
+                it.map { name -> company(name, CompanyType.PUBLISHER) }.toMutableList()
         }
         setFieldIfAbsent("developers", metadata.developedBy?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.developers =
-                it.map { name ->
-                    companyService.createOrGet(
-                        Company(name = name, type = CompanyType.DEVELOPER)
-                    )
-                }.toMutableList()
+                it.map { name -> company(name, CompanyType.DEVELOPER) }.toMutableList()
         }
         setFieldIfAbsent("genres", metadata.genres?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {
             mergedGame.genres = it.toList()
@@ -1221,9 +1253,7 @@ class GameService(
             sourcePlugin
         ) { screenshotUrls ->
             mergedGame.images = screenshotUrls.map {
-                imageService.createOrGet(
-                    Image(originalUrl = it.toString(), type = ImageType.SCREENSHOT)
-                )
+                image(it.toString(), ImageType.SCREENSHOT)
             }.toMutableList()
         }
         setFieldIfAbsent("videoUrls", metadata.videoUrls?.takeIf { it.isNotEmpty() }, metadataMap, sourcePlugin) {

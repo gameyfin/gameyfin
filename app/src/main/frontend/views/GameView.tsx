@@ -6,7 +6,7 @@ import {GameCover} from "Frontend/components/general/covers/GameCover";
 import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
-import {Button, Chip, Link, Surface, toast, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Chip, Link, Surface, Tooltip, useOverlayState} from "@heroui/react";
 import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
 import {gameState, useFullGame} from "Frontend/state/GameState";
@@ -32,7 +32,7 @@ import ChipList from "Frontend/components/general/ChipList";
 import {collectionState} from "Frontend/state/CollectionState";
 import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
 import {libraryState} from "Frontend/state/LibraryState.ts";
-import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
+import RemoveGameModal from "Frontend/components/general/modals/RemoveGameModal";
 
 export default function GameView() {
     const {gameId} = useParams();
@@ -43,7 +43,6 @@ export default function GameView() {
     const editGameModal = useOverlayState();
     const matchGameModal = useOverlayState();
     const deleteModal = useOverlayState();
-    const [isDeleting, setIsDeleting] = useState(false);
 
     const state = useSnapshot(gameState);
     const id = gameId ? parseInt(gameId) : undefined;
@@ -97,25 +96,6 @@ export default function GameView() {
                 metadata: {matchConfirmed: !(game.metadata as GameMetadataAdminDto).matchConfirmed}
             } as GameUpdateDto
         );
-    }
-
-    async function deleteGame() {
-        if (!game) return;
-        setIsDeleting(true);
-        try {
-            await GameEndpoint.deleteGame(game.id);
-            toast.success("Game deleted", {
-                description: `${game.title} removed from Gameyfin!`,
-            });
-            deleteModal.close();
-            navigate("/");
-        } catch (e) {
-            toast.warning("Error deleting game", {
-                description: `${game.title} could not be removed from Gameyfin!`,
-            });
-        } finally {
-            setIsDeleting(false);
-        }
     }
 
     return game && (
@@ -389,14 +369,9 @@ export default function GameView() {
                 </div>
             </div>
             {isAdmin(auth) && <>
-                <ConfirmModal isOpen={deleteModal.isOpen}
-                              onOpenChange={deleteModal.setOpen}
-                              title="Remove from library"
-                              confirmLabel="Remove"
-                              isPending={isDeleting}
-                              onConfirm={deleteGame}>
-                    <p>Remove <code>{game.title}</code> from the library? This can not be undone.</p>
-                </ConfirmModal>
+                <RemoveGameModal game={{id: game.id, title: game.title, path: (game.metadata as GameMetadataAdminDto).path}}
+                                 isOpen={deleteModal.isOpen} onOpenChange={deleteModal.setOpen}
+                                 onRemoved={() => navigate("/")}/>
                 <EditGameMetadataModal gameId={game.id}
                                        isOpen={editGameModal.isOpen}
                                        onOpenChange={editGameModal.setOpen}/>

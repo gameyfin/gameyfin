@@ -61,7 +61,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
     return (
         <Modal>
             <Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
-                <ResponsiveDialog>
+                <ResponsiveDialog scroll="inside">
                     <Modal.Dialog>
                         {({close}) => {
 
@@ -77,7 +77,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                         onSubmit={handleSubmit}
                                 >
                                     {(formik: any) => (
-                                        <Form>
+                                        <Form className="flex min-h-0 flex-col">
                                             <Modal.Header>
                                                 <Modal.Heading>Plugin configuration for {plugin.name}</Modal.Heading>
                                             </Modal.Header>
@@ -166,7 +166,7 @@ export default function PluginDetailsModal({plugin, isOpen, onOpenChange}: Plugi
                                                     )) : "This plugin has no configuration options."
                                                 }
                                             </Modal.Body>
-                                            <Modal.Footer>
+                                            <Modal.Footer className="shrink-0">
                                                 <Button variant="ghost" onPress={close}>
                                                     Cancel
                                                 </Button>

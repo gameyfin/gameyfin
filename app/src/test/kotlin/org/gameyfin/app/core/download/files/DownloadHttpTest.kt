@@ -85,7 +85,11 @@ class DownloadHttpTest {
         }
         every { service.getRangeDownload(any(), "slow") } returns null
         every { service.describeDownload(any(), "slow") } returns DownloadMetadata("zip", null)
-        every { service.getProviders() } returns listOf("direct", "broken", "slow").map {
+        val magnet = "magnet:?xt=urn:btih:1234&dn=Game%20Title&tr=http%3A%2F%2Ftracker.test%2Fannounce"
+        every { service.getRangeDownload(any(), "magnet") } returns null
+        every { service.describeDownload(any(), "magnet") } returns null
+        every { service.getDownload(any(), "magnet") } returns org.gameyfin.pluginapi.download.LinkDownload(magnet)
+        every { service.getProviders() } returns listOf("direct", "broken", "slow", "cancel", "magnet").map {
             org.gameyfin.app.core.download.provider.DownloadProviderDto(it, it, 1, it)
         }
         val catalog = mockk<org.gameyfin.app.api.v1.service.CatalogServiceV1>()
@@ -166,7 +170,41 @@ class DownloadHttpTest {
                     } finally {
                         release.countDown()
                     }
-                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=direct")
+                    val cancelled = CountDownLatch(1)
+                    every { service.getRangeDownload(any(), "cancel") } returns null
+                    every { service.getDownload(any(), "cancel") } answers {
+                        org.gameyfin.pluginapi.download.FileDownload(object : InputStream() {
+                            var first = true
+                            override fun read(): Int = error("Bulk reads expected")
+                            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                                if (first) {
+                                    first = false
+                                    b[off] = 1
+                                    return 1
+                                }
+                                try {
+                                    cancelled.await(10, TimeUnit.SECONDS)
+                                } catch (_: InterruptedException) {
+                                    throw java.io.IOException("Download cancelled")
+                                }
+                                throw java.io.IOException("Source closed")
+                            }
+                            override fun close() { cancelled.countDown() }
+                        }, "bin", 1024)
+                    }
+                    val cancelUrl = URI("http://localhost:${tomcat.connector.localPort}$path?provider=cancel")
+                    val cancelResponse = client.send(
+                        HttpRequest.newBuilder(cancelUrl).GET().build(), HttpResponse.BodyHandlers.ofInputStream()
+                    )
+                    cancelResponse.body().use { body ->
+                        assertEquals(1, body.read())
+                        GameDownloadLifecycle.remove(1) { assertEquals(0L, cancelled.count) }
+                        val failure = java.util.concurrent.CompletableFuture.supplyAsync {
+                            runCatching { body.readAllBytes() }.exceptionOrNull()
+                        }.get(5, TimeUnit.SECONDS)
+                        assertTrue(failure is java.io.IOException, "Cancellation must abort the HTTP download through $path")
+                    }
+                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=direct&client=browser")
                     val first = client.send(
                         HttpRequest.newBuilder(url).GET().build(),
                         HttpResponse.BodyHandlers.ofInputStream()
@@ -199,7 +237,39 @@ class DownloadHttpTest {
                         )
                     }
                 }
-                verify(exactly = 8) { games.incrementDownloadCount(game) }
+                for (path in listOf("/download/1", "/v1/games/1/download")) {
+                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=magnet")
+                    val head = client.send(
+                        HttpRequest.newBuilder(url).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+                        HttpResponse.BodyHandlers.ofByteArray()
+                    )
+                    assertEquals(200, head.statusCode())
+                    assertTrue(head.body().isEmpty())
+                    val response = client.send(
+                        HttpRequest.newBuilder(url).GET().build(), HttpResponse.BodyHandlers.ofByteArray()
+                    )
+                    if (path == "/download/1") {
+                        assertEquals(302, response.statusCode())
+                        assertEquals(magnet, response.headers().firstValue("Location").orElseThrow())
+                        assertEquals("no-store", response.headers().firstValue("Cache-Control").orElseThrow())
+                        assertFalse(response.headers().firstValue("Content-Disposition").isPresent)
+                        assertTrue(response.body().isEmpty())
+                    } else {
+                        assertEquals(200, response.statusCode())
+                        val descriptor = JsonMapper().readTree(response.body())
+                        assertEquals(magnet, descriptor.get("url").asString())
+                    }
+                }
+                val browserLink = client.send(
+                    HttpRequest.newBuilder(URI("http://localhost:${tomcat.connector.localPort}/download/1?provider=magnet&client=browser"))
+                        .GET().build(), HttpResponse.BodyHandlers.ofString()
+                )
+                assertEquals(200, browserLink.statusCode())
+                assertEquals("text/html", browserLink.headers().firstValue("Content-Type").orElseThrow())
+                assertEquals("SAMEORIGIN", browserLink.headers().firstValue("X-Frame-Options").orElseThrow())
+                assertTrue(browserLink.body().contains("href=\"${magnet.replace("&", "&amp;")}\""))
+                verify(exactly = 13) { games.incrementDownloadCount(game) }
+                verify(exactly = 3) { service.getDownload(any(), "magnet") }
                 verify(exactly = 2) { service.getDownload(any(), "slow") }
             }
         } finally {

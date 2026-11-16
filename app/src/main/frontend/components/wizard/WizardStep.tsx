@@ -1,11 +1,16 @@
-import {JSX, ReactNode} from "react";
+import {ReactNode} from "react";
 import * as Yup from 'yup';
 
-export default function WizardStep({children, icon, validationSchema}: {
+export type WizardStepProps = {
     children: ReactNode,
-    icon: JSX.Element,
+    icon: ReactNode,
+    title?: string,
     validationSchema?: Yup.Schema,
-    onSubmit?: (...values: any) => Promise<void>
-}) {
+    isNextDisabled?: boolean,
+    nextLabel?: string,
+    onSubmit?: (...values: any) => Promise<void | boolean>
+};
+
+export default function WizardStep({children}: WizardStepProps) {
     return children;
 }
