@@ -65,7 +65,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@types/react-window": "^2.0.0",
-    "@typescript/native": "npm:typescript@^7.0.2",
+    "@typescript/native": "^7.0.2",
     "@vaadin/hilla-generator-cli": "25.3.1",
     "@vaadin/hilla-generator-core": "25.3.1",
     "@vaadin/hilla-generator-plugin-backbone": "25.3.1",
@@ -86,7 +86,7 @@
     "strip-css-comments": "5.0.0",
     "tailwindcss": "4.3.4",
     "transform-ast": "2.4.4",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vite-plugin-checker": "0.14.5"
   },
@@ -262,6 +262,6 @@
       "vite-plugin-checker": "0.14.5"
     },
     "disableUsageStatistics": true,
-    "hash": "345b0d885ccffc6deceec5ac19a518625c51f7178e31e0df8c663557ffffdb72"
+    "hash": "16982f04a3c82242dd6c9189947525f8619b5f43b7738b51658d7f907afab1f0"
   }
 }
