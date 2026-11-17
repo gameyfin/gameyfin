@@ -124,6 +124,17 @@ class DatabaseBackupIntegrationTest {
             }
         }
 
+    /** Only usable with the current schema, older schema versions do not have these tables */
+    private fun insertVersionData(dataSource: DataSource) = dataSource.connection.use { c ->
+        c.createStatement().use { s ->
+            s.execute("INSERT INTO GAME_STORE_LINK (ID, GAME_ID, STORE, STORE_APP_ID, TRACKED, EDITION) VALUES (201, 101, 'GOG', '1453375253', TRUE, 'Anniversary Edition')")
+            s.execute("INSERT INTO STORE_VERSION (ID, LINK_ID, BUILD_ID, BRANCH, LABEL, RELEASED_AT) VALUES (301, 201, '1', '', '1.0', TIMESTAMP '2024-03-04 05:06:07')")
+            s.execute("INSERT INTO STORE_VERSION (ID, LINK_ID, BUILD_ID, BRANCH, LABEL) VALUES (302, 201, '2', 'next-gen', '1.1')")
+            s.execute("INSERT INTO GAME_VERSION_STATE (LINK_ID, INSTALLED_VERSION_ID, SOURCE) VALUES (201, 301, 'MANUAL')")
+            s.execute("INSERT INTO GAME_INCLUDED_DLC (ID, LINK_ID, DLC_ID, TITLE, SOURCE, KIND) VALUES (401, 201, '1256837418', 'Phantom Liberty', 'AUTO', 'BONUS')")
+        }
+    }
+
     /** Reads the content of all application tables in a vendor-neutral representation */
     private fun dump(dataSource: DataSource): Map<String, List<Map<String, String?>>> = dataSource.connection.use { c ->
         SchemaInspector(c).tables().associate { table ->
@@ -163,6 +174,12 @@ class DatabaseBackupIntegrationTest {
         assertTrue(query(dataSource, nextValueSql("USERS_SEQ")) - 49 > 1)
     }
 
+    private fun assertVersionSequencesWork(dataSource: DataSource, nextValueSql: (String) -> String) {
+        assertTrue(query(dataSource, nextValueSql("GAME_STORE_LINK_SEQ")) - 49 > 201)
+        assertTrue(query(dataSource, nextValueSql("STORE_VERSION_SEQ")) - 49 > 302)
+        assertTrue(query(dataSource, nextValueSql("GAME_INCLUDED_DLC_SEQ")) - 49 > 401)
+    }
+
     private fun Connection.changeLogRows(): Int =
         createStatement().use { s ->
             s.executeQuery("SELECT COUNT(*) FROM DATABASECHANGELOG").use { it.next(); it.getInt(1) }
@@ -173,6 +190,7 @@ class DatabaseBackupIntegrationTest {
         val source = h2("source")
         migrate(source)
         insertSampleData(source)
+        insertVersionData(source)
         val expected = dump(source)
 
         // H2 -> Postgres
@@ -183,6 +201,7 @@ class DatabaseBackupIntegrationTest {
         assertEquals(expected, dump(target))
         assertEquals(restorer(target).currentChangeSets().size, target.connection.use { it.changeLogRows() })
         assertSequencesWork(target) { "SELECT nextval('${it.lowercase()}')" }
+        assertVersionSequencesWork(target) { "SELECT nextval('${it.lowercase()}')" }
 
         // Postgres -> H2
         val roundTrip = h2("round-trip")
@@ -191,6 +210,7 @@ class DatabaseBackupIntegrationTest {
 
         assertEquals(expected, dump(roundTrip))
         assertSequencesWork(roundTrip) { "SELECT NEXT VALUE FOR $it" }
+        assertVersionSequencesWork(roundTrip) { "SELECT NEXT VALUE FOR $it" }
 
         val game = roundTrip.connection.use { c ->
             c.createStatement().use { s ->

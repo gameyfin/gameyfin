@@ -1,0 +1,12 @@
+Plugin-Version: 1.0.0
+Plugin-Class: org.gameyfin.plugins.store.itch.ItchPlugin
+Plugin-Id: org.gameyfin.plugins.store.itch
+Plugin-Name: itch.io
+Plugin-Description: Search itch.io and track the downloads of its games.<br>
+ itch.io has no public API for this, so the plugin reads public pages and can break when the site changes.
+ Versions are the uploads of a game (with the version name if the developer provides one) and have no dates,
+ so Gameyfin cannot tell which one is newest. itch.io has no DLC or editions.
+Plugin-Short-Description: Search and downloads from itch.io
+Plugin-Author: grimsi
+Plugin-License: MIT
+Plugin-Url: https://github.com/gameyfin

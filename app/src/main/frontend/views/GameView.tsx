@@ -31,6 +31,7 @@ import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import ChipList from "Frontend/components/general/ChipList";
 import {collectionState} from "Frontend/state/CollectionState";
 import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
+import GameVersionDetails from "Frontend/components/general/versions/GameVersionDetails";
 import {libraryState} from "Frontend/state/LibraryState.ts";
 import RemoveGameModal from "Frontend/components/general/modals/RemoveGameModal";
 
@@ -350,6 +351,7 @@ export default function GameView() {
                                         </td>
                                     </tr>
                                 }
+                                <GameVersionDetails gameId={game.id} refreshKey={editGameModal.isOpen}/>
                                 </tbody>
                             </table>
                         </div>

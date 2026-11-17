@@ -7,6 +7,7 @@ import Pf4jPluginState from "Frontend/generated/org/pf4j/PluginState";
 
 export enum PluginType {
     GameMetadataProvider = "GameMetadataProvider",
+    GameStoreProvider = "GameStoreProvider",
     DownloadProvider = "DownloadProvider",
 }
 

@@ -1,0 +1,35 @@
+name: Store plugins live check
+
+# The Steam builds, GOGDB and Epic plugins rely on unofficial services, so this notices when one changes its format.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  live-check:
+    name: Check unofficial store sources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Run live tests
+        env:
+          GAMEYFIN_LIVE_TESTS: 'true'
+        run: >
+          ./gradlew
+          :plugins:steamcmd:cleanTest :plugins:steamcmd:test
+          :plugins:gogdb:cleanTest :plugins:gogdb:test
+          :plugins:epic:cleanTest :plugins:epic:test
+          :plugins:itch:cleanTest :plugins:itch:test

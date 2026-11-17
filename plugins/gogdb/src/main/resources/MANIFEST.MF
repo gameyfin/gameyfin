@@ -1,0 +1,11 @@
+Plugin-Version: 1.0.0
+Plugin-Class: org.gameyfin.plugins.store.gogdb.GogDbPlugin
+Plugin-Id: org.gameyfin.plugins.store.gogdb
+Plugin-Name: GOG Builds (GOGDB)
+Plugin-Description: Tracks the build history of GOG products and suggests their editions.<br>
+ Data comes from the community-run GOGDB archive (gogdb.org), which is not an official GOG API.<br>
+ This plugin cannot search for games. Enable another GOG store plugin to search; without one, products can only be added by ID or URL.
+Plugin-Short-Description: GOG builds and editions via gogdb.org
+Plugin-Author: grimsi
+Plugin-License: MIT
+Plugin-Url: https://github.com/gameyfin

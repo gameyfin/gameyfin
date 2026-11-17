@@ -55,6 +55,11 @@ out/
 /db
 /data
 /backups
+# Runtime data when the app is started from app/
+/app/db
+/app/data
+/app/logs
+/app/backups
 /packaged_plugins
 /logs
 /templates
@@ -73,6 +78,8 @@ out/
 /app/target/
 **/*.trace.db
 /plugins-installed/
+/env.local
+/enable-plugins.sh
 /app/logs/
 # heroui-agents-md
 .heroui-docs/

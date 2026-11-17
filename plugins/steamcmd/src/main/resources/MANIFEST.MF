@@ -1,0 +1,11 @@
+Plugin-Version: 1.0.0
+Plugin-Class: org.gameyfin.plugins.store.steamcmd.SteamCmdPlugin
+Plugin-Id: org.gameyfin.plugins.store.steamcmd
+Plugin-Name: Steam Builds (SteamCMD)
+Plugin-Description: Tracks the latest branch builds of Steam products.<br>
+ Build data comes from the unofficial steamcmd.net API, so this is prone to breaking.<br>
+ This plugin cannot search for games. Enable another Steam store plugin to search; without one, products can only be added by ID or URL.
+Plugin-Short-Description: Steam branch builds via steamcmd.net
+Plugin-Author: grimsi
+Plugin-License: MIT
+Plugin-Url: https://github.com/gameyfin

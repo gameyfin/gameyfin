@@ -1,0 +1,37 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+# To regenerate this file, run: ./gradlew :plugins:gogdb:dependencies --write-locks
+care.better.pf4j:pf4j-kotlin-symbol-processing:2.4.0-1.0.5=kspKotlinProcessorClasspath
+com.github.zafarkhaja:java-semver:0.10.2=compileClasspath,kspKotlinProcessorClasspath
+com.google.devtools.ksp:symbol-processing-api:2.3.11=kotlinCompilerPluginClasspathMain
+com.google.devtools.ksp:symbol-processing-api:2.3.6=kspKotlinProcessorClasspath
+org.jetbrains.kotlin:kotlin-build-tools-api:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-build-tools-cri-impl:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-compiler-runner:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-daemon-client:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-reflect:1.6.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlin:kotlin-script-runtime:2.4.10=kotlinBuildToolsApiClasspath,kotlinCompilerPluginClasspathMain
+org.jetbrains.kotlin:kotlin-scripting-common:2.4.10=kotlinCompilerPluginClasspathMain
+org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.4.10=kotlinCompilerPluginClasspathMain
+org.jetbrains.kotlin:kotlin-scripting-compiler-impl-embeddable:2.4.10=kotlinCompilerPluginClasspathMain
+org.jetbrains.kotlin:kotlin-scripting-jvm:2.4.10=kotlinCompilerPluginClasspathMain
+org.jetbrains.kotlin:kotlin-serialization-compiler-plugin-embeddable:2.4.10=kotlinCompilerPluginClasspathMain
+org.jetbrains.kotlin:kotlin-stdlib:2.2.0=runtimeClasspath
+org.jetbrains.kotlin:kotlin-stdlib:2.4.0=kspKotlinProcessorClasspath
+org.jetbrains.kotlin:kotlin-stdlib:2.4.10=compileClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerPluginClasspathMain
+org.jetbrains.kotlin:kotlin-tooling-core:2.4.10=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0=kotlinBuildToolsApiClasspath
+org.jetbrains.kotlinx:kotlinx-serialization-bom:1.9.0=compileClasspath,runtimeClasspath
+org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.9.0=compileClasspath,runtimeClasspath
+org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0=compileClasspath,runtimeClasspath
+org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0=compileClasspath,runtimeClasspath
+org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0=compileClasspath,runtimeClasspath
+org.jetbrains:annotations:13.0=compileClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerPluginClasspathMain,kspKotlinProcessorClasspath,runtimeClasspath
+org.pf4j:pf4j:3.15.0=compileClasspath,kspKotlinProcessorClasspath
+org.slf4j:slf4j-api:2.0.6=compileClasspath,kspKotlinProcessorClasspath
+empty=annotationProcessor,kotlinScriptDefExtensions

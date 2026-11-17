@@ -13,8 +13,13 @@ RUN java -Djarmode=tools -jar application.jar extract --layers --destination ext
 
 # Pre-collect plugin JARs so final stage can copy them in a single layer
 COPY --link ./plugins/ /tmp/plugins/
+# Game store plugins are not bundled; they are installed separately (marketplace or plugins-installed volume)
 RUN mkdir -p /builder/plugins \
-    && find /tmp/plugins -type f -path "*/build/libs/*.jar" -exec cp {} /builder/plugins/ \; \
+    && find /tmp/plugins -type f -path "*/build/libs/*.jar" \
+        -not -path "/tmp/plugins/steamstore/*" -not -path "/tmp/plugins/steamcmd/*" \
+        -not -path "/tmp/plugins/gog/*" -not -path "/tmp/plugins/gogdb/*" \
+        -not -path "/tmp/plugins/epic/*" -not -path "/tmp/plugins/itch/*" \
+        -exec cp {} /builder/plugins/ \; \
     && rm -rf /tmp/plugins
 
 # ── Stage 2: AOT cache training (must use the *runtime* JVM) ─────────────

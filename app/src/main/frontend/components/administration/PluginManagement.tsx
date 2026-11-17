@@ -13,7 +13,7 @@ const TAB_MARKETPLACE = "#marketplace";
 export default function PluginManagement() {
 
     // Defined manually for now to control the layout (order of categories)
-    const pluginTypes = ["GameMetadataProvider", "DownloadProvider"];
+    const pluginTypes = ["GameMetadataProvider", "GameStoreProvider", "DownloadProvider"];
 
     const state = useSnapshot(pluginState);
     const marketplace = useSnapshot(marketplaceState);

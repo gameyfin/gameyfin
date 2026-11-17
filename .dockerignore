@@ -32,7 +32,16 @@ plugins/**
 data/
 db/
 logs/
+backups/
 plugindata/
+app/data/
+app/db/
+app/logs/
+app/backups/
+
+# Local secrets and helper scripts
+env.local
+enable-plugins.sh
 
 # Docker intermediate artifacts
 **/.DS_Store
