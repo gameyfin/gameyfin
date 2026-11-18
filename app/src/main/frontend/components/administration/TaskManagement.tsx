@@ -44,6 +44,7 @@ export function TaskManagement() {
     const finishedCount = Object.values(liveState.finishedCount).reduce((a, b) => a + b, 0);
 
     const plugins = useSnapshot(pluginState).state;
+    const overviewTasks = tasks?.filter(task => task.visibleInTaskList);
 
     // Refresh tasks whenever a run has been started or finished, so running state, last and next runs are up-to-date
     useEffect(() => {
@@ -291,7 +292,7 @@ export function TaskManagement() {
                 manually and inspect the logs of previous runs.
             </p>
             {compact ?
-                <CompactRecordList label="Tasks" items={tasks ?? []} itemKey={task => task.key} fields={taskFields}
+                <CompactRecordList label="Tasks" items={overviewTasks ?? []} itemKey={task => task.key} fields={taskFields}
                                    empty={tasks ? <p>No tasks available.</p> :
                                        <Spinner aria-label="Loading tasks"/>}/> : <Table variant="secondary">
                     <TableScroller label="Tasks">
@@ -303,7 +304,7 @@ export function TaskManagement() {
                                 <Table.Column id="last">Last run</Table.Column>
                                 <Table.Column id="actions">Actions</Table.Column>
                             </Table.Header>
-                            <Table.Body items={(tasks ?? []).map(task => ({key: task.key, task}))}
+                            <Table.Body items={(overviewTasks ?? []).map(task => ({key: task.key, task}))}
                                         renderEmptyState={() => <div className="flex justify-center p-4">
                                             {tasks ? <p className="text-muted">No tasks available.</p> : <Spinner/>}
                                         </div>}>

@@ -24,10 +24,18 @@ pluginManagement {
 include(":plugin-api")
 include(":app")
 
-include(":plugins")
-
-include(":plugins:igdb")
-include(":plugins:steam")
-include(":plugins:steamgriddb")
-include(":plugins:directdownload")
-include(":plugins:torrentdownload")
+// Standalone plugin checkouts participate only in an explicit development composite.
+providers.gradleProperty("pluginDevDir").orNull?.let { directory ->
+    val root = file(directory)
+    require(root.isDirectory) { "pluginDevDir must be a directory: $root" }
+    // Register this build's API for substitution in every included plugin build.
+    includeBuild(".") {
+        dependencySubstitution {
+            substitute(module("org.gameyfin:plugin-api")).using(project(":plugin-api"))
+        }
+    }
+    root.listFiles().orEmpty()
+        .filter { it.isDirectory && it.resolve("settings.gradle.kts").isFile }
+        .sortedBy { it.name }
+        .forEach { includeBuild(it) }
+}

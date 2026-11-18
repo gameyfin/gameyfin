@@ -40,6 +40,16 @@ import kotlin.test.*
  */
 class MarketplaceInstallIntegrationTest {
 
+    private val recoveryCandidates = mutableMapOf<String, PluginRecoveryCandidate>()
+    private fun recoveryRepository() = mockk<PluginRecoveryRepository> {
+        every { findById(any()) } answers { Optional.ofNullable(recoveryCandidates[firstArg()]) }
+        every { save(any<PluginRecoveryCandidate>()) } answers { firstArg<PluginRecoveryCandidate>().also { recoveryCandidates[it.pluginId] = it } }
+    }
+
+    private fun readyPlugins() = mockk<org.gameyfin.app.core.plugins.management.PluginsLoadedIndicator> {
+        every { isReady() } returns true
+    }
+
     companion object {
         private const val PLUGIN_ID = "integration-plugin"
         private const val MARKETPLACE_ID = "test-market"
@@ -95,7 +105,7 @@ class MarketplaceInstallIntegrationTest {
             managementEntries.values.maxOfOrNull { it.priority }
         }
 
-        val pluginConfigRepository = mockk<PluginConfigRepository>()
+        val pluginConfigRepository = mockk<PluginConfigRepository>(relaxUnitFun = true)
         every { pluginConfigRepository.findAllByPluginId(any()) } returns emptyList()
 
         System.setProperty("pf4j.pluginsDir", pluginsDir.toString())
@@ -113,7 +123,10 @@ class MarketplaceInstallIntegrationTest {
         updateManager = GameyfinUpdateManager(
             pluginManager,
             MarketplaceHttpClient(allowInsecureUrls = true),
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginConfigRepository,
+            recoveryRepository(),
+            readyPlugins()
         )
         updateManager.setMarketplaceRepositories(
             listOf(updateManager.createRepository(MARKETPLACE_ID, URI("${baseUrl()}/plugins.json")))
@@ -359,7 +372,10 @@ class MarketplaceInstallIntegrationTest {
         GameyfinUpdateManager(
             pluginManager,
             MarketplaceHttpClient(allowInsecureUrls = true),
-            pluginManagementRepository
+            pluginManagementRepository,
+            mockk<PluginConfigRepository>(),
+            recoveryRepository(),
+            readyPlugins()
         )
 
         assertFalse(staleFile.exists())

@@ -6,7 +6,7 @@ import MarketplacePluginDto
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginDto";
 import MarketplacePluginStatus
     from "Frontend/generated/org/gameyfin/app/core/plugins/marketplace/dto/MarketplacePluginStatus";
-import {initializeMarketplaceState, marketplaceState} from "Frontend/state/MarketplaceState";
+import {loadMarketplaceState, marketplaceState} from "Frontend/state/MarketplaceState";
 import MarketplacePluginCard from "Frontend/components/general/plugin/marketplace/MarketplacePluginCard";
 import PluginMarketplacesModal from "Frontend/components/general/plugin/marketplace/PluginMarketplacesModal";
 import {statusLabels} from "Frontend/components/general/plugin/marketplace/MarketplacePluginStatusChip";
@@ -31,7 +31,7 @@ export default function PluginMarketplace() {
     async function load(force: boolean) {
         setLoadError(undefined);
         try {
-            await initializeMarketplaceState(force);
+            await loadMarketplaceState(force);
         } catch (e: any) {
             setLoadError(e?.message ?? "Failed to load marketplace");
             if (force) toast.danger("Failed to refresh marketplace", {description: e?.message});
@@ -56,7 +56,10 @@ export default function PluginMarketplace() {
             .filter(p => typeFilter === ALL || p.types.includes(typeFilter))
             .filter(p => statusFilter === ALL || p.status === statusFilter)
             .sort((a, b) =>
-                Number(b.officialMarketplace) - Number(a.officialMarketplace) || a.name.localeCompare(b.name)
+                Number(b.status === MarketplacePluginStatus.UPDATE_AVAILABLE)
+                - Number(a.status === MarketplacePluginStatus.UPDATE_AVAILABLE)
+                || Number(b.officialMarketplace) - Number(a.officialMarketplace)
+                || a.name.localeCompare(b.name)
             );
     }, [plugins, searchTerm, typeFilter, statusFilter]);
 
@@ -88,7 +91,7 @@ export default function PluginMarketplace() {
                                   id: s,
                                   label: statusLabels[s]
                               }))}
-                              className="md:w-48"/>
+                              className="md:w-52 md:shrink-0"/>
                 <div className="flex flex-row gap-2">
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>

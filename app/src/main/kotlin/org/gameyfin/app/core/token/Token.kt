@@ -10,7 +10,6 @@ import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.Type
 import java.time.Instant
 import java.util.*
-import kotlin.time.toJavaDuration
 
 @Entity
 class Token<T : TokenType>(
@@ -36,6 +35,7 @@ class Token<T : TokenType>(
     val createdOn: Instant? = null
 ) {
     val expired: Boolean
-        get() = type.expiration.isFinite() &&
-                createdOn?.plus(type.expiration.toJavaDuration())!!.isBefore(Instant.now())
+        get() = type.expiration?.let { expiration ->
+            createdOn?.plus(expiration)!!.isBefore(Instant.now())
+        } ?: false
 }

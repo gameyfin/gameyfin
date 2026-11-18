@@ -47,7 +47,11 @@ subprojects {
     }
 }
 
-extra.set("pf4j.pluginsDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))
+val buildDevPlugins by tasks.registering {
+    group = "build"
+    description = "Prepares opted-in standalone plugin checkouts for PF4J source debugging"
+    dependsOn(gradle.includedBuilds.filter { it.projectDir != rootDir }.map { it.task(":prepareDevPlugin") })
+}
 
 abstract class UpdatePackageJsonVersionTask : DefaultTask() {
     @get:Input

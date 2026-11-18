@@ -948,13 +948,13 @@ class PluginMarketplaceServiceTest {
     @Test
     fun `uninstall should uninstall plugin, emit update and return DTO`() {
         val dto = mockk<PluginDto>()
-        every { updateManager.uninstall("p") } returns PluginState.STARTED
+        every { updateManager.uninstall("p", true) } returns PluginState.STARTED
         every { pluginService.getDto("p") } returns dto
 
-        assertSame(dto, service().uninstall("p"))
+        assertSame(dto, service().uninstall("p", true))
 
         verifyOrder {
-            updateManager.uninstall("p")
+            updateManager.uninstall("p", true)
             pluginService.emitPlugin("p")
             pluginService.getDto("p")
         }
@@ -962,17 +962,17 @@ class PluginMarketplaceServiceTest {
 
     @Test
     fun `uninstall should return null if no local version exists`() {
-        every { updateManager.uninstall("p") } returns null
+        every { updateManager.uninstall("p", false) } returns null
         every { pluginService.getDto("p") } returns null
 
-        assertNull(service().uninstall("p"))
+        assertNull(service().uninstall("p", false))
     }
 
     @Test
     fun `uninstall should emit update even if uninstall fails`() {
-        every { updateManager.uninstall("p") } throws IllegalStateException("not from marketplace")
+        every { updateManager.uninstall("p", false) } throws IllegalStateException("not from marketplace")
 
-        assertFailsWith<IllegalStateException> { service().uninstall("p") }
+        assertFailsWith<IllegalStateException> { service().uninstall("p", false) }
 
         verify(exactly = 1) { pluginService.emitPlugin("p") }
         verify(exactly = 0) { pluginService.getDto(any()) }

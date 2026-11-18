@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {test} from "node:test";
 import {runInThisContext} from "node:vm";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import * as valtio from "valtio/vanilla";
 
 function loadModule(path, dependencies) {
@@ -81,11 +81,14 @@ function run(status = "IN_PROGRESS") {
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-for (const operation of ["installPlugin", "updatePlugin", "uninstallPlugin"]) {
+for (const [operation, start] of Object.entries({
+    installPlugin: marketplace => marketplace.installPlugin("market", "plugin"),
+    updatePlugin: marketplace => marketplace.updatePlugin("plugin"),
+    uninstallPlugin: marketplace => marketplace.uninstallPlugin("plugin", false)
+})) {
     test(`${operation} returns promptly and keeps controls pending until completion`, async () => {
         const f = fixture();
-        const result = await (operation === "installPlugin"
-            ? f.marketplace[operation]("market", "plugin") : f.marketplace[operation]("plugin"));
+        const result = await start(f.marketplace);
         assert.equal(result.id, "run");
         assert.equal(f.marketplace.marketplaceState.pending.plugin, true);
         assert.equal(f.reloads(), 0);
@@ -96,6 +99,17 @@ for (const operation of ["installPlugin", "updatePlugin", "uninstallPlugin"]) {
         assert.equal(f.notifications[0].level, "success");
     });
 }
+
+test("uninstall forwards the keep configuration choice", async () => {
+    const f = fixture();
+    for (const keepConfiguration of [false, true]) {
+        f.endpoints.PluginMarketplaceEndpoint.uninstall = async (...args) => {
+            assert.deepEqual(args, ["plugin", keepConfiguration]);
+            return run("COMPLETED");
+        };
+        await f.marketplace.uninstallPlugin("plugin", keepConfiguration);
+    }
+});
 
 test("a failed background operation clears pending state and reports the failure", async () => {
     const f = fixture();

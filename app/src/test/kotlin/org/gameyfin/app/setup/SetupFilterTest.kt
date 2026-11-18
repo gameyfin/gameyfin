@@ -57,7 +57,7 @@ class SetupFilterTest {
     fun `login gateway on a new instance redirects to setup before reading SSO configuration`() {
         every { setupService.isSetupCompleted() } returns false
         val config = mockk<ConfigService>()
-        val mvc = MockMvcBuilders.standaloneSetup(LoginRedirectController(config, setupService))
+        val mvc = MockMvcBuilders.standaloneSetup(LoginRedirectController(config, setupService, mockk(relaxed = true)))
             .addFilters<StandaloneMockMvcBuilder>(filter)
             .build()
 

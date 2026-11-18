@@ -23,6 +23,8 @@ internal data class InboxEntry(
     val executionId: String, val executionState: String, val executionAction: String?
 )
 
+internal data class PluginUpdateNotice(val version: String, val notificationId: String)
+
 /** All inbox mutations use database locks; events become visible only after the transaction commits. */
 @Repository
 @Transactional
@@ -209,6 +211,25 @@ class NotificationStore(
             "UPDATE NOTIFICATION_PRODUCER_STATE SET LAST_VERSION = :version, BOOT_ID = :boot WHERE ID = :id",
             mapOf("id" to key, "version" to version, "boot" to bootId)
         )
+    }
+
+    internal fun pluginUpdateNotices(): Map<String, PluginUpdateNotice> {
+        // Lock the producer even when no plugin has a notice yet.
+        producerState("plugin-updates")
+        return jdbc.query("SELECT PLUGIN_ID, VERSION, NOTIFICATION_ID FROM PLUGIN_UPDATE_NOTICE", emptyMap<String, Any>()) { rs, _ ->
+            rs.getString("PLUGIN_ID") to PluginUpdateNotice(rs.getString("VERSION"), rs.getString("NOTIFICATION_ID"))
+        }.toMap()
+    }
+
+    internal fun insertPluginUpdateNotice(pluginId: String, version: String, notificationId: String) {
+        jdbc.update(
+            "INSERT INTO PLUGIN_UPDATE_NOTICE (PLUGIN_ID, VERSION, NOTIFICATION_ID) VALUES (:plugin, :version, :notice)",
+            mapOf("plugin" to pluginId, "version" to version, "notice" to notificationId)
+        )
+    }
+
+    internal fun removePluginUpdateNotice(pluginId: String) {
+        jdbc.update("DELETE FROM PLUGIN_UPDATE_NOTICE WHERE PLUGIN_ID = :plugin", mapOf("plugin" to pluginId))
     }
 
     fun invalidatePlugin(pluginId: String) {

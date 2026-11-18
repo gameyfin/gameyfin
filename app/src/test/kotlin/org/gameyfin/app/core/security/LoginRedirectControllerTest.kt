@@ -5,6 +5,9 @@ import io.mockk.mockk
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.setup.SetupService
+import org.gameyfin.app.setup.PluginOnboardingService
+import org.springframework.security.authentication.TestingAuthenticationToken
+import org.springframework.security.core.context.SecurityContextHolder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -17,7 +20,47 @@ import kotlin.test.assertEquals
 class LoginRedirectControllerTest {
     private val config = mockk<ConfigService>()
     private val setup = mockk<SetupService>()
-    private val controller = LoginRedirectController(config, setup)
+    private val onboarding = mockk<PluginOnboardingService>(relaxed = true)
+    private val controller = LoginRedirectController(config, setup, onboarding)
+
+    @Test
+    fun `initial account setup retains a validated login destination`() {
+        every { setup.isSetupCompleted() } returns false
+        val request = MockHttpServletRequest().apply { addParameter("continue", "/game/42") }
+        val response = MockHttpServletResponse()
+        controller.loginRedirect(request, response)
+        assertEquals("/setup", response.redirectedUrl)
+        assertEquals("/game/42", LoginReturnUrl.consume(request))
+    }
+
+    @Test
+    fun `pending admin visits onboarding without consuming validated return path`() {
+        SecurityContextHolder.getContext().authentication = TestingAuthenticationToken("admin", "", "ROLE_ADMIN")
+        try {
+            every { onboarding.isPending() } returns true
+            val request = MockHttpServletRequest()
+            LoginReturnUrl.save(request, "/game/42?q=test#details")
+            val response = MockHttpServletResponse()
+            controller.loginSuccess(request, response)
+            assertEquals("/setup/plugins", response.redirectedUrl)
+            every { onboarding.isPending() } returns false
+            val finished = MockHttpServletResponse()
+            controller.loginSuccess(request, finished)
+            assertEquals("/game/42?q=test#details", finished.redirectedUrl)
+        } finally { SecurityContextHolder.clearContext() }
+    }
+
+    @Test
+    fun `ordinary user bypasses pending onboarding`() {
+        SecurityContextHolder.getContext().authentication = TestingAuthenticationToken("user", "", "ROLE_USER")
+        try {
+            every { onboarding.isPending() } returns true
+            val request = MockHttpServletRequest()
+            val response = MockHttpServletResponse()
+            controller.loginSuccess(request, response)
+            assertEquals("/", response.redirectedUrl)
+        } finally { SecurityContextHolder.clearContext() }
+    }
 
     @ParameterizedTest
     @CsvSource("false,false,,/setup", "false,true,,/setup", "true,false,,/login",
@@ -51,7 +94,7 @@ class LoginRedirectControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["https://evil.example", "//evil.example", "/\\evil.example", "/%2f/evil.example",
-        "/%5cevil.example", "/login", "/login/", "/loginredirect", "/login/success", "/setup", "/logout",
+        "/%5cevil.example", "/login", "/login/", "/loginredirect", "/login/success", "/setup", "/setup/plugins", "/setup/%70lugins", "/logout",
         "/oauth2/authorization/oidc", "/foo/../login", "/foo/..%2flogin", "/login;jsessionid=123",
         "/bad\r\nLocation: evil", "relative", ""])
     fun `unsafe and recursive return destinations fall back to root`(target: String) {

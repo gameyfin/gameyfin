@@ -133,7 +133,7 @@ class DatabaseRestorerTest {
     fun `restore replaces migration seed rows with backed up state`() {
         source.connection.use { c ->
             c.createStatement().use {
-                it.executeUpdate("DELETE FROM NOTIFICATION_PRODUCER_STATE WHERE ID = 'sso'")
+                it.executeUpdate("DELETE FROM NOTIFICATION_PRODUCER_STATE WHERE ID <> 'release'")
                 it.executeUpdate(
                     "UPDATE NOTIFICATION_PRODUCER_STATE SET LAST_VERSION = '2.7.0', BOOT_ID = 'backup-boot' WHERE ID = 'release'"
                 )

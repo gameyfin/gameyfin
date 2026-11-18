@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.plugins.marketplace
 
 import io.mockk.*
+import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.core.plugins.management.PluginManagementRepository
@@ -29,6 +30,16 @@ import kotlin.test.*
  */
 class GameyfinUpdateManagerTest {
 
+    private val recoveryCandidates = mutableMapOf<String, PluginRecoveryCandidate>()
+    private fun recoveryRepository() = mockk<PluginRecoveryRepository> {
+        every { findById(any()) } answers { Optional.ofNullable(recoveryCandidates[firstArg()]) }
+        every { save(any<PluginRecoveryCandidate>()) } answers { firstArg<PluginRecoveryCandidate>().also { recoveryCandidates[it.pluginId] = it } }
+    }
+
+    private fun readyPlugins() = mockk<org.gameyfin.app.core.plugins.management.PluginsLoadedIndicator> {
+        every { isReady() } returns true
+    }
+
     companion object {
         private const val PLUGIN_ID = "test-plugin"
         private const val SYSTEM_VERSION = "2.0.0"
@@ -44,6 +55,7 @@ class GameyfinUpdateManagerTest {
     private val versionManager = DefaultVersionManager()
     private lateinit var pluginManager: GameyfinPluginManager
     private lateinit var pluginManagementRepository: PluginManagementRepository
+    private val pluginConfigRepository = mockk<PluginConfigRepository>(relaxUnitFun = true)
     private lateinit var updateManager: GameyfinUpdateManager
 
     private val entries = mutableMapOf<String, PluginManagementEntry>()
@@ -115,7 +127,7 @@ class GameyfinUpdateManagerTest {
         fileVerifier = mockk()
         every { fileVerifier.verify(any(), any()) } just Runs
 
-        updateManager = GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(), pluginManagementRepository)
+        updateManager = GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(), pluginManagementRepository, pluginConfigRepository, recoveryRepository(), readyPlugins())
     }
 
     @AfterEach
@@ -232,6 +244,110 @@ class GameyfinUpdateManagerTest {
         downloadedFiles.forEach { assertFalse(it.exists(), "Downloaded file $it should have been removed") }
     }
 
+    @Test
+    fun `recovery ignores plugins outside the migration snapshot`() {
+        updateManager.recoverMissingPlugin(PLUGIN_ID)
+        verify(exactly = 0) { fileDownloader.downloadFile(any()) }
+    }
+
+    @Test
+    fun `recovery completes surviving artifacts without downloading even when unloaded`() {
+        val candidate = PluginRecoveryCandidate(PLUGIN_ID)
+        recoveryCandidates[PLUGIN_ID] = candidate
+        every { pluginManager.hasPluginArtifact(PLUGIN_ID) } returns true
+        updateManager.recoverMissingPlugin(PLUGIN_ID)
+        assertTrue(candidate.completed)
+        verify(exactly = 0) { fileDownloader.downloadFile(any()) }
+    }
+
+    @Test
+    fun `recovery requires official signature before any code loads and can retry`() {
+        val candidate = PluginRecoveryCandidate(PLUGIN_ID)
+        recoveryCandidates[PLUGIN_ID] = candidate
+        setRepositories(repository("official", pluginInfo("official", release("1.0.0"))))
+        every { pluginManager.requireOfficialSignature(any()) } throws IllegalStateException("bad signature")
+        assertFailsWith<IllegalStateException> { updateManager.recoverMissingPlugin(PLUGIN_ID) }
+        assertFalse(candidate.completed)
+        assertEquals("bad signature", candidate.lastError)
+        verify(exactly = 0) { pluginManager.loadPluginOrThrow(any()) }
+        assertNoDownloadLeftovers()
+        every { pluginManager.requireOfficialSignature(any()) } just Runs
+        updateManager.recoverMissingPlugin(PLUGIN_ID)
+        assertTrue(candidate.completed)
+        assertNull(candidate.lastError)
+    }
+
+    @Test
+    fun `recovery chooses latest compatible official release preserving disabled state and priority`() {
+        recoveryCandidates[PLUGIN_ID] = PluginRecoveryCandidate(PLUGIN_ID)
+        entries[PLUGIN_ID] = PluginManagementEntry(PLUGIN_ID, enabled = false, priority = 42, trustLevel = PluginTrustLevel.OFFICIAL)
+        setRepositories(
+            repository("other", pluginInfo("other", release("9.0.0"))),
+            repository("official", pluginInfo("official", release("1.0.0"), release("1.1.0"), release("2.0.0", ">=3.0.0")))
+        )
+        updateManager.recoverMissingPlugin(PLUGIN_ID)
+        assertEquals("1.1.0", loaded.getValue(PLUGIN_ID).descriptor.version)
+        assertEquals(42, entries.getValue(PLUGIN_ID).priority)
+        assertFalse(entries.getValue(PLUGIN_ID).enabled)
+        assertEquals("official", entries.getValue(PLUGIN_ID).sourceMarketplaceId)
+    }
+
+    @Test
+    fun `completed recovery and later uninstall never reinstall`() {
+        recoveryCandidates[PLUGIN_ID] = PluginRecoveryCandidate(PLUGIN_ID)
+        setRepositories(repository("official", pluginInfo("official", release("1.0.0"))))
+        updateManager.recoverMissingPlugin(PLUGIN_ID)
+        updateManager.uninstall(PLUGIN_ID)
+        clearMocks(fileDownloader, answers = false)
+        updateManager.recoverMissingPlugin(PLUGIN_ID)
+        verify(exactly = 0) { fileDownloader.downloadFile(any()) }
+        assertNull(loaded[PLUGIN_ID])
+    }
+
+    @Test
+    fun `recovery retains candidate on offline failure and never falls back to third party`() {
+        val candidate = PluginRecoveryCandidate(PLUGIN_ID)
+        recoveryCandidates[PLUGIN_ID] = candidate
+        setRepositories(repository("other", pluginInfo("other", release("1.0.0"))))
+        assertFailsWith<IllegalStateException> { updateManager.recoverMissingPlugin(PLUGIN_ID) }
+        assertFalse(candidate.completed)
+        assertNotNull(candidate.lastError)
+        verify(exactly = 0) { fileDownloader.downloadFile(any()) }
+    }
+
+    @Test
+    fun `concurrent recovery attempts install a candidate only once`() {
+        recoveryCandidates[PLUGIN_ID] = PluginRecoveryCandidate(PLUGIN_ID)
+        setRepositories(repository("official", pluginInfo("official", release("1.0.0"))))
+        val first = java.util.concurrent.CompletableFuture.runAsync { updateManager.recoverMissingPlugin(PLUGIN_ID) }
+        val second = java.util.concurrent.CompletableFuture.runAsync { updateManager.recoverMissingPlugin(PLUGIN_ID) }
+        java.util.concurrent.CompletableFuture.allOf(first, second).get(10, java.util.concurrent.TimeUnit.SECONDS)
+        verify(exactly = 1) { fileDownloader.downloadFile(any()) }
+        assertTrue(recoveryCandidates.getValue(PLUGIN_ID).completed)
+    }
+
+    @Test
+    fun `artifact appearing during recovery download is preserved on failed install`() {
+        recoveryCandidates[PLUGIN_ID] = PluginRecoveryCandidate(PLUGIN_ID)
+        setRepositories(repository("official", pluginInfo("official", release("1.0.0"))))
+        every { pluginManager.requireOfficialSignature(any()) } answers {
+            installedFile("1.0.0").writeText("concurrent artifact")
+        }
+        assertFailsWith<java.nio.file.FileAlreadyExistsException> { updateManager.recoverMissingPlugin(PLUGIN_ID) }
+        assertEquals("concurrent artifact", installedFile("1.0.0").readText())
+        verify(exactly = 0) { pluginManager.loadPluginOrThrow(any()) }
+    }
+
+    @Test
+    fun `recovery refuses to overwrite an unreadable artifact at its target path`() {
+        recoveryCandidates[PLUGIN_ID] = PluginRecoveryCandidate(PLUGIN_ID)
+        setRepositories(repository("official", pluginInfo("official", release("1.0.0"))))
+        installedFile("1.0.0").writeText("preserve me")
+        assertFailsWith<IllegalStateException> { updateManager.recoverMissingPlugin(PLUGIN_ID) }
+        assertEquals("preserve me", installedFile("1.0.0").readText())
+        verify(exactly = 0) { fileDownloader.downloadFile(any()) }
+    }
+
     // ========================================================================================
     // Initialization
     // ========================================================================================
@@ -243,7 +359,7 @@ class GameyfinUpdateManagerTest {
         downloadDir.resolve("nested").createDirectories().resolve("file").writeText("x")
         val installedPlugin = writePluginFile(installedFile("1.0.0"), PLUGIN_ID, "1.0.0")
 
-        GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(), pluginManagementRepository)
+        GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(), pluginManagementRepository, pluginConfigRepository, recoveryRepository(), readyPlugins())
 
         assertFalse(downloadDir.exists())
         assertTrue(installedPlugin.exists())
@@ -253,7 +369,7 @@ class GameyfinUpdateManagerTest {
     fun `init should tolerate missing installed plugins root`() {
         every { pluginManager.installedPluginsRoot } returns tempDir.resolve("does-not-exist")
 
-        val manager = GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(), pluginManagementRepository)
+        val manager = GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(), pluginManagementRepository, pluginConfigRepository, recoveryRepository(), readyPlugins())
 
         assertTrue(manager.getMarketplaceRepositories().isEmpty())
         assertTrue(manager.repositories.isEmpty())
@@ -1117,6 +1233,7 @@ class GameyfinUpdateManagerTest {
         assertTrue(e.message!!.contains("Failed to uninstall"))
         assertTrue(e.message!!.contains("file is locked"))
         assertEquals("official", entries[PLUGIN_ID]?.sourceMarketplaceId)
+        verify(exactly = 0) { pluginConfigRepository.deleteAllByPluginId(any()) }
     }
 
     @Test
@@ -1143,7 +1260,18 @@ class GameyfinUpdateManagerTest {
         assertNull(entries[PLUGIN_ID]?.sourceMarketplaceId)
         assertEquals("Original plugin name", entries.getValue(PLUGIN_ID).name)
         verify(exactly = 1) { pluginManager.deletePlugin(PLUGIN_ID) }
+        verify(exactly = 1) { pluginConfigRepository.deleteAllByPluginId(PLUGIN_ID) }
         verify(exactly = 0) { pluginManager.loadPluginOrThrow(any()) }
+    }
+
+    @Test
+    fun `uninstall should keep configuration when requested`() {
+        val installed = installedFile("1.0.0")
+        preload(installed, "1.0.0", enabled = true)
+
+        assertNull(updateManager.uninstall(PLUGIN_ID, keepConfiguration = true))
+        assertFalse(installed.exists())
+        verify(exactly = 0) { pluginConfigRepository.deleteAllByPluginId(any()) }
     }
 
     @Test
@@ -1179,6 +1307,7 @@ class GameyfinUpdateManagerTest {
         assertNull(entries[PLUGIN_ID]?.sourceMarketplaceId)
         verifyOrder {
             pluginManager.deletePlugin(PLUGIN_ID)
+            pluginConfigRepository.deleteAllByPluginId(PLUGIN_ID)
             pluginManager.loadPluginOrThrow(bundled)
             pluginManager.startPlugin(PLUGIN_ID)
         }

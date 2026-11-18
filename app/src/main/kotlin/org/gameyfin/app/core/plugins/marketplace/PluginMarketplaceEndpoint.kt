@@ -35,5 +35,6 @@ class PluginMarketplaceEndpoint(
 
     fun update(pluginId: String, version: String?): TaskRunDto = installationTaskService.update(pluginId, version)
 
-    fun uninstall(pluginId: String): TaskRunDto = installationTaskService.uninstall(pluginId)
+    fun uninstall(pluginId: String, keepConfiguration: Boolean): TaskRunDto =
+        installationTaskService.uninstall(pluginId, keepConfiguration)
 }

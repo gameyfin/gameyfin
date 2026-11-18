@@ -177,3 +177,12 @@ tasks.named<ProcessResources>("processResources") {
     }
 }
 
+
+// Production builds never discover or build plugin sources.
+providers.gradleProperty("pluginDevDir").orNull?.let { directory ->
+    tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+        dependsOn(rootProject.tasks.named("buildDevPlugins"))
+        systemProperty("pf4j.mode", "development")
+        systemProperty("pf4j.pluginsDir", rootProject.file(directory).absolutePath)
+    }
+}

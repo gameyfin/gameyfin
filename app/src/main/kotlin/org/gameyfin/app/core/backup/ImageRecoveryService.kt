@@ -87,6 +87,7 @@ class ImageRecoveryService(
                         "has been interrupted.",
                 schedulable = false,
                 manuallyTriggerable = false,
+                visibleInTaskList = false,
                 action = TaskAction.Run { recoverMissingImages(it) }
             )
         )

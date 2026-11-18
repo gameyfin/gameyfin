@@ -1,6 +1,7 @@
 package org.gameyfin.app.core
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.setup.PluginOnboardingService
 import org.gameyfin.app.setup.SetupService
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.entities.User
@@ -15,6 +16,7 @@ import java.net.InetAddress
 class SetupDataLoader(
     private val userService: UserService,
     private val setupService: SetupService,
+    private val pluginOnboardingService: PluginOnboardingService,
     private val env: Environment
 ) {
     private val log = KotlinLogging.logger {}
@@ -72,6 +74,10 @@ class SetupDataLoader(
         registerUserIfNotFound(user)
 
         log.info { "User setup completed." }
+
+
+        log.info { "Starting plugin onboarding." }
+        pluginOnboardingService.begin()
     }
 
     fun registerUserIfNotFound(user: User) {

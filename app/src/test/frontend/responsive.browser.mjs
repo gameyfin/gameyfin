@@ -97,7 +97,16 @@ await page.route('**/connect/**', async route => {
         settings: {},
         parametersMetadata: [],
         lastRun: run,
-        running: true
+        running: true,
+        visibleInTaskList: true
+    };
+    const recoveryRun = {
+        ...run, id: 'recovery-run', taskKey: 'image-recovery', taskName: 'Image recovery',
+        displayName: 'Restoring missing images', trigger: 'SYSTEM', status: 'COMPLETED', cancellable: false
+    };
+    const recoveryTask = {
+        ...task, key: recoveryRun.taskKey, name: recoveryRun.taskName, lastRun: recoveryRun,
+        schedulable: false, manuallyTriggerable: false, running: false, visibleInTaskList: false
     };
     let result = [];
     if (name === 'UserEndpoint/getUserInfo') result = role === 'anonymous' ? null : {
@@ -191,8 +200,8 @@ await page.route('**/connect/**', async route => {
     }];
     else if (name === 'ConfigEndpoint/areGameRequestsEnabled' || name === 'ConfigEndpoint/areGuestsAllowedToRequestGames') result = true;
     else if (name === 'CredentialEndpoint/scopes') result = ['games:read', 'games:write'];
-    else if (name === 'TaskEndpoint/getTasks') result = [task];
-    else if (name === 'TaskEndpoint/getRuns') result = {runs: [run], hasMore: false};
+    else if (name === 'TaskEndpoint/getTasks') result = [task, recoveryTask];
+    else if (name === 'TaskEndpoint/getRuns') result = {runs: [run, recoveryRun], hasMore: false};
     else if (name === 'TaskEndpoint/runNow') result = run;
     else if (name === 'DownloadProviderEndpoint/getProviders') result = [{
         key: 'http',
@@ -384,13 +393,20 @@ try {
             await page.setViewportSize({width: 1280, height: 800});
             assert.equal(await page.locator('th[aria-sort="ascending"]').count(), 1);
         } else {
+            await page.getByText("Restoring missing images", {exact: true}).waitFor();
+            assert.equal(await page.getByRole("region", {name: "Tasks", exact: true})
+                .getByText("Image recovery", {exact: true}).count(), 0);
             await page.getByRole("button", {name: "Run now", exact: true}).click();
             assert.ok(calls.includes("TaskEndpoint/runNow"));
-            await page.getByRole("button", {name: "Show log", exact: true}).click();
+            await page.getByRole("button", {name: "Show log", exact: true}).first().click();
             await page.getByRole("dialog").waitFor();
             await page.setViewportSize({width: 1280, height: 800});
             assert.equal(await page.getByRole("dialog").isVisible(), true);
             await page.keyboard.press("Escape");
+            await page.locator('table[aria-label="Task runs"]')
+                .getByText("Restoring missing images", {exact: true}).waitFor();
+            assert.equal(await page.locator('table[aria-label="Tasks"]')
+                .getByText("Image recovery", {exact: true}).count(), 0);
         }
     }
     for (const path of ["/administration/logs", "/administration/users", "/administration/requests", "/administration/downloads"]) {

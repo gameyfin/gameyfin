@@ -1,6 +1,8 @@
 package org.gameyfin.app.core.notifications
 
 import org.gameyfin.app.config.SsoConfigurationChanged
+import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginDto
+import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginStatus
 import org.gameyfin.pluginapi.notifications.NotificationAction
 import org.gameyfin.pluginapi.notifications.NotificationActionType
 import org.gameyfin.pluginapi.notifications.NotificationRequest
@@ -20,6 +22,7 @@ class SystemNotifications(
     companion object {
         private const val SSO_SOURCE = "core:sso"
         private const val RELEASE_SOURCE = "core:release"
+        private const val PLUGIN_UPDATE_SOURCE = "core:plugin-update"
     }
 
     @EventListener
@@ -74,5 +77,41 @@ class SystemNotifications(
         )
         store.setProducerState("release", version)
         return true
+    }
+
+    fun announcePluginUpdates(plugins: List<MarketplacePluginDto>): Int {
+        if (plugins.isEmpty()) return 0
+        val previousNotices = store.pluginUpdateNotices()
+        var updateCount = 0
+
+        for ((pluginId, entries) in plugins.groupBy { it.id }) {
+            val updates = entries.filter { it.status == MarketplacePluginStatus.UPDATE_AVAILABLE }
+            // Match the Marketplace UI's preference for the source the plugin was installed from.
+            val update = updates.firstOrNull { it.marketplaceId == it.installedFromMarketplaceId } ?: updates.firstOrNull()
+            val version = update?.latestCompatibleVersion
+            val previous = previousNotices[pluginId]
+            if (version != null) updateCount++
+            if (previous?.version == version) continue
+
+            if (previous != null) {
+                store.resolve(PLUGIN_UPDATE_SOURCE, previous.notificationId)
+                store.removePluginUpdateNotice(pluginId)
+            }
+            if (update != null && version != null) {
+                val notificationId = store.publish(
+                    PLUGIN_UPDATE_SOURCE, NotificationRequest(
+                        "${update.name.take(150)} update available (${version.take(70)})",
+                        "A compatible plugin update is ready to install.",
+                        actions = listOf(
+                            NotificationAction(
+                                "marketplace", "Open Marketplace", NotificationActionType.LINK, "/administration/plugins#marketplace"
+                            )
+                        )
+                    )
+                )
+                store.insertPluginUpdateNotice(pluginId, version, notificationId)
+            }
+        }
+        return updateCount
     }
 }

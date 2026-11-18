@@ -103,6 +103,20 @@ class TaskServiceTest {
     }
 
     @Test
+    fun `getTasks should include tasks hidden from the overview table for run history filtering`() {
+        registry.register(
+            TaskDefinition(
+                key = "recovery", name = "Recovery", visibleInTaskList = false, action = TaskAction.Run { null }
+            )
+        )
+
+        val task = service.getTasks().single()
+
+        assertEquals("recovery", task.key)
+        assertFalse(task.visibleInTaskList)
+    }
+
+    @Test
     fun `updateTask should validate the settings before changing anything`() {
         val definition = taskDefinition("test")
         registry.register(definition)
