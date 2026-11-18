@@ -28,15 +28,20 @@ import org.springframework.transaction.support.AbstractPlatformTransactionManage
 import org.springframework.transaction.support.DefaultTransactionStatus
 import org.springframework.transaction.support.TransactionTemplate
 import reactor.test.StepVerifier
-import java.util.Optional
+import java.util.*
 import kotlin.test.*
 
 class LiveUserStateTest {
     private val hierarchy = RoleHierarchyImpl.fromHierarchy("ROLE_SUPERADMIN > ROLE_ADMIN\nROLE_ADMIN > ROLE_USER")
     private fun dto(id: Long = 901, roles: List<Role> = listOf(Role.USER), enabled: Boolean = true) =
-        ExtendedUserInfoDto(id, "user$id", false, "user$id@example.com", true, enabled, false, null, roles)
+        ExtendedUserInfoDto(id, "user$id", false, "user$id@example.com", true, enabled, false, roles = roles)
+
     private fun authenticate(user: ExtendedUserInfoDto): LiveUserAuthentication {
-        val original = UsernamePasswordAuthenticationToken.authenticated(user.username, "", listOf(SimpleGrantedAuthority("ROLE_USER")))
+        val original = UsernamePasswordAuthenticationToken.authenticated(
+            user.username,
+            "",
+            listOf(SimpleGrantedAuthority("ROLE_USER"))
+        )
         return LiveUserAuthentication(original, user, hierarchy)
     }
 
@@ -54,7 +59,9 @@ class LiveUserStateTest {
             assertEquals(setOf("ROLE_ADMIN", "ROLE_USER"), session.authorities.map { it.authority }.toSet())
         }
         events.committed(UserStateChanged(UserEvent(901, dto())))
-        for (session in listOf(first, second)) assertEquals(listOf("ROLE_USER"), session.authorities.map { it.authority })
+        for (session in listOf(first, second)) assertEquals(
+            listOf("ROLE_USER"),
+            session.authorities.map { it.authority })
     }
 
     @Test
@@ -75,7 +82,10 @@ class LiveUserStateTest {
     fun `HTTP authorization observes both added and removed admin access`() {
         val auth = authenticate(dto(910))
         SecurityContextHolder.getContext().authentication = auth
-        val manager = org.springframework.security.authorization.AuthorityAuthorizationManager.hasRole<jakarta.servlet.http.HttpServletRequest>("ADMIN")
+        val manager =
+            org.springframework.security.authorization.AuthorityAuthorizationManager.hasRole<jakarta.servlet.http.HttpServletRequest>(
+                "ADMIN"
+            )
         val filter = org.springframework.security.web.access.intercept.AuthorizationFilter(manager)
         fun request() = filter.doFilter(MockHttpServletRequest(), MockHttpServletResponse()) { _, response ->
             (response as jakarta.servlet.http.HttpServletResponse).status = 204
@@ -90,8 +100,11 @@ class LiveUserStateTest {
     @Test
     fun `OIDC identity and non role authorities survive role refresh`() {
         val principal = mockk<OidcUser>()
-        val original = UsernamePasswordAuthenticationToken.authenticated(principal, "token", listOf(
-            SimpleGrantedAuthority("ROLE_ADMIN"), SimpleGrantedAuthority("SCOPE_openid")))
+        val original = UsernamePasswordAuthenticationToken.authenticated(
+            principal, "token", listOf(
+                SimpleGrantedAuthority("ROLE_ADMIN"), SimpleGrantedAuthority("SCOPE_openid")
+            )
+        )
         val auth = LiveUserAuthentication(original, dto(), hierarchy)
         assertSame(principal, auth.principal)
         assertEquals("token", auth.credentials)
@@ -101,12 +114,14 @@ class LiveUserStateTest {
     @Test
     fun `HTTP filter keeps stable identity after username change`() {
         val users = mockk<UserRepository>()
-        val user = User(id = 904, username = "before", email = "a@example.com", enabled = true, roles = listOf(Role.USER))
+        val user =
+            User(id = 904, username = "before", email = "a@example.com", enabled = true, roles = listOf(Role.USER))
         every { users.findByUsername("before") } returns user
         every { users.findById(904) } returns Optional.of(user)
-        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken.authenticated("before", "", emptyList())
+        SecurityContextHolder.getContext().authentication =
+            UsernamePasswordAuthenticationToken.authenticated("before", "", emptyList())
         val filter = LiveUserSecurityFilter(users, hierarchy)
-        val request = MockHttpServletRequest().apply { getSession() }
+        val request = MockHttpServletRequest().apply { session }
         filter.doFilter(request, MockHttpServletResponse()) { _, _ -> }
         val auth = SecurityContextHolder.getContext().authentication as LiveUserAuthentication
         user.username = "after"
@@ -167,8 +182,11 @@ class LiveUserStateTest {
     @Configuration(proxyBeanMethods = false)
     @EnableTransactionManagement
     class TransactionConfig {
-        @Bean fun events() = UserEvents()
-        @Bean fun transactionManager() = object : AbstractPlatformTransactionManager() {
+        @Bean
+        fun events() = UserEvents()
+
+        @Bean
+        fun transactionManager() = object : AbstractPlatformTransactionManager() {
             override fun doGetTransaction(): Any = Any()
             override fun doBegin(transaction: Any, definition: org.springframework.transaction.TransactionDefinition) {}
             override fun doCommit(status: DefaultTransactionStatus) {}

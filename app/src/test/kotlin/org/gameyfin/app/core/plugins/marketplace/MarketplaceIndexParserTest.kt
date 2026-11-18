@@ -6,11 +6,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import java.net.URI
 import java.time.Instant
 import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class MarketplaceIndexParserTest {
 
@@ -47,7 +43,8 @@ class MarketplaceIndexParserTest {
 
     @Test
     fun `ignores unknown properties in object root and entries`() {
-        val json = """{"version":2,"name":"Market","plugins":[{"id":"a","foo":"bar","releases":[{"version":"1","url":"a.jar","bar":1}]}]}"""
+        val json =
+            """{"version":2,"name":"Market","plugins":[{"id":"a","foo":"bar","releases":[{"version":"1","url":"a.jar","bar":1}]}]}"""
         assertEquals(setOf("a"), parse(json).keys)
     }
 
@@ -207,7 +204,7 @@ class MarketplaceIndexParserTest {
 
     @Test
     fun `keeps multiple releases in order`() {
-        val releases = listOf(release("1.0.0", "a-1.jar"), release("2.0.0", "a-2.jar")).joinToString(",")
+        val releases = listOf(release(url = "a-1.jar"), release("2.0.0", "a-2.jar")).joinToString(",")
         val info = parse("[${plugin("a", releases)}]").getValue("a")
         assertEquals(listOf("1.0.0", "2.0.0"), info.gameyfinReleases.map { it.version })
         assertTrue(info.releases.all { it is GameyfinPluginRelease })
@@ -223,7 +220,7 @@ class MarketplaceIndexParserTest {
 
     @Test
     fun `skips duplicate plugins and keeps the first one`() {
-        val json = "[${plugin("a", release("1.0.0"))},${plugin("a", release("9.9.9"))}]"
+        val json = "[${plugin("a", release())},${plugin("a", release("9.9.9"))}]"
         val result = parse(json)
         assertEquals(1, result.size)
         assertEquals("1.0.0", result.getValue("a").singleRelease().version)
@@ -250,7 +247,7 @@ class MarketplaceIndexParserTest {
 
     @Test
     fun `skips releases with invalid url`() {
-        val releases = listOf(release("1.0.0", "ht tp://bad url"), release("2.0.0", "valid.jar")).joinToString(",")
+        val releases = listOf(release(url = "ht tp://bad url"), release("2.0.0", "valid.jar")).joinToString(",")
         val info = parse("[${plugin("a", releases)}]").getValue("a")
         assertEquals(listOf("2.0.0"), info.gameyfinReleases.map { it.version })
     }
@@ -322,21 +319,42 @@ class MarketplaceIndexParserTest {
 
     @Test
     fun `sha512 shorthand is case insensitive`() {
-        val info = parse("[${plugin("a", release(url = "https://cdn.example.org/a.jar", extra = "\"sha512sum\":\".SHA512\""))}]")
+        val info = parse(
+            "[${
+                plugin(
+                    "a",
+                    release(url = "https://cdn.example.org/a.jar", extra = "\"sha512sum\":\".SHA512\"")
+                )
+            }]"
+        )
             .getValue("a")
         assertEquals("https://cdn.example.org/a.sha512", info.singleRelease().sha512sum)
     }
 
     @Test
     fun `sha512 shorthand appends extension if the plugin file has none`() {
-        val info = parse("[${plugin("a", release(url = "https://cdn.example.org/download/plugin", extra = "\"sha512sum\":\".sha512\""))}]")
+        val info = parse(
+            "[${
+                plugin(
+                    "a",
+                    release(url = "https://cdn.example.org/download/plugin", extra = "\"sha512sum\":\".sha512\"")
+                )
+            }]"
+        )
             .getValue("a")
         assertEquals("https://cdn.example.org/download/plugin.sha512", info.singleRelease().sha512sum)
     }
 
     @Test
     fun `sha512 shorthand only replaces the extension of the file name and keeps the query`() {
-        val info = parse("[${plugin("a", release(url = "https://cdn.v1.example.org/a.jar?raw=true", extra = "\"sha512sum\":\".sha512\""))}]")
+        val info = parse(
+            "[${
+                plugin(
+                    "a",
+                    release(url = "https://cdn.v1.example.org/a.jar?raw=true", extra = "\"sha512sum\":\".sha512\"")
+                )
+            }]"
+        )
             .getValue("a")
         assertEquals("https://cdn.v1.example.org/a.sha512?raw=true", info.singleRelease().sha512sum)
     }
@@ -402,7 +420,10 @@ class MarketplaceIndexParserTest {
 
     @Test
     fun `parseDate trims input`() {
-        assertEquals(Date.from(Instant.parse("2024-05-01T00:00:00Z")), MarketplaceIndexParser.parseDate("  2024-05-01 "))
+        assertEquals(
+            Date.from(Instant.parse("2024-05-01T00:00:00Z")),
+            MarketplaceIndexParser.parseDate("  2024-05-01 ")
+        )
     }
 
     @ParameterizedTest

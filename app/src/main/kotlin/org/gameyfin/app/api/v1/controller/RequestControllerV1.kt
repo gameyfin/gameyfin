@@ -2,8 +2,8 @@ package org.gameyfin.app.api.v1.controller
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.tags.Tag
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.gameyfin.app.api.security.ApiAccess
 import org.gameyfin.app.api.security.ApiScope
@@ -89,7 +89,10 @@ class RequestControllerV1(
         operationId = "changeRequestStatus",
         description = "Requires requests:write or an administrator personal token. Fulfilled requests cannot be changed."
     )
-    fun status(@Parameter(description = "Request ID.") @PathVariable id: String, @RequestBody input: RequestStatusV1): RequestV1 {
+    fun status(
+        @Parameter(description = "Request ID.") @PathVariable id: String,
+        @RequestBody input: RequestStatusV1
+    ): RequestV1 {
         access.require(ApiScope.REQUESTS_WRITE)
         val request = entity(id)
         val status = apiEnum<GameRequestStatus>(input.status)
@@ -132,7 +135,8 @@ class RequestControllerV1(
         description = "Personal tokens only. Idempotently removes the owner's vote."
     )
     @ApiResponse(responseCode = "204", description = "No content")
-    fun unvote(@Parameter(description = "Request ID.") @PathVariable id: String): ResponseEntity<Void> = setVote(id, false)
+    fun unvote(@Parameter(description = "Request ID.") @PathVariable id: String): ResponseEntity<Void> =
+        setVote(id, false)
 
     private fun setVote(id: String, present: Boolean): ResponseEntity<Void> {
         val actor = access.personal()

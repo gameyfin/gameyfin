@@ -12,8 +12,8 @@ import org.gameyfin.app.libraries.entities.IgnoredPath
 import org.gameyfin.app.libraries.entities.IgnoredPathUserSource
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
-import org.gameyfin.app.libraries.extensions.toDto
 import org.gameyfin.app.libraries.extensions.toAdminDto
+import org.gameyfin.app.libraries.extensions.toDto
 import org.gameyfin.app.libraries.extensions.toSummaryDto
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.entities.User
@@ -25,11 +25,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.core.Authentication
 import java.time.Instant
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class LibraryServiceTest {
 
@@ -112,7 +108,7 @@ class LibraryServiceTest {
 
     @Test
     fun `getById should return library when it exists`() {
-        val library = createTestLibrary(1L, "Test Library")
+        val library = createTestLibrary(1L)
 
         every { libraryRepository.findByIdOrNull(1L) } returns library
 
@@ -160,7 +156,7 @@ class LibraryServiceTest {
     @Test
     fun `create should trigger scan when scanAfterCreation is true`() {
         val dto = createAdminDto(name = "New Library")
-        val savedLibrary = createTestLibrary(1L, "New Library")
+        val savedLibrary = createTestLibrary(name = "New Library")
 
         every { libraryRepository.findByPaths(any()) } returns emptyList()
         every { libraryRepository.save(any()) } returns savedLibrary
@@ -187,7 +183,7 @@ class LibraryServiceTest {
     fun `create should throw exception when directory already exists in another library`() {
         val dto = createAdminDto(
             name = "New Library",
-            directories = listOf(DirectoryMappingDto("/existing/path", null))
+            directories = listOf(DirectoryMappingDto("/existing/path"))
         )
         val existingLibrary = createTestLibrary(2L, "Existing Library")
 
@@ -201,7 +197,7 @@ class LibraryServiceTest {
 
     @Test
     fun `update should update library name when provided`() {
-        val library = createTestLibrary(1L, "Old Name")
+        val library = createTestLibrary(name = "Old Name")
         val updateDto = LibraryUpdateDto(id = 1L, name = "New Name")
 
         every { libraryRepository.findByIdOrNull(1L) } returns library
@@ -227,7 +223,6 @@ class LibraryServiceTest {
     @Test
     fun `update should update directories when provided`() {
         val library = createTestLibrary(
-            id = 1L,
             directories = mutableListOf(
                 createDirectoryMapping("/old/path1"),
                 createDirectoryMapping("/old/path2")
@@ -259,7 +254,6 @@ class LibraryServiceTest {
         val game3 = createTestGame(3L, "/keep/path/game3")
 
         val library = createTestLibrary(
-            id = 1L,
             directories = mutableListOf(
                 createDirectoryMapping("/old/path1"),
                 createDirectoryMapping("/old/path2"),
@@ -270,7 +264,7 @@ class LibraryServiceTest {
 
         val updateDto = LibraryUpdateDto(
             id = 1L,
-            directories = listOf(DirectoryMappingDto("/keep/path", null))
+            directories = listOf(DirectoryMappingDto("/keep/path"))
         )
 
         every { libraryRepository.findByIdOrNull(1L) } returns library
@@ -285,7 +279,7 @@ class LibraryServiceTest {
 
     @Test
     fun `update should update platforms when provided`() {
-        val library = createTestLibrary(1L, platforms = mutableListOf(Platform.PLAYSTATION_5))
+        val library = createTestLibrary(platforms = mutableListOf(Platform.PLAYSTATION_5))
         val updateDto = LibraryUpdateDto(
             id = 1L,
             platforms = listOf(Platform.XBOX_SERIES_X_S, Platform.PC_MICROSOFT_WINDOWS)
@@ -304,7 +298,6 @@ class LibraryServiceTest {
     @Test
     fun `update should update ignoredPaths when provided`() {
         val library = createTestLibrary(
-            1L,
             ignoredPaths = mutableListOf(createTestIgnoredPath("/old/unmatched"))
         )
 
@@ -316,7 +309,7 @@ class LibraryServiceTest {
             )
         )
 
-        val user = mockk<User>() {
+        val user = mockk<User> {
             every { id } returns 42L
             every { username } returns "testuser"
         }
@@ -343,11 +336,11 @@ class LibraryServiceTest {
 
     @Test
     fun `update should throw exception when duplicate directory in another library`() {
-        val library = createTestLibrary(1L)
+        val library = createTestLibrary()
         val otherLibrary = createTestLibrary(2L, "Other Library")
         val updateDto = LibraryUpdateDto(
             id = 1L,
-            directories = listOf(DirectoryMappingDto("/duplicate/path", null))
+            directories = listOf(DirectoryMappingDto("/duplicate/path"))
         )
 
         every { libraryRepository.findByIdOrNull(1L) } returns library
@@ -362,7 +355,6 @@ class LibraryServiceTest {
     @Test
     fun `update should allow duplicate directory in same library`() {
         val library = createTestLibrary(
-            id = 1L,
             directories = mutableListOf(createDirectoryMapping("/existing/path"))
         )
         val updateDto = LibraryUpdateDto(
@@ -384,7 +376,6 @@ class LibraryServiceTest {
     fun `update should update existing directory mapping`() {
         val existingMapping = createDirectoryMapping("/path1", "/old/external")
         val library = createTestLibrary(
-            id = 1L,
             directories = mutableListOf(existingMapping)
         )
         val updateDto = LibraryUpdateDto(
@@ -406,7 +397,7 @@ class LibraryServiceTest {
 
     @Test
     fun `update should update timestamp`() {
-        val library = createTestLibrary(1L)
+        val library = createTestLibrary()
         val updateDto = LibraryUpdateDto(id = 1L, name = "Updated")
         val beforeUpdate = Instant.now()
 
@@ -424,7 +415,7 @@ class LibraryServiceTest {
 
     @Test
     fun `update with list should call update for every element`() {
-        val library1 = createTestLibrary(1L)
+        val library1 = createTestLibrary()
         val library2 = createTestLibrary(2L)
         val updateDto1 = LibraryUpdateDto(id = 1L, name = "Updated 1")
         val updateDto2 = LibraryUpdateDto(id = 2L, name = "Updated 2")

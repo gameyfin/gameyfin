@@ -145,9 +145,9 @@ class PluginMarketplaceService(
         return install(pluginInfo.repositoryId, pluginId, version)
     }
 
-    fun uninstall(pluginId: String): PluginDto? {
+    fun uninstall(pluginId: String, keepConfiguration: Boolean): PluginDto? {
         try {
-            updateManager.uninstall(pluginId)
+            updateManager.uninstall(pluginId, keepConfiguration)
         } finally {
             pluginService.emitPlugin(pluginId)
         }

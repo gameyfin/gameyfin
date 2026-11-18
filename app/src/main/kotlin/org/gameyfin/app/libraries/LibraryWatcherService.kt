@@ -11,6 +11,7 @@ import org.gameyfin.app.core.events.LibraryDeletedEvent
 import org.gameyfin.app.core.events.LibraryFilesystemWatcherConfigUpdatedEvent
 import org.gameyfin.app.core.events.LibraryUpdatedEvent
 import org.gameyfin.app.core.filesystem.FilesystemService
+import org.gameyfin.app.core.filesystem.GAME_UPLOAD_DIRECTORY
 import org.gameyfin.app.games.repositories.GameRepository
 import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.libraries.enums.ScanType
@@ -233,7 +234,9 @@ class LibraryWatcherService(
                 val watchKey = watchService?.poll(1, TimeUnit.SECONDS) ?: continue
                 val watchInfo = watchKeys[watchKey] ?: continue
 
-                val events = watchKey.pollEvents().toList()
+                val events = watchKey.pollEvents().filter {
+                    (it.context() as? Path)?.getName(0)?.toString() != GAME_UPLOAD_DIRECTORY
+                }
                 if (events.isEmpty()) {
                     watchKey.reset()
                     continue
@@ -268,6 +271,20 @@ class LibraryWatcherService(
     }
 
     private fun processFileSystemEvents(
+        watchInfo: LibraryWatchInfo,
+        events: List<WatchEvent<*>>,
+        hasCreates: Boolean,
+        hasDeletes: Boolean,
+        hasModifies: Boolean
+    ) {
+        val relevantEvents = events.filter { it.context()?.toString() != GAME_UPLOAD_DIRECTORY }
+        if (relevantEvents.isEmpty()) return
+        LibraryOperationLock.withLibrary(watchInfo.libraryId) {
+            processLibraryEvents(watchInfo, relevantEvents, hasCreates, hasDeletes, hasModifies)
+        }
+    }
+
+    private fun processLibraryEvents(
         watchInfo: LibraryWatchInfo,
         events: List<WatchEvent<*>>,
         hasCreates: Boolean,

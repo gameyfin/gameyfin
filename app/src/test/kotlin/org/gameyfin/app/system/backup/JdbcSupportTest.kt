@@ -3,21 +3,13 @@ package org.gameyfin.app.system.backup
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.gameyfin.app.core.backup.BackupFormat
-import org.gameyfin.app.core.backup.JdbcValues
-import org.gameyfin.app.core.backup.SchemaInspector
-import org.gameyfin.app.core.backup.ValueKind
-import org.gameyfin.app.core.backup.normalizeJdbcType
+import org.gameyfin.app.core.backup.*
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.io.StringWriter
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.Types
+import java.sql.*
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -85,7 +77,10 @@ class JdbcSupportTest {
         assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, "timestamp"))
         assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, "timestamp without time zone"))
         assertEquals(Types.TIMESTAMP, normalizeJdbcType(Types.TIMESTAMP, null))
-        assertEquals(Types.TIMESTAMP_WITH_TIMEZONE, normalizeJdbcType(Types.TIMESTAMP_WITH_TIMEZONE, "TIMESTAMP WITH TIME ZONE"))
+        assertEquals(
+            Types.TIMESTAMP_WITH_TIMEZONE,
+            normalizeJdbcType(Types.TIMESTAMP_WITH_TIMEZONE, "TIMESTAMP WITH TIME ZONE")
+        )
         assertEquals(Types.VARCHAR, normalizeJdbcType(Types.VARCHAR, "timestamptz"))
     }
 
@@ -113,7 +108,7 @@ class JdbcSupportTest {
     @Test
     fun `schema inspector normalizes PostgreSQL timestamptz columns`() {
         val c = mockk<Connection>()
-        val metadata = mockk<java.sql.DatabaseMetaData>(relaxed = true)
+        val metadata = mockk<DatabaseMetaData>(relaxed = true)
         val rs = mockk<ResultSet>(relaxed = true)
         every { c.metaData } returns metadata
         every { c.catalog } returns "gameyfin"
@@ -178,10 +173,10 @@ class JdbcSupportTest {
         }
         bind(Types.TIMESTAMP, "\"2026-01-02T03:04:05Z\"") { verify { it.setObject(1, any<java.time.LocalDateTime>()) } }
         bind(Types.TIMESTAMP_WITH_TIMEZONE, "\"2026-01-02T03:04:05Z\"") {
-            verify { it.setObject(1, java.time.OffsetDateTime.parse("2026-01-02T03:04:05Z")) }
+            verify { it.setObject(1, OffsetDateTime.parse("2026-01-02T03:04:05Z")) }
         }
         bind(Types.TIMESTAMP_WITH_TIMEZONE, "\"2026-01-02T03:04:05\"") {
-            verify { it.setObject(1, any<java.time.OffsetDateTime>()) }
+            verify { it.setObject(1, any<OffsetDateTime>()) }
         }
         bind(Types.VARBINARY, "\"AQID\"") { verify { it.setBytes(1, byteArrayOf(1, 2, 3)) } }
         bind(Types.OTHER, "\"v\"") { verify { it.setObject(1, "v", Types.OTHER) } }

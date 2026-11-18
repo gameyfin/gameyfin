@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React from "react";
 import withConfigPage from "Frontend/components/administration/withConfigPage";
 import * as Yup from 'yup';
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
@@ -6,15 +6,7 @@ import Section from "Frontend/components/general/Section";
 import {Button, toast} from "@heroui/react";
 import {MagicWandIcon} from "@phosphor-icons/react";
 
-function SecurityManagementLayout({getConfig, formik, setSaveMessage}: any) {
-
-    useEffect(() => {
-        if (JSON.stringify(formik.values.sso) !== JSON.stringify(formik.initialValues.sso)) {
-            setSaveMessage("Gameyfin must be restarted for changes in the SSO configuration to take effect");
-        } else {
-            setSaveMessage(null);
-        }
-    }, [formik.values.sso, formik.initialValues.sso]);
+function SecurityManagementLayout({getConfig, formik}: any) {
 
     function isAutoPopulateDisabled() {
         return !formik.values.sso.oidc.enabled || !formik.values.sso.oidc["issuer-url"];

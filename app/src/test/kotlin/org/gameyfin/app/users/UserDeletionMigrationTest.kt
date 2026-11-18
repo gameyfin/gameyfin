@@ -11,7 +11,7 @@ import org.gameyfin.app.libraries.extensions.toDto
 import org.junit.jupiter.api.Test
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
-import java.util.UUID
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -52,9 +52,11 @@ class UserDeletionMigrationTest {
 
     @Test
     fun `contributions with deleted authors can still be rendered`() {
-        val metadata = GameMetadata(path = "/game", fields = mutableMapOf(
-            "title" to GameFieldMetadata(source = GameFieldUserSource(null))
-        ))
+        val metadata = GameMetadata(
+            path = "/game", fields = mutableMapOf(
+                "title" to GameFieldMetadata(source = GameFieldUserSource(null))
+            )
+        )
         assertEquals("Deleted user", metadata.toAdminDto().fields!!.getValue("title").source)
         assertEquals("", IgnoredPath(id = 1, path = "/ignored", source = IgnoredPathUserSource(null)).toDto().source)
     }

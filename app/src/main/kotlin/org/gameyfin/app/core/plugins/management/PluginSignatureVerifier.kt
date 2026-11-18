@@ -5,6 +5,7 @@ import java.security.CodeSigner
 import java.security.PublicKey
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
+import java.util.Locale
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
@@ -17,21 +18,29 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
         JarFile(pluginPath.toFile(), true).use { jarFile ->
             val entries = jarFile.entries()
 
+            var trustLevel = PluginTrustLevel.THIRD_PARTY
             while (entries.hasMoreElements()) {
                 val entry = entries.nextElement()
-                if (entry.isDirectory || entry.name.startsWith("META-INF/")) continue
+                if (shouldSkipEntry(entry)) continue
 
                 if (!verifyEntryDigest(jarFile, entry)) return PluginTrustLevel.UNTRUSTED
 
                 val codeSigners = entry.codeSigners
                 if (codeSigners.isNullOrEmpty()) return PluginTrustLevel.THIRD_PARTY
 
-                val signersTrustLevel = verifyCodeSigners(codeSigners)
-                if (signersTrustLevel != PluginTrustLevel.OFFICIAL) return signersTrustLevel
+                trustLevel = verifyCodeSigners(codeSigners)
+                if (trustLevel != PluginTrustLevel.OFFICIAL) return trustLevel
             }
 
-            return PluginTrustLevel.OFFICIAL
+            return trustLevel
         }
+    }
+
+    private fun shouldSkipEntry(entry: JarEntry): Boolean {
+        val name = entry.name.uppercase(Locale.ROOT)
+        return entry.isDirectory || name == "META-INF/MANIFEST.MF" ||
+            (name.startsWith("META-INF/") && '/' !in name.removePrefix("META-INF/") &&
+                (name.endsWith(".SF") || name.endsWith(".RSA") || name.endsWith(".DSA") || name.endsWith(".EC")))
     }
 
     /**
@@ -67,8 +76,9 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
     }
 
     fun verifyCertificates(certs: List<Certificate>): PluginTrustLevel {
+        if (certs.isEmpty()) return PluginTrustLevel.UNTRUSTED
         for (cert in certs) {
-            if (cert !is X509Certificate) continue
+            if (cert !is X509Certificate) return PluginTrustLevel.UNTRUSTED
             try {
                 cert.verify(publicKey)
             } catch (_: Exception) {

@@ -8,6 +8,7 @@ import SearchBar from "Frontend/components/general/SearchBar";
 import {useProfileActions} from "./useProfileActions";
 import NavigationDrawer from "./NavigationDrawer";
 import {useAuth} from "Frontend/util/auth";
+import NotificationPopover from "Frontend/components/general/NotificationPopover";
 
 export default function CompactNavigation({searchValue, onSearchChange, sectionMenuRef}: {
     sectionMenuRef: RefCallback<HTMLDivElement>;
@@ -39,7 +40,7 @@ export default function CompactNavigation({searchValue, onSearchChange, sectionM
                     </>}
                 </div>
                 <Link href="/" aria-label="Gameyfin home"><GameyfinLogo className="h-9 fill-foreground"/></Link>
-                <div aria-hidden="true" className="min-h-11"/>
+                <div className="min-h-11 flex justify-end">{auth.state.user && <NotificationPopover/>}</div>
             </div>
             {!location.pathname.startsWith("/search") &&
                 <SearchBar inputValue={searchValue} onInputChange={onSearchChange}/>}

@@ -197,6 +197,63 @@ class GameEndpointTest {
     }
 
     @Test
+    fun `deleteGame deletes files only when explicitly requested`() {
+        val gameId = 123L
+        val game = mockk<Game> { every { library.id } returns 1L }
+        every { gameService.getById(gameId) } returns game
+        every { libraryCoreService.deleteGameFromLibrary(gameId, true) } just Runs
+        every { gameService.delete(gameId) } just Runs
+
+        gameEndpoint.deleteGame(gameId, true)
+
+        verifyOrder {
+            libraryCoreService.deleteGameFromLibrary(gameId, true)
+            gameService.delete(gameId)
+        }
+    }
+
+    @Test
+    fun `deleteGame keeps record when file deletion fails`() {
+        val game = mockk<Game> { every { library.id } returns 1L }
+        every { gameService.getById(123L) } returns game
+        every { libraryCoreService.deleteGameFromLibrary(123L, true) } throws java.io.IOException("Denied")
+
+        kotlin.test.assertFailsWith<java.io.IOException> { gameEndpoint.deleteGame(123L, true) }
+
+        verify(exactly = 0) { gameService.delete(any()) }
+    }
+
+    @Test
+    fun `deleteGame cancels downloads before removing files or catalog entry`() {
+        for (deleteFiles in listOf(false, true)) {
+            val gameId = 345L
+            val game = mockk<Game> { every { library.id } returns 1L }
+            every { gameService.getById(gameId) } returns game
+            var closed = false
+            val response = org.gameyfin.app.core.download.files.GameDownloadLifecycle.prepare(
+                gameId, org.springframework.mock.web.MockHttpServletRequest(), { game }
+            ) { _, transfer ->
+                transfer.own(java.io.Closeable { closed = true })
+                org.springframework.http.ResponseEntity.ok().body(
+                    org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody {}
+                )
+            }
+            every { libraryCoreService.deleteGameFromLibrary(gameId, deleteFiles) } answers {
+                kotlin.test.assertTrue(closed, "Download source must close before removal")
+            }
+            every { gameService.delete(gameId) } just Runs
+            try {
+                gameEndpoint.deleteGame(gameId, deleteFiles)
+                kotlin.test.assertFailsWith<java.io.IOException> {
+                    response.body!!.writeTo(java.io.ByteArrayOutputStream())
+                }
+            } finally {
+                (response.body as java.io.Closeable).close()
+            }
+        }
+    }
+
+    @Test
     fun `deleteGame should handle deletion of non-existent game`() {
         val gameId = 999L
         every { libraryCoreService.deleteGameFromLibrary(gameId) } just Runs
@@ -297,12 +354,12 @@ class GameEndpointTest {
         val game = mockk<Game>()
 
         every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
-        every { gameService.matchManually(any(), any(), library, null) } returns game
+        every { gameService.matchManually(any(), any(), library) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
         gameEndpoint.matchManually(originalIds, path, libraryId, null)
 
-        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library, null) }
+        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library) }
     }
 
     @Test
@@ -314,12 +371,12 @@ class GameEndpointTest {
         val game = mockk<Game>()
 
         every { libraryCoreService.getWithGamesAndIgnoredPaths(libraryId) } returns library
-        every { gameService.matchManually(any(), any(), library, null) } returns game
+        every { gameService.matchManually(any(), any(), library) } returns game
         coEvery { libraryCoreService.addGamesToLibrary(listOf(game), library, true) } returns library
 
         gameEndpoint.matchManually(originalIds, path, libraryId, null)
 
-        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library, null) }
+        verify(exactly = 1) { gameService.matchManually(originalIds, Path.of(path), library) }
     }
 
     @Test

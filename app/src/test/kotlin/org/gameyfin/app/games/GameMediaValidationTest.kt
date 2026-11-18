@@ -7,7 +7,7 @@ import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.MultipartFile
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import java.util.Base64
+import java.util.*
 import javax.imageio.ImageIO
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -18,7 +18,10 @@ class GameMediaValidationTest {
         for ((format, mime) in listOf("png" to "image/png", "jpeg" to "image/jpeg", "gif" to "image/gif")) {
             val output = ByteArrayOutputStream()
             ImageIO.write(BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB), format, output)
-            assertEquals(mime, GameMediaValidation.upload(MockMultipartFile("file", "test.txt", "text/plain", output.toByteArray())))
+            assertEquals(
+                mime,
+                GameMediaValidation.upload(MockMultipartFile("file", "test.txt", "text/plain", output.toByteArray()))
+            )
         }
         val webp = Base64.getDecoder().decode("UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA")
         assertEquals("image/webp", GameMediaValidation.upload(MockMultipartFile("file", webp)))
@@ -29,7 +32,12 @@ class GameMediaValidationTest {
         val empty = MockMultipartFile("file", byteArrayOf())
         val oversized = mockk<MultipartFile> { every { size } returns GameMediaValidation.MAX_FILE_SIZE + 1 }
         val text = MockMultipartFile("file", "test.png", "image/png", "not an image".toByteArray())
-        val unsupported = MockMultipartFile("file", "test.png", "image/png", "<svg xmlns=\"http://www.w3.org/2000/svg\"/>".toByteArray())
+        val unsupported = MockMultipartFile(
+            "file",
+            "test.png",
+            "image/png",
+            "<svg xmlns=\"http://www.w3.org/2000/svg\"/>".toByteArray()
+        )
         for (file in listOf(empty, oversized, text, unsupported)) {
             assertFailsWith<IllegalArgumentException> { GameMediaValidation.upload(file) }
         }

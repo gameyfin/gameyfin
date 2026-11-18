@@ -1,9 +1,10 @@
 package org.gameyfin.app.core.token
 
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration
 
 class TokenTypeTest {
 
@@ -12,8 +13,7 @@ class TokenTypeTest {
         val type = TokenType.PasswordReset
 
         assertEquals("password-reset", type.key)
-        assertEquals(15, type.expiration.inWholeMinutes)
-        assertTrue(type.expiration.isFinite())
+        assertEquals(Duration.ofMinutes(15), type.expiration)
     }
 
     @Test
@@ -21,8 +21,7 @@ class TokenTypeTest {
         val type = TokenType.EmailConfirmation
 
         assertEquals("email-verification", type.key)
-        assertEquals(Duration.INFINITE, type.expiration)
-        assertTrue(type.expiration.isInfinite())
+        assertNull(type.expiration)
     }
 
     @Test
@@ -30,8 +29,7 @@ class TokenTypeTest {
         val type = TokenType.Invitation
 
         assertEquals("invitation", type.key)
-        assertEquals(Duration.INFINITE, type.expiration)
-        assertTrue(type.expiration.isInfinite())
+        assertNull(type.expiration)
     }
 
     @Test
@@ -50,7 +48,6 @@ class TokenTypeTest {
     fun `PasswordReset expiration should be positive`() {
         val type = TokenType.PasswordReset
 
-        assertTrue(type.expiration.isPositive())
+        assertTrue(requireNotNull(type.expiration) > Duration.ZERO)
     }
 }
-

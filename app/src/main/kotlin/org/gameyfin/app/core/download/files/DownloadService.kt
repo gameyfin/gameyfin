@@ -12,9 +12,9 @@ import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.download.Download
+import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.DownloadProvider
 import org.gameyfin.pluginapi.download.RangeDownload
-import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.springframework.stereotype.Service
 import java.io.IOException
 import java.io.InputStream
@@ -46,10 +46,10 @@ class DownloadService(
 
             DownloadProviderDto(
                 key = it.javaClass.name,
-                name = descriptor.pluginName,
+                name = it.name ?: descriptor.pluginName,
                 priority = managementEntry.priority,
-                description = descriptor.pluginDescription,
-                shortDescription = descriptor.pluginShortDescription,
+                description = it.description ?: descriptor.pluginDescription,
+                shortDescription = it.shortDescription ?: descriptor.pluginShortDescription,
             )
         }
     }
@@ -121,11 +121,13 @@ class DownloadService(
                 val timeTaken = measureTime {
                     val buffer = ByteArray(64 * 1024)
                     while (true) {
+                        GameDownloadLifecycle.checkCancelled()
                         val count = readDownloadSource(data, buffer, game)
                         if (count < 0) break
                         finalOutputStream.write(buffer, 0, count)
                         bytesWritten += count
                     }
+                    GameDownloadLifecycle.checkCancelled()
                     finalOutputStream.flush()
                 }
 

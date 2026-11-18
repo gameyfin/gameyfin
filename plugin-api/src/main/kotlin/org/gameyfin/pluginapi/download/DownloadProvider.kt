@@ -11,6 +11,11 @@ import java.nio.file.Path
  */
 interface DownloadProvider : ExtensionPoint {
 
+    /** Optional display metadata; null falls back to the owning plugin's manifest. */
+    val name: String? get() = null
+    val description: String? get() = null
+    val shortDescription: String? get() = null
+
     /**
      * Downloads a resource for the given path.
      *

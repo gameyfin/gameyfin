@@ -38,7 +38,7 @@ class TaskHistoryCleanupTask(
                 key = KEY,
                 name = "Task history cleanup",
                 description = "Deletes old task runs and their logs from the history",
-                defaultSchedule = "0 30 3 * * *",
+                defaultSchedule = "@daily",
                 settings = listOf(
                     ConfigMetadata(
                         key = RETENTION_DAYS,

@@ -51,21 +51,60 @@ class PluginSignatureVerifierTest {
     }
 
     @Test
-    fun `verifyPluginSignature should return OFFICIAL for JAR with only META-INF entries`() {
+    fun `verifyPluginSignature should return THIRD_PARTY for JAR with only META-INF entries`() {
         val jarPath = createUnsignedJar("meta-only.jar", mapOf("META-INF/services/some.service" to "org.example.Impl"))
 
         val result = verifier.verifyPluginSignature(jarPath)
 
-        assertEquals(PluginTrustLevel.OFFICIAL, result)
+        assertEquals(PluginTrustLevel.THIRD_PARTY, result)
     }
 
     @Test
-    fun `verifyPluginSignature should return OFFICIAL for empty JAR`() {
+    fun `verifyPluginSignature should return THIRD_PARTY for empty JAR`() {
         val jarPath = createUnsignedJar("empty.jar", emptyMap())
 
         val result = verifier.verifyPluginSignature(jarPath)
 
-        assertEquals(PluginTrustLevel.OFFICIAL, result)
+        assertEquals(PluginTrustLevel.THIRD_PARTY, result)
+    }
+
+    @Test
+    fun `real official signature covers extension index and rejects tampered resources`() {
+        val keystore = tempDir.resolve("test.jks")
+        val certificate = tempDir.resolve("test.pem")
+        fun command(vararg arguments: String) {
+            val process = ProcessBuilder(*arguments).redirectErrorStream(true).start()
+            val output = process.inputStream.bufferedReader().readText()
+            assertEquals(0, process.waitFor(), output)
+        }
+        command("keytool", "-genkeypair", "-alias", "test", "-keystore", keystore.toString(),
+            "-storepass", "test-password", "-keypass", "test-password", "-keyalg", "RSA", "-dname", "CN=Plugin test", "-validity", "1")
+        command("keytool", "-exportcert", "-rfc", "-alias", "test", "-keystore", keystore.toString(),
+            "-storepass", "test-password", "-file", certificate.toString())
+        val key = java.nio.file.Files.newInputStream(certificate).use {
+            java.security.cert.CertificateFactory.getInstance("X.509").generateCertificate(it).publicKey
+        }
+        val signed = createUnsignedJar("signed.jar", mapOf("payload.txt" to "payload", "META-INF/extensions.idx" to "example.Extension"))
+        val signing = ProcessBuilder("jarsigner", "-keystore", keystore.toString(), "-storepass:env", "TEST_PLUGIN_PASSWORD", signed.toString(), "test")
+            .redirectErrorStream(true)
+        signing.environment()["TEST_PLUGIN_PASSWORD"] = "test-password"
+        val process = signing.start()
+        val output = process.inputStream.bufferedReader().readText()
+        assertEquals(0, process.waitFor(), output)
+        val signedVerifier = PluginSignatureVerifier(key)
+        assertEquals(PluginTrustLevel.OFFICIAL, signedVerifier.verifyPluginSignature(signed))
+        val tampered = tempDir.resolve("tampered.jar")
+        JarFile(signed.toFile(), false).use { source ->
+            JarOutputStream(java.nio.file.Files.newOutputStream(tampered)).use { target ->
+                source.entries().asSequence().forEach { entry ->
+                    target.putNextEntry(JarEntry(entry.name))
+                    if (entry.name == "META-INF/extensions.idx") target.write("malicious.Extension".toByteArray())
+                    else source.getInputStream(entry).use { it.copyTo(target) }
+                    target.closeEntry()
+                }
+            }
+        }
+        assertEquals(PluginTrustLevel.UNTRUSTED, signedVerifier.verifyPluginSignature(tampered))
     }
 
     // ========================================================================================
@@ -90,19 +129,19 @@ class PluginSignatureVerifierTest {
     // ========================================================================================
 
     @Test
-    fun `verifyCertificates should return OFFICIAL for empty certificate list`() {
+    fun `verifyCertificates should return UNTRUSTED for empty certificate list`() {
         val result = verifier.verifyCertificates(emptyList())
 
-        assertEquals(PluginTrustLevel.OFFICIAL, result)
+        assertEquals(PluginTrustLevel.UNTRUSTED, result)
     }
 
     @Test
-    fun `verifyCertificates should return OFFICIAL for non-X509 certificates`() {
+    fun `verifyCertificates should return UNTRUSTED for non-X509 certificates`() {
         val nonX509Cert = mockk<Certificate>()
 
         val result = verifier.verifyCertificates(listOf(nonX509Cert))
 
-        assertEquals(PluginTrustLevel.OFFICIAL, result)
+        assertEquals(PluginTrustLevel.UNTRUSTED, result)
     }
 
     @Test

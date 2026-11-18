@@ -1,10 +1,10 @@
 package org.gameyfin.app.libraries.entities
 
 import jakarta.persistence.*
-import org.hibernate.annotations.OnDelete
-import org.hibernate.annotations.OnDeleteAction
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.users.entities.User
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 
 @Entity
 class IgnoredPath(

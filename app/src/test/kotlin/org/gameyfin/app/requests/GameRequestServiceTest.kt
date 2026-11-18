@@ -478,7 +478,7 @@ class GameRequestServiceTest {
     @Test
     fun `deleteRequest should throw exception when non-admin tries to delete guest request`() {
         val user = createTestUser(1L, "testuser")
-        val request = createTestGameRequest(1L, "Game", null)
+        val request = createTestGameRequest(1L, "Game")
 
         setupAuthentication("testuser", false)
         every { gameRequestRepository.findById(1L) } returns Optional.of(request)
@@ -495,7 +495,7 @@ class GameRequestServiceTest {
     @Test
     fun `deleteRequest should allow admin to delete guest request`() {
         val admin = createTestUser(1L, "admin")
-        val request = createTestGameRequest(1L, "Game", null)
+        val request = createTestGameRequest(1L, "Game")
 
         setupAuthentication("admin", true)
         every { gameRequestRepository.findById(1L) } returns Optional.of(request)
@@ -643,9 +643,9 @@ class GameRequestServiceTest {
         val game = createTestGame(1L, "Test Game")
         val releaseYear = 2024
         game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS, Platform.PLAYSTATION_5)
-        val request1 = createTestGameRequest(1L, "Test Game")
+        val request1 = createTestGameRequest(1L)
         request1.status = GameRequestStatus.PENDING
-        val request2 = createTestGameRequest(2L, "Test Game")
+        val request2 = createTestGameRequest(2L)
         request2.status = GameRequestStatus.APPROVED
 
         mockkObject(GameRequestService.Companion)
@@ -758,7 +758,7 @@ class GameRequestServiceTest {
         val game = createTestGame(1L, "Test Game")
         val releaseYear = 2024
         game.platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS)
-        val request = createTestGameRequest(1L, "Test Game")
+        val request = createTestGameRequest(1L)
         request.status = GameRequestStatus.FULFILLED
 
         every {
@@ -791,7 +791,6 @@ class GameRequestServiceTest {
             status = GameRequestStatus.PENDING,
             requester = requester,
             voters = mutableSetOf(),
-            linkedGameId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -817,10 +816,6 @@ class GameRequestServiceTest {
             library = mockk(relaxed = true),
             title = title,
             platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS),
-            coverImage = null,
-            headerImage = null,
-            comment = null,
-            summary = null,
             release = Instant.parse("2024-01-01T00:00:00Z"),
             userRating = 0,
             criticRating = 0,
@@ -837,9 +832,7 @@ class GameRequestServiceTest {
                 path = "/test/path",
                 fileSize = 1000L,
                 fields = mutableMapOf(),
-                originalIds = emptyMap(),
-                downloadCount = 0,
-                matchConfirmed = false
+                originalIds = emptyMap()
             )
         )
     }

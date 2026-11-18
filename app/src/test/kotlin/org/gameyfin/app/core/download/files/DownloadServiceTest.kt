@@ -1,7 +1,7 @@
 package org.gameyfin.app.core.download.files
 
-import io.mockk.*
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.mockk.*
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.download.bandwidth.SessionBandwidthManager
@@ -108,6 +108,25 @@ class DownloadServiceTest {
         assertEquals(15, result[0].priority)
         assertEquals("This is a test provider", result[0].description)
         assertEquals("Test short description", result[0].shortDescription)
+    }
+
+    @Test
+    fun `provider display metadata overrides manifest fields individually`() {
+        val torrent = spyk(TestProvider())
+        val magnet = spyk(Provider2())
+        every { magnet.name } returns "Magnet Link"
+        every { magnet.shortDescription } returns "Open in your torrent client"
+        every { pluginManager.getExtensions(DownloadProvider::class.java) } returns listOf(torrent, magnet)
+        every { pluginManager.whichPlugin(any()) } returns createMockPluginWrapper(
+            "torrent", "Torrent Download", "Plugin description", "Download via Torrent"
+        )
+        every { pluginManager.getManagementEntry("torrent") } returns mockk { every { priority } returns 2 }
+
+        val providers = service.getProviders()
+        assertEquals(listOf(torrent.javaClass.name, magnet.javaClass.name), providers.map { it.key })
+        assertEquals(listOf("Torrent Download", "Magnet Link"), providers.map { it.name })
+        assertEquals(listOf("Plugin description", "Plugin description"), providers.map { it.description })
+        assertEquals(listOf("Download via Torrent", "Open in your torrent client"), providers.map { it.shortDescription })
     }
 
     @Test

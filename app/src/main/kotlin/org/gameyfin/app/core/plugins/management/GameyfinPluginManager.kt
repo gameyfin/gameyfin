@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.plugins.management
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.notifications.NotificationService
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.pluginapi.core.config.Configurable
 import org.gameyfin.pluginapi.core.config.PluginConfigValidationResult
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
+import java.nio.file.Files
 import java.nio.file.Path
 import java.security.PublicKey
 import java.security.cert.CertificateFactory
@@ -30,6 +32,7 @@ class GameyfinPluginManager(
     private val pluginConfigRepository: PluginConfigRepository,
     private val pluginManagementRepository: PluginManagementRepository,
     private val pluginDataService: ObjectProvider<GameyfinDataService>,
+    private val notificationService: ObjectProvider<NotificationService>,
     @Value($$"${gameyfin.plugins.install-directory:$$DEFAULT_INSTALLED_PLUGINS_DIR}")
     installedPluginsDirectory: String = DEFAULT_INSTALLED_PLUGINS_DIR,
     @Value($$"${spring.application.version:}")
@@ -38,12 +41,15 @@ class GameyfinPluginManager(
     listOf(
         Path(System.getProperty("pf4j.pluginsDir", "plugins")),
         Path(installedPluginsDirectory)
-    )
+    ).plus(
+        listOf(Path(LEGACY_INSTALLED_PLUGINS_DIR)).filter { Files.isDirectory(it) }
+    ).distinct()
 ) {
 
     companion object {
         private const val PUBLIC_KEY_FILE = "certificates/gameyfin-plugins.pem"
-        const val DEFAULT_INSTALLED_PLUGINS_DIR = "plugins-installed"
+        const val DEFAULT_INSTALLED_PLUGINS_DIR = "plugins"
+        private const val LEGACY_INSTALLED_PLUGINS_DIR = "plugins-installed"
         private const val UNKNOWN_SYSTEM_VERSION = "0.0.0"
         private val log = KotlinLogging.logger {}
     }
@@ -129,7 +135,8 @@ class GameyfinPluginManager(
             pluginId = pluginWrapper.pluginId,
             pluginVersion = pluginWrapper.descriptor.version,
             dataDirectory = GameyfinPluginContext.dataDirectoryOf(pluginWrapper.pluginId),
-            dataServiceProvider = { pluginDataService.getObject() }
+            dataServiceProvider = { pluginDataService.getObject() },
+            notificationServiceProvider = { notificationService.getObject().forPlugin(pluginWrapper.pluginId) }
         )
     }
 
@@ -234,6 +241,12 @@ class GameyfinPluginManager(
         }
 
         return pluginManagementEntry
+    }
+
+    fun requireOfficialSignature(pluginPath: Path) {
+        check(signatureVerifier.verifyPluginSignature(pluginPath) == PluginTrustLevel.OFFICIAL) {
+            "Recovery requires a plugin signed by Gameyfin"
+        }
     }
 
     private fun verifyTrustLevel(pluginPath: Path): PluginTrustLevel {
@@ -392,7 +405,9 @@ class GameyfinPluginManager(
     }
 
     fun isInInstalledPluginsRoot(path: Path): Boolean {
-        return path.toAbsolutePath().normalize().startsWith(installedPluginsRoot)
+        val normalized = path.toAbsolutePath().normalize()
+        return normalized.startsWith(installedPluginsRoot) ||
+                normalized.startsWith(Path(LEGACY_INSTALLED_PLUGINS_DIR).toAbsolutePath().normalize())
     }
 
     /**
@@ -410,6 +425,13 @@ class GameyfinPluginManager(
                     false
                 }
             }
+    }
+
+    /** Include incompatible/unloaded artifacts: recovery must never replace local installations. */
+    fun hasPluginArtifact(pluginId: String): Boolean {
+        if (getPlugin(pluginId) != null) return true
+        val repository = (pluginRepository as? HighestVersionPluginRepository)?.delegate ?: pluginRepository
+        return repository.pluginPaths.any { readPluginDescriptor(it)?.pluginId == pluginId }
     }
 
     fun readPluginDescriptor(pluginPath: Path): PluginDescriptor? {

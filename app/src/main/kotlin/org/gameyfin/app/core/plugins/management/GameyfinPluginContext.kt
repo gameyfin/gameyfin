@@ -2,6 +2,7 @@ package org.gameyfin.app.core.plugins.management
 
 import org.gameyfin.pluginapi.core.wrapper.PluginContext
 import org.gameyfin.pluginapi.data.GameyfinDataService
+import org.gameyfin.pluginapi.notifications.GameyfinNotificationService
 import java.nio.file.Path
 
 /**
@@ -14,6 +15,7 @@ class GameyfinPluginContext(
     override val pluginId: String,
     override val pluginVersion: String,
     override val dataDirectory: Path,
+    notificationServiceProvider: () -> GameyfinNotificationService,
     dataServiceProvider: () -> GameyfinDataService
 ) : PluginContext {
 
@@ -24,4 +26,5 @@ class GameyfinPluginContext(
     }
 
     override val dataService: GameyfinDataService by lazy(dataServiceProvider)
+    override val notificationService: GameyfinNotificationService by lazy(notificationServiceProvider)
 }

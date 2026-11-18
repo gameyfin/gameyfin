@@ -4,8 +4,10 @@ import com.sun.net.httpserver.HttpServer
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.unmockkAll
+import org.gameyfin.app.core.notifications.NotificationService
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.app.core.plugins.management.*
+import org.gameyfin.app.core.plugins.marketplace.MarketplaceInstallIntegrationTest.Companion.PLUGIN_ID
 import org.gameyfin.pluginapi.data.GameyfinDataService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -37,6 +39,16 @@ import kotlin.test.*
  * That is sufficient to verify the file handling and loading/unloading in PF4J.
  */
 class MarketplaceInstallIntegrationTest {
+
+    private val recoveryCandidates = mutableMapOf<String, PluginRecoveryCandidate>()
+    private fun recoveryRepository() = mockk<PluginRecoveryRepository> {
+        every { findById(any()) } answers { Optional.ofNullable(recoveryCandidates[firstArg()]) }
+        every { save(any<PluginRecoveryCandidate>()) } answers { firstArg<PluginRecoveryCandidate>().also { recoveryCandidates[it.pluginId] = it } }
+    }
+
+    private fun readyPlugins() = mockk<org.gameyfin.app.core.plugins.management.PluginsLoadedIndicator> {
+        every { isReady() } returns true
+    }
 
     companion object {
         private const val PLUGIN_ID = "integration-plugin"
@@ -93,7 +105,7 @@ class MarketplaceInstallIntegrationTest {
             managementEntries.values.maxOfOrNull { it.priority }
         }
 
-        val pluginConfigRepository = mockk<PluginConfigRepository>()
+        val pluginConfigRepository = mockk<PluginConfigRepository>(relaxUnitFun = true)
         every { pluginConfigRepository.findAllByPluginId(any()) } returns emptyList()
 
         System.setProperty("pf4j.pluginsDir", pluginsDir.toString())
@@ -103,6 +115,7 @@ class MarketplaceInstallIntegrationTest {
             pluginConfigRepository,
             pluginManagementRepository,
             mockk<ObjectProvider<GameyfinDataService>>(relaxed = true),
+            mockk<ObjectProvider<NotificationService>>(relaxed = true),
             installedPluginsDirectory = installedDir.toString(),
             applicationVersion = "2.0.0"
         )
@@ -110,7 +123,10 @@ class MarketplaceInstallIntegrationTest {
         updateManager = GameyfinUpdateManager(
             pluginManager,
             MarketplaceHttpClient(allowInsecureUrls = true),
-            pluginManagementRepository
+            pluginManagementRepository,
+            pluginConfigRepository,
+            recoveryRepository(),
+            readyPlugins()
         )
         updateManager.setMarketplaceRepositories(
             listOf(updateManager.createRepository(MARKETPLACE_ID, URI("${baseUrl()}/plugins.json")))
@@ -245,6 +261,7 @@ class MarketplaceInstallIntegrationTest {
             mockk<PluginConfigRepository> { every { findAllByPluginId(any()) } returns emptyList() },
             pluginManagementRepository,
             mockk<ObjectProvider<GameyfinDataService>>(relaxed = true),
+            mockk<ObjectProvider<NotificationService>>(relaxed = true),
             installedPluginsDirectory = installedDir.toString(),
             applicationVersion = "2.0.0"
         )
@@ -352,7 +369,14 @@ class MarketplaceInstallIntegrationTest {
         val staleFile = Files.createDirectories(installedDir.resolve(".download")).resolve("plugin-123.jar.part")
         Files.writeString(staleFile, "partial")
 
-        GameyfinUpdateManager(pluginManager, MarketplaceHttpClient(allowInsecureUrls = true), pluginManagementRepository)
+        GameyfinUpdateManager(
+            pluginManager,
+            MarketplaceHttpClient(allowInsecureUrls = true),
+            pluginManagementRepository,
+            mockk<PluginConfigRepository>(),
+            recoveryRepository(),
+            readyPlugins()
+        )
 
         assertFalse(staleFile.exists())
         assertFalse(installedDir.resolve(".download").exists())

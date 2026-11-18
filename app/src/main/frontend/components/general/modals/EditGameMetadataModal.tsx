@@ -1,15 +1,13 @@
+import GameMetadataFields from "Frontend/components/general/input/GameMetadataFields";
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
 import {Accordion, Button, Modal, Spinner} from "@heroui/react";
-import {FastField, FieldProps, Form, Formik, FormikProvider} from "formik";
-import Input from "Frontend/components/general/input/Input";
+import {Form, Formik} from "formik";
 import React, {useEffect, useState} from "react";
 import GameEnumPropertyValuesDto from "Frontend/generated/org/gameyfin/app/games/dto/GameEnumPropertyValuesDto";
 import {GameEndpoint} from "Frontend/generated/endpoints";
-import MarkdownInput from "Frontend/components/general/input/MarkdownInput";
 import * as Yup from "yup";
-import DatePickerInput from "Frontend/components/general/input/DatePickerInput";
-import ArrayInput from "Frontend/components/general/input/ArrayInput";
-import GameMediaEditor from "Frontend/components/general/input/GameMediaEditor";
+import GameVersionEditor from "Frontend/components/general/versions/GameVersionEditor";
+import {useGameVersionEditor} from "Frontend/components/general/versions/useGameVersionEditor";
 import {
     GameMetadataFormValues,
     ManualGameImport,
@@ -17,32 +15,18 @@ import {
     metadataUpdate,
     saveMetadata
 } from "Frontend/util/gameMedia";
-import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput.tsx";
-import {useSnapshot} from "valtio/react";
-import {platformState} from "Frontend/state/PlatformState";
 import {useFullGame} from "Frontend/state/GameState";
 import {fileNameFromPath} from "Frontend/util/utils";
-import {GameMetadataAdminDto} from "Frontend/dtos/GameDtos";
-import GameMetadataSourceIcon from "Frontend/components/general/game/GameMetadataSourceIcon";
 
 type EditGameMetadataModalProps =
     ({ gameId: number; newGame?: never } | { gameId?: never; newGame: ManualGameImport })
     & {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
-}
 
-function MetadataField({name, children}: { name: string; children: React.ReactNode }) {
-    // Existing input components use useField. Scope their context to this FastField so
-    // unrelated edits do not rerender every control in the metadata form.
-    return <FastField name={name}>
-        {({form}: FieldProps<unknown, GameMetadataFormValues>) =>
-            <FormikProvider value={form}>{children}</FormikProvider>}
-    </FastField>;
 }
 
 export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenChange}: EditGameMetadataModalProps) {
-    const availablePlatforms = useSnapshot(platformState).available;
     const [propertyEnumValues, setPropertyEnumValues] = useState<GameEnumPropertyValuesDto>();
     // The full game is only loaded once the modal has been opened
     const [requestedGameId, setRequestedGameId] = useState<number>();
@@ -70,15 +54,11 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
     useEffect(() => {
         if (isOpen) setRequestedGameId(gameId);
     }, [isOpen, gameId]);
+    const versionEditor = useGameVersionEditor(gameId ?? 0, isOpen && gameId !== undefined);
 
     useEffect(() => {
         GameEndpoint.getEnumPropertyValues().then(setPropertyEnumValues);
     }, []);
-
-    function sourceIcon(field: string) {
-        const metadata = initialValues?.metadata as GameMetadataAdminDto | undefined;
-        return <GameMetadataSourceIcon source={metadata?.fields?.[field]}/>;
-    }
 
     return propertyEnumValues && initialValues && (newGame || initialValues.id === gameId) && isOpen && (
         <Modal>
@@ -97,6 +77,14 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                         changed.platforms = values.platforms;
                                     }
                                     if (newGame || Object.keys(changed).length > 1) await saveMetadata(changed, values, newGame);
+                                    if (!newGame) {
+                                        try {
+                                            await versionEditor.apply();
+                                        } catch {
+                                            setSaveError("Metadata was saved, but some store-version changes may not have been saved. Check the notification and review the store section.");
+                                            return;
+                                        }
+                                    }
                                     close();
                                 } catch (error) {
                                     setSaveError(error instanceof Error ? error.message : "Unable to save metadata. Try again.");
@@ -119,114 +107,29 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                 <Modal.Header className="flex flex-col gap-1">
                                                     <Modal.Heading>{newGame ? "Manual import" : "Update game metadata"}</Modal.Heading>
                                                 </Modal.Header>
-                                                <Modal.Body>
-                                                    <GameMediaEditor searchOnOpen={!newGame} sourceIcon={sourceIcon}>
-                                                        {({artwork, gallery}) => <>
-                                                            <MetadataField name="metadata.path">
-                                                                <Input key="metadata.path" name="metadata.path"
-                                                                       label="Path" labelSuffix={sourceIcon("path")}
-                                                                       isDisabled className="mb-0"/>
-                                                            </MetadataField>
-                                                            {artwork}
-                                                            <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                                                                <MetadataField name="title">
-                                                                    <Input key="title" name="title" label="Title"
-                                                                           labelSuffix={sourceIcon("title")}
-                                                                           isRequired/>
-                                                                </MetadataField>
-                                                                <MetadataField name="release">
-                                                                    <DatePickerInput key="release" name="release"
-                                                                                     label="Release"
-                                                                                     labelSuffix={sourceIcon("release")}
-                                                                                     className="w-fit"/>
-                                                                </MetadataField>
-                                                            </div>
-                                                            <MetadataField name="platforms"
-                                                                           key={Array.from(availablePlatforms).join(",")}>
-                                                                <AutocompleteInput
-                                                                    options={Array.from(availablePlatforms)}
-                                                                    name="platforms" label="Platforms"
-                                                                    labelSuffix={sourceIcon("platforms")}/>
-                                                            </MetadataField>
-                                                            <MetadataField name="comment">
-                                                                <MarkdownInput key="comment" name="comment"
-                                                                               label="Comment"
-                                                                               labelSuffix={sourceIcon("comment")}/>
-                                                            </MetadataField>
-                                                            <MetadataField name="summary">
-                                                                <MarkdownInput key="summary" name="summary"
-                                                                               label="Summary"
-                                                                               labelSuffix={sourceIcon("summary")}/>
-                                                            </MetadataField>
-                                                            {gallery}
-                                                            <Accordion variant="default" className="space-y-2">
-                                                                <Accordion.Item id="additional-metadata">
-                                                                    <Accordion.Heading>
-                                                                        <Accordion.Trigger
-                                                                            className="bg-segment rounded-2xl mb-4">
-                                                                            <span>Additional Metadata</span>
-                                                                            <Accordion.Indicator/>
-                                                                        </Accordion.Trigger>
-                                                                    </Accordion.Heading>
-                                                                    <Accordion.Panel>
-                                                                        <Accordion.Body className="overflow-y-auto">
-                                                                            <MetadataField name="developers">
-                                                                                <ArrayInput key="developers"
-                                                                                            name="developers"
-                                                                                            label="Developers"
-                                                                                            labelSuffix={sourceIcon("developers")}/>
-                                                                            </MetadataField>
-                                                                            <MetadataField name="publishers">
-                                                                                <ArrayInput key="publishers"
-                                                                                            name="publishers"
-                                                                                            label="Publishers"
-                                                                                            labelSuffix={sourceIcon("publishers")}/>
-                                                                            </MetadataField>
-                                                                            <MetadataField name="genres">
-                                                                                <AutocompleteInput
-                                                                                    options={propertyEnumValues.genres}
-                                                                                    defaultSelected={initialValues.genres}
-                                                                                    key="genres" name="genres"
-                                                                                    label="Genres"
-                                                                                    labelSuffix={sourceIcon("genres")}/>
-                                                                            </MetadataField>
-                                                                            <MetadataField name="themes">
-                                                                                <AutocompleteInput
-                                                                                    options={propertyEnumValues.themes}
-                                                                                    defaultSelected={initialValues.themes}
-                                                                                    key="themes" name="themes"
-                                                                                    label="Themes"
-                                                                                    labelSuffix={sourceIcon("themes")}/>
-                                                                            </MetadataField>
-                                                                            <MetadataField name="features">
-                                                                                <AutocompleteInput
-                                                                                    options={propertyEnumValues.features}
-                                                                                    defaultSelected={initialValues.features}
-                                                                                    key="features" name="features"
-                                                                                    label="Features"
-                                                                                    labelSuffix={sourceIcon("features")}/>
-                                                                            </MetadataField>
-                                                                            <MetadataField name="perspectives">
-                                                                                <AutocompleteInput
-                                                                                    options={propertyEnumValues.perspectives}
-                                                                                    defaultSelected={initialValues.perspectives}
-                                                                                    key="perspectives"
-                                                                                    name="perspectives"
-                                                                                    label="Perspectives"
-                                                                                    labelSuffix={sourceIcon("perspectives")}/>
-                                                                            </MetadataField>
-                                                                            <MetadataField name="keywords">
-                                                                                <ArrayInput key="keywords"
-                                                                                            name="keywords"
-                                                                                            label="Keywords"
-                                                                                            labelSuffix={sourceIcon("keywords")}/>
-                                                                            </MetadataField>
-                                                                        </Accordion.Body>
-                                                                    </Accordion.Panel>
-                                                                </Accordion.Item>
-                                                            </Accordion>
-                                                        </>}
-                                                    </GameMediaEditor>
+                                                <Modal.Body inert={isSaving} aria-busy={isSaving}>
+                                                    <GameMetadataFields initialValues={initialValues}
+                                                                        propertyEnumValues={propertyEnumValues}
+                                                                        searchOnOpen={!newGame}/>
+                                                    {versionEditor.available && !newGame && gameId !== undefined && game && (
+                                                        <Accordion variant="default" className="space-y-2">
+                                                            <Accordion.Item id="store-versions">
+                                                                <Accordion.Heading>
+                                                                    <Accordion.Trigger className="bg-segment rounded-2xl mb-4">
+                                                                        <span>Store versions</span>
+                                                                        <Accordion.Indicator/>
+                                                                    </Accordion.Trigger>
+                                                                </Accordion.Heading>
+                                                                <Accordion.Panel>
+                                                                    <Accordion.Body className="max-h-80 overflow-y-auto">
+                                                                        <GameVersionEditor gameId={gameId}
+                                                                                           gameTitle={game.title}
+                                                                                           editor={versionEditor}/>
+                                                                    </Accordion.Body>
+                                                                </Accordion.Panel>
+                                                            </Accordion.Item>
+                                                        </Accordion>
+                                                    )}
                                                 </Modal.Body>
                                                 {saveError &&
                                                     <p role="alert" className="px-6 text-danger">{saveError}</p>}
@@ -238,7 +141,7 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                     <Button
                                                         variant="primary"
                                                         isPending={formik.isSubmitting}
-                                                        isDisabled={formik.isSubmitting || (!newGame && !formik.dirty)}
+                                                        isDisabled={formik.isSubmitting || (!newGame && !formik.dirty && !versionEditor.dirty)}
                                                         type="submit"
                                                     >
                                                         {formik.isSubmitting ?

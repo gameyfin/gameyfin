@@ -1,8 +1,8 @@
 package org.gameyfin.app.core.plugins.marketplace
 
 import io.mockk.*
-import org.gameyfin.app.core.tasks.dto.TaskRunDto
 import org.gameyfin.app.core.plugins.marketplace.dto.*
+import org.gameyfin.app.core.tasks.dto.TaskRunDto
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -155,16 +155,16 @@ class PluginMarketplaceEndpointTest {
     @Test
     fun `uninstall should delegate to service`() {
         val dto = mockk<TaskRunDto>()
-        every { tasks.uninstall("plugin") } returns dto
+        every { tasks.uninstall("plugin", true) } returns dto
 
-        assertSame(dto, endpoint.uninstall("plugin"))
-        verify(exactly = 1) { tasks.uninstall("plugin") }
+        assertSame(dto, endpoint.uninstall("plugin", true))
+        verify(exactly = 1) { tasks.uninstall("plugin", true) }
     }
 
     @Test
     fun `uninstall should propagate errors`() {
-        every { tasks.uninstall("plugin") } throws IllegalArgumentException("not installed")
+        every { tasks.uninstall("plugin", false) } throws IllegalArgumentException("not installed")
 
-        assertFailsWith<IllegalArgumentException> { endpoint.uninstall("plugin") }
+        assertFailsWith<IllegalArgumentException> { endpoint.uninstall("plugin", false) }
     }
 }

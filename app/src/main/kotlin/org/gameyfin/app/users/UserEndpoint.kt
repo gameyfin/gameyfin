@@ -7,11 +7,11 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
-import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.dto.UserEvent
-import reactor.core.publisher.Flux
+import org.gameyfin.app.users.dto.UserUpdateDto
 import org.gameyfin.app.users.enums.RoleAssignmentResult
 import org.springframework.security.core.Authentication
+import reactor.core.publisher.Flux
 
 
 @Endpoint

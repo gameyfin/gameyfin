@@ -1,14 +1,17 @@
 package org.gameyfin.app.games
 
-import io.mockk.*
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
 import liquibase.integration.spring.SpringLiquibase
 import org.gameyfin.app.core.sync.EntityChangeProcessor
 import org.gameyfin.app.core.sync.EntityChangeSet
 import org.gameyfin.app.core.sync.EntityChangeTracker
 import org.gameyfin.app.games.dto.GameField
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.app.games.entities.GameFieldMetadata
 import org.gameyfin.app.games.entities.GameFieldApiSource
+import org.gameyfin.app.games.entities.GameFieldMetadata
 import org.gameyfin.app.games.extensions.mediaSources
 import org.gameyfin.app.games.extensions.replaceMediaSources
 import org.gameyfin.app.games.repositories.GameRepository
@@ -20,21 +23,21 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory
 import org.springframework.jdbc.datasource.DriverManagerDataSource
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
 import org.springframework.orm.jpa.JpaTransactionManager
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean
 import org.springframework.orm.jpa.SharedEntityManagerCreator
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter
 import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes
 import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypesScanner
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter
 import org.springframework.transaction.support.TransactionTemplate
 import java.net.URI
 import java.nio.file.Path
-import java.util.UUID
+import java.util.*
 import javax.sql.DataSource
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
-import kotlin.test.assertNull
 import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class GameMediaPersistenceTest {
     @ParameterizedTest
@@ -48,17 +51,25 @@ class GameMediaPersistenceTest {
                 .managedClassNames.filterNot { it == CompanyScanRecord::class.java.name }
             setManagedTypes(PersistenceManagedTypes.of(entityTypes, emptyList()))
             jpaVendorAdapter = HibernateJpaVendorAdapter()
-            setJpaPropertyMap(mapOf(
-                "hibernate.hbm2ddl.auto" to "validate",
-                "hibernate.implicit_naming_strategy" to "org.springframework.boot.hibernate.SpringImplicitNamingStrategy",
-                "hibernate.physical_naming_strategy" to "org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl"
-            ))
+            setJpaPropertyMap(
+                mapOf(
+                    "hibernate.hbm2ddl.auto" to "validate",
+                    "hibernate.implicit_naming_strategy" to "org.springframework.boot.hibernate.SpringImplicitNamingStrategy",
+                    "hibernate.physical_naming_strategy" to "org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl"
+                )
+            )
             afterPropertiesSet()
         }
         try {
             val emf = factory.`object`!!
-            val longVideo = URI("https://example.com/" + "long-path/".repeat(100) + "video.mp4?token=" + "a".repeat(500))
-            val originalVideos = listOf(URI("https://example.com/b.mp4"), URI("https://example.com/a.mp4"), URI("https://example.com/a.mp4"), longVideo)
+            val longVideo =
+                URI("https://example.com/" + "long-path/".repeat(100) + "video.mp4?token=" + "a".repeat(500))
+            val originalVideos = listOf(
+                URI("https://example.com/b.mp4"),
+                URI("https://example.com/a.mp4"),
+                URI("https://example.com/a.mp4"),
+                longVideo
+            )
             var gameId = 0L
             var imageIds = emptyList<Long>()
             emf.createEntityManager().use { em ->
@@ -85,8 +96,10 @@ class GameMediaPersistenceTest {
                     statement.execute("INSERT INTO GAME_IMAGES SELECT GAME_ID, IMAGE_ID FROM GAME_MEDIA WHERE IMAGE_ID IS NOT NULL")
                     statement.execute("INSERT INTO GAME_VIDEO_URLS SELECT GAME_ID, VIDEO_URL FROM GAME_MEDIA WHERE VIDEO_URL IS NOT NULL")
                     statement.execute("DROP TABLE GAME_MEDIA")
-                    statement.execute(if (legacyIndex) "CREATE UNIQUE INDEX UX_GAME_IMAGES_GAME_IMAGE ON GAME_IMAGES (GAME_ID, IMAGES_ID)"
-                        else "ALTER TABLE GAME_IMAGES ADD CONSTRAINT UX_GAME_IMAGES_GAME_IMAGE UNIQUE (GAME_ID, IMAGES_ID)")
+                    statement.execute(
+                        if (legacyIndex) "CREATE UNIQUE INDEX UX_GAME_IMAGES_GAME_IMAGE ON GAME_IMAGES (GAME_ID, IMAGES_ID)"
+                        else "ALTER TABLE GAME_IMAGES ADD CONSTRAINT UX_GAME_IMAGES_GAME_IMAGE UNIQUE (GAME_ID, IMAGES_ID)"
+                    )
                     statement.execute("DELETE FROM DATABASECHANGELOG WHERE ID = '2.6.0-game-media-order'")
                 }
             }
@@ -148,9 +161,11 @@ class GameMediaPersistenceTest {
                 val em = SharedEntityManagerCreator.createSharedEntityManager(emf)
                 em.find(Game::class.java, gameId).mediaOrder = videoFirst
             }
-            assertTrue(EntityChangeSet.merge(changes).games.getValue(gameId).fields.containsAll(
-                listOf(GameField.IMAGES, GameField.VIDEO_URLS, GameField.MEDIA_ORDER)
-            ))
+            assertTrue(
+                EntityChangeSet.merge(changes).games.getValue(gameId).fields.containsAll(
+                    listOf(GameField.IMAGES, GameField.VIDEO_URLS, GameField.MEDIA_ORDER)
+                )
+            )
             emf.createEntityManager().use { em ->
                 em.transaction.begin()
                 val game = em.find(Game::class.java, gameId)

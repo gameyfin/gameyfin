@@ -46,7 +46,6 @@ class UserEndpointTest {
             emailConfirmed = true,
             enabled = true,
             hasAvatar = false,
-            avatarId = null,
             managedBySso = false,
             roles = listOf(Role.USER)
         )
@@ -165,7 +164,6 @@ class UserEndpointTest {
                 emailConfirmed = true,
                 enabled = true,
                 hasAvatar = false,
-                avatarId = null,
                 managedBySso = false,
                 roles = listOf(Role.USER)
             ),
@@ -176,7 +174,6 @@ class UserEndpointTest {
                 emailConfirmed = true,
                 enabled = true,
                 hasAvatar = false,
-                avatarId = null,
                 managedBySso = false,
                 roles = listOf(Role.ADMIN)
             )

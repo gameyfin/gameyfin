@@ -6,13 +6,16 @@ import ts from "typescript";
 
 function load(relativePath) {
     const source = readFileSync(new URL(`../../main/frontend/${relativePath}`, import.meta.url), "utf8");
-    const output = ts.transpileModule(source, {compilerOptions: {
-        module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022
-    }}).outputText;
+    const output = ts.transpileModule(source, {
+        compilerOptions: {
+            module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022
+        }
+    }).outputText;
     const exports = {};
     runInThisContext(`(function(exports) {${output}\n})`)(exports);
     return exports;
 }
+
 const {coverGridLayout, COVER_GAP} = load("util/coverGridLayout.ts");
 const {navigationVisibility} = load("components/layout/navigationVisibility.ts");
 
@@ -42,13 +45,13 @@ test("grid retains desktop sizes and responds to container resize", () => {
 
 test("navigation exposes only actions for the current identity", () => {
     assert.deepEqual(navigationVisibility(false, false), {
-        profile:false, administration:false, tasks:false, signIn:true, signOut:false
+        profile: false, administration: false, tasks: false, signIn: true, signOut: false
     });
     assert.deepEqual(navigationVisibility(true, false), {
-        profile:true, administration:false, tasks:false, signIn:false, signOut:true
+        profile: true, administration: false, tasks: false, signIn: false, signOut: true
     });
     assert.deepEqual(navigationVisibility(true, true), {
-        profile:true, administration:true, tasks:true, signIn:false, signOut:true
+        profile: true, administration: true, tasks: true, signIn: false, signOut: true
     });
     assert.equal(navigationVisibility(false, true).administration, false);
 });

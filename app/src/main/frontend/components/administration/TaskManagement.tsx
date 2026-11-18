@@ -3,7 +3,7 @@ import CompactRecordList from "Frontend/components/layout/CompactRecordList";
 import {COMPACT_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import TableScroller from "Frontend/components/layout/TableScroller";
 import React, {useEffect, useMemo, useState} from "react";
-import {Button, Chip, Label, ListBox, Select, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Label, ListBox, Select, Spinner, Table, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {ClockCounterClockwiseIcon, FileTextIcon, GearIcon, PlayIcon, StopIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {TaskEndpoint} from "Frontend/generated/endpoints";
@@ -16,6 +16,8 @@ import {TaskRunProgress, TaskRunStatusChip, triggerLabel} from "Frontend/compone
 import TaskEditModal from "Frontend/components/general/modals/TaskEditModal";
 import TaskRunLogModal from "Frontend/components/general/modals/TaskRunLogModal";
 import TaskRunParametersModal from "Frontend/components/general/modals/TaskRunParametersModal";
+import {pluginState} from "Frontend/state/PluginState.ts";
+import PluginIcon from "Frontend/components/general/plugin/PluginIcon.tsx";
 
 const PAGE_SIZE = 25;
 const ALL_TASKS = "__all__";
@@ -40,6 +42,9 @@ export function TaskManagement() {
     const liveRuns = liveState.runs as Record<string, TaskRunDto>;
     const activeRunIds = Object.values(liveRuns).filter(isRunActive).map(run => run.id).sort().join(",");
     const finishedCount = Object.values(liveState.finishedCount).reduce((a, b) => a + b, 0);
+
+    const plugins = useSnapshot(pluginState).state;
+    const overviewTasks = tasks?.filter(task => task.visibleInTaskList);
 
     // Refresh tasks whenever a run has been started or finished, so running state, last and next runs are up-to-date
     useEffect(() => {
@@ -71,9 +76,7 @@ export function TaskManagement() {
         const loadedIds = new Set(history.map(run => run.id));
         const oldestLoaded = history.length > 0 ? new Date(history[history.length - 1].startedAt).getTime() : 0;
         const newRuns = Object.values(liveRuns).filter(run =>
-            run.visibleInOverview !== false &&
-            !loadedIds.has(run.id) &&
-            (filter === ALL_TASKS || run.taskKey === filter) &&
+            run.visibleInOverview && !loadedIds.has(run.id) && (filter === ALL_TASKS || run.taskKey === filter) &&
             (!hasMore || new Date(run.startedAt).getTime() >= oldestLoaded));
         return [...newRuns, ...history.map(run => liveRuns[run.id] ?? run)]
             .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
@@ -131,11 +134,12 @@ export function TaskManagement() {
                 label: "Task", tableClassName: "", content: <>
                     <div className="flex flex-col">
                         <div className="flex flex-row items-center gap-2">
+                            {task.source === TaskSource.PLUGIN && task.pluginId &&
+                                <PluginIcon plugin={plugins[task.pluginId] ?? {
+                                    id: task.pluginId,
+                                    name: task.pluginName ?? task.pluginId
+                                }}/>}
                             <span className="font-semibold">{task.name}</span>
-                            {task.source === TaskSource.PLUGIN &&
-                                <Chip size="sm" variant="soft">
-                                    {task.pluginName ?? task.pluginId}
-                                </Chip>}
                         </div>
                         <span className="text-sm text-muted">{task.description}</span>
                     </div>
@@ -174,7 +178,7 @@ export function TaskManagement() {
             },
             {
                 label: "Actions", tableClassName: "", content: <>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex w-max flex-nowrap gap-2">
                         {task.manuallyTriggerable &&
                             <Tooltip>
                                 <Button isIconOnly size="sm" variant="ghost"
@@ -255,7 +259,7 @@ export function TaskManagement() {
             },
             {
                 label: "Actions", tableClassName: "", content: <>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex w-max flex-nowrap gap-2">
                         <Tooltip>
                             <Button isIconOnly size="sm" variant="ghost"
                                     aria-label="Show log"
@@ -288,7 +292,7 @@ export function TaskManagement() {
                 manually and inspect the logs of previous runs.
             </p>
             {compact ?
-                <CompactRecordList label="Tasks" items={tasks ?? []} itemKey={task => task.key} fields={taskFields}
+                <CompactRecordList label="Tasks" items={overviewTasks ?? []} itemKey={task => task.key} fields={taskFields}
                                    empty={tasks ? <p>No tasks available.</p> :
                                        <Spinner aria-label="Loading tasks"/>}/> : <Table variant="secondary">
                     <TableScroller label="Tasks">
@@ -300,7 +304,7 @@ export function TaskManagement() {
                                 <Table.Column id="last">Last run</Table.Column>
                                 <Table.Column id="actions">Actions</Table.Column>
                             </Table.Header>
-                            <Table.Body items={(tasks ?? []).map(task => ({key: task.key, task}))}
+                            <Table.Body items={(overviewTasks ?? []).map(task => ({key: task.key, task}))}
                                         renderEmptyState={() => <div className="flex justify-center p-4">
                                             {tasks ? <p className="text-muted">No tasks available.</p> : <Spinner/>}
                                         </div>}>

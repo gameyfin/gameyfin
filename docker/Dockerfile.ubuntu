@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 
-# ── Stage 1: extract layers & collect plugins ────────────────────────────
+# ── Stage 1: extract application layers ────────────────────────────
 FROM eclipse-temurin:25-jre-alpine AS extractor
 
 WORKDIR /builder
@@ -9,13 +9,8 @@ ARG JAR_FILE=./app/build/libs/app-*.jar
 COPY ${JAR_FILE} application.jar
 
 # Extract using layered layout for optimal Docker layer caching
-RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
-
-# Pre-collect plugin JARs so final stage can copy them in a single layer
-COPY --link ./plugins/ /tmp/plugins/
-RUN mkdir -p /builder/plugins \
-    && find /tmp/plugins -type f -path "*/build/libs/*.jar" -exec cp {} /builder/plugins/ \; \
-    && rm -rf /tmp/plugins
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted && \
+    chmod -R go-w extracted
 
 # ── Stage 2: AOT cache training (must use the *runtime* JVM) ─────────────
 # Boot the full application, wait for readiness, fire warm-up HTTP requests
@@ -23,7 +18,8 @@ RUN mkdir -p /builder/plugins \
 # loading, then gracefully shut down
 FROM eclipse-temurin:25-jre AS aot-training
 
-WORKDIR /training
+WORKDIR /opt/gameyfin
+RUN mkdir -p /usr/lib/gameyfin
 
 # curl is needed by the training script to poll health and send warm-up requests
 RUN apt-get update && \
@@ -31,13 +27,10 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the extracted layers to reassemble the application for the training run
-COPY --from=extractor /builder/extracted/dependencies/ ./
-COPY --from=extractor /builder/extracted/spring-boot-loader/ ./
-COPY --from=extractor /builder/extracted/snapshot-dependencies/ ./
-COPY --from=extractor /builder/extracted/application/ ./
-
-# Copy plugins
-COPY --from=extractor /builder/plugins ./plugins
+COPY --from=extractor /builder/extracted/dependencies/ /usr/lib/gameyfin/
+COPY --from=extractor /builder/extracted/spring-boot-loader/ /usr/lib/gameyfin/
+COPY --from=extractor /builder/extracted/snapshot-dependencies/ /usr/lib/gameyfin/
+COPY --from=extractor /builder/extracted/application/ /usr/lib/gameyfin/
 
 # Copy and run the AOT training script
 # On x86-64, the script passes UseAVX=0 to restrict generated code to baseline
@@ -63,7 +56,7 @@ ENV RUNTIME_ENV=docker
 
 # Install necessary packages
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends tini gosu libjemalloc2 && \
+    apt-get install -y --no-install-recommends gosu libjemalloc2 tini && \
     rm -rf /var/lib/apt/lists/*
 
 # Fixed runtime user/group
@@ -76,21 +69,20 @@ WORKDIR /opt/gameyfin
 # Create user and required directories with fixed IDs
 RUN groupadd -g "$GID" "$USER" && \
     useradd -u "$UID" -g "$GID" -M -s /usr/sbin/nologin "$USER" && \
-    mkdir -p plugins plugins-installed plugindata db data logs backups && \
+    mkdir -p plugins plugindata db data logs backups && \
     chown -R "$UID:$GID" .
 
 # Copy entrypoint script with proper perms and ownership
-COPY --link --chown=${UID}:${GID} --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
+COPY --link --chown=0:0 --chmod=0755 ./docker/entrypoint.ubuntu.sh /entrypoint.sh
 
 # Copy application layers from extractor stage
-COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/dependencies/ ./
-COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/spring-boot-loader/ ./
-COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/snapshot-dependencies/ ./
-COPY --from=extractor --link --chown=${UID}:${GID} /builder/extracted/application/ ./
-COPY --from=extractor --link --chown=${UID}:${GID} /builder/plugins ./plugins
+COPY --from=extractor --link --chown=0:0 /builder/extracted/dependencies/ /usr/lib/gameyfin/
+COPY --from=extractor --link --chown=0:0 /builder/extracted/spring-boot-loader/ /usr/lib/gameyfin/
+COPY --from=extractor --link --chown=0:0 /builder/extracted/snapshot-dependencies/ /usr/lib/gameyfin/
+COPY --from=extractor --link --chown=0:0 /builder/extracted/application/ /usr/lib/gameyfin/
 
 # Copy AOT cache from training stage
-COPY --from=aot-training --link --chown=${UID}:${GID} /training/app.aot ./
+COPY --from=aot-training --link --chown=0:0 --chmod=0644 /usr/lib/gameyfin/app.aot /usr/lib/gameyfin/app.aot
 
 EXPOSE 8080
 

@@ -66,8 +66,7 @@ class EmailConfirmationServiceTest {
         val user = User(
             id = 1L,
             username = "testuser",
-            email = "test@example.com",
-            emailConfirmed = false
+            email = "test@example.com"
         )
         val token = Token(
             secret = "secret123",
@@ -104,8 +103,7 @@ class EmailConfirmationServiceTest {
         val user = User(
             id = 1L,
             username = "testuser",
-            email = "test@example.com",
-            emailConfirmed = false
+            email = "test@example.com"
         )
         val token = Token(
             secret = "secret123",
@@ -128,8 +126,7 @@ class EmailConfirmationServiceTest {
         val user = User(
             id = 1L,
             username = "testuser",
-            email = "test@example.com",
-            emailConfirmed = false
+            email = "test@example.com"
         )
         val token = Token(
             secret = "secret123",
@@ -169,8 +166,7 @@ class EmailConfirmationServiceTest {
         val user = User(
             id = 1L,
             username = "testuser",
-            email = "test@example.com",
-            emailConfirmed = false
+            email = "test@example.com"
         )
         val token = Token(
             secret = "newSecret",
@@ -203,8 +199,7 @@ class EmailConfirmationServiceTest {
         val user = User(
             id = 1L,
             username = "testuser",
-            email = "test@example.com",
-            emailConfirmed = false
+            email = "test@example.com"
         )
         val token = Token(
             secret = "newSecret",

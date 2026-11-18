@@ -8,7 +8,7 @@ import org.junit.jupiter.api.io.TempDir
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.DockerClientFactory
 import java.math.BigDecimal
 import java.nio.file.Files
 import java.nio.file.Path
@@ -34,7 +34,6 @@ import kotlin.test.assertTrue
 /**
  * Creates backups of a database and restores them into databases of the same and of different types.
  */
-@Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DatabaseBackupIntegrationTest {
 
@@ -51,16 +50,25 @@ class DatabaseBackupIntegrationTest {
     @TempDir
     lateinit var tempDir: Path
 
+    private val localPostgresUrl = System.getenv("GAMEYFIN_TEST_POSTGRES_URL")
+
     @BeforeAll
-    fun startPostgres() = postgres.start()
+    fun startPostgres() {
+        if (localPostgresUrl != null) return
+        Assumptions.assumeTrue(DockerClientFactory.instance().isDockerAvailable, "PostgreSQL or Docker required")
+        postgres.start()
+    }
 
     @AfterAll
-    fun stopPostgres() = postgres.stop()
+    fun stopPostgres() { if (localPostgresUrl == null && postgres.isRunning) postgres.stop() }
 
     private fun h2(name: String): DataSource =
         DriverManagerDataSource("jdbc:h2:file:${tempDir.resolve(name).toAbsolutePath()}", "sa", "")
 
-    private fun postgres(): DataSource = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
+    private fun postgres(): DataSource = localPostgresUrl?.let {
+        DriverManagerDataSource(it, System.getenv("GAMEYFIN_TEST_POSTGRES_USER") ?: "postgres",
+            System.getenv("GAMEYFIN_TEST_POSTGRES_PASSWORD") ?: "")
+    } ?: DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
 
     /** Runs the database migrations the same way as on application startup */
     private fun migrate(dataSource: DataSource, changelog: String = CHANGELOG) {
@@ -113,6 +121,10 @@ class DatabaseBackupIntegrationTest {
                 ps.setString(3, UNICODE_TEXT)
                 ps.executeUpdate()
             }
+            if (!legacyMedia) c.createStatement().use { sql ->
+                sql.execute("INSERT INTO PLUGIN_ONBOARDING_STATE (ID, PENDING) VALUES (1, TRUE)")
+                sql.execute("INSERT INTO PLUGIN_RECOVERY_CANDIDATE (PLUGIN_ID, COMPLETED, LAST_ERROR) VALUES ('org.gameyfin.plugins.metadata.igdb', TRUE, NULL), ('org.gameyfin.plugins.download.direct', FALSE, 'offline')")
+            }
             val mediaSql = if (legacyMedia) {
                 "INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)"
             } else {
@@ -123,6 +135,17 @@ class DatabaseBackupIntegrationTest {
                 ps.executeUpdate()
             }
         }
+
+    /** Only usable with the current schema, older schema versions do not have these tables */
+    private fun insertVersionData(dataSource: DataSource) = dataSource.connection.use { c ->
+        c.createStatement().use { s ->
+            s.execute("INSERT INTO GAME_STORE_LINK (ID, GAME_ID, STORE, STORE_APP_ID, TRACKED, EDITION) VALUES (201, 101, 'GOG', '1453375253', TRUE, 'Anniversary Edition')")
+            s.execute("INSERT INTO STORE_VERSION (ID, LINK_ID, BUILD_ID, BRANCH, LABEL, RELEASED_AT) VALUES (301, 201, '1', '', '1.0', TIMESTAMP '2024-03-04 05:06:07')")
+            s.execute("INSERT INTO STORE_VERSION (ID, LINK_ID, BUILD_ID, BRANCH, LABEL) VALUES (302, 201, '2', 'next-gen', '1.1')")
+            s.execute("INSERT INTO GAME_VERSION_STATE (LINK_ID, INSTALLED_VERSION_ID, SOURCE) VALUES (201, 301, 'MANUAL')")
+            s.execute("INSERT INTO GAME_INCLUDED_DLC (ID, LINK_ID, DLC_ID, TITLE, SOURCE, KIND) VALUES (401, 201, '1256837418', 'Phantom Liberty', 'AUTO', 'BONUS')")
+        }
+    }
 
     /** Reads the content of all application tables in a vendor-neutral representation */
     private fun dump(dataSource: DataSource): Map<String, List<Map<String, String?>>> = dataSource.connection.use { c ->
@@ -163,6 +186,12 @@ class DatabaseBackupIntegrationTest {
         assertTrue(query(dataSource, nextValueSql("USERS_SEQ")) - 49 > 1)
     }
 
+    private fun assertVersionSequencesWork(dataSource: DataSource, nextValueSql: (String) -> String) {
+        assertTrue(query(dataSource, nextValueSql("GAME_STORE_LINK_SEQ")) - 49 > 201)
+        assertTrue(query(dataSource, nextValueSql("STORE_VERSION_SEQ")) - 49 > 302)
+        assertTrue(query(dataSource, nextValueSql("GAME_INCLUDED_DLC_SEQ")) - 49 > 401)
+    }
+
     private fun Connection.changeLogRows(): Int =
         createStatement().use { s ->
             s.executeQuery("SELECT COUNT(*) FROM DATABASECHANGELOG").use { it.next(); it.getInt(1) }
@@ -173,6 +202,7 @@ class DatabaseBackupIntegrationTest {
         val source = h2("source")
         migrate(source)
         insertSampleData(source)
+        insertVersionData(source)
         val expected = dump(source)
 
         // H2 -> Postgres
@@ -183,6 +213,7 @@ class DatabaseBackupIntegrationTest {
         assertEquals(expected, dump(target))
         assertEquals(restorer(target).currentChangeSets().size, target.connection.use { it.changeLogRows() })
         assertSequencesWork(target) { "SELECT nextval('${it.lowercase()}')" }
+        assertVersionSequencesWork(target) { "SELECT nextval('${it.lowercase()}')" }
 
         // Postgres -> H2
         val roundTrip = h2("round-trip")
@@ -191,6 +222,7 @@ class DatabaseBackupIntegrationTest {
 
         assertEquals(expected, dump(roundTrip))
         assertSequencesWork(roundTrip) { "SELECT NEXT VALUE FOR $it" }
+        assertVersionSequencesWork(roundTrip) { "SELECT NEXT VALUE FOR $it" }
 
         val game = roundTrip.connection.use { c ->
             c.createStatement().use { s ->

@@ -26,7 +26,8 @@ data class TaskDto(
     /** Parameters which can be specified when starting the task manually */
     val parametersMetadata: List<PluginConfigMetadataDto>,
     val lastRun: TaskRunDto?,
-    val running: Boolean
+    val running: Boolean,
+    val visibleInTaskList: Boolean = true
 )
 
 data class TaskUpdateDto(

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {test} from "node:test";
 import {runInThisContext} from "node:vm";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import * as valtio from "valtio/vanilla";
 
 function loadModule(path, dependencies) {
@@ -25,12 +25,21 @@ function fixture() {
     let receive;
     let reloads = 0;
     const endpoints = {
-        TaskEndpoint: {subscribeToTaskRuns: () => ({onNext: handler => { receive = handler; }})},
+        TaskEndpoint: {
+            subscribeToTaskRuns: () => ({
+                onNext: handler => {
+                    receive = handler;
+                }
+            })
+        },
         PluginMarketplaceEndpoint: {
             install: async () => run(),
             update: async () => run(),
             uninstall: async () => run(),
-            getPlugins: async () => { reloads++; return [{id: "plugin", status: "INSTALLED"}]; }
+            getPlugins: async () => {
+                reloads++;
+                return [{id: "plugin", status: "INSTALLED"}];
+            }
         }
     };
     const tasks = loadModule("../../main/frontend/state/TaskState.ts", {
@@ -53,21 +62,33 @@ function fixture() {
         },
         "Frontend/state/TaskState": tasks
     });
-    return {marketplace, tasks, endpoints, notifications, receive: (...args) => receive(...args), reloads: () => reloads};
+    return {
+        marketplace,
+        tasks,
+        endpoints,
+        notifications,
+        receive: (...args) => receive(...args),
+        reloads: () => reloads
+    };
 }
 
 function run(status = "IN_PROGRESS") {
-    return {id: "run", taskKey: "core.plugin.install", displayName: "Install plugin", status,
-        visibleInOverview: false, summary: "Installed", errorMessage: "Download failed"};
+    return {
+        id: "run", taskKey: "core.plugin.install", displayName: "Install plugin", status,
+        visibleInOverview: false, summary: "Installed", errorMessage: "Download failed"
+    };
 }
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
-for (const operation of ["installPlugin", "updatePlugin", "uninstallPlugin"]) {
+for (const [operation, start] of Object.entries({
+    installPlugin: marketplace => marketplace.installPlugin("market", "plugin"),
+    updatePlugin: marketplace => marketplace.updatePlugin("plugin"),
+    uninstallPlugin: marketplace => marketplace.uninstallPlugin("plugin", false)
+})) {
     test(`${operation} returns promptly and keeps controls pending until completion`, async () => {
         const f = fixture();
-        const result = await (operation === "installPlugin"
-            ? f.marketplace[operation]("market", "plugin") : f.marketplace[operation]("plugin"));
+        const result = await start(f.marketplace);
         assert.equal(result.id, "run");
         assert.equal(f.marketplace.marketplaceState.pending.plugin, true);
         assert.equal(f.reloads(), 0);
@@ -78,6 +99,17 @@ for (const operation of ["installPlugin", "updatePlugin", "uninstallPlugin"]) {
         assert.equal(f.notifications[0].level, "success");
     });
 }
+
+test("uninstall forwards the keep configuration choice", async () => {
+    const f = fixture();
+    for (const keepConfiguration of [false, true]) {
+        f.endpoints.PluginMarketplaceEndpoint.uninstall = async (...args) => {
+            assert.deepEqual(args, ["plugin", keepConfiguration]);
+            return run("COMPLETED");
+        };
+        await f.marketplace.uninstallPlugin("plugin", keepConfiguration);
+    }
+});
 
 test("a failed background operation clears pending state and reports the failure", async () => {
     const f = fixture();
@@ -114,7 +146,9 @@ test("a finished subscription update before the response is announced once", asy
 
 test("failure to start the task clears pending state and propagates the error", async () => {
     const f = fixture();
-    f.endpoints.PluginMarketplaceEndpoint.install = async () => { throw new Error("Unavailable"); };
+    f.endpoints.PluginMarketplaceEndpoint.install = async () => {
+        throw new Error("Unavailable");
+    };
     await assert.rejects(f.marketplace.installPlugin("market", "plugin"), /Unavailable/);
     assert.equal(f.marketplace.marketplaceState.pending.plugin, undefined);
 });

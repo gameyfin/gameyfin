@@ -77,6 +77,8 @@ while IFS= read -r title; do
     con|prn|aux|nul|com[1-9]|lpt[1-9])
       folder_name="_${folder_name}"
       ;;
+    *)
+      ;;
   esac
 
   # Safety: limit folder name length to 240 characters and re-trim trailing spaces/dots

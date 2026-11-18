@@ -19,10 +19,11 @@ export default function MarketplacePluginCard({plugin}: { plugin: MarketplacePlu
     const detailsModal = useOverlayState();
     const {install, isInstalling, confirmationModal} = useMarketplaceInstall(plugin);
     const isPending = (useSnapshot(marketplaceState).pending[plugin.id] ?? false) || isInstalling;
+    const hasUpdate = plugin.status === MarketplacePluginStatus.UPDATE_AVAILABLE;
 
     return (
         <>
-            <Card className="flex flex-col gap-3 p-4 h-full">
+            <Card className={`flex flex-col gap-3 p-4 h-full ${hasUpdate ? "border border-accent" : ""}`}>
                 <button type="button"
                         className="flex flex-col items-center gap-2 grow text-left cursor-pointer"
                         aria-label={`Show details for ${plugin.name}`}
@@ -50,7 +51,9 @@ export default function MarketplacePluginCard({plugin}: { plugin: MarketplacePlu
 
                 <div className="flex flex-row items-center justify-between gap-2">
                     <div className="flex flex-col gap-1">
-                        <MarketplacePluginStatusChip plugin={plugin}/>
+                        {hasUpdate
+                            ? <span className="text-xs text-muted">Installed: v{plugin.installedVersion}</span>
+                            : <MarketplacePluginStatusChip plugin={plugin}/>}
                         {plugin.latestVersion &&
                             <span className="text-xs text-muted">Latest: v{plugin.latestVersion}</span>}
                     </div>

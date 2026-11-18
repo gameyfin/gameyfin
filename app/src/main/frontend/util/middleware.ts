@@ -1,5 +1,6 @@
 import {Middleware, MiddlewareContext, MiddlewareNext} from '@vaadin/hilla-frontend';
 import {toast} from "@heroui/react";
+import {redirectToLogin} from "Frontend/util/login";
 
 export const ErrorHandlingMiddleware: Middleware = async function (
     context: MiddlewareContext,
@@ -16,8 +17,8 @@ export const ErrorHandlingMiddleware: Middleware = async function (
 
         // Session expired: redirect to the login page (or the SSO provider if SSO is enabled)
         if (originalResponse.status == 401 || (originalResponse.status == 403 && !(await isJson(response)))) {
-            if (window.location.pathname !== "/login") {
-                window.location.href = "/loginredirect";
+            if (!["/login", "/login/", "/setup", "/setup/", "/loginredirect"].includes(window.location.pathname)) {
+                redirectToLogin();
             }
             return originalResponse;
         }

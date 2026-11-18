@@ -43,7 +43,11 @@ class GameyfinPluginFactoryTest {
     @Test
     fun `should instantiate plugin with PluginContext constructor`() {
         val dataService = mockk<GameyfinDataService>()
-        val context = GameyfinPluginContext("test-plugin", "1.0.0", Path.of("plugindata", "test-plugin")) { dataService }
+        val context = GameyfinPluginContext(
+            "test-plugin",
+            "1.0.0",
+            Path.of("plugindata", "test-plugin"),
+            { mockk() }) { dataService }
         val factory = GameyfinPluginFactory { context }
 
         val plugin = factory.create(mockWrapper(ContextPlugin::class.java))
@@ -66,7 +70,8 @@ class GameyfinPluginFactoryTest {
 
     @Test
     fun `should return null if plugin constructor throws`() {
-        val context = GameyfinPluginContext("test-plugin", "1.0.0", Path.of("plugindata", "test-plugin")) { mockk() }
+        val context =
+            GameyfinPluginContext("test-plugin", "1.0.0", Path.of("plugindata", "test-plugin"), { mockk() }) { mockk() }
         val factory = GameyfinPluginFactory { context }
 
         assertNull(factory.create(mockWrapper(FailingPlugin::class.java)))
@@ -76,7 +81,7 @@ class GameyfinPluginFactoryTest {
     fun `context should resolve data service lazily and only once`() {
         var calls = 0
         val dataService = mockk<GameyfinDataService>()
-        val context = GameyfinPluginContext("test-plugin", "1.0.0", Path.of("plugindata", "test-plugin")) {
+        val context = GameyfinPluginContext("test-plugin", "1.0.0", Path.of("plugindata", "test-plugin"), { mockk() }) {
             calls++
             dataService
         }

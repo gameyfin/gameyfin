@@ -112,7 +112,6 @@ class PasswordResetServiceTest {
             id = 1L,
             username = "testuser",
             email = "test@example.com",
-            emailConfirmed = false,
             password = "password"
         )
         val token = Token(
@@ -193,7 +192,6 @@ class PasswordResetServiceTest {
             id = 1L,
             username = "testuser",
             email = "test@example.com",
-            emailConfirmed = false,
             password = "password"
         )
 
@@ -372,7 +370,6 @@ class PasswordResetServiceTest {
             id = 1L,
             username = "testuser",
             email = "test@example.com",
-            emailConfirmed = false,
             password = "password"
         )
         val token = Token(

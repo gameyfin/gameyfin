@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
-import {test, afterEach, mock} from "node:test";
+import {afterEach, mock, test} from "node:test";
 import {runInThisContext} from "node:vm";
 import ts from "typescript";
 
@@ -19,12 +19,21 @@ runInThisContext(`(function(exports) {${ts.transpileModule(orderingSource, {
 }).outputText}\n})`)(ordering);
 runInThisContext(`(function(require, exports) {${compiled}\n})`)(specifier => {
     if (specifier === "./mediaOrder") return ordering;
-    if (specifier === "Frontend/generated/endpoints") return {GameEndpoint: {updateGame: async update => { endpointCalls.push(update); }}};
+    if (specifier === "Frontend/generated/endpoints") return {
+        GameEndpoint: {
+            updateGame: async update => {
+                endpointCalls.push(update);
+            }
+        }
+    };
     if (specifier === "Frontend/util/auth") return {getCsrfToken: () => "csrf-test"};
     throw new Error(`Unexpected runtime dependency: ${specifier}`);
 }, media);
 
-afterEach(() => { endpointCalls.length = 0; mock.restoreAll(); });
+afterEach(() => {
+    endpointCalls.length = 0;
+    mock.restoreAll();
+});
 
 function game() {
     return {
@@ -51,7 +60,11 @@ test("media drafts preserve individual sources and fall back to legacy list attr
     const mixed = media.metadataInitialValues(original);
     assert.deepEqual(mixed.mediaImages.map(image => image.source), [plugin, user, undefined]);
     assert.deepEqual(mixed.mediaVideoSources, [undefined, plugin, undefined]);
-    const selected = {...media.remoteImage("https://example.com/new.png"), selection: {url: "https://example.com/new.png", pluginId: "screenshots"}, source: plugin};
+    const selected = {
+        ...media.remoteImage("https://example.com/new.png"),
+        selection: {url: "https://example.com/new.png", pluginId: "screenshots"},
+        source: plugin
+    };
     const update = media.metadataUpdate(mixed, {...mixed, mediaImages: [selected, ...mixed.mediaImages]});
     assert.equal(update.images[0].pluginId, "screenshots");
     assert.equal(update.images[0].source, undefined);
@@ -88,7 +101,12 @@ test("reordering submits complete lists including unchanged entries", () => {
 test("empty media lists clear media and an unchanged form only submits its ID", () => {
     const initial = media.metadataInitialValues(game());
     assert.deepEqual(media.metadataUpdate(initial, initial), {id: 1});
-    assert.deepEqual(media.metadataUpdate(initial, {...initial, mediaImages: [], mediaVideos: []}), {id: 1, images: [], videoUrls: [], mediaOrder: []});
+    assert.deepEqual(media.metadataUpdate(initial, {...initial, mediaImages: [], mediaVideos: []}), {
+        id: 1,
+        images: [],
+        videoUrls: [],
+        mediaOrder: []
+    });
 });
 
 test("gallery defaults to screenshots first and preserves a saved mixed order on reopening", () => {
@@ -120,14 +138,22 @@ test("saving without uploads uses the existing Hilla endpoint", async () => {
 
 test("uploaded files and metadata share one multipart save with CSRF protection", async () => {
     const initial = media.metadataInitialValues(game());
-    const cover = {key: "upload-test", previewUrl: "blob:preview", selection: {uploadKey: "upload-test"}, file: new File(["image"], "cover.png", {type: "image/png"})};
+    const cover = {
+        key: "upload-test",
+        previewUrl: "blob:preview",
+        selection: {uploadKey: "upload-test"},
+        file: new File(["image"], "cover.png", {type: "image/png"})
+    };
     const values = {...initial, mediaCover: cover};
     const update = media.metadataUpdate(initial, values);
     const transport = mock.method(globalThis, "fetch", async (url, options) => {
         assert.equal(url, "game-media/metadata");
         assert.equal(options.headers["X-CSRF-Token"], "csrf-test");
         assert.equal(options.credentials, "same-origin");
-        assert.deepEqual(await options.body.get("metadata").text().then(JSON.parse), {id: 1, cover: {uploadKey: "upload-test"}});
+        assert.deepEqual(await options.body.get("metadata").text().then(JSON.parse), {
+            id: 1,
+            cover: {uploadKey: "upload-test"}
+        });
         assert.equal(options.body.get("upload-test").name, "cover.png");
         assert.deepEqual([...options.body.keys()], ["metadata", "upload-test"]);
         return new Response(null, {status: 204});
@@ -140,7 +166,10 @@ test("uploaded files and metadata share one multipart save with CSRF protection"
 test("failed saves preserve drafts for retry and show server errors", async () => {
     const initial = media.metadataInitialValues(game());
     const file = new File(["image"], "cover.png", {type: "image/png"});
-    const values = {...initial, mediaCover: {key: "upload-test", previewUrl: "blob:preview", selection: {uploadKey: "upload-test"}, file}};
+    const values = {
+        ...initial,
+        mediaCover: {key: "upload-test", previewUrl: "blob:preview", selection: {uploadKey: "upload-test"}, file}
+    };
     const update = media.metadataUpdate(initial, values);
     const transport = mock.method(globalThis, "fetch", async () => new Response(JSON.stringify({detail: "Invalid image"}), {status: 400}));
     await assert.rejects(media.saveMetadata(update, values), /Invalid image/);
@@ -154,8 +183,13 @@ test("reject non-HTTP image URLs and excessive uploads", async () => {
     assert.throws(() => media.remoteImage("javascript:alert(1)"), /HTTP/);
     assert.equal(media.remoteImage(" https://example.com/image.png ").selection.url, "https://example.com/image.png");
     const initial = media.metadataInitialValues(game());
-    const values = {...initial, mediaCover: {key: "oversized", selection: {uploadKey: "oversized"}, file: {size: media.MAX_MEDIA_SIZE + 1}}};
-    const transport = mock.method(globalThis, "fetch", async () => { throw new Error("must not upload"); });
+    const values = {
+        ...initial,
+        mediaCover: {key: "oversized", selection: {uploadKey: "oversized"}, file: {size: media.MAX_MEDIA_SIZE + 1}}
+    };
+    const transport = mock.method(globalThis, "fetch", async () => {
+        throw new Error("must not upload");
+    });
     await assert.rejects(media.saveMetadata({id: 1}, values), /100 MiB/);
     assert.equal(transport.mock.callCount(), 0);
 });

@@ -5,9 +5,9 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.gameyfin.app.users.extensions.toExtendedUserInfoDto
 import org.gameyfin.app.users.persistence.UserRepository
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.access.hierarchicalroles.RoleHierarchy
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
 import org.springframework.web.filter.OncePerRequestFilter

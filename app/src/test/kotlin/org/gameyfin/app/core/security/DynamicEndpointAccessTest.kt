@@ -1,10 +1,12 @@
 package org.gameyfin.app.core.security
 
+import com.vaadin.hilla.EndpointInvocationException.EndpointUnauthorizedException
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.exceptions.EndpointExceptionHandler
 import org.gameyfin.app.games.GameEndpoint
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.users.UserEvents
@@ -18,6 +20,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertEquals
 
 class DynamicEndpointAccessTest {
     private val config = mockk<ConfigService>()
@@ -38,6 +41,18 @@ class DynamicEndpointAccessTest {
         )
         assertFailsWith<AccessDeniedException> { endpoint.getById(1) }
         verify(exactly = 0) { games.getDtoById(any()) }
+    }
+
+    @Test
+    fun `dynamic access denial passes through endpoint exception handling as 401`() {
+        every { config.get(ConfigProperties.Security.AllowPublicAccess) } returns false
+        val handled = AspectJProxyFactory(GameEndpoint(games, mockk())).apply {
+            addAspect(EndpointExceptionHandler())
+            addAspect(LiveSubscriptionSecurity(mockk<UserEvents>(), config))
+        }.getProxy<GameEndpoint>()
+        val exception = assertFailsWith<EndpointUnauthorizedException> { handled.sync(null) }
+        assertEquals(401, exception.httpStatusCode)
+        verify(exactly = 0) { games.sync(any(), any()) }
     }
 
     @Test

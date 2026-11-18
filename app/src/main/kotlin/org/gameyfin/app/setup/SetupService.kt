@@ -8,11 +8,13 @@ import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.extensions.toExtendedUserInfoDto
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class SetupService(
     private val userService: UserService,
-    private val roleService: RoleService
+    private val roleService: RoleService,
+    private val pluginOnboarding: PluginOnboardingService
 ) {
 
     /**
@@ -27,6 +29,7 @@ class SetupService(
     /**
      * Creates the initial user with Super-Admin permissions
      */
+    @Transactional
     fun createInitialAdminUser(registration: UserRegistrationDto): ExtendedUserInfoDto {
         val superAdmin = User(
             username = registration.username,
@@ -37,6 +40,7 @@ class SetupService(
         )
 
         val user = userService.registerOrUpdateUser(superAdmin)
+        pluginOnboarding.begin()
         return user.toExtendedUserInfoDto()
     }
 }

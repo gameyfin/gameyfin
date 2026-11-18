@@ -29,7 +29,7 @@ class DatabasePluginStatusProviderTest {
 
     @Test
     fun `isPluginDisabled should return true when plugin is disabled`() {
-        val entry = PluginManagementEntry("test-plugin", enabled = false, priority = 1)
+        val entry = PluginManagementEntry("test-plugin", priority = 1)
         every { pluginManagementRepository.findByIdOrNull("test-plugin") } returns entry
 
         val result = statusProvider.isPluginDisabled("test-plugin")
@@ -79,7 +79,7 @@ class DatabasePluginStatusProviderTest {
 
     @Test
     fun `disablePlugin should handle already disabled plugin`() {
-        val entry = PluginManagementEntry("test-plugin", enabled = false, priority = 1)
+        val entry = PluginManagementEntry("test-plugin", priority = 1)
         every { pluginManagementRepository.findByIdOrNull("test-plugin") } returns entry
         every { pluginManagementRepository.save(entry) } returns entry
 
@@ -91,7 +91,7 @@ class DatabasePluginStatusProviderTest {
 
     @Test
     fun `enablePlugin should set enabled to true and save`() {
-        val entry = PluginManagementEntry("test-plugin", enabled = false, priority = 1)
+        val entry = PluginManagementEntry("test-plugin", priority = 1)
         every { pluginManagementRepository.findByIdOrNull("test-plugin") } returns entry
         every { pluginManagementRepository.save(entry) } returns entry
 
@@ -124,7 +124,7 @@ class DatabasePluginStatusProviderTest {
 
     @Test
     fun `should handle multiple enable and disable calls`() {
-        val entry = PluginManagementEntry("test-plugin", enabled = false, priority = 1)
+        val entry = PluginManagementEntry("test-plugin", priority = 1)
         every { pluginManagementRepository.findByIdOrNull("test-plugin") } returns entry
         every { pluginManagementRepository.save(entry) } returns entry
 
@@ -142,7 +142,7 @@ class DatabasePluginStatusProviderTest {
 
     @Test
     fun `should handle different plugins independently`() {
-        val entry1 = PluginManagementEntry("plugin1", enabled = false, priority = 1)
+        val entry1 = PluginManagementEntry("plugin1", priority = 1)
         val entry2 = PluginManagementEntry("plugin2", enabled = true, priority = 2)
 
         every { pluginManagementRepository.findByIdOrNull("plugin1") } returns entry1

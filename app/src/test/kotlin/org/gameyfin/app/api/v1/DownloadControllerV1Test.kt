@@ -42,7 +42,7 @@ class DownloadControllerV1Test {
 
     @Test
     fun `range requests use partial responses and HEAD does not count or stream`() {
-        val game = testGame(title = "Game")
+        val game = testGame()
         every { catalog.gameEntity("10") } returns game
         every { downloads.getProviders() } returns listOf(provider())
         val resource = mockk<org.gameyfin.pluginapi.download.RangeDownload>(relaxed = true)
@@ -69,7 +69,7 @@ class DownloadControllerV1Test {
 
     @Test
     fun `providers are sorted by descending priority`() {
-        every { downloads.getProviders() } returns listOf(provider("low", 1), provider("high", 10))
+        every { downloads.getProviders() } returns listOf(provider("low"), provider("high", 10))
 
         val result = controller.providers()
 
@@ -131,14 +131,15 @@ class DownloadControllerV1Test {
         val game = testGame()
         every { catalog.gameEntity("10") } returns game
         every { downloads.getProviders() } returns listOf(provider())
-        every { downloads.getDownload(any(), any()) } returns LinkDownload("https://example.test/game.zip")
+        val magnet = "magnet:?xt=urn:btih:1234&dn=Game&tr=http%3A%2F%2Ftracker.test%2Fannounce"
+        every { downloads.getDownload(any(), any()) } returns LinkDownload(magnet)
 
         val response = controller.download("10", "direct", MockHttpServletRequest())
 
         val output = ByteArrayOutputStream()
         response.body!!.writeTo(output)
         val descriptor = JsonMapper().readTree(output.toByteArray())
-        assertEquals("https://example.test/game.zip", descriptor.get("url").asString())
+        assertEquals(magnet, descriptor.get("url").asString())
         assertEquals("link", descriptor.get("kind").asString())
         assertEquals(MediaType.APPLICATION_JSON, response.headers.contentType)
         verify { games.incrementDownloadCount(game) }

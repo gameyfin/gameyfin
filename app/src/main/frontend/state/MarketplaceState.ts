@@ -46,9 +46,13 @@ export const marketplaceState = proxy<MarketplaceState>({
     }
 });
 
-/** Loads the marketplace data (only once unless forced) **/
-export async function initializeMarketplaceState(force = false) {
-    if (marketplaceState.isLoading || (marketplaceState.isLoaded && !force)) return;
+/** Loads marketplace data once for views that only need to initialize shared state. */
+export async function initializeMarketplaceState() {
+    if (!marketplaceState.isLoaded) await loadMarketplaceState();
+}
+
+export async function loadMarketplaceState(force = false) {
+    if (marketplaceState.isLoading) return;
 
     marketplaceState.isLoading = true;
     try {
@@ -107,8 +111,8 @@ export async function updatePlugin(pluginId: string, version?: string) {
     return withPending(pluginId, () => PluginMarketplaceEndpoint.update(pluginId, version));
 }
 
-export async function uninstallPlugin(pluginId: string) {
-    return withPending(pluginId, () => PluginMarketplaceEndpoint.uninstall(pluginId));
+export async function uninstallPlugin(pluginId: string, keepConfiguration: boolean) {
+    return withPending(pluginId, () => PluginMarketplaceEndpoint.uninstall(pluginId, keepConfiguration));
 }
 
 export async function addMarketplace(marketplace: PluginMarketplaceCreateDto) {

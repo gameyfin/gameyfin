@@ -1,11 +1,7 @@
 package org.gameyfin.app.core.plugins.management
 
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class PluginManagementEntryTest {
 
@@ -66,7 +62,7 @@ class PluginManagementEntryTest {
     @Test
     fun `PluginManagementEntry should be different with different enabled state`() {
         val entry1 = PluginManagementEntry("plugin1", true, 1)
-        val entry2 = PluginManagementEntry("plugin1", false, 1)
+        val entry2 = PluginManagementEntry("plugin1", priority = 1)
 
         assert(entry1 != entry2)
     }

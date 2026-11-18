@@ -86,15 +86,8 @@ class SsoAuthenticationSuccessHandler(
             SecurityContextHolder.getContext().authentication = newAuth
         }
 
-        // Get the continue parameter from the request to redirect back to the original page
-        val continueUrl = request.getParameter("continue")
-        val redirectUrl = if (!continueUrl.isNullOrBlank() && continueUrl.startsWith("/")) {
-            continueUrl
-        } else {
-            "/"
-        }
-
-        response.sendRedirect(redirectUrl)
+        // Share the onboarding and validated-destination decision with local login.
+        response.sendRedirect("/login/success")
         return
     }
 }

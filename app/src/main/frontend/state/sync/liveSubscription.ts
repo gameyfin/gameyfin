@@ -6,6 +6,9 @@ export function liveSubscription<T, E>(options: {
     fetch: () => Promise<T>;
     replace: (value: T) => void;
     apply: (events: E[]) => void;
+    /** Invalidation-only streams carry no entities; every event requests a fresh snapshot. */
+    invalidates?: boolean;
+    onError?: (error: unknown) => void;
 }) {
     let disposed = false;
     let buffer: E[] | undefined = [];
@@ -30,6 +33,7 @@ export function liveSubscription<T, E>(options: {
             buffer = undefined;
         } catch (error) {
             if (!disposed) {
+                options.onError?.(error);
                 console.error("Failed to synchronize live state", error);
                 clearTimeout(retry);
                 retry = setTimeout(() => void sync(), 10_000);
@@ -48,6 +52,10 @@ export function liveSubscription<T, E>(options: {
         subscription = options.subscribe()
             .onNext(events => {
                 if (disposed) return;
+                if (options.invalidates) {
+                    void sync();
+                    return;
+                }
                 if (buffer) buffer.push(...events);
                 else options.apply(events);
             })
@@ -69,9 +77,9 @@ export function liveSubscription<T, E>(options: {
     }
 
     connect();
-    return () => {
+    return Object.assign(() => {
         disposed = true;
         clearTimeout(retry);
         subscription?.cancel();
-    };
+    }, {refresh: sync});
 }

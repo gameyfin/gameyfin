@@ -20,6 +20,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
+import org.springframework.mock.web.MockHttpSession
 import kotlin.test.assertEquals
 
 class SsoAuthenticationSuccessHandlerTest {
@@ -45,6 +46,9 @@ class SsoAuthenticationSuccessHandlerTest {
         handler = SsoAuthenticationSuccessHandler(userService, roleService, config, roleHierarchy)
 
         request = mockk()
+        val session = MockHttpSession()
+        every { request.getSession(false) } returns session
+        every { request.getSession(true) } returns session
         response = mockk(relaxed = true)
         authentication = mockk()
         securityContext = mockk(relaxed = true)
@@ -165,7 +169,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
     @Test
     fun `uses preferred_username fallback when UsernameAttribute config is null`() {
-        val oidcUser = oidcUser(preferredUsername = "alice")
+        val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns null
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
@@ -356,7 +360,7 @@ class SsoAuthenticationSuccessHandlerTest {
     // ── Redirect behaviour ────────────────────────────────────────────────────
 
     @Test
-    fun `redirects to root when no continue parameter`() {
+    fun `redirects through shared login success when no continue parameter`() {
         val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
@@ -371,18 +375,18 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/") }
+        verify { response.sendRedirect("/login/success") }
     }
 
     @Test
-    fun `redirects to continue URL when it starts with slash`() {
+    fun `retains session destination for shared login success after OIDC callback`() {
         val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
         every { authentication.principal } returns oidcUser
         every { authentication.credentials } returns null
-        every { request.getParameter("continue") } returns "/collection/games"
+        LoginReturnUrl.save(request, "/collection/games")
 
         every { userService.findByOidcProviderId(any()) } returns null
         every { userService.getByUsername(any()) } returns null
@@ -390,7 +394,8 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/collection/games") }
+        verify { response.sendRedirect("/login/success") }
+        assertEquals("/collection/games", LoginReturnUrl.consume(request))
     }
 
     @Test
@@ -409,7 +414,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/") }
+        verify { response.sendRedirect("/login/success") }
     }
 
     // ── Unknown MatchExistingUsersBy ──────────────────────────────────────────
@@ -490,7 +495,7 @@ class SsoAuthenticationSuccessHandlerTest {
     }
 
     @Test
-    fun `redirects to root when continue parameter is blank`() {
+    fun `redirects through shared login success when continue parameter is blank`() {
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
         every { authentication.principal } returns oidcUser()
@@ -502,6 +507,6 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/") }
+        verify { response.sendRedirect("/login/success") }
     }
 }

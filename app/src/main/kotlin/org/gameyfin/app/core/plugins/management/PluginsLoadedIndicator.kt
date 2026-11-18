@@ -10,6 +10,8 @@ class PluginsLoadedIndicator : HealthIndicator {
 
     private val ready = AtomicBoolean(false)
 
+    fun isReady(): Boolean = ready.get()
+
     fun markReady() {
         ready.set(true)
     }

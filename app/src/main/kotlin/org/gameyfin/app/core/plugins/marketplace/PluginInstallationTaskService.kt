@@ -53,10 +53,10 @@ class PluginInstallationTaskService(
             installationResult(marketplaceService.update(pluginId, version), pluginId)
         }
 
-    fun uninstall(pluginId: String): TaskRunDto =
+    fun uninstall(pluginId: String, keepConfiguration: Boolean): TaskRunDto =
         runService.start(UNINSTALL, TaskTrigger.MANUAL, displayName = "Uninstall plugin $pluginId") { context ->
             context.progress("Uninstalling plugin $pluginId")
-            val fallback = marketplaceService.uninstall(pluginId)
+            val fallback = marketplaceService.uninstall(pluginId, keepConfiguration)
             TaskResult(
                 if (fallback == null) "Plugin $pluginId uninstalled"
                 else "Plugin $pluginId reverted to local version ${fallback.version}. ${stateSummary(fallback)}"

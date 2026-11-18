@@ -206,7 +206,6 @@ class ImageServiceTest {
             id = 1L,
             originalUrl = url,
             type = ImageType.COVER,
-            contentId = null,
             contentLength = 0L,
             mimeType = "image/jpeg"
         )
@@ -716,7 +715,7 @@ class ImageServiceTest {
         @Test
         fun `returns original image when width is already within maxWidth`() {
             val small = BufferedImage(80, 60, BufferedImage.TYPE_INT_RGB)
-            val result = ImageService.scaleImageForBlurhash(small, maxWidth = 100)
+            val result = ImageService.scaleImageForBlurhash(small)
             assertNotNull(result)
             assertSame(result, small, "Expected the same instance to be returned for small images")
         }
@@ -724,14 +723,14 @@ class ImageServiceTest {
         @Test
         fun `returns original image when width exactly equals maxWidth`() {
             val exact = BufferedImage(100, 75, BufferedImage.TYPE_INT_RGB)
-            val result = ImageService.scaleImageForBlurhash(exact, maxWidth = 100)
+            val result = ImageService.scaleImageForBlurhash(exact)
             assertSame(result, exact)
         }
 
         @Test
         fun `scales down a landscape image to maxWidth maintaining aspect ratio`() {
             val landscape = BufferedImage(400, 200, BufferedImage.TYPE_INT_RGB)
-            val result = ImageService.scaleImageForBlurhash(landscape, maxWidth = 100)
+            val result = ImageService.scaleImageForBlurhash(landscape)
             assertEquals(100, result.width)
             assertEquals(50, result.height)   // 200 * (100/400) = 50
         }
@@ -739,7 +738,7 @@ class ImageServiceTest {
         @Test
         fun `scales down a portrait image preserving aspect ratio`() {
             val portrait = BufferedImage(200, 400, BufferedImage.TYPE_INT_RGB)
-            val result = ImageService.scaleImageForBlurhash(portrait, maxWidth = 100)
+            val result = ImageService.scaleImageForBlurhash(portrait)
             assertEquals(100, result.width)
             assertEquals(200, result.height)  // 400 * (100/200) = 200
         }
@@ -747,7 +746,7 @@ class ImageServiceTest {
         @Test
         fun `scales down a square image preserving aspect ratio`() {
             val square = BufferedImage(300, 300, BufferedImage.TYPE_INT_RGB)
-            val result = ImageService.scaleImageForBlurhash(square, maxWidth = 100)
+            val result = ImageService.scaleImageForBlurhash(square)
             assertEquals(100, result.width)
             assertEquals(100, result.height)
         }

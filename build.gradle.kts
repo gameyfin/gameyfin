@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.nio.file.Files
 
 group = "org.gameyfin"
-version = "2.6.2"
+version = "2.7.0-preview"
 
 allprojects {
     dependencyLocking {
@@ -47,7 +47,11 @@ subprojects {
     }
 }
 
-extra.set("pf4j.pluginsDir", rootProject.layout.buildDirectory.get().asFile.resolve("plugins"))
+val buildDevPlugins by tasks.registering {
+    group = "build"
+    description = "Prepares opted-in standalone plugin checkouts for PF4J source debugging"
+    dependsOn(gradle.includedBuilds.filter { it.projectDir != rootDir }.map { it.task(":prepareDevPlugin") })
+}
 
 abstract class UpdatePackageJsonVersionTask : DefaultTask() {
     @get:Input

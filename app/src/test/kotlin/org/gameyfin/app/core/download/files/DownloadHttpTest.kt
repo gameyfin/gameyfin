@@ -1,7 +1,8 @@
 package org.gameyfin.app.core.download.files
 
-import io.mockk.*
-import tools.jackson.databind.json.JsonMapper
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.apache.catalina.startup.Tomcat
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext
 import org.springframework.web.servlet.DispatcherServlet
 import org.springframework.web.servlet.config.annotation.EnableWebMvc
+import tools.jackson.databind.json.JsonMapper
 import java.io.InputStream
 import java.net.URI
 import java.net.http.HttpClient
@@ -25,7 +27,8 @@ import kotlin.test.*
 
 /** Exercises the servlet's DeferredResult -> StreamingResponseBody lifecycle over actual HTTP. */
 class DownloadHttpTest {
-    @TempDir lateinit var directory: Path
+    @TempDir
+    lateinit var directory: Path
 
     @Configuration(proxyBeanMethods = false)
     @EnableWebMvc
@@ -42,8 +45,13 @@ class DownloadHttpTest {
         every { bandwidth.getTracker(any(), any()) } answers {
             org.gameyfin.app.core.download.bandwidth.SessionBandwidthTracker(firstArg(), secondArg())
         }
-        val transferService = DownloadService(mockk(relaxed = true), config, bandwidth,
-            org.gameyfin.app.core.metrics.DownloadMetrics(io.micrometer.core.instrument.simple.SimpleMeterRegistry(), bandwidth))
+        val transferService = DownloadService(
+            mockk(relaxed = true), config, bandwidth,
+            org.gameyfin.app.core.metrics.DownloadMetrics(
+                io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
+                bandwidth
+            )
+        )
         val service = mockk<DownloadService>()
         val responseStreamType = java.util.concurrent.atomic.AtomicReference<String>()
         every { service.processDownload(any(), any(), any(), any(), any(), any()) } answers {
@@ -61,6 +69,7 @@ class DownloadHttpTest {
                 override val etag = "\"unchanged\""
                 override fun openStream(offset: Long, length: Long): InputStream =
                     bytes.inputStream(offset.toInt(), length.toInt())
+
                 override fun close() = Unit
             }
         }
@@ -76,7 +85,11 @@ class DownloadHttpTest {
         }
         every { service.getRangeDownload(any(), "slow") } returns null
         every { service.describeDownload(any(), "slow") } returns DownloadMetadata("zip", null)
-        every { service.getProviders() } returns listOf("direct", "broken", "slow").map {
+        val magnet = "magnet:?xt=urn:btih:1234&dn=Game%20Title&tr=http%3A%2F%2Ftracker.test%2Fannounce"
+        every { service.getRangeDownload(any(), "magnet") } returns null
+        every { service.describeDownload(any(), "magnet") } returns null
+        every { service.getDownload(any(), "magnet") } returns org.gameyfin.pluginapi.download.LinkDownload(magnet)
+        every { service.getProviders() } returns listOf("direct", "broken", "slow", "cancel", "magnet").map {
             org.gameyfin.app.core.download.provider.DownloadProviderDto(it, it, 1, it)
         }
         val catalog = mockk<org.gameyfin.app.api.v1.service.CatalogServiceV1>()
@@ -89,9 +102,11 @@ class DownloadHttpTest {
         spring.register(WebConfig::class.java)
         spring.addBeanFactoryPostProcessor { factory ->
             factory.registerSingleton("downloads", DownloadEndpoint(service, games))
-            factory.registerSingleton("apiDownloads", org.gameyfin.app.api.v1.controller.DownloadControllerV1(
-                org.gameyfin.app.api.v1.allowingAccess(), service, catalog, games, mockk(), JsonMapper()
-            ))
+            factory.registerSingleton(
+                "apiDownloads", org.gameyfin.app.api.v1.controller.DownloadControllerV1(
+                    org.gameyfin.app.api.v1.allowingAccess(), service, catalog, games, mockk(), JsonMapper()
+                )
+            )
             factory.registerSingleton("apiErrors", org.gameyfin.app.api.v1.ApiErrors())
         }
         val servlet = Tomcat.addServlet(context, "dispatcher", DispatcherServlet(spring))
@@ -118,15 +133,21 @@ class DownloadHttpTest {
                                 check(release.await(10, TimeUnit.SECONDS))
                                 return -1
                             }
-                            override fun close() { closed.countDown() }
+
+                            override fun close() {
+                                closed.countDown()
+                            }
                         }, "zip")
                     }
                     val slow = URI("http://localhost:${tomcat.connector.localPort}$path?provider=slow")
                     try {
-                        val pending = client.sendAsync(HttpRequest.newBuilder(slow).GET().build(),
-                            HttpResponse.BodyHandlers.ofInputStream())
-                        val response = try { pending.get(5, TimeUnit.SECONDS) }
-                        catch (error: Exception) {
+                        val pending = client.sendAsync(
+                            HttpRequest.newBuilder(slow).GET().build(),
+                            HttpResponse.BodyHandlers.ofInputStream()
+                        )
+                        val response = try {
+                            pending.get(5, TimeUnit.SECONDS)
+                        } catch (error: Exception) {
                             pending.cancel(true)
                             throw AssertionError("First byte did not arrive through ${responseStreamType.get()}", error)
                         }
@@ -139,36 +160,116 @@ class DownloadHttpTest {
                             assertEquals(-1, it.read())
                         }
                         assertTrue(closed.await(3, TimeUnit.SECONDS))
-                        val head = client.send(HttpRequest.newBuilder(slow).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
-                            HttpResponse.BodyHandlers.ofByteArray())
+                        val head = client.send(
+                            HttpRequest.newBuilder(slow).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+                            HttpResponse.BodyHandlers.ofByteArray()
+                        )
                         assertEquals(200, head.statusCode())
                         assertTrue(head.headers().firstValue("Content-Length").isEmpty)
                         assertTrue(head.body().isEmpty())
-                    } finally { release.countDown() }
-                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=direct")
-                    val first = client.send(HttpRequest.newBuilder(url).GET().build(), HttpResponse.BodyHandlers.ofInputStream())
+                    } finally {
+                        release.countDown()
+                    }
+                    val cancelled = CountDownLatch(1)
+                    every { service.getRangeDownload(any(), "cancel") } returns null
+                    every { service.getDownload(any(), "cancel") } answers {
+                        org.gameyfin.pluginapi.download.FileDownload(object : InputStream() {
+                            var first = true
+                            override fun read(): Int = error("Bulk reads expected")
+                            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                                if (first) {
+                                    first = false
+                                    b[off] = 1
+                                    return 1
+                                }
+                                try {
+                                    cancelled.await(10, TimeUnit.SECONDS)
+                                } catch (_: InterruptedException) {
+                                    throw java.io.IOException("Download cancelled")
+                                }
+                                throw java.io.IOException("Source closed")
+                            }
+                            override fun close() { cancelled.countDown() }
+                        }, "bin", 1024)
+                    }
+                    val cancelUrl = URI("http://localhost:${tomcat.connector.localPort}$path?provider=cancel")
+                    val cancelResponse = client.send(
+                        HttpRequest.newBuilder(cancelUrl).GET().build(), HttpResponse.BodyHandlers.ofInputStream()
+                    )
+                    cancelResponse.body().use { body ->
+                        assertEquals(1, body.read())
+                        GameDownloadLifecycle.remove(1) { assertEquals(0L, cancelled.count) }
+                        val failure = java.util.concurrent.CompletableFuture.supplyAsync {
+                            runCatching { body.readAllBytes() }.exceptionOrNull()
+                        }.get(5, TimeUnit.SECONDS)
+                        assertTrue(failure is java.io.IOException, "Cancellation must abort the HTTP download through $path")
+                    }
+                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=direct&client=browser")
+                    val first = client.send(
+                        HttpRequest.newBuilder(url).GET().build(),
+                        HttpResponse.BodyHandlers.ofInputStream()
+                    )
                     if (first.statusCode() != 200) {
                         val error = first.body().use { it.readAllBytes().decodeToString() }
                         fail("$path returned ${first.statusCode()}: $error")
                     }
                     val prefix = first.body().use { it.readNBytes(8192) }
-                    val resumed = client.send(HttpRequest.newBuilder(url)
-                        .header("Range", "bytes=${prefix.size}-")
-                        .header("If-Range", first.headers().firstValue("ETag").orElseThrow()).GET().build(),
-                        HttpResponse.BodyHandlers.ofByteArray())
+                    val resumed = client.send(
+                        HttpRequest.newBuilder(url)
+                            .header("Range", "bytes=${prefix.size}-")
+                            .header("If-Range", first.headers().firstValue("ETag").orElseThrow()).GET().build(),
+                        HttpResponse.BodyHandlers.ofByteArray()
+                    )
                     assertEquals(206, resumed.statusCode())
                     assertContentEquals(bytes, prefix + resumed.body())
-                    val head = client.send(HttpRequest.newBuilder(url).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
-                        HttpResponse.BodyHandlers.ofByteArray())
+                    val head = client.send(
+                        HttpRequest.newBuilder(url).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+                        HttpResponse.BodyHandlers.ofByteArray()
+                    )
                     assertEquals(200, head.statusCode())
                     assertEquals(bytes.size.toString(), head.headers().firstValue("Content-Length").orElseThrow())
                     assertTrue(head.body().isEmpty())
                     val broken = URI("http://localhost:${tomcat.connector.localPort}$path?provider=broken")
                     assertFailsWith<java.io.IOException> {
-                        client.send(HttpRequest.newBuilder(broken).GET().build(), HttpResponse.BodyHandlers.ofByteArray())
+                        client.send(
+                            HttpRequest.newBuilder(broken).GET().build(),
+                            HttpResponse.BodyHandlers.ofByteArray()
+                        )
                     }
                 }
-                verify(exactly = 8) { games.incrementDownloadCount(game) }
+                for (path in listOf("/download/1", "/v1/games/1/download")) {
+                    val url = URI("http://localhost:${tomcat.connector.localPort}$path?provider=magnet")
+                    val head = client.send(
+                        HttpRequest.newBuilder(url).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+                        HttpResponse.BodyHandlers.ofByteArray()
+                    )
+                    assertEquals(200, head.statusCode())
+                    assertTrue(head.body().isEmpty())
+                    val response = client.send(
+                        HttpRequest.newBuilder(url).GET().build(), HttpResponse.BodyHandlers.ofByteArray()
+                    )
+                    if (path == "/download/1") {
+                        assertEquals(302, response.statusCode())
+                        assertEquals(magnet, response.headers().firstValue("Location").orElseThrow())
+                        assertEquals("no-store", response.headers().firstValue("Cache-Control").orElseThrow())
+                        assertFalse(response.headers().firstValue("Content-Disposition").isPresent)
+                        assertTrue(response.body().isEmpty())
+                    } else {
+                        assertEquals(200, response.statusCode())
+                        val descriptor = JsonMapper().readTree(response.body())
+                        assertEquals(magnet, descriptor.get("url").asString())
+                    }
+                }
+                val browserLink = client.send(
+                    HttpRequest.newBuilder(URI("http://localhost:${tomcat.connector.localPort}/download/1?provider=magnet&client=browser"))
+                        .GET().build(), HttpResponse.BodyHandlers.ofString()
+                )
+                assertEquals(200, browserLink.statusCode())
+                assertEquals("text/html", browserLink.headers().firstValue("Content-Type").orElseThrow())
+                assertEquals("SAMEORIGIN", browserLink.headers().firstValue("X-Frame-Options").orElseThrow())
+                assertTrue(browserLink.body().contains("href=\"${magnet.replace("&", "&amp;")}\""))
+                verify(exactly = 13) { games.incrementDownloadCount(game) }
+                verify(exactly = 3) { service.getDownload(any(), "magnet") }
                 verify(exactly = 2) { service.getDownload(any(), "slow") }
             }
         } finally {

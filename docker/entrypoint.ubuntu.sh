@@ -5,19 +5,33 @@ set -e
 PUID=${PUID:-}
 PGID=${PGID:-}
 
-if [ -n "$PGID" ]; then
+if [[ -n "$PGID" ]]; then
   groupmod -o -g "$PGID" gameyfin
 fi
-if [ -n "$PUID" ]; then
+if [[ -n "$PUID" ]]; then
   usermod -o -u "$PUID" gameyfin
 fi
 
-# Only fix ownership on writable dirs when remapping is requested
-if [ -n "$PUID$PGID" ]; then
-  for d in plugins plugins-installed plugindata db data logs backups; do
-    [ -d "/opt/gameyfin/$d" ] || mkdir -p "/opt/gameyfin/$d"
+# A bind mount hides image-created directories, including on a first start.
+# Own the persistent root too, so future application directories can be created.
+chown gameyfin:gameyfin /opt/gameyfin
+chmod u+rwx /opt/gameyfin
+for d in plugins plugindata db data logs backups; do
+  mkdir -p "/opt/gameyfin/$d"
+  if [[ -n "$PUID$PGID" ]]; then
     chown -R gameyfin:gameyfin "/opt/gameyfin/$d"
-  done
+  else
+    chown gameyfin:gameyfin "/opt/gameyfin/$d"
+  fi
+done
+
+# Preserve ownership handling for existing legacy mounts without creating one.
+if [[ -d /opt/gameyfin/plugins-installed ]]; then
+  if [[ -n "$PUID$PGID" ]]; then
+    chown -R gameyfin:gameyfin /opt/gameyfin/plugins-installed
+  else
+    chown gameyfin:gameyfin /opt/gameyfin/plugins-installed
+  fi
 fi
 
 # ── JVM memory tuning for containers ──────────────────────────────
@@ -52,12 +66,11 @@ DEFAULT_JVM_OPTS="\
   -XX:MaxDirectMemorySize=64m \
   -Xss512k \
   -XX:ErrorFile=/opt/gameyfin/logs/hs_err_pid%p.log"
-# ErrorFile            – the working directory (/opt/gameyfin) is not writable by the
-#                        runtime user, so JVM crash reports were silently lost.
+# Crash reports persist under the mounted logs directory.
 
 # Append AOT Cache flag if a non-empty training cache file exists
-if [ -s /opt/gameyfin/app.aot ]; then
-  DEFAULT_JVM_OPTS="${DEFAULT_JVM_OPTS} -XX:AOTCache=/opt/gameyfin/app.aot"
+if [[ -s /usr/lib/gameyfin/app.aot ]]; then
+  DEFAULT_JVM_OPTS="${DEFAULT_JVM_OPTS} -XX:AOTCache=/usr/lib/gameyfin/app.aot"
 fi
 
 # Two env-var options for users (set in docker-compose "environment:"):
@@ -65,7 +78,7 @@ fi
 #                        e.g. JAVA_OPTS=-Dsome.prop=value
 #   JAVA_OPTS_OVERRIDE – if set, *replaces* all built-in defaults entirely
 #                        e.g. JAVA_OPTS_OVERRIDE=-Xmx512m -XX:+UseG1GC
-if [ -n "${JAVA_OPTS_OVERRIDE:-}" ]; then
+if [[ -n "${JAVA_OPTS_OVERRIDE:-}" ]]; then
   export JDK_JAVA_OPTIONS="${JAVA_OPTS_OVERRIDE}"
 else
   export JDK_JAVA_OPTIONS="${DEFAULT_JVM_OPTS} ${JAVA_OPTS:-}"
@@ -81,20 +94,20 @@ fi
 # Set DISABLE_JEMALLOC=true to fall back to glibc malloc.
 JSIG="${JAVA_HOME:-/opt/java/openjdk}/lib/libjsig.so"
 JEMALLOC=""
-if [ "${DISABLE_JEMALLOC:-false}" != "true" ]; then
+if [[ "${DISABLE_JEMALLOC:-false}" != "true" ]]; then
   JEMALLOC="$(find /usr/lib -maxdepth 2 -name libjemalloc.so.2 -print -quit 2>/dev/null || true)"
 fi
 
-if [ -z "${LD_PRELOAD:-}" ]; then
+if [[ -z "${LD_PRELOAD:-}" ]]; then
   PRELOAD=""
-  [ -f "${JSIG}" ] && PRELOAD="${JSIG}"
-  [ -n "${JEMALLOC}" ] && PRELOAD="${PRELOAD:+${PRELOAD}:}${JEMALLOC}"
-  [ -n "${PRELOAD}" ] && export LD_PRELOAD="${PRELOAD}"
+  [[ -f "${JSIG}" ]] && PRELOAD="${JSIG}"
+  [[ -n "${JEMALLOC}" ]] && PRELOAD="${PRELOAD:+${PRELOAD}:}${JEMALLOC}"
+  [[ -n "${PRELOAD}" ]] && export LD_PRELOAD="${PRELOAD}"
 fi
 
-if [ -n "${JEMALLOC}" ]; then
+if [[ -n "${JEMALLOC}" ]]; then
   # background_thread: purge unused pages in a separate thread so idle memory is returned to the OS
   export MALLOC_CONF="${MALLOC_CONF:-background_thread:true,dirty_decay_ms:5000,muzzy_decay_ms:5000,narenas:2}"
 fi
 
-exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true -jar application.jar
+exec gosu gameyfin:gameyfin java -Djava.net.preferIPv4Stack=true -jar /usr/lib/gameyfin/application.jar

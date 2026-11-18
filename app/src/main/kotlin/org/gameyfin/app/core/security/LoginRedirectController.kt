@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.setup.SetupService
+import org.gameyfin.app.setup.PluginOnboardingService
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 
@@ -13,32 +15,41 @@ import org.springframework.web.bind.annotation.GetMapping
  */
 @Controller
 class LoginRedirectController(
-    private val config: ConfigService
+    private val config: ConfigService,
+    private val setupService: SetupService,
+    private val onboarding: PluginOnboardingService
 ) {
 
     @GetMapping("/loginredirect")
     fun loginRedirect(request: HttpServletRequest, response: HttpServletResponse) {
-        val continueParam = request.getParameter("continue")
+        val target = request.getParameter("continue")
+        if (target != null || request.getParameter("resume") != "1") {
+            LoginReturnUrl.save(request, target)
+        }
+        if (!setupService.isSetupCompleted()) {
+            response.sendRedirect("/setup")
+            return
+        }
         val directParam = request.getParameter("direct")
 
         // Check if SSO is enabled
         val isSsoEnabled = config.get(ConfigProperties.SSO.OIDC.Enabled) == true
 
         if (isSsoEnabled && directParam != "1") {
-            // Redirect to SSO provider with continue parameter if present
+            // The return destination stays in the session during the OIDC round trip.
             val ssoUrl = "/oauth2/authorization/${SecurityConfig.SSO_PROVIDER_KEY}"
-            if (!continueParam.isNullOrBlank()) {
-                response.sendRedirect("$ssoUrl?continue=$continueParam")
-            } else {
-                response.sendRedirect(ssoUrl)
-            }
+            response.sendRedirect(ssoUrl)
         } else {
-            // Redirect to direct login page with continue parameter if present
-            if (!continueParam.isNullOrBlank()) {
-                response.sendRedirect("/login?continue=$continueParam")
-            } else {
-                response.sendRedirect("/login")
-            }
+            response.sendRedirect("/login")
+        }
+    }
+
+    @GetMapping("/login/success")
+    fun loginSuccess(request: HttpServletRequest, response: HttpServletResponse) {
+        if (isCurrentUserAdmin() && onboarding.isPending()) {
+            response.sendRedirect("/setup/plugins")
+        } else {
+            response.sendRedirect(LoginReturnUrl.consume(request))
         }
     }
 }

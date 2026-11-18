@@ -13,6 +13,7 @@ import org.gameyfin.app.api.v1.apiId
 import org.gameyfin.app.api.v1.apiPage
 import org.gameyfin.app.api.v1.dto.*
 import org.gameyfin.app.api.v1.service.CatalogServiceV1
+import org.gameyfin.app.core.download.files.GameDownloadLifecycle
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.libraries.LibraryCoreService
 import org.springframework.http.ResponseEntity
@@ -114,7 +115,9 @@ class GameControllerV1(
     @ApiResponse(responseCode = "204", description = "No content")
     fun deleteGame(@Parameter(description = "Game ID.") @PathVariable id: String): ResponseEntity<Void> {
         access.require(ApiScope.GAMES_DELETE); catalog.game(id)
-        libraries.deleteGameFromLibrary(apiId(id)); games.delete(apiId(id))
+        GameDownloadLifecycle.remove(apiId(id)) {
+            libraries.deleteGameFromLibrary(apiId(id)); games.delete(apiId(id))
+        }
         return ResponseEntity.noContent().build()
     }
 }

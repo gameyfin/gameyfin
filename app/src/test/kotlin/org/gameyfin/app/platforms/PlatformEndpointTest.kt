@@ -69,9 +69,6 @@ class PlatformEndpointTest {
     @Test
     fun `getStats should handle null values in PlatformStatsDto`() {
         val expectedStats = PlatformStatsDto(
-            available = null,
-            inUseByGames = null,
-            inUseByLibraries = null
         )
 
         every { platformService.getStats() } returns expectedStats
@@ -85,9 +82,7 @@ class PlatformEndpointTest {
     @Test
     fun `getStats should handle partial null values in PlatformStatsDto`() {
         val expectedStats = PlatformStatsDto(
-            available = setOf(Platform.NINTENDO_SWITCH),
-            inUseByGames = null,
-            inUseByLibraries = null
+            available = setOf(Platform.NINTENDO_SWITCH)
         )
 
         every { platformService.getStats() } returns expectedStats

@@ -267,7 +267,7 @@ class SessionMonitoredOutputStreamTest {
 
         // Order matters
         verifyOrder {
-            sessionTracker.downloadStarted(null, null, null)
+            sessionTracker.downloadStarted(null, null)
             sessionTracker.recordBytes(5)
             sessionTracker.recordBytes(6)
         }

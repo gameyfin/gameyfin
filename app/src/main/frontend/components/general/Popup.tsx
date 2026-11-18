@@ -2,7 +2,9 @@ import {Popover} from "@heroui/react";
 import {ComponentProps} from "react";
 import {Button} from "react-aria-components";
 
-function PopupTrigger({className = "", ...props}: Omit<ComponentProps<typeof Button>, "className"> & {className?: string}) {
+function PopupTrigger({className = "", ...props}: Omit<ComponentProps<typeof Button>, "className"> & {
+    className?: string
+}) {
     return <Button type="button" aria-label="Show details"
                    className={`inline-flex items-center cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 ${className}`}
                    {...props}/>;

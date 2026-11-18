@@ -1,6 +1,8 @@
 import LoginView from "Frontend/views/LoginView";
+import LoginRedirectView from "Frontend/views/LoginRedirectView";
 import MainLayout from "Frontend/views/MainLayout";
 import HomeView from "Frontend/views/HomeView";
+import PluginSetupView from "Frontend/views/PluginSetupView";
 import SetupView from "Frontend/views/SetupView";
 import AppearanceView from "Frontend/components/theming/AppearanceView";
 import App from "Frontend/App";
@@ -39,6 +41,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
             element: <App/>,
             errorElement: <ErrorView/>,
             children: [
+                {path: 'loginredirect', element: <LoginRedirectView/>},
                 {
                     element: <MainLayout/>,
                     children: [
@@ -175,6 +178,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                     handle: {title: 'Login'}
                 },
                 {
+                    path: 'setup/plugins',
+                    element: <PluginSetupView/>,
+                    handle: {title: 'Choose plugins', loginRequired: true, rolesAllowed: ['ROLE_ADMIN']}
+                },
+                {
                     path: 'setup',
                     element: <SetupView/>,
                     handle: {title: 'Setup'}
@@ -202,5 +210,5 @@ export const {router, routes} = new RouterConfigurationBuilder()
             ]
         }
     ])
-    .protect("/login")
+    .protect("/loginredirect")
     .build();

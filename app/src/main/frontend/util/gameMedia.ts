@@ -136,9 +136,7 @@ export async function saveMetadata(update: GameUpdateDto, values: MediaDraft, ne
     if (files.reduce((size, image) => size + image.file!.size, 0) > MAX_MEDIA_SIZE) {
         throw new Error("The selected uploads exceed 100 MiB. Save fewer images at a time.");
     }
-    const body = new FormData();
-    body.append("metadata", new Blob([JSON.stringify(update)], {type: "application/json"}));
-    files.forEach(image => body.append(image.selection.uploadKey!, image.file!));
+    const body = metadataFormData(update, values);
     if (newGame) {
         body.append("path", newGame.path);
         body.append("libraryId", String(newGame.libraryId));
@@ -151,4 +149,17 @@ export async function saveMetadata(update: GameUpdateDto, values: MediaDraft, ne
         const detail = await response.json().catch(() => undefined);
         throw new Error(detail?.detail ?? detail?.message ?? `Saving metadata failed (HTTP ${response.status}).`);
     }
+}
+
+/** Shared multipart payload for metadata edits, manual import, and game upload publication. */
+export function metadataFormData(update: GameUpdateDto, values: MediaDraft): FormData {
+    const files = allDraftImages(values).filter(image => image.file);
+    if (files.some(image => image.file!.size > MAX_IMAGE_SIZE) ||
+        files.reduce((size, image) => size + image.file!.size, 0) > MAX_MEDIA_SIZE) {
+        throw new Error("Images must be at most 20 MiB each and 100 MiB in total.");
+    }
+    const body = new FormData();
+    body.append("metadata", new Blob([JSON.stringify(update)], {type: "application/json"}));
+    files.forEach(image => body.append(image.selection.uploadKey!, image.file!));
+    return body;
 }
