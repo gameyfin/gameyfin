@@ -93,6 +93,25 @@ class LoginRedirectControllerTest {
     }
 
     @ParameterizedTest
+    @CsvSource("false,,/setup", "true,,/oauth2/authorization/oidc", "true,1,/login")
+    fun `gateway resumes the return path saved by the authentication entry point`(
+        complete: Boolean, direct: String?, target: String
+    ) {
+        every { setup.isSetupCompleted() } returns complete
+        every { config.get(ConfigProperties.SSO.OIDC.Enabled) } returns true
+        val request = MockHttpServletRequest().apply {
+            setSession(MockHttpSession())
+            addParameter("resume", "1")
+            direct?.let { addParameter("direct", it) }
+        }
+        LoginReturnUrl.save(request, "/download/42?q=a%2Bb")
+        val response = MockHttpServletResponse()
+        controller.loginRedirect(request, response)
+        assertEquals(target, response.redirectedUrl)
+        assertEquals("/download/42?q=a%2Bb", LoginReturnUrl.consume(request))
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = ["https://evil.example", "//evil.example", "/\\evil.example", "/%2f/evil.example",
         "/%5cevil.example", "/login", "/login/", "/loginredirect", "/login/success", "/setup", "/setup/plugins", "/setup/%70lugins", "/logout",
         "/oauth2/authorization/oidc", "/foo/../login", "/foo/..%2flogin", "/login;jsessionid=123",
@@ -105,9 +124,10 @@ class LoginRedirectControllerTest {
 
     @Test
     fun `starting another login clears stale destination`() {
+        every { setup.isSetupCompleted() } returns false
         val request = MockHttpServletRequest()
         LoginReturnUrl.save(request, "/game/42")
-        LoginReturnUrl.save(request, null)
+        controller.loginRedirect(request, MockHttpServletResponse())
         assertEquals("/", LoginReturnUrl.consume(request))
     }
 }

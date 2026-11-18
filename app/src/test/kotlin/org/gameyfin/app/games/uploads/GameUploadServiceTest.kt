@@ -142,6 +142,20 @@ class GameUploadServiceTest {
     }
 
     @Test
+    fun `folder transfer rejects linked staging directories before creating nested directories`() {
+        val request = request(name = "My Game").copy(
+            folder = true, files = listOf(GameUploadFileDto("data/nested/file.dat", 3))
+        )
+        val (id, _) = prepare(request)
+        val payload = Files.createDirectory(root.resolve("$GAME_UPLOAD_DIRECTORY/$id/payload"))
+        Files.createSymbolicLink(payload.resolve("data"), second)
+
+        assertFailsWith<IllegalArgumentException> { service.transfer("admin", id, 0, "abc".byteInputStream()) }
+        assertFalse(Files.exists(second.resolve("nested")))
+        assertEquals(0, service.status("admin", id).completedFiles)
+    }
+
+    @Test
     fun `invalid manifests cannot escape destination or conflict within a folder`() {
         val invalid = listOf("../escape", "/absolute", "nested/../../escape", "C:\\escape", "a//b", "a/./b", "a/", "a\u0000b")
         invalid.forEach { path ->

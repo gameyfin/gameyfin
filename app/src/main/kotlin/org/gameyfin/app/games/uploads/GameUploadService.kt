@@ -41,7 +41,7 @@ class GameUploadService(
         val id: UUID,
         val owner: String,
         val request: GameUploadRequest,
-        val root: Path,
+        val target: Path,
         val staging: Path
     ) {
         val lock = ReentrantLock()
@@ -72,18 +72,20 @@ class GameUploadService(
     /** Preflight checks are read-only; creation and publication recheck before changing files. */
     fun validateDestination(request: GameUploadDestinationDto) {
         LibraryOperationLock.withLibrary(request.libraryId) {
-            availableDestination(request.libraryId, request.directory, request.name)
+            val root = destination(request.directory, library(request.libraryId))
+            availableDestination(root, request.name)
         }
     }
 
     fun create(owner: String, request: GameUploadRequest): GameUploadStatus =
         LibraryOperationLock.withLibrary(request.libraryId) {
             validateManifest(request)
-            val root = availableDestination(request.libraryId, request.directory, request.name)
+            val root = destination(request.directory, library(request.libraryId))
+            val target = availableDestination(root, request.name)
             val stagingRoot = stagingRoot(root)
             val id = UUID.randomUUID()
             val staging = Files.createDirectory(stagingRoot.resolve(id.toString()))
-            val session = Session(id, owner, request, root, staging)
+            val session = Session(id, owner, request, target, staging)
             sessions[id] = session
             status(session)
         }
@@ -93,7 +95,7 @@ class GameUploadService(
             require(session.gameId == null && session.completed.isEmpty()) { "Upload has already started" }
             val library = library(session.request.libraryId)
             checkDestination(session, library)
-            val prepared = games.prepareMetadata(originalIds, session.root.resolve(session.request.name), library)
+            val prepared = games.prepareMetadata(originalIds, session.target, library)
             session.prepared = prepared
             prepared.draft.uploadDraft()
         }
@@ -112,9 +114,9 @@ class GameUploadService(
         checkDestination(session, library(session.request.libraryId))
         checkStaging(session)
         val file = session.request.files[index]
-        val target = if (session.request.folder) session.payload.resolve(file.path) else session.payload
-        Files.createDirectories(target.parent)
-        require(target.parent.toRealPath().startsWith(session.staging)) { "Invalid upload directory" }
+        val target = if (session.request.folder) {
+            resolveWithin(session.payload, file.path).also { createPayloadDirectories(session.staging, it.parent) }
+        } else session.payload
         session.input = input
         try {
             Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE).use { output ->
@@ -159,7 +161,7 @@ class GameUploadService(
                 LibraryOperationLock.withLibrary(session.request.libraryId) {
                     val library = library(session.request.libraryId)
                     checkDestination(session, library)
-                    val target = session.root.resolve(session.request.name)
+                    val target = session.target
                     conflictIfExists(target)
                     val payloadKey = Files.readAttributes(
                         session.payload,
@@ -260,23 +262,25 @@ class GameUploadService(
     private fun library(id: Long): Library = libraries.getWithGamesAndIgnoredPaths(id)
         ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Library not found")
 
-    private fun availableDestination(libraryId: Long, directory: String, name: String): Path {
+    private fun availableDestination(root: Path, name: String): Path {
         component(name)
         require(name != GAME_UPLOAD_DIRECTORY) { "This folder name is reserved for uploads" }
-        val root = destination(directory, library(libraryId))
-        conflictIfExists(root.resolve(name))
-        return root
+        val target = resolveWithin(root, name)
+        conflictIfExists(target)
+        return target
     }
 
     private fun destination(directory: String, library: Library): Path {
-        require(library.directories.any { it.internalPath == directory }) { "Select a configured library directory" }
-        val root = Path.of(directory).toRealPath()
+        val configured = requireNotNull(library.directories.firstOrNull { it.internalPath == directory }) {
+            "Select a configured library directory"
+        }
+        val root = Path.of(configured.internalPath).toRealPath()
         require(Files.isDirectory(root) && Files.isWritable(root)) { "Library directory must be writable" }
         return root
     }
 
     private fun checkDestination(session: Session, library: Library) {
-        require(destination(session.request.directory, library) == session.root) { "Library directory has changed" }
+        require(destination(session.request.directory, library) == session.target.parent) { "Library directory has changed" }
     }
 
     private fun checkStaging(session: Session) {
@@ -300,9 +304,22 @@ class GameUploadService(
                 Files.isRegularFile(path.resolve(OWNER_DIR), LinkOption.NOFOLLOW_LINKS) &&
                 Files.readString(path.resolve(OWNER_DIR)) == marker
 
+    private fun resolveWithin(root: Path, name: String): Path {
+        val target = root.resolve(name).normalize()
+        if (!target.startsWith(root) || target == root) throw IllegalArgumentException("Invalid upload path")
+        return target
+    }
+
+    private fun createPayloadDirectories(staging: Path, parent: Path) {
+        var directory = staging
+        for (component in staging.relativize(parent)) {
+            directory = directory.resolve(component)
+            if (!Files.exists(directory, LinkOption.NOFOLLOW_LINKS)) Files.createDirectory(directory)
+            require(Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)) { "Invalid upload directory" }
+        }
+    }
+
     private fun validateManifest(request: GameUploadRequest) {
-        component(request.name)
-        require(request.name != GAME_UPLOAD_DIRECTORY) { "This folder name is reserved for uploads" }
         require(request.files.isNotEmpty() && request.files.size <= 100_000) { "Select between 1 and 100000 files" }
         if (!request.folder) require(request.files.size == 1 && request.files.single().path == request.name) {
             "Select one file per game"

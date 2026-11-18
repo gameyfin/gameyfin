@@ -101,11 +101,12 @@ class SecurityErrorDispatchTest {
             for (path in listOf("/download/1", "/login/success")) {
                 val response = MockHttpServletResponse()
                 var reachedHandler = false
-                security.doFilter(MockHttpServletRequest("GET", path), response) { _, _ -> reachedHandler = true }
+                val request = MockHttpServletRequest("GET", path)
+                security.doFilter(request, response) { _, _ -> reachedHandler = true }
                 assertFalse(reachedHandler)
                 assertEquals(302, response.status)
-                assertEquals("/loginredirect?continue=" + java.net.URLEncoder.encode(path, Charsets.UTF_8),
-                    response.redirectedUrl)
+                assertEquals("/loginredirect?resume=1", response.redirectedUrl)
+                assertEquals(if (path == "/login/success") "/" else path, LoginReturnUrl.consume(request))
             }
         }
     }

@@ -22,12 +22,14 @@ class LoginRedirectController(
 
     @GetMapping("/loginredirect")
     fun loginRedirect(request: HttpServletRequest, response: HttpServletResponse) {
+        val target = request.getParameter("continue")
+        if (target != null || request.getParameter("resume") != "1") {
+            LoginReturnUrl.save(request, target)
+        }
         if (!setupService.isSetupCompleted()) {
-            LoginReturnUrl.save(request, request.getParameter("continue"))
             response.sendRedirect("/setup")
             return
         }
-        LoginReturnUrl.save(request, request.getParameter("continue"))
         val directParam = request.getParameter("direct")
 
         // Check if SSO is enabled
