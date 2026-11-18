@@ -56,8 +56,11 @@ class PluginDistributionMigrationTest {
     private fun verifySnapshot(url: String, username: String, password: String) {
         DriverManager.getConnection(url, username, password).use { connection ->
             val migration = Liquibase("db/changelog/db.changelog-master.yaml", ClassLoaderResourceAccessor(), JdbcConnection(connection))
-            migration.update(Contexts(), LabelExpression())
-            migration.rollback(1, Contexts(), LabelExpression())
+            val changesBeforeSnapshot = migration.databaseChangeLog.changeSets.indexOfFirst {
+                it.id == "2.7.0-marketplace-only-plugins" && it.author == "gameyfin"
+            }
+            check(changesBeforeSnapshot > 0) { "Marketplace plugin snapshot changeset has no preceding schema" }
+            migration.update(changesBeforeSnapshot, Contexts(), LabelExpression())
             connection.createStatement().use { sql ->
                 sql.executeUpdate("""INSERT INTO PLUGIN_MANAGEMENT_ENTRY (PLUGIN_ID, ENABLED, PRIORITY, TRUST_LEVEL, SOURCE_MARKETPLACE_ID)
                     VALUES ('org.gameyfin.plugins.metadata.igdb', FALSE, 42, 1, NULL),
