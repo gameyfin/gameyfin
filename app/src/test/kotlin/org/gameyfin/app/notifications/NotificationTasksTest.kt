@@ -2,6 +2,9 @@ package org.gameyfin.app.notifications
 
 import io.mockk.*
 import org.gameyfin.app.core.notifications.*
+import org.gameyfin.app.core.plugins.marketplace.PluginMarketplaceService
+import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginDto
+import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginStatus
 import org.gameyfin.app.core.tasks.TaskRegistry
 import org.gameyfin.app.core.tasks.TaskAction
 import org.gameyfin.app.core.tasks.TaskDefinition
@@ -22,6 +25,12 @@ import kotlin.test.*
 class NotificationTasksTest {
     private val mapper = JsonMapper.builder().build()
     private val client = GithubReleaseClient(mapper, "2.7.0-preview")
+    private val marketplace = mockk<PluginMarketplaceService> {
+        every { refresh() } returns emptyList()
+    }
+    private val notifications = mockk<SystemNotifications> {
+        every { announcePluginUpdates(emptyList()) } returns 0
+    }
 
     private fun release(tag: String, day: Int, prerelease: Boolean = false) = GithubRelease(
         tag, "https://github.com/gameyfin/gameyfin/releases/tag/$tag",
@@ -76,16 +85,16 @@ class NotificationTasksTest {
         val definitions = mutableListOf<TaskDefinition>()
         val registry = mockk<TaskRegistry>()
         val store = mockk<NotificationStore>()
-        val context = mockk<TaskContext>()
+        val context = mockk<TaskContext>(relaxed = true)
         every { registry.register(capture(definitions)) } just Runs
         every { store.cleanup(any()) } returns 4
         every { context.setting<Int>("retentionDays") } returnsMany listOf(null, 7)
-        NotificationTasks(registry, store, mockk(), mockk(), "unknown").register()
+        NotificationTasks(registry, store, mockk(), notifications, marketplace, "unknown").register()
         val action = definitions.single { it.key == "notification-archive-cleanup" }.action as TaskAction.Run
         repeat(2) { assertEquals("4 archived notification(s) deleted", action.execute(context)?.summary) }
         verify { store.cleanup(30); store.cleanup(7) }
         val update = definitions.single { it.key == "check-for-updates" }.action as TaskAction.Run
-        assertEquals("Skipped: installed version is unknown", update.execute(context)?.summary)
+        assertEquals("Gameyfin check skipped (installed version is unknown). 0 plugin updates found", update.execute(context)?.summary)
     }
 
     @Test
@@ -104,15 +113,14 @@ class NotificationTasksTest {
     }
 
     @Test
-    fun `unknown installed version skips network and failures reach task framework`() {
+    fun `unknown installed version skips GitHub and GitHub failures reach task framework`() {
         val releases = mockk<GithubReleaseClient>()
-        val notifications = mockk<SystemNotifications>()
         val context = mockk<TaskContext>(relaxed = true)
         every { context.setting<ReleaseChannel>("releaseChannel") } returns null
-        val unknown = NotificationTasks(mockk(), mockk(), releases, notifications, "unknown")
+        val unknown = NotificationTasks(mockk(), mockk(), releases, notifications, marketplace, "unknown")
         unknown.checkForUpdates(context)
         verify(exactly = 0) { releases.published() }
-        val tasks = NotificationTasks(mockk(), mockk(), releases, notifications, "2.7.0")
+        val tasks = NotificationTasks(mockk(), mockk(), releases, notifications, marketplace, "2.7.0")
         every { releases.published() } throws HttpTimeoutException("Timed out")
         assertFailsWith<HttpTimeoutException> { tasks.checkForUpdates(context) }
         every { releases.published() } throws IllegalStateException("GitHub release check failed (HTTP 403)")
@@ -121,11 +129,40 @@ class NotificationTasksTest {
     }
 
     @Test
+    fun `update check sends Marketplace results to the notifier even if the Gameyfin check is skipped`() {
+        val update = MarketplacePluginDto(
+            id = "test-plugin",
+            marketplaceId = "official",
+            marketplaceName = "Official",
+            officialMarketplace = true,
+            name = "Test plugin",
+            hasLogo = false,
+            types = emptyList(),
+            tags = emptyList(),
+            releases = emptyList(),
+            installedVersion = "1.0.0",
+            latestCompatibleVersion = "2.0.0",
+            status = MarketplacePluginStatus.UPDATE_AVAILABLE
+        )
+        val plugins = listOf(update)
+        every { marketplace.refresh() } returns plugins
+        every { notifications.announcePluginUpdates(plugins) } returns 1
+        val result = NotificationTasks(mockk(), mockk(), mockk(), notifications, marketplace, "unknown")
+            .checkForUpdates(mockk(relaxed = true))
+
+        assertEquals("Gameyfin check skipped (installed version is unknown). 1 plugin update found", result.summary)
+        verifySequence {
+            marketplace.refresh()
+            notifications.announcePluginUpdates(plugins)
+        }
+    }
+
+    @Test
     fun `tasks default to daily schedule and retention 30 days`() {
         val definitions = mutableListOf<org.gameyfin.app.core.tasks.TaskDefinition>()
         val registry = mockk<TaskRegistry>(relaxed = true)
         every { registry.register(capture(definitions)) } just Runs
-        NotificationTasks(registry, mockk(), mockk(), mockk(), "2.7.0").register()
+        NotificationTasks(registry, mockk(), mockk(), mockk(), marketplace, "2.7.0").register()
         assertEquals(setOf("check-for-updates", "notification-archive-cleanup"), definitions.map { it.key }.toSet())
         assertTrue(definitions.all { it.defaultSchedule == "@daily" && it.scheduledByDefault })
         val channel = definitions.single { it.key == "check-for-updates" }.settings.single()
@@ -140,14 +177,13 @@ class NotificationTasksTest {
     @Test
     fun `channels select by publication date and find installed prerelease regardless of channel`() {
         val releases = mockk<GithubReleaseClient>()
-        val notifications = mockk<SystemNotifications>()
         val context = mockk<TaskContext>(relaxed = true)
         val installed = release("v2.0.0.RC1", 5, true)
         val stable = release("v1.0.0", 6)
         val preview = release("nightly", 7, true)
         every { releases.published() } returns listOf(preview, release("v99.0.0", 1), stable, installed)
         every { notifications.announceRelease(any(), installed) } returns true
-        val tasks = NotificationTasks(mockk(), mockk(), releases, notifications, "2.0.0.RC1")
+        val tasks = NotificationTasks(mockk(), mockk(), releases, notifications, marketplace, "2.0.0.RC1")
 
         every { context.setting<ReleaseChannel>("releaseChannel") } returns ReleaseChannel.stable
         tasks.checkForUpdates(context)
@@ -161,26 +197,27 @@ class NotificationTasksTest {
     @Test
     fun `missing installed release skips announcements instead of guessing a date`() {
         val releases = mockk<GithubReleaseClient>()
-        val notifications = mockk<SystemNotifications>()
         val context = mockk<TaskContext>(relaxed = true)
         every { context.setting<ReleaseChannel>("releaseChannel") } returns ReleaseChannel.preview
         every { releases.published() } returns listOf(release("v2.6.2", 1))
-        val result = NotificationTasks(mockk(), mockk(), releases, notifications, "2.7.0-preview")
+        val result = NotificationTasks(mockk(), mockk(), releases, notifications, marketplace, "2.7.0-preview")
             .checkForUpdates(context)
-        assertEquals("Skipped: no GitHub release found for installed version 2.7.0-preview", result.summary)
+        assertEquals(
+            "Gameyfin check skipped (no GitHub release found for installed version 2.7.0-preview). 0 plugin updates found",
+            result.summary
+        )
         verify(exactly = 0) { notifications.announceRelease(any(), any()) }
     }
 
     @Test
     fun `no stable releases still reconciles existing notification against installed release`() {
         val releases = mockk<GithubReleaseClient>()
-        val notifications = mockk<SystemNotifications>()
         val context = mockk<TaskContext>(relaxed = true)
         val installed = release("preview", 5, true)
         every { context.setting<ReleaseChannel>("releaseChannel") } returns ReleaseChannel.stable
         every { releases.published() } returns listOf(installed)
         every { notifications.announceRelease(installed, installed) } returns false
-        NotificationTasks(mockk(), mockk(), releases, notifications, "preview").checkForUpdates(context)
+        NotificationTasks(mockk(), mockk(), releases, notifications, marketplace, "preview").checkForUpdates(context)
         verify { notifications.announceRelease(installed, installed) }
     }
 

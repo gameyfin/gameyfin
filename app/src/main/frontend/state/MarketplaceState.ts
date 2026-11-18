@@ -46,9 +46,13 @@ export const marketplaceState = proxy<MarketplaceState>({
     }
 });
 
-/** Loads the marketplace data (only once unless forced) **/
-export async function initializeMarketplaceState(force = false) {
-    if (marketplaceState.isLoading || (marketplaceState.isLoaded && !force)) return;
+/** Loads marketplace data once for views that only need to initialize shared state. */
+export async function initializeMarketplaceState() {
+    if (!marketplaceState.isLoaded) await loadMarketplaceState();
+}
+
+export async function loadMarketplaceState(force = false) {
+    if (marketplaceState.isLoading) return;
 
     marketplaceState.isLoading = true;
     try {

@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.notifications
 
 import jakarta.annotation.PostConstruct
+import org.gameyfin.app.core.plugins.marketplace.PluginMarketplaceService
 import org.gameyfin.app.core.tasks.TaskAction
 import org.gameyfin.app.core.tasks.TaskDefinition
 import org.gameyfin.app.core.tasks.TaskRegistry
@@ -70,6 +71,7 @@ internal fun releaseTag(version: String): String = version.trim().removePrefix("
 class NotificationTasks(
     private val registry: TaskRegistry, private val store: NotificationStore,
     private val releases: GithubReleaseClient, private val notifications: SystemNotifications,
+    private val marketplace: PluginMarketplaceService,
     @param:Value($$"${spring.application.version:unknown}") private val installedVersion: String
 ) {
     @PostConstruct
@@ -96,8 +98,10 @@ class NotificationTasks(
         )
         registry.register(
             TaskDefinition(
-                key = "check-for-updates", name = "Check for updates",
-                description = "Checks GitHub for a newer Gameyfin release", defaultSchedule = "@daily",
+                key = "check-for-updates",
+                name = "Check for updates",
+                description = "Checks for Gameyfin releases and updates for installed plugins",
+                defaultSchedule = "@daily",
                 settings = listOf(
                     ConfigMetadata(
                         key = "releaseChannel",
@@ -113,13 +117,24 @@ class NotificationTasks(
     }
 
     fun checkForUpdates(context: TaskContext): TaskResult {
-        if (installedVersion.isBlank() || installedVersion == "unknown") return TaskResult("Skipped: installed version is unknown")
+        context.throwIfCancelled()
+        context.progress("Checking installed plugins for updates")
+        val plugins = marketplace.refresh()
+        context.throwIfCancelled()
+        val pluginUpdates = notifications.announcePluginUpdates(plugins)
+        val releaseSummary = checkForGameyfinUpdate(context)
+        val pluginSummary = if (pluginUpdates == 1) "1 plugin update found" else "$pluginUpdates plugin updates found"
+        return TaskResult("$releaseSummary. $pluginSummary")
+    }
+
+    private fun checkForGameyfinUpdate(context: TaskContext): String {
+        if (installedVersion.isBlank() || installedVersion == "unknown") return "Gameyfin check skipped (installed version is unknown)"
         context.progress("Checking GitHub releases")
         context.throwIfCancelled()
         val channel = context.setting("releaseChannel") ?: ReleaseChannel.stable
         val published = releases.published()
         val installed = published.find { releaseTag(it.version) == releaseTag(installedVersion) }
-            ?: return TaskResult("Skipped: no GitHub release found for installed version $installedVersion")
+            ?: return "Gameyfin check skipped (no GitHub release found for installed version $installedVersion)"
         val release = published.filter { channel == ReleaseChannel.preview || !it.prerelease }
             .maxByOrNull { it.publishedAt } ?: installed
         context.throwIfCancelled()
@@ -127,7 +142,7 @@ class NotificationTasks(
                 release,
                 installed
             )
-        ) TaskResult("New release: ${release.version}")
-        else TaskResult("No new release to announce")
+        ) "New Gameyfin release: ${release.version}"
+        else "No new Gameyfin release to announce"
     }
 }

@@ -91,3 +91,24 @@ databaseChangeLog:
             tableName: PLUGIN_RECOVERY_CANDIDATE
         - dropTable:
             tableName: PLUGIN_ONBOARDING_STATE
+
+  - changeSet:
+      id: 2.7.0-plugin-update-notifications
+      author: gameyfin
+      changes:
+        - sql:
+            sql: INSERT INTO NOTIFICATION_PRODUCER_STATE (ID) VALUES ('plugin-updates')
+        - sql:
+            sql: >
+              CREATE TABLE PLUGIN_UPDATE_NOTICE (
+                PLUGIN_ID VARCHAR(255) PRIMARY KEY,
+                VERSION TEXT NOT NULL,
+                NOTIFICATION_ID VARCHAR(36) NOT NULL
+              )
+      rollback:
+        - sql:
+            sql: DELETE FROM APP_NOTIFICATION WHERE SOURCE = 'core:plugin-update'
+        - dropTable:
+            tableName: PLUGIN_UPDATE_NOTICE
+        - sql:
+            sql: DELETE FROM NOTIFICATION_PRODUCER_STATE WHERE ID = 'plugin-updates'

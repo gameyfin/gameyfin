@@ -3,6 +3,8 @@ package org.gameyfin.app.notifications
 import liquibase.integration.spring.SpringLiquibase
 import org.gameyfin.app.config.SsoConfigurationChanged
 import org.gameyfin.app.core.notifications.*
+import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginDto
+import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginStatus
 import org.gameyfin.pluginapi.notifications.NotificationAudience
 import org.gameyfin.pluginapi.notifications.NotificationRecipients
 import org.gameyfin.pluginapi.notifications.NotificationRequest
@@ -85,6 +87,7 @@ class NotificationIntegrationTest {
     @BeforeEach
     fun reset() {
         jdbc.update("DELETE FROM APP_NOTIFICATION", emptyMap<String, Any>())
+        jdbc.update("DELETE FROM PLUGIN_UPDATE_NOTICE", emptyMap<String, Any>())
         jdbc.update("DELETE FROM USERS", emptyMap<String, Any>())
         jdbc.update(
             "UPDATE NOTIFICATION_PRODUCER_STATE SET LAST_VERSION = NULL, BOOT_ID = NULL",
@@ -342,6 +345,45 @@ class NotificationIntegrationTest {
         assertTrue(system.announceRelease(release("announced", 2), release("installed", 1)))
         assertEquals(1, store.count(admin, false))
         assertFalse(system.announceRelease(release("announced", 2), release("upgraded", 3)))
+        assertEquals(0, store.count(admin, false))
+    }
+
+    @Test
+    fun `plugin updates announce once per plugin and replace or resolve older notices`() {
+        val system = context.getBean(SystemNotifications::class.java)
+        val first = MarketplacePluginDto(
+            id = "first", marketplaceId = "community", marketplaceName = "Community", officialMarketplace = false,
+            name = "First", hasLogo = false, types = emptyList(), tags = emptyList(), releases = emptyList(),
+            installedVersion = "1.0.0", latestCompatibleVersion = "2.0.0",
+            installedFromMarketplaceId = "community", status = MarketplacePluginStatus.UPDATE_AVAILABLE
+        )
+        val alt = first.copy(marketplaceId = "official", officialMarketplace = true, latestCompatibleVersion = "9.0.0")
+        val second = first.copy(id = "second", name = "Second")
+        val third = first.copy(id = "third", installedVersion = null, status = MarketplacePluginStatus.NOT_INSTALLED)
+        val plugins = listOf(alt, first, second, third)
+        val firstTitle = "First update available (2.0.0)"
+        val secondTitle = "Second update available (2.0.0)"
+
+        assertEquals(2, system.announcePluginUpdates(plugins))
+        val notices = store.page(admin, false, 0, 10)
+        assertEquals(setOf(firstTitle, secondTitle), notices.map { it.title }.toSet())
+        assertTrue(notices.all { it.actions.single().url == "/administration/plugins#marketplace" })
+        assertEquals(0, store.count(user, false))
+
+        val secondId = notices.single { it.title == secondTitle }.id
+        store.mutate(admin, setOf(secondId), false)
+        store.mutate(admin, setOf(secondId), true)
+        assertEquals(2, system.announcePluginUpdates(plugins))
+        assertEquals(firstTitle, store.page(admin, false, 0, 10).single().title)
+
+        store.mutate(admin, null, false)
+        val newer = first.copy(latestCompatibleVersion = "3.0.0")
+        assertEquals(2, system.announcePluginUpdates(listOf(newer, second)))
+        assertEquals("First update available (3.0.0)", store.page(admin, false, 0, 10).single().title)
+        assertEquals(0, store.count(admin, true))
+
+        val upToDate = newer.copy(installedVersion = "3.0.0", status = MarketplacePluginStatus.INSTALLED)
+        assertEquals(1, system.announcePluginUpdates(listOf(upToDate, second)))
         assertEquals(0, store.count(admin, false))
     }
 
