@@ -8,7 +8,7 @@ import org.junit.jupiter.api.io.TempDir
 import org.springframework.core.io.DefaultResourceLoader
 import org.springframework.jdbc.datasource.DriverManagerDataSource
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.DockerClientFactory
 import java.math.BigDecimal
 import java.nio.file.Files
 import java.nio.file.Path
@@ -34,7 +34,6 @@ import kotlin.test.assertTrue
 /**
  * Creates backups of a database and restores them into databases of the same and of different types.
  */
-@Testcontainers(disabledWithoutDocker = true)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DatabaseBackupIntegrationTest {
 
@@ -51,16 +50,25 @@ class DatabaseBackupIntegrationTest {
     @TempDir
     lateinit var tempDir: Path
 
+    private val localPostgresUrl = System.getenv("GAMEYFIN_TEST_POSTGRES_URL")
+
     @BeforeAll
-    fun startPostgres() = postgres.start()
+    fun startPostgres() {
+        if (localPostgresUrl != null) return
+        Assumptions.assumeTrue(DockerClientFactory.instance().isDockerAvailable, "PostgreSQL or Docker required")
+        postgres.start()
+    }
 
     @AfterAll
-    fun stopPostgres() = postgres.stop()
+    fun stopPostgres() { if (localPostgresUrl == null && postgres.isRunning) postgres.stop() }
 
     private fun h2(name: String): DataSource =
         DriverManagerDataSource("jdbc:h2:file:${tempDir.resolve(name).toAbsolutePath()}", "sa", "")
 
-    private fun postgres(): DataSource = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
+    private fun postgres(): DataSource = localPostgresUrl?.let {
+        DriverManagerDataSource(it, System.getenv("GAMEYFIN_TEST_POSTGRES_USER") ?: "postgres",
+            System.getenv("GAMEYFIN_TEST_POSTGRES_PASSWORD") ?: "")
+    } ?: DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
 
     /** Runs the database migrations the same way as on application startup */
     private fun migrate(dataSource: DataSource, changelog: String = CHANGELOG) {
@@ -112,6 +120,10 @@ class DatabaseBackupIntegrationTest {
                 ps.setObject(2, LocalDateTime.of(2024, 5, 6, 7, 8, 10))
                 ps.setString(3, UNICODE_TEXT)
                 ps.executeUpdate()
+            }
+            if (!legacyMedia) c.createStatement().use { sql ->
+                sql.execute("INSERT INTO PLUGIN_ONBOARDING_STATE (ID, PENDING) VALUES (1, TRUE)")
+                sql.execute("INSERT INTO PLUGIN_RECOVERY_CANDIDATE (PLUGIN_ID, COMPLETED, LAST_ERROR) VALUES ('org.gameyfin.plugins.metadata.igdb', TRUE, NULL), ('org.gameyfin.plugins.download.direct', FALSE, 'offline')")
             }
             val mediaSql = if (legacyMedia) {
                 "INSERT INTO GAME_VIDEO_URLS (GAME_ID, VIDEO_URLS) VALUES (101, ?)"

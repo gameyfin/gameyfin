@@ -53,8 +53,6 @@ jobs:
             app/package.json
 
       - name: Run production build
-        env:
-          GAMEYFIN_KEYSTORE_PASSWORD: ${{ secrets.GAMEYFIN_KEYSTORE_PASSWORD }}
         run: ./gradlew clean build -Pvaadin.productionMode=true
 
       - name: Publish Test Report
@@ -69,7 +67,6 @@ jobs:
           name: build-outputs
           path: |
             app/build/libs/**
-            plugins/**/build/libs/**/*.jar
 
   docker-build:
     needs: build

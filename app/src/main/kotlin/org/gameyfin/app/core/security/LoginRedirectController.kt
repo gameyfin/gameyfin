@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.setup.SetupService
+import org.gameyfin.app.setup.PluginOnboardingService
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 
@@ -15,13 +16,14 @@ import org.springframework.web.bind.annotation.GetMapping
 @Controller
 class LoginRedirectController(
     private val config: ConfigService,
-    private val setupService: SetupService
+    private val setupService: SetupService,
+    private val onboarding: PluginOnboardingService
 ) {
 
     @GetMapping("/loginredirect")
     fun loginRedirect(request: HttpServletRequest, response: HttpServletResponse) {
         if (!setupService.isSetupCompleted()) {
-            LoginReturnUrl.save(request, null)
+            LoginReturnUrl.save(request, request.getParameter("continue"))
             response.sendRedirect("/setup")
             return
         }
@@ -42,7 +44,11 @@ class LoginRedirectController(
 
     @GetMapping("/login/success")
     fun loginSuccess(request: HttpServletRequest, response: HttpServletResponse) {
-        response.sendRedirect(LoginReturnUrl.consume(request))
+        if (isCurrentUserAdmin() && onboarding.isPending()) {
+            response.sendRedirect("/setup/plugins")
+        } else {
+            response.sendRedirect(LoginReturnUrl.consume(request))
+        }
     }
 }
 

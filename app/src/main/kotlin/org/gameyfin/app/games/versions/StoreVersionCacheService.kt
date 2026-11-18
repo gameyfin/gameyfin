@@ -19,7 +19,6 @@ class StoreVersionCacheService(
             ?: throw NoSuchElementException("Store link $linkId not found")
         val existing = versionRepository.findAllByLinkId(linkId)
             .associateBy { it.buildId to it.branch }
-            .toMutableMap()
         val retained = mutableSetOf<Pair<String, String>>()
 
         versions.distinctBy { it.buildId to it.branch }.forEach { version ->

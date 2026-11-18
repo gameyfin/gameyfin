@@ -19,7 +19,7 @@ class PluginManagerConfigTest {
     fun setup() {
         pluginManager = mockk(relaxed = true)
         pluginsLoadedIndicator = mockk(relaxed = true)
-        pluginManagerConfig = PluginManagerConfig(pluginManager, pluginsLoadedIndicator)
+        pluginManagerConfig = PluginManagerConfig(pluginManager, pluginsLoadedIndicator, mockk(relaxed = true))
     }
 
     @AfterEach

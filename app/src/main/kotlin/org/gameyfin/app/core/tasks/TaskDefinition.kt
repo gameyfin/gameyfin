@@ -41,6 +41,8 @@ class TaskDefinition(
     val cancellable: Boolean = true,
     /** Whether the task and its runs appear in the administration task overview */
     val visibleInOverview: Boolean = true,
+    /** Whether the task appears in the table above the run history */
+    val visibleInTaskList: Boolean = true,
     val settings: List<ConfigMetadata<*>> = emptyList(),
     val parameters: List<ConfigMetadata<*>> = emptyList(),
     val action: TaskAction

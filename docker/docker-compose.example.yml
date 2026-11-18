@@ -25,15 +25,10 @@ services:
       # JAVA_OPTS_OVERRIDE – *replaces* all built-in defaults entirely:
       # JAVA_OPTS_OVERRIDE: -Xmx512m -XX:+UseG1GC
     volumes:
-      - "./db:/opt/gameyfin/db"
-      - "./data:/opt/gameyfin/data"
-      - "./backups:/opt/gameyfin/backups"
-      - "./plugindata:/opt/gameyfin/plugindata"
-      - "./plugins-installed:/opt/gameyfin/plugins-installed"
-      - "./logs:/opt/gameyfin/logs"
+      - "./gameyfin:/opt/gameyfin"
       - <mount your library folder(s) here>
     ports:
       - "8080:8080"
-      # If you plan to use the included torrent plugin, uncomment the following lines:
+      # If you plan to use the torrent plugin, uncomment the following lines:
       # - "6969:6969"
       # - "6881:6881"

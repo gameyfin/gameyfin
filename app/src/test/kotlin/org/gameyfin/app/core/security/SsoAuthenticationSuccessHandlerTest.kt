@@ -360,7 +360,7 @@ class SsoAuthenticationSuccessHandlerTest {
     // ── Redirect behaviour ────────────────────────────────────────────────────
 
     @Test
-    fun `redirects to root when no continue parameter`() {
+    fun `redirects through shared login success when no continue parameter`() {
         val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
@@ -375,11 +375,11 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/") }
+        verify { response.sendRedirect("/login/success") }
     }
 
     @Test
-    fun `redirects to session destination after OIDC callback without continue parameter`() {
+    fun `retains session destination for shared login success after OIDC callback`() {
         val oidcUser = oidcUser()
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
@@ -394,8 +394,8 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/collection/games") }
-        assertEquals("/", LoginReturnUrl.consume(request))
+        verify { response.sendRedirect("/login/success") }
+        assertEquals("/collection/games", LoginReturnUrl.consume(request))
     }
 
     @Test
@@ -414,7 +414,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/") }
+        verify { response.sendRedirect("/login/success") }
     }
 
     // ── Unknown MatchExistingUsersBy ──────────────────────────────────────────
@@ -495,7 +495,7 @@ class SsoAuthenticationSuccessHandlerTest {
     }
 
     @Test
-    fun `redirects to root when continue parameter is blank`() {
+    fun `redirects through shared login success when continue parameter is blank`() {
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
         every { authentication.principal } returns oidcUser()
@@ -507,6 +507,6 @@ class SsoAuthenticationSuccessHandlerTest {
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { response.sendRedirect("/") }
+        verify { response.sendRedirect("/login/success") }
     }
 }

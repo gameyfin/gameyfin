@@ -33,11 +33,11 @@ case "$(uname -m)" in
 esac
 
 echo "▶ Starting application for AOT training …"
-java -XX:AOTCacheOutput=app.aot \
+java -XX:AOTCacheOutput=/usr/lib/gameyfin/app.aot \
      --enable-native-access=ALL-UNNAMED \
      -XX:+UseCompactObjectHeaders \
      $ARCH_OPTS \
-     -jar application.jar --spring.profiles.active=aot-training &
+     -jar /usr/lib/gameyfin/application.jar --spring.profiles.active=aot-training &
 APP_PID=$!
 
 # ── Wait for readiness ────────────────────────────────────────────────────────
@@ -117,8 +117,8 @@ else
 fi
 
 # ── Verify the AOT cache was produced ─────────────────────────────────────────
-if [[ -s app.aot ]]; then
-    echo "✓ AOT cache written ($(du -h app.aot | cut -f1))."
+if [[ -s /usr/lib/gameyfin/app.aot ]]; then
+    echo "✓ AOT cache written ($(du -h /usr/lib/gameyfin/app.aot | cut -f1))."
 else
     echo "✗ AOT cache file is missing or empty!"
     exit 1

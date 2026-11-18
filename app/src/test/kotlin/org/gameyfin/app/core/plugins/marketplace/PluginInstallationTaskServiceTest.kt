@@ -54,7 +54,7 @@ class PluginInstallationTaskServiceTest {
         }
         every { marketplace.install("market", "plugin", "1.0") } answers { work() }
         every { marketplace.update("plugin", "1.0") } answers { work() }
-        every { marketplace.uninstall("plugin") } answers { work() }
+        every { marketplace.uninstall("plugin", false) } answers { work() }
 
         try {
             val run = start(operation)
@@ -82,7 +82,7 @@ class PluginInstallationTaskServiceTest {
     fun `operation errors are exposed as failed task runs`(operation: Operation) {
         every { marketplace.install(any(), any(), any()) } throws IllegalStateException("Operation failed")
         every { marketplace.update(any(), any()) } throws IllegalStateException("Operation failed")
-        every { marketplace.uninstall(any()) } throws IllegalStateException("Operation failed")
+        every { marketplace.uninstall(any(), false) } throws IllegalStateException("Operation failed")
 
         val run = start(operation)
         awaitFinished(run.id)
@@ -104,9 +104,9 @@ class PluginInstallationTaskServiceTest {
 
     @Test
     fun `uninstallation summary includes fallback version and state`() {
-        every { marketplace.uninstall(any()) } returns plugin(PluginState.STARTED)
+        every { marketplace.uninstall("plugin", true) } returns plugin(PluginState.STARTED)
 
-        val run = start(Operation.UNINSTALL)
+        val run = service.uninstall("plugin", true)
         awaitFinished(run.id)
 
         val summary = assertNotNull(entries.getValue(run.id).summary)
@@ -123,7 +123,7 @@ class PluginInstallationTaskServiceTest {
     private fun start(operation: Operation): TaskRunDto = when (operation) {
         Operation.INSTALL -> service.install("market", "plugin", "1.0")
         Operation.UPDATE -> service.update("plugin", "1.0")
-        Operation.UNINSTALL -> service.uninstall("plugin")
+        Operation.UNINSTALL -> service.uninstall("plugin", false)
     }
 
     private fun awaitFinished(id: String) {

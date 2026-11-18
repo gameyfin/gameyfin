@@ -23,8 +23,6 @@ updates:
   - package-ecosystem: "gradle"
     directories:
       - "/plugin-api"
-      - "/plugins"
-      - "/plugins/*"
     schedule:
       interval: "monthly"
     groups:

@@ -35,16 +35,18 @@ selection or add extras the store does not list. Game details show the edition, 
 #### Game Store Provider plugins
 
 Stores are provided by plugins in the new **Game Store Provider** category, listed between the metadata and download
-provider categories. There is one plugin per data source:
+provider categories. Install plugins individually from the marketplace in Administration → Plugins.
+Images contain no plugin JARs. Initial administrators may choose plugins after login or finish with none.
+There is one plugin per data source:
 
 | Plugin | Store | Provides |
 |---|---|---|
-| `plugins/steamstore` (Steam Store) | Steam | Search, DLC |
-| `plugins/steamcmd` (Steam Builds, unofficial) | Steam | Versions (branch builds) |
-| `plugins/gog` (GOG Store) | GOG | Search, versions, DLC |
-| `plugins/gogdb` (GOG Builds, unofficial) | GOG | Versions, edition names |
-| `plugins/epic` (Epic Games Store, egdata.app) | Epic | Search, versions, DLC |
-| `plugins/itch` (itch.io, public pages) | itch.io | Search, versions (undated upload names, no DLC or editions) |
+| [`plugin-steamstore`](https://github.com/gameyfin/plugin-steamstore) (Steam Store) | Steam | Search, DLC |
+| [`plugin-steamcmd`](https://github.com/gameyfin/plugin-steamcmd) (Steam Builds, unofficial) | Steam | Versions (branch builds) |
+| [`plugin-gog`](https://github.com/gameyfin/plugin-gog) (GOG Store) | GOG | Search, versions, DLC |
+| [`plugin-gogdb`](https://github.com/gameyfin/plugin-gogdb) (GOG Builds, unofficial) | GOG | Versions, edition names |
+| [`plugin-epic`](https://github.com/gameyfin/plugin-epic) (Epic Games Store, egdata.app) | Epic | Search, versions, DLC |
+| [`plugin-itch`](https://github.com/gameyfin/plugin-itch) (itch.io, public pages) | itch.io | Search, versions (undated upload names, no DLC or editions) |
 
 ![Game Store Provider plugins](assets/screenshots/editions-dlc/plugins-game-store-provider.png)
 
@@ -65,9 +67,11 @@ plugin API. It becomes another source for its store and is combined with the oth
 your source provides: `search`, `fetchVersions`, `fetchDlc` and `suggestEditions` all have empty defaults, and a
 plugin that cannot search should set `supportsSearch = false`.
 
-The Steam builds, GOGDB, Epic and itch.io plugins use unofficial services or scrape public pages. `.github/workflows/store-plugins-live-check.yml`
-runs a small live test for them every week. To run it locally, set `GAMEYFIN_LIVE_TESTS=true` and run the tests of
-`:plugins:steamcmd`, `:plugins:gogdb`, `:plugins:epic` and `:plugins:itch`.
+The Steam builds, GOGDB, Epic and itch.io plugins use unofficial services or scrape public pages. Their
+repositories run weekly live checks. In a plugin checkout, run `GAMEYFIN_LIVE_TESTS=true ./gradlew cleanTest test`.
+
+See [plugin development and rollout](docs/plugin-distribution.md) and
+[single-mount container migration](docs/container-storage.md).
 
 #### Screenshots
 

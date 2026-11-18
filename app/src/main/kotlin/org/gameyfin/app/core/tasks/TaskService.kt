@@ -107,7 +107,8 @@ class TaskService(
             settings = settingsService.getRaw(definition),
             parametersMetadata = definition.parameters.map { TaskSettingsService.toDto(it) },
             lastRun = lastRun,
-            running = runService.isRunning(definition.key)
+            running = runService.isRunning(definition.key),
+            visibleInTaskList = definition.visibleInTaskList
         )
     }
 }

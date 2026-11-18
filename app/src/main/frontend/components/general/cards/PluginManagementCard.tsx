@@ -1,5 +1,5 @@
 import Popup from "Frontend/components/general/Popup";
-import {Button, Card, Chip, Spinner, toast, Tooltip, useOverlayState} from "@heroui/react";
+import {Button, Card, Checkbox, Chip, Spinner, toast, Tooltip, useOverlayState} from "@heroui/react";
 import {
     ArrowCircleUpIcon,
     CheckCircleIcon,
@@ -21,7 +21,7 @@ import {
     XCircleIcon
 } from "@phosphor-icons/react";
 import PluginState from "Frontend/generated/org/pf4j/PluginState";
-import React, {ReactNode} from "react";
+import React, {ReactNode, useState} from "react";
 import PluginDetailsModal from "Frontend/components/general/modals/PluginDetailsModal";
 import PluginLogo from "Frontend/components/general/plugin/PluginLogo";
 import PluginTrustLevel from "Frontend/generated/org/gameyfin/app/core/plugins/management/PluginTrustLevel";
@@ -53,11 +53,13 @@ const CHIP_CLASSES = {
 export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     const pluginDetailsModal = useOverlayState();
     const uninstallModal = useOverlayState();
+    const [keepConfiguration, setKeepConfiguration] = useState(false);
     const marketplace = useSnapshot(marketplaceState);
 
     const availableUpdate = marketplace.updates[plugin.id];
     const isPending = marketplace.pending[plugin.id] ?? false;
     const isMarketplacePlugin = plugin.origin === PluginOrigin.MARKETPLACE;
+    const hasConfigOptions = (plugin.configMetadata?.length ?? 0) > 0;
     const sourceMarketplace = marketplace.marketplaces.find(m => m.id === plugin.sourceMarketplaceId);
 
     async function update() {
@@ -74,7 +76,7 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
 
     async function uninstall() {
         try {
-            await uninstallPlugin(plugin.id);
+            await uninstallPlugin(plugin.id, hasConfigOptions && keepConfiguration);
             uninstallModal.close();
             toast.info("Plugin uninstallation started", {
                 description: "Progress is shown in the active tasks popover."
@@ -267,7 +269,10 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                                 <Button isIconOnly
                                         variant="ghost"
                                         aria-label="Uninstall plugin"
-                                        onPress={uninstallModal.open}
+                                        onPress={() => {
+                                            setKeepConfiguration(false);
+                                            uninstallModal.open();
+                                        }}
                                         isDisabled={isPending}>
                                     <TrashIcon/>
                                 </Button>
@@ -368,12 +373,18 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
                           title={`Uninstall ${plugin.name}`}
                           confirmLabel="Uninstall"
                           isPending={isPending}
-                          onConfirm={uninstall}>
+                          onConfirm={uninstall}
+                          footerStart={hasConfigOptions &&
+                              <Checkbox isSelected={keepConfiguration}
+                                        onChange={setKeepConfiguration}
+                                        isDisabled={isPending}>
+                                  <Checkbox.Content>
+                                      <Checkbox.Control><Checkbox.Indicator/></Checkbox.Control>
+                                      Keep plugin configuration
+                                  </Checkbox.Content>
+                              </Checkbox>
+                          }>
                 <p>Do you really want to uninstall <b>{plugin.name}</b> (version {plugin.version})?</p>
-                <p className="text-muted">
-                    If a bundled version of this plugin exists, it will be used instead.
-                    The configuration of the plugin is kept.
-                </p>
             </ConfirmModal>
         </>
 

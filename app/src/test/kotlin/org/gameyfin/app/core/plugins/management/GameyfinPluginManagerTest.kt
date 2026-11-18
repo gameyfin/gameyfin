@@ -910,6 +910,23 @@ class GameyfinPluginManagerTest {
     }
 
     @Test
+    fun `default storage is plugins and does not create the legacy directory`() {
+        assertEquals("plugins", GameyfinPluginManager.DEFAULT_INSTALLED_PLUGINS_DIR)
+        val legacy = Path.of("plugins-installed")
+        val existed = java.nio.file.Files.exists(legacy)
+        pluginManager = createManager()
+        assertEquals(existed, java.nio.file.Files.exists(legacy))
+        assertEquals(java.nio.file.Files.isDirectory(legacy), pluginManager.pluginsRoots.contains(legacy))
+    }
+
+    @Test
+    fun `legacy marketplace paths remain manageable for uninstall and update`() {
+        pluginManager = createManager()
+        assertTrue(pluginManager.isInInstalledPluginsRoot(Path.of("plugins-installed/old.jar")))
+        assertFalse(pluginManager.isInInstalledPluginsRoot(Path.of("plugins-installed-other/old.jar")))
+    }
+
+    @Test
     fun `constructor should normalize installed plugins root`() {
         pluginManager = createManager(installedPluginsDirectory = tempPluginsDir.resolve("a/../installed"))
 

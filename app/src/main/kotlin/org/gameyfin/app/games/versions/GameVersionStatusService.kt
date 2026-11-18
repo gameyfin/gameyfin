@@ -218,7 +218,7 @@ class GameVersionStatusService(
         val infoValues = infoFile?.let { file ->
             val info = objectMapper.readTree(Files.readString(file))
             sequenceOf("buildId", "build_id", "version", "version_name")
-                .mapNotNull { key -> info.path(key).takeIf { !it.isMissingNode && !it.isNull }?.asText()?.trim() }
+                .mapNotNull { key -> info.path(key).takeIf { !it.isMissingNode && !it.isNull }?.asString()?.trim() }
                 .filter { it.isNotEmpty() }
                 .toList()
         }.orEmpty()
@@ -265,7 +265,8 @@ class GameVersionStatusService(
         private const val MAX_ANCESTORS = 8
         private val ACF_APP_ID = Regex("\"appid\"\\s+\"(\\d+)\"")
         private val GOG_INSTALLER_NAME = Regex("^(setup|patch)_.+\\.(exe|bin)$", RegexOption.IGNORE_CASE)
-        private val GOG_INSTALLER_VERSION = Regex("_v?(\\d+(?:\\.\\d+)+[a-z]?)(?=_|\\.(?:exe|bin)$|-\\d+\\.)", RegexOption.IGNORE_CASE)
+        private val GOG_INSTALLER_VERSION =
+            Regex("_v?(\\d+(?:\\.\\d+)+[a-z]?)(?=_|\\.(?:exe|bin)$|-\\d+\\.)", RegexOption.IGNORE_CASE)
         private val ACF_BUILD_ID = Regex("\"buildid\"\\s+\"(\\d+)\"")
     }
 }

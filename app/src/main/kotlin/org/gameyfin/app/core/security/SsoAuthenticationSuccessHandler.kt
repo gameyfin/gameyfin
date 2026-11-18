@@ -86,8 +86,8 @@ class SsoAuthenticationSuccessHandler(
             SecurityContextHolder.getContext().authentication = newAuth
         }
 
-        // Consume the same session destination used after local login.
-        response.sendRedirect(LoginReturnUrl.consume(request))
+        // Share the onboarding and validated-destination decision with local login.
+        response.sendRedirect("/login/success")
         return
     }
 }

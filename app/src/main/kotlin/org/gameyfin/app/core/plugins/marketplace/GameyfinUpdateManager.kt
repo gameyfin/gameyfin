@@ -1,9 +1,11 @@
 package org.gameyfin.app.core.plugins.marketplace
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.core.plugins.management.PluginManagementRepository
 import org.gameyfin.app.core.plugins.management.PluginTrustLevel
+import org.gameyfin.app.core.plugins.management.PluginsLoadedIndicator
 import org.pf4j.PluginRuntimeException
 import org.pf4j.PluginState
 import org.pf4j.update.FileVerifier
@@ -32,8 +34,8 @@ import kotlin.io.path.isDirectory
  * PF4J [UpdateManager] for the Gameyfin plugin marketplace.
  *
  * Differences to the default implementation:
- * - Plugins are installed into a dedicated directory ([GameyfinPluginManager.installedPluginsRoot]),
- *   bundled/manually added plugins are never modified or deleted
+ * - Plugins are installed into the shared plugins directory ([GameyfinPluginManager.installedPluginsRoot]);
+ *   existing legacy marketplace directories remain manageable
  * - Compatibility checks use the same logic as the plugin manager (see [GameyfinPluginManager.isCompatible])
  * - Downloads are verified (mandatory SHA-512 checksum, plugin ID/version/compatibility from the JAR manifest)
  * - A failed update is rolled back to the previously loaded version
@@ -44,6 +46,9 @@ class GameyfinUpdateManager(
     private val pluginManager: GameyfinPluginManager,
     private val httpClient: MarketplaceHttpClient,
     private val pluginManagementRepository: PluginManagementRepository,
+    private val pluginConfigRepository: PluginConfigRepository,
+    private val recoveryRepository: PluginRecoveryRepository,
+    private val pluginsLoaded: PluginsLoadedIndicator,
     @Value($$"${gameyfin.plugins.marketplace.cache-ttl:1h}")
     private val cacheTtl: Duration = Duration.ofHours(1),
 ) : UpdateManager(pluginManager, null as Path?) {
@@ -194,6 +199,7 @@ class GameyfinUpdateManager(
      */
     fun installPlugin(marketplaceId: String, pluginId: String, version: String?): PluginState {
         return lock.withLock {
+            check(pluginsLoaded.isReady()) { "Local plugin discovery has not finished yet" }
             val repository = getMarketplaceRepository(marketplaceId)
                 ?: throw IllegalArgumentException("Marketplace '$marketplaceId' not found")
             val pluginInfo = repository.getGameyfinPlugins()[pluginId]
@@ -211,7 +217,9 @@ class GameyfinUpdateManager(
 
             val downloaded = download(repository, pluginId, release)
             try {
-                replacePlugin(pluginId, release, downloaded, marketplaceId)
+                val state = replacePlugin(pluginId, release, downloaded, marketplaceId)
+                completeRecovery(pluginId)
+                state
             } finally {
                 Files.deleteIfExists(downloaded)
             }
@@ -224,8 +232,9 @@ class GameyfinUpdateManager(
      *
      * @return the state of the local version of the plugin or null if there is none
      */
-    fun uninstall(pluginId: String): PluginState? {
+    fun uninstall(pluginId: String, keepConfiguration: Boolean = false): PluginState? {
         return lock.withLock {
+            check(pluginsLoaded.isReady()) { "Local plugin discovery has not finished yet" }
             val pluginWrapper = pluginManager.getPlugin(pluginId)
                 ?: throw IllegalArgumentException("Plugin '$pluginId' is not installed")
 
@@ -238,11 +247,16 @@ class GameyfinUpdateManager(
                         (pluginWrapper.failedException?.message?.let { ": $it" } ?: "")
             }
 
+            if (!keepConfiguration) {
+                pluginConfigRepository.deleteAllByPluginId(pluginId)
+            }
+
             pluginManagementRepository.findByIdOrNull(pluginId)?.let {
                 it.sourceMarketplaceId = null
                 pluginManagementRepository.save(it)
             }
 
+            completeRecovery(pluginId)
             val localPath = pluginManager.findLocalPluginPath(pluginId) ?: return@withLock null
             log.info { "Falling back to local version of plugin '$pluginId' from '$localPath'" }
             try {
@@ -252,6 +266,45 @@ class GameyfinUpdateManager(
                 log.error(e) { "Failed to load local version of plugin '$pluginId' from '$localPath'" }
                 null
             }
+        }
+    }
+
+    /** Candidate state, artifact check and install share the normal install/uninstall lock. */
+    fun recoverMissingPlugin(pluginId: String) = lock.withLock {
+        val candidate = recoveryRepository.findByIdOrNull(pluginId) ?: return@withLock
+        if (candidate.completed) return@withLock
+        if (pluginManager.hasPluginArtifact(pluginId)) {
+            completeRecovery(pluginId)
+            return@withLock
+        }
+        try {
+            val repository = getMarketplaceRepository(PluginMarketplaceService.OFFICIAL_MARKETPLACE_ID)
+                ?: error("Official marketplace is unavailable or disabled")
+            val info = repository.getGameyfinPlugins()[pluginId]
+                ?: error("Plugin '$pluginId' is unavailable in the official marketplace")
+            val release = findRelease(info, null)
+            val target = pluginManager.installedPluginsRoot.resolve("${sanitize(pluginId)}-${sanitize(release.version)}.jar")
+            check(!Files.exists(target)) { "An existing plugin artifact blocks recovery: $target" }
+            val downloaded = download(repository, pluginId, release)
+            try {
+                pluginManager.requireOfficialSignature(downloaded)
+                replacePlugin(pluginId, release, downloaded, repository.id, allowReplacement = false)
+                completeRecovery(pluginId)
+            } finally {
+                Files.deleteIfExists(downloaded)
+            }
+        } catch (e: Exception) {
+            candidate.lastError = (e.message ?: e.javaClass.simpleName).take(4000)
+            recoveryRepository.save(candidate)
+            throw e
+        }
+    }
+
+    private fun completeRecovery(pluginId: String) {
+        recoveryRepository.findByIdOrNull(pluginId)?.let {
+            it.completed = true
+            it.lastError = null
+            recoveryRepository.save(it)
         }
     }
 
@@ -305,7 +358,8 @@ class GameyfinUpdateManager(
         pluginId: String,
         release: PluginRelease,
         downloaded: Path,
-        marketplaceId: String
+        marketplaceId: String,
+        allowReplacement: Boolean = true
     ): PluginState {
         val installedRoot = Files.createDirectories(pluginManager.installedPluginsRoot)
         val target = installedRoot.resolve("${sanitize(pluginId)}-${sanitize(release.version)}.jar")
@@ -313,6 +367,7 @@ class GameyfinUpdateManager(
         val previous = pluginManager.getPlugin(pluginId)
         val previousPath = previous?.pluginPath
 
+        check(allowReplacement || previous == null) { "Recovery cannot replace an existing installation" }
         if (previous != null) {
             pluginManager.stopPlugin(pluginId)
             if (!pluginManager.unloadPlugin(pluginId)) {
@@ -322,13 +377,16 @@ class GameyfinUpdateManager(
         }
 
         var loadedId: String? = null
+        var installedNewFile = false
         try {
-            move(downloaded, target)
+            if (allowReplacement) move(downloaded, target)
+            else Files.move(downloaded, target)
+            installedNewFile = true
             loadedId = pluginManager.loadPluginOrThrow(target)
             check(loadedId == pluginId) { "Downloaded plugin has ID '$loadedId' instead of '$pluginId'" }
         } catch (e: Exception) {
             log.error { "Failed to install plugin '$pluginId' version ${release.version}: ${e.message}" }
-            rollback(pluginId, loadedId, target, previousPath)
+            rollback(pluginId, loadedId, target, previousPath, installedNewFile)
             throw e
         }
 
@@ -356,13 +414,13 @@ class GameyfinUpdateManager(
         return state
     }
 
-    private fun rollback(pluginId: String, loadedId: String?, target: Path, previousPath: Path?) {
+    private fun rollback(pluginId: String, loadedId: String?, target: Path, previousPath: Path?, removeTarget: Boolean) {
         try {
             // The new file may have been loaded under a different ID than expected
             setOfNotNull(pluginId, loadedId).forEach {
                 if (pluginManager.getPlugin(it) != null) pluginManager.unloadPlugin(it)
             }
-            Files.deleteIfExists(target)
+            if (removeTarget) Files.deleteIfExists(target)
             if (previousPath != null && previousPath.exists()) {
                 pluginManager.loadPluginOrThrow(previousPath)
                 startIfEnabled(pluginId)

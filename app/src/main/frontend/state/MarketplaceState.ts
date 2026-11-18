@@ -107,8 +107,8 @@ export async function updatePlugin(pluginId: string, version?: string) {
     return withPending(pluginId, () => PluginMarketplaceEndpoint.update(pluginId, version));
 }
 
-export async function uninstallPlugin(pluginId: string) {
-    return withPending(pluginId, () => PluginMarketplaceEndpoint.uninstall(pluginId));
+export async function uninstallPlugin(pluginId: string, keepConfiguration: boolean) {
+    return withPending(pluginId, () => PluginMarketplaceEndpoint.uninstall(pluginId, keepConfiguration));
 }
 
 export async function addMarketplace(marketplace: PluginMarketplaceCreateDto) {

@@ -3,13 +3,15 @@ package org.gameyfin.app.core.plugins.management
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 
 @Configuration
 class PluginManagerConfig(
     private val pluginManager: GameyfinPluginManager,
-    private val pluginsLoadedIndicator: PluginsLoadedIndicator
+    private val pluginsLoadedIndicator: PluginsLoadedIndicator,
+    private val events: ApplicationEventPublisher
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -20,5 +22,7 @@ class PluginManagerConfig(
         pluginManager.startPlugins()
         log.info { "Loaded plugins: ${pluginManager.plugins.map { it.pluginId }}" }
         pluginsLoadedIndicator.markReady()
+        events.publishEvent(PluginsDiscoveredEvent())
     }
 }
+class PluginsDiscoveredEvent

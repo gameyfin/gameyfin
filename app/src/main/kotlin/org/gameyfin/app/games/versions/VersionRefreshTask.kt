@@ -21,7 +21,7 @@ class VersionRefreshTask(
         private val log = KotlinLogging.logger {}
 
         const val KEY = "game-version-refresh"
-        private const val DEFAULT_SCHEDULE = "0 0 4 * * *"
+        private const val DEFAULT_SCHEDULE = "@daily"
     }
 
     @PostConstruct
@@ -71,9 +71,7 @@ class VersionRefreshTask(
 
         context.throwIfCancelled()
         context.progress("Version refresh complete", links.size, links.size)
-        if (failed > 0) {
-            throw IllegalStateException("Version refresh updated $updated of ${links.size} links; $failed failed")
-        }
+        check(failed <= 0) { "Version refresh updated $updated of ${links.size} links; $failed failed" }
         val skippedNote = if (skipped > 0) " ($skipped skipped because their store plugin is not enabled)" else ""
         return TaskResult("Refreshed versions for $updated store link(s)$skippedNote")
     }
