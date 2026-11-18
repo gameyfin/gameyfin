@@ -22,6 +22,9 @@ app/dist/
 !app/build/libs/
 !app/build/libs/app.jar
 
+# The Dockerfile's wildcard must select only the executable Spring Boot JAR
+app/build/libs/*-plain.jar
+
 # Only keep plugin jars in build/libs
 plugins/**
 !plugins/*/build/
