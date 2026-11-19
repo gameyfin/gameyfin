@@ -354,10 +354,9 @@ class GameyfinPluginManager(
     }
 
     fun getExtensionTypes(pluginId: String): List<String> {
-        return getExtensionClasses(pluginId)
-            .flatMap { it.interfaces.toList() }
-            .filterIsInstance<Class<ExtensionPoint>>()
+        return getExtensionTypeClasses(pluginId)
             .map { it.simpleName }
+            .distinct()
     }
 
     fun getPluginsForExtension(extensionClass: KClass<out ExtensionPoint>): List<PluginWrapper> {
