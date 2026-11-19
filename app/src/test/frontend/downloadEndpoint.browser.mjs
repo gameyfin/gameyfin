@@ -4,7 +4,8 @@ import {fileURLToPath} from "node:url";
 import {resolve} from "node:path";
 import {createServer} from "vite";
 
-const {chromium} = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
+const playwright = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
+const engine = playwright[process.env.BROWSER_ENGINE || "chromium"];
 const app = fileURLToPath(new URL("../../../", import.meta.url));
 const fixture = await mkdtemp(resolve(app, "download-test-"));
 const bytes = Buffer.from("Native file download contents");
@@ -12,13 +13,17 @@ const link = "magnet:?xt=urn:btih:1234&dn=Game%20Title&tr=http%3A%2F%2Ftracker.t
 let server;
 let browser;
 try {
-    await writeFile(resolve(fixture, "index.html"), '<script type="module" src="./fixture.ts"></script>');
+    await writeFile(resolve(fixture, "index.html"), `
+        <script type="module" src="./fixture.ts"></script>
+        <button id="file">File</button>
+    `);
     await writeFile(resolve(fixture, "fixture.ts"), `
         import {downloadGame} from "Frontend/endpoints/DownloadEndpoint";
         window.opened = [];
         window.toasts = [];
         window.open = (...args) => window.opened.push(args);
         window.downloadGame = downloadGame;
+        document.querySelector("#file").onclick = () => downloadGame(window.gameId, "example.Provider");
     `);
     await writeFile(resolve(fixture, "toast.ts"), `
         export const toast = {
@@ -47,7 +52,7 @@ try {
                 } else {
                     response.setHeader("Content-Type", "application/octet-stream");
                     response.setHeader("Content-Disposition", 'attachment; filename="game.bin"');
-                    response.setHeader("X-Frame-Options", "DENY");
+                    response.setHeader("X-Frame-Options", "SAMEORIGIN");
                     response.write(bytes.subarray(0, 5));
                     setTimeout(() => response.end(bytes.subarray(5)), 100);
                 }
@@ -55,7 +60,7 @@ try {
         }}],
     });
     await server.listen();
-    browser = await chromium.launch({headless: true, executablePath: process.env.BROWSER_EXECUTABLE});
+    browser = await engine.launch({headless: true, executablePath: process.env.BROWSER_EXECUTABLE});
     const page = await browser.newPage({acceptDownloads: true});
     await page.goto(`${server.resolvedUrls.local[0]}${fixture.split("/").pop()}/index.html`);
     await page.waitForFunction(() => typeof window.downloadGame === "function");
@@ -63,9 +68,12 @@ try {
     // The same provider can produce a file or a link; only its response controls the notice.
     const downloads = [];
     for (const id of [1, 3]) {
-        const pending = page.waitForEvent("download");
-        await page.evaluate(id => window.downloadGame(id, "example.Provider"), id);
-        downloads.push(await pending);
+        await page.evaluate(id => window.gameId = id, id);
+        const [download] = await Promise.all([
+            page.waitForEvent("download", {timeout: 5000}),
+            page.locator("#file").click(),
+        ]);
+        downloads.push(download);
     }
     for (const download of downloads) {
         assert.equal(download.suggestedFilename(), "game.bin");

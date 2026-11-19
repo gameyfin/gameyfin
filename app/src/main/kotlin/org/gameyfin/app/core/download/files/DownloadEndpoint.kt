@@ -9,6 +9,7 @@ import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.GameService
 import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.LinkDownload
+import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.context.request.async.DeferredResult
@@ -40,52 +41,7 @@ class DownloadEndpoint(
 
         downloadExecutor.execute {
             try {
-                val result =
-                    GameDownloadLifecycle.prepare(gameId, request, { gameService.getById(gameId) }) { game, lifetime ->
-                        val sessionId = request.session.id
-                        val remoteIp = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
-
-                        val baseFilename = game.title?.replace("[\\\\/:*?\"<>|\r\n]".toRegex(), "")
-                            ?.ifBlank { "download" } ?: "download"
-
-                        fun disposition(extension: String?) = createContentDispositionHeader(
-                            baseFilename + (extension?.let { ".$it" } ?: "")
-                        )
-
-                        val onStart = { lifetime.whileActive { gameService.incrementDownloadCount(game) }; }
-                        val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
-                            downloadService.processDownload(input, output, game, username, sessionId, remoteIp)
-                        }
-                        val resource = downloadService.getRangeDownload(game.metadata.path, provider)
-                            ?.also { lifetime.own(it) }
-                        val result = if (resource != null) {
-                            DownloadResponses.range(
-                                resource,
-                                request,
-                                disposition(resource.metadata.fileExtension),
-                                onStart,
-                                transfer
-                            )
-                        } else if (request.method == "HEAD") {
-                            val metadata = downloadService.describeDownload(game.metadata.path, provider)
-                            DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
-                        } else when (val download = downloadService.getDownload(game.metadata.path, provider)) {
-                            is FileDownload -> DownloadResponses.file(
-                                download.also { lifetime.own(it.data) },
-                                request,
-                                disposition(download.fileExtension),
-                                onStart,
-                                transfer
-                            )
-
-                            is LinkDownload -> {
-                                val response = DownloadResponses.link(download, request)
-                                onStart()
-                                response
-                            }
-                        }
-                        result
-                    }
+                val result = prepareDownload(gameId, provider, request, username)
                 deferredResult.onCompletion { (result.body as? java.io.Closeable)?.close() }
                 if (!deferredResult.setResult(result)) (result.body as? java.io.Closeable)?.close()
             } catch (e: Exception) {
@@ -95,6 +51,63 @@ class DownloadEndpoint(
 
         return deferredResult
     }
+
+    private fun prepareDownload(
+        gameId: Long,
+        provider: String,
+        request: HttpServletRequest,
+        username: String?
+    ): ResponseEntity<StreamingResponseBody> =
+        GameDownloadLifecycle.prepare(gameId, request, { gameService.getById(gameId) }) { game, lifetime ->
+            val sessionId = request.session.id
+            val remoteIp = request.getRemoteIp(LookupPolicy.IPV4_PREFERRED)
+
+            val baseFilename = game.title?.replace("[\\\\/:*?\"<>|\r\n]".toRegex(), "")
+                ?.ifBlank { "download" } ?: "download"
+
+            fun disposition(extension: String?) = createContentDispositionHeader(
+                baseFilename + (extension?.let { ".$it" } ?: "")
+            )
+
+            val onStart = { lifetime.whileActive { gameService.incrementDownloadCount(game) }; }
+            val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
+                downloadService.processDownload(input, output, game, username, sessionId, remoteIp)
+            }
+            val resource = downloadService.getRangeDownload(game.metadata.path, provider)
+                ?.also { lifetime.own(it) }
+            val result = if (resource != null) {
+                DownloadResponses.range(
+                    resource,
+                    request,
+                    disposition(resource.metadata.fileExtension),
+                    onStart,
+                    transfer
+                )
+            } else if (request.method == "HEAD") {
+                val metadata = downloadService.describeDownload(game.metadata.path, provider)
+                DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
+            } else when (val download = downloadService.getDownload(game.metadata.path, provider)) {
+                is FileDownload -> DownloadResponses.file(
+                    download.also { lifetime.own(it.data) },
+                    request,
+                    disposition(download.fileExtension),
+                    onStart,
+                    transfer
+                )
+
+                is LinkDownload -> {
+                    val response = DownloadResponses.link(download, request)
+                    onStart()
+                    response
+                }
+            }
+            if (request.getParameter("client") == "browser" && result.body != null &&
+                result.headers.containsHeader(HttpHeaders.CONTENT_DISPOSITION)
+            ) {
+                ResponseEntity.status(result.statusCode).headers(result.headers)
+                    .header("X-Frame-Options", "SAMEORIGIN").body(result.body)
+            } else result
+        }
 
     /**
      * Converts a string to a safe ASCII fallback filename by replacing non-ASCII characters.

@@ -320,7 +320,7 @@ class GameyfinPluginManagerTest {
     }
 
     @Test
-    fun `getExtensionTypes should return extension type names`() {
+    fun `getExtensionTypes should return each extension type name once`() {
         System.setProperty("pf4j.pluginsDir", tempPluginsDir.toString())
 
         pluginManager = spyk(
@@ -336,6 +336,7 @@ class GameyfinPluginManagerTest {
 
         val extensionClasses = listOf(
             TestExtension1::class.java,
+            AnotherTestExtension1::class.java,
             TestExtension2::class.java
         )
 
@@ -343,8 +344,7 @@ class GameyfinPluginManagerTest {
 
         val result = pluginManager.getExtensionTypes("test-plugin")
 
-        assertTrue(result.contains("TestExtensionPoint1"))
-        assertTrue(result.contains("TestExtensionPoint2"))
+        assertEquals(listOf("TestExtensionPoint1", "TestExtensionPoint2"), result)
     }
 
     @Test
@@ -753,6 +753,7 @@ class GameyfinPluginManagerTest {
     interface TestExtensionPoint2 : ExtensionPoint
 
     class TestExtension1 : TestExtensionPoint1
+    class AnotherTestExtension1 : TestExtensionPoint1
     class TestExtension2 : TestExtensionPoint2
 
 

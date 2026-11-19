@@ -139,7 +139,8 @@ class DownloadHttpTest {
                             }
                         }, "zip")
                     }
-                    val slow = URI("http://localhost:${tomcat.connector.localPort}$path?provider=slow")
+                    val browserFrameOptions = if (path == "/download/1") "SAMEORIGIN" else null
+                    val slow = URI("http://localhost:${tomcat.connector.localPort}$path?provider=slow&client=browser")
                     try {
                         val pending = client.sendAsync(
                             HttpRequest.newBuilder(slow).GET().build(),
@@ -152,6 +153,7 @@ class DownloadHttpTest {
                             throw AssertionError("First byte did not arrive through ${responseStreamType.get()}", error)
                         }
                         assertEquals(200, response.statusCode())
+                        assertEquals(browserFrameOptions, response.headers().firstValue("X-Frame-Options").orElse(null))
                         assertTrue(response.headers().firstValue("Content-Length").isEmpty)
                         response.body().use {
                             assertEquals(80, it.read())
@@ -196,6 +198,7 @@ class DownloadHttpTest {
                     val cancelResponse = client.send(
                         HttpRequest.newBuilder(cancelUrl).GET().build(), HttpResponse.BodyHandlers.ofInputStream()
                     )
+                    assertTrue(cancelResponse.headers().firstValue("X-Frame-Options").isEmpty)
                     cancelResponse.body().use { body ->
                         assertEquals(1, body.read())
                         GameDownloadLifecycle.remove(1) { assertEquals(0L, cancelled.count) }
@@ -213,6 +216,7 @@ class DownloadHttpTest {
                         val error = first.body().use { it.readAllBytes().decodeToString() }
                         fail("$path returned ${first.statusCode()}: $error")
                     }
+                    assertEquals(browserFrameOptions, first.headers().firstValue("X-Frame-Options").orElse(null))
                     val prefix = first.body().use { it.readNBytes(8192) }
                     val resumed = client.send(
                         HttpRequest.newBuilder(url)
@@ -221,6 +225,7 @@ class DownloadHttpTest {
                         HttpResponse.BodyHandlers.ofByteArray()
                     )
                     assertEquals(206, resumed.statusCode())
+                    assertEquals(browserFrameOptions, resumed.headers().firstValue("X-Frame-Options").orElse(null))
                     assertContentEquals(bytes, prefix + resumed.body())
                     val head = client.send(
                         HttpRequest.newBuilder(url).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
