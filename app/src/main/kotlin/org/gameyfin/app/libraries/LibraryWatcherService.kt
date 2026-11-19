@@ -363,10 +363,12 @@ class LibraryWatcherService(
                 log.debug { "Updating file size for ${gamesToUpdate.size} games: $fullPath" }
                 gamesToUpdate.forEach { game ->
                     val newFileSize = filesystemService.calculateFileSize(game.metadata.path, library)
-                    if (game.metadata.fileSize != newFileSize) {
+                    val isDirectory = filesystemService.gameDirectoryType(game.metadata.path, library)
+                    if (game.metadata.fileSize != newFileSize || game.metadata.isDirectory != isDirectory) {
+                        game.metadata.isDirectory = isDirectory
                         game.metadata.fileSize = newFileSize
                         gameRepository.save(game)
-                        log.debug { "Updated file size for game '${game.title}' from ${game.metadata.fileSize} to $newFileSize bytes" }
+                        log.debug { "Updated file metadata for game '${game.title}' ($newFileSize bytes)" }
                     }
                 }
             }

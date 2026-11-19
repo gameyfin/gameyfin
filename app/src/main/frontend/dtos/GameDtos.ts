@@ -7,6 +7,7 @@ export interface GameAdminDto extends GameDto {
 export interface GameMetadataAdminDto {
     path?: string | null;
     fileSize: number;
+    directory?: boolean;
     fields?: { [key: string]: GameFieldMetadataDto } | null;
     originalIds?: { [key: string]: string } | null;
     downloadCount: number;

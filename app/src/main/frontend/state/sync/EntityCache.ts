@@ -6,7 +6,7 @@ import {compareTimestamps} from "Frontend/state/sync/timestamps";
  * Bump this whenever the shape of a cached DTO changes in an incompatible way.
  * All caches with a different version are wiped on startup.
  */
-const CACHE_SCHEMA_VERSION = 1;
+const CACHE_SCHEMA_VERSION = 2;
 
 const DB_NAME = "gameyfin-cache";
 /** IndexedDB version, only needs to be bumped when object stores are added/removed */

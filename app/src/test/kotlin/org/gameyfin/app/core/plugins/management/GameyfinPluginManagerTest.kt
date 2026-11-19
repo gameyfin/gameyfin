@@ -753,7 +753,8 @@ class GameyfinPluginManagerTest {
     interface TestExtensionPoint2 : ExtensionPoint
 
     class TestExtension1 : TestExtensionPoint1
-    class AnotherTestExtension1 : TestExtensionPoint1
+    interface ExtendedTestPoint : TestExtensionPoint1
+    class AnotherTestExtension1 : ExtendedTestPoint
     class TestExtension2 : TestExtensionPoint2
 
 

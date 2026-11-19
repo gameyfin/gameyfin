@@ -9,12 +9,18 @@ import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.GameService
 import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.LinkDownload
+import org.springframework.http.ContentDisposition
+import org.springframework.http.CacheControl
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.context.request.async.DeferredResult
+import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
-import java.net.URLEncoder
+import tools.jackson.databind.ObjectMapper
+import java.io.IOException
+import java.io.UncheckedIOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -26,6 +32,7 @@ import java.util.concurrent.Executors
 class DownloadEndpoint(
     private val downloadService: DownloadService,
     private val gameService: GameService,
+    private val objectMapper: ObjectMapper,
 ) {
 
     private val downloadExecutor: Executor = Executors.newVirtualThreadPerTaskExecutor()
@@ -35,13 +42,49 @@ class DownloadEndpoint(
         @PathVariable gameId: Long,
         @RequestParam provider: String,
         request: HttpServletRequest
+    ) = startDownload(gameId, provider, request, null)
+
+    @GetMapping("/{gameId}/contents")
+    fun listContents(@PathVariable gameId: Long): ResponseEntity<List<DownloadFileEntry>> = selectionRequest {
+        val contents = downloadService.listContents(gameService.getDownloadFolder(gameId))
+        ResponseEntity.ok().cacheControl(CacheControl.noStore()).eTag(DownloadSelection.contentsETag(contents)).body(contents)
+    }
+
+    @PostMapping("/{gameId}/selection", consumes = ["application/x-www-form-urlencoded"])
+    fun downloadSelection(
+        @PathVariable gameId: Long,
+        @RequestParam provider: String,
+        @RequestParam(required = false) files: String?,
+        @RequestParam(required = false) contentsETag: String?,
+        request: HttpServletRequest
+    ): DeferredResult<ResponseEntity<StreamingResponseBody>> {
+        if (contentsETag != null && files == null) {
+            return startDownload(gameId, provider, request) {
+                downloadService.getFullSelection(gameService.getDownloadFolder(gameId), provider, contentsETag)
+            }
+        }
+        val paths = try {
+            require(files != null && contentsETag == null)
+            val nodes = objectMapper.readTree(files)
+            require(nodes.isArray && !nodes.isEmpty && nodes.all { it.isString }) { "Expected a list of files" }
+            nodes.values().map { it.asString() }
+        } catch (e: RuntimeException) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid file selection", e)
+        }
+        return startDownload(gameId, provider, request) {
+            downloadService.getSelection(gameService.getDownloadFolder(gameId), provider, paths)
+        }
+    }
+
+    private fun startDownload(
+        gameId: Long, provider: String, request: HttpServletRequest, selection: (() -> FileDownload)?
     ): DeferredResult<ResponseEntity<StreamingResponseBody>> {
         val username = getCurrentAuth()?.name
         val deferredResult = DeferredResult<ResponseEntity<StreamingResponseBody>>()
 
         downloadExecutor.execute {
             try {
-                val result = prepareDownload(gameId, provider, request, username)
+                val result = prepareDownload(gameId, provider, request, username, selection)
                 deferredResult.onCompletion { (result.body as? java.io.Closeable)?.close() }
                 if (!deferredResult.setResult(result)) (result.body as? java.io.Closeable)?.close()
             } catch (e: Exception) {
@@ -56,7 +99,8 @@ class DownloadEndpoint(
         gameId: Long,
         provider: String,
         request: HttpServletRequest,
-        username: String?
+        username: String?,
+        selection: (() -> FileDownload)?
     ): ResponseEntity<StreamingResponseBody> =
         GameDownloadLifecycle.prepare(gameId, request, { gameService.getById(gameId) }) { game, lifetime ->
             val sessionId = request.session.id
@@ -73,7 +117,7 @@ class DownloadEndpoint(
             val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
                 downloadService.processDownload(input, output, game, username, sessionId, remoteIp)
             }
-            val resource = downloadService.getRangeDownload(game.metadata.path, provider)
+            val resource = if (selection != null) null else downloadService.getRangeDownload(game.metadata.path, provider)
                 ?.also { lifetime.own(it) }
             val result = if (resource != null) {
                 DownloadResponses.range(
@@ -86,19 +130,24 @@ class DownloadEndpoint(
             } else if (request.method == "HEAD") {
                 val metadata = downloadService.describeDownload(game.metadata.path, provider)
                 DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
-            } else when (val download = downloadService.getDownload(game.metadata.path, provider)) {
-                is FileDownload -> DownloadResponses.file(
-                    download.also { lifetime.own(it.data) },
-                    request,
-                    disposition(download.fileExtension),
-                    onStart,
-                    transfer
-                )
+            } else {
+                val download = if (selection != null) selectionRequest(selection)
+                    else downloadService.getDownload(game.metadata.path, provider)
+                when (download) {
+                    is FileDownload -> DownloadResponses.file(
+                        download.also { lifetime.own(it.data) },
+                        request,
+                        download.fileName?.let { createContentDispositionHeader(it.substringAfterLast('/').substringAfterLast('\\')) }
+                            ?: disposition(download.fileExtension),
+                        onStart,
+                        transfer
+                    )
 
-                is LinkDownload -> {
-                    val response = DownloadResponses.link(download, request)
-                    onStart()
-                    response
+                    is LinkDownload -> {
+                        val response = DownloadResponses.link(download, request)
+                        onStart()
+                        response
+                    }
                 }
             }
             if (request.getParameter("client") == "browser" && result.body != null &&
@@ -109,50 +158,18 @@ class DownloadEndpoint(
             } else result
         }
 
-    /**
-     * Converts a string to a safe ASCII fallback filename by replacing non-ASCII characters.
-     * Characters with code points > 127 and common invalid chars for filenames are removed, and if the result is empty or only whitespace,
-     * returns "download" as a fallback.
-     */
-    private fun String.safeDownloadFileName(): String {
-        val asciiOnly = filter { it.code in 0..255 } // Printable ASCII only
-            .trim()
-
-        return asciiOnly.ifBlank { "download" }
+    private inline fun <T> selectionRequest(action: () -> T): T = try {
+        action()
+    } catch (e: IllegalArgumentException) {
+        throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Selection is unavailable", e)
+    } catch (e: IOException) {
+        throw ResponseStatusException(HttpStatus.CONFLICT, "Game contents have changed or are unavailable", e)
+    } catch (e: UncheckedIOException) {
+        throw ResponseStatusException(HttpStatus.CONFLICT, "Game contents have changed or are unavailable", e)
     }
 
-    /**
-     * URL-encodes a string according to RFC 5987.
-     */
-    private fun String.encodeRfc5987(): String {
-        return URLEncoder.encode(this, StandardCharsets.UTF_8)
-            .replace("+", "%20") // URLEncoder uses + for space, but RFC 5987 requires %20
-    }
-
-    /**
-     * Creates a Content-Disposition header value with both ASCII fallback and RFC 5987 Unicode support.
-     *
-     * Example output:
-     *   attachment; filename="Game_Title.zip"; filename*=UTF-8''Game%E2%84%A2%20Title.zip
-     *
-     * @param filename The original filename (may contain Unicode characters)
-     * @param disposition The disposition type (default: "attachment")
-     * @return A properly formatted Content-Disposition header value
-     */
-    private fun createContentDispositionHeader(filename: String, disposition: String = "attachment"): String {
-        val asciiFallback = filename.safeDownloadFileName()
-        val encodedFilename = filename.encodeRfc5987()
-
-        return buildString {
-            append(disposition)
-            append("; filename=\"")
-            append(asciiFallback)
-            append("\"")
-            // Only add filename* if there are non-ASCII characters
-            if (filename != asciiFallback) {
-                append("; filename*=utf-8''")
-                append(encodedFilename)
-            }
-        }
+    private fun createContentDispositionHeader(filename: String): String {
+        val charset = if (filename.all { it.code in 32..126 }) StandardCharsets.US_ASCII else StandardCharsets.UTF_8
+        return ContentDisposition.attachment().filename(filename, charset).build().toString()
     }
 }

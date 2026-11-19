@@ -18,5 +18,8 @@ class GameMetadata(
 
     var downloadCount: Int = 0,
 
-    var matchConfirmed: Boolean = false
+    var matchConfirmed: Boolean = false,
+
+    @Column(name = "IS_DIRECTORY")
+    var isDirectory: Boolean? = null
 )

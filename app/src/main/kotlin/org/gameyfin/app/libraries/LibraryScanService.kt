@@ -287,6 +287,14 @@ class LibraryScanService(
         val newPaths = scanResult.newPaths
         val removedGamePaths = scanResult.removedGamePaths.map { it.toString() }
         val removedIgnoredPaths = scanResult.removedIgnoredPaths
+        for (game in library.games) {
+            if (game.metadata.path in removedGamePaths) continue
+            val type = filesystemService.gameDirectoryType(game.metadata.path, library)
+            if (game.metadata.isDirectory != type) {
+                libraryGameProcessor.updateDirectoryType(game.id!!, type)
+                game.metadata.isDirectory = type
+            }
+        }
 
         // Get plugin-generated (system) ignored paths to re-scan
         // Skip paths that no longer exist on the filesystem, otherwise they get re-added as unmatched
