@@ -76,8 +76,10 @@ try {
                     let body = "";
                     for await (const chunk of request) body += chunk;
                     postedSelection = Object.fromEntries(new URLSearchParams(body));
-                    response.setHeader("Content-Disposition", 'attachment; filename="Game.zip"');
-                    response.setHeader("Content-Type", "application/zip");
+                    const paths = postedSelection.files ? JSON.parse(postedSelection.files) : [];
+                    const filename = paths.length === 1 ? paths[0].split("/").pop() : "Game.zip";
+                    response.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+                    response.setHeader("Content-Type", "application/octet-stream");
                     response.setHeader("X-Frame-Options", "SAMEORIGIN");
                     response.end(bytes);
                 } else if (request.url.startsWith("/download/2?")) {
@@ -191,7 +193,8 @@ try {
     await second.click();
     await total.filter({hasText: "Selected size: 2.0 KiB"}).waitFor();
     const [selection] = await Promise.all([page.waitForEvent("download"), action.click()]);
-    assert.equal(selection.suggestedFilename(), "Game.zip");
+    assert.equal(selection.suggestedFilename(), "two.bin");
+    assert.deepEqual(await readFile(await selection.path()), bytes);
     assert.deepEqual(postedSelection, {provider: "Second", files: '["updates/two.bin"]', _csrf: "test-token"});
     assert.equal(page.url(), initialUrl);
     await browse.click();
@@ -203,7 +206,8 @@ try {
     const selectedColor = await base.evaluate(el => getComputedStyle(el).backgroundColor);
     await base.hover();
     assert.notEqual(await base.evaluate(el => getComputedStyle(el).backgroundColor), selectedColor);
-    await Promise.all([page.waitForEvent("download"), action.click()]);
+    const [archive] = await Promise.all([page.waitForEvent("download"), action.click()]);
+    assert.equal(archive.suggestedFilename(), "Game.zip");
     assert.deepEqual(postedSelection, {provider: "Second", contentsETag: '"game-files"', _csrf: "test-token"});
     console.log("Selection tree, preferred provider, form submission and ZIP attachment passed.");
     console.log("Native streaming, repeated downloads, actual link results, and error notices passed.");

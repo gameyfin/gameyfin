@@ -10,6 +10,7 @@ import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.RangeDownload
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.springframework.http.ContentDisposition
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext
 import org.springframework.web.servlet.DispatcherServlet
@@ -98,6 +99,7 @@ class DownloadHttpTest {
         tomcat.setBaseDir(directory.resolve("tomcat").toString())
         tomcat.setPort(0)
         val context = tomcat.addContext("", directory.toString())
+        context.requestCharacterEncoding = Charsets.UTF_8.name()
         val spring = AnnotationConfigWebApplicationContext()
         spring.register(WebConfig::class.java)
         spring.addBeanFactoryPostProcessor { factory ->
@@ -111,18 +113,19 @@ class DownloadHttpTest {
         }
         val servlet = Tomcat.addServlet(context, "dispatcher", DispatcherServlet(spring))
         servlet.isAsyncSupported = true
-        context.addServletMappingDecoded("/", "dispatcher")
+        context.addServletMapping("/", "dispatcher")
         tomcat.connector
         try {
             tomcat.start()
             HttpClient.newHttpClient().use { client ->
                 val root = directory.toRealPath()
-                val selected = listOf("dlc/patch,1.bin")
+                val filename = "mise à jour, 1.tar.gz"
+                val selected = listOf("dlc/$filename")
                 every { games.getDownloadFolder(1) } returns root
                 val entries = selected.map { DownloadFileEntry(it, bytes.size.toLong()) }
                 every { service.listContents(root) } returns entries
                 every { service.getSelection(root, "direct", selected) } answers {
-                    org.gameyfin.pluginapi.download.FileDownload(bytes.inputStream(), "zip", bytes.size.toLong())
+                    org.gameyfin.pluginapi.download.FileDownload(bytes.inputStream(), "gz", bytes.size.toLong(), filename)
                 }
                 val base = "http://localhost:${tomcat.connector.localPort}/download/1"
                 val contents = client.send(HttpRequest.newBuilder(URI("$base/contents")).GET().build(),
@@ -135,12 +138,12 @@ class DownloadHttpTest {
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .POST(HttpRequest.BodyPublishers.ofString(form)).build(), HttpResponse.BodyHandlers.ofByteArray())
                 assertEquals(200, selection.statusCode())
-                assertTrue(selection.headers().firstValue("Content-Disposition").get().contains("Game.zip"))
+                assertEquals(filename, ContentDisposition.parse(selection.headers().firstValue("Content-Disposition").orElseThrow()).filename)
                 assertContentEquals(bytes, selection.body())
 
                 val etag = contents.headers().firstValue("ETag").orElseThrow()
                 every { service.getFullSelection(root, "direct", etag) } answers {
-                    org.gameyfin.pluginapi.download.FileDownload(bytes.inputStream(), "zip", bytes.size.toLong())
+                    org.gameyfin.pluginapi.download.FileDownload(bytes.inputStream(), "gz", bytes.size.toLong(), filename)
                 }
                 val allFiles = HttpRequest.newBuilder(URI("$base/selection?client=browser"))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -148,6 +151,7 @@ class DownloadHttpTest {
                             java.net.URLEncoder.encode(etag, Charsets.UTF_8))).build()
                 val full = client.send(allFiles, HttpResponse.BodyHandlers.ofByteArray())
                 assertEquals(200, full.statusCode())
+                assertEquals(filename, ContentDisposition.parse(full.headers().firstValue("Content-Disposition").orElseThrow()).filename)
                 assertContentEquals(bytes, full.body())
                 every { service.getFullSelection(root, "direct", etag) } throws java.io.IOException("Contents changed")
                 assertEquals(409, client.send(allFiles, HttpResponse.BodyHandlers.discarding()).statusCode())
