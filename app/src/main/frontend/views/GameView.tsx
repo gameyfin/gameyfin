@@ -18,11 +18,13 @@ import {
     InfoIcon,
     MagnifyingGlassIcon,
     PencilIcon,
+    StackIcon,
     StarIcon,
     TrashIcon,
 } from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
+import GameVersionEditorModal from "Frontend/components/general/modals/GameVersionEditorModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
 import MarkdownContent from "Frontend/components/general/MarkdownContent";
@@ -39,6 +41,7 @@ export default function GameView() {
     const navigate = useNavigate();
     const auth = useAuth();
 
+    const versionsModal = useOverlayState();
     const editGameModal = useOverlayState();
     const matchGameModal = useOverlayState();
     const deleteModal = useOverlayState();
@@ -169,6 +172,15 @@ export default function GameView() {
                                 <Tooltip.Content>
                                     {(game.metadata as GameMetadataAdminDto).matchConfirmed ? "Unconfirm match" : "Confirm match"}
                                 </Tooltip.Content>
+                            </Tooltip>
+                            <Tooltip>
+                                <Tooltip.Trigger>
+                                    <Button isIconOnly variant="tertiary" aria-label="Versions &amp; Extras"
+                                            onPress={versionsModal.open}>
+                                        <StackIcon/>
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>Versions &amp; Extras</Tooltip.Content>
                             </Tooltip>
                             <Tooltip>
                                 <Tooltip.Trigger>
@@ -326,7 +338,7 @@ export default function GameView() {
                                         </td>
                                     </tr>
                                 }
-                                <GameVersionDetails gameId={game.id} refreshKey={editGameModal.isOpen}/>
+                                <GameVersionDetails gameId={game.id} refreshKey={versionsModal.isOpen}/>
                                 </tbody>
                             </table>
                         </div>
@@ -346,9 +358,12 @@ export default function GameView() {
                 </div>
             </div>
             {isAdmin(auth) && <>
-                <RemoveGameModal game={{id: game.id, title: game.title, path: (game.metadata as GameMetadataAdminDto).path}}
-                                 isOpen={deleteModal.isOpen} onOpenChange={deleteModal.setOpen}
-                                 onRemoved={() => navigate("/")}/>
+                <RemoveGameModal
+                    game={{id: game.id, title: game.title, path: (game.metadata as GameMetadataAdminDto).path}}
+                    isOpen={deleteModal.isOpen} onOpenChange={deleteModal.setOpen}
+                    onRemoved={() => navigate("/")}/>
+                {versionsModal.isOpen && <GameVersionEditorModal key={game.id} gameId={game.id}
+                                                                 gameTitle={game.title} onClose={versionsModal.close}/>}
                 <EditGameMetadataModal gameId={game.id}
                                        isOpen={editGameModal.isOpen}
                                        onOpenChange={editGameModal.setOpen}/>

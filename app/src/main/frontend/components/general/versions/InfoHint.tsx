@@ -7,7 +7,7 @@ export default function InfoHint({text}: { text: string }) {
     return (
         <Tooltip>
             <Tooltip.Trigger>
-                <span tabIndex={0} role="img" aria-label={text} className="inline-flex text-muted"><InfoIcon size={16}/></span>
+                <InfoIcon size={16}/>
             </Tooltip.Trigger>
             <Tooltip.Content placement="right">
                 <span className="block max-w-64">{text}</span>

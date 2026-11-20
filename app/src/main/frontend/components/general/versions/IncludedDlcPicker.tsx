@@ -1,5 +1,6 @@
 import React, {useState} from "react";
-import {Button, Checkbox, Chip, Input, Label, Spinner, TextField, toast} from "@heroui/react";
+import {Button, Checkbox, Input, Label, ListBox, Select, Spinner, TextField, toast} from "@heroui/react";
+import {ListChecksIcon, MagnifyingGlassIcon, PlusIcon, XIcon} from "@phosphor-icons/react";
 import {GameDlcEndpoint} from "Frontend/generated/endpoints";
 import IncludedDlcDto from "Frontend/generated/org/gameyfin/app/games/versions/IncludedDlcDto";
 import DlcKind from "Frontend/generated/org/gameyfin/app/games/versions/DlcKind";
@@ -20,10 +21,21 @@ const KINDS: { kind: DlcKind; label: string }[] = [
 
 function KindSelect({value, onChange, label}: { value: DlcKind; onChange: (kind: DlcKind) => void; label: string }) {
     return (
-        <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value as DlcKind)}
-                className="rounded-md bg-surface px-1 py-0.5 text-xs text-muted">
-            {KINDS.map((entry) => <option key={entry.kind} value={entry.kind}>{entry.label}</option>)}
-        </select>
+        <Select aria-label={label} value={value} onChange={(next) => {
+            const entry = KINDS.find(({kind}) => kind === next);
+            if (entry) onChange(entry.kind);
+        }}>
+            <Select.Trigger className="min-w-36"><Select.Value/><Select.Indicator/></Select.Trigger>
+            <Select.Popover>
+                <ListBox>
+                    {KINDS.map((entry) => (
+                        <ListBox.Item key={entry.kind} id={entry.kind} textValue={entry.label}>
+                            {entry.label}<ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                    ))}
+                </ListBox>
+            </Select.Popover>
+        </Select>
     );
 }
 
@@ -115,38 +127,35 @@ export default function IncludedDlcPicker({gameId, link, onChange}: IncludedDlcP
                 if (items.length === 0) return null;
                 return (
                     <div key={kind} className="flex flex-col gap-1">
-                        <span className="text-sm text-muted">{label}:</span>
-                        <div className="flex flex-wrap items-center gap-2">
+                        <h5 className="text-sm text-muted">{label}</h5>
+                        <ul className="divide-y divide-separator rounded-xl bg-surface px-3">
                             {items.map((item) => (
-                                <Chip key={item.dlcId} size="sm" variant="soft">
-                                    <span className="flex items-center gap-1">
-                                        {item.title}
-                                        <KindSelect value={item.kind} label={`Type of ${item.title}`}
-                                                    onChange={(next) => retype(item.dlcId, next)}/>
-                                        <button type="button" className="text-muted hover:text-foreground"
-                                                aria-label={`Remove ${item.title}`}
-                                                onClick={() => onChange(link.dlc.filter((entry) => entry.dlcId !== item.dlcId))}>
-                                            ×
-                                        </button>
-                                    </span>
-                                </Chip>
+                                <li key={item.dlcId} className="flex flex-wrap items-center gap-2 py-2">
+                                    <span className="min-w-32 flex-1 wrap-anywhere text-sm">{item.title}</span>
+                                    <KindSelect value={item.kind} label={`Type of ${item.title}`}
+                                                onChange={(next) => retype(item.dlcId, next)}/>
+                                    <Button isIconOnly size="sm" variant="ghost" aria-label={`Remove ${item.title}`}
+                                            onPress={() => onChange(link.dlc.filter((entry) => entry.dlcId !== item.dlcId))}>
+                                        <XIcon/>
+                                    </Button>
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     </div>
                 );
             })}
             <div className="flex flex-wrap items-center gap-2">
                 <Button size="sm" variant="outline" isDisabled={busy} onPress={() => void toggleOpen()}>
-                    {open ? "Hide list" : "Choose extras"}
+                    <ListChecksIcon/> {open ? "Hide list" : "Choose extras"}
                 </Button>
                 <Button size="sm" variant="outline" isPending={busy} isDisabled={busy} onPress={() => void detect()}>
-                    Detect extras
+                    <MagnifyingGlassIcon/> Detect extras
                 </Button>
             </div>
 
             <div className="flex flex-wrap items-end gap-2">
                 <TextField className="min-w-48 flex-1" value={customTitle} onChange={setCustomTitle}>
-                    <Label className="sr-only">Custom extra name</Label>
+                    <Label>Custom extra name</Label>
                     <Input
                         variant="secondary"
                         placeholder="Add an extra the store does not list"
@@ -161,7 +170,7 @@ export default function IncludedDlcPicker({gameId, link, onChange}: IncludedDlcP
                 </TextField>
                 <KindSelect value={customKind} label="Type of custom extra" onChange={setCustomKind}/>
                 <Button size="sm" variant="outline" isDisabled={!customDlcId(customTitle.trim())} onPress={addCustom}>
-                    Add
+                    <PlusIcon/> Add
                 </Button>
             </div>
 
@@ -185,7 +194,7 @@ export default function IncludedDlcPicker({gameId, link, onChange}: IncludedDlcP
                         if (group.length === 0) return null;
                         return (
                             <div key={kind} className="flex flex-col gap-1">
-                                <span className="pt-1 text-xs font-semibold uppercase text-muted">{label}</span>
+                                <span className="pt-1 text-xs font-semibold text-muted">{label}</span>
                                 {group.map((dlc) => (
                                     <Checkbox key={dlc.dlcId} isSelected={selectedIds.has(dlc.dlcId)}
                                               onChange={(selected: boolean) => toggle(dlc, selected)}>

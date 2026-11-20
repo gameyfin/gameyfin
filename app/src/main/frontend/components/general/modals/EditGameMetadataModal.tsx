@@ -1,13 +1,11 @@
 import GameMetadataFields from "Frontend/components/general/input/GameMetadataFields";
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
-import {Accordion, Button, Modal, Spinner} from "@heroui/react";
+import {Button, Modal, Spinner} from "@heroui/react";
 import {Form, Formik} from "formik";
 import React, {useEffect, useState} from "react";
 import GameEnumPropertyValuesDto from "Frontend/generated/org/gameyfin/app/games/dto/GameEnumPropertyValuesDto";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import * as Yup from "yup";
-import GameVersionEditor from "Frontend/components/general/versions/GameVersionEditor";
-import {useGameVersionEditor} from "Frontend/components/general/versions/useGameVersionEditor";
 import {
     GameMetadataFormValues,
     ManualGameImport,
@@ -54,7 +52,6 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
     useEffect(() => {
         if (isOpen) setRequestedGameId(gameId);
     }, [isOpen, gameId]);
-    const versionEditor = useGameVersionEditor(gameId ?? 0, isOpen && gameId !== undefined);
 
     useEffect(() => {
         GameEndpoint.getEnumPropertyValues().then(setPropertyEnumValues);
@@ -77,14 +74,6 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                         changed.platforms = values.platforms;
                                     }
                                     if (newGame || Object.keys(changed).length > 1) await saveMetadata(changed, values, newGame);
-                                    if (!newGame) {
-                                        try {
-                                            await versionEditor.apply();
-                                        } catch {
-                                            setSaveError("Metadata was saved, but some store-version changes may not have been saved. Check the notification and review the store section.");
-                                            return;
-                                        }
-                                    }
                                     close();
                                 } catch (error) {
                                     setSaveError(error instanceof Error ? error.message : "Unable to save metadata. Try again.");
@@ -111,25 +100,6 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                     <GameMetadataFields initialValues={initialValues}
                                                                         propertyEnumValues={propertyEnumValues}
                                                                         searchOnOpen={!newGame}/>
-                                                    {versionEditor.available && !newGame && gameId !== undefined && game && (
-                                                        <Accordion variant="default" className="space-y-2">
-                                                            <Accordion.Item id="store-versions">
-                                                                <Accordion.Heading>
-                                                                    <Accordion.Trigger className="bg-segment rounded-2xl mb-4">
-                                                                        <span>Store versions</span>
-                                                                        <Accordion.Indicator/>
-                                                                    </Accordion.Trigger>
-                                                                </Accordion.Heading>
-                                                                <Accordion.Panel>
-                                                                    <Accordion.Body className="max-h-80 overflow-y-auto">
-                                                                        <GameVersionEditor gameId={gameId}
-                                                                                           gameTitle={game.title}
-                                                                                           editor={versionEditor}/>
-                                                                    </Accordion.Body>
-                                                                </Accordion.Panel>
-                                                            </Accordion.Item>
-                                                        </Accordion>
-                                                    )}
                                                 </Modal.Body>
                                                 {saveError &&
                                                     <p role="alert" className="px-6 text-danger">{saveError}</p>}
@@ -141,7 +111,7 @@ export default function EditGameMetadataModal({gameId, newGame, isOpen, onOpenCh
                                                     <Button
                                                         variant="primary"
                                                         isPending={formik.isSubmitting}
-                                                        isDisabled={formik.isSubmitting || (!newGame && !formik.dirty && !versionEditor.dirty)}
+                                                        isDisabled={formik.isSubmitting || (!newGame && !formik.dirty)}
                                                         type="submit"
                                                     >
                                                         {formik.isSubmitting ?
