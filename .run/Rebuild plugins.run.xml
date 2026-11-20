@@ -2,16 +2,15 @@
   <configuration default="false" name="Rebuild plugins" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/plugins" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$" />
       <option name="externalSystemIdString" value="GRADLE" />
-      <option name="scriptParameters" value="" />
+      <option name="scriptParameters" value="-PpluginDevDir=plugins --rerun-tasks" />
       <option name="taskDescriptions">
         <list />
       </option>
       <option name="taskNames">
         <list>
-          <option value="clean" />
-          <option value="build" />
+          <option value="buildDevPlugins" />
         </list>
       </option>
       <option name="vmOptions" />
