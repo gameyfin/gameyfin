@@ -47,6 +47,12 @@ subprojects {
     }
 }
 
+tasks.named("dependencies") {
+    if (gradle.startParameter.isWriteDependencyLocks) {
+        dependsOn(subprojects.map { "${it.path}:dependencies" })
+    }
+}
+
 val buildDevPlugins by tasks.registering {
     group = "build"
     description = "Prepares opted-in standalone plugin checkouts for PF4J source debugging"

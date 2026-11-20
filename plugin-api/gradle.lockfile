@@ -2,7 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :plugin-api:dependencies --write-locks
-com.fasterxml.jackson.core:jackson-annotations:2.22=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-annotations:2.23=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.github.zafarkhaja:java-semver:0.10.2=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.github.oshai:kotlin-logging-jvm:8.0.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.bouncycastle:bcpg-jdk18on:1.84=kotlinBouncyCastleConfiguration
@@ -26,7 +26,7 @@ org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.0=kotlinAbiValidationCompatCla
 org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.10=kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinKlibCommonizerClasspath
 org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.4.10=kotlinKlibCommonizerClasspath
 org.jetbrains.kotlin:kotlin-reflect:1.6.10=kotlinAbiValidationCompatClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinKlibCommonizerClasspath
-org.jetbrains.kotlin:kotlin-reflect:2.1.21=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.jetbrains.kotlin:kotlin-reflect:2.2.21=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.jetbrains.kotlin:kotlin-script-runtime:2.4.0=kotlinAbiValidationCompatClasspath
 org.jetbrains.kotlin:kotlin-script-runtime:2.4.10=kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,kotlinKlibCommonizerClasspath
 org.jetbrains.kotlin:kotlin-scripting-common:2.4.10=kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest
@@ -40,8 +40,8 @@ org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0=kotlinAbiValidationCompa
 org.jetbrains:annotations:13.0=compileClasspath,kotlinAbiValidationCompatClasspath,kotlinBuildToolsApiClasspath,kotlinCompilerClasspath,kotlinCompilerPluginClasspathMain,kotlinCompilerPluginClasspathTest,kotlinKlibCommonizerClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.pf4j:pf4j:3.15.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.6=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-tools.jackson.core:jackson-core:3.2.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-tools.jackson.core:jackson-databind:3.2.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-tools.jackson.module:jackson-module-kotlin:3.2.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-tools.jackson:jackson-bom:3.2.1=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+tools.jackson.core:jackson-core:3.3.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+tools.jackson.core:jackson-databind:3.3.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+tools.jackson.module:jackson-module-kotlin:3.3.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+tools.jackson:jackson-bom:3.3.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 empty=annotationProcessor,implementationDependenciesMetadata,kotlinCompilerPluginClasspath,kotlinNativeCompilerPluginClasspath,kotlinScriptDefExtensions,testAnnotationProcessor,testImplementationDependenciesMetadata,testKotlinScriptDefExtensions
