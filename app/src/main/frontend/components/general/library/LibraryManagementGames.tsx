@@ -15,12 +15,13 @@ import {
     useOverlayState,
     Virtualizer
 } from "@heroui/react";
-import {CheckCircleIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon} from "@phosphor-icons/react";
+import {CheckCircleIcon, MagnifyingGlassIcon, PencilIcon, StackIcon, TrashIcon} from "@phosphor-icons/react";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
 import {useMemo, useState} from "react";
+import GameVersionEditorModal from "Frontend/components/general/modals/GameVersionEditorModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import MetadataCompletenessIndicator from "Frontend/components/general/MetadataCompletenessIndicator";
@@ -42,6 +43,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
     const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({column: "title", direction: "ascending"});
 
     const [selectedGame, setSelectedGame] = useState<GameSummaryDto | undefined>(undefined);
+    const versionsModal = useOverlayState();
     const editGameModal = useOverlayState();
     const matchGameModal = useOverlayState();
     const removeGameModal = useOverlayState();
@@ -119,6 +121,17 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 </Tooltip>
                 <Tooltip>
                     <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
+                            variant="tertiary" aria-label="Versions &amp; Extras"
+                            onPress={() => {
+                                setSelectedGame(item);
+                                versionsModal.open();
+                            }}>
+                        <StackIcon/>
+                    </Button>
+                    <Tooltip.Content>Versions &amp; Extras</Tooltip.Content>
+                </Tooltip>
+                <Tooltip>
+                    <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
                             variant="tertiary" aria-label="Edit metadata"
                             onPress={() => {
                                 setSelectedGame(item);
@@ -142,9 +155,9 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
                 <Tooltip>
                     <Button isIconOnly size="sm" className={compact ? "min-h-11 min-w-11" : undefined}
                             variant="danger" aria-label="Remove from library" onPress={() => {
-                                setSelectedGame(item);
-                                removeGameModal.open();
-                            }}>
+                        setSelectedGame(item);
+                        removeGameModal.open();
+                    }}>
                         <TrashIcon/>
                     </Button>
                     <Tooltip.Content>Remove from library</Tooltip.Content>
@@ -205,7 +218,7 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         /> : <Virtualizer layout={TableLayout} layoutOptions={{headingHeight: 42, rowHeight: 56}}>
             <Table variant="secondary">
                 <Table.ScrollContainer>
-                    <Table.Content aria-label="Games in library" className="h-[35rem] min-w-[1100px] overflow-auto"
+                    <Table.Content aria-label="Games in library" className="h-140 min-w-275 overflow-auto"
                                    sortDescriptor={sortDescriptor} onSortChange={setSortDescriptor}>
                         <Table.Header className="h-full w-full">
                             <Table.Column id="title" allowsSorting isRowHeader>
@@ -280,6 +293,9 @@ export default function LibraryManagementGames({library}: LibraryManagementGames
         {selectedGame && <>
             <RemoveGameModal game={selectedGame} isOpen={removeGameModal.isOpen}
                              onOpenChange={removeGameModal.setOpen}/>
+            {versionsModal.isOpen && <GameVersionEditorModal key={selectedGame.id} gameId={selectedGame.id}
+                                                             gameTitle={selectedGame.title}
+                                                             onClose={versionsModal.close}/>}
             <EditGameMetadataModal gameId={selectedGame.id}
                                    isOpen={editGameModal.isOpen}
                                    onOpenChange={editGameModal.setOpen}/>

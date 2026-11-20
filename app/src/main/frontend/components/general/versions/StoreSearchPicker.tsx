@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {Button, Input, Label, ListBox, Select, Spinner, TextField} from "@heroui/react";
 import {GameStoreSearchEndpoint} from "Frontend/generated/endpoints";
 import GameStoreDto from "Frontend/generated/org/gameyfin/app/games/versions/GameStoreDto";
+import {MagnifyingGlassIcon} from "@phosphor-icons/react";
 
 /** Plugin patterns are Java regexes; JS has no inline flags, so a leading (?i) becomes the "i" flag. */
 function toRegExp(pattern: string): RegExp {
@@ -81,7 +82,7 @@ export default function StoreSearchPicker({stores, initialQuery, linkedKeys, onP
     }
 
     return (
-        <div className="flex flex-col gap-3 rounded-xl border border-default-200 p-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-separator p-3">
             <div className="flex flex-wrap items-end gap-2">
                 <Select
                     aria-label="Store"
@@ -105,25 +106,25 @@ export default function StoreSearchPicker({stores, initialQuery, linkedKeys, onP
                     </Select.Popover>
                 </Select>
                 {store.supportsSearch && <>
-                <TextField className="min-w-48 flex-1" value={query} onChange={setQuery}>
-                    <Label className="sr-only">Search term</Label>
-                    <Input
-                        variant="secondary"
-                        placeholder="Search by game title"
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                void search(store, query);
-                            }
-                        }}
-                    />
-                </TextField>
-                <Button size="sm" variant="outline" isDisabled={searching || query.trim().length < 2}
-                        onPress={() => void search(store, query)}>
-                    Search
-                </Button>
+                    <TextField className="min-w-48 flex-1" value={query} onChange={setQuery}>
+                        <Label className="sr-only">Search term</Label>
+                        <Input
+                            variant="secondary"
+                            placeholder="Search by game title"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    void search(store, query);
+                                }
+                            }}
+                        />
+                    </TextField>
+                    <Button variant="primary" isIconOnly isDisabled={searching || query.trim().length < 2}
+                            onPress={() => void search(store, query)}>
+                        <MagnifyingGlassIcon/>
+                    </Button>
                 </>}
-                <Button size="sm" variant="ghost" onPress={onClose}>Done</Button>
+                <Button variant="outline" onPress={onClose}>Done</Button>
             </div>
 
             {!store.supportsSearch &&
@@ -140,7 +141,7 @@ export default function StoreSearchPicker({stores, initialQuery, linkedKeys, onP
                     {results.map((result) => {
                         const linked = linkedKeys.has(`${store.id}:${result.id}`);
                         return (
-                            <li key={result.id} className="flex items-center gap-3 rounded-lg p-1 hover:bg-default-100">
+                            <li key={result.id} className="flex items-center gap-3 rounded-lg p-1">
                                 {result.imageUrl
                                     ? <img src={result.imageUrl} alt=""
                                            referrerPolicy="no-referrer"
@@ -148,14 +149,14 @@ export default function StoreSearchPicker({stores, initialQuery, linkedKeys, onP
                                            onError={(event) => {
                                                event.currentTarget.style.visibility = "hidden";
                                            }}/>
-                                    : <div className="h-12 w-9 rounded bg-default-200"/>}
+                                    : <div className="h-12 w-9 rounded bg-surface-secondary"/>}
                                 <div className="flex min-w-0 flex-1 flex-col">
                                     <span className="truncate">{result.title}</span>
                                     <span className="truncate text-xs text-muted">
                                         {[result.subtitle, `ID ${result.id}`].filter(Boolean).join(" · ")}
                                     </span>
                                 </div>
-                                <Button size="sm" variant="outline" isDisabled={linked}
+                                <Button size="sm" variant="secondary" isDisabled={linked}
                                         onPress={() => onPick(store.id, result.id, result.title)}>
                                     {linked ? "Added" : "Add"}
                                 </Button>
@@ -165,7 +166,7 @@ export default function StoreSearchPicker({stores, initialQuery, linkedKeys, onP
                 </ul>
             )}
 
-            <div className="border-t border-default-200 pt-2">
+            <div className="border-t border-separator pt-2">
                 {showManual ? (
                     <div className="flex flex-wrap items-end gap-2">
                         <TextField className="min-w-48 flex-1" value={manualInput} onChange={setManualInput}>
