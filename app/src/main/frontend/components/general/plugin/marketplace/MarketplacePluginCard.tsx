@@ -23,12 +23,12 @@ export default function MarketplacePluginCard({plugin}: { plugin: MarketplacePlu
 
     return (
         <>
-            <Card className={`flex flex-col gap-3 p-4 h-full ${hasUpdate ? "border border-accent" : ""}`}>
+            <Card className={`flex flex-col gap-3 p-4 h-[min(20rem,100cqw)] min-h-0 min-w-0 overflow-hidden ${hasUpdate ? "border border-accent" : ""}`}>
                 <button type="button"
-                        className="flex flex-col items-center gap-2 grow text-left cursor-pointer"
+                        className="flex flex-col items-center gap-2 grow min-h-0 -mx-4 -mt-4 px-4 pt-4 overflow-y-auto text-left cursor-pointer"
                         aria-label={`Show details for ${plugin.name}`}
                         onClick={detailsModal.open}>
-                    <div className="flex h-16 w-full items-center justify-center">
+                    <div className="flex h-16 w-full shrink-0 items-center justify-center">
                         <MarketplacePluginLogo plugin={plugin} glow={true}/>
                     </div>
                     <p className="flex flex-wrap justify-center wrap-anywhere items-center gap-1 font-semibold text-center">
@@ -49,7 +49,7 @@ export default function MarketplacePluginCard({plugin}: { plugin: MarketplacePlu
                     <MarketplaceSourceBadge plugin={plugin}/>
                 </div>}
 
-                <div className="flex flex-row items-center justify-between gap-2">
+                <div className="flex flex-row flex-wrap shrink-0 items-center justify-between gap-2">
                     <div className="flex flex-col gap-1">
                         {hasUpdate
                             ? <span className="text-xs text-muted">Installed: v{plugin.installedVersion}</span>

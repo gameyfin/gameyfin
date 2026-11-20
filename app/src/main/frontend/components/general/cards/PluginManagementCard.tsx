@@ -244,7 +244,7 @@ export function PluginManagementCard({plugin}: { plugin: PluginDto }) {
     return (
         <>
             <Card
-                className={`flex flex-row justify-between p-2 border-2 ${BORDER_CLASSES[borderColor(plugin.state, plugin.trustLevel)]}`}>
+                className={`flex flex-row justify-between p-2 border-2 overflow-hidden ${BORDER_CLASSES[borderColor(plugin.state, plugin.trustLevel)]}`}>
                 <div className="absolute left-0 top-0 flex flex-row">
                     {availableUpdate &&
                         <Tooltip delay={0}>
