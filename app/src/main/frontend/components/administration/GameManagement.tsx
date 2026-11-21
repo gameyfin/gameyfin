@@ -1,5 +1,4 @@
 import React, {useState} from "react";
-import {GridList, Selection} from "react-aria-components";
 import {CollectionEndpoint, LibraryEndpoint} from "Frontend/generated/endpoints";
 import ScanType from "Frontend/generated/org/gameyfin/app/libraries/enums/ScanType";
 import ConfigFormField from "Frontend/components/administration/ConfigFormField";
@@ -21,9 +20,16 @@ import {pluginState} from "Frontend/state/PluginState";
 import UploadGameButton from "Frontend/components/general/modals/UploadGameButton";
 import BulkDeleteButton from "Frontend/components/general/BulkDeleteButton";
 
+function toggleSelection(selection: Set<number>, id: number) {
+    const next = new Set(selection);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+}
+
 function GameManagementLayout({getConfig, formik}: any) {
-    const [selectedLibraries, setSelectedLibraries] = useState<Selection>(new Set());
-    const [selectedCollections, setSelectedCollections] = useState<Selection>(new Set());
+    const [selectedLibraries, setSelectedLibraries] = useState<Set<number>>(new Set());
+    const [selectedCollections, setSelectedCollections] = useState<Set<number>>(new Set());
     const libraries = useSnapshot(libraryState);
     const libraryCreationModal = useOverlayState();
     const libraryOrderModal = useOverlayState();
@@ -44,11 +50,10 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <h2 className="text-xl font-bold mt-8 mb-1">Libraries</h2>
                 <div className="flex flex-row gap-2">
                     <BulkDeleteButton entityLabel="libraries"
-                                      selectedItems={libraries.sorted.filter(item => selectedLibraries === "all" || selectedLibraries.has(item.id))}
+                                      selectedItems={libraries.sorted.filter(item => selectedLibraries.has(item.id))}
                                       deleteItem={id => LibraryEndpoint.deleteLibrary(id)}
                                       onStarted={ids => setSelectedLibraries(current => new Set(
-                                          libraries.sorted.filter(item => (current === "all" || current.has(item.id)) && !ids.includes(item.id))
-                                              .map(item => item.id)
+                                          [...current].filter(id => !ids.includes(id))
                                       ))}/>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
@@ -99,15 +104,14 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {libraries.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <GridList id="library-cards" aria-label="Libraries" layout="grid"
-                          selectionMode="multiple" selectionBehavior="toggle"
-                          selectedKeys={selectedLibraries} onSelectionChange={setSelectedLibraries}
-                          className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
+                <ul id="library-cards" aria-label="Libraries"
+                    className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {libraries.sorted.map((library) =>
-                        // @ts-ignore
-                        <LibraryOverviewCard library={library} key={library.id}/>
+                        <LibraryOverviewCard library={library} key={library.id}
+                                             isSelected={selectedLibraries.has(library.id)}
+                                             onToggleSelection={() => setSelectedLibraries(current => toggleSelection(current, library.id))}/>
                     )}
-                </GridList> :
+                </ul> :
                 <p className="mt-4 text-center text-muted">No libraries found</p>
             }
 
@@ -115,11 +119,10 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <h2 className="text-xl font-bold mt-8 mb-1">Collections</h2>
                 <div className="flex flex-row gap-2">
                     <BulkDeleteButton entityLabel="collections"
-                                      selectedItems={collections.sorted.filter(item => selectedCollections === "all" || selectedCollections.has(item.id))}
+                                      selectedItems={collections.sorted.filter(item => selectedCollections.has(item.id))}
                                       deleteItem={id => CollectionEndpoint.deleteCollection(id)}
                                       onStarted={ids => setSelectedCollections(current => new Set(
-                                          collections.sorted.filter(item => (current === "all" || current.has(item.id)) && !ids.includes(item.id))
-                                              .map(item => item.id)
+                                          [...current].filter(id => !ids.includes(id))
                                       ))}/>
                     <Tooltip delay={0}>
                         <Tooltip.Trigger>
@@ -146,15 +149,14 @@ function GameManagementLayout({getConfig, formik}: any) {
             <Separator className="mb-4"/>
             {collections.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
-                <GridList id="collection-cards" aria-label="Collections" layout="grid"
-                          selectionMode="multiple" selectionBehavior="toggle"
-                          selectedKeys={selectedCollections} onSelectionChange={setSelectedCollections}
-                          className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
+                <ul id="collection-cards" aria-label="Collections"
+                    className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
                     {collections.sorted.map((collection) =>
-                        // @ts-ignore
-                        <CollectionOverviewCard collection={collection} key={collection.id}/>
+                        <CollectionOverviewCard collection={collection} key={collection.id}
+                                                isSelected={selectedCollections.has(collection.id)}
+                                                onToggleSelection={() => setSelectedCollections(current => toggleSelection(current, collection.id))}/>
                     )}
-                </GridList> :
+                </ul> :
                 <p className="mt-4 text-center text-muted">No collections found</p>
             }
 
