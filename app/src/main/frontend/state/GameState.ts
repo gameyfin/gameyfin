@@ -108,6 +108,7 @@ const gamePatchMapping: PatchMapping<GameField> = {
     ],
     [GameField.VIDEO_URLS]: [{value: "videoUrls", full: "videoUrls"}],
     [GameField.MEDIA_ORDER]: [{value: "mediaOrder", full: "mediaOrder"}],
+    [GameField.IS_DIRECTORY]: [{value: "directory", full: "metadata.directory"}],
     [GameField.FILE_SIZE]: [{value: "fileSize", summary: "fileSize", full: "metadata.fileSize"}],
     [GameField.PATH]: [{value: "path", summary: "path", full: "metadata.path"}],
     [GameField.DOWNLOAD_COUNT]: [{value: "downloadCount", summary: "downloadCount", full: "metadata.downloadCount"}],

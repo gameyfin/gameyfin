@@ -126,6 +126,7 @@ object EntityFieldMappings {
     val GAME_METADATA_FIELDS = listOf(
         GameField.PATH,
         GameField.FILE_SIZE,
+        GameField.IS_DIRECTORY,
         GameField.DOWNLOAD_COUNT,
         GameField.MATCH_CONFIRMED
     )
@@ -155,6 +156,7 @@ object EntityFieldMappings {
 
         return buildList {
             if (previous.path != current.path) add(GameField.PATH)
+            if (previous.isDirectory != current.isDirectory) add(GameField.IS_DIRECTORY)
             if (previous.fileSize != current.fileSize) add(GameField.FILE_SIZE)
             if (previous.downloadCount != current.downloadCount) add(GameField.DOWNLOAD_COUNT)
             if (previous.matchConfirmed != current.matchConfirmed) add(GameField.MATCH_CONFIRMED)

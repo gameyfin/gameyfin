@@ -1,11 +1,10 @@
-import {Button, Card, Tooltip} from "@heroui/react";
-import {GridListItem} from "react-aria-components";
+import {Button, Card, Checkbox, Tooltip} from "@heroui/react";
 import React from "react";
 import {LibraryEndpoint} from "Frontend/generated/endpoints";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import {MagnifyingGlassIcon, MagnifyingGlassPlusIcon, SlidersHorizontalIcon} from "@phosphor-icons/react";
+import {MagnifyingGlassIcon, MagnifyingGlassPlusIcon} from "@phosphor-icons/react";
 import ScanType from "Frontend/generated/org/gameyfin/app/libraries/enums/ScanType";
-import {useNavigate} from "react-router";
+import {Link} from "react-router";
 import {useSnapshot} from "valtio/react";
 import {gameState} from "Frontend/state/GameState";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
@@ -16,11 +15,12 @@ import {pluginState} from "Frontend/state/PluginState";
 
 interface LibraryOverviewCardProps {
     library: LibrarySummaryDto;
+    isSelected: boolean;
+    onToggleSelection: () => void;
 }
 
-export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
+export function LibraryOverviewCard({library, isSelected, onToggleSelection}: LibraryOverviewCardProps) {
     const MAX_COVER_COUNT = 5;
-    const navigate = useNavigate();
     const state = useSnapshot(gameState);
     const randomGames = getRandomGames();
     const hasActiveMetadataPlugins = useSnapshot(pluginState).hasActiveMetadataPlugins;
@@ -39,11 +39,21 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
     }
 
     return (
-        <GridListItem id={library.id} textValue={library.name}
-                      className="max-w-[353px] rounded-xl cursor-pointer outline-none data-[selected]:ring-2 data-[selected]:ring-accent data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-4 data-[focus-visible]:outline-accent">
-            <Card className="flex flex-col justify-between w-full max-w-[353px] p-0 overflow-hidden">
+        <li className="relative isolate max-w-88.25">
+            <Checkbox aria-label={`Select ${library.name}`} isSelected={isSelected} onChange={onToggleSelection}
+                      className="absolute top-2 left-2 z-20">
+                <Checkbox.Content>
+                    <Checkbox.Control className={isSelected ? undefined : "border-2 border-foreground bg-surface"}>
+                        <Checkbox.Indicator/>
+                    </Checkbox.Control>
+                </Checkbox.Content>
+            </Checkbox>
+            <Link to={`library/${library.id}`} aria-label={`Open ${library.name}`}
+                  className="absolute inset-0 z-10 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"/>
+            <Card data-selected={isSelected || undefined}
+                  className="flex flex-col justify-between w-full max-w-88.25 p-0 overflow-hidden data-selected:ring-2 data-selected:ring-accent">
                 <div className="flex flex-1 justify-center items-center">
-                    <div className="flex flex-1 opacity-10 min-h-[100px]">
+                    <div className="flex flex-1 opacity-10 min-h-25">
                         <IconBackgroundPattern/>
                         {randomGames.length > 0 &&
                             <div className="absolute flex flex-row">
@@ -54,9 +64,9 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                         }
                     </div>
 
-                    <p className="mt-6 absolute max-w-full px-3 wrap-anywhere text-center text-2xl text-center font-bold">{library.name}</p>
+                    <p className="mt-6 absolute max-w-full px-3 wrap-anywhere text-center text-2xl font-bold">{library.name}</p>
 
-                    <div className="absolute right-0 top-0 flex flex-row">
+                    <div className="absolute right-0 top-0 z-20 flex flex-row">
                         <Tooltip delay={0}>
                             <Tooltip.Trigger>
                                 <Button isIconOnly variant="ghost"
@@ -83,21 +93,12 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                                 Scan library (full)
                             </Tooltip.Content>
                         </Tooltip>
-                        <Tooltip delay={0}>
-                            <Tooltip.Trigger>
-                                <Button isIconOnly variant="ghost" aria-label="Configuration" onPress={() => navigate('library/' + library.id)}>
-                                    <SlidersHorizontalIcon/>
-                                </Button>
-                            </Tooltip.Trigger>
-                            <Tooltip.Content placement="bottom" className="bg-foreground text-background">
-                                Configuration
-                            </Tooltip.Content>
-                        </Tooltip>
                     </div>
                 </div>
 
                 {stats &&
-                    <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
+                    <div
+                        className="relative grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 [&_button]:relative [&_button]:z-20">
                         <p>Games</p>
                         <p>Downloads</p>
                         <p>Platforms</p>
@@ -107,6 +108,6 @@ export function LibraryOverviewCard({library}: LibraryOverviewCardProps) {
                     </div>
                 }
             </Card>
-        </GridListItem>
+        </li>
     );
 }

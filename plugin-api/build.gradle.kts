@@ -20,7 +20,9 @@ dependencies {
 
 mavenPublishing {
     publishToMavenCentral()
-    signAllPublications()
+    val localPublishTasks = setOf("publishToMavenLocal", "publishMavenPublicationToMavenLocal")
+    val publishingOnlyToLocal = gradle.startParameter.taskNames.all { it.substringAfterLast(':') in localPublishTasks }
+    if (!publishingOnlyToLocal) signAllPublications()
 
     coordinates(project.group.toString(), project.name, rootProject.version.toString())
 

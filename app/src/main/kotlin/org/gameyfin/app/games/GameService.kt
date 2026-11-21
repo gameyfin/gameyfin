@@ -44,6 +44,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile
 import reactor.core.publisher.Flux
 import java.net.URI
+import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
@@ -115,13 +116,27 @@ class GameService(
         )
     }
 
-    @Transactional(readOnly = true)
-    fun getDtoById(id: Long): GameDto? = gameRepository.findByIdOrNull(id)?.toDto()
+    @Transactional
+    fun getDtoById(id: Long): GameDto? = gameRepository.findByIdOrNull(id)?.also(::backfillDirectoryType)?.toDto()
+
+    private fun backfillDirectoryType(game: Game) {
+        if (game.metadata.isDirectory == null) {
+            game.metadata.isDirectory = filesystemService.gameDirectoryType(game.metadata.path, game.library)
+        }
+    }
 
     @Transactional(readOnly = true)
+    fun getDownloadFolder(id: Long): Path {
+        val game = getById(id)
+        val root = filesystemService.validateGamePath(game.metadata.path, game.library)
+        require(Files.isDirectory(root)) { "Game is not stored in a folder" }
+        return root
+    }
+
+    @Transactional
     fun getDtosByIds(ids: Collection<Long>): List<GameDto> {
         if (ids.isEmpty()) return emptyList()
-        return gameRepository.findAllById(ids.distinct()).toDtos()
+        return gameRepository.findAllById(ids.distinct()).onEach(::backfillDirectoryType).toDtos()
     }
 
     private fun create(game: Game): Game {
@@ -145,6 +160,7 @@ class GameService(
             log.debug(e) {}
         }
 
+        backfillDirectoryType(game)
         game.metadata.fileSize = filesystemService.calculateFileSize(game.metadata.path, game.library)
 
         return gameRepository.save(game)
@@ -155,6 +171,7 @@ class GameService(
         val gamesToBePersisted = games.filter { it.id == null }
 
         gamesToBePersisted.forEach { game ->
+            backfillDirectoryType(game)
             game.publishers = game.publishers.map { companyService.createOrGet(it) }.toMutableList()
             game.developers = game.developers.map { companyService.createOrGet(it) }.toMutableList()
             game.coverImage?.let { game.coverImage = imageService.createOrGet(it) }

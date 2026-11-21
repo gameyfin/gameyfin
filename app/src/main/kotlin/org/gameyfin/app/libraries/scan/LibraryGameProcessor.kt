@@ -69,6 +69,11 @@ class LibraryGameProcessor(
         }
     }
 
+    @Transactional
+    fun updateDirectoryType(gameId: Long, isDirectory: Boolean?) {
+        gameService.getById(gameId).metadata.isDirectory = isDirectory
+    }
+
     private fun downloadImagesForGame(game: Game) {
         game.coverImage?.let { imageService.downloadIfNew(it) }
         game.headerImage?.let { imageService.downloadIfNew(it) }

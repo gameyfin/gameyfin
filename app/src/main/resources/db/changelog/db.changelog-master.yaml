@@ -1707,3 +1707,18 @@ databaseChangeLog:
   - include:
       file: db.changelog-2.7.0.yaml
       relativeToChangelogFile: true
+
+  - changeSet:
+      id: 2.7.1-game-is-directory
+      author: gameyfin
+      changes:
+        - addColumn:
+            tableName: GAME
+            columns:
+              - column:
+                  name: IS_DIRECTORY
+                  type: boolean
+      rollback:
+        - dropColumn:
+            tableName: GAME
+            columnName: IS_DIRECTORY

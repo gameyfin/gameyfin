@@ -14,11 +14,14 @@ import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.DownloadProvider
+import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.RangeDownload
+import org.gameyfin.pluginapi.download.SelectiveDownloadProvider
 import org.springframework.stereotype.Service
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.time.DurationUnit
 import kotlin.time.measureTime
@@ -40,12 +43,13 @@ class DownloadService(
 
     fun getProviders(): List<DownloadProviderDto> {
         return downloadPlugins.map {
-            val plugin = pluginManager.whichPlugin(it.javaClass.enclosingClass)
+            val plugin = pluginManager.whichPlugin(it.javaClass)
             val managementEntry = pluginManager.getManagementEntry(plugin.pluginId)
             val descriptor = plugin.descriptor as GameyfinPluginDescriptor
 
             DownloadProviderDto(
                 key = it.javaClass.name,
+                supportsFileSelection = it is SelectiveDownloadProvider,
                 name = it.name ?: descriptor.pluginName,
                 priority = managementEntry.priority,
                 description = it.description ?: descriptor.pluginDescription,
@@ -55,11 +59,28 @@ class DownloadService(
     }
 
     fun getDownload(path: String, provider: String): Download {
-        val provider = downloadPlugins.firstOrNull { it.javaClass.name == provider }
-            ?: throw IllegalArgumentException("Download provider $provider not found")
-
-        return provider.download(Path(path))
+        return findProvider(provider).download(Path(path))
     }
+
+    fun listContents(root: Path): List<DownloadFileEntry> {
+        require(downloadPlugins.any { it is SelectiveDownloadProvider }) { "File selection is unavailable" }
+        return DownloadSelection.contents(root)
+    }
+
+    fun getSelection(root: Path, provider: String, files: List<String>): FileDownload {
+        return selectiveProvider(provider).downloadSelection(root, DownloadSelection.validate(root, files))
+    }
+
+    fun getFullSelection(root: Path, provider: String, contentsETag: String): FileDownload {
+        val selectedProvider = selectiveProvider(provider)
+        val entries = DownloadSelection.contents(root)
+        if (DownloadSelection.contentsETag(entries) != contentsETag) throw IOException("Game contents have changed")
+        require(entries.isNotEmpty()) { "Select at least one file" }
+        return selectedProvider.downloadSelection(root, entries.map { Path(it.path) })
+    }
+
+    private fun selectiveProvider(provider: String) = findProvider(provider) as? SelectiveDownloadProvider
+        ?: throw IllegalArgumentException("Provider does not support file selection")
 
     fun getRangeDownload(path: String, provider: String): RangeDownload? =
         findProvider(provider).prepareRangeDownload(Path(path))

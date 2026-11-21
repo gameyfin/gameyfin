@@ -15,12 +15,36 @@ const aspectRatio = 12 / 17; // aspect ratio of the game cover
 const defaultImageHeight = 300; // default height for the image
 const defaultImageWidth = aspectRatio * defaultImageHeight; // default width for the image
 const gap = 8; // gap between items in pixels (gap-2 = 0.5rem = 8px)
+const columnWidth = defaultImageWidth + gap;
+const mouseDragThreshold = 5;
+const releaseVelocityWindow = 100; // ms before a stationary pointer loses its momentum
+const momentumProjectionTime = 160; // ms of travel used to choose the snap point
+
+interface MouseDrag {
+    pointerId: number;
+    startX: number;
+    startScrollLeft: number;
+    lastX: number;
+    lastMoveTime: number;
+    velocity: number;
+}
 
 export function CoverRow({games, title, link}: CoverRowProps) {
     const gridRef = useRef<GridImperativeAPI | null>(null);
     const [scrollPosition, setScrollPosition] = useState(0);
     const [containerWidth, setContainerWidth] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const mouseDrag = useRef<MouseDrag | null>(null);
+    const momentumFrame = useRef<number | null>(null);
+
+    const stopMomentum = useCallback(() => {
+        if (momentumFrame.current !== null) {
+            cancelAnimationFrame(momentumFrame.current);
+            momentumFrame.current = null;
+        }
+    }, []);
+
+    useEffect(() => stopMomentum, [stopMomentum]);
 
     // Update container width on resize
     useEffect(() => {
@@ -68,14 +92,14 @@ export function CoverRow({games, title, link}: CoverRowProps) {
         };
     }, [containerWidth, games.length]);
 
-    const totalWidth = games.length * (defaultImageWidth + gap);
+    const totalWidth = games.length * columnWidth;
     const maxScroll = Math.max(0, totalWidth - containerWidth);
 
     const scrollLeft = () => {
+        stopMomentum();
         const gridElement = gridRef.current?.element;
         if (gridElement) {
-            const itemWidth = defaultImageWidth + gap;
-            const scrollAmount = itemWidth * 3; // Scroll exactly 3 items
+            const scrollAmount = columnWidth * 3; // Scroll exactly 3 items
             const newPosition = Math.max(0, scrollPosition - scrollAmount);
             gridElement.scrollTo({
                 left: newPosition,
@@ -85,10 +109,10 @@ export function CoverRow({games, title, link}: CoverRowProps) {
     };
 
     const scrollRight = () => {
+        stopMomentum();
         const gridElement = gridRef.current?.element;
         if (gridElement) {
-            const itemWidth = defaultImageWidth + gap;
-            const scrollAmount = itemWidth * 3; // Scroll exactly 3 items
+            const scrollAmount = columnWidth * 3; // Scroll exactly 3 items
             const newPosition = Math.min(maxScroll, scrollPosition + scrollAmount);
             gridElement.scrollTo({
                 left: newPosition,
@@ -99,6 +123,86 @@ export function CoverRow({games, title, link}: CoverRowProps) {
 
     const canScrollLeft = scrollPosition > 1; // Allow small margin for floating point issues
     const canScrollRight = scrollPosition < maxScroll - 1 && maxScroll > 0;
+
+    const startMouseDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+        stopMomentum();
+        const gridElement = gridRef.current?.element;
+        if (event.pointerType !== "mouse" || event.button !== 0 || !gridElement ||
+            gridElement.scrollWidth <= gridElement.clientWidth) return;
+
+        mouseDrag.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startScrollLeft: gridElement.scrollLeft,
+            lastX: event.clientX,
+            lastMoveTime: event.timeStamp,
+            velocity: 0
+        };
+    };
+
+    const moveMouseDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+        const drag = mouseDrag.current;
+        const gridElement = gridRef.current?.element;
+        if (!drag || drag.pointerId !== event.pointerId || !gridElement) return;
+
+        const distance = event.clientX - drag.startX;
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+            if (Math.abs(distance) < mouseDragThreshold) return;
+            // Capture only after movement so a regular click still reaches the cover link.
+            event.currentTarget.setPointerCapture(event.pointerId);
+        }
+
+        gridElement.scrollLeft = drag.startScrollLeft - distance;
+
+        if (event.clientX !== drag.lastX) {
+            const elapsed = event.timeStamp - drag.lastMoveTime;
+            const velocity = (drag.lastX - event.clientX) / Math.max(elapsed, 8);
+            drag.velocity = elapsed < releaseVelocityWindow ? (drag.velocity + velocity) / 2 : velocity;
+            drag.lastX = event.clientX;
+            drag.lastMoveTime = event.timeStamp;
+        }
+    };
+
+    const releaseMouseDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+        const drag = mouseDrag.current;
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        mouseDrag.current = null;
+
+        const gridElement = gridRef.current?.element;
+        if (!gridElement || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+
+        const start = gridElement.scrollLeft;
+        const end = gridElement.scrollWidth - gridElement.clientWidth;
+        const timeSinceMove = event.timeStamp - drag.lastMoveTime;
+        const velocity = drag.velocity * Math.max(0, 1 - timeSinceMove / releaseVelocityWindow);
+        const momentum = Math.max(-3 * columnWidth, Math.min(3 * columnWidth, velocity * momentumProjectionTime));
+        const projected = Math.max(0, Math.min(end, start + momentum));
+        const lastAlignedCover = Math.floor(end / columnWidth);
+        const aligned = Math.min(lastAlignedCover, Math.round(projected / columnWidth)) * columnWidth;
+        const target = end - projected <= Math.abs(projected - aligned) ? end : aligned;
+
+        const distance = target - start;
+        if (Math.abs(distance) < 1 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            gridElement.scrollLeft = target;
+            return;
+        }
+
+        const duration = Math.min(520, 200 + Math.abs(distance) * 0.55);
+        const startedAt = performance.now();
+        const animate = (now: number) => {
+            const progress = Math.min(1, (now - startedAt) / duration);
+            const eased = 1 - (1 - progress) ** 3;
+            gridElement.scrollLeft = start + distance * eased;
+            momentumFrame.current = progress < 1 ? requestAnimationFrame(animate) : null;
+        };
+        momentumFrame.current = requestAnimationFrame(animate);
+    };
+
+    const endMouseDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (mouseDrag.current?.pointerId === event.pointerId) {
+            mouseDrag.current = null;
+        }
+    };
 
     // Define interface for Cell props
     interface RowCellProps {
@@ -149,12 +253,23 @@ export function CoverRow({games, title, link}: CoverRowProps) {
                     </Button>
                 </div>
             </div>
-            <div ref={containerRef} className="w-full relative overflow-hidden">
+            <div ref={containerRef}
+                 className="w-full relative overflow-hidden"
+                 onPointerDown={startMouseDrag}
+                 onPointerMove={moveMouseDrag}
+                 onPointerUp={releaseMouseDrag}
+                 onPointerCancel={endMouseDrag}
+                 onLostPointerCapture={endMouseDrag}
+                 onPointerLeave={endMouseDrag}
+                 onWheel={stopMomentum}
+                 onDragStart={event => {
+                     if (mouseDrag.current) event.preventDefault();
+                 }}>
                 {containerWidth > 0 && (
                     <Grid<{ games: GameSummaryDto[] }>
                         gridRef={gridRef}
                         columnCount={games.length}
-                        columnWidth={defaultImageWidth + gap}
+                        columnWidth={columnWidth}
                         rowCount={1}
                         rowHeight={defaultImageHeight}
                         defaultHeight={defaultImageHeight}

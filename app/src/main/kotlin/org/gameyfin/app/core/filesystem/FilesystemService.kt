@@ -171,6 +171,23 @@ class FilesystemService(
         throw IllegalArgumentException("Path must refer to an accessible file or directory inside the library")
     }
 
+    /** Unknown when the path is inaccessible or no longer belongs to this library. */
+    fun gameDirectoryType(path: String, library: Library): Boolean? = try {
+        val target = validateGamePath(path, library)
+        val attributes = Files.readAttributes(target, BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS)
+        when {
+            attributes.isDirectory -> true
+            attributes.isRegularFile -> false
+            else -> null
+        }
+    } catch (_: IllegalArgumentException) {
+        null
+    } catch (_: IOException) {
+        null
+    } catch (_: SecurityException) {
+        null
+    }
+
     /** Delete only a validated game path; never follow symlinks during recursive deletion. */
     fun deleteGameFiles(path: String, library: Library) {
         require(!Files.isSymbolicLink(Path(path))) { "Cannot delete game files through a symbolic link" }

@@ -23,6 +23,7 @@ function fixture() {
             body: {appendChild: frame => frames.push(frame)},
         },
     })(name => {
+        if (name === "Frontend/util/auth") return {getCsrfToken: () => "test-token"};
         assert.equal(name, "@heroui/react");
         return {toast: {
             info: (...args) => toasts.push(args),

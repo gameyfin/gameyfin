@@ -55,6 +55,7 @@ class LibraryScanServiceTest {
     fun setup() {
         libraryRepository = mockk()
         filesystemService = mockk()
+        every { filesystemService.gameDirectoryType(any(), any()) } returns null
         libraryCoreService = mockk()
         // Queued scans reload the library with its lazy associations initialized, delegate to the repository stubs
         every { libraryCoreService.getWithGamesAndIgnoredPaths(any()) } answers {
@@ -230,6 +231,21 @@ class LibraryScanServiceTest {
 
         Thread.sleep(100)
         verify(atLeast = 1) { filesystemService.scanLibraryForGamefiles(library) }
+    }
+
+    @Test
+    fun `quick scan updates a game replaced by a folder even with unchanged size`() {
+        val game = createTestGame(42, "/library/game.zip")
+        game.metadata.isDirectory = false
+        game.metadata.fileSize = 123
+        val library = createTestLibrary(1, games = mutableListOf(game))
+        setupSuccessfulQuickScan(library)
+        every { libraryRepository.findAllById(listOf(1L)) } returns listOf(library)
+        every { filesystemService.gameDirectoryType(game.metadata.path, library) } returns true
+        every { libraryGameProcessor.updateDirectoryType(42, true) } just Runs
+
+        libraryScanService.triggerScan(ScanType.QUICK, listOf(1L))
+        verify(timeout = 2000) { libraryGameProcessor.updateDirectoryType(42, true) }
     }
 
     @Test

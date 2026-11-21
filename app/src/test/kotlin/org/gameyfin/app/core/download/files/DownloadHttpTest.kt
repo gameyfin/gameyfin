@@ -10,6 +10,7 @@ import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.RangeDownload
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.springframework.http.ContentDisposition
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext
 import org.springframework.web.servlet.DispatcherServlet
@@ -98,10 +99,11 @@ class DownloadHttpTest {
         tomcat.setBaseDir(directory.resolve("tomcat").toString())
         tomcat.setPort(0)
         val context = tomcat.addContext("", directory.toString())
+        context.requestCharacterEncoding = Charsets.UTF_8.name()
         val spring = AnnotationConfigWebApplicationContext()
         spring.register(WebConfig::class.java)
         spring.addBeanFactoryPostProcessor { factory ->
-            factory.registerSingleton("downloads", DownloadEndpoint(service, games))
+            factory.registerSingleton("downloads", DownloadEndpoint(service, games, tools.jackson.databind.ObjectMapper()))
             factory.registerSingleton(
                 "apiDownloads", org.gameyfin.app.api.v1.controller.DownloadControllerV1(
                     org.gameyfin.app.api.v1.allowingAccess(), service, catalog, games, mockk(), JsonMapper()
@@ -111,11 +113,49 @@ class DownloadHttpTest {
         }
         val servlet = Tomcat.addServlet(context, "dispatcher", DispatcherServlet(spring))
         servlet.isAsyncSupported = true
-        context.addServletMappingDecoded("/", "dispatcher")
+        context.addServletMapping("/", "dispatcher")
         tomcat.connector
         try {
             tomcat.start()
             HttpClient.newHttpClient().use { client ->
+                val root = directory.toRealPath()
+                val filename = "mise à jour, 1.tar.gz"
+                val selected = listOf("dlc/$filename")
+                every { games.getDownloadFolder(1) } returns root
+                val entries = selected.map { DownloadFileEntry(it, bytes.size.toLong()) }
+                every { service.listContents(root) } returns entries
+                every { service.getSelection(root, "direct", selected) } answers {
+                    org.gameyfin.pluginapi.download.FileDownload(bytes.inputStream(), "gz", bytes.size.toLong(), filename)
+                }
+                val base = "http://localhost:${tomcat.connector.localPort}/download/1"
+                val contents = client.send(HttpRequest.newBuilder(URI("$base/contents")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString())
+                assertEquals(200, contents.statusCode())
+                val listed = JsonMapper().readTree(contents.body()).values()
+                assertEquals(entries, listed.map { DownloadFileEntry(it.required("path").asString(), it.required("size").longValue()) })
+                val form = "provider=direct&files=" + java.net.URLEncoder.encode(JsonMapper().writeValueAsString(selected), Charsets.UTF_8)
+                val selection = client.send(HttpRequest.newBuilder(URI("$base/selection?client=browser"))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(form)).build(), HttpResponse.BodyHandlers.ofByteArray())
+                assertEquals(200, selection.statusCode())
+                assertEquals(filename, ContentDisposition.parse(selection.headers().firstValue("Content-Disposition").orElseThrow()).filename)
+                assertContentEquals(bytes, selection.body())
+
+                val etag = contents.headers().firstValue("ETag").orElseThrow()
+                every { service.getFullSelection(root, "direct", etag) } answers {
+                    org.gameyfin.pluginapi.download.FileDownload(bytes.inputStream(), "gz", bytes.size.toLong(), filename)
+                }
+                val allFiles = HttpRequest.newBuilder(URI("$base/selection?client=browser"))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString("provider=direct&contentsETag=" +
+                            java.net.URLEncoder.encode(etag, Charsets.UTF_8))).build()
+                val full = client.send(allFiles, HttpResponse.BodyHandlers.ofByteArray())
+                assertEquals(200, full.statusCode())
+                assertEquals(filename, ContentDisposition.parse(full.headers().firstValue("Content-Disposition").orElseThrow()).filename)
+                assertContentEquals(bytes, full.body())
+                every { service.getFullSelection(root, "direct", etag) } throws java.io.IOException("Contents changed")
+                assertEquals(409, client.send(allFiles, HttpResponse.BodyHandlers.discarding()).statusCode())
+
                 for (path in listOf("/download/1", "/v1/games/1/download")) {
                     val release = CountDownLatch(1)
                     val closed = CountDownLatch(1)
@@ -139,7 +179,8 @@ class DownloadHttpTest {
                             }
                         }, "zip")
                     }
-                    val slow = URI("http://localhost:${tomcat.connector.localPort}$path?provider=slow")
+                    val browserFrameOptions = if (path == "/download/1") "SAMEORIGIN" else null
+                    val slow = URI("http://localhost:${tomcat.connector.localPort}$path?provider=slow&client=browser")
                     try {
                         val pending = client.sendAsync(
                             HttpRequest.newBuilder(slow).GET().build(),
@@ -152,6 +193,7 @@ class DownloadHttpTest {
                             throw AssertionError("First byte did not arrive through ${responseStreamType.get()}", error)
                         }
                         assertEquals(200, response.statusCode())
+                        assertEquals(browserFrameOptions, response.headers().firstValue("X-Frame-Options").orElse(null))
                         assertTrue(response.headers().firstValue("Content-Length").isEmpty)
                         response.body().use {
                             assertEquals(80, it.read())
@@ -196,6 +238,7 @@ class DownloadHttpTest {
                     val cancelResponse = client.send(
                         HttpRequest.newBuilder(cancelUrl).GET().build(), HttpResponse.BodyHandlers.ofInputStream()
                     )
+                    assertTrue(cancelResponse.headers().firstValue("X-Frame-Options").isEmpty)
                     cancelResponse.body().use { body ->
                         assertEquals(1, body.read())
                         GameDownloadLifecycle.remove(1) { assertEquals(0L, cancelled.count) }
@@ -213,6 +256,7 @@ class DownloadHttpTest {
                         val error = first.body().use { it.readAllBytes().decodeToString() }
                         fail("$path returned ${first.statusCode()}: $error")
                     }
+                    assertEquals(browserFrameOptions, first.headers().firstValue("X-Frame-Options").orElse(null))
                     val prefix = first.body().use { it.readNBytes(8192) }
                     val resumed = client.send(
                         HttpRequest.newBuilder(url)
@@ -221,6 +265,7 @@ class DownloadHttpTest {
                         HttpResponse.BodyHandlers.ofByteArray()
                     )
                     assertEquals(206, resumed.statusCode())
+                    assertEquals(browserFrameOptions, resumed.headers().firstValue("X-Frame-Options").orElse(null))
                     assertContentEquals(bytes, prefix + resumed.body())
                     val head = client.send(
                         HttpRequest.newBuilder(url).method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
@@ -268,7 +313,7 @@ class DownloadHttpTest {
                 assertEquals("text/html", browserLink.headers().firstValue("Content-Type").orElseThrow())
                 assertEquals("SAMEORIGIN", browserLink.headers().firstValue("X-Frame-Options").orElseThrow())
                 assertTrue(browserLink.body().contains("href=\"${magnet.replace("&", "&amp;")}\""))
-                verify(exactly = 13) { games.incrementDownloadCount(game) }
+                verify(exactly = 15) { games.incrementDownloadCount(game) }
                 verify(exactly = 3) { service.getDownload(any(), "magnet") }
                 verify(exactly = 2) { service.getDownload(any(), "slow") }
             }

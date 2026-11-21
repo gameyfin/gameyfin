@@ -147,7 +147,7 @@ export default function PluginMarketplace() {
             }
 
             {filteredPlugins.length > 0 &&
-                <div className="grid grid-cols-300px gap-4">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,20rem),1fr))] gap-4 @container">
                     {filteredPlugins.map(plugin =>
                         <MarketplacePluginCard key={`${plugin.marketplaceId}/${plugin.id}`} plugin={plugin}/>
                     )}

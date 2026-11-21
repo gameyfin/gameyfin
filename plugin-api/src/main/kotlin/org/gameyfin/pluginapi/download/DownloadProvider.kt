@@ -39,3 +39,14 @@ interface DownloadProvider : ExtensionPoint {
      */
     fun prepareRangeDownload(path: Path): RangeDownload? = null
 }
+
+/** A provider that streams individually selected regular files from a game folder. */
+interface SelectiveDownloadProvider : DownloadProvider {
+    /**
+     * [root] is the canonical game directory. [relativeFiles] contains distinct, validated paths
+     * relative to it. Return a single file directly with its basename in [FileDownload.fileName].
+     * For multiple files, preserve the relative paths in a ZIP. Files can change
+     * after validation; never follow a replacement symlink while opening selected files.
+     */
+    fun downloadSelection(root: Path, relativeFiles: List<Path>): FileDownload
+}

@@ -13,6 +13,8 @@ import org.gameyfin.app.games.entities.Game
 import org.gameyfin.pluginapi.download.Download
 import org.gameyfin.pluginapi.download.DownloadMetadata
 import org.gameyfin.pluginapi.download.DownloadProvider
+import org.gameyfin.pluginapi.download.FileDownload
+import org.gameyfin.pluginapi.download.SelectiveDownloadProvider
 import org.gameyfin.pluginapi.download.RangeDownload
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
@@ -69,6 +71,7 @@ class DownloadServiceTest {
         assertEquals(2, result.size)
         assertEquals("Provider 1", result[0].name)
         assertEquals("Provider 2", result[1].name)
+        assertEquals(listOf(true, false), result.map { it.supportsFileSelection })
         assertEquals(10, result[0].priority)
         assertEquals(5, result[1].priority)
     }
@@ -127,6 +130,31 @@ class DownloadServiceTest {
         assertEquals(listOf("Torrent Download", "Magnet Link"), providers.map { it.name })
         assertEquals(listOf("Plugin description", "Plugin description"), providers.map { it.description })
         assertEquals(listOf("Download via Torrent", "Open in your torrent client"), providers.map { it.shortDescription })
+    }
+
+    @Test
+    fun `providers must still support selection at download time`(@org.junit.jupiter.api.io.TempDir folder: java.nio.file.Path) {
+        val root = folder.toRealPath()
+        val provider = spyk(Provider1())
+        java.nio.file.Files.createFile(root.resolve("patch"))
+        every { pluginManager.getExtensions(DownloadProvider::class.java) } returns listOf(provider)
+        val files = service.listContents(root).map { it.path }
+        service.getSelection(root, provider.javaClass.name, files)
+        verify { provider.downloadSelection(root, listOf(Path("patch"))) }
+
+        val etag = DownloadSelection.contentsETag(service.listContents(root))
+        java.nio.file.Files.createSymbolicLink(root.resolve("link"), root.resolve("patch"))
+        service.getFullSelection(root, provider.javaClass.name, etag)
+        verify(exactly = 2) { provider.downloadSelection(root, listOf(Path("patch"))) }
+        java.nio.file.Files.createFile(root.resolve("new"))
+        assertThrows(IOException::class.java) { service.getFullSelection(root, provider.javaClass.name, etag) }
+
+        val legacy = Provider2()
+        every { pluginManager.getExtensions(DownloadProvider::class.java) } returns listOf(legacy)
+        assertThrows(IllegalArgumentException::class.java) { service.getSelection(root, provider.javaClass.name, files) }
+        assertThrows(IllegalArgumentException::class.java) { service.getSelection(root, legacy.javaClass.name, files) }
+        assertThrows(IllegalArgumentException::class.java) { service.getFullSelection(root, legacy.javaClass.name, etag) }
+        assertThrows(IllegalArgumentException::class.java) { service.listContents(root) }
     }
 
     @Test
@@ -431,7 +459,10 @@ class DownloadServiceTest {
     }
 
     // Test provider classes with known names
-    class Provider1 : DownloadProvider {
+    class Provider1 : SelectiveDownloadProvider {
+        override fun downloadSelection(root: java.nio.file.Path, relativeFiles: List<java.nio.file.Path>): FileDownload =
+            mockk(relaxed = true)
+
         override fun download(path: java.nio.file.Path): Download = mockk(relaxed = true)
     }
 

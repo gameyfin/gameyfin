@@ -1,6 +1,7 @@
 package org.gameyfin.app.core.plugins.management
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.apache.commons.lang3.ClassUtils
 import org.gameyfin.app.core.notifications.NotificationService
 import org.gameyfin.app.core.plugins.config.PluginConfigRepository
 import org.gameyfin.pluginapi.core.config.Configurable
@@ -344,20 +345,21 @@ class GameyfinPluginManager(
     }
 
     fun supportsExtensionType(pluginId: String, extensionType: KClass<out ExtensionPoint>): Boolean {
-        return getExtensionTypeClasses(pluginId).any { it == extensionType.java }
+        return getExtensionClasses(pluginId).any { extensionType.java.isAssignableFrom(it) }
     }
 
-    fun getExtensionTypeClasses(pluginId: String): List<Class<ExtensionPoint>> {
+    fun getExtensionTypeClasses(pluginId: String): List<Class<out ExtensionPoint>> {
         return getExtensionClasses(pluginId)
-            .flatMap { it.interfaces.toList() }
-            .filterIsInstance<Class<ExtensionPoint>>()
+            .flatMap { ClassUtils.getAllInterfaces(it) }
+            .filter { ExtensionPoint::class.java in it.interfaces }
+            .map { it.asSubclass(ExtensionPoint::class.java) }
+            .distinct()
     }
 
     fun getExtensionTypes(pluginId: String): List<String> {
-        return getExtensionClasses(pluginId)
-            .flatMap { it.interfaces.toList() }
-            .filterIsInstance<Class<ExtensionPoint>>()
+        return getExtensionTypeClasses(pluginId)
             .map { it.simpleName }
+            .distinct()
     }
 
     fun getPluginsForExtension(extensionClass: KClass<out ExtensionPoint>): List<PluginWrapper> {

@@ -1,21 +1,20 @@
-import {Button, Card, Tooltip} from "@heroui/react";
-import {GridListItem} from "react-aria-components";
+import {Card, Checkbox} from "@heroui/react";
 import React, {useMemo} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
-import {SlidersHorizontalIcon} from "@phosphor-icons/react";
-import {useNavigate} from "react-router";
+import {Link} from "react-router";
 import {useCollectionStats, useRandomlyOrderedGamesByCollectionId} from "Frontend/state/derived";
 import IconBackgroundPattern from "Frontend/components/general/IconBackgroundPattern";
 import ChipList from "Frontend/components/general/ChipList";
 
 interface CollectionOverviewCardProps {
     collection: CollectionDto;
+    isSelected: boolean;
+    onToggleSelection: () => void;
 }
 
-export function CollectionOverviewCard({collection}: CollectionOverviewCardProps) {
+export function CollectionOverviewCard({collection, isSelected, onToggleSelection}: CollectionOverviewCardProps) {
     const MAX_COVER_COUNT = 5;
-    const navigate = useNavigate();
     const randomlyOrderedGames = useRandomlyOrderedGamesByCollectionId()[collection.id];
     const randomGames = useMemo(() => (randomlyOrderedGames ?? [])
         .filter(game => game.cover?.id != null)
@@ -24,11 +23,21 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
 
 
     return (
-        <GridListItem id={collection.id} textValue={collection.name}
-                      className="max-w-[353px] rounded-xl cursor-pointer outline-none data-[selected]:ring-2 data-[selected]:ring-accent data-[focus-visible]:outline-2 data-[focus-visible]:outline-offset-4 data-[focus-visible]:outline-accent">
-            <Card className="flex flex-col justify-between w-full max-w-[353px] p-0 overflow-hidden">
+        <li className="relative isolate max-w-88.25">
+            <Checkbox aria-label={`Select ${collection.name}`} isSelected={isSelected} onChange={onToggleSelection}
+                      className="absolute top-2 left-2 z-20">
+                <Checkbox.Content>
+                    <Checkbox.Control className={isSelected ? undefined : "border-2 border-foreground bg-surface"}>
+                        <Checkbox.Indicator/>
+                    </Checkbox.Control>
+                </Checkbox.Content>
+            </Checkbox>
+            <Link to={`collection/${collection.id}`} aria-label={`Open ${collection.name}`}
+                  className="absolute inset-0 z-10 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"/>
+            <Card data-selected={isSelected || undefined}
+                  className="flex flex-col justify-between w-full max-w-88.25 p-0 overflow-hidden data-selected:ring-2 data-selected:ring-accent">
                 <div className="flex flex-1 justify-center items-center">
-                    <div className="flex flex-1 opacity-10 min-h-[100px]">
+                    <div className="flex flex-1 opacity-10 min-h-25">
                         <IconBackgroundPattern/>
                         {randomGames.length > 0 &&
                             <div className="absolute flex flex-row">
@@ -40,23 +49,11 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
                     </div>
 
                     <p className="absolute max-w-full px-3 wrap-anywhere text-center text-2xl font-bold">{collection.name}</p>
-
-                    <div className="absolute right-0 top-0 flex flex-row">
-                        <Tooltip delay={0}>
-                            <Tooltip.Trigger>
-                                <Button isIconOnly variant="ghost" aria-label="Configuration" onPress={() => navigate('collection/' + collection.id)}>
-                                    <SlidersHorizontalIcon/>
-                                </Button>
-                            </Tooltip.Trigger>
-                            <Tooltip.Content placement="bottom" className="bg-foreground text-background">
-                                Configuration
-                            </Tooltip.Content>
-                        </Tooltip>
-                    </div>
                 </div>
 
                 {stats &&
-                    <div className="grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 relative z-10">
+                    <div
+                        className="relative grid grid-rows-2 grid-cols-3 justify-items-center items-center p-2 pt-4 [&_button]:relative [&_button]:z-20">
                         <p>Games</p>
                         <p>Downloads</p>
                         <p>Platforms</p>
@@ -67,6 +64,6 @@ export function CollectionOverviewCard({collection}: CollectionOverviewCardProps
                     </div>
                 }
             </Card>
-        </GridListItem>
+        </li>
     );
 }

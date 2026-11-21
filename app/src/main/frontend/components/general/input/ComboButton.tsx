@@ -16,9 +16,10 @@ export interface ComboButtonProps {
     icon?: ReactElement<IconProps>;
     options: Record<string, ComboButtonOption>;
     preferredOptionKey?: string;
+    actionLabel?: string;
 }
 
-export default function ComboButton({options, preferredOptionKey, description, icon, className}: ComboButtonProps) {
+export default function ComboButton({options, preferredOptionKey, description, icon, className, actionLabel}: ComboButtonProps) {
     const [selectedOption, setSelectedOption] = useState(new Set([Object.keys(options)[0]]));
     const selectedOptionValue = Array.from(selectedOption)[0];
     const hasMultipleOptions = Object.keys(options).length > 1;
@@ -51,6 +52,7 @@ export default function ComboButton({options, preferredOptionKey, description, i
     return options[selectedOptionValue] && (
         <ButtonGroup className={`gap-px items-stretch ${className ?? ""}`}>
             <Button variant="primary" className="w-52 min-w-0 grow h-auto active:scale-[0.97] transition-[scale]"
+                    isDisabled={options[selectedOptionValue].isDisabled}
                     onPress={options[selectedOptionValue].action}>
                 <div className="flex items-center gap-3 py-1 px-2 w-full">
                     {icon && (
@@ -60,8 +62,8 @@ export default function ComboButton({options, preferredOptionKey, description, i
                         </span>
                     )}
                     <div className="flex flex-col items-center grow">
-                        <p className="font-semibold">{options[selectedOptionValue].label}</p>
-                        <p className="text-xs font-normal opacity-70 ">{description}</p>
+                        <p className="font-semibold">{actionLabel ?? options[selectedOptionValue].label}</p>
+                        <p className="text-xs font-normal opacity-70 ">{actionLabel ? options[selectedOptionValue].label : description}</p>
                     </div>
                 </div>
             </Button>
@@ -74,7 +76,7 @@ export default function ComboButton({options, preferredOptionKey, description, i
                     <Dropdown.Popover placement="bottom end">
                         <Dropdown.Menu
                             disallowEmptySelection
-                            aria-label="Merge options"
+                            aria-label="Download providers"
                             selectedKeys={selectedOption}
                             selectionMode="single"
                             onSelectionChange={onSelectionChange}

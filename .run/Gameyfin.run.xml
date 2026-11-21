@@ -9,7 +9,8 @@
     <module name="Gameyfin.app.main" />
     <option name="SHORTEN_COMMAND_LINE" value="ARGS_FILE" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="org.gameyfin.app.GameyfinApplication" />
-    <option name="VM_PARAMETERS" value="-Dpf4j.mode=development -Djava.net.preferIPv4Stack=true -Dvaadin.frontend.hotdeploy=true -Dvaadin.copilot.enable=false -Dvaadin.project.basedir=$PROJECT_DIR$/app" />
+    <option name="VM_PARAMETERS" value="-Dpf4j.mode=development -Dpf4j.pluginsDir=plugins -Djava.net.preferIPv4Stack=true -Dvaadin.frontend.hotdeploy=true -Dvaadin.copilot.enable=false -Dvaadin.project.basedir=$PROJECT_DIR$/app" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="org.gameyfin.app.*" />
@@ -17,6 +18,7 @@
       </pattern>
     </extension>
     <method v="2">
+      <option name="Gradle.BeforeRunTask" enabled="true" tasks="buildDevPlugins" externalProjectPath="$PROJECT_DIR$" scriptParameters="-PpluginDevDir=plugins" />
       <option name="Make" enabled="true" />
     </method>
   </configuration>

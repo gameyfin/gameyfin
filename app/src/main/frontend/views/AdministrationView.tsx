@@ -81,3 +81,5 @@ export function AdministrationView() {
     if (auth.state.initializing || auth.state.loading) return null;
     return isAdmin(auth) ? <AdministrationLayout/> : <Navigate to="/" replace/>;
 }
+
+export default AdministrationView;

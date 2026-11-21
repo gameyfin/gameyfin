@@ -69,6 +69,7 @@ class GameServiceTest {
         userService = mockk()
         imageService = mockk()
         filesystemService = mockk()
+        every { filesystemService.gameDirectoryType(any(), any()) } returns null
 
         gameService = GameService(
             gameRepository,
@@ -111,6 +112,7 @@ class GameServiceTest {
         every { filesystemService.validateGamePath(path, library) } returns Path.of(path)
         every { gameRepository.existsByMetadataPath(path) } returns false
         every { filesystemService.calculateFileSize(path, library) } returns 123L
+        every { filesystemService.gameDirectoryType(path, library) } returns true
         every { gameRepository.save(any()) } answers { firstArg<Game>().also { it.id = 42L } }
 
         val game = gameService.createManually("  Obscure title  ", path, library)
@@ -118,6 +120,7 @@ class GameServiceTest {
         assertEquals("Obscure title", game.title)
         assertEquals(path, game.metadata.path)
         assertEquals(123L, game.metadata.fileSize)
+        assertEquals(true, game.metadata.isDirectory)
         assertTrue(game.metadata.matchConfirmed)
         assertTrue(game.metadata.originalIds.isEmpty())
         assertEquals(library, game.library)
@@ -224,9 +227,11 @@ class GameServiceTest {
         val game = createTestGame(1L)
         val dtos = listOf(mockk<GameDto>())
         every { gameRepository.findAllById(listOf(1L, 2L)) } returns listOf(game)
+        every { filesystemService.gameDirectoryType(game.metadata.path, game.library) } returns false
         every { listOf(game).toDtos() } returns dtos
 
         assertEquals(dtos, gameService.getDtosByIds(listOf(1L, 2L, 1L)))
+        assertEquals(false, game.metadata.isDirectory)
     }
 
     @Test
@@ -2215,7 +2220,9 @@ class GameServiceTest {
         every { imageService.createOrGet(any()) } answers { firstArg<Image>().also { it.id = 10L } }
         every { imageService.downloadIfNew(any()) } just Runs
         every { pluginService.getPluginManagementEntry(provider.javaClass) } throws IllegalStateException("Provider unloaded during upload")
+        every { filesystemService.gameDirectoryType(path.toString(), library) } returns true
         val published = gameService.createPrepared(prepared, path, library)
+        assertEquals(true, published.metadata.isDirectory)
         assertEquals(mapOf(plugin to "preview"), published.metadata.originalIds)
         assertIs<GameFieldPluginSource>(published.metadata.fields.getValue("summary").source)
         assertEquals("Full description", published.summary)

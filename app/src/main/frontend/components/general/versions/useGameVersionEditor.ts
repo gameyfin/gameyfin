@@ -80,17 +80,17 @@ async function loadLinks(gameId: number): Promise<StagedLink[]> {
         fromStatus(status, included.find((entry) => entry.linkId === status.linkId)?.dlc ?? []));
 }
 
-export function useGameVersionEditor(gameId: number, isOpen: boolean) {
+export function useGameVersionEditor(gameId: number) {
     const [links, setLinks] = useState<StagedLink[]>([]);
     /** Stores of the active plugins. Version tracking needs at least one. */
     const [stores, setStores] = useState<GameStoreDto[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string>();
     const [pendingKey, setPendingKey] = useState<string>();
     const newCounter = useRef(0);
 
     // Reloading when the dialog opens discards edits that were cancelled
     useEffect(() => {
-        if (!isOpen) return;
         let cancelled = false;
         setLoading(true);
         Promise.all([loadLinks(gameId), GameStoreEndpoint.getStores()])
@@ -99,14 +99,16 @@ export function useGameVersionEditor(gameId: number, isOpen: boolean) {
                 setLinks(loaded);
                 setStores(availableStores);
             })
-            .catch((error) => toast.danger("Could not load game versions", {description: errorMessage(error)}))
+            .catch((error) => {
+                if (!cancelled) setLoadError(errorMessage(error));
+            })
             .finally(() => {
                 if (!cancelled) setLoading(false);
             });
         return () => {
             cancelled = true;
         };
-    }, [gameId, isOpen]);
+    }, [gameId]);
 
     const visibleLinks = useMemo(() => links.filter((link) => !link.removed), [links]);
 
@@ -182,11 +184,6 @@ export function useGameVersionEditor(gameId: number, isOpen: boolean) {
         void loadPreview(key, store, storeAppId);
     }, [links, stores, loadPreview, update]);
 
-    const refreshPreview = useCallback((key: string) => {
-        const link = links.find((candidate) => candidate.key === key);
-        if (link && link.linkId === undefined) void loadPreview(key, link.store, link.storeAppId);
-    }, [links, loadPreview]);
-
     const removeLink = useCallback((key: string) => {
         setLinks((current) => current
             .filter((link) => !(link.key === key && link.linkId === undefined))
@@ -237,7 +234,7 @@ export function useGameVersionEditor(gameId: number, isOpen: boolean) {
         const link = links.find((candidate) => candidate.key === key);
         if (!link) return;
         if (link.linkId === undefined) {
-            await loadPreview(link.key, link.store, link.storeAppId, true);
+            await loadPreview(link.key, link.store, link.storeAppId);
             return;
         }
         setPendingKey(key);
@@ -306,8 +303,8 @@ export function useGameVersionEditor(gameId: number, isOpen: boolean) {
     }, [dirty, gameId, links]);
 
     return {
-        links: visibleLinks, stores, available: stores.length > 0, loading, pendingKey, dirty,
-        addLink, removeLink, setInstalledVersion, setDlc, setEdition, makePrimary, detect, refresh, refreshPreview, apply,
+        links: visibleLinks, stores, loadError, loading, pendingKey, dirty,
+        addLink, removeLink, setInstalledVersion, setDlc, setEdition, makePrimary, detect, refresh, apply,
     };
 }
 

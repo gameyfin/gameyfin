@@ -1,14 +1,13 @@
 import Popup from "Frontend/components/general/Popup";
-import React, {useEffect, useState} from "react";
-import {DownloadProviderEndpoint, GameEndpoint} from "Frontend/generated/endpoints";
+import React, {useEffect} from "react";
+import {GameEndpoint} from "Frontend/generated/endpoints";
 import {useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
-import ComboButton, {ComboButtonOption} from "Frontend/components/general/input/ComboButton";
+import GameDownloadButtons from "Frontend/components/general/input/GameDownloadButtons";
 import ImageCarousel from "Frontend/components/general/covers/ImageCarousel";
 import BlurhashImage from "Frontend/components/general/covers/BlurhashImage";
 import {Button, Chip, Link, Surface, Tooltip, useOverlayState} from "@heroui/react";
-import {humanFileSize, isAdmin, starRatingAsString} from "Frontend/util/utils";
-import {DownloadEndpoint} from "Frontend/endpoints/endpoints";
+import {isAdmin, starRatingAsString} from "Frontend/util/utils";
 import {gameState, useFullGame} from "Frontend/state/GameState";
 import {useCollectionIdsOfGame} from "Frontend/state/derived";
 import {useSnapshot} from "valtio/react";
@@ -16,15 +15,16 @@ import {
     CaretLeftIcon,
     CaretRightIcon,
     CheckCircleIcon,
-    DownloadSimpleIcon,
     InfoIcon,
     MagnifyingGlassIcon,
     PencilIcon,
+    StackIcon,
     StarIcon,
     TrashIcon,
 } from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
+import GameVersionEditorModal from "Frontend/components/general/modals/GameVersionEditorModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
 import MarkdownContent from "Frontend/components/general/MarkdownContent";
@@ -41,6 +41,7 @@ export default function GameView() {
     const navigate = useNavigate();
     const auth = useAuth();
 
+    const versionsModal = useOverlayState();
     const editGameModal = useOverlayState();
     const matchGameModal = useOverlayState();
     const deleteModal = useOverlayState();
@@ -54,8 +55,6 @@ export default function GameView() {
     const collectionIds = useCollectionIdsOfGame(summary ? id : undefined);
     const libraries = useSnapshot(libraryState).state;
 
-    const [downloadOptions, setDownloadOptions] = useState<Record<string, ComboButtonOption>>();
-
     const sortedGameIds = Object.keys(state.state).map(Number).sort((a, b) => a - b);
     const currentIndex = id !== undefined ? sortedGameIds.indexOf(id) : -1;
 
@@ -65,22 +64,6 @@ export default function GameView() {
         const targetIndex = (currentIndex + offset + count) % count;
         navigate(`/game/${sortedGameIds[targetIndex]}`);
     }
-
-    useEffect(() => {
-        DownloadProviderEndpoint.getProviders().then((providers) => {
-            const options: Record<string, ComboButtonOption> = providers.reduce((acc, provider) => {
-                acc[provider.key] = {
-                    label: provider.name,
-                    description: provider.shortDescription ?? provider.description,
-                    action: () => {
-                        if (gameId) DownloadEndpoint.downloadGame(parseInt(gameId), provider.key);
-                    },
-                };
-                return acc;
-            }, {} as Record<string, ComboButtonOption>);
-            setDownloadOptions(options);
-        });
-    }, [gameId]);
 
     useEffect(() => {
         if (state.isLoaded && !summary) {
@@ -192,6 +175,15 @@ export default function GameView() {
                             </Tooltip>
                             <Tooltip>
                                 <Tooltip.Trigger>
+                                    <Button isIconOnly variant="tertiary" aria-label="Versions &amp; Extras"
+                                            onPress={versionsModal.open}>
+                                        <StackIcon/>
+                                    </Button>
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>Versions &amp; Extras</Tooltip.Content>
+                            </Tooltip>
+                            <Tooltip>
+                                <Tooltip.Trigger>
                                     <Button isIconOnly variant="tertiary" onPress={editGameModal.open}>
                                         <PencilIcon/>
                                     </Button>
@@ -215,12 +207,7 @@ export default function GameView() {
                                 <Tooltip.Content>Remove from library</Tooltip.Content>
                             </Tooltip>
                         </div>}
-                        {downloadOptions &&
-                            <ComboButton className="w-full sm:w-auto" icon={<DownloadSimpleIcon size={24}/>}
-                                         description={humanFileSize(game.metadata.fileSize)}
-                                         options={downloadOptions}
-                                         preferredOptionKey="preferred-download-method"
-                            />}
+                        <GameDownloadButtons key={game.id} gameId={game.id} metadata={game.metadata}/>
                     </div>
                 </div>
                 <div className="flex min-w-0 flex-col gap-8 wrap-anywhere">
@@ -351,7 +338,7 @@ export default function GameView() {
                                         </td>
                                     </tr>
                                 }
-                                <GameVersionDetails gameId={game.id} refreshKey={editGameModal.isOpen}/>
+                                <GameVersionDetails gameId={game.id} refreshKey={versionsModal.isOpen}/>
                                 </tbody>
                             </table>
                         </div>
@@ -371,9 +358,12 @@ export default function GameView() {
                 </div>
             </div>
             {isAdmin(auth) && <>
-                <RemoveGameModal game={{id: game.id, title: game.title, path: (game.metadata as GameMetadataAdminDto).path}}
-                                 isOpen={deleteModal.isOpen} onOpenChange={deleteModal.setOpen}
-                                 onRemoved={() => navigate("/")}/>
+                <RemoveGameModal
+                    game={{id: game.id, title: game.title, path: (game.metadata as GameMetadataAdminDto).path}}
+                    isOpen={deleteModal.isOpen} onOpenChange={deleteModal.setOpen}
+                    onRemoved={() => navigate("/")}/>
+                {versionsModal.isOpen && <GameVersionEditorModal key={game.id} gameId={game.id}
+                                                                 gameTitle={game.title} onClose={versionsModal.close}/>}
                 <EditGameMetadataModal gameId={game.id}
                                        isOpen={editGameModal.isOpen}
                                        onOpenChange={editGameModal.setOpen}/>

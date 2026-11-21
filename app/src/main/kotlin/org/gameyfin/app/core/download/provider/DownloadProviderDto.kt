@@ -8,5 +8,6 @@ data class DownloadProviderDto(
     val name: String,
     val priority: Int,
     val description: String,
-    val shortDescription: String? = null
+    val shortDescription: String? = null,
+    val supportsFileSelection: Boolean = false
 )

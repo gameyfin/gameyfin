@@ -145,6 +145,7 @@ fun Game.toPatchDto(fields: Set<GameField>, admin: Boolean): GamePatchDto? {
             GameField.VIDEO_URLS -> values.copy(videoUrls = videoUrls.map { it.toString() })
             GameField.MEDIA_ORDER -> values.copy(mediaOrder = mediaOrder.toList())
             GameField.FILE_SIZE -> values.copy(fileSize = metadata.fileSize ?: 0L)
+            GameField.IS_DIRECTORY -> values.copy(directory = metadata.isDirectory)
             GameField.PATH -> values.copy(path = metadata.path)
             GameField.DOWNLOAD_COUNT -> values.copy(downloadCount = metadata.downloadCount)
             GameField.MATCH_CONFIRMED -> values.copy(matchConfirmed = metadata.matchConfirmed)
@@ -158,6 +159,7 @@ fun Game.toPatchDto(fields: Set<GameField>, admin: Boolean): GamePatchDto? {
 
 fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
     return GameMetadataAdminDto(
+        directory = isDirectory,
         fileSize = this.fileSize ?: 0L,
         downloadCount = this.downloadCount,
         path = this.path,
@@ -169,6 +171,7 @@ fun GameMetadata.toAdminDto(): GameMetadataAdminDto {
 
 fun GameMetadata.toUserDto(): GameMetadataUserDto {
     return GameMetadataUserDto(
+        directory = isDirectory,
         fileSize = this.fileSize ?: 0L
     )
 }

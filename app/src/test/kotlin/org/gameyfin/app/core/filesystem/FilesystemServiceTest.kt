@@ -739,6 +739,14 @@ class FilesystemServiceTest {
     }
 
     @Test
+    fun `storage type distinguishes folder file and unavailable paths`() {
+        val library = libraryAt(tempDir)
+        assertEquals(true, filesystemService.gameDirectoryType(tempDir.resolve("game").createDirectory().toString(), library))
+        assertEquals(false, filesystemService.gameDirectoryType(tempDir.resolve("file").createFile().toString(), library))
+        assertEquals(null, filesystemService.gameDirectoryType(tempDir.resolve("missing").toString(), library))
+    }
+
+    @Test
     fun `validateGamePath rejects missing paths and libraries without directories`() {
         val root = tempDir.resolve("library").createDirectory()
         assertFailsWith<IllegalArgumentException> {
