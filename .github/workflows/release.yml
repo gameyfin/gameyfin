@@ -40,12 +40,12 @@ jobs:
           fi
 
       - name: Update version in build.gradle.kts
-        if: ${{ github.event.inputs.update_version }}
+        if: ${{ inputs.update_version }}
         run: |
           sed -i "s/^version = .*/version = \"$RELEASE_VERSION\"/" build.gradle.kts
 
       - name: Update version in app/package.json
-        if: ${{ github.event.inputs.update_version }}
+        if: ${{ inputs.update_version }}
         run: |
           jq ".version = \"$RELEASE_VERSION\"" app/package.json > app/package.json.tmp && mv app/package.json.tmp app/package.json
 
@@ -204,8 +204,10 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVENCENTRAL_PASSWORD }}
 
   finalize:
-    needs: [ docker-merge, plugin_api ]
+    needs: [ setup, docker-merge, plugin_api ]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -218,16 +220,18 @@ jobs:
           name: modified-files
 
       - name: Commit version bump
-        if: ${{ github.event.inputs.update_version }}
+        if: ${{ inputs.update_version }}
         uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1
         with:
-          commit_message: 'chore: release v${{ github.event.inputs.version }}'
-          tagging_message: v${{ github.event.inputs.version }}
+          commit_message: 'chore: release v${{ needs.setup.outputs.release_version }}'
+          tagging_message: v${{ needs.setup.outputs.release_version }}
 
       - name: Detect prerelease
         id: detect_prerelease
+        env:
+          RELEASE_VERSION: ${{ needs.setup.outputs.release_version }}
         run: |
-          if [[ "${{ github.event.inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
             echo "MAKE_LATEST=true" >> $GITHUB_ENV
           else
@@ -236,9 +240,33 @@ jobs:
           fi
 
       - name: Create GitHub release
-        if: ${{ github.event.inputs.update_version }}
+        if: ${{ inputs.update_version }}
         uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
-          tag_name: v${{ github.event.inputs.version }}
+          tag_name: v${{ needs.setup.outputs.release_version }}
           prerelease: ${{ env.IS_PRERELEASE }}
           make_latest: ${{ env.MAKE_LATEST }}
+
+  publish-docs:
+    needs: [ setup, finalize ]
+    if: ${{ inputs.update_version }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Create docs deployment token
+        id: docs-token
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
+        with:
+          client-id: ${{ vars.DOCS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DOCS_APP_PRIVATE_KEY }}
+          owner: gameyfin
+          repositories: docs
+          permission-actions: write
+
+      - name: Publish documentation for the released version
+        env:
+          GH_TOKEN: ${{ steps.docs-token.outputs.token }}
+          RELEASE_TAG: v${{ needs.setup.outputs.release_version }}
+        run: |
+          gh workflow run docs.yml --repo gameyfin/docs --ref main --field gameyfin_ref="$RELEASE_TAG"
+          echo "Documentation build requested for $RELEASE_TAG: https://github.com/gameyfin/docs/actions/workflows/docs.yml" >> "$GITHUB_STEP_SUMMARY"
