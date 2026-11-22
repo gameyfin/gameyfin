@@ -180,3 +180,21 @@ databaseChangeLog:
                   name: VISIBILITY
               - column:
                   name: KIND
+
+  - changeSet:
+      id: 2.8.0-plugin-recovery-error-text
+      author: gameyfin
+      # Keep the same migration history on both databases for portable backups.
+      preConditions:
+        - onFail: MARK_RAN
+          dbms:
+            type: h2
+      changes:
+        # The original H2 SQL used TEXT, which H2 treats as VARCHAR.
+        - modifyDataType:
+            tableName: PLUGIN_RECOVERY_CANDIDATE
+            columnName: LAST_ERROR
+            newDataType: clob
+      rollback:
+        - sql:
+            sql: ALTER TABLE PLUGIN_RECOVERY_CANDIDATE ALTER COLUMN LAST_ERROR SET DATA TYPE TEXT

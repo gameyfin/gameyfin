@@ -25,14 +25,15 @@ class SocialMigrationTest {
         val labels = LabelExpression()
         Liquibase("db/changelog/db.changelog-master.yaml", ClassLoaderResourceAccessor(), database).use { liquibase ->
             val changes = liquibase.listUnrunChangeSets(contexts, labels)
-            assertEquals("game-social-features", changes.last().id)
-            liquibase.update(changes.size - 1, contexts, labels)
+            val changesBeforeSocial = changes.indexOfFirst { it.id == "game-social-features" }
+            check(changesBeforeSocial > 0) { "Social changeset has no preceding schema" }
+            liquibase.update(changesBeforeSocial, contexts, labels)
             jdbc.update("INSERT INTO COLLECTION (ID, NAME, CREATED_AT, UPDATED_AT, DISPLAY_ORDER) VALUES (1, 'Legacy', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 5)")
             jdbc.update("INSERT INTO GAME (ID, TITLE, CREATED_AT, UPDATED_AT) VALUES (2, 'Game', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
             jdbc.update("INSERT INTO COLLECTION_GAMES (COLLECTIONS_ID, GAMES_ID) VALUES (1, 2)")
             jdbc.update("INSERT INTO USERS (ID, USERNAME, EMAIL, EMAIL_CONFIRMED, ENABLED) VALUES (3, 'member', 'member@example.com', TRUE, TRUE)")
 
-            liquibase.update(contexts, labels)
+            liquibase.update(1, contexts, labels)
             assertEquals("CURATED", jdbc.queryForObject("SELECT KIND FROM COLLECTION WHERE ID = 1", String::class.java))
             assertEquals("PUBLIC", jdbc.queryForObject("SELECT VISIBILITY FROM COLLECTION WHERE ID = 1", String::class.java))
             jdbc.update(
@@ -67,7 +68,7 @@ class SocialMigrationTest {
             assertEquals("Legacy", jdbc.queryForObject("SELECT NAME FROM COLLECTION WHERE ID = 1", String::class.java))
             assertEquals(5, jdbc.queryForObject("SELECT DISPLAY_ORDER FROM COLLECTION WHERE ID = 1", Int::class.java))
             assertEquals(1, count(jdbc, "COLLECTION_GAMES"))
-            liquibase.update(contexts, labels)
+            liquibase.update(1, contexts, labels)
             assertEquals("PUBLIC", jdbc.queryForObject("SELECT VISIBILITY FROM COLLECTION WHERE ID = 1", String::class.java))
         }
     }
