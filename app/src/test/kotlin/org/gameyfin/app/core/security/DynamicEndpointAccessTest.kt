@@ -81,7 +81,8 @@ class DynamicEndpointAccessTest {
     @Test
     fun `all dynamic Hilla endpoint classes reject anonymous calls including subscriptions and writes`() {
         every { config.get(ConfigProperties.Security.AllowPublicAccess) } returns false
-        val collections = guarded(org.gameyfin.app.collections.CollectionEndpoint(mockk(), mockk()))
+        val collections = guarded(org.gameyfin.app.collections.CollectionEndpoint(mockk(), mockk(), mockk(), mockk()))
+        val social = guarded(org.gameyfin.app.social.GameSocialEndpoint(mockk()))
         val libraries = guarded(org.gameyfin.app.libraries.LibraryEndpoint(mockk(), mockk(), mockk()))
         val platforms = guarded(org.gameyfin.app.platforms.PlatformEndpoint(mockk()))
         val providers = guarded(org.gameyfin.app.core.download.provider.DownloadProviderEndpoint(mockk()))
@@ -90,7 +91,8 @@ class DynamicEndpointAccessTest {
         val settings = guarded(org.gameyfin.app.config.ConfigEndpoint(config))
         val calls: List<() -> Any?> = listOf(
             { endpoint.sync(null) }, { endpoint.getByIds(emptyList()) }, { endpoint.subscribe() },
-            { collections.sync(null) }, { collections.getById(1) }, { collections.subscribeToCollectionEvents() },
+            { collections.sync(null) }, { collections.getById(1) }, { collections.subscribeToCollections() },
+            { social.get(1) }, { social.subscribeSettings() }, { social.rate(1, 4) },
             { libraries.sync(null) }, { libraries.subscribeToLibraryEvents() },
             { platforms.getStats() }, { platforms.subscribe() },
             { providers.getProviders() }, { plugins.getAll() }, { plugins.subscribe() },

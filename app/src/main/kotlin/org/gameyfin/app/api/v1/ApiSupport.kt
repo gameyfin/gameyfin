@@ -67,4 +67,4 @@ fun Game.publicGame() = GameV1(
 )
 
 fun Library.publicLibrary() = LibraryV1(id!!.toString(), name, platforms.map { it.name }, createdAt, updatedAt)
-fun Collection.publicCollection() = CollectionV1(id!!.toString(), name, description, createdAt, updatedAt)
+fun Collection.publicCollection() = CollectionV1(id!!.toString(), displayName, description, createdAt, updatedAt)

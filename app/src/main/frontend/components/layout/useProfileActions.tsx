@@ -1,7 +1,7 @@
 import {navigationVisibility} from "./navigationVisibility";
 import {redirectToLogin} from "Frontend/util/login";
 import {useAuth} from "Frontend/util/auth";
-import {GearFineIcon, QuestionIcon, SignInIcon, SignOutIcon, UserIcon} from "@phosphor-icons/react";
+import {FolderSimpleIcon, GearFineIcon, QuestionIcon, SignInIcon, SignOutIcon, UserIcon} from "@phosphor-icons/react";
 import {useNavigate} from "react-router";
 import {isAdmin} from "Frontend/util/utils";
 
@@ -24,6 +24,12 @@ export function useProfileActions() {
             icon: <GearFineIcon/>,
             onClick: () => navigate("/administration/games"),
             showIf: visible.administration
+        },
+        {
+            label: "Collections",
+            path: "/collections",
+            icon: <FolderSimpleIcon/>,
+            onClick: () => navigate("/collections")
         },
         {
             label: "Help",

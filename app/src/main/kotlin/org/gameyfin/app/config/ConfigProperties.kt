@@ -155,6 +155,23 @@ sealed class ConfigProperties<T : Serializable>(
         }
     }
 
+    sealed class Social {
+        data object EnableReviews : ConfigProperties<Boolean>(
+            Boolean::class, "social.enable-reviews", "Enable reviews",
+            "Allows members to write reviews and displays published reviews.", true
+        )
+
+        data object RequireReviewApproval : ConfigProperties<Boolean>(
+            Boolean::class, "social.require-review-approval", "Require approval before publishing",
+            "Queues new reviews and edits for administrator approval.", false
+        )
+
+        data object AllowUserCollections : ConfigProperties<Boolean>(
+            Boolean::class, "social.allow-user-collections", "Allow users to create collections",
+            "Allows members to create custom collections. Existing collections and favourites remain available.", true
+        )
+    }
+
     /** Downloads */
     sealed class Downloads {
         data object BandwidthLimitEnabled : ConfigProperties<Boolean>(

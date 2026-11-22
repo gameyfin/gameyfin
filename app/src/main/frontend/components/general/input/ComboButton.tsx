@@ -17,9 +17,10 @@ export interface ComboButtonProps {
     options: Record<string, ComboButtonOption>;
     preferredOptionKey?: string;
     actionLabel?: string;
+    compact?: boolean;
 }
 
-export default function ComboButton({options, preferredOptionKey, description, icon, className, actionLabel}: ComboButtonProps) {
+export default function ComboButton({options, preferredOptionKey, description, icon, className, actionLabel, compact}: ComboButtonProps) {
     const [selectedOption, setSelectedOption] = useState(new Set([Object.keys(options)[0]]));
     const selectedOptionValue = Array.from(selectedOption)[0];
     const hasMultipleOptions = Object.keys(options).length > 1;
@@ -51,19 +52,23 @@ export default function ComboButton({options, preferredOptionKey, description, i
 
     return options[selectedOptionValue] && (
         <ButtonGroup className={`gap-px items-stretch ${className ?? ""}`}>
-            <Button variant="primary" className="w-52 min-w-0 grow h-auto active:scale-[0.97] transition-[scale]"
+            <Button variant="primary"
+                    className={`w-52 min-w-0 grow h-auto active:scale-[0.97] transition-[scale] ${compact ? "px-1" : ""}`}
+                    aria-label={compact && actionLabel ? `${actionLabel}: ${options[selectedOptionValue].label}` : undefined}
                     isDisabled={options[selectedOptionValue].isDisabled}
                     onPress={options[selectedOptionValue].action}>
-                <div className="flex items-center gap-3 py-1 px-2 w-full">
-                    {icon && (
+                <div className={`flex items-center gap-3 py-1 w-full ${compact ? "" : "px-2"}`}>
+                    {!compact && icon && (
                         <span className="shrink-0 flex items-center justify-center [&_svg]:w-full! [&_svg]:h-full!"
                               style={{width: icon.props.size ?? "1em", height: icon.props.size ?? "1em"}}>
                             {icon}
                         </span>
                     )}
                     <div className="flex flex-col items-center grow">
-                        <p className="font-semibold">{actionLabel ?? options[selectedOptionValue].label}</p>
-                        <p className="text-xs font-normal opacity-70 ">{actionLabel ? options[selectedOptionValue].label : description}</p>
+                        <p className={`font-semibold ${compact ? "text-xs" : ""}`}>{actionLabel ?? options[selectedOptionValue].label}</p>
+                        <p className="text-xs font-normal opacity-70">
+                            {actionLabel && !compact ? options[selectedOptionValue].label : description}
+                        </p>
                     </div>
                 </div>
             </Button>

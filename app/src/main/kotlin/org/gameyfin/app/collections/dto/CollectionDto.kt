@@ -2,6 +2,8 @@ package org.gameyfin.app.collections.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.Instant
+import org.gameyfin.app.collections.entities.CollectionKind
+import org.gameyfin.app.collections.entities.CollectionVisibility
 
 /**
  * Representation of a collection. Collections are small, so this is used both for overview pages and details.
@@ -16,6 +18,10 @@ data class CollectionDto(
     val description: String?,
     val gameIds: List<Long> = emptyList(),
     val metadata: CollectionMetadataDto,
+    val kind: CollectionKind = CollectionKind.CURATED,
+    val visibility: CollectionVisibility = CollectionVisibility.PUBLIC,
+    val ownerId: Long? = null,
+    val ownerName: String? = null,
 )
 
 data class CollectionSyncDto(
@@ -32,26 +38,9 @@ enum class CollectionField {
     NAME,
     DESCRIPTION,
     GAME_IDS,
-    METADATA
+    METADATA,
+    VISIBILITY
 }
-
-/**
- * Describes a partial update of a collection. Only the values listed in [fields] are valid, all other values must
- * be ignored by the client (a listed field with a `null`/missing value has been cleared).
- */
-data class CollectionPatchDto(
-    val updatedAt: Instant,
-    val fields: List<CollectionField>,
-    val values: CollectionPatchValuesDto
-)
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-data class CollectionPatchValuesDto(
-    val name: String? = null,
-    val description: String? = null,
-    val gameIds: List<Long>? = null,
-    val metadata: CollectionMetadataDto? = null
-)
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CollectionCreateDto(
@@ -66,6 +55,7 @@ data class CollectionUpdateDto(
     val name: String? = null,
     val description: String? = null,
     val gameIds: List<Long>? = null,
-    val metadata: CollectionMetadataUpdateDto? = null
+    val metadata: CollectionMetadataUpdateDto? = null,
+    val visibility: CollectionVisibility? = null
 )
 

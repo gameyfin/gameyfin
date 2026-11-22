@@ -8,6 +8,7 @@ import {
     PlugIcon,
     ShootingStarIcon,
     TimerIcon,
+    ChatTextIcon,
     UsersIcon,
     WrenchIcon
 } from "@phosphor-icons/react";
@@ -26,6 +27,11 @@ const menuItems: MenuItem[] = [
         title: "Game Requests",
         url: "requests",
         icon: <ShootingStarIcon/>
+    },
+    {
+        title: "Social",
+        url: "social",
+        icon: <ChatTextIcon/>
     },
     {
         title: "Downloads",

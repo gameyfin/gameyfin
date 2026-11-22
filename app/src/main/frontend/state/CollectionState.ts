@@ -1,66 +1,76 @@
+import {ActionOnLostSubscription, Subscription} from "@vaadin/hilla-frontend";
 import {proxy} from "valtio";
-import {CollectionEndpoint} from "Frontend/generated/endpoints";
+import {CollectionEndpoint, GameSocialEndpoint} from "Frontend/generated/endpoints";
 import CollectionDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionDto";
-import CollectionEvent from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionEvent";
-import CollectionField from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionField";
-import CollectionPatchDto from "Frontend/generated/org/gameyfin/app/collections/dto/CollectionPatchDto";
-import {createSyncedStore, SyncedEntityState} from "Frontend/state/sync/createSyncedStore";
-import {identityMapping} from "Frontend/state/sync/patches";
+import SocialSettings from "Frontend/generated/org/gameyfin/app/social/SocialSettings";
 
-/** Collections are small, so there is no separate full tier */
-type CollectionState = SyncedEntityState<CollectionDto, CollectionDto> & {
-    collections: CollectionDto[];
+type CollectionState = {
+    state: Record<number, CollectionDto>;
+    isLoaded: boolean;
+    settings?: SocialSettings;
     sorted: CollectionDto[];
 };
 
 export const collectionState = proxy<CollectionState>({
     state: {},
-    full: {},
     isLoaded: false,
-    isSynced: false,
-    get collections() {
-        return Object.values<CollectionDto>(this.state);
-    },
+    settings: undefined,
     get sorted() {
         return Object.values<CollectionDto>(this.state).sort((a, b) => {
-            const orderA = a.metadata?.displayOrder ?? -1;
-            const orderB = b.metadata?.displayOrder ?? -1;
-
-            // Handle -1 as "end of list"
-            const effectiveOrderA = orderA === -1 ? Number.MAX_SAFE_INTEGER : orderA;
-            const effectiveOrderB = orderB === -1 ? Number.MAX_SAFE_INTEGER : orderB;
-
-            const orderDiff = effectiveOrderA - effectiveOrderB;
-            if (orderDiff !== 0) {
-                return orderDiff;
-            }
-
-            // Fallback to creation date (newer first)
-            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            const orderA = a.metadata.displayOrder === -1 ? Infinity : a.metadata.displayOrder;
+            const orderB = b.metadata.displayOrder === -1 ? Infinity : b.metadata.displayOrder;
+            return orderA - orderB || new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         });
     }
 });
 
-const collectionPatchMapping = identityMapping<CollectionField>({
-    [CollectionField.NAME]: "name",
-    [CollectionField.DESCRIPTION]: "description",
-    [CollectionField.GAME_IDS]: "gameIds",
-    [CollectionField.METADATA]: "metadata"
-});
+let collections: Subscription<CollectionDto[]> | undefined;
+let settings: Subscription<SocialSettings> | undefined;
+let generation = 0;
 
-export const collectionStore = createSyncedStore<CollectionDto, CollectionDto, CollectionEvent, CollectionField, CollectionPatchDto>(collectionState, {
-    name: "collections",
-    summaryStore: "collections",
-    fetchSync: async (since) => {
-        const result = await CollectionEndpoint.sync(since);
-        return {serverTime: result.serverTime, full: result.full, items: result.collections, allIds: result.allIds};
-    },
-    subscribe: () => CollectionEndpoint.subscribeToCollectionEvents(),
-    normalizeEvent: (event) => ({type: event.type, id: event.id, summary: event.collection, patch: event.patch}),
-    patchMapping: collectionPatchMapping
-});
+function clearCollections() {
+    collectionState.state = {};
+    collectionState.isLoaded = false;
+}
 
-/** Subscribe to and process state updates from backend **/
-export async function initializeCollectionState(identity: string) {
-    await collectionStore.start(identity);
+export function resetCollectionState() {
+    generation++;
+    collections?.cancel();
+    settings?.cancel();
+    collections = undefined;
+    settings = undefined;
+    clearCollections();
+    collectionState.settings = undefined;
+}
+
+export function initializeCollectionState(member: boolean) {
+    resetCollectionState();
+    const current = generation;
+    collections = CollectionEndpoint.subscribeToCollections()
+        .onNext(items => {
+            if (current !== generation) return;
+            collectionState.state = Object.fromEntries(items.map(item => [item.id, item]));
+            collectionState.isLoaded = true;
+        })
+        .onComplete(() => {
+            if (current === generation) clearCollections();
+        })
+        .onConnectionStateChange(event => {
+            if (current === generation && event.detail.state !== "connected") clearCollections();
+        })
+        .onSubscriptionLost(() => {
+            if (current !== generation) return ActionOnLostSubscription.REMOVE;
+            clearCollections();
+            return ActionOnLostSubscription.RESUBSCRIBE;
+        });
+    settings = GameSocialEndpoint.subscribeSettings()
+        .onNext(value => {
+            if (current === generation) collectionState.settings = value;
+        })
+        .onSubscriptionLost(() => {
+            if (current !== generation) return ActionOnLostSubscription.REMOVE;
+            collectionState.settings = undefined;
+            return ActionOnLostSubscription.RESUBSCRIBE;
+        });
+    if (member) void CollectionEndpoint.ensureFavourites().catch(console.error);
 }

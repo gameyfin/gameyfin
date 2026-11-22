@@ -14,6 +14,10 @@ interface UserRepository : JpaRepository<User, Long> {
     @Query("SELECT u FROM User u ORDER BY u.id")
     fun findAllForDeletion(): List<User>
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    fun findForUpdate(id: Long): User?
+
     fun existsByUsername(userName: String): Boolean
     fun existsByEmail(email: String): Boolean
     fun findByUsername(userName: String): User?

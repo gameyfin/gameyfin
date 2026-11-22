@@ -4,6 +4,7 @@ import {useLocation, useNavigate} from "react-router";
 import {
     ArrowLeftIcon,
     DiceSixIcon,
+    FolderSimpleIcon,
     HouseIcon,
     ListMagnifyingGlassIcon,
     ShootingStarIcon,
@@ -74,6 +75,11 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
             )}
 
             <ul className="flex flex-1 items-center justify-end gap-2">
+                {!auth.state.user && <li>
+                    <Button isIconOnly aria-label="Collections" variant="ghost" onPress={() => navigate("/collections")}>
+                        <FolderSimpleIcon/>
+                    </Button>
+                </li>}
                 <li>
                     <Tooltip>
                         <Tooltip.Trigger>

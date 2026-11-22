@@ -12,6 +12,7 @@ import LibraryCreationModal from "Frontend/components/general/modals/LibraryCrea
 import {useSnapshot} from "valtio/react";
 import {libraryState} from "Frontend/state/LibraryState";
 import LibraryPrioritiesModal from "Frontend/components/general/modals/LibraryPrioritiesModal";
+import CollectionKind from "Frontend/generated/org/gameyfin/app/collections/entities/CollectionKind";
 import {collectionState} from "Frontend/state/CollectionState";
 import {CollectionOverviewCard} from "Frontend/components/general/cards/CollectionOverviewCard";
 import CollectionCreationModal from "Frontend/components/general/modals/CollectionCreationModal";
@@ -34,7 +35,7 @@ function GameManagementLayout({getConfig, formik}: any) {
     const libraryCreationModal = useOverlayState();
     const libraryOrderModal = useOverlayState();
 
-    const collections = useSnapshot(collectionState);
+    const collections = useSnapshot(collectionState).sorted.filter(collection => collection.kind === CollectionKind.CURATED);
     const collectionCreationModal = useOverlayState();
     const collectionOrderModal = useOverlayState();
 
@@ -119,7 +120,7 @@ function GameManagementLayout({getConfig, formik}: any) {
                 <h2 className="text-xl font-bold mt-8 mb-1">Collections</h2>
                 <div className="flex flex-row gap-2">
                     <BulkDeleteButton entityLabel="collections"
-                                      selectedItems={collections.sorted.filter(item => selectedCollections.has(item.id))}
+                                      selectedItems={collections.filter(item => selectedCollections.has(item.id))}
                                       deleteItem={id => CollectionEndpoint.deleteCollection(id)}
                                       onStarted={ids => setSelectedCollections(current => new Set(
                                           [...current].filter(id => !ids.includes(id))
@@ -147,12 +148,12 @@ function GameManagementLayout({getConfig, formik}: any) {
                 </div>
             </div>
             <Separator className="mb-4"/>
-            {collections.sorted.length > 0 ?
+            {collections.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
                 <ul id="collection-cards" aria-label="Collections"
                     className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
-                    {collections.sorted.map((collection) =>
-                        <CollectionOverviewCard collection={collection} key={collection.id}
+                    {collections.map((collection) =>
+                        <CollectionOverviewCard collection={collection} href={`/administration/games/collection/${collection.id}`} key={collection.id}
                                                 isSelected={selectedCollections.has(collection.id)}
                                                 onToggleSelection={() => setSelectedCollections(current => toggleSelection(current, collection.id))}/>
                     )}

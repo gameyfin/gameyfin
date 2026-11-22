@@ -78,6 +78,10 @@ class SecurityConfig(
             }
         }
 
+        http.logout { logout ->
+            logout.addLogoutHandler { _, _, authentication -> (authentication as? LiveUserAuthentication)?.refresh(null) }
+        }
+
         // Both login modes use the same gateway for setup and provider selection.
         http.exceptionHandling { it.authenticationEntryPoint(CustomAuthenticationEntryPoint()) }
 
@@ -85,7 +89,7 @@ class SecurityConfig(
             // A canceled stream can dispatch to /error after the response is committed.
             // Allow container error handling without trying to authorize a second response.
             auth.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-            auth.requestMatchers("/login/success").authenticated()
+            auth.requestMatchers("/login/success", "/collections/*/manage").authenticated()
                 .requestMatchers("/setup/plugins", "/setup/plugins/**").hasAnyAuthority(Role.Names.ADMIN, Role.Names.SUPERADMIN)
             // Set default security policy that permits Hilla internal requests and denies all other
             auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
@@ -113,14 +117,15 @@ class SecurityConfig(
                 // Authentication will be handled by Hilla on the client side
                 .requestMatchers(
                     "/administration/**",
-                    "/settings/**",
-                    "/collection/**"
+                    "/settings/**"
                 ).permitAll()
                 // Dynamic public access for certain endpoints
                 .requestMatchers(
                     "/",
                     "/game/**",
                     "/library/**",
+                    "/collection/**",
+                    "/collections",
                     "/search/**",
                     "/requests/**",
                     "/download/**"

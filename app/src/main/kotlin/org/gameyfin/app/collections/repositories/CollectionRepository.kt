@@ -2,20 +2,16 @@ package org.gameyfin.app.collections.repositories
 
 import org.gameyfin.app.collections.entities.Collection
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 
-interface CollectionRepository : JpaRepository<Collection, Long> {
+interface CollectionRepository : JpaRepository<Collection, Long>, JpaSpecificationExecutor<Collection> {
+    fun findByFavouritesOwnerId(ownerId: Long): Collection?
+
     fun findByName(name: String): Collection?
-
-    /* Synchronization */
-
-    fun findAllByUpdatedAtAfter(since: Instant): List<Collection>
-
-    @Query("SELECT c.id FROM Collection c")
-    fun findAllIds(): List<Long>
 
     /**
      * @return Pairs of `[collectionId, gameId]` for the given collections

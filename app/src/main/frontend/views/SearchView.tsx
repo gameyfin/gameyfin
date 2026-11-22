@@ -10,6 +10,8 @@ import {Fzf} from "fzf";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
 import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput";
+import {collectionState} from "Frontend/state/CollectionState";
+import CollectionKind from "Frontend/generated/org/gameyfin/app/collections/entities/CollectionKind";
 import {compoundRating} from "Frontend/util/utils";
 
 type SearchFormValues = {
@@ -23,6 +25,7 @@ type SearchFormValues = {
     perspectives: string[];
     keywords: string[];
     minRating: number;
+    favouritesOf: string;
 };
 
 const SORT_OPTIONS = [
@@ -53,6 +56,7 @@ export default function SearchView() {
             features: searchParams.getAll("feature"),
             perspectives: searchParams.getAll("perspective"),
             keywords: searchParams.getAll("keyword"),
+            favouritesOf: searchParams.get("favouritesOf") || "",
             minRating: isNaN(minRatingParam) ? 1 : minRatingParam,
         };
     });
@@ -74,11 +78,14 @@ function SearchViewContent() {
     const knownPerspectives = useSnapshot(gameState).knownPerspectives;
     const knownKeywords = useSnapshot(gameState).knownKeywords;
     const libraries = useSnapshot(libraryState).libraries;
+    const collections = useSnapshot(collectionState).sorted;
+    const favourites = useMemo(() => collections.filter(item => item.kind === CollectionKind.FAVOURITES)
+        .sort((a, b) => (a.ownerName ?? "").localeCompare(b.ownerName ?? "")), [collections]);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const {values, setFieldValue, setValues} = useFormikContext<SearchFormValues>();
     const {
-        searchTerm, sortBy, minRating,
+        searchTerm, sortBy, minRating, favouritesOf,
         libraries: selectedLibraries,
         developers: selectedDevelopers,
         genres: selectedGenres,
@@ -87,6 +94,8 @@ function SearchViewContent() {
         perspectives: selectedPerspectives,
         keywords: selectedKeywords,
     } = values;
+
+    const selectedFavourites = favourites.find(item => item.ownerId?.toString() === favouritesOf);
 
     const [showFilters, setShowFilters] = useState(() => searchParams.get("filters") === "1");
 
@@ -107,6 +116,7 @@ function SearchViewContent() {
         selectedFeatures.forEach(feature => newParams.append("feature", feature));
         selectedPerspectives.forEach(perspective => newParams.append("perspective", perspective));
         selectedKeywords.forEach(keyword => newParams.append("keyword", keyword));
+        if (favouritesOf) newParams.set("favouritesOf", favouritesOf);
         if (minRating > 1) {
             newParams.set("minRating", minRating.toString());
         }
@@ -155,14 +165,15 @@ function SearchViewContent() {
     }
 
     const filteredAndSortedGames = useMemo(() => sortGames(filterGames()), [
-        games, searchTerm,
+        games, searchTerm, favouritesOf, selectedFavourites,
         selectedLibraries, selectedDevelopers,
         selectedGenres, selectedThemes,
         selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating,
     ]);
 
     function filterGames(): GameSummaryDto[] {
-        let filtered = games;
+        const favouriteIds = favouritesOf ? new Set(selectedFavourites?.gameIds ?? []) : undefined;
+        let filtered = favouriteIds ? games.filter(game => favouriteIds.has(game.id)) : games;
 
         if (searchTerm !== "") {
             const fzf = new Fzf(filtered, {
@@ -326,6 +337,7 @@ function SearchViewContent() {
                                     perspectives: [],
                                     keywords: [],
                                     minRating: 1,
+                                    favouritesOf: "",
                                 })}
                                 aria-label="Clear All Filters"
                         >
@@ -357,6 +369,21 @@ function SearchViewContent() {
                 "Minimum rating",
                 "flex flex-col gap-1 min-w-0",
                 true,
+            )}
+            {renderSelect(
+                "Favourites of", favouritesOf || "all",
+                value => setFieldValue("favouritesOf", value === "all" ? "" : value ?? ""),
+                <>
+                    <ListBox.Item id="all" textValue="Anyone">Anyone<ListBox.ItemIndicator/></ListBox.Item>
+                    {favouritesOf && !selectedFavourites && <ListBox.Item id={favouritesOf} textValue="Unavailable owner">
+                        Unavailable owner<ListBox.ItemIndicator/>
+                    </ListBox.Item>}
+                    {favourites.map(item => <ListBox.Item key={item.id} id={item.ownerId?.toString()}
+                                                          textValue={item.ownerName}>
+                        {item.ownerName}<ListBox.ItemIndicator/>
+                    </ListBox.Item>)}
+                </>,
+                "single", "Anyone", "flex flex-col gap-1 min-w-0", true
             )}
             <AutocompleteInput name="developers" label="Developers" placeholder="Filter by developer"
                                options={toOptions(knownDevelopers)} className="flex flex-col gap-1 min-w-0"

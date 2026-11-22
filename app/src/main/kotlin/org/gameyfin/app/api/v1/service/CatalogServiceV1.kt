@@ -10,6 +10,7 @@ import org.gameyfin.app.collections.CollectionService
 import org.gameyfin.app.collections.dto.CollectionCreateDto
 import org.gameyfin.app.collections.dto.CollectionUpdateDto
 import org.gameyfin.app.collections.entities.Collection
+import org.gameyfin.app.collections.entities.CollectionKind
 import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.games.GameService
@@ -66,7 +67,6 @@ class CatalogServiceV1(
                 predicates += cb.like(cb.lower(root.get("title")), "%$escaped%", '\\')
             }
             library?.let { predicates += cb.equal(root.get<Any>("library").get<Long>("id"), it) }
-            collection?.let { predicates += cb.equal(root.join<Any, Any>("collections").get<Long>("id"), it) }
             platformValue?.let { predicates += cb.equal(root.join<Game, Platform>("platforms"), it) }
             externalProvider?.let {
                 val ids = root.join<Game, Any>("metadata")
@@ -79,7 +79,8 @@ class CatalogServiceV1(
             }
             cb.and(*predicates.toTypedArray())
         }
-        return games.findAll(spec, page).publicPage { it.publicGame() }
+        val filter = collection?.let { spec.and(collectionService.gameCollectionFilter(it)) } ?: spec
+        return games.findAll(filter, page).publicPage { it.publicGame() }
     }
 
     fun gameIndex() = games.findAllIndexEntries().map { GameIndexEntryV1(it.id.toString(), it.updatedAt) }
@@ -92,7 +93,7 @@ class CatalogServiceV1(
         libraries.findById(apiId(id)).orElseThrow { NoSuchElementException("Library not found") }
 
     fun collectionEntity(id: String): Collection =
-        collections.findById(apiId(id)).orElseThrow { NoSuchElementException("Collection not found") }
+        collectionService.findReadable(apiId(id)) ?: throw NoSuchElementException("Collection not found")
 
     fun libraries(page: Pageable) = libraries.findAll(page).publicPage { it.publicLibrary() }
     fun library(id: String) = libraryEntity(id).publicLibrary()
@@ -105,7 +106,7 @@ class CatalogServiceV1(
         }, it.platforms.map { p -> p.name })
     }
 
-    fun collections(page: Pageable) = collections.findAll(page).publicPage { it.publicCollection() }
+    fun collections(page: Pageable) = collectionService.findReadable(page).publicPage { it.publicCollection() }
     fun collection(id: String) = collectionEntity(id).publicCollection()
 
     @Transactional
@@ -217,7 +218,7 @@ class CatalogServiceV1(
     fun patchCollection(id: String, values: Map<String, Any?>): CollectionV1 {
         validatePatch(values, setOf("name", "description"), setOf("description"))
         val patch = convert(values, CollectionPatchV1::class.java)
-        val collection = collectionEntity(id)
+        val collection = writableCuratedCollection(id)
         patch.name?.let(::validateName)
         collectionService.update(
             CollectionUpdateDto(
@@ -233,12 +234,16 @@ class CatalogServiceV1(
 
     @Transactional
     fun membership(collectionId: String, gameId: String, present: Boolean) {
-        val collection = collectionEntity(collectionId)
+        val collection = writableCuratedCollection(collectionId)
         val game = gameEntity(gameId)
         val exists = collection.games.any { it.id == game.id }
         if (present && !exists) collectionService.addGame(collection.id!!, game.id!!)
         if (!present && exists) collectionService.removeGame(collection.id!!, game.id!!)
     }
+
+    private fun writableCuratedCollection(id: String): Collection =
+        collectionEntity(id).takeIf { it.kind == CollectionKind.CURATED }
+            ?: throw NoSuchElementException("Collection not found")
 
     private fun validateDirectories(directories: List<DirectoryV1>) {
         require(directories.size in 1..100 && directories.all { it.internalPath.isNotBlank() }) { "Provide 1 to 100 nonempty directory paths" }
