@@ -1,12 +1,14 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
+import type {PlayStatuses} from "Frontend/state/useMyPlayStatuses";
 import {CaretLeftIcon, CaretRightIcon} from "@phosphor-icons/react";
 import {Button, Link} from "@heroui/react";
 import {Grid, GridImperativeAPI} from "react-window";
 
 interface CoverRowProps {
     games: GameSummaryDto[];
+    playStatuses?: PlayStatuses;
     title: string;
     link: string;
 }
@@ -29,7 +31,7 @@ interface MouseDrag {
     velocity: number;
 }
 
-export function CoverRow({games, title, link}: CoverRowProps) {
+export function CoverRow({games, playStatuses, title, link}: CoverRowProps) {
     const gridRef = useRef<GridImperativeAPI | null>(null);
     const [scrollPosition, setScrollPosition] = useState(0);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -205,19 +207,18 @@ export function CoverRow({games, title, link}: CoverRowProps) {
     };
 
     // Define interface for Cell props
-    interface RowCellProps {
+    interface RowCellProps extends Pick<CoverRowProps, "games" | "playStatuses"> {
         columnIndex: number;
         rowIndex: number;
         style: React.CSSProperties;
-        games: GameSummaryDto[];
     }
 
     // Cell renderer for react-window Grid
-    const Cell = useCallback(({columnIndex, style, games: gamesData}: RowCellProps) => {
+    const Cell = useCallback(({columnIndex, style, games: gamesData, playStatuses: statuses}: RowCellProps) => {
         const game = gamesData[columnIndex];
         return (
             <div style={{...style, paddingRight: gap}}>
-                <GameCover key={game.id} game={game} radius="sm" interactive={true}/>
+                <GameCover key={game.id} game={game} radius="sm" interactive={true} playStatus={statuses?.[game.id]}/>
             </div>
         );
     }, []);
@@ -266,7 +267,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
                      if (mouseDrag.current) event.preventDefault();
                  }}>
                 {containerWidth > 0 && (
-                    <Grid<{ games: GameSummaryDto[] }>
+                    <Grid<Pick<CoverRowProps, "games" | "playStatuses">>
                         gridRef={gridRef}
                         columnCount={games.length}
                         columnWidth={columnWidth}
@@ -275,7 +276,7 @@ export function CoverRow({games, title, link}: CoverRowProps) {
                         defaultHeight={defaultImageHeight}
                         defaultWidth={containerWidth}
                         cellComponent={Cell}
-                        cellProps={{games}}
+                        cellProps={{games, playStatuses}}
                         className="scrollbar-hide"
                         style={{overflow: 'auto'}}
                     />

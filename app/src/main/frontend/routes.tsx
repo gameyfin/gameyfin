@@ -36,6 +36,7 @@ import {DownloadManagement} from "Frontend/components/administration/DownloadMan
 import CollectionManagementView from "Frontend/views/CollectionManagementView";
 import CollectionsView from "Frontend/views/CollectionsView";
 import CollectionView from "Frontend/views/CollectionView";
+import DiscoverView from "Frontend/views/DiscoverView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -66,6 +67,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             element: <LibraryView/>
                         },
                         {path: 'collections', element: <CollectionsView/>, handle: {title: 'Collections'}},
+                        {path: 'discover', element: <DiscoverView/>, handle: {title: 'Discover', loginRequired: true}},
                         {path: 'collections/:collectionId/manage', element: <CollectionManagementView owned/>,
                             handle: {title: 'Manage Collection', loginRequired: true}},
                         {

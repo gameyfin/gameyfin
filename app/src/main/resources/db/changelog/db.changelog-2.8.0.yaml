@@ -198,3 +198,45 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: ALTER TABLE PLUGIN_RECOVERY_CANDIDATE ALTER COLUMN LAST_ERROR SET DATA TYPE TEXT
+
+  - changeSet:
+      id: 2.8.0-normalize-notification-and-review-text
+      author: gameyfin
+      # Released H2 SQL created VARCHAR from TEXT. The equivalent Liquibase type creates CLOB.
+      preConditions:
+        - onFail: MARK_RAN
+        - dbms:
+            type: h2
+        - sqlCheck:
+            expectedResult: "1"
+            sql: |
+              SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+              FROM INFORMATION_SCHEMA.COLUMNS
+              WHERE TABLE_SCHEMA = CURRENT_SCHEMA AND DATA_TYPE = 'CHARACTER VARYING'
+                AND ((TABLE_NAME = 'APP_NOTIFICATION' AND COLUMN_NAME IN ('ACTIONS', 'BODY'))
+                  OR (TABLE_NAME = 'PLUGIN_UPDATE_NOTICE' AND COLUMN_NAME = 'VERSION')
+                  OR (TABLE_NAME = 'GAME_REVIEW' AND COLUMN_NAME IN ('SUBMITTED_TEXT', 'PUBLISHED_TEXT')))
+      changes:
+        - modifyDataType:
+            tableName: APP_NOTIFICATION
+            columnName: ACTIONS
+            newDataType: clob
+        - modifyDataType:
+            tableName: APP_NOTIFICATION
+            columnName: BODY
+            newDataType: clob
+        - modifyDataType:
+            tableName: PLUGIN_UPDATE_NOTICE
+            columnName: VERSION
+            newDataType: clob
+        - modifyDataType:
+            tableName: GAME_REVIEW
+            columnName: SUBMITTED_TEXT
+            newDataType: clob
+        - modifyDataType:
+            tableName: GAME_REVIEW
+            columnName: PUBLISHED_TEXT
+            newDataType: clob
+      # Earlier releases can read the canonical CLOB schema created by a fresh installation.
+      rollback:
+        - empty: {}

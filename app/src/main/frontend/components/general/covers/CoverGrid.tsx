@@ -2,23 +2,25 @@ import {COVER_GAP as GAP, coverGridLayout} from "Frontend/util/coverGridLayout";
 import {NARROW_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
+import type {PlayStatuses} from "Frontend/state/useMyPlayStatuses";
 import {Grid} from "react-window";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 interface CoverGridProps {
     games: GameSummaryDto[];
+    captions?: ReadonlyMap<number, string>;
+    playStatuses?: PlayStatuses;
 }
 
-interface GridCellProps {
+interface GridCellProps extends CoverGridProps {
     columnIndex: number;
     rowIndex: number;
     style: React.CSSProperties;
-    games: GameSummaryDto[];
     columnCount: number;
     coverHeight: number;
 }
 
-export default function CoverGrid({games}: CoverGridProps) {
+export default function CoverGrid({games, captions, playStatuses}: CoverGridProps) {
     const narrow = useMediaQuery(NARROW_QUERY);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -42,6 +44,7 @@ export default function CoverGrid({games}: CoverGridProps) {
     }, []);
 
     const {columnCount, actualColumnWidth, coverHeight} = coverGridLayout(containerWidth, narrow);
+    const captionHeight = captions?.size ? 72 : 0;
 
     // Calculate row count
     const rowCount = Math.ceil(games.length / columnCount);
@@ -53,6 +56,8 @@ export default function CoverGrid({games}: CoverGridProps) {
                                   rowIndex,
                                   style,
                                   games: gamesData,
+                                  captions: gameCaptions,
+                                  playStatuses: statuses,
                                   columnCount: colCount,
                                   coverHeight: height
                               }: GridCellProps) => {
@@ -64,6 +69,7 @@ export default function CoverGrid({games}: CoverGridProps) {
         }
 
         const game = gamesData[gameIndex];
+        const caption = gameCaptions?.get(game.id);
 
         return (
             <div
@@ -71,11 +77,15 @@ export default function CoverGrid({games}: CoverGridProps) {
                     ...style,
                     paddingBottom: GAP,
                     display: 'flex',
-                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                     boxSizing: 'border-box'
                 }}
             >
-                <GameCover key={game.id} game={game} interactive={true} size={height} lazy={true}/>
+                <GameCover key={game.id} game={game} interactive={true} size={height} lazy={true}
+                           playStatus={statuses?.[game.id]}/>
+                {caption && <p className="px-1 pt-2 text-sm leading-4 text-muted text-center line-clamp-4 wrap-anywhere"
+                               title={caption} style={{maxWidth: height * 12 / 17}}>{caption}</p>}
             </div>
         );
     }, []);
@@ -92,14 +102,14 @@ export default function CoverGrid({games}: CoverGridProps) {
     return (
         <div ref={containerRef} className="w-full">
             {containerWidth > 0 && (
-                <Grid<{ games: GameSummaryDto[], columnCount: number, coverHeight: number }>
+                <Grid<Omit<GridCellProps, "columnIndex" | "rowIndex" | "style">>
                     columnCount={columnCount}
                     columnWidth={getColumnWidth}
                     rowCount={rowCount}
-                    rowHeight={coverHeight + GAP}
+                    rowHeight={coverHeight + GAP + captionHeight}
                     defaultWidth={containerWidth}
                     cellComponent={Cell}
-                    cellProps={{games, columnCount, coverHeight}}
+                    cellProps={{games, captions, playStatuses, columnCount, coverHeight}}
                     style={{overflowX: 'hidden'}}
                 />
             )}

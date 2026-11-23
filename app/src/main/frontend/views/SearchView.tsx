@@ -13,6 +13,7 @@ import AutocompleteInput from "Frontend/components/general/input/AutocompleteInp
 import {collectionState} from "Frontend/state/CollectionState";
 import CollectionKind from "Frontend/generated/org/gameyfin/app/collections/entities/CollectionKind";
 import {compoundRating} from "Frontend/util/utils";
+import {useMyPlayStatuses} from "Frontend/state/useMyPlayStatuses";
 
 type SearchFormValues = {
     searchTerm: string;
@@ -70,6 +71,7 @@ export default function SearchView() {
 }
 
 function SearchViewContent() {
+    const playStatuses = useMyPlayStatuses();
     const games = useSnapshot(gameState).sortedAlphabetically;
     const knownDevelopers = useSnapshot(gameState).knownDevelopers;
     const knownGenres = useSnapshot(gameState).knownGenres;
@@ -406,7 +408,7 @@ function SearchViewContent() {
         </div>
         }
         <div className="mt-4 w-full select-none">
-            <CoverGrid games={filteredAndSortedGames}/>
+            <CoverGrid games={filteredAndSortedGames} playStatuses={playStatuses}/>
             {filteredAndSortedGames.length === 0 && (
                 <div className="text-center mt-8 text-muted">
                     No games found matching your filters

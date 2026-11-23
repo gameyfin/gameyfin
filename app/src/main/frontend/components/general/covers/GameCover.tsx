@@ -1,5 +1,7 @@
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
+import PlayStatus from "Frontend/generated/org/gameyfin/app/social/PlayStatus";
 import {GameCoverFallback} from "Frontend/components/general/covers/GameCoverFallback";
+import {BookmarkSimpleIcon, CheckCircleIcon, GameControllerIcon} from "@phosphor-icons/react";
 import {memo, useEffect, useMemo, useRef, useState} from "react";
 import {blurhashToDataUrl, imageRetryDelay, MAX_IMAGE_RETRIES, withRetryParam} from "Frontend/util/images";
 
@@ -11,6 +13,11 @@ const radiusClasses: Record<NonNullable<GameCoverProps["radius"]>, string> = {
     md: "rounded-md",
     lg: "rounded-lg",
 };
+const playStatusBadges = {
+    [PlayStatus.PLAYED]: {Icon: CheckCircleIcon, label: "Played"},
+    [PlayStatus.PLAYING]: {Icon: GameControllerIcon, label: "Playing"},
+    [PlayStatus.WANT_TO_PLAY]: {Icon: BookmarkSimpleIcon, label: "Want to play"}
+};
 
 interface GameCoverProps {
     /** Works with both summary and full DTOs */
@@ -19,6 +26,7 @@ interface GameCoverProps {
     radius?: "none" | "sm" | "md" | "lg";
     interactive?: boolean;
     lazy?: boolean;
+    playStatus?: PlayStatus;
     /** Whether the title is shown while the cover image is not available */
     showTitle?: boolean;
 }
@@ -29,6 +37,7 @@ const GameCoverComponent = ({
                                 radius = "sm",
                                 interactive = false,
                                 lazy = false,
+                                playStatus,
                                 showTitle = true
                             }: GameCoverProps) => {
     const [shouldLoad, setShouldLoad] = useState(!lazy);
@@ -120,10 +129,7 @@ const GameCoverComponent = ({
     const isUnavailable = hasImageError || attempt > 0;
 
     const coverContent = game.cover && (loadedUrl || blurhashUrl || !isUnavailable) ? (
-        <div
-            ref={containerRef}
-            className={`${interactive ? "rounded-md scale-95 hover:scale-100 shine transition-all" : ""}`}
-        >
+        <div ref={containerRef}>
             {loadedUrl ? (
                 <img
                     alt={game.title}
@@ -156,18 +162,24 @@ const GameCoverComponent = ({
             )}
         </div>
     ) : (
-        <GameCoverFallback title={game.title} size={size} radius={radius} hover={interactive} showTitle={showTitle}/>
+        <GameCoverFallback title={game.title} size={size} radius={radius} showTitle={showTitle}/>
     );
 
+    const badge = playStatus && playStatusBadges[playStatus];
     return interactive ? (
-        <a href={`/game/${game.id}`}>
+        <a href={`/game/${game.id}`} className="block w-fit rounded-md scale-95 hover:scale-100 shine transition-all">
             {coverContent}
+            {badge && (
+                <span title={badge.label} className="absolute top-2 right-2 z-10 rounded-full bg-black/80 p-1 text-white">
+                    <badge.Icon size={18} weight="bold" aria-hidden="true"/>
+                    <span className="sr-only">{badge.label}</span>
+                </span>
+            )}
         </a>
     ) : coverContent;
 };
 
 // Memoize the component to prevent unnecessary re-renders
-// Only re-render if the game ID, cover ID, size, radius, interactive, lazy or showTitle props change
 export const GameCover = memo(GameCoverComponent, (prevProps, nextProps) => {
     return prevProps.game.id === nextProps.game.id &&
         prevProps.game.cover?.id === nextProps.game.cover?.id &&
@@ -175,5 +187,6 @@ export const GameCover = memo(GameCoverComponent, (prevProps, nextProps) => {
         prevProps.radius === nextProps.radius &&
         prevProps.interactive === nextProps.interactive &&
         prevProps.lazy === nextProps.lazy &&
+        prevProps.playStatus === nextProps.playStatus &&
         prevProps.showTitle === nextProps.showTitle;
 });

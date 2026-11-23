@@ -4,7 +4,13 @@ import java.time.Instant
 
 enum class PlayStatus { WANT_TO_PLAY, PLAYING, PLAYED }
 
-data class SocialSettings(val reviewsEnabled: Boolean, val allowUserCollections: Boolean)
+data class GamePlayStatus(val gameId: Long, val status: PlayStatus)
+
+data class SocialSettings(
+    val reviewsEnabled: Boolean,
+    val allowUserCollections: Boolean,
+    val recommendationsEnabled: Boolean
+)
 
 data class GameSocialDto(
     val averageRating: Double?,

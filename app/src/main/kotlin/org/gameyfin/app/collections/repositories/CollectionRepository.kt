@@ -11,6 +11,9 @@ import java.time.Instant
 interface CollectionRepository : JpaRepository<Collection, Long>, JpaSpecificationExecutor<Collection> {
     fun findByFavouritesOwnerId(ownerId: Long): Collection?
 
+    @Query("select c.favouritesOwnerId as memberId, g.id as gameId from Collection c join c.games g where c.favouritesOwnerId in :memberIds")
+    fun favouriteGames(memberIds: List<Long>): List<FavouriteGame>
+
     fun findByName(name: String): Collection?
 
     /**
@@ -42,3 +45,5 @@ fun CollectionRepository.findGameIdsGroupedByCollectionId(
         .groupBy({ (it[0] as Number).toLong() }, { (it[1] as Number).toLong() })
         .mapValues { (_, gameIds) -> gameIds.sorted() }
 }
+
+data class FavouriteGame(val memberId: Long, val gameId: Long)

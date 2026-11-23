@@ -8,7 +8,6 @@ import jakarta.servlet.DispatcherType
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
 import org.springframework.core.env.Environment
@@ -66,6 +65,7 @@ class SecurityConfig(
 
             // Use custom success handler to handle user registration
             http.oauth2Login { oauth2Login ->
+                oauth2Login.clientRegistrationRepository(clientRegistrationRepository())
                 oauth2Login.successHandler(ssoAuthenticationSuccessHandler)
             }
             // Prevent unnecessary redirects
@@ -151,10 +151,7 @@ class SecurityConfig(
         return http.build()
     }
 
-    @Suppress("kotlin:S6518")
-    @Bean
-    @Conditional(SsoEnabledCondition::class)
-    fun clientRegistrationRepository(): ClientRegistrationRepository? {
+    private fun clientRegistrationRepository(): ClientRegistrationRepository {
         val clientRegistration = ClientRegistration.withRegistrationId(SSO_PROVIDER_KEY)
             .clientId(
                 config.get(ConfigProperties.SSO.OIDC.ClientId)

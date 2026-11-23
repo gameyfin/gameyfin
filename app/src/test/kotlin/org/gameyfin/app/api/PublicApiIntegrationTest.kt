@@ -1,5 +1,6 @@
 package org.gameyfin.app.api
 
+import org.gameyfin.app.db.applicationTestDatabaseUrl
 import org.gameyfin.app.GameyfinApplication
 import org.gameyfin.app.api.security.ApiCredential
 import org.gameyfin.app.api.security.ApiCredentialRepository
@@ -22,10 +23,15 @@ import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.requests.GameRequestRepository
 import org.gameyfin.app.requests.entities.GameRequest
 import org.gameyfin.app.requests.status.GameRequestStatus
+import org.gameyfin.app.social.GamePlayStatus
 import org.gameyfin.app.social.GameSocialService
 import org.gameyfin.app.social.PlayStatus
+import org.gameyfin.app.social.recommendations.DiscoveryKind
+import org.gameyfin.app.social.recommendations.GameRecommendation
+import org.gameyfin.app.social.recommendations.RecommendationService
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository
+import org.gameyfin.pluginapi.gamemetadata.Genre
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -70,7 +76,6 @@ import kotlin.test.*
     classes = [GameyfinApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
-        "spring.datasource.url=jdbc:h2:mem:public-api;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=validate",
@@ -82,6 +87,75 @@ import kotlin.test.*
 @Import(PublicApiIntegrationTest.ProductionEntities::class)
 class PublicApiIntegrationTest {
     @Test
+    fun `discover combines personal taste with explicitly shared activity and honors revocation`() {
+        val library = libraries.save(Library(name = "Discover"))
+        val catalog = games.saveAll(listOf(
+            Game(library = library, title = "Seed", genres = listOf(Genre.PUZZLE), metadata = GameMetadata("/discover/seed")),
+            Game(library = library, title = "Another seed", metadata = GameMetadata("/discover/second-seed")),
+            Game(library = library, title = "Similar puzzle", genres = listOf(Genre.PUZZLE), metadata = GameMetadata("/discover/puzzle")),
+            Game(library = library, title = "Peer favourite", metadata = GameMetadata("/discover/peer-favourite")),
+            Game(library = library, title = "Popular", metadata = GameMetadata("/discover/popular"))
+        ))
+        val (seed, secondSeed, puzzle, peerFavourite, popular) = catalog.map { it.id!! }
+        val reader = socialMember("discover-reader")
+        val peer = socialMember("discover-peer")
+        val newcomer = socialMember("discover-newcomer")
+        try {
+            assertFailsWith<AccessDeniedException> { recommendations.discover() }
+            asMember(peer) {
+                assertFalse(recommendations.sharesActivity())
+                social.rate(seed, 5)
+                social.rate(secondSeed, 4)
+                social.rate(popular, 5)
+                collections.setFavourite(peerFavourite, true)
+            }
+            asMember(reader) {
+                collections.setFavourite(seed, true)
+                assertEquals(
+                    listOf(GameRecommendation(puzzle, seed, "Puzzle")),
+                    recommendations.discover().recommendations
+                )
+                social.setPlayStatus(secondSeed, PlayStatus.WANT_TO_PLAY)
+            }
+            assertEquals(DiscoveryKind.EMPTY, asMember(newcomer) { recommendations.discover().kind })
+
+            assertTrue(asMember(peer) { recommendations.setSharesActivity(true) })
+            assertTrue(asMember(peer) { recommendations.sharesActivity() })
+            val personalized = asMember(reader) { recommendations.discover() }
+            assertEquals(DiscoveryKind.PERSONALIZED, personalized.kind)
+            assertContains(personalized.recommendations, GameRecommendation(peerFavourite))
+            assertTrue(personalized.recommendations.none { it.gameId == seed || it.gameId == secondSeed })
+            val fallback = asMember(newcomer) { recommendations.discover() }
+            assertEquals(DiscoveryKind.POPULAR, fallback.kind)
+            assertEquals(setOf(seed, secondSeed, popular), fallback.recommendations.map { it.gameId }.toSet())
+
+            assertFalse(asMember(peer) { recommendations.setSharesActivity(false) })
+            assertFalse(asMember(peer) { recommendations.sharesActivity() })
+            assertEquals(listOf(puzzle), asMember(reader) { recommendations.discover().recommendations.map { it.gameId } })
+            assertEquals(DiscoveryKind.EMPTY, asMember(newcomer) { recommendations.discover().kind })
+            asMember(reader) {
+                social.rate(seed, 1)
+                social.setPlayStatus(seed, PlayStatus.PLAYED)
+                assertEquals(DiscoveryKind.EMPTY, recommendations.discover().kind)
+            }
+
+            configService.set(ConfigProperties.Social.EnableRecommendations, false)
+            assertFalse(social.settings().recommendationsEnabled)
+            assertFailsWith<AccessDeniedException> { asMember(reader) { recommendations.discover() } }
+        } finally {
+            configService.set(ConfigProperties.Social.EnableRecommendations, true)
+            RequestContextHolder.setRequestAttributes(ServletRequestAttributes(MockHttpServletRequest()))
+            try {
+                users.deleteAll(listOf(reader, peer, newcomer))
+            } finally {
+                RequestContextHolder.resetRequestAttributes()
+            }
+            games.deleteAll(catalog)
+            libraries.delete(library)
+        }
+    }
+
+    @Test
     fun `ratings and play status stay independent and review moderation targets the inspected version`() {
         val library = libraries.save(Library(name = "Social activity"))
         val game = games.save(Game(library = library, title = "Activity game", metadata = GameMetadata("/activity/game")))
@@ -89,6 +163,7 @@ class PublicApiIntegrationTest {
         val owner = socialMember("review-author")
         val reader = socialMember("review-reader")
         try {
+            assertFailsWith<AccessDeniedException> { social.myPlayStatuses() }
             asMember(owner) {
                 assertEquals(0L, social.get(id).ratingCount)
                 assertNull(social.get(id).averageRating)
@@ -103,6 +178,7 @@ class PublicApiIntegrationTest {
                 social.rate(id, null)
                 assertNull(social.get(id).myRating)
                 assertEquals(PlayStatus.PLAYED, social.get(id).myPlayStatus)
+                assertEquals(listOf(GamePlayStatus(id, PlayStatus.PLAYED)), social.myPlayStatuses())
                 social.rate(id, 4)
             }
             asMember(reader) {
@@ -112,6 +188,7 @@ class PublicApiIntegrationTest {
                 assertEquals(2L, view.ratingCount)
                 assertNull(view.myPlayStatus)
                 assertNull(view.myReview)
+                assertTrue(social.myPlayStatuses().isEmpty())
             }
 
             configService.set(ConfigProperties.Social.RequireReviewApproval, true)
@@ -120,6 +197,8 @@ class PublicApiIntegrationTest {
                 assertEquals("First pending", social.get(id).myReview?.submittedText)
             }
             val first = social.moderationQueue().single { it.gameId == id && it.pending }
+            assertEquals(owner.username, first.author)
+            assertEquals(owner.username, social.get(id).reviews.single().author)
             asMember(owner) { social.saveReview(id, "Second pending") }
             assertFalse(social.moderate(id, owner.id!!, first.version, approve = true))
             assertEquals("First published", social.get(id).reviews.single().text)
@@ -144,6 +223,7 @@ class PublicApiIntegrationTest {
                 assertFailsWith<AccessDeniedException> { social.saveReview(id, "Disabled") }
                 assertFailsWith<AccessDeniedException> { social.deleteReview(id) }
                 social.setPlayStatus(id, null)
+                assertTrue(social.myPlayStatuses().isEmpty())
                 assertFalse(social.setPlayStatus(id, PlayStatus.PLAYED))
             }
             configService.set(ConfigProperties.Social.EnableReviews, true)
@@ -287,6 +367,10 @@ class PublicApiIntegrationTest {
         @JvmStatic
         @DynamicPropertySource
         fun directories(properties: DynamicPropertyRegistry) {
+            if (System.getenv("GAMEYFIN_TEST_POSTGRES") == "true") {
+                properties.add("spring.datasource.driver-class-name") { "org.testcontainers.jdbc.ContainerDatabaseDriver" }
+            }
+            properties.add("spring.datasource.url") { applicationTestDatabaseUrl("public-api") }
             properties.add("gameyfin.plugins.install-directory") { root.resolve("plugins").toString() }
             properties.add("spring.content.fs.filesystem-root") { root.resolve("media").toString() }
             properties.add("gameyfin.backup.directory") { root.resolve("backups").toString() }
@@ -326,6 +410,9 @@ class PublicApiIntegrationTest {
 
     @Autowired
     lateinit var social: GameSocialService
+
+    @Autowired
+    lateinit var recommendations: RecommendationService
 
     @Autowired
     lateinit var collections: CollectionService

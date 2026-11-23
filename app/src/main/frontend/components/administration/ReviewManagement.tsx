@@ -12,6 +12,7 @@ const SocialSettingsForm = withConfigPage(({getConfig}) => <div className="grid 
     <ConfigFormField configElement={getConfig("social.enable-reviews")}/>
     <ConfigFormField configElement={getConfig("social.require-review-approval")}/>
     <ConfigFormField configElement={getConfig("social.allow-user-collections")}/>
+    <ConfigFormField configElement={getConfig("social.enable-recommendations")}/>
 </div>, "Social settings");
 
 export function ReviewManagement() {

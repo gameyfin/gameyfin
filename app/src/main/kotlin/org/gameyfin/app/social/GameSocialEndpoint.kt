@@ -22,6 +22,9 @@ class GameSocialEndpoint(private val social: GameSocialService) {
     ).publishOn(Schedulers.boundedElastic()).map { social.settings() }.distinctUntilChanged()
 
     @PermitAll
+    fun myPlayStatuses() = social.myPlayStatuses()
+
+    @PermitAll
     fun rate(gameId: Long, rating: Int?) = social.rate(gameId, rating)
 
     @PermitAll

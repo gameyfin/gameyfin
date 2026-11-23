@@ -4,12 +4,14 @@ import {gameState} from "Frontend/state/GameState";
 import React, {useEffect} from "react";
 import {useNavigate, useParams} from "react-router";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
+import {useMyPlayStatuses} from "Frontend/state/useMyPlayStatuses";
 
 export default function LibraryView() {
     const {libraryId} = useParams();
     const navigate = useNavigate();
     const libraries = useSnapshot(libraryState);
     const games = useSnapshot(gameState).gamesByLibraryId[parseInt(libraryId!)] || [];
+    const playStatuses = useMyPlayStatuses();
 
     useEffect(() => {
         window.scrollTo(0, 0)
@@ -25,7 +27,7 @@ export default function LibraryView() {
     return (
         <div className="flex flex-col gap-6">
             <p className="text-4xl font-bold text-center">{libraries.state[parseInt(libraryId!)]?.name}</p>
-            <CoverGrid games={games}/>
+            <CoverGrid games={games} playStatuses={playStatuses}/>
             {games.length === 0 && <p className="text-center text-gray-500">This library is empty.</p>}
         </div>
     );

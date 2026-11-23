@@ -156,6 +156,11 @@ sealed class ConfigProperties<T : Serializable>(
     }
 
     sealed class Social {
+        data object EnableRecommendations : ConfigProperties<Boolean>(
+            Boolean::class, "social.enable-recommendations", "Enable game recommendations",
+            "Shows the Discover page with game recommendations for signed-in members.", true
+        )
+
         data object EnableReviews : ConfigProperties<Boolean>(
             Boolean::class, "social.enable-reviews", "Enable reviews",
             "Allows members to write reviews and displays published reviews.", true

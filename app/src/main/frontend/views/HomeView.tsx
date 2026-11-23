@@ -12,6 +12,7 @@ import {Link, Spinner} from "@heroui/react";
 import {CaretRightIcon, FolderOpenIcon} from "@phosphor-icons/react";
 import {useAuth} from "Frontend/util/auth";
 import {isAdmin} from "Frontend/util/utils";
+import {useMyPlayStatuses} from "Frontend/state/useMyPlayStatuses";
 
 export default function HomeView() {
     const auth = useAuth();
@@ -20,6 +21,7 @@ export default function HomeView() {
     const gamesState = useSnapshot(gameState);
     const gamesByLibrary = gamesState.gamesByLibraryId;
     const gamesByCollection = useGamesByCollectionId();
+    const playStatuses = useMyPlayStatuses();
 
     const filteredAndSortedLibraries = useMemo(() =>
             librariesState.sorted
@@ -127,12 +129,14 @@ export default function HomeView() {
                 {filteredAndSortedLibraries.map((library) => (
                     <CoverRow key={library.id} title={library.name}
                               games={getSortedLibraryGames(library.id)}
+                              playStatuses={playStatuses}
                               link={"/library/" + library.id}
                     />
                 ))}
                 {filteredAndSortedCollections.map((collection) => (
                     <CoverRow key={collection.id} title={collection.name}
                               games={getSortedCollectionGames(collection)}
+                              playStatuses={playStatuses}
                               link={"/collection/" + collection.id}
                     />
                 ))}
