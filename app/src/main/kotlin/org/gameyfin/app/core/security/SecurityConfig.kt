@@ -1,12 +1,11 @@
 package org.gameyfin.app.core.security
 
-import org.gameyfin.app.core.Role
-
 import com.vaadin.flow.spring.security.VaadinSecurityConfigurer
 import com.vaadin.hilla.route.RouteUtil
 import jakarta.servlet.DispatcherType
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.Role
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
@@ -90,7 +89,8 @@ class SecurityConfig(
             // Allow container error handling without trying to authorize a second response.
             auth.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
             auth.requestMatchers("/login/success", "/collections/*/manage").authenticated()
-                .requestMatchers("/setup/plugins", "/setup/plugins/**").hasAnyAuthority(Role.Names.ADMIN, Role.Names.SUPERADMIN)
+                .requestMatchers("/setup/plugins", "/setup/plugins/**")
+                .hasAnyAuthority(Role.Names.ADMIN, Role.Names.SUPERADMIN)
             // Set default security policy that permits Hilla internal requests and denies all other
             auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
                 // Gameyfin static resources and public endpoints
@@ -128,7 +128,8 @@ class SecurityConfig(
                     "/collections",
                     "/search/**",
                     "/requests/**",
-                    "/download/**"
+                    "/download/**",
+                    "/discover/**"
                 ).access(DynamicPublicAccessAuthorizationManager(config))
         }
 

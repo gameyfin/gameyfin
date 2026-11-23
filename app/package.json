@@ -87,7 +87,7 @@
     "tailwindcss": "4.3.5",
     "transform-ast": "2.4.4",
     "typescript": "^7.0.2",
-    "vite": "^8.3.8",
+    "vite": "8.3.5",
     "vite-plugin-checker": "0.14.5"
   },
   "overrides": {
@@ -262,6 +262,6 @@
       "vite-plugin-checker": "0.14.5"
     },
     "disableUsageStatistics": true,
-    "hash": "c995e6ac3a61ead88096d34a69178b232b0fe097397aada18ceaf9cce2ab2caf"
+    "hash": "be75460a8e547af80a86ec4ed6455e44efd4a64a04cf1b01fd3b87122d78354a"
   }
 }
