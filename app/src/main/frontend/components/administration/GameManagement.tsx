@@ -106,7 +106,7 @@ function GameManagementLayout({getConfig, formik}: any) {
             {libraries.sorted.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
                 <ul id="library-cards" aria-label="Libraries"
-                    className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
+                    className="grid gap-4 grid-cols-[repeat(auto-fill,min(100%,353px))]">
                     {libraries.sorted.map((library) =>
                         <LibraryOverviewCard library={library} key={library.id}
                                              isSelected={selectedLibraries.has(library.id)}

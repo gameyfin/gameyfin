@@ -279,7 +279,7 @@ export default function GameView() {
                         <h2 id="game-summary" className="text-xl font-semibold">Summary</h2>
                         {game.summary?.trim() ?
                             <MarkdownContent
-                                className="max-w-prose text-base lg:max-w-none">{game.summary}</MarkdownContent> :
+                                className="max-w-prose text-base text-justify lg:max-w-none">{game.summary}</MarkdownContent> :
                             <p className="text-muted">No summary available</p>}
                         <div className="flex flex-wrap gap-1.5 empty:hidden">
                             <DiscoveryChips items={game.genres} filter="genre" label="Genres"/>
