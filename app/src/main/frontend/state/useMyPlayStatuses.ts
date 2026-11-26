@@ -5,8 +5,9 @@ import {useAuth} from "Frontend/util/auth";
 
 export type PlayStatuses = Readonly<Partial<Record<number, PlayStatus>>>;
 
-export function useMyPlayStatuses() {
-    const memberId = useAuth().state.user?.id;
+export function useMyPlayStatuses(enabled = true) {
+    const {user} = useAuth().state;
+    const memberId = enabled ? user?.id : undefined;
     const [result, setResult] = useState<{memberId: number; statuses?: PlayStatuses; failed?: boolean}>();
 
     useEffect(() => {

@@ -17,7 +17,7 @@ test("ranks distinct shared metadata and excludes the current game and unrelated
     assert.deepEqual(findRelatedGames(missingMetadata, [strongest, game]), []);
 });
 
-test("breaks score ties by title and ID and returns at most six games", () => {
+test("breaks score ties by title and ID across all matches", () => {
     const game = {id: 0, title: "Current", developers: ["Studio"]};
     const catalog = Array.from({length: 8}, (_, index) => ({
         id: 8 - index,
@@ -25,5 +25,5 @@ test("breaks score ties by title and ID and returns at most six games", () => {
         developers: ["Studio"]
     }));
 
-    assert.deepEqual(findRelatedGames(game, catalog).map(({id}) => id), [7, 8, 1, 2, 3, 4]);
+    assert.deepEqual(findRelatedGames(game, catalog).map(({id}) => id), [7, 8, 1, 2, 3, 4, 5, 6]);
 });

@@ -25,6 +25,5 @@ export function findRelatedGames<T extends GameMatchFields>(game: GameMatchField
         .sort((a, b) => b.score - a.score ||
             titleOrder.compare(a.candidate.title, b.candidate.title) ||
             a.candidate.id - b.candidate.id)
-        .slice(0, 6)
         .map(({candidate}) => candidate);
 }

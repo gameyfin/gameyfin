@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo} from "react";
+import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import {GameEndpoint} from "Frontend/generated/endpoints";
 import {Link as RouterLink, useNavigate, useParams} from "react-router";
 import {GameCover} from "Frontend/components/general/covers/GameCover";
@@ -26,6 +26,7 @@ import MatchGameModal from "Frontend/components/general/modals/MatchGameModal";
 import GameVersionEditorModal from "Frontend/components/general/modals/GameVersionEditorModal";
 import EditGameMetadataModal from "Frontend/components/general/modals/EditGameMetadataModal";
 import GameUpdateDto from "Frontend/generated/org/gameyfin/app/games/dto/GameUpdateDto";
+import type GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import MarkdownContent from "Frontend/components/general/MarkdownContent";
 import ChipList from "Frontend/components/general/ChipList";
 import {collectionState} from "Frontend/state/CollectionState";
@@ -61,6 +62,48 @@ function DiscoveryChips({items, filter, label}: {
             ))}
         </ul>
     );
+}
+
+const coverAspectRatio = 12 / 17;
+
+function RelatedGames({games, coverHeight}: { games: readonly GameSummaryDto[]; coverHeight: number }) {
+    const row = useRef<HTMLUListElement>(null);
+    const [layout, setLayout] = useState({count: 1, height: coverHeight});
+
+    useLayoutEffect(() => {
+        const list = row.current;
+        if (!list) return;
+
+        const update = () => {
+            const {width} = list.getBoundingClientRect();
+            const gap = parseFloat(getComputedStyle(list).columnGap) || 0;
+            const height = Math.min(coverHeight, width / coverAspectRatio);
+            if (height <= 0) return;
+            const count = Math.max(1, Math.floor((width + gap) / (height * coverAspectRatio + gap)));
+            setLayout(previous => previous.count === count && previous.height === height
+                ? previous : {count, height});
+        };
+
+        update();
+        const observer = new ResizeObserver(update);
+        observer.observe(list);
+        return () => observer.disconnect();
+    }, [coverHeight]);
+
+    return <section aria-labelledby="related-games" className="flex min-w-0 flex-col gap-4">
+        <h2 id="related-games" className="text-xl font-semibold">Related games</h2>
+        <ul ref={row} className="flex items-start justify-between gap-3">
+            {games.slice(0, layout.count).map(game => (
+                <li key={game.id} className="shrink-0" style={{width: layout.height * coverAspectRatio}}>
+                    <RouterLink to={`/game/${game.id}`} aria-label={game.title}
+                                className="group flex flex-col gap-2 rounded-sm hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus">
+                        <GameCover game={game} size={layout.height} lazy showTitle={false}/>
+                        <span className="text-sm font-medium wrap-anywhere group-hover:underline">{game.title}</span>
+                    </RouterLink>
+                </li>
+            ))}
+        </ul>
+    </section>;
 }
 
 export default function GameView() {
@@ -126,7 +169,7 @@ export default function GameView() {
     }
 
     return game && (
-        <div className="isolate flex min-w-0 flex-col gap-6">
+        <div className="isolate flex min-w-0 flex-col gap-6 -mt-4">
             <div className="overflow-hidden relative rounded-t-xl">
                 {game.header?.id ? (
                     <BlurhashImage
@@ -231,11 +274,12 @@ export default function GameView() {
                         <MarkdownContent>{game.comment}</MarkdownContent>
                     </Surface>}
 
-                <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-12">
+                <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_max-content] lg:gap-12">
                     <section aria-labelledby="game-summary" className="flex min-w-0 flex-col gap-4">
                         <h2 id="game-summary" className="text-xl font-semibold">Summary</h2>
                         {game.summary?.trim() ?
-                            <MarkdownContent className="max-w-prose text-base">{game.summary}</MarkdownContent> :
+                            <MarkdownContent
+                                className="max-w-prose text-base lg:max-w-none">{game.summary}</MarkdownContent> :
                             <p className="text-muted">No summary available</p>}
                         <div className="flex flex-wrap gap-1.5 empty:hidden">
                             <DiscoveryChips items={game.genres} filter="genre" label="Genres"/>
@@ -262,25 +306,6 @@ export default function GameView() {
                         />
                     </section>}
 
-                {relatedGames.length > 0 &&
-                    <section aria-labelledby="related-games" className="flex min-w-0 flex-col gap-4">
-                        <h2 id="related-games" className="text-xl font-semibold">Related games</h2>
-                        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 xl:grid-cols-6">
-                            {relatedGames.map(related => (
-                                <li key={related.id} className="min-w-0">
-                                    <RouterLink to={`/game/${related.id}`} aria-label={related.title}
-                                                className="group flex w-fit max-w-full flex-col gap-2 rounded-sm hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus">
-                                        <GameCover game={related} size={narrow ? 160 : 196} lazy showTitle={false}/>
-                                        <span className="line-clamp-2 text-sm font-medium group-hover:underline">
-                                            {related.title}
-                                        </span>
-                                    </RouterLink>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>}
-
-                <Separator/>
                 <div className="grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-12">
                     <section aria-labelledby="game-details" className="min-w-0">
                         <h2 id="game-details" className="text-xl font-semibold">Details</h2>
@@ -353,6 +378,10 @@ export default function GameView() {
                         <GameReviews key={`${game.id}:${social.memberId}`} social={social}/>
                     </div>
                 </div>
+
+                <Separator/>
+
+                {relatedGames.length > 0 && <RelatedGames games={relatedGames} coverHeight={narrow ? 160 : 196}/>}
             </div>
             {admin && <>
                 <RemoveGameModal

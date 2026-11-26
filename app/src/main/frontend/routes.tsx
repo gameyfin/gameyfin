@@ -25,7 +25,7 @@ import {SystemManagement} from "Frontend/components/administration/SystemManagem
 import GameView from "Frontend/views/GameView";
 import LibraryManagementView from "Frontend/views/LibraryManagementView";
 import SearchView from "Frontend/views/SearchView";
-import LibraryView from "Frontend/views/LibraryView";
+import GameBrowseView from "Frontend/views/GameBrowseView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
 import NotFoundView from "Frontend/views/NotFoundView.tsx";
 import ErrorView from "Frontend/views/ErrorView";
@@ -35,7 +35,6 @@ import {GameRequestManagement} from "Frontend/components/administration/GameRequ
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
 import CollectionManagementView from "Frontend/views/CollectionManagementView";
 import CollectionsView from "Frontend/views/CollectionsView";
-import CollectionView from "Frontend/views/CollectionView";
 import DiscoverView from "Frontend/views/DiscoverView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
@@ -64,7 +63,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         },
                         {
                             path: 'library/:libraryId',
-                            element: <LibraryView/>
+                            element: <GameBrowseView/>
                         },
                         {path: 'collections', element: <CollectionsView/>, handle: {title: 'Collections'}},
                         {path: 'discover', element: <DiscoverView/>, handle: {title: 'Discover', loginRequired: true}},
@@ -72,7 +71,7 @@ export const {router, routes} = new RouterConfigurationBuilder()
                             handle: {title: 'Manage Collection', loginRequired: true}},
                         {
                             path: 'collection/:collectionId',
-                            element: <CollectionView/>
+                            element: <GameBrowseView/>
                         },
                         {
                             path: 'game/:gameId',

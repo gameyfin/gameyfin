@@ -23,7 +23,6 @@ export function useGameSocial(gameId: number | undefined) {
     const scope = `${gameId}:${memberId ?? "guest"}`;
     const [result, setResult] = useState<{ scope: string; data: GameSocialDto }>();
     const [busy, setBusy] = useState(false);
-    const [prompt, setPrompt] = useState(false);
     const [editing, setEditing] = useState(false);
     const request = useRef(0);
     const activeScope = useRef(scope);
@@ -39,7 +38,6 @@ export function useGameSocial(gameId: number | undefined) {
 
     useEffect(() => {
         setBusy(false);
-        setPrompt(false);
         setEditing(false);
         return () => {
             request.current++;
@@ -48,7 +46,6 @@ export function useGameSocial(gameId: number | undefined) {
 
     useEffect(() => {
         if (settings?.reviewsEnabled === false) {
-            setPrompt(false);
             setEditing(false);
         }
         void load().catch(() => toast.danger("Could not load game activity"));
@@ -70,7 +67,7 @@ export function useGameSocial(gameId: number | undefined) {
     }
 
     return {
-        gameId, memberId, data, busy, prompt, setPrompt, editing, setEditing, mutate,
+        gameId, memberId, data, busy, editing, setEditing, mutate,
         reviewsEnabled: settings?.reviewsEnabled !== false && data?.reviewsEnabled === true
     };
 }
@@ -83,21 +80,25 @@ function externalStarRating(rating: number | undefined) {
 }
 
 function RatingScore({value, fallback = "No data"}: { value?: number; fallback?: string }) {
-    if (value == null) return <span className="text-muted">{fallback}</span>;
+    const hasScore = value != null;
+    const score = value ?? 0;
 
-    return <span className="inline-flex items-center gap-2">
-        <span className="inline-flex text-accent" aria-hidden="true">
-            {starValues.map(star => {
-                const fill = Math.min(1, Math.max(0, value - star + 1));
-                return <span key={star} className="relative">
-                    <StarIcon className="size-4"/>
-                    <StarIcon weight="fill" className="absolute inset-0 size-4"
-                              style={{clipPath: `inset(0 ${(1 - fill) * 100}% 0 0)`}}/>
-                </span>;
-            })}
+    return <span className="inline-grid items-center justify-items-end align-top">
+        <span className={`col-start-1 row-start-1 text-muted ${hasScore ? "invisible" : ""}`}>{fallback}</span>
+        <span className={`col-start-1 row-start-1 inline-flex items-center gap-2 ${hasScore ? "" : "invisible"}`}>
+            <span className="inline-flex text-accent" aria-hidden="true">
+                {starValues.map(star => {
+                    const fill = Math.min(1, Math.max(0, score - star + 1));
+                    return <span key={star} className="relative">
+                        <StarIcon className="size-4"/>
+                        <StarIcon weight="fill" className="absolute inset-0 size-4"
+                                  style={{clipPath: `inset(0 ${(1 - fill) * 100}% 0 0)`}}/>
+                    </span>;
+                })}
+            </span>
+            <span className="whitespace-nowrap tabular-nums">{score.toFixed(1)}/5<span
+                className="sr-only"> stars</span></span>
         </span>
-        <span className="whitespace-nowrap tabular-nums">{value.toFixed(1)}/5<span
-            className="sr-only"> stars</span></span>
     </span>;
 }
 
@@ -124,9 +125,9 @@ export function GameScores({data, critic, external}: {
                 <dd className="flex flex-col items-end">
                     <RatingScore value={data?.averageRating}
                                  fallback={data ? "No ratings yet" : "Loading…"}/>
-                    {votes > 0 && <span className="text-xs text-muted">
+                    <span className={`whitespace-nowrap text-xs text-muted tabular-nums ${votes === 0 ? "invisible" : ""}`}>
                         {votes} {votes === 1 ? "vote" : "votes"}
-                    </span>}
+                    </span>
                 </dd>
             </div>
         </dl>
@@ -169,9 +170,11 @@ export function GameRatingInput({social}: { social: GameSocial }) {
                     </button>
                 )}
             </div>
-            {data.myRating != null && <Button size="sm" variant="ghost" isDisabled={busy}
-                                              onPress={() => void mutate(() => GameSocialEndpoint.rate(gameId, undefined))}>Clear
-                rating</Button>}
+            <Button size="sm" variant="ghost" className={data.myRating == null ? "invisible" : undefined}
+                    isDisabled={busy || data.myRating == null}
+                    onPress={() => void mutate(() => GameSocialEndpoint.rate(gameId, undefined))}>
+                Clear rating
+            </Button>
         </div>
     </div>;
 }
@@ -184,7 +187,7 @@ export function GamePlayStatus({social}: { social: GameSocial }) {
         <Select className="w-44 max-w-full" value={data.myPlayStatus ?? "none"} isDisabled={busy}
                 onChange={key => {
                     const status = key === "none" ? undefined : key as PlayStatus;
-                    void mutate(() => GameSocialEndpoint.setPlayStatus(gameId, status), social.setPrompt);
+                    void mutate(() => GameSocialEndpoint.setPlayStatus(gameId, status));
                 }}>
             <Label>Your play status</Label>
             <Select.Trigger><Select.Value/><Select.Indicator/></Select.Trigger>
@@ -196,15 +199,6 @@ export function GamePlayStatus({social}: { social: GameSocial }) {
                 </ListBox>
             </Select.Popover>
         </Select>
-        {social.prompt && social.reviewsEnabled && !data.myReview &&
-            <div role="status" className="flex flex-wrap items-center gap-2">
-                <p>Marked as Played.</p>
-                <Button onPress={() => {
-                    social.setPrompt(false);
-                    social.setEditing(true);
-                }}>Write a review</Button>
-                <Button variant="ghost" onPress={() => social.setPrompt(false)}>Skip</Button>
-            </div>}
     </div>;
 }
 
@@ -242,7 +236,6 @@ export function GameReviews({social}: { social: GameSocial }) {
                 </div>
             </form> : <div className="flex flex-wrap gap-2">
                 <Button onPress={() => {
-                    social.setPrompt(false);
                     setEditing(true);
                 }}>
                     {own ? "Edit your review" : "Write a review"}
