@@ -12,6 +12,7 @@ import org.gameyfin.app.core.events.UserRegistrationWaitingForApprovalEvent
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
+import org.gameyfin.app.media.ImageType
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.dto.UserUpdateDto
@@ -33,6 +34,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
+import java.io.IOException
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -594,6 +596,45 @@ class UserServiceTest {
         assertNull(result.password)
         verify(exactly = 0) { passwordEncoder.encode(any()) }
         verify(exactly = 1) { userRepository.save(user) }
+    }
+
+    @Test
+    fun `OIDC login updates changed avatars and reuses identical content`() {
+        val oldBytes = byteArrayOf(1, 2, 3)
+        val newBytes = byteArrayOf(4, 5, 6)
+        val oldAvatar = Image(id = 1L, type = ImageType.AVATAR, contentLength = 3L)
+        val newAvatar = Image(id = 2L, type = ImageType.AVATAR, contentLength = 3L)
+        val current = User(id = 42L, username = "alice", email = "alice@example.com", avatar = oldAvatar)
+        val profile = User(id = 42L, username = "alice", email = null, oidcProviderId = "sub")
+        every { userRepository.findForUpdate(42L) } returns current
+        every { userRepository.save(current) } returns current
+        every { imageService.getFileContent(oldAvatar) } answers { oldBytes.inputStream() }
+        every { imageService.getFileContent(newAvatar) } answers { newBytes.inputStream() }
+        every { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/png") } returns newAvatar
+
+        userService.registerOrUpdateOidcUser(profile, newBytes)
+        assertEquals(newAvatar, current.avatar)
+
+        userService.registerOrUpdateOidcUser(profile, newBytes)
+        assertEquals(newAvatar, current.avatar)
+        assertEquals("alice@example.com", current.email)
+        verify(exactly = 1) { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/png") }
+    }
+
+    @Test
+    fun `OIDC login preserves current avatar when none is available or storage fails`() {
+        val avatar = Image(id = 1L, type = ImageType.AVATAR)
+        val current = User(id = 42L, username = "alice", email = null, avatar = avatar)
+        val profile = User(id = 42L, username = "alice", email = null, oidcProviderId = "sub")
+        every { userRepository.findForUpdate(42L) } returns current
+        every { userRepository.save(current) } returns current
+        every { imageService.createFromInputStream(ImageType.AVATAR, any(), "image/png") } throws IOException()
+
+        userService.registerOrUpdateOidcUser(profile, null)
+        userService.registerOrUpdateOidcUser(profile, byteArrayOf(1))
+
+        assertEquals(avatar, current.avatar)
+        verify(exactly = 2) { userRepository.save(current) }
     }
 
     @Test

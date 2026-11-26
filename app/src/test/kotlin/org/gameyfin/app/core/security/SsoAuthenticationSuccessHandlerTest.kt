@@ -29,6 +29,7 @@ class SsoAuthenticationSuccessHandlerTest {
     private lateinit var roleService: RoleService
     private lateinit var config: ConfigService
     private lateinit var roleHierarchy: RoleHierarchy
+    private lateinit var avatarSource: OidcAvatarSource
     private lateinit var handler: SsoAuthenticationSuccessHandler
 
     private lateinit var request: HttpServletRequest
@@ -43,7 +44,8 @@ class SsoAuthenticationSuccessHandlerTest {
         config = mockk()
         roleHierarchy = mockk(relaxed = true)
 
-        handler = SsoAuthenticationSuccessHandler(userService, roleService, config, roleHierarchy)
+        avatarSource = mockk { every { load(any()) } returns null }
+        handler = SsoAuthenticationSuccessHandler(userService, roleService, config, roleHierarchy, avatarSource)
 
         request = mockk()
         val session = MockHttpSession()
@@ -109,7 +111,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { userService.findByOidcProviderId("sub-1") } returns null
         every { userService.getByUsername("alice@corp") } returns null
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -136,7 +138,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { userService.findByOidcProviderId("sub-2") } returns null
         every { userService.getByUsername("alice") } returns null
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -160,7 +162,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { userService.findByOidcProviderId("sub-99") } returns null
         every { userService.getByUsername("sub-99") } returns null
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -179,7 +181,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { userService.findByOidcProviderId("sub-1") } returns null
         every { userService.getByUsername("alice") } returns null
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -191,6 +193,8 @@ class SsoAuthenticationSuccessHandlerTest {
     @Test
     fun `registers new user when not found by provider ID or username`() {
         val oidcUser = oidcUser(subject = "sub-new", preferredUsername = "newuser")
+        val avatar = byteArrayOf(1, 2, 3)
+        every { avatarSource.load(oidcUser) } returns avatar
 
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
         every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.username
@@ -200,11 +204,11 @@ class SsoAuthenticationSuccessHandlerTest {
         every { userService.findByOidcProviderId("sub-new") } returns null
         every { userService.getByUsername("newuser") } returns null
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), avatar) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify(exactly = 1) { userService.registerOrUpdateUser(any()) }
+        verify(exactly = 1) { userService.registerOrUpdateOidcUser(any(), avatar) }
         assertEquals("newuser", savedSlot.captured.username)
         assertEquals("sub-new", savedSlot.captured.oidcProviderId)
     }
@@ -221,7 +225,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { userService.findByOidcProviderId("sub-new2") } returns null
         every { userService.getByEmail("new@example.com") } returns null
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -248,14 +252,15 @@ class SsoAuthenticationSuccessHandlerTest {
         every { authentication.credentials } returns null
 
         every { userService.findByOidcProviderId("sub-existing") } returns existingUser
-        every { userService.registerOrUpdateUser(existingUser) } returns mockk(relaxed = true)
+        val profile = slot<User>()
+        every { userService.registerOrUpdateOidcUser(capture(profile), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        assertEquals("updated-name", existingUser.username)
-        assertEquals("updated@example.com", existingUser.email)
-        assertEquals(true, existingUser.emailConfirmed)
-        assertEquals("sub-existing", existingUser.oidcProviderId)
+        assertEquals("updated-name", profile.captured.username)
+        assertEquals("updated@example.com", profile.captured.email)
+        assertEquals(true, profile.captured.emailConfirmed)
+        assertEquals("sub-existing", profile.captured.oidcProviderId)
     }
 
     @Test
@@ -275,12 +280,14 @@ class SsoAuthenticationSuccessHandlerTest {
 
         every { userService.findByOidcProviderId("sub-link") } returns null
         every { userService.getByUsername("existinguser") } returns existingUser
-        every { userService.registerOrUpdateUser(existingUser) } returns mockk(relaxed = true)
+        val profile = slot<User>()
+        every { userService.registerOrUpdateOidcUser(capture(profile), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        assertEquals("sub-link", existingUser.oidcProviderId)
-        assertEquals("existinguser", existingUser.username)
+        assertEquals(existingUser.id, profile.captured.id)
+        assertEquals("sub-link", profile.captured.oidcProviderId)
+        assertEquals("existinguser", profile.captured.username)
     }
 
     @Test
@@ -301,13 +308,15 @@ class SsoAuthenticationSuccessHandlerTest {
 
         every { userService.findByOidcProviderId("sub-email-link") } returns null
         every { userService.getByEmail("matched@example.com") } returns existingUser
-        every { userService.registerOrUpdateUser(existingUser) } returns mockk(relaxed = true)
+        val profile = slot<User>()
+        every { userService.registerOrUpdateOidcUser(capture(profile), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
         // Username should be updated to the resolved username from SSO
-        assertEquals("renamed", existingUser.username)
-        assertEquals("sub-email-link", existingUser.oidcProviderId)
+        assertEquals(existingUser.id, profile.captured.id)
+        assertEquals("renamed", profile.captured.username)
+        assertEquals("sub-email-link", profile.captured.oidcProviderId)
     }
 
     // ── Role assignment ───────────────────────────────────────────────────────
@@ -327,7 +336,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { roleService.authoritiesToRoles(any()) } returns emptyList() // empty → should default to USER
 
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -350,7 +359,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { roleService.authoritiesToRoles(listOf(adminAuthority)) } returns listOf(Role.ADMIN)
 
         val savedSlot = slot<User>()
-        every { userService.registerOrUpdateUser(capture(savedSlot)) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(capture(savedSlot), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -371,7 +380,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
         every { userService.findByOidcProviderId(any()) } returns null
         every { userService.getByUsername(any()) } returns null
-        every { userService.registerOrUpdateUser(any()) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(any(), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -390,7 +399,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
         every { userService.findByOidcProviderId(any()) } returns null
         every { userService.getByUsername(any()) } returns null
-        every { userService.registerOrUpdateUser(any()) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(any(), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -410,7 +419,7 @@ class SsoAuthenticationSuccessHandlerTest {
 
         every { userService.findByOidcProviderId(any()) } returns null
         every { userService.getByUsername(any()) } returns null
-        every { userService.registerOrUpdateUser(any()) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(any(), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -466,7 +475,7 @@ class SsoAuthenticationSuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication)
 
         verify { response.sendError(HttpServletResponse.SC_FORBIDDEN, "OIDC user has no email claim") }
-        verify(exactly = 0) { userService.registerOrUpdateUser(any()) }
+        verify(exactly = 0) { userService.registerOrUpdateOidcUser(any(), any()) }
     }
 
     @Test
@@ -478,7 +487,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { authentication.credentials } returns null
         every { userService.findByOidcProviderId(any()) } returns null
         val saved = slot<User>()
-        every { userService.registerOrUpdateUser(capture(saved)) } answers { firstArg() }
+        every { userService.registerOrUpdateOidcUser(capture(saved), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -488,24 +497,24 @@ class SsoAuthenticationSuccessHandlerTest {
     }
 
     @Test
-    fun `linked OIDC user keeps access without an email claim and keeps their stored address`() {
+    fun `linked OIDC user keeps access without an email claim`() {
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
         every { userService.emailRequired } returns true
         every { authentication.principal } returns userWithoutEmail()
         every { authentication.credentials } returns null
-        val linked = User(username = "alice", email = null, oidcProviderId = "sub-1")
+        val linked = User(id = 1L, username = "alice", email = null, oidcProviderId = "sub-1")
         every { userService.findByOidcProviderId("sub-1") } returns linked
-        every { userService.registerOrUpdateUser(linked) } returns linked
+        val profile = slot<User>()
+        every { userService.registerOrUpdateOidcUser(capture(profile), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
-        assertEquals(null, linked.email)
-        assertEquals(false, linked.emailConfirmed)
+        assertEquals(linked.id, profile.captured.id)
+        assertEquals(null, profile.captured.email)
 
         linked.email = "alice@example.com"
         linked.emailConfirmed = true
         handler.onAuthenticationSuccess(request, response, authentication)
-        assertEquals("alice@example.com", linked.email)
-        assertEquals(true, linked.emailConfirmed)
+        assertEquals(null, profile.captured.email)
         verify(exactly = 2) { response.sendRedirect("/login/success") }
     }
 
@@ -517,7 +526,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { authentication.credentials } returns "credentials"
         every { userService.findByOidcProviderId(any()) } returns null
         every { userService.getByUsername(any()) } returns null
-        every { userService.registerOrUpdateUser(any()) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(any(), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
@@ -533,7 +542,7 @@ class SsoAuthenticationSuccessHandlerTest {
         every { request.getParameter("continue") } returns "  "
         every { userService.findByOidcProviderId(any()) } returns null
         every { userService.getByUsername(any()) } returns null
-        every { userService.registerOrUpdateUser(any()) } returns mockk(relaxed = true)
+        every { userService.registerOrUpdateOidcUser(any(), any()) } just Runs
 
         handler.onAuthenticationSuccess(request, response, authentication)
 

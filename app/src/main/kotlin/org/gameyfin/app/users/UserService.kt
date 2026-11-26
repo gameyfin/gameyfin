@@ -12,6 +12,7 @@ import org.gameyfin.app.core.events.UserRegistrationWaitingForApprovalEvent
 import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.media.Image
 import org.gameyfin.app.media.ImageService
+import org.gameyfin.app.media.ImageType
 import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserEvent
 import org.gameyfin.app.users.dto.UserRegistrationDto
@@ -30,6 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.io.IOException
 
 
 @Service
@@ -162,10 +164,47 @@ class UserService(
             user.password = passwordEncoder.encode(user.password)
         }
 
-        return userRepository.save(user).also {
+        return saveUserAndPublishState(user)
+    }
+
+    @Transactional
+    fun registerOrUpdateOidcUser(profile: org.gameyfin.app.users.entities.User, avatarPng: ByteArray?) {
+        val current = profile.id?.let { id ->
+            val existing = userRepository.findForUpdate(id) ?: throw UsernameNotFoundException("Unknown user ID $id")
+            check(existing.oidcProviderId == null || existing.oidcProviderId == profile.oidcProviderId) {
+                "Account is already linked to an OIDC identity"
+            }
+            existing.username = profile.username
+            existing.oidcProviderId = profile.oidcProviderId
+            existing.roles = profile.roles
+            profile.email?.let { email ->
+                existing.email = email
+                existing.emailConfirmed = true
+            }
+            existing
+        } ?: profile
+
+        if (avatarPng != null) {
+            try {
+                val avatar = current.avatar
+                val unchanged = avatar != null && avatar.contentLength == avatarPng.size.toLong() &&
+                        imageService.getFileContent(avatar)?.use {
+                            it.readNBytes(avatarPng.size + 1).contentEquals(avatarPng)
+                        } == true
+                if (!unchanged) {
+                    current.avatar = imageService.createFromInputStream(ImageType.AVATAR, avatarPng.inputStream(), "image/png")
+                }
+            } catch (e: IOException) {
+                log.warn(e) { "Could not store OIDC avatar" }
+            }
+        }
+        saveUserAndPublishState(current)
+    }
+
+    private fun saveUserAndPublishState(user: org.gameyfin.app.users.entities.User) =
+        userRepository.save(user).also {
             eventPublisher.publishEvent(UserStateChanged(UserEvent(it.id!!, it.toExtendedUserInfoDto())))
         }
-    }
 
     @Transactional
     fun selfRegisterUser(registration: UserRegistrationDto) {

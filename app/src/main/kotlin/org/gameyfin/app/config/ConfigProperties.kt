@@ -149,7 +149,7 @@ sealed class ConfigProperties<T : Serializable>(
                 Int::class,
                 "requests.games.max-open-requests-per-user",
                 "Maximum number of pending requests per user. Set to 0 for unlimited.",
-                "Caps the number of **open (unresolved) requests** a single user can have at any time. Set to `0` to remove the limit.",
+                "Caps the number of **open (unresolved) requests** a single user can have at any time. Set to 0 to remove the limit.",
                 10
             )
         }
@@ -232,7 +232,7 @@ sealed class ConfigProperties<T : Serializable>(
                 Boolean::class,
                 "sso.oidc.enabled",
                 "Enable SSO via OIDC/OAuth2",
-                "Activates the **OpenID Connect / OAuth 2.0** single sign-on integration. All other OIDC settings below are required when this is turned on.",
+                "Activates the **OpenID Connect / OAuth 2.0** single sign-on integration.",
                 false
             )
 
@@ -240,7 +240,7 @@ sealed class ConfigProperties<T : Serializable>(
                 MatchUsersBy::class,
                 "sso.oidc.match-existing-users-by",
                 "Match existing users by",
-                "Determines which field (`username` or `email`) is used to link an incoming SSO identity to an **existing Gameyfin account**.",
+                "Determines which field (username or email) is used to link an incoming SSO identity to an **existing Gameyfin account**.",
                 MatchUsersBy.username,
                 MatchUsersBy.entries
             )
@@ -249,8 +249,8 @@ sealed class ConfigProperties<T : Serializable>(
                 String::class,
                 "sso.oidc.username-claim",
                 "Username claim",
-                """Name of the OIDC / userinfo claim used as the Gameyfin username (e.g. `preferred_username`, `name`, `email`).
-                    |If the claim is absent or blank, Gameyfin falls back through `preferred_username` → `nickname` → `name` → `email` → `sub` automatically.""".trimMargin(),
+                """Name of the OIDC / userinfo claim used as the Gameyfin username (e.g. preferred_username, name, email).
+                    |If the claim is absent or blank, Gameyfin falls back through preferred_username → nickname → name → email → sub automatically.""".trimMargin(),
                 "preferred_username"
             )
 
@@ -267,8 +267,15 @@ sealed class ConfigProperties<T : Serializable>(
                 Array<String>::class,
                 "sso.oidc.oauth-scopes",
                 "OAuth2 scopes to request",
-                "List of [OAuth 2.0 scopes](https://oauth.net/2/scope/) sent in the authorization request. Must include at least `openid`.",
+                "List of [OAuth 2.0 scopes](https://oauth.net/2/scope/) sent in the authorization request. Must include at least openid.",
                 arrayOf("openid", "profile", "email", "roles")
+            )
+
+            data object AvatarOrigin : ConfigProperties<String>(
+                String::class,
+                "sso.oidc.avatar-origin",
+                "Additional avatar origin",
+                "Gameyfin syncs avatars from the OIDC picture claim on login. The issuer and UserInfo origins are trusted by default. Set this optional URL (e.g. https://avatars.example.com) if your provider serves avatars from another trusted origin."
             )
 
             data object ClientId : ConfigProperties<String>(
@@ -289,7 +296,7 @@ sealed class ConfigProperties<T : Serializable>(
                 String::class,
                 "sso.oidc.issuer-url",
                 "Issuer URL",
-                "The base URL of your identity provider (e.g. `https://auth.example.com/realms/myrealm`). Used for OIDC discovery."
+                "The base URL of your identity provider (e.g. https://auth.example.com/realms/myrealm). Used for OIDC discovery."
             )
 
             data object AuthorizeUrl : ConfigProperties<String>(
@@ -345,14 +352,14 @@ sealed class ConfigProperties<T : Serializable>(
                     String::class,
                     "messages.providers.email.host",
                     "URL of the email server",
-                    "Hostname or IP address of the **SMTP server** used to dispatch outgoing e-mails (e.g. `smtp.gmail.com`)."
+                    "Hostname or IP address of the **SMTP server** used to dispatch outgoing e-mails (e.g. smtp.gmail.com)."
                 )
 
                 data object Port : ConfigProperties<Int>(
                     Int::class,
                     "messages.providers.email.port",
                     "Port of the email server",
-                    "TCP port of the SMTP server. Common values: `587` (STARTTLS), `465` (SSL/TLS), `25` (unencrypted).",
+                    "TCP port of the SMTP server. Common values: 587 (STARTTLS), 465 (SSL/TLS), 25 (unencrypted).",
                     587
                 )
 
@@ -387,7 +394,7 @@ sealed class ConfigProperties<T : Serializable>(
             Int::class,
             "logs.max-history-days",
             "Log retention in days",
-            "Number of days log files are kept before being **automatically deleted**. Set to `0` to disable automatic clean-up.",
+            "Number of days log files are kept before being **automatically deleted**. Set to 0 to disable automatic clean-up.",
             30
         )
 
@@ -396,7 +403,7 @@ sealed class ConfigProperties<T : Serializable>(
                 LogLevel::class,
                 "logs.level.gameyfin",
                 "Log level (Gameyfin)",
-                "Minimum severity level for Gameyfin's own log messages. Use `DEBUG` or `TRACE` for detailed troubleshooting output.",
+                "Minimum severity level for Gameyfin's own log messages. Use DEBUG or TRACE for detailed troubleshooting output.",
                 LogLevel.INFO,
                 LogLevel.entries
             )
@@ -405,7 +412,7 @@ sealed class ConfigProperties<T : Serializable>(
                 LogLevel::class,
                 "logs.level.root",
                 "Log level (Root)",
-                "Minimum severity level for **all other libraries and frameworks** (Spring, Hibernate, …). It is recommended to keep this at `WARN` or `ERROR` in production.",
+                "Minimum severity level for **all other libraries and frameworks** (Spring, Hibernate, …). It is recommended to keep this at WARN or ERROR in production.",
                 LogLevel.WARN,
                 LogLevel.entries
             )
