@@ -26,6 +26,10 @@ interface MemberGameStateRepository : JpaRepository<MemberGameState, MemberGameI
     @Query("select new org.gameyfin.app.social.RatingSummary(avg(s.rating), count(s.rating)) from MemberGameState s where s.id.gameId = :gameId")
     fun ratings(gameId: Long): RatingSummary
 
+    @Query("""select new org.gameyfin.app.social.GameMemberRating(s.id.gameId, avg(s.rating))
+        from MemberGameState s where s.rating is not null group by s.id.gameId""")
+    fun memberRatings(): List<GameMemberRating>
+
     @Query("""select new org.gameyfin.app.social.GamePlayStatus(s.id.gameId, s.playStatus)
         from MemberGameState s where s.id.memberId = :memberId and s.playStatus is not null""")
     fun playStatuses(memberId: Long): List<GamePlayStatus>

@@ -6,13 +6,15 @@ interface GameCoverFallbackProps {
     size?: number;
     radius?: "none" | "sm" | "md" | "lg";
     showTitle?: boolean;
+    titlePlacement?: "top" | "bottom";
 }
 
 export function GameCoverFallback({
                                       title,
                                       size = 300,
                                       radius = "sm",
-                                      showTitle = true
+                                      showTitle = true,
+                                      titlePlacement = "bottom"
                                   }: GameCoverFallbackProps) {
     const iconSize = size * 0.5;
     const radiusClass = {
@@ -30,7 +32,7 @@ export function GameCoverFallback({
             <DiscIcon weight="fill" size={iconSize} aria-hidden="true"
                       className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-muted"/>
             {showTitle && (
-                <p className="absolute inset-x-3 bottom-3 text-center wrap-anywhere line-clamp-2 text-sm"
+                <p className={`absolute inset-x-3 ${titlePlacement === "top" ? "top-3" : "bottom-3"} text-center wrap-anywhere line-clamp-2 text-sm`}
                 >
                     {title}
                 </p>

@@ -1,14 +1,14 @@
 import {COVER_GAP as GAP, coverGridLayout} from "Frontend/util/coverGridLayout";
 import {NARROW_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
-import {GameCover} from "Frontend/components/general/covers/GameCover";
+import {type CoverBadge, GameCover} from "Frontend/components/general/covers/GameCover";
 import type {PlayStatuses} from "Frontend/state/useMyPlayStatuses";
 import {Grid} from "react-window";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 interface CoverGridProps {
     games: GameSummaryDto[];
-    captions?: ReadonlyMap<number, string>;
+    coverBadges?: ReadonlyMap<number, readonly CoverBadge[]>;
     playStatuses?: PlayStatuses;
 }
 
@@ -20,7 +20,7 @@ interface GridCellProps extends CoverGridProps {
     coverHeight: number;
 }
 
-export default function CoverGrid({games, captions, playStatuses}: CoverGridProps) {
+export default function CoverGrid({games, coverBadges, playStatuses}: CoverGridProps) {
     const narrow = useMediaQuery(NARROW_QUERY);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -44,7 +44,6 @@ export default function CoverGrid({games, captions, playStatuses}: CoverGridProp
     }, []);
 
     const {columnCount, actualColumnWidth, coverHeight} = coverGridLayout(containerWidth, narrow);
-    const captionHeight = captions?.size ? 72 : 0;
 
     // Calculate row count
     const rowCount = Math.ceil(games.length / columnCount);
@@ -56,7 +55,7 @@ export default function CoverGrid({games, captions, playStatuses}: CoverGridProp
                                   rowIndex,
                                   style,
                                   games: gamesData,
-                                  captions: gameCaptions,
+                                  coverBadges: badges,
                                   playStatuses: statuses,
                                   columnCount: colCount,
                                   coverHeight: height
@@ -69,7 +68,6 @@ export default function CoverGrid({games, captions, playStatuses}: CoverGridProp
         }
 
         const game = gamesData[gameIndex];
-        const caption = gameCaptions?.get(game.id);
 
         return (
             <div
@@ -83,9 +81,7 @@ export default function CoverGrid({games, captions, playStatuses}: CoverGridProp
                 }}
             >
                 <GameCover key={game.id} game={game} interactive={true} size={height} lazy={true}
-                           playStatus={statuses?.[game.id]}/>
-                {caption && <p className="px-1 pt-2 text-sm leading-4 text-muted text-center line-clamp-4 wrap-anywhere"
-                               title={caption} style={{maxWidth: height * 12 / 17}}>{caption}</p>}
+                           playStatus={statuses?.[game.id]} badges={badges?.get(game.id)}/>
             </div>
         );
     }, []);
@@ -106,10 +102,10 @@ export default function CoverGrid({games, captions, playStatuses}: CoverGridProp
                     columnCount={columnCount}
                     columnWidth={getColumnWidth}
                     rowCount={rowCount}
-                    rowHeight={coverHeight + GAP + captionHeight}
+                    rowHeight={coverHeight + GAP}
                     defaultWidth={containerWidth}
                     cellComponent={Cell}
-                    cellProps={{games, captions, playStatuses, columnCount, coverHeight}}
+                    cellProps={{games, coverBadges, playStatuses, columnCount, coverHeight}}
                     style={{overflowX: 'hidden'}}
                 />
             )}

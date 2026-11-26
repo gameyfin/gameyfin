@@ -23,6 +23,10 @@ interface UserRepository : JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.id = :id")
     fun findForUpdate(id: Long): User?
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.username = :username")
+    fun findByUsernameForUpdate(username: String): User?
+
     fun existsByUsername(userName: String): Boolean
     fun existsByEmail(email: String): Boolean
     fun findByUsername(userName: String): User?

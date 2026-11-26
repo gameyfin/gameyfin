@@ -92,7 +92,7 @@ class DynamicEndpointAccessTest {
         val calls: List<() -> Any?> = listOf(
             { endpoint.sync(null) }, { endpoint.getByIds(emptyList()) }, { endpoint.subscribe() },
             { collections.sync(null) }, { collections.getById(1) }, { collections.subscribeToCollections() },
-            { social.get(1) }, { social.subscribeSettings() }, { social.rate(1, 4) },
+            { social.get(1) }, { social.memberRatings() }, { social.subscribeSettings() }, { social.rate(1, 4) },
             { libraries.sync(null) }, { libraries.subscribeToLibraryEvents() },
             { platforms.getStats() }, { platforms.subscribe() },
             { providers.getProviders() }, { plugins.getAll() }, { plugins.subscribe() },

@@ -9,6 +9,7 @@ import org.gameyfin.app.core.Role
 import org.gameyfin.app.users.RoleService
 import org.gameyfin.app.users.UserService
 import org.gameyfin.app.users.entities.User
+import org.gameyfin.app.users.parseEmailAddress
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyAuthoritiesMapper
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -40,33 +41,47 @@ class SsoAuthenticationSuccessHandler(
         val resolvedUsername = oidcUser.resolvedUsername(usernameAttributeName)
 
         // Check if user is already registered via SSO
-        var matchedUser = userService.findByOidcProviderId(
-            oidcUser.subject ?: error("OIDC user has no subject claim")
-        )
+        val subject = oidcUser.subject ?: error("OIDC user has no subject claim")
+        var matchedUser = userService.findByOidcProviderId(subject)
+        val email = try {
+            parseEmailAddress(oidcUser.email)
+        } catch (_: IllegalArgumentException) {
+            rejectSignIn(request, response, "Invalid OIDC email claim")
+            return
+        }
+        if (matchedUser == null && email == null && userService.emailRequired) {
+            rejectSignIn(request, response, "OIDC user has no email claim")
+            return
+        }
 
         // If user is not registered via SSO, check if user is already registered by username or email
         // This is meant to map existing users to SSO users
         if (matchedUser == null) {
             matchedUser = when (config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy)) {
                 MatchUsersBy.username -> userService.getByUsername(resolvedUsername)
-                MatchUsersBy.email -> userService.getByEmail(
-                    oidcUser.email ?: error("OIDC user has no email claim")
-                )
+                MatchUsersBy.email -> email?.let(userService::getByEmail)
 
                 else -> error("Unknown 'match users by' configuration")
             }
         }
 
+        if (matchedUser?.oidcProviderId?.let { it != subject } == true) {
+            rejectSignIn(request, response, "Account is already linked to an OIDC identity")
+            return
+        }
+
         // User could not be found in the database
         if (matchedUser == null) {
             // Register as new user
-            matchedUser = User(oidcUser, resolvedUsername)
+            matchedUser = User(oidcUser, resolvedUsername, email)
         } else {
             // Update user with new SSO data
             matchedUser.username = resolvedUsername
-            matchedUser.email = oidcUser.email ?: error("OIDC user has no email claim")
-            matchedUser.emailConfirmed = true
-            matchedUser.oidcProviderId = oidcUser.subject
+            if (email != null) {
+                matchedUser.email = email
+                matchedUser.emailConfirmed = true
+            }
+            matchedUser.oidcProviderId = subject
         }
 
 
@@ -89,5 +104,11 @@ class SsoAuthenticationSuccessHandler(
         // Share the onboarding and validated-destination decision with local login.
         response.sendRedirect("/login/success")
         return
+    }
+
+    private fun rejectSignIn(request: HttpServletRequest, response: HttpServletResponse, message: String) {
+        SecurityContextHolder.clearContext()
+        request.getSession(false)?.invalidate()
+        response.sendError(HttpServletResponse.SC_FORBIDDEN, message)
     }
 }

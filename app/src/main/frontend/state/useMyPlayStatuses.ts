@@ -5,9 +5,9 @@ import {useAuth} from "Frontend/util/auth";
 
 export type PlayStatuses = Readonly<Partial<Record<number, PlayStatus>>>;
 
-export function useMyPlayStatuses(): PlayStatuses | undefined {
+export function useMyPlayStatuses() {
     const memberId = useAuth().state.user?.id;
-    const [result, setResult] = useState<{memberId: number; statuses: PlayStatuses}>();
+    const [result, setResult] = useState<{memberId: number; statuses?: PlayStatuses; failed?: boolean}>();
 
     useEffect(() => {
         setResult(undefined);
@@ -19,11 +19,14 @@ export function useMyPlayStatuses(): PlayStatuses | undefined {
                 setResult({memberId, statuses: Object.fromEntries(entries.map(({gameId, status}) => [gameId, status]))});
             }
         }).catch(error => {
-            if (!request.signal.aborted) console.error("Could not load play statuses", error);
+            if (!request.signal.aborted) {
+                console.error("Could not load play statuses", error);
+                setResult({memberId, failed: true});
+            }
         });
 
         return () => request.abort();
     }, [memberId]);
 
-    return result?.memberId === memberId ? result?.statuses : undefined;
+    return result?.memberId === memberId ? result : undefined;
 }

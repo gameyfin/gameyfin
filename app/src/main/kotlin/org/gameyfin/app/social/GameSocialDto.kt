@@ -6,6 +6,8 @@ enum class PlayStatus { WANT_TO_PLAY, PLAYING, PLAYED }
 
 data class GamePlayStatus(val gameId: Long, val status: PlayStatus)
 
+data class GameMemberRating(val gameId: Long, val average: Double)
+
 data class SocialSettings(
     val reviewsEnabled: Boolean,
     val allowUserCollections: Boolean,

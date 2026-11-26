@@ -2,6 +2,7 @@ package org.gameyfin.app.social.recommendations
 
 import org.gameyfin.app.social.PlayStatus
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 internal data class GameInterest(val rating: Int?, val status: PlayStatus?, val favourite: Boolean) {
@@ -44,13 +45,15 @@ internal fun rankRecommendations(
         }
         if (score <= 0) return@mapNotNull null
         val match = content?.takeIf { it.score > 0 }?.match
-        RankedGame(GameRecommendation(id, match?.gameId, match?.tag), score)
+        RankedGame(GameRecommendation(id, score.toPercentage(), match?.gameId, match?.tag), score)
     }.sortedWith(compareByDescending<RankedGame> { it.score }.thenBy { it.game.gameId })
         .take(LIMIT).map { it.game }
 
     if (ranked.isNotEmpty()) return DiscoveryResult(DiscoveryKind.PERSONALIZED, ranked)
     return popularGames(catalog, candidates, peers)
 }
+
+private fun Double.toPercentage() = (coerceIn(0.0, 1.0) * 100).roundToInt()
 
 private data class RankedGame(val game: GameRecommendation, val score: Double)
 private data class ContentSeed(val id: Long, val weight: Int, val tags: GameTags)
@@ -153,10 +156,11 @@ private fun popularGames(
     }
     if (stats.isEmpty()) return DiscoveryResult(DiscoveryKind.EMPTY, emptyList())
     val average = stats.values.sumOf { it.total }.toDouble() / stats.values.sumOf { it.count }
+    fun adjustedRating(value: RatingStats) = (value.total + 3 * average) / (value.count + 3)
+
     val ranked = stats.entries.filter { it.key in candidates }
-        .sortedWith(compareByDescending<Map.Entry<Long, RatingStats>> { (_, value) ->
-            (value.total + 3 * average) / (value.count + 3)
-        }.thenByDescending { it.value.count }.thenBy { it.key })
-        .take(LIMIT).map { GameRecommendation(it.key) }
+        .sortedWith(compareByDescending<Map.Entry<Long, RatingStats>> { adjustedRating(it.value) }
+            .thenByDescending { it.value.count }.thenBy { it.key })
+        .take(LIMIT).map { (id, value) -> GameRecommendation(id, (adjustedRating(value) / 5).toPercentage()) }
     return DiscoveryResult(if (ranked.isEmpty()) DiscoveryKind.EMPTY else DiscoveryKind.POPULAR, ranked)
 }

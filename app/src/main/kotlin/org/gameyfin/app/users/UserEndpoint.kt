@@ -62,6 +62,7 @@ class UserEndpoint(
 
     @RolesAllowed(Role.Names.ADMIN)
     fun updateUserByName(username: String, updates: UserUpdateDto) {
+        check(userService.canManage(username)) { "Cannot manage this user" }
         userService.updateUser(username, updates)
     }
 

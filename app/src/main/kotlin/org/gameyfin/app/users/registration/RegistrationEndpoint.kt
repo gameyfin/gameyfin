@@ -19,6 +19,8 @@ class RegistrationEndpoint(
         return userService.selfRegistrationAllowed
     }
 
+    fun isEmailRequired(): Boolean = userService.emailRequired
+
     fun registerUser(registration: UserRegistrationDto) {
         userService.selfRegisterUser(registration)
 

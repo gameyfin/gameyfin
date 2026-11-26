@@ -157,6 +157,13 @@ class MessageServiceTest {
     }
 
     @Test
+    fun `sendNotification skips missing email addresses`() {
+        messageService.sendNotification(null, "Subject", MessageTemplates.AccountEnabled, emptyMap())
+
+        verify(exactly = 0) { applicationContext.getBeansOfType<AbstractMessageProvider>() }
+    }
+
+    @Test
     fun `sendNotification should send to all enabled providers`() {
         val recipient = "user@example.com"
         val title = "Test Title"

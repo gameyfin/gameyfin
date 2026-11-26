@@ -16,6 +16,8 @@ import reactor.core.scheduler.Schedulers
 class GameSocialEndpoint(private val social: GameSocialService) {
     fun get(gameId: Long) = social.get(gameId)
 
+    fun memberRatings() = social.memberRatings()
+
     fun subscribeSettings(): Flux<SocialSettings> = Flux.merge(
         ConfigService.subscribe().filter { updates -> updates.any { it.updates.keys.any { key -> key.startsWith("social.") } } }.map { Unit },
         Flux.just(Unit)

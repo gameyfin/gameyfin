@@ -198,6 +198,14 @@ sealed class ConfigProperties<T : Serializable>(
 
     /** User management */
     sealed class Users {
+        data object EmailRequired : ConfigProperties<Boolean>(
+            Boolean::class,
+            "users.email-required",
+            "Require email address",
+            "Require an email address for new accounts and prevent users from removing their address.",
+            true
+        )
+
         sealed class SignUps {
             data object Allow : ConfigProperties<Boolean>(
                 Boolean::class,

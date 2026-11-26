@@ -200,6 +200,7 @@ class UserEndpointTest {
     fun `updateUserByName should update specific user`() {
         val updates = UserUpdateDto(username = null, password = "newpass", email = null)
 
+        every { userService.canManage("targetuser") } returns true
         every { userService.updateUser("targetuser", updates) } just Runs
 
         userEndpoint.updateUserByName("targetuser", updates)

@@ -24,7 +24,7 @@ export default function PasswordResetModal({
 
         await PasswordResetEndpoint.requestPasswordReset(resetEmail);
         toast.success("Password reset requested", {
-            description: "If the email address is registered, you will receive a message with further instructions."
+            description: "If this is a confirmed email address for a local account, you will receive reset instructions."
         });
     }
 
@@ -38,13 +38,17 @@ export default function PasswordResetModal({
                                 <Modal.Header><Modal.Heading>Request a password reset</Modal.Heading></Modal.Header>
                                 <Modal.Body>
                                     {canResetPassword ?
-                                        <NextInput
-                                            onChange={(event: any) => {
-                                                setResetEmail(event.target.value);
-                                            }}
-                                            type="email"
-                                            placeholder="Email"
-                                        /> :
+                                        <>
+                                            <NextInput
+                                                onChange={event => setResetEmail(event.target.value)}
+                                                type="email"
+                                                aria-label="Email"
+                                                placeholder="Email"
+                                            />
+                                            <p className="text-sm text-muted">
+                                                Contact your administrator if your account has no confirmed email address.
+                                            </p>
+                                        </> :
                                         <div className="flex flex-row items-center gap-4 text-warning">
                                             <WarningCircleIcon size={40}/>
                                             <p>
@@ -59,7 +63,7 @@ export default function PasswordResetModal({
                                         Cancel
                                     </Button>
                                     <Button variant="primary"
-                                            isDisabled={!canResetPassword}
+                                            isDisabled={!canResetPassword || !resetEmail?.trim()}
                                             onPress={async () => {
                                                 await resetPassword();
                                                 close();

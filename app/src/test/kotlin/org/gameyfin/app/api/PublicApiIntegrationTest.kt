@@ -112,7 +112,7 @@ class PublicApiIntegrationTest {
             asMember(reader) {
                 collections.setFavourite(seed, true)
                 assertEquals(
-                    listOf(GameRecommendation(puzzle, seed, "Puzzle")),
+                    listOf(GameRecommendation(puzzle, 100, seed, "Puzzle")),
                     recommendations.discover().recommendations
                 )
                 social.setPlayStatus(secondSeed, PlayStatus.WANT_TO_PLAY)
@@ -123,11 +123,14 @@ class PublicApiIntegrationTest {
             assertTrue(asMember(peer) { recommendations.sharesActivity() })
             val personalized = asMember(reader) { recommendations.discover() }
             assertEquals(DiscoveryKind.PERSONALIZED, personalized.kind)
-            assertContains(personalized.recommendations, GameRecommendation(peerFavourite))
+            assertContains(personalized.recommendations, GameRecommendation(peerFavourite, 100))
             assertTrue(personalized.recommendations.none { it.gameId == seed || it.gameId == secondSeed })
             val fallback = asMember(newcomer) { recommendations.discover() }
             assertEquals(DiscoveryKind.POPULAR, fallback.kind)
-            assertEquals(setOf(seed, secondSeed, popular), fallback.recommendations.map { it.gameId }.toSet())
+            assertEquals(
+                mapOf(seed to 95, secondSeed to 90, popular to 95),
+                fallback.recommendations.associate { it.gameId to it.matchPercentage }
+            )
 
             assertFalse(asMember(peer) { recommendations.setSharesActivity(false) })
             assertFalse(asMember(peer) { recommendations.sharesActivity() })
@@ -177,6 +180,7 @@ class PublicApiIntegrationTest {
                 assertEquals(2, social.get(id).myRating)
                 social.rate(id, null)
                 assertNull(social.get(id).myRating)
+                assertTrue(social.memberRatings().none { it.gameId == id })
                 assertEquals(PlayStatus.PLAYED, social.get(id).myPlayStatus)
                 assertEquals(listOf(GamePlayStatus(id, PlayStatus.PLAYED)), social.myPlayStatuses())
                 social.rate(id, 4)
@@ -190,6 +194,7 @@ class PublicApiIntegrationTest {
                 assertNull(view.myReview)
                 assertTrue(social.myPlayStatuses().isEmpty())
             }
+            assertEquals(3.5, social.memberRatings().single { it.gameId == id }.average)
 
             configService.set(ConfigProperties.Social.RequireReviewApproval, true)
             asMember(owner) {

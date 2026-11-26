@@ -16,6 +16,11 @@ function UserManagementLayout({getConfig, formik}: any) {
     return (
         <div className="flex flex-col grow">
 
+            <Section title="Accounts"/>
+            <div className="flex flex-col xl:flex-row gap-4">
+                <ConfigFormField configElement={getConfig("users.email-required")}/>
+            </div>
+
             <Section title="Sign-Ups"/>
             <div className="flex flex-col xl:flex-row gap-4">
                 <ConfigFormField configElement={getConfig("users.sign-ups.allow")}/>

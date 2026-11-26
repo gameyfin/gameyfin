@@ -1,7 +1,7 @@
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import PlayStatus from "Frontend/generated/org/gameyfin/app/social/PlayStatus";
 import {GameCoverFallback} from "Frontend/components/general/covers/GameCoverFallback";
-import {BookmarkSimpleIcon, CheckCircleIcon, GameControllerIcon} from "@phosphor-icons/react";
+import {BookmarkSimpleIcon, CheckCircleIcon, GameControllerIcon, type Icon} from "@phosphor-icons/react";
 import {memo, useEffect, useMemo, useRef, useState} from "react";
 import {blurhashToDataUrl, imageRetryDelay, MAX_IMAGE_RETRIES, withRetryParam} from "Frontend/util/images";
 
@@ -19,6 +19,12 @@ const playStatusBadges = {
     [PlayStatus.WANT_TO_PLAY]: {Icon: BookmarkSimpleIcon, label: "Want to play"}
 };
 
+export interface CoverBadge {
+    text: string;
+    icon?: Icon;
+    description?: string;
+}
+
 interface GameCoverProps {
     /** Works with both summary and full DTOs */
     game: Pick<GameSummaryDto, "id" | "title" | "cover">;
@@ -27,6 +33,7 @@ interface GameCoverProps {
     interactive?: boolean;
     lazy?: boolean;
     playStatus?: PlayStatus;
+    badges?: readonly CoverBadge[];
     /** Whether the title is shown while the cover image is not available */
     showTitle?: boolean;
 }
@@ -38,6 +45,7 @@ const GameCoverComponent = ({
                                 interactive = false,
                                 lazy = false,
                                 playStatus,
+                                badges,
                                 showTitle = true
                             }: GameCoverProps) => {
     const [shouldLoad, setShouldLoad] = useState(!lazy);
@@ -127,6 +135,7 @@ const GameCoverComponent = ({
 
     // Once loading the image failed, the title is shown until it is available
     const isUnavailable = hasImageError || attempt > 0;
+    const hasCoverBadges = interactive && !!badges?.length;
 
     const coverContent = game.cover && (loadedUrl || blurhashUrl || !isUnavailable) ? (
         <div ref={containerRef}>
@@ -162,7 +171,8 @@ const GameCoverComponent = ({
             )}
         </div>
     ) : (
-        <GameCoverFallback title={game.title} size={size} radius={radius} showTitle={showTitle}/>
+        <GameCoverFallback title={game.title} size={size} radius={radius} showTitle={showTitle}
+                           titlePlacement={hasCoverBadges ? "top" : "bottom"}/>
     );
 
     const badge = playStatus && playStatusBadges[playStatus];
@@ -174,6 +184,18 @@ const GameCoverComponent = ({
                     <badge.Icon size={18} weight="bold" aria-hidden="true"/>
                     <span className="sr-only">{badge.label}</span>
                 </span>
+            )}
+            {hasCoverBadges && (
+                <div className="absolute inset-x-2 bottom-2 z-10 flex flex-col items-start gap-1">
+                    {badges.map(({text, icon: Icon, description}, index) => (
+                        <span key={index} title={description}
+                              className="flex max-w-full items-center gap-1 rounded-full bg-black/80 px-2 py-1 text-xs font-semibold text-white">
+                            {Icon && <Icon size={14} className="shrink-0" aria-hidden="true"/>}
+                            <span className="truncate" aria-hidden={description ? true : undefined}>{text}</span>
+                            {description && <span className="sr-only">{description}</span>}
+                        </span>
+                    ))}
+                </div>
             )}
         </a>
     ) : coverContent;
@@ -188,5 +210,6 @@ export const GameCover = memo(GameCoverComponent, (prevProps, nextProps) => {
         prevProps.interactive === nextProps.interactive &&
         prevProps.lazy === nextProps.lazy &&
         prevProps.playStatus === nextProps.playStatus &&
+        prevProps.badges === nextProps.badges &&
         prevProps.showTitle === nextProps.showTitle;
 });

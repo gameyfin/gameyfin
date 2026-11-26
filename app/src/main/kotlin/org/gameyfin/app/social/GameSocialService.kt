@@ -42,6 +42,9 @@ class GameSocialService(
     }
 
     @Transactional(readOnly = true)
+    fun memberRatings(): List<GameMemberRating> = states.memberRatings()
+
+    @Transactional(readOnly = true)
     fun myPlayStatuses(): List<GamePlayStatus> = states.playStatuses(members.requireId())
 
     @Transactional

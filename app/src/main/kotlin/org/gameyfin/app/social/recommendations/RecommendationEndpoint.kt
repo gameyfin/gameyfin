@@ -17,4 +17,9 @@ data class DiscoveryResult(val kind: DiscoveryKind, val recommendations: List<Ga
 
 enum class DiscoveryKind { PERSONALIZED, POPULAR, EMPTY }
 
-data class GameRecommendation(val gameId: Long, val similarToGameId: Long? = null, val sharedTag: String? = null)
+data class GameRecommendation(
+    val gameId: Long,
+    val matchPercentage: Int,
+    val similarToGameId: Long? = null,
+    val sharedTag: String? = null
+)

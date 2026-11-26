@@ -88,7 +88,7 @@ class EntityUpdateInterceptor : Interceptor {
         for (i in propertyNames.indices) {
             when (propertyNames[i]) {
                 "username" -> reconstructed.username = state[i] as String
-                "email" -> reconstructed.email = state[i] as String
+                "email" -> reconstructed.email = state[i] as? String
                 "id" -> reconstructed.id = state[i] as? Long
                 "password" -> reconstructed.password = state[i] as? String
                 "oidcProviderId" -> reconstructed.oidcProviderId = state[i] as? String

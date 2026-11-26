@@ -35,6 +35,8 @@ class PasswordResetServiceTest {
         tokenRepository = mockk()
         userService = mockk()
         messageService = mockk()
+        every { messageService.enabled } returns true
+        every { userService.canManage(any<User>()) } returns true
         sessionService = mockk()
         eventPublisher = mockk()
 
@@ -130,6 +132,31 @@ class PasswordResetServiceTest {
 
         assertEquals("secret123", result.secret)
         verify(exactly = 1) { tokenRepository.save(any<Token<TokenType.PasswordReset>>()) }
+    }
+
+    @Test
+    fun `admin can reset an email-less account with messaging enabled`() {
+        val user = User(id = 1L, username = "testuser", email = null)
+        val token = Token(secret = "secret", creator = user, type = TokenType.PasswordReset)
+        every { userService.getByUsername("testuser") } returns user
+        every { tokenRepository.findByCreatorAndType(user, TokenType.PasswordReset) } returns null
+        every { tokenRepository.save(any<Token<TokenType.PasswordReset>>()) } returns token
+
+        assertEquals("secret", passwordResetService.generate("testuser").secret)
+
+        every { userService.canManage(user) } returns false
+        assertThrows(IllegalStateException::class.java) { passwordResetService.generate("testuser") }
+        verify(exactly = 1) { tokenRepository.save(any()) }
+    }
+
+    @Test
+    fun `requestPasswordReset skips blank input and disabled messaging`() {
+        passwordResetService.requestPasswordReset(" ")
+        every { messageService.enabled } returns false
+        passwordResetService.requestPasswordReset("test@example.com")
+
+        verify(exactly = 0) { userService.getByEmail(any()) }
+        verify(exactly = 0) { tokenRepository.save(any()) }
     }
 
     @Test

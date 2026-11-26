@@ -10,7 +10,7 @@ import {collectionState} from "Frontend/state/CollectionState";
 import {useAuth} from "Frontend/util/auth";
 import {compoundRating} from "Frontend/util/utils";
 
-const playOptions = [
+export const playStatusOptions = [
     {id: "none", label: "No status"},
     {id: PlayStatus.WANT_TO_PLAY, label: "Want to play"},
     {id: PlayStatus.PLAYING, label: "Playing"},
@@ -79,10 +79,10 @@ type GameSocial = ReturnType<typeof useGameSocial>;
 const starValues = [1, 2, 3, 4, 5];
 
 function externalStarRating(rating: number | undefined) {
-    return rating == null ? undefined : Math.max(1, compoundRating({criticRating: rating}, [1, 5]));
+    return compoundRating({criticRating: rating}, [1, 5]);
 }
 
-function RatingScore({value, fallback = "Unavailable"}: { value?: number; fallback?: string }) {
+function RatingScore({value, fallback = "No data"}: { value?: number; fallback?: string }) {
     if (value == null) return <span className="text-muted">{fallback}</span>;
 
     return <span className="inline-flex items-center gap-2">
@@ -189,7 +189,7 @@ export function GamePlayStatus({social}: { social: GameSocial }) {
             <Label>Your play status</Label>
             <Select.Trigger><Select.Value/><Select.Indicator/></Select.Trigger>
             <Select.Popover>
-                <ListBox items={playOptions}>
+                <ListBox items={playStatusOptions}>
                     {option => <ListBox.Item id={option.id} textValue={option.label}>
                         {option.label}<ListBox.ItemIndicator/>
                     </ListBox.Item>}

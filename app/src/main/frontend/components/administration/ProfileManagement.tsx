@@ -8,7 +8,7 @@ import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import * as Yup from "yup";
 import UserUpdateDto from "Frontend/generated/org/gameyfin/app/users/dto/UserUpdateDto";
-import {EmailConfirmationEndpoint, MessageEndpoint, RecommendationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
+import {EmailConfirmationEndpoint, MessageEndpoint, RecommendationEndpoint, RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
 import Avatar from "Frontend/components/general/Avatar";
@@ -16,7 +16,7 @@ import RecommendationSharing from "Frontend/components/RecommendationSharing";
 
 interface ProfileFormValues {
     username: string | undefined;
-    email: string | undefined;
+    email: string;
     newPassword: string;
     passwordRepeat: string;
     sharesActivity?: boolean;
@@ -32,11 +32,13 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [configSaved, setConfigSaved] = useState(false);
     const [messagesEnabled, setMessagesEnabled] = useState(false);
+    const [emailRequired, setEmailRequired] = useState(true);
     const [savedSharing, setSavedSharing] = useState<boolean>();
     const [sharingLoadFailed, setSharingLoadFailed] = useState(false);
 
     useEffect(() => {
-        MessageEndpoint.isEnabled().then(setMessagesEnabled);
+        MessageEndpoint.isEnabled().then(setMessagesEnabled, () => setMessagesEnabled(false));
+        RegistrationEndpoint.isEmailRequired().then(setEmailRequired, () => setEmailRequired(true));
     }, []);
 
     useEffect(() => {
@@ -77,6 +79,8 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
     async function handleSubmit(values: ProfileFormValues, helpers: FormikHelpers<ProfileFormValues>): Promise<void> {
         if (!formik.dirty) return;
 
+        const email = values.email.trim();
+
         if (values.sharesActivity !== undefined) {
             try {
                 setSavedSharing(await RecommendationEndpoint.setSharesActivity(values.sharesActivity));
@@ -90,7 +94,7 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
         const userUpdate: UserUpdateDto = {};
         if (!user?.managedBySso) {
             if (values.username !== formik.initialValues.username) userUpdate.username = values.username;
-            if (values.email !== formik.initialValues.email) userUpdate.email = values.email;
+            if (email !== formik.initialValues.email) userUpdate.email = email;
             if (values.newPassword.length > 0) userUpdate.password = values.newPassword;
         }
 
@@ -104,7 +108,7 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
         }
 
         helpers.resetForm({
-            values: {username: values.username, email: values.email, newPassword: "", passwordRepeat: ""}
+            values: {username: values.username, email, newPassword: "", passwordRepeat: ""}
         });
         setConfigSaved(true);
 
@@ -118,10 +122,11 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
         }
     }
 
+    const hasStoredEmail = Boolean(user?.email);
     const formik = useFormik<ProfileFormValues>({
         initialValues: {
             username: user?.username,
-            email: user?.email,
+            email: user?.email ?? "",
             newPassword: "",
             passwordRepeat: ""
         },
@@ -131,9 +136,9 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
                 .required('Required'),
             newPassword: Yup.string()
                 .min(8, 'Password must be at least 8 characters long'),
-            email: Yup.string()
-                .email()
-                .required('Required'),
+            email: emailRequired && hasStoredEmail
+                ? Yup.string().trim().email().required('Required')
+                : Yup.string().trim().email(),
             passwordRepeat: Yup.string()
                 .equals([Yup.ref('newPassword')], 'Passwords do not match')
         })
@@ -194,8 +199,9 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
                                isDisabled={profileFieldsDisabled}/>
                         <div className="flex flex-col sm:flex-row gap-4">
                             <Input name="email" label="Email" type="email" autoComplete="email"
-                                   isDisabled={profileFieldsDisabled || !messagesEnabled}/>
-                            {(auth.state.user?.emailConfirmed === false && !auth.state.user.managedBySso) &&
+                                   isDisabled={profileFieldsDisabled}
+                                   isRequired={emailRequired && hasStoredEmail}/>
+                            {(user?.email && !user.emailConfirmed && !user.managedBySso && messagesEnabled) &&
                                 <Tooltip delay={0}>
                                     <Tooltip.Trigger>
                                         <Button isIconOnly
@@ -206,7 +212,6 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
                                                         })
                                                     )
                                                 }}
-                                                isDisabled={!messagesEnabled}
                                                 variant="ghost"
                                                 className="size-14"
                                         >
@@ -223,7 +228,7 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
                             <div className="flex flex-row gap-2 text-warning -mt-5">
                                 <InfoIcon/>
                                 <small>
-                                    Email services are disabled. Please contact your administrator.
+                                    Email confirmation and password recovery emails are unavailable while email services are disabled.
                                 </small>
                             </div>
                         }

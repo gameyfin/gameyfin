@@ -1,7 +1,9 @@
 import {Button, Link, Spinner} from "@heroui/react";
+import {SparkleIcon, TagIcon, UsersIcon} from "@phosphor-icons/react";
 import {useEffect, useState} from "react";
 import {useSnapshot} from "valtio/react";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
+import type {CoverBadge} from "Frontend/components/general/covers/GameCover";
 import {RecommendationEndpoint} from "Frontend/generated/endpoints";
 import DiscoveryResult from "Frontend/generated/org/gameyfin/app/social/recommendations/DiscoveryResult";
 import DiscoveryKind from "Frontend/generated/org/gameyfin/app/social/recommendations/DiscoveryKind";
@@ -46,21 +48,28 @@ function Recommendations() {
 
     if (!result || !catalog.isLoaded) return <Spinner aria-label="Loading game recommendations"/>;
 
-    const captions = new Map<number, string>();
+    const coverBadges = new Map<number, readonly CoverBadge[]>();
     const popular = result.kind === DiscoveryKind.POPULAR;
-    const games = result.recommendations.flatMap(({gameId, similarToGameId, sharedTag}) => {
+    const games = result.recommendations.flatMap(({gameId, matchPercentage, similarToGameId, sharedTag}) => {
         const game = catalog.state[gameId];
         if (!game) return [];
 
+        const badges: CoverBadge[] = [{text: `${matchPercentage}% ${popular ? "rating" : "match"}`}];
         if (!popular) {
-            const source = similarToGameId === undefined ? undefined : catalog.state[similarToGameId];
-            const reason = similarToGameId === undefined
-                ? "Members with similar taste liked this."
-                : source && sharedTag
-                    ? `Shares ${sharedTag} with ${source.title}.`
-                    : "Matches your game preferences.";
-            captions.set(gameId, reason);
+            if (sharedTag) {
+                const source = similarToGameId === undefined ? undefined : catalog.state[similarToGameId];
+                badges.push({
+                    text: sharedTag,
+                    icon: TagIcon,
+                    description: source ? `Shares ${sharedTag} with ${source.title}.` : `Matching tag: ${sharedTag}.`
+                });
+            } else if (similarToGameId === undefined) {
+                badges.push({text: "Similar taste", icon: UsersIcon, description: "Members with similar taste liked this."});
+            } else {
+                badges.push({text: "Your preferences", icon: SparkleIcon, description: "Matches your game preferences."});
+            }
         }
+        coverBadges.set(gameId, badges);
         return [game];
     });
 
@@ -73,6 +82,6 @@ function Recommendations() {
         <h2 id="discover-list-title" className="text-xl font-semibold">
             {popular ? "Popular on this server" : "Recommended for you"}
         </h2>
-        <CoverGrid games={games} captions={captions}/>
+        <CoverGrid games={games} coverBadges={coverBadges}/>
     </section>;
 }

@@ -12,17 +12,23 @@ import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class EmailConfirmationService(
-    tokenRepository: TokenRepository,
+    private val tokenRepository: TokenRepository,
     private val userRepository: UserRepository,
     private val eventPublisher: ApplicationEventPublisher
 ) : TokenService<TokenType.EmailConfirmation>(TokenType.EmailConfirmation, tokenRepository) {
 
     val log: KLogger = KotlinLogging.logger {}
 
+    @Transactional
     fun confirmEmail(secret: String): TokenValidationResult {
+        val userId = tokenRepository.findCreatorIdBySecret(secret) ?: return TokenValidationResult.INVALID
+        // Lock the account before loading the token so an address change can remove stale tokens.
+        val user = userRepository.findForUpdate(userId) ?: return TokenValidationResult.INVALID
+
         val emailConfirmationToken = get(secret, TokenType.EmailConfirmation)
             ?: return TokenValidationResult.INVALID
 
@@ -30,14 +36,22 @@ class EmailConfirmationService(
             return TokenValidationResult.EXPIRED
         }
 
-        val user = emailConfirmationToken.creator
+        if (user.email.isNullOrBlank() || user.oidcProviderId != null) return TokenValidationResult.INVALID
+
         confirmEmail(user)
         delete(emailConfirmationToken)
 
         return TokenValidationResult.VALID
     }
 
-    fun resendEmailConfirmation(user: User) {
+    fun invalidate(user: User) {
+        tokenRepository.findByCreatorAndType(user, TokenType.EmailConfirmation)?.let(tokenRepository::delete)
+    }
+
+    @Transactional
+    fun resendEmailConfirmation(account: User) {
+        val user = account.id?.let(userRepository::findForUpdate) ?: return
+        if (user.email.isNullOrBlank() || user.oidcProviderId != null) return
         if (user.emailConfirmed) {
             log.error { "User '${user.username}' has already confirmed their email address" }
             return

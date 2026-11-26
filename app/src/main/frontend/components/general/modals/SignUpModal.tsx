@@ -1,7 +1,7 @@
 import ResponsiveDialog from "Frontend/components/layout/ResponsiveDialog";
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {Button, Modal, toast} from "@heroui/react";
-import {RegistrationEndpoint} from "Frontend/generated/endpoints";
+import {MessageEndpoint, RegistrationEndpoint} from "Frontend/generated/endpoints";
 import UserRegistrationDto from "Frontend/generated/org/gameyfin/app/users/dto/UserRegistrationDto";
 import {Form, Formik} from "formik";
 import * as Yup from "yup";
@@ -17,6 +17,25 @@ export default function SignUpModal({
                                         onOpenChange
                                     }: SignUpModalProps) {
 
+    const [emailRequired, setEmailRequired] = useState(true);
+    const [messagesEnabled, setMessagesEnabled] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        let active = true;
+        RegistrationEndpoint.isEmailRequired().then(
+            required => { if (active) setEmailRequired(required); },
+            () => { if (active) setEmailRequired(true); }
+        );
+        MessageEndpoint.isEnabled().then(
+            enabled => { if (active) setMessagesEnabled(enabled); },
+            () => { if (active) setMessagesEnabled(false); }
+        );
+        return () => {
+            active = false;
+        };
+    }, [isOpen]);
+
     async function signUp(registration: UserRegistrationDto, onClose: () => void) {
         try {
             await RegistrationEndpoint.registerUser({
@@ -27,8 +46,10 @@ export default function SignUpModal({
 
             onClose();
 
-            toast.success("Account created", {
-                description: "You will receive an email with further instructions shortly."
+            toast.success("Registration submitted", {
+                description: registration.email?.trim() && messagesEnabled
+                    ? "Check your inbox for further instructions."
+                    : "If approval is required, your administrator must activate your account."
             });
         } catch (_) {
             toast.danger("Registration failed", {
@@ -44,8 +65,8 @@ export default function SignUpModal({
                 <ResponsiveDialog size="lg" className="max-w-xl">
                     <Modal.Dialog>
                         {({close}) => (
-                            <Formik initialValues={{}}
-                                    onSubmit={async (values: any, {setFieldError}) => {
+                            <Formik initialValues={{username: "", email: "", password: "", passwordRepeat: ""}}
+                                    onSubmit={async (values, {setFieldError}) => {
                                         let usernameAvailable = await RegistrationEndpoint.isUsernameAvailable(values.username);
                                         if (!usernameAvailable) {
                                             setFieldError('username', 'Username already taken');
@@ -60,9 +81,9 @@ export default function SignUpModal({
                                         password: Yup.string()
                                             .min(8, 'Password must be at least 8 characters long')
                                             .required('Required'),
-                                        email: Yup.string()
-                                            .email()
-                                            .required('Required'),
+                                        email: emailRequired
+                                            ? Yup.string().trim().email().required('Required')
+                                            : Yup.string().trim().email(),
                                         passwordRepeat: Yup.string()
                                             .equals([Yup.ref('password')], 'Passwords do not match')
                                             .required('Required')
@@ -80,6 +101,7 @@ export default function SignUpModal({
                                                 label="E-Mail"
                                                 name="email"
                                                 type="email"
+                                                isRequired={emailRequired}
                                             />
                                             <Input
                                                 label="Password"

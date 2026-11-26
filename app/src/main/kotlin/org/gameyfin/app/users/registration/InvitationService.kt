@@ -10,6 +10,7 @@ import org.gameyfin.app.core.token.TokenRepository
 import org.gameyfin.app.core.token.TokenService
 import org.gameyfin.app.core.token.TokenType
 import org.gameyfin.app.users.UserService
+import org.gameyfin.app.users.parseEmailAddress
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.enums.UserInvitationAcceptanceResult
 import org.springframework.context.ApplicationEventPublisher
@@ -26,7 +27,8 @@ class InvitationService(
         private const val EMAIL_KEY = "email"
     }
 
-    fun createInvitation(email: String): TokenDto {
+    fun createInvitation(address: String): TokenDto {
+        val email = requireNotNull(parseEmailAddress(address)) { "Email address is required" }
         check(!(userService.existsByEmail(email))) { "User with email ${Utils.maskEmail(email)} is already registered" }
 
         val auth = getCurrentAuth() ?: error("No authentication found")

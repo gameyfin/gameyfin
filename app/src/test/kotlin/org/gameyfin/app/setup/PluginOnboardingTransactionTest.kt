@@ -46,6 +46,10 @@ class PluginOnboardingTransactionTest {
             val users = context.getBean(UserRepository::class.java)
             val registration = UserRegistrationDto("admin", "password", "a@example.com")
             assertFalse(onboarding.isPending(), "Existing installations have no onboarding row")
+            assertFailsWith<IllegalArgumentException> {
+                setup.createInitialAdminUser(registration.copy(email = null))
+            }
+            assertEquals(0, users.count())
             assertFailsWith<IllegalStateException> { setup.createInitialAdminUser(registration) }
             assertEquals(0, users.count())
             assertFalse(onboarding.isPending())

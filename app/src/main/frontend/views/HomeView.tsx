@@ -21,7 +21,7 @@ export default function HomeView() {
     const gamesState = useSnapshot(gameState);
     const gamesByLibrary = gamesState.gamesByLibraryId;
     const gamesByCollection = useGamesByCollectionId();
-    const playStatuses = useMyPlayStatuses();
+    const playStatuses = useMyPlayStatuses()?.statuses;
 
     const filteredAndSortedLibraries = useMemo(() =>
             librariesState.sorted

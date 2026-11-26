@@ -11,7 +11,7 @@ export default function LibraryView() {
     const navigate = useNavigate();
     const libraries = useSnapshot(libraryState);
     const games = useSnapshot(gameState).gamesByLibraryId[parseInt(libraryId!)] || [];
-    const playStatuses = useMyPlayStatuses();
+    const playStatuses = useMyPlayStatuses()?.statuses;
 
     useEffect(() => {
         window.scrollTo(0, 0)

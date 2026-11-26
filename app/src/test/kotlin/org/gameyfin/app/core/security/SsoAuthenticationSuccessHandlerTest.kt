@@ -457,26 +457,56 @@ class SsoAuthenticationSuccessHandlerTest {
     }
 
     @Test
-    fun `throws when matching by email and OIDC user has no email`() {
+    fun `rejects unlinked OIDC user without email when required`() {
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
-        every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.email
+        every { userService.emailRequired } returns true
         every { authentication.principal } returns userWithoutEmail()
         every { userService.findByOidcProviderId(any()) } returns null
 
-        assertThrows<IllegalStateException> {
-            handler.onAuthenticationSuccess(request, response, authentication)
-        }
+        handler.onAuthenticationSuccess(request, response, authentication)
+
+        verify { response.sendError(HttpServletResponse.SC_FORBIDDEN, "OIDC user has no email claim") }
+        verify(exactly = 0) { userService.registerOrUpdateUser(any()) }
     }
 
     @Test
-    fun `throws when updating existing user and OIDC user has no email`() {
+    fun `registers OIDC user without email and skips matching by email in optional mode`() {
         every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
+        every { config.get(ConfigProperties.SSO.OIDC.MatchExistingUsersBy) } returns MatchUsersBy.email
+        every { userService.emailRequired } returns false
         every { authentication.principal } returns userWithoutEmail()
-        every { userService.findByOidcProviderId("sub-1") } returns mockk<User>(relaxed = true)
+        every { authentication.credentials } returns null
+        every { userService.findByOidcProviderId(any()) } returns null
+        val saved = slot<User>()
+        every { userService.registerOrUpdateUser(capture(saved)) } answers { firstArg() }
 
-        assertThrows<IllegalStateException> {
-            handler.onAuthenticationSuccess(request, response, authentication)
-        }
+        handler.onAuthenticationSuccess(request, response, authentication)
+
+        assertEquals(null, saved.captured.email)
+        assertEquals(false, saved.captured.emailConfirmed)
+        verify(exactly = 0) { userService.getByEmail(any()) }
+    }
+
+    @Test
+    fun `linked OIDC user keeps access without an email claim and keeps their stored address`() {
+        every { config.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "preferred_username"
+        every { userService.emailRequired } returns true
+        every { authentication.principal } returns userWithoutEmail()
+        every { authentication.credentials } returns null
+        val linked = User(username = "alice", email = null, oidcProviderId = "sub-1")
+        every { userService.findByOidcProviderId("sub-1") } returns linked
+        every { userService.registerOrUpdateUser(linked) } returns linked
+
+        handler.onAuthenticationSuccess(request, response, authentication)
+        assertEquals(null, linked.email)
+        assertEquals(false, linked.emailConfirmed)
+
+        linked.email = "alice@example.com"
+        linked.emailConfirmed = true
+        handler.onAuthenticationSuccess(request, response, authentication)
+        assertEquals("alice@example.com", linked.email)
+        assertEquals(true, linked.emailConfirmed)
+        verify(exactly = 2) { response.sendRedirect("/login/success") }
     }
 
     @Test
