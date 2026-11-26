@@ -53,6 +53,8 @@ function SecurityManagementLayout({getConfig, formik}: any) {
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
                     <ConfigFormField configElement={getConfig("sso.oidc.oauth-scopes")}
                                      isDisabled={!formik.values.sso.oidc.enabled}/>
+                    <ConfigFormField configElement={getConfig("sso.oidc.avatar-origin")}
+                                     isDisabled={!formik.values.sso.oidc.enabled}/>
                 </div>
                 <div className="flex flex-col xl:col-span-2">
                     <h2 className="text-xl font-bold mb-4">SSO Provider Configuration</h2>

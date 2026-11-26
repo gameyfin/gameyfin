@@ -25,6 +25,7 @@ class SsoAuthenticationSuccessHandler(
     private val roleService: RoleService,
     private val config: ConfigService,
     roleHierarchy: RoleHierarchy,
+    private val avatarSource: OidcAvatarSource,
 ) : AuthenticationSuccessHandler {
 
     private val authoritiesMapper = RoleHierarchyAuthoritiesMapper(roleHierarchy)
@@ -70,25 +71,12 @@ class SsoAuthenticationSuccessHandler(
             return
         }
 
-        // User could not be found in the database
-        if (matchedUser == null) {
-            // Register as new user
-            matchedUser = User(oidcUser, resolvedUsername, email)
-        } else {
-            // Update user with new SSO data
-            matchedUser.username = resolvedUsername
-            if (email != null) {
-                matchedUser.email = email
-                matchedUser.emailConfirmed = true
-            }
-            matchedUser.oidcProviderId = subject
-        }
-
-
         val grantedAuthorities = roleService.extractGrantedAuthorities(oidcUser.authorities)
-        val roles = roleService.authoritiesToRoles(grantedAuthorities).ifEmpty { listOf(Role.USER) }
-        matchedUser.roles = roles
-        userService.registerOrUpdateUser(matchedUser)
+        val profile = User(oidcUser, resolvedUsername, email).apply {
+            id = matchedUser?.id
+            roles = roleService.authoritiesToRoles(grantedAuthorities).ifEmpty { listOf(Role.USER) }
+        }
+        userService.registerOrUpdateOidcUser(profile, avatarSource.load(oidcUser))
 
         // Update SecurityContext with expanded authorities through RoleHierarchy
         val mappedAuthorities = authoritiesMapper.mapAuthorities(grantedAuthorities)
