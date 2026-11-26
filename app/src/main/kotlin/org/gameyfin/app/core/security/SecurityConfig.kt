@@ -1,14 +1,12 @@
 package org.gameyfin.app.core.security
 
-import org.gameyfin.app.core.Role
-
 import com.vaadin.flow.spring.security.VaadinSecurityConfigurer
 import com.vaadin.hilla.route.RouteUtil
 import jakarta.servlet.DispatcherType
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
+import org.gameyfin.app.core.Role
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.annotation.Order
 import org.springframework.core.env.Environment
@@ -66,6 +64,7 @@ class SecurityConfig(
 
             // Use custom success handler to handle user registration
             http.oauth2Login { oauth2Login ->
+                oauth2Login.clientRegistrationRepository(clientRegistrationRepository())
                 oauth2Login.successHandler(ssoAuthenticationSuccessHandler)
             }
             // Prevent unnecessary redirects
@@ -78,6 +77,10 @@ class SecurityConfig(
             }
         }
 
+        http.logout { logout ->
+            logout.addLogoutHandler { _, _, authentication -> (authentication as? LiveUserAuthentication)?.refresh(null) }
+        }
+
         // Both login modes use the same gateway for setup and provider selection.
         http.exceptionHandling { it.authenticationEntryPoint(CustomAuthenticationEntryPoint()) }
 
@@ -85,8 +88,9 @@ class SecurityConfig(
             // A canceled stream can dispatch to /error after the response is committed.
             // Allow container error handling without trying to authorize a second response.
             auth.dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-            auth.requestMatchers("/login/success").authenticated()
-                .requestMatchers("/setup/plugins", "/setup/plugins/**").hasAnyAuthority(Role.Names.ADMIN, Role.Names.SUPERADMIN)
+            auth.requestMatchers("/login/success", "/collections/*/manage").authenticated()
+                .requestMatchers("/setup/plugins", "/setup/plugins/**")
+                .hasAnyAuthority(Role.Names.ADMIN, Role.Names.SUPERADMIN)
             // Set default security policy that permits Hilla internal requests and denies all other
             auth.requestMatchers(routeUtil::isRouteAllowed).permitAll()
                 // Gameyfin static resources and public endpoints
@@ -113,17 +117,19 @@ class SecurityConfig(
                 // Authentication will be handled by Hilla on the client side
                 .requestMatchers(
                     "/administration/**",
-                    "/settings/**",
-                    "/collection/**"
+                    "/settings/**"
                 ).permitAll()
                 // Dynamic public access for certain endpoints
                 .requestMatchers(
                     "/",
                     "/game/**",
                     "/library/**",
+                    "/collection/**",
+                    "/collections",
                     "/search/**",
                     "/requests/**",
-                    "/download/**"
+                    "/download/**",
+                    "/discover/**"
                 ).access(DynamicPublicAccessAuthorizationManager(config))
         }
 
@@ -146,10 +152,7 @@ class SecurityConfig(
         return http.build()
     }
 
-    @Suppress("kotlin:S6518")
-    @Bean
-    @Conditional(SsoEnabledCondition::class)
-    fun clientRegistrationRepository(): ClientRegistrationRepository? {
+    private fun clientRegistrationRepository(): ClientRegistrationRepository {
         val clientRegistration = ClientRegistration.withRegistrationId(SSO_PROVIDER_KEY)
             .clientId(
                 config.get(ConfigProperties.SSO.OIDC.ClientId)

@@ -2,13 +2,15 @@ import {createPortal} from "react-dom";
 import {RefCallback, useState} from "react";
 import {Button, Link} from "@heroui/react";
 import {NavLink, useLocation, useNavigate} from "react-router";
-import {ArrowLeftIcon, HouseIcon, ListIcon, MagnifyingGlassIcon, ShootingStarIcon} from "@phosphor-icons/react";
+import {ArrowLeftIcon, CompassIcon, HouseIcon, ListIcon, MagnifyingGlassIcon, ShootingStarIcon} from "@phosphor-icons/react";
 import GameyfinLogo from "Frontend/components/theming/GameyfinLogo";
 import SearchBar from "Frontend/components/general/SearchBar";
 import {useProfileActions} from "./useProfileActions";
 import NavigationDrawer from "./NavigationDrawer";
 import {useAuth} from "Frontend/util/auth";
 import NotificationPopover from "Frontend/components/general/NotificationPopover";
+import {useSnapshot} from "valtio/react";
+import {collectionState} from "Frontend/state/CollectionState";
 
 export default function CompactNavigation({searchValue, onSearchChange, sectionMenuRef}: {
     sectionMenuRef: RefCallback<HTMLDivElement>;
@@ -20,12 +22,14 @@ export default function CompactNavigation({searchValue, onSearchChange, sectionM
     const location = useLocation();
     const navigate = useNavigate();
     const auth = useAuth();
+    const discover = useSnapshot(collectionState).settings?.recommendationsEnabled;
     const actions = useProfileActions();
     const [open, setOpen] = useState(false);
     const home = location.pathname === "/";
     const destinations = [
         {href: "/", label: "Home", icon: <HouseIcon weight="fill"/>},
         {href: "/search", label: "Search", icon: <MagnifyingGlassIcon weight="fill"/>},
+        ...(auth.state.user && discover ? [{href: "/discover", label: "Discover", icon: <CompassIcon weight="fill"/>}] : []),
         {href: "/requests", label: "Requests", icon: <ShootingStarIcon weight="fill"/>},
     ];
     return <>

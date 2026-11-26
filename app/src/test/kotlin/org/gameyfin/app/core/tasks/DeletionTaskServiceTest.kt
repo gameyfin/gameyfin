@@ -31,7 +31,7 @@ class DeletionTaskServiceTest {
         libraries = mockk()
         collections = mockk()
         every { libraries.getById(1) } returns Library(name = "Test")
-        every { collections.getById(1) } returns Collection(name = "Test")
+        every { collections.getCuratedById(1) } returns Collection(name = "Test")
         service = DeletionTaskService(registry, runs, libraries, collections)
         service.registerTasks()
     }

@@ -155,6 +155,28 @@ sealed class ConfigProperties<T : Serializable>(
         }
     }
 
+    sealed class Social {
+        data object EnableRecommendations : ConfigProperties<Boolean>(
+            Boolean::class, "social.enable-recommendations", "Enable game recommendations",
+            "Shows the Discover page with game recommendations for signed-in members.", true
+        )
+
+        data object EnableReviews : ConfigProperties<Boolean>(
+            Boolean::class, "social.enable-reviews", "Enable reviews",
+            "Allows members to write reviews and displays published reviews.", true
+        )
+
+        data object RequireReviewApproval : ConfigProperties<Boolean>(
+            Boolean::class, "social.require-review-approval", "Require approval before publishing",
+            "Queues new reviews and edits for administrator approval.", false
+        )
+
+        data object AllowUserCollections : ConfigProperties<Boolean>(
+            Boolean::class, "social.allow-user-collections", "Allow users to create collections",
+            "Allows members to create custom collections. Existing collections and favourites remain available.", true
+        )
+    }
+
     /** Downloads */
     sealed class Downloads {
         data object BandwidthLimitEnabled : ConfigProperties<Boolean>(
@@ -176,6 +198,14 @@ sealed class ConfigProperties<T : Serializable>(
 
     /** User management */
     sealed class Users {
+        data object EmailRequired : ConfigProperties<Boolean>(
+            Boolean::class,
+            "users.email-required",
+            "Require email address",
+            "Require an email address for new accounts and prevent users from removing their address.",
+            true
+        )
+
         sealed class SignUps {
             data object Allow : ConfigProperties<Boolean>(
                 Boolean::class,

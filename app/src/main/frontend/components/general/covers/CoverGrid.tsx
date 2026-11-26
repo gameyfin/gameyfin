@@ -1,24 +1,26 @@
 import {COVER_GAP as GAP, coverGridLayout} from "Frontend/util/coverGridLayout";
 import {NARROW_QUERY, useMediaQuery} from "Frontend/util/useMediaQuery";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
-import {GameCover} from "Frontend/components/general/covers/GameCover";
+import {type CoverBadge, GameCover} from "Frontend/components/general/covers/GameCover";
+import type {PlayStatuses} from "Frontend/state/useMyPlayStatuses";
 import {Grid} from "react-window";
 import React, {useCallback, useEffect, useRef, useState} from "react";
 
 interface CoverGridProps {
     games: GameSummaryDto[];
+    coverBadges?: ReadonlyMap<number, readonly CoverBadge[]>;
+    playStatuses?: PlayStatuses;
 }
 
-interface GridCellProps {
+interface GridCellProps extends CoverGridProps {
     columnIndex: number;
     rowIndex: number;
     style: React.CSSProperties;
-    games: GameSummaryDto[];
     columnCount: number;
     coverHeight: number;
 }
 
-export default function CoverGrid({games}: CoverGridProps) {
+export default function CoverGrid({games, coverBadges, playStatuses}: CoverGridProps) {
     const narrow = useMediaQuery(NARROW_QUERY);
     const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
@@ -53,6 +55,8 @@ export default function CoverGrid({games}: CoverGridProps) {
                                   rowIndex,
                                   style,
                                   games: gamesData,
+                                  coverBadges: badges,
+                                  playStatuses: statuses,
                                   columnCount: colCount,
                                   coverHeight: height
                               }: GridCellProps) => {
@@ -71,11 +75,13 @@ export default function CoverGrid({games}: CoverGridProps) {
                     ...style,
                     paddingBottom: GAP,
                     display: 'flex',
-                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    alignItems: 'center',
                     boxSizing: 'border-box'
                 }}
             >
-                <GameCover key={game.id} game={game} interactive={true} size={height} lazy={true}/>
+                <GameCover key={game.id} game={game} interactive={true} size={height} lazy={true}
+                           playStatus={statuses?.[game.id]} badges={badges?.get(game.id)}/>
             </div>
         );
     }, []);
@@ -92,14 +98,14 @@ export default function CoverGrid({games}: CoverGridProps) {
     return (
         <div ref={containerRef} className="w-full">
             {containerWidth > 0 && (
-                <Grid<{ games: GameSummaryDto[], columnCount: number, coverHeight: number }>
+                <Grid<Omit<GridCellProps, "columnIndex" | "rowIndex" | "style">>
                     columnCount={columnCount}
                     columnWidth={getColumnWidth}
                     rowCount={rowCount}
                     rowHeight={coverHeight + GAP}
                     defaultWidth={containerWidth}
                     cellComponent={Cell}
-                    cellProps={{games, columnCount, coverHeight}}
+                    cellProps={{games, coverBadges, playStatuses, columnCount, coverHeight}}
                     style={{overflowX: 'hidden'}}
                 />
             )}

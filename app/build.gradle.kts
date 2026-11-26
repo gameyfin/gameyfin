@@ -132,6 +132,7 @@ dependencyManagement {
 }
 
 tasks.withType<Test> {
+    inputs.property("testPostgres", providers.environmentVariable("GAMEYFIN_TEST_POSTGRES").orElse("false"))
     useJUnitPlatform()
     // Separate JVMs isolate MockK static/object mocks and other process-wide state.
     // Keep JUnit execution sequential inside each worker. Cap the default to avoid

@@ -1,5 +1,8 @@
 package org.gameyfin.app.system.backup
 
+import liquibase.Contexts
+import liquibase.LabelExpression
+import liquibase.Liquibase
 import liquibase.integration.spring.SpringLiquibase
 import liquibase.integration.spring.SpringResourceAccessor
 import org.gameyfin.app.core.backup.*
@@ -71,10 +74,16 @@ class DatabaseBackupIntegrationTest {
     } ?: DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
 
     /** Runs the database migrations the same way as on application startup */
-    private fun migrate(dataSource: DataSource, changelog: String = CHANGELOG) {
-        SpringLiquibase().apply {
+    private fun migrate(dataSource: DataSource, changeSetCount: Int? = null) {
+        val migration = object : SpringLiquibase() {
+            override fun performUpdate(liquibase: Liquibase) {
+                if (changeSetCount == null) super.performUpdate(liquibase)
+                else liquibase.update(changeSetCount, Contexts(), LabelExpression())
+            }
+        }
+        migration.apply {
             this.dataSource = dataSource
-            changeLog = changelog
+            changeLog = CHANGELOG
             resourceLoader = DefaultResourceLoader()
             afterPropertiesSet()
         }
@@ -277,7 +286,8 @@ class DatabaseBackupIntegrationTest {
     @Test
     fun `backup of an older schema version is restored and migrated afterwards`() {
         val source = h2("source-old")
-        migrate(source, "classpath:/db/changelog/db.changelog-2.4.1.yaml")
+        // Apply the baseline and the two changesets shipped in 2.4.1.
+        migrate(source, changeSetCount = 3)
         insertSampleData(source, legacyMedia = true)
         val expectedOldSchema = dump(source)
 

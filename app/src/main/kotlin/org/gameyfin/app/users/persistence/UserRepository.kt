@@ -9,10 +9,23 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
 interface UserRepository : JpaRepository<User, Long> {
+    @Query("select u.id from User u")
+    fun allIds(): List<Long>
+
+    fun countByIdIn(ids: Set<Long>): Long
+
     // Stable ordering serializes concurrent account deletions.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u ORDER BY u.id")
     fun findAllForDeletion(): List<User>
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    fun findForUpdate(id: Long): User?
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.username = :username")
+    fun findByUsernameForUpdate(username: String): User?
 
     fun existsByUsername(userName: String): Boolean
     fun existsByEmail(email: String): Boolean

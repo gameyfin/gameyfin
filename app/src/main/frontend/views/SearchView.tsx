@@ -10,7 +10,13 @@ import {Fzf} from "fzf";
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
 import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput";
+import {collectionState} from "Frontend/state/CollectionState";
+import CollectionKind from "Frontend/generated/org/gameyfin/app/collections/entities/CollectionKind";
 import {compoundRating} from "Frontend/util/utils";
+import {useMyPlayStatuses} from "Frontend/state/useMyPlayStatuses";
+import {useAuth} from "Frontend/util/auth";
+import {GameSocialEndpoint} from "Frontend/generated/endpoints";
+import {playStatusOptions} from "Frontend/components/social/GameSocial";
 
 type SearchFormValues = {
     searchTerm: string;
@@ -23,6 +29,8 @@ type SearchFormValues = {
     perspectives: string[];
     keywords: string[];
     minRating: number;
+    favouritesOf: string;
+    playStatus: string;
 };
 
 const SORT_OPTIONS = [
@@ -43,6 +51,7 @@ export default function SearchView() {
 
     const [initialValues] = useState<SearchFormValues>(() => {
         const minRatingParam = parseInt(searchParams.get("minRating") || "1", 10);
+        const playStatusParam = searchParams.get("playStatus");
         return {
             searchTerm: searchParams.get("term") || "",
             sortBy: searchParams.get("sort") || "title_asc",
@@ -53,6 +62,8 @@ export default function SearchView() {
             features: searchParams.getAll("feature"),
             perspectives: searchParams.getAll("perspective"),
             keywords: searchParams.getAll("keyword"),
+            favouritesOf: searchParams.get("favouritesOf") || "",
+            playStatus: playStatusOptions.find(({id}) => id === playStatusParam)?.id ?? "",
             minRating: isNaN(minRatingParam) ? 1 : minRatingParam,
         };
     });
@@ -66,6 +77,10 @@ export default function SearchView() {
 }
 
 function SearchViewContent() {
+    const signedIn = useAuth().state.user?.id != null;
+    const playStatusResult = useMyPlayStatuses();
+    const playStatuses = playStatusResult?.statuses;
+    const [memberRatings, setMemberRatings] = useState<Partial<Record<number, number>> | null>();
     const games = useSnapshot(gameState).sortedAlphabetically;
     const knownDevelopers = useSnapshot(gameState).knownDevelopers;
     const knownGenres = useSnapshot(gameState).knownGenres;
@@ -74,11 +89,14 @@ function SearchViewContent() {
     const knownPerspectives = useSnapshot(gameState).knownPerspectives;
     const knownKeywords = useSnapshot(gameState).knownKeywords;
     const libraries = useSnapshot(libraryState).libraries;
+    const collections = useSnapshot(collectionState).sorted;
+    const favourites = useMemo(() => collections.filter(item => item.kind === CollectionKind.FAVOURITES)
+        .sort((a, b) => (a.ownerName ?? "").localeCompare(b.ownerName ?? "")), [collections]);
 
     const [searchParams, setSearchParams] = useSearchParams();
     const {values, setFieldValue, setValues} = useFormikContext<SearchFormValues>();
     const {
-        searchTerm, sortBy, minRating,
+        searchTerm, sortBy, minRating, favouritesOf, playStatus,
         libraries: selectedLibraries,
         developers: selectedDevelopers,
         genres: selectedGenres,
@@ -88,10 +106,29 @@ function SearchViewContent() {
         keywords: selectedKeywords,
     } = values;
 
+    const selectedFavourites = favourites.find(item => item.ownerId?.toString() === favouritesOf);
+    const selectedPlayStatus = signedIn ? playStatus : "";
+    const usesRating = minRating > 1 || sortBy.startsWith("rating_");
+
     const [showFilters, setShowFilters] = useState(() => searchParams.get("filters") === "1");
 
     useEffect(() => {
         window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
+        const request = new AbortController();
+        void GameSocialEndpoint.memberRatings({signal: request.signal}).then(entries => {
+            if (!request.signal.aborted) {
+                setMemberRatings(Object.fromEntries(entries.map(({gameId, average}) => [gameId, average])));
+            }
+        }).catch(error => {
+            if (!request.signal.aborted) {
+                console.error("Could not load member ratings", error);
+                setMemberRatings(null);
+            }
+        });
+        return () => request.abort();
     }, []);
 
     useEffect(() => {
@@ -107,6 +144,8 @@ function SearchViewContent() {
         selectedFeatures.forEach(feature => newParams.append("feature", feature));
         selectedPerspectives.forEach(perspective => newParams.append("perspective", perspective));
         selectedKeywords.forEach(keyword => newParams.append("keyword", keyword));
+        if (favouritesOf) newParams.set("favouritesOf", favouritesOf);
+        if (playStatus) newParams.set("playStatus", playStatus);
         if (minRating > 1) {
             newParams.set("minRating", minRating.toString());
         }
@@ -119,6 +158,14 @@ function SearchViewContent() {
 
         setSearchParams(newParams, {replace: true});
     }, [values, showFilters]);
+
+    function ratingFor(game: GameSummaryDto) {
+        return compoundRating({
+            criticRating: game.criticRating,
+            userRating: game.userRating,
+            memberRating: memberRatings?.[game.id]
+        }, [1, 5]);
+    }
 
     function sortGames(games: GameSummaryDto[]): GameSummaryDto[] {
         if (!sortBy) return games;
@@ -136,7 +183,7 @@ function SearchViewContent() {
                     cmp = (a.release || "").localeCompare(b.release || "");
                     break;
                 case "rating":
-                    cmp = compoundRating(a) - compoundRating(b);
+                    cmp = (ratingFor(a) ?? 0) - (ratingFor(b) ?? 0);
                     break;
                 case "added":
                     cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
@@ -155,14 +202,16 @@ function SearchViewContent() {
     }
 
     const filteredAndSortedGames = useMemo(() => sortGames(filterGames()), [
-        games, searchTerm,
+        games, searchTerm, favouritesOf, selectedFavourites,
         selectedLibraries, selectedDevelopers,
         selectedGenres, selectedThemes,
         selectedFeatures, selectedPerspectives, selectedKeywords, sortBy, minRating,
+        selectedPlayStatus, playStatuses, memberRatings,
     ]);
 
     function filterGames(): GameSummaryDto[] {
-        let filtered = games;
+        const favouriteIds = favouritesOf ? new Set(selectedFavourites?.gameIds ?? []) : undefined;
+        let filtered = favouriteIds ? games.filter(game => favouriteIds.has(game.id)) : games;
 
         if (searchTerm !== "") {
             const fzf = new Fzf(filtered, {
@@ -211,9 +260,14 @@ function SearchViewContent() {
             );
         }
 
+        if (selectedPlayStatus && playStatuses) {
+            filtered = filtered.filter(game => (playStatuses[game.id] ?? "none") === selectedPlayStatus);
+        }
+
         if (minRating > 1) {
             filtered = filtered.filter(game => {
-                const starRating = compoundRating(game, [1, 5]);
+                const starRating = ratingFor(game);
+                if (starRating === undefined) return false;
                 if (minRating === 5) {
                     return starRating > 4.5;
                 }
@@ -222,6 +276,12 @@ function SearchViewContent() {
         }
         return filtered;
     }
+
+    const resultsStatus = selectedPlayStatus && !playStatuses
+        ? (playStatusResult?.failed ? "Could not load your play statuses" : "Loading your play statuses…")
+        : usesRating && !memberRatings
+            ? (memberRatings === null ? "Could not load member ratings" : "Loading member ratings…")
+            : undefined;
 
     function stars(filled: number, total: number = 5) {
         const stars = [];
@@ -326,6 +386,8 @@ function SearchViewContent() {
                                     perspectives: [],
                                     keywords: [],
                                     minRating: 1,
+                                    favouritesOf: "",
+                                    playStatus: "",
                                 })}
                                 aria-label="Clear All Filters"
                         >
@@ -358,6 +420,19 @@ function SearchViewContent() {
                 "flex flex-col gap-1 min-w-0",
                 true,
             )}
+            {signedIn && renderSelect(
+                "Your Play Status", playStatus || "all",
+                value => setFieldValue("playStatus", value === "all" ? "" : value ?? ""),
+                <>
+                    <ListBox.Item id="all" textValue="Any status">Any status<ListBox.ItemIndicator/></ListBox.Item>
+                    {playStatusOptions.map(({id, label}) => (
+                        <ListBox.Item key={id} id={id} textValue={label}>
+                            {label}<ListBox.ItemIndicator/>
+                        </ListBox.Item>
+                    ))}
+                </>,
+                "single", "Any status", "flex flex-col gap-1 min-w-0", true
+            )}
             <AutocompleteInput name="developers" label="Developers" placeholder="Filter by developer"
                                options={toOptions(knownDevelopers)} className="flex flex-col gap-1 min-w-0"
                                showError={false}/>
@@ -379,8 +454,9 @@ function SearchViewContent() {
         </div>
         }
         <div className="mt-4 w-full select-none">
-            <CoverGrid games={filteredAndSortedGames}/>
-            {filteredAndSortedGames.length === 0 && (
+            {resultsStatus ? <div role="status" className="text-center mt-8 text-muted">{resultsStatus}</div>
+                : <CoverGrid games={filteredAndSortedGames} playStatuses={playStatuses}/>}
+            {!resultsStatus && filteredAndSortedGames.length === 0 && (
                 <div className="text-center mt-8 text-muted">
                     No games found matching your filters
                 </div>

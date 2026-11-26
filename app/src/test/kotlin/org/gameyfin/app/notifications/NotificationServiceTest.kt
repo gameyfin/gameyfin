@@ -40,7 +40,7 @@ class NotificationServiceTest {
         SecurityContextHolder.getContext().authentication =
             UsernamePasswordAuthenticationToken.authenticated("admin", "", emptyList())
         every { users.findByUsername("admin") } returns admin
-        every { store.entry(any(), "inbox", any()) } returns entry
+        every { store.entry(any(), "inbox") } returns entry
         every { store.claim(any(), "inbox", "run") } returns entry
         every { callbacks.available("plugin:test", "run", any()) } returns true
         every { callbacks.execute(any(), any(), any(), any()) } just Runs
@@ -106,7 +106,7 @@ class NotificationServiceTest {
     fun `superadmin can restart and archive mutations use current recipient scope`() {
         every { users.findByUsername("admin") } returns User(id = 1, username = "admin", email = "a@example.com", enabled = true, roles = listOf(Role.SUPERADMIN))
         val restart = entry.copy(actions = listOf(NotificationAction("restart", "Restart", NotificationActionType.RESTART)))
-        every { store.entry(any(), "inbox", any()) } returns restart
+        every { store.entry(any(), "inbox") } returns restart
         every { store.claim(any(), "inbox", "restart") } returns restart
         service.execute("inbox", "restart")
         service.markRead(null)
@@ -190,10 +190,10 @@ class NotificationServiceTest {
             enabled = true,
             roles = listOf(Role.USER)
         )
-        every { store.entry(any(), "inbox", any()) } returns entry.copy(recipient = "user:1", actions = listOf(restart))
+        every { store.entry(any(), "inbox") } returns entry.copy(recipient = "user:1", actions = listOf(restart))
         assertFailsWith<AccessDeniedException> { service.execute("inbox", "restart") }
         every { users.findByUsername("admin") } returns admin
-        every { store.entry(any(), "inbox", any()) } returns entry.copy(executionState = "SUCCEEDED")
+        every { store.entry(any(), "inbox") } returns entry.copy(executionState = "SUCCEEDED")
         assertFailsWith<AccessDeniedException> { service.execute("inbox", "run") }
         verify(exactly = 0) { system.restart() }
     }
@@ -204,7 +204,7 @@ class NotificationServiceTest {
         service.forPlugin("first").publish(request)
         service.forPlugin("first").resolve("id")
         verify { store.publish("plugin:first", request); store.resolve("plugin:first", "id") }
-        every { store.entry(any(), "inbox", any()) } returns entry.copy(
+        every { store.entry(any(), "inbox") } returns entry.copy(
             actions = listOf(
                 NotificationAction("link", "Link", NotificationActionType.LINK, "https://example.com")
             )

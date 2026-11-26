@@ -9,11 +9,12 @@ import ChipList from "Frontend/components/general/ChipList";
 
 interface CollectionOverviewCardProps {
     collection: CollectionDto;
-    isSelected: boolean;
-    onToggleSelection: () => void;
+    isSelected?: boolean;
+    onToggleSelection?: () => void;
+    href?: string;
 }
 
-export function CollectionOverviewCard({collection, isSelected, onToggleSelection}: CollectionOverviewCardProps) {
+export function CollectionOverviewCard({collection, isSelected, onToggleSelection, href = `/collection/${collection.id}`}: CollectionOverviewCardProps) {
     const MAX_COVER_COUNT = 5;
     const randomlyOrderedGames = useRandomlyOrderedGamesByCollectionId()[collection.id];
     const randomGames = useMemo(() => (randomlyOrderedGames ?? [])
@@ -24,15 +25,15 @@ export function CollectionOverviewCard({collection, isSelected, onToggleSelectio
 
     return (
         <li className="relative isolate max-w-88.25">
-            <Checkbox aria-label={`Select ${collection.name}`} isSelected={isSelected} onChange={onToggleSelection}
+            {onToggleSelection && <Checkbox aria-label={`Select ${collection.name}`} isSelected={isSelected} onChange={onToggleSelection}
                       className="absolute top-2 left-2 z-20">
                 <Checkbox.Content>
                     <Checkbox.Control className={isSelected ? undefined : "border-2 border-foreground bg-surface"}>
                         <Checkbox.Indicator/>
                     </Checkbox.Control>
                 </Checkbox.Content>
-            </Checkbox>
-            <Link to={`collection/${collection.id}`} aria-label={`Open ${collection.name}`}
+            </Checkbox>}
+            <Link to={href} aria-label={`Open ${collection.name}`}
                   className="absolute inset-0 z-10 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"/>
             <Card data-selected={isSelected || undefined}
                   className="flex flex-col justify-between w-full max-w-88.25 p-0 overflow-hidden data-selected:ring-2 data-selected:ring-accent">
@@ -48,7 +49,10 @@ export function CollectionOverviewCard({collection, isSelected, onToggleSelectio
                         }
                     </div>
 
-                    <p className="absolute max-w-full px-3 wrap-anywhere text-center text-2xl font-bold">{collection.name}</p>
+                    <div className="absolute max-w-full px-3 text-center wrap-anywhere">
+                        <p className="text-2xl font-bold">{collection.name}</p>
+                        {collection.ownerName && <p className="text-muted">{collection.ownerName}</p>}
+                    </div>
                 </div>
 
                 {stats &&

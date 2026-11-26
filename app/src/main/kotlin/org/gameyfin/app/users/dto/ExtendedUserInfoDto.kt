@@ -6,7 +6,7 @@ data class ExtendedUserInfoDto(
     val id: Long,
     val username: String,
     val managedBySso: Boolean,
-    val email: String,
+    val email: String?,
     val emailConfirmed: Boolean,
     val enabled: Boolean,
     val hasAvatar: Boolean,

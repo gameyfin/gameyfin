@@ -7,6 +7,7 @@ import org.gameyfin.app.users.dto.ExtendedUserInfoDto
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.extensions.toExtendedUserInfoDto
+import org.gameyfin.app.users.parseEmailAddress
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -34,7 +35,7 @@ class SetupService(
         val superAdmin = User(
             username = registration.username,
             password = registration.password,
-            email = registration.email,
+            email = requireNotNull(parseEmailAddress(registration.email)) { "Email address is required" },
             enabled = true,
             roles = listOf(Role.SUPERADMIN)
         )

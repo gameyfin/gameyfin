@@ -23,9 +23,10 @@ import {collectionState} from "Frontend/state/CollectionState";
 
 interface CollectionGamesTableProps {
     collectionId: number;
+    owned?: boolean;
 }
 
-export default function CollectionGamesTable({collectionId}: CollectionGamesTableProps) {
+export default function CollectionGamesTable({collectionId, owned}: CollectionGamesTableProps) {
     const compact = useMediaQuery(COMPACT_QUERY);
     const [selectedDetails, setSelectedDetails] = useState<GameSummaryDto | null>(null);
     const gamesState = useSnapshot(gameState);
@@ -96,11 +97,13 @@ export default function CollectionGamesTable({collectionId}: CollectionGamesTabl
     }, [filteredGames, sortDescriptor, libraries, gameInCollectionMap]);
 
     async function addGameToCollection(game: GameSummaryDto) {
-        await CollectionEndpoint.addGameToCollection(collectionId, game.id);
+        if (owned) await CollectionEndpoint.setOwnedMembership(collectionId, game.id, true);
+        else await CollectionEndpoint.addGameToCollection(collectionId, game.id);
     }
 
     async function removeGameFromCollection(game: GameSummaryDto) {
-        await CollectionEndpoint.removeGameFromCollection(collectionId, game.id);
+        if (owned) await CollectionEndpoint.setOwnedMembership(collectionId, game.id, false);
+        else await CollectionEndpoint.removeGameFromCollection(collectionId, game.id);
     }
 
     function renderActions(game: GameSummaryDto) {

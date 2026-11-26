@@ -27,7 +27,7 @@ class SystemNotifications(
 
     @EventListener
     fun ssoChanged(event: SsoConfigurationChanged) {
-        store.producerState("sso") // Serialize concurrent saves and startup cleanup.
+        val state = store.producerState("sso") // Serialize concurrent saves and startup cleanup.
         store.resolve(SSO_SOURCE)
         store.publish(
             SSO_SOURCE, NotificationRequest(
@@ -37,14 +37,15 @@ class SystemNotifications(
                 actions = listOf(NotificationAction("restart", "Restart Gameyfin", NotificationActionType.RESTART))
             )
         )
-        store.setProducerState("sso")
+        state.lastVersion = null
+        state.bootId = store.bootId
     }
 
     @EventListener(ApplicationReadyEvent::class)
     fun onReady() {
         val sso = store.producerState("sso")
-        if (sso["BOOT_ID"] != store.bootId) store.resolve(SSO_SOURCE)
-        val release = store.producerState("release")["LAST_VERSION"] as String?
+        if (sso.bootId != store.bootId) store.resolve(SSO_SOURCE)
+        val release = store.producerState("release").lastVersion
         if (release != null && releaseTag(release) == releaseTag(installedVersion)) {
             store.resolve(RELEASE_SOURCE)
         }
@@ -52,7 +53,8 @@ class SystemNotifications(
     }
 
     fun announceRelease(release: GithubRelease, installed: GithubRelease): Boolean {
-        val previous = store.producerState("release")["LAST_VERSION"] as String?
+        val state = store.producerState("release")
+        val previous = state.lastVersion
         if (release.publishedAt <= installed.publishedAt) {
             store.resolve(RELEASE_SOURCE)
             return false
@@ -75,7 +77,8 @@ class SystemNotifications(
                 )
             )
         )
-        store.setProducerState("release", version)
+        state.lastVersion = version
+        state.bootId = store.bootId
         return true
     }
 

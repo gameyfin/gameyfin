@@ -9,17 +9,20 @@ import * as Yup from "yup";
 import TextAreaInput from "Frontend/components/general/input/TextAreaInput";
 
 interface CollectionCreationModalProps {
+    owned?: boolean;
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
 }
 
 export default function CollectionCreationModal({
+                                                    owned = false,
                                                     isOpen,
                                                     onOpenChange
                                                 }: CollectionCreationModalProps) {
 
     async function createCollection(collection: CollectionCreateDto) {
-        await CollectionEndpoint.createCollection(collection);
+        if (owned) await CollectionEndpoint.createCustomCollection(collection);
+        else await CollectionEndpoint.createCollection(collection);
 
         toast.success("New collection created", {
             description: `Collection ${collection.name} created!`

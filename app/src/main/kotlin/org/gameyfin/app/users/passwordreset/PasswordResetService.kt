@@ -31,17 +31,15 @@ class PasswordResetService(
     }
 
     /**
-     * Admins should be able to create password reset tokens for users when the following conditions are met:
-     * - E-Mail notifications are not enabled
-     * - The user has no confirmed email address
-     * - The user is not managed externally
+     * Admins can create password reset tokens for local accounts they manage when self-service is unavailable.
      */
     fun generate(username: String): TokenDto {
 
         val user = userService.getByUsername(username)
             ?: throw IllegalArgumentException("Cannot create password reset token for user '$username' because user does not exist")
 
-        check(!(messageService.enabled && user.emailConfirmed)) { "Cannot create password reset token for user '$username' because self-service is enabled" }
+        check(userService.canManage(user)) { "Cannot manage this user" }
+        check(!(messageService.enabled && user.emailConfirmed && !user.email.isNullOrBlank())) { "Cannot create password reset token for user '$username' because self-service is enabled" }
 
         val token = generate(user)
         return TokenDto(token)
@@ -49,11 +47,21 @@ class PasswordResetService(
 
     /**
      * Users can request a password reset when the following conditions are met:
-     * - The user has confirmed their email address
+     * - Messaging is enabled and the user has confirmed their email address
      * - The user is not managed externally
      */
     fun requestPasswordReset(email: String) {
+        val address = email.trim()
+        if (address.isEmpty()) return
+        try {
+            if (messageService.enabled) sendResetRequest(address)
+        } finally {
+            // Apply the same delay whether or not the address is eligible.
+            Thread.sleep(secureRandom.nextLong(1024))
+        }
+    }
 
+    private fun sendResetRequest(email: String) {
         val maskedEmail = Utils.maskEmail(email)
 
         log.info { "Initiating password reset request for '${maskedEmail}'" }
@@ -65,7 +73,7 @@ class PasswordResetService(
             return
         }
 
-        if (!user.emailConfirmed) {
+        if (!user.emailConfirmed || user.email.isNullOrBlank()) {
             log.error { "User with email '${maskedEmail}' has not confirmed their email address" }
             return
         }
@@ -77,9 +85,6 @@ class PasswordResetService(
 
         val token = generate(user)
         eventPublisher.publishEvent(PasswordResetRequestEvent(this, token, Utils.getBaseUrl()))
-
-        // Simulate a delay to prevent timing attacks
-        Thread.sleep(secureRandom.nextLong(1024))
     }
 
     fun resetPassword(secret: String, newPassword: String): TokenValidationResult {
@@ -91,6 +96,7 @@ class PasswordResetService(
         }
 
         val user = passwordResetToken.creator
+        if (user.oidcProviderId != null) return TokenValidationResult.INVALID
 
         userService.updatePassword(user, newPassword)
         delete(passwordResetToken)

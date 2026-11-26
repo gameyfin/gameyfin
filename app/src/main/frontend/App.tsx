@@ -13,13 +13,13 @@ import {initializeTaskState, resetTaskState} from "Frontend/state/TaskState";
 import {initializePluginState} from "Frontend/state/PluginState";
 import {isAdmin} from "Frontend/util/utils";
 import {useRouteMetadata} from "Frontend/util/routing";
-import {useCallback, useEffect} from "react";
+import {useCallback, useEffect, useLayoutEffect} from "react";
 import {initializeGameRequestState} from "Frontend/state/GameRequestState";
 import {initializePlatformState} from "Frontend/state/PlatformState";
 import {initializeDownloadSessionState, resetDownloadSessionState} from "Frontend/state/DownloadSessionState";
 import {initializeUserState, resetUserState} from "Frontend/state/UserState";
 import {initializeNotificationState, resetNotificationState} from "Frontend/state/NotificationState";
-import {initializeCollectionState} from "Frontend/state/CollectionState";
+import {initializeCollectionState, resetCollectionState} from "Frontend/state/CollectionState";
 import {initializeConfigState, resetConfigState} from "Frontend/state/ConfigState";
 
 // Generate & inject the per-theme CSS custom property overrides once, before first render
@@ -63,7 +63,14 @@ function ViewWithAuth() {
     const navigate = useNavigate();
     const {pathname} = useLocation();
     const isSetupRoute = pathname === "/setup" || pathname === "/setup/";
+    const canLoadCollections = !isSetupRoute && !pathname.startsWith("/login");
     const identity = `${auth.state.user?.id ?? "anonymous"}:${[...(auth.state.user?.roles ?? [])].sort().join(",")}`;
+
+    useLayoutEffect(() => {
+        if (!canLoadCollections || auth.state.initializing || auth.state.loading) return;
+        initializeCollectionState(Boolean(auth.state.user));
+        return resetCollectionState;
+    }, [identity, auth.state.initializing, auth.state.loading, canLoadCollections]);
 
     useEffect(() => {
         // Setup has no user yet; protected synchronization would send it back through login.
@@ -74,7 +81,6 @@ function ViewWithAuth() {
         const cacheIdentity = `${user?.id ?? "anonymous"}:${[...(user?.roles ?? [])].sort().join(",")}`;
 
         initializeLibraryState(cacheIdentity);
-        initializeCollectionState(cacheIdentity);
         initializePlatformState();
         initializeGameRequestState();
         initializePluginState();

@@ -12,31 +12,15 @@ fun Collection.toDto(gameIds: List<Long>): CollectionDto = CollectionDto(
     id = id!!,
     createdAt = createdAt!!,
     updatedAt = updatedAt!!,
-    name = name,
+    name = displayName,
     description = description,
     gameIds = gameIds,
-    metadata = this.metadata.toDto()
+    metadata = this.metadata.toDto(),
+    kind = kind,
+    visibility = visibility,
+    ownerId = owner?.id,
+    ownerName = owner?.username
 )
-
-/**
- * Builds a patch containing only the given fields.
- * @param gameIds IDs of the games in this collection, required if [fields] contains [CollectionField.GAME_IDS]
- */
-fun Collection.toPatchDto(fields: Set<CollectionField>, gameIds: List<Long>?): CollectionPatchDto? {
-    if (fields.isEmpty()) return null
-
-    var values = CollectionPatchValuesDto()
-    for (field in fields.sorted()) {
-        values = when (field) {
-            CollectionField.NAME -> values.copy(name = name)
-            CollectionField.DESCRIPTION -> values.copy(description = description)
-            CollectionField.GAME_IDS -> values.copy(gameIds = gameIds ?: games.mapNotNull { it.id })
-            CollectionField.METADATA -> values.copy(metadata = metadata.toDto())
-        }
-    }
-
-    return CollectionPatchDto(updatedAt = updatedAt!!, fields = fields.sorted(), values = values)
-}
 
 fun CollectionCreateDto.toEntity(): Collection = Collection(
     name = name,

@@ -23,8 +23,7 @@ import java.time.Instant
  *
  * The restore runs before the application context is refreshed (registered in `META-INF/spring.factories`, so it also
  * runs when Gameyfin restarts itself). At this point no other component has accessed the database yet, so the content
- * can safely be replaced. This includes conditions which are evaluated while the configuration is parsed and read the
- * database directly (e.g. [org.gameyfin.app.core.security.SsoEnabledCondition]), so they already see the restored data.
+ * can safely be replaced. Security configuration subsequently reads the restored settings through JPA.
  * Afterward Liquibase applies any changesets that are newer than the backup.
  * Once Gameyfin has started, images missing after the restore are recovered in the background ([ImageRecoveryService]).
  *

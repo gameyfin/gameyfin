@@ -2,9 +2,7 @@ package org.gameyfin.app.core.sync
 
 import io.mockk.*
 import org.gameyfin.app.collections.CollectionService
-import org.gameyfin.app.collections.dto.CollectionEvent
 import org.gameyfin.app.collections.dto.CollectionField
-import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.dto.*
@@ -37,7 +35,6 @@ class EntityChangeProcessorTest {
     private val gameAdminEvents = mutableListOf<GameEvent>()
     private val libraryUserEvents = mutableListOf<LibraryEvent>()
     private val libraryAdminEvents = mutableListOf<LibraryEvent>()
-    private val collectionEvents = mutableListOf<CollectionEvent>()
 
     @BeforeEach
     fun setup() {
@@ -49,7 +46,6 @@ class EntityChangeProcessorTest {
 
         every { gameRepository.findAllById(any()) } returns emptyList()
         every { libraryRepository.findAllById(any()) } returns emptyList()
-        every { collectionRepository.findAllById(any()) } returns emptyList()
 
         mockkStatic("org.gameyfin.app.games.extensions.GameExtensionsKt")
         mockkStatic("org.gameyfin.app.libraries.extensions.LibraryExtensionsKt")
@@ -59,7 +55,7 @@ class EntityChangeProcessorTest {
         every { GameService.emitAdmin(capture(gameAdminEvents)) } just Runs
         every { LibraryService.emitUser(capture(libraryUserEvents)) } just Runs
         every { LibraryService.emitAdmin(capture(libraryAdminEvents)) } just Runs
-        every { CollectionService.emit(capture(collectionEvents)) } just Runs
+        every { CollectionService.invalidate() } just Runs
     }
 
     @AfterEach
@@ -124,7 +120,7 @@ class EntityChangeProcessorTest {
         assertTrue(gameAdminEvents.isEmpty())
         assertTrue(libraryUserEvents.isEmpty())
         assertTrue(libraryAdminEvents.isEmpty())
-        assertTrue(collectionEvents.isEmpty())
+        verify(exactly = 0) { CollectionService.invalidate() }
     }
 
     @Test
@@ -160,32 +156,17 @@ class EntityChangeProcessorTest {
     }
 
     @Test
-    fun `collection game changes should bump timestamp and include game IDs`() {
-        val collection = Collection(name = "C").apply { id = 3L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { collectionRepository.findAllById(listOf(3L)) } returns listOf(collection)
-        every { collectionRepository.findGameIdsByCollectionIds(listOf(3L)) } returns listOf(
-            arrayOf<Any>(3L, 12L),
-            arrayOf<Any>(3L, 11L)
-        )
-
+    fun `collection membership changes bump timestamp and invalidate snapshots`() {
         processor.process(EntityChangeSet().apply {
             collection(3L).addAssociationFields(listOf(CollectionField.GAME_IDS))
         }.finalizeTransaction())
 
         verify(exactly = 1) { collectionRepository.bumpUpdatedAt(listOf(3L), any()) }
-        assertEquals(1, collectionEvents.size)
-        val event = collectionEvents.first()
-        assertEquals(EntityEventType.UPDATED, event.type)
-        assertEquals(listOf(CollectionField.GAME_IDS), event.patch?.fields)
-        assertEquals(listOf(11L, 12L), event.patch?.values?.gameIds)
+        verify(exactly = 1) { CollectionService.invalidate() }
     }
 
     @Test
-    fun `created entities should not bump timestamps`() {
-        val collection = Collection(name = "C").apply { id = 3L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { collectionRepository.findAllById(listOf(3L)) } returns listOf(collection)
-        every { collectionRepository.findGameIdsByCollectionIds(listOf(3L)) } returns emptyList()
-
+    fun `created collections invalidate snapshots without bumping timestamps`() {
         processor.process(EntityChangeSet().apply {
             collection(3L).apply {
                 created = true
@@ -194,8 +175,7 @@ class EntityChangeProcessorTest {
         }.finalizeTransaction())
 
         verify(exactly = 0) { collectionRepository.bumpUpdatedAt(any(), any()) }
-        assertEquals(EntityEventType.CREATED, collectionEvents.single().type)
-        assertEquals("C", collectionEvents.single().collection?.name)
+        verify(exactly = 1) { CollectionService.invalidate() }
     }
 
     @Test

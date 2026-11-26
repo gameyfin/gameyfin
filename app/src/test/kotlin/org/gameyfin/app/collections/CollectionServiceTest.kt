@@ -4,16 +4,14 @@ import io.mockk.*
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.collections.repositories.CollectionRepository
-import org.gameyfin.app.core.sync.EntityEventType
-import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.repository.findByIdOrNull
-import java.time.Duration
 import java.time.Instant
 import java.util.*
 import kotlin.test.*
@@ -28,7 +26,7 @@ class CollectionServiceTest {
     fun setup() {
         repository = mockk()
         gameService = mockk()
-        service = CollectionService(repository, gameService)
+        service = CollectionService(repository, gameService, mockk(relaxed = true), mockk())
     }
 
     @AfterEach
@@ -100,7 +98,7 @@ class CollectionServiceTest {
         val c1 =
             Collection(name = "Indie").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
         val c2 = Collection(name = "AAA").apply { id = 2L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findAll() } returns listOf(c1, c2)
+        every { repository.findAll(any<Specification<Collection>>()) } returns listOf(c1, c2)
         every { repository.findGameIdsByCollectionIds(listOf(1L, 2L)) } returns listOf(
             arrayOf<Any>(1L, 12L), arrayOf<Any>(1L, 11L), arrayOf<Any>(2L, 13L)
         )
@@ -118,8 +116,8 @@ class CollectionServiceTest {
     fun `sync with timestamp should return changed collections and all ids`() {
         val since = Instant.parse("2024-01-01T12:00:00Z")
         val c1 = Collection(name = "Indie").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findAllByUpdatedAtAfter(since.minus(SYNC_SAFETY_WINDOW)) } returns listOf(c1)
-        every { repository.findAllIds() } returns listOf(1L, 2L)
+        val unchanged = Collection(id = 2L, name = "Old", updatedAt = since.minusSeconds(120))
+        every { repository.findAll(any<Specification<Collection>>()) } returns listOf(c1, unchanged)
         every { repository.findGameIdsByCollectionIds(listOf(1L)) } returns emptyList()
 
         val result = service.sync(since)
@@ -128,14 +126,13 @@ class CollectionServiceTest {
         assertEquals(listOf(1L, 2L), result.allIds)
         assertEquals(1, result.collections.size)
         assertEquals(emptyList(), result.collections[0].gameIds)
-        verify(exactly = 0) { repository.findAll() }
     }
 
     @Test
     fun `sync with timestamp should not query game ids if nothing changed`() {
         val since = Instant.now()
-        every { repository.findAllByUpdatedAtAfter(any()) } returns emptyList()
-        every { repository.findAllIds() } returns listOf(1L)
+        val unchanged = Collection(id = 1L, name = "Old", updatedAt = since.minusSeconds(120))
+        every { repository.findAll(any<Specification<Collection>>()) } returns listOf(unchanged)
 
         val result = service.sync(since)
 
@@ -145,7 +142,7 @@ class CollectionServiceTest {
 
     @Test
     fun `getDtoById should return null when not found`() {
-        every { repository.findByIdOrNull(42L) } returns null
+        every { repository.findOne(any<Specification<Collection>>()) } returns Optional.empty()
         assertNull(service.getDtoById(42L))
     }
 
@@ -222,19 +219,6 @@ class CollectionServiceTest {
         every { repository.deleteById(8L) } just Runs
         service.delete(8L)
         verify { repository.deleteById(8L) }
-    }
-
-    @Test
-    fun `companion events emit and subscribe`() {
-        // Integration tests may have emitted other events into the shared broadcaster.
-        val flux = CollectionService.subscribe().flatMapIterable { it }
-            .filter { it.id == -2001L || it.id == -2002L }.take(2).collectList()
-        val now = Instant.now()
-        val dto = CollectionDto(1L, now, now, "n", null, emptyList(), CollectionMetadataDto(true, 1, emptyMap()))
-        CollectionService.emit(CollectionEvent(EntityEventType.CREATED, -2001L, collection = dto))
-        CollectionService.emit(CollectionEvent(EntityEventType.DELETED, -2002L))
-        val batch = flux.block(Duration.ofSeconds(2))
-        assertEquals(2, batch?.size)
     }
 
     private fun stubGameIdsFrom(collection: Collection) {

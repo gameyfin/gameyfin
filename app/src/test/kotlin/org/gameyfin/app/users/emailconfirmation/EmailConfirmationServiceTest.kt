@@ -75,6 +75,8 @@ class EmailConfirmationServiceTest {
             createdOn = Instant.now()
         )
 
+        every { tokenRepository.findCreatorIdBySecret("validSecret") } returns user.id
+        every { userRepository.findForUpdate(user.id!!) } returns user
         every { tokenRepository.findBySecret("validSecret") } returns token
         every { userRepository.save(user) } returns user
         every { tokenRepository.delete(token) } just Runs
@@ -89,7 +91,7 @@ class EmailConfirmationServiceTest {
 
     @Test
     fun `confirmEmail should return INVALID when token not found`() {
-        every { tokenRepository.findBySecret("invalidSecret") } returns null
+        every { tokenRepository.findCreatorIdBySecret("invalidSecret") } returns null
 
         val result = emailConfirmationService.confirmEmail("invalidSecret")
 
@@ -112,6 +114,8 @@ class EmailConfirmationServiceTest {
             createdOn = Instant.now()
         )
 
+        every { tokenRepository.findCreatorIdBySecret("validSecret") } returns user.id
+        every { userRepository.findForUpdate(user.id!!) } returns user
         every { tokenRepository.findBySecret("validSecret") } returns token
         every { userRepository.save(user) } returns user
         every { tokenRepository.delete(token) } just Runs
@@ -140,6 +144,7 @@ class EmailConfirmationServiceTest {
 
         mockRequestContext()
 
+        every { userRepository.findForUpdate(user.id!!) } returns user
         emailConfirmationService.resendEmailConfirmation(user)
 
         verify(exactly = 1) { tokenRepository.save(any<Token<TokenType.EmailConfirmation>>()) }
@@ -155,6 +160,7 @@ class EmailConfirmationServiceTest {
             emailConfirmed = true
         )
 
+        every { userRepository.findForUpdate(user.id!!) } returns user
         emailConfirmationService.resendEmailConfirmation(user)
 
         verify(exactly = 0) { tokenRepository.save(any()) }
@@ -180,6 +186,7 @@ class EmailConfirmationServiceTest {
 
         mockRequestContext()
 
+        every { userRepository.findForUpdate(user.id!!) } returns user
         emailConfirmationService.resendEmailConfirmation(user)
 
         verify(exactly = 1) { eventPublisher.publishEvent(ofType<EmailNeedsConfirmationEvent>()) }
@@ -187,11 +194,35 @@ class EmailConfirmationServiceTest {
 
     @Test
     fun `confirmEmail should not save user when token is invalid`() {
-        every { tokenRepository.findBySecret("invalid") } returns null
+        every { tokenRepository.findCreatorIdBySecret("invalid") } returns null
 
         emailConfirmationService.confirmEmail("invalid")
 
         verify(exactly = 0) { userRepository.save(any()) }
+    }
+
+    @Test
+    fun `confirmEmail rejects a token removed while waiting for the account lock`() {
+        val user = User(id = 1L, username = "testuser", email = "new@example.com")
+        every { tokenRepository.findCreatorIdBySecret("previousToken") } returns user.id
+        every { userRepository.findForUpdate(user.id!!) } returns user
+        every { tokenRepository.findBySecret("previousToken") } returns null
+
+        assertEquals(TokenValidationResult.INVALID, emailConfirmationService.confirmEmail("previousToken"))
+
+        assertFalse(user.emailConfirmed)
+        verify(exactly = 0) { userRepository.save(any()) }
+    }
+
+    @Test
+    fun `resendEmailConfirmation skips accounts without email`() {
+        val user = User(id = 1L, username = "testuser", email = null)
+        every { userRepository.findForUpdate(user.id!!) } returns user
+
+        emailConfirmationService.resendEmailConfirmation(user)
+
+        verify(exactly = 0) { tokenRepository.save(any()) }
+        verify(exactly = 0) { eventPublisher.publishEvent(any()) }
     }
 
     @Test
@@ -208,6 +239,8 @@ class EmailConfirmationServiceTest {
             createdOn = Instant.now()
         )
 
+        every { tokenRepository.findCreatorIdBySecret("validSecret") } returns user.id
+        every { userRepository.findForUpdate(user.id!!) } returns user
         every { tokenRepository.findBySecret("validSecret") } returns token
         every { userRepository.save(user) } returns user
         every { tokenRepository.delete(token) } just Runs

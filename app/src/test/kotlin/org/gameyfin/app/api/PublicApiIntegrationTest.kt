@@ -1,10 +1,16 @@
 package org.gameyfin.app.api
 
+import org.gameyfin.app.db.applicationTestDatabaseUrl
 import org.gameyfin.app.GameyfinApplication
 import org.gameyfin.app.api.security.ApiCredential
 import org.gameyfin.app.api.security.ApiCredentialRepository
 import org.gameyfin.app.api.security.ApiCredentialService
 import org.gameyfin.app.api.security.CredentialKind
+import org.gameyfin.app.collections.CollectionEndpoint
+import org.gameyfin.app.collections.CollectionService
+import org.gameyfin.app.collections.dto.CollectionCreateDto
+import org.gameyfin.app.collections.dto.CollectionUpdateDto
+import org.gameyfin.app.collections.entities.CollectionVisibility
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
@@ -17,8 +23,15 @@ import org.gameyfin.app.libraries.entities.Library
 import org.gameyfin.app.requests.GameRequestRepository
 import org.gameyfin.app.requests.entities.GameRequest
 import org.gameyfin.app.requests.status.GameRequestStatus
+import org.gameyfin.app.social.GamePlayStatus
+import org.gameyfin.app.social.GameSocialService
+import org.gameyfin.app.social.PlayStatus
+import org.gameyfin.app.social.recommendations.DiscoveryKind
+import org.gameyfin.app.social.recommendations.GameRecommendation
+import org.gameyfin.app.social.recommendations.RecommendationService
 import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository
+import org.gameyfin.pluginapi.gamemetadata.Genre
 import org.gameyfin.pluginapi.gamemetadata.Platform
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -31,6 +44,10 @@ import org.springframework.context.annotation.Import
 import org.springframework.core.env.Environment
 import org.springframework.core.io.ResourceLoader
 import org.springframework.mock.web.MockHttpServletRequest
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes
 import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypesScanner
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -49,13 +66,16 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import kotlin.test.*
 
 @SpringBootTest(
     classes = [GameyfinApplication::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
-        "spring.datasource.url=jdbc:h2:mem:public-api;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=validate",
@@ -66,6 +86,274 @@ import kotlin.test.*
 )
 @Import(PublicApiIntegrationTest.ProductionEntities::class)
 class PublicApiIntegrationTest {
+    @Test
+    fun `discover combines personal taste with explicitly shared activity and honors revocation`() {
+        val library = libraries.save(Library(name = "Discover"))
+        val catalog = games.saveAll(listOf(
+            Game(library = library, title = "Seed", genres = listOf(Genre.PUZZLE), metadata = GameMetadata("/discover/seed")),
+            Game(library = library, title = "Another seed", metadata = GameMetadata("/discover/second-seed")),
+            Game(library = library, title = "Similar puzzle", genres = listOf(Genre.PUZZLE), metadata = GameMetadata("/discover/puzzle")),
+            Game(library = library, title = "Peer favourite", metadata = GameMetadata("/discover/peer-favourite")),
+            Game(library = library, title = "Popular", metadata = GameMetadata("/discover/popular"))
+        ))
+        val (seed, secondSeed, puzzle, peerFavourite, popular) = catalog.map { it.id!! }
+        val reader = socialMember("discover-reader")
+        val peer = socialMember("discover-peer")
+        val newcomer = socialMember("discover-newcomer")
+        try {
+            assertFailsWith<AccessDeniedException> { recommendations.discover() }
+            asMember(peer) {
+                assertFalse(recommendations.sharesActivity())
+                social.rate(seed, 5)
+                social.rate(secondSeed, 4)
+                social.rate(popular, 5)
+                collections.setFavourite(peerFavourite, true)
+            }
+            asMember(reader) {
+                collections.setFavourite(seed, true)
+                assertEquals(
+                    listOf(GameRecommendation(puzzle, 100, seed, "Puzzle")),
+                    recommendations.discover().recommendations
+                )
+                social.setPlayStatus(secondSeed, PlayStatus.WANT_TO_PLAY)
+            }
+            assertEquals(DiscoveryKind.EMPTY, asMember(newcomer) { recommendations.discover().kind })
+
+            assertTrue(asMember(peer) { recommendations.setSharesActivity(true) })
+            assertTrue(asMember(peer) { recommendations.sharesActivity() })
+            val personalized = asMember(reader) { recommendations.discover() }
+            assertEquals(DiscoveryKind.PERSONALIZED, personalized.kind)
+            assertContains(personalized.recommendations, GameRecommendation(peerFavourite, 100))
+            assertTrue(personalized.recommendations.none { it.gameId == seed || it.gameId == secondSeed })
+            val fallback = asMember(newcomer) { recommendations.discover() }
+            assertEquals(DiscoveryKind.POPULAR, fallback.kind)
+            assertEquals(
+                mapOf(seed to 95, secondSeed to 90, popular to 95),
+                fallback.recommendations.associate { it.gameId to it.matchPercentage }
+            )
+
+            assertFalse(asMember(peer) { recommendations.setSharesActivity(false) })
+            assertFalse(asMember(peer) { recommendations.sharesActivity() })
+            assertEquals(listOf(puzzle), asMember(reader) { recommendations.discover().recommendations.map { it.gameId } })
+            assertEquals(DiscoveryKind.EMPTY, asMember(newcomer) { recommendations.discover().kind })
+            asMember(reader) {
+                social.rate(seed, 1)
+                social.setPlayStatus(seed, PlayStatus.PLAYED)
+                assertEquals(DiscoveryKind.EMPTY, recommendations.discover().kind)
+            }
+
+            configService.set(ConfigProperties.Social.EnableRecommendations, false)
+            assertFalse(social.settings().recommendationsEnabled)
+            assertFailsWith<AccessDeniedException> { asMember(reader) { recommendations.discover() } }
+        } finally {
+            configService.set(ConfigProperties.Social.EnableRecommendations, true)
+            RequestContextHolder.setRequestAttributes(ServletRequestAttributes(MockHttpServletRequest()))
+            try {
+                users.deleteAll(listOf(reader, peer, newcomer))
+            } finally {
+                RequestContextHolder.resetRequestAttributes()
+            }
+            games.deleteAll(catalog)
+            libraries.delete(library)
+        }
+    }
+
+    @Test
+    fun `ratings and play status stay independent and review moderation targets the inspected version`() {
+        val library = libraries.save(Library(name = "Social activity"))
+        val game = games.save(Game(library = library, title = "Activity game", metadata = GameMetadata("/activity/game")))
+        val id = game.id!!
+        val owner = socialMember("review-author")
+        val reader = socialMember("review-reader")
+        try {
+            assertFailsWith<AccessDeniedException> { social.myPlayStatuses() }
+            asMember(owner) {
+                assertEquals(0L, social.get(id).ratingCount)
+                assertNull(social.get(id).averageRating)
+                assertFailsWith<IllegalArgumentException> { social.rate(id, 6) }
+                social.rate(id, 5)
+                assertTrue(social.setPlayStatus(id, PlayStatus.PLAYED))
+                assertFalse(social.setPlayStatus(id, PlayStatus.PLAYED))
+                social.saveReview(id, "First published")
+                assertEquals("First published", social.get(id).reviews.single().text)
+                social.rate(id, 2)
+                assertEquals(2, social.get(id).myRating)
+                social.rate(id, null)
+                assertNull(social.get(id).myRating)
+                assertTrue(social.memberRatings().none { it.gameId == id })
+                assertEquals(PlayStatus.PLAYED, social.get(id).myPlayStatus)
+                assertEquals(listOf(GamePlayStatus(id, PlayStatus.PLAYED)), social.myPlayStatuses())
+                social.rate(id, 4)
+            }
+            asMember(reader) {
+                social.rate(id, 3)
+                val view = social.get(id)
+                assertEquals(3.5, view.averageRating)
+                assertEquals(2L, view.ratingCount)
+                assertNull(view.myPlayStatus)
+                assertNull(view.myReview)
+                assertTrue(social.myPlayStatuses().isEmpty())
+            }
+            assertEquals(3.5, social.memberRatings().single { it.gameId == id }.average)
+
+            configService.set(ConfigProperties.Social.RequireReviewApproval, true)
+            asMember(owner) {
+                social.saveReview(id, "First pending")
+                assertEquals("First pending", social.get(id).myReview?.submittedText)
+            }
+            val first = social.moderationQueue().single { it.gameId == id && it.pending }
+            assertEquals(owner.username, first.author)
+            assertEquals(owner.username, social.get(id).reviews.single().author)
+            asMember(owner) { social.saveReview(id, "Second pending") }
+            assertFalse(social.moderate(id, owner.id!!, first.version, approve = true))
+            assertEquals("First published", social.get(id).reviews.single().text)
+
+            configService.set(ConfigProperties.Social.RequireReviewApproval, false)
+            val second = social.moderationQueue().single { it.gameId == id && it.pending }
+            assertEquals("Second pending", second.text)
+            assertTrue(social.moderate(id, owner.id!!, second.version, approve = false))
+            asMember(owner) { assertTrue(social.get(id).myReview!!.rejected) }
+
+            configService.set(ConfigProperties.Social.RequireReviewApproval, true)
+            asMember(owner) { social.saveReview(id, "Final pending") }
+            val final = social.moderationQueue().single { it.gameId == id && it.pending }
+            assertTrue(social.moderate(id, owner.id!!, final.version, approve = true))
+            assertEquals("Final pending", social.get(id).reviews.single().text)
+            assertTrue(social.removePublished(id, owner.id!!, final.version))
+
+            configService.set(ConfigProperties.Social.EnableReviews, false)
+            asMember(owner) {
+                assertFalse(social.get(id).reviewsEnabled)
+                assertTrue(social.get(id).reviews.isEmpty())
+                assertFailsWith<AccessDeniedException> { social.saveReview(id, "Disabled") }
+                assertFailsWith<AccessDeniedException> { social.deleteReview(id) }
+                social.setPlayStatus(id, null)
+                assertTrue(social.myPlayStatuses().isEmpty())
+                assertFalse(social.setPlayStatus(id, PlayStatus.PLAYED))
+            }
+            configService.set(ConfigProperties.Social.EnableReviews, true)
+            asMember(owner) {
+                social.saveReview(id, "Draft to delete")
+                social.deleteReview(id)
+                assertNull(social.get(id).myReview)
+            }
+        } finally {
+            configService.set(ConfigProperties.Social.EnableReviews, true)
+            configService.set(ConfigProperties.Social.RequireReviewApproval, false)
+            games.deleteById(id)
+        }
+    }
+
+    @Test
+    fun `collection visibility applies to open streams direct links sync and the catalogue API`() {
+        val library = libraries.save(Library(name = "Social collections"))
+        val game = games.save(Game(library = library, title = "Collection game", metadata = GameMetadata("/collections/game")))
+        val owner = socialMember("collection-owner")
+        val reader = socialMember("collection-reader")
+        val admin = socialMember("collection-admin", Role.ADMIN)
+        val serviceToken = key(setOf("games:read", "collections:read"))
+        val readerToken = key(emptySet(), reader)
+        configService.set(ConfigProperties.Security.AllowPublicAccess, true)
+        try {
+            val id = asMember(owner) {
+                collections.createCustom(CollectionCreateDto("Shared collection", gameIds = listOf(game.id!!)))
+            }
+            assertNotNull(asMember(owner) { collections.getDtoById(id) })
+            assertNull(asMember(reader) { collections.getDtoById(id) })
+            assertNull(asMember(admin) { collections.getDtoById(id) })
+            assertNull(collections.getDtoById(id))
+            assertFalse(id in asMember(reader) { collections.sync(Instant.EPOCH).allIds })
+            assertEquals(404, request("/v1/collections/$id", readerToken).statusCode())
+            assertEquals(404, request("/v1/collections/$id", serviceToken).statusCode())
+            val filtered = request("/v1/games?collectionId=$id", serviceToken)
+            assertEquals(200, filtered.statusCode(), filtered.body())
+            assertEquals(0, mapper.readTree(filtered.body())["items"].size())
+
+            val readerSnapshots = LinkedBlockingQueue<List<Long>>()
+            val guestSnapshots = LinkedBlockingQueue<List<Long>>()
+            val readerSubscription = asMember(reader) { collectionEndpoint.subscribeToCollections() }
+                .subscribe { readerSnapshots.add(it.map { dto -> dto.id }) }
+            val guestSubscription = collectionEndpoint.subscribeToCollections()
+                .subscribe { guestSnapshots.add(it.map { dto -> dto.id }) }
+            try {
+                assertFalse(id in assertNotNull(readerSnapshots.poll(5, TimeUnit.SECONDS)))
+                assertFalse(id in assertNotNull(guestSnapshots.poll(5, TimeUnit.SECONDS)))
+                asMember(owner) { collections.updateOwned(CollectionUpdateDto(id, visibility = CollectionVisibility.MEMBERS_ONLY)) }
+                awaitSnapshot(readerSnapshots, id, true)
+                assertNull(collections.getDtoById(id))
+                assertEquals(200, request("/v1/collections/$id", readerToken).statusCode())
+                assertEquals(404, request("/v1/collections/$id", serviceToken).statusCode())
+
+                asMember(owner) { collections.updateOwned(CollectionUpdateDto(id, visibility = CollectionVisibility.PUBLIC)) }
+                awaitSnapshot(guestSnapshots, id, true)
+                assertEquals(200, request("/v1/collections/$id", serviceToken).statusCode())
+                val sorted = request("/v1/collections?sort=name", serviceToken)
+                assertEquals(200, sorted.statusCode(), sorted.body())
+                assertTrue(mapper.readTree(sorted.body())["items"].any { it["name"].asString() == "Shared collection" })
+                asMember(owner) { collections.updateOwned(CollectionUpdateDto(id, visibility = CollectionVisibility.PRIVATE)) }
+                awaitSnapshot(readerSnapshots, id, false)
+                awaitSnapshot(guestSnapshots, id, false)
+                assertFalse(id in asMember(reader) { collections.sync(Instant.EPOCH).allIds })
+                assertFailsWith<AccessDeniedException> { asMember(reader) { collections.deleteOwned(id) } }
+            } finally {
+                readerSubscription.dispose()
+                guestSubscription.dispose()
+            }
+
+            configService.set(ConfigProperties.Social.AllowUserCollections, false)
+            asMember(owner) {
+                assertFailsWith<AccessDeniedException> { collections.createCustom(CollectionCreateDto("Disabled")) }
+                assertEquals("Renamed", collections.updateOwned(CollectionUpdateDto(id, name = "Renamed")).name)
+            }
+            val start = CountDownLatch(1)
+            val favourite = Executors.newFixedThreadPool(2).use { executor ->
+                val pending = (1..2).map {
+                    executor.submit<Long> {
+                        start.await()
+                        asMember(owner) { collections.ensureFavourites() }
+                    }
+                }
+                start.countDown()
+                pending.map { it.get(10, TimeUnit.SECONDS) }.toSet().single()
+            }
+            asMember(owner) {
+                collections.setFavourite(game.id!!, true)
+                assertEquals(listOf(game.id!!), collections.getDtoById(favourite)?.gameIds)
+                collections.updateOwned(CollectionUpdateDto(favourite, visibility = CollectionVisibility.PUBLIC))
+                assertEquals(favourite, collections.ensureFavourites())
+                collections.deleteOwned(id)
+            }
+            assertEquals(listOf(game.id!!), collections.getDtoById(favourite)?.gameIds)
+        } finally {
+            configService.set(ConfigProperties.Security.AllowPublicAccess, false)
+            configService.set(ConfigProperties.Social.AllowUserCollections, true)
+            games.deleteById(game.id!!)
+        }
+    }
+
+    private fun awaitSnapshot(queue: LinkedBlockingQueue<List<Long>>, id: Long, expected: Boolean) {
+        val end = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+        while (System.nanoTime() < end) {
+            val snapshot = queue.poll(end - System.nanoTime(), TimeUnit.NANOSECONDS) ?: break
+            if ((id in snapshot) == expected) return
+        }
+        fail("Collection $id visibility did not become $expected")
+    }
+
+    private fun socialMember(username: String, role: Role = Role.USER) =
+        users.save(User(username = username, email = "$username@example.com", enabled = true, roles = listOf(role)))
+
+    private fun <T> asMember(user: User, block: () -> T): T {
+        SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(
+            user.username, null, user.roles.map { SimpleGrantedAuthority(it.roleName) }
+        )
+        return try {
+            block()
+        } finally {
+            SecurityContextHolder.clearContext()
+        }
+    }
+
     @TestConfiguration(proxyBeanMethods = false)
     class ProductionEntities {
         @Bean
@@ -84,6 +372,10 @@ class PublicApiIntegrationTest {
         @JvmStatic
         @DynamicPropertySource
         fun directories(properties: DynamicPropertyRegistry) {
+            if (System.getenv("GAMEYFIN_TEST_POSTGRES") == "true") {
+                properties.add("spring.datasource.driver-class-name") { "org.testcontainers.jdbc.ContainerDatabaseDriver" }
+            }
+            properties.add("spring.datasource.url") { applicationTestDatabaseUrl("public-api") }
             properties.add("gameyfin.plugins.install-directory") { root.resolve("plugins").toString() }
             properties.add("spring.content.fs.filesystem-root") { root.resolve("media").toString() }
             properties.add("gameyfin.backup.directory") { root.resolve("backups").toString() }
@@ -120,6 +412,18 @@ class PublicApiIntegrationTest {
 
     @Autowired
     lateinit var configService: ConfigService
+
+    @Autowired
+    lateinit var social: GameSocialService
+
+    @Autowired
+    lateinit var recommendations: RecommendationService
+
+    @Autowired
+    lateinit var collections: CollectionService
+
+    @Autowired
+    lateinit var collectionEndpoint: CollectionEndpoint
 
     private val client = HttpClient.newHttpClient()
 
