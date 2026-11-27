@@ -2,7 +2,6 @@ package org.gameyfin.app.social.recommendations
 
 import jakarta.persistence.EntityManager
 import jakarta.persistence.Tuple
-import java.util.Locale
 import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.config.ConfigProperties.Social.EnableRecommendations
 import org.gameyfin.app.config.ConfigService
@@ -17,6 +16,7 @@ import org.gameyfin.pluginapi.gamemetadata.Theme
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.*
 
 @Service
 class RecommendationService(

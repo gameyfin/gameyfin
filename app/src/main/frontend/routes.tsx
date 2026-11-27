@@ -67,8 +67,10 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         },
                         {path: 'collections', element: <CollectionsView/>, handle: {title: 'Collections'}},
                         {path: 'discover', element: <DiscoverView/>, handle: {title: 'Discover', loginRequired: true}},
-                        {path: 'collections/:collectionId/manage', element: <CollectionManagementView owned/>,
-                            handle: {title: 'Manage Collection', loginRequired: true}},
+                        {
+                            path: 'collections/:collectionId/manage', element: <CollectionManagementView owned/>,
+                            handle: {title: 'Manage Collection', loginRequired: true}
+                        },
                         {
                             path: 'collection/:collectionId',
                             element: <GameBrowseView/>

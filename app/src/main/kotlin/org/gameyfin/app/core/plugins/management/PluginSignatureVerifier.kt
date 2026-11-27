@@ -5,7 +5,7 @@ import java.security.CodeSigner
 import java.security.PublicKey
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
-import java.util.Locale
+import java.util.*
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 
@@ -39,8 +39,8 @@ class PluginSignatureVerifier(private val publicKey: PublicKey) {
     private fun shouldSkipEntry(entry: JarEntry): Boolean {
         val name = entry.name.uppercase(Locale.ROOT)
         return entry.isDirectory || name == "META-INF/MANIFEST.MF" ||
-            (name.startsWith("META-INF/") && '/' !in name.removePrefix("META-INF/") &&
-                (name.endsWith(".SF") || name.endsWith(".RSA") || name.endsWith(".DSA") || name.endsWith(".EC")))
+                (name.startsWith("META-INF/") && '/' !in name.removePrefix("META-INF/") &&
+                        (name.endsWith(".SF") || name.endsWith(".RSA") || name.endsWith(".DSA") || name.endsWith(".EC")))
     }
 
     /**

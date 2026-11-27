@@ -10,9 +10,9 @@ import org.gameyfin.app.core.token.TokenRepository
 import org.gameyfin.app.core.token.TokenService
 import org.gameyfin.app.core.token.TokenType
 import org.gameyfin.app.users.UserService
-import org.gameyfin.app.users.parseEmailAddress
 import org.gameyfin.app.users.dto.UserRegistrationDto
 import org.gameyfin.app.users.enums.UserInvitationAcceptanceResult
+import org.gameyfin.app.users.parseEmailAddress
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 

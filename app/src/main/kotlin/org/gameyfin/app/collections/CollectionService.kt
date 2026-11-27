@@ -1,40 +1,44 @@
 package org.gameyfin.app.collections
 
-import org.gameyfin.app.collections.dto.*
+import org.gameyfin.app.collections.dto.CollectionCreateDto
+import org.gameyfin.app.collections.dto.CollectionDto
+import org.gameyfin.app.collections.dto.CollectionSyncDto
+import org.gameyfin.app.collections.dto.CollectionUpdateDto
 import org.gameyfin.app.collections.entities.Collection
-import org.gameyfin.app.collections.entities.CollectionMetadata
 import org.gameyfin.app.collections.entities.CollectionKind
+import org.gameyfin.app.collections.entities.CollectionMetadata
 import org.gameyfin.app.collections.entities.CollectionVisibility
 import org.gameyfin.app.collections.extensions.toDto
 import org.gameyfin.app.collections.extensions.toEntity
 import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.collections.repositories.findGameIdsGroupedByCollectionId
+import org.gameyfin.app.config.ConfigProperties
+import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.sync.EntityEventBroadcaster
 import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
-import org.springframework.data.repository.findByIdOrNull
+import org.gameyfin.app.social.MemberIdentity
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.access.AccessDeniedException
-import org.gameyfin.app.config.ConfigProperties
-import org.gameyfin.app.config.ConfigService
-import org.gameyfin.app.social.MemberIdentity
-import java.util.UUID
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import java.time.Instant
+import java.util.*
 
 @Service
 class CollectionService(
     private val collectionRepository: CollectionRepository,
     private val gameService: GameService,
     private val members: MemberIdentity,
-    private val config: ConfigService
+    private val config: ConfigService,
+    private val smartCollections: SmartCollectionService
 ) {
     companion object {
         // Internal invalidations. Subscribers read a fresh snapshot using their own access rules.
@@ -85,7 +89,9 @@ class CollectionService(
     }
 
     fun findReadable(page: Pageable): Page<Collection> {
-        val sort = Sort.by(page.sort.map { it.withProperty(if (it.property == "name") "displaySortName" else it.property) }.toList())
+        val sort =
+            Sort.by(page.sort.map { it.withProperty(if (it.property == "name") "displaySortName" else it.property) }
+                .toList())
         return collectionRepository.findAll(
             members.collectionViewer().readable(), PageRequest.of(page.pageNumber, page.pageSize, sort)
         )
@@ -103,6 +109,10 @@ class CollectionService(
         getById(id).takeIf { it.kind == CollectionKind.CURATED }
             ?: throw NoSuchElementException("Collection not found")
 
+    fun lockCuratedById(id: Long): Collection =
+        collectionRepository.lockById(id)?.takeIf { it.kind == CollectionKind.CURATED }
+            ?: throw NoSuchElementException("Collection not found")
+
     @Transactional
     fun create(dto: CollectionCreateDto) {
         createEntity(dto)
@@ -116,22 +126,16 @@ class CollectionService(
         require(collectionRepository.findByName(dto.name) == null) {
             "Collection with name '${dto.name}' already exists"
         }
-        val entity = dto.toEntity()
-        dto.gameIds?.let { ids ->
-            ids.distinct().forEach { gameId ->
-                val game = gameService.getById(gameId)
-                entity.addGame(game)
-            }
-        }
-        return collectionRepository.save(entity)
+        return saveNew(dto.toEntity(), dto)
     }
 
     @Transactional
     fun update(dto: CollectionUpdateDto): CollectionDto {
-        return updateEntity(getCuratedById(dto.id), dto)
+        return updateEntity(lockCuratedById(dto.id), dto)
     }
 
     private fun updateEntity(collection: Collection, dto: CollectionUpdateDto): CollectionDto {
+        if (dto.gameIds != null) collection.requireManualMembership()
         dto.name?.let { newName ->
             validateName(newName)
             if (collection.kind == CollectionKind.CURATED) {
@@ -175,12 +179,13 @@ class CollectionService(
      */
     @Transactional
     fun update(collections: List<CollectionUpdateDto>) {
-        collections.forEach { update(it) }
+        collections.sortedBy { it.id }.forEach { update(it) }
     }
 
     @Transactional
     fun addGame(collectionId: Long, gameId: Long): CollectionDto {
-        val collection = getCuratedById(collectionId)
+        val collection = lockCuratedById(collectionId)
+        collection.requireManualMembership()
         val game = gameService.getById(gameId)
 
         collection.addGame(game)
@@ -192,7 +197,8 @@ class CollectionService(
 
     @Transactional
     fun removeGame(collectionId: Long, gameId: Long): CollectionDto {
-        val collection = getCuratedById(collectionId)
+        val collection = lockCuratedById(collectionId)
+        collection.requireManualMembership()
         val game = gameService.getById(gameId)
 
         collection.removeGame(game)
@@ -212,10 +218,20 @@ class CollectionService(
         val collection = Collection(
             name = UUID.randomUUID().toString(), memberName = dto.name,
             description = dto.description, owner = owner, kind = CollectionKind.CUSTOM,
-            visibility = CollectionVisibility.PRIVATE, metadata = CollectionMetadata(displayOnHomepage = false)
+            visibility = dto.visibility ?: CollectionVisibility.PRIVATE,
+            metadata = CollectionMetadata(displayOnHomepage = false)
         )
-        dto.gameIds.orEmpty().distinct().forEach { collection.addGame(gameService.getById(it)) }
-        return collectionRepository.save(collection).id!!
+        return saveNew(collection, dto).id!!
+    }
+
+    private fun saveNew(collection: Collection, dto: CollectionCreateDto): Collection {
+        if (dto.smartRule != null) {
+            require(dto.gameIds.isNullOrEmpty()) { "Smart collection membership is managed by its rules" }
+            smartCollections.enable(collection, dto.smartRule)
+        } else {
+            dto.gameIds.orEmpty().distinct().forEach { collection.addGame(gameService.getById(it)) }
+        }
+        return collectionRepository.save(collection)
     }
 
     @Transactional
@@ -255,6 +271,7 @@ class CollectionService(
     fun setOwnedMembership(id: Long, gameId: Long, present: Boolean) {
         val collection = owned(id)
         require(collection.kind == CollectionKind.CUSTOM)
+        collection.requireManualMembership()
         val game = gameService.getById(gameId)
         if (present && game !in collection.games) collection.addGame(game)
         if (!present && game in collection.games) collection.removeGame(game)
@@ -270,7 +287,7 @@ class CollectionService(
     private fun owned(id: Long): Collection {
         val memberId = members.requireId()
         members.lock(memberId)
-        return collectionRepository.findByIdOrNull(id)?.takeIf { it.owner?.id == memberId }
+        return collectionRepository.lockById(id)?.takeIf { it.owner?.id == memberId }
             ?: throw AccessDeniedException("Collection owner required")
     }
 
@@ -278,7 +295,8 @@ class CollectionService(
         require(name.isNotBlank() && name.length <= 255) { "Collection name must have 1–255 characters" }
     }
 
+    @Transactional
     fun delete(collectionId: Long) {
-        collectionRepository.deleteById(collectionId)
+        collectionRepository.lockById(collectionId)?.let(collectionRepository::delete)
     }
 }

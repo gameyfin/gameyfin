@@ -29,10 +29,12 @@ export default function GameMetadataFields({initialValues, propertyEnumValues, s
     searchOnOpen?: boolean;
 }) {
     const availablePlatforms = useSnapshot(platformState).available;
+
     function sourceIcon(field: string) {
         const metadata = initialValues.metadata as GameMetadataAdminDto;
         return <GameMetadataSourceIcon source={metadata?.fields?.[field]}/>;
     }
+
     return (
         <GameMediaEditor searchOnOpen={searchOnOpen} sourceIcon={sourceIcon}>
             {({artwork, gallery}) => <>

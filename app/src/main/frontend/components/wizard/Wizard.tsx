@@ -18,14 +18,18 @@ type WizardProps = {
     status?: ReactNode;
 };
 
-const Wizard = ({children, initialValues, onSubmit, variant = "page", keepStepsMounted = false,
-                    isBusy = false, finishLabel = "Finish setup", finishIcon = <CheckIcon/>, onCancel, status}: WizardProps) => {
+const Wizard = ({
+                    children, initialValues, onSubmit, variant = "page", keepStepsMounted = false,
+                    isBusy = false, finishLabel = "Finish setup", finishIcon = <CheckIcon/>, onCancel, status
+                }: WizardProps) => {
     const allSteps = React.Children.toArray(children) as ReactElement<WizardStepProps>[];
     const [stepNumber, setStepNumber] = useState(0);
     const [snapshot, setSnapshot] = useState(initialValues);
     const [error, setError] = useState("");
     const bodyRef = useRef<HTMLDivElement>(null);
-    useEffect(() => { bodyRef.current?.scrollTo({top: 0}); }, [stepNumber]);
+    useEffect(() => {
+        bodyRef.current?.scrollTo({top: 0});
+    }, [stepNumber]);
     const modal = variant === "modal";
     const step = allSteps[stepNumber];
     const totalSteps = allSteps.length;
@@ -77,7 +81,8 @@ const Wizard = ({children, initialValues, onSubmit, variant = "page", keepStepsM
                     <Button aria-label={isLastStep ? finishLabel : step.props.nextLabel ?? "Next step"}
                             variant="primary" isIconOnly={!modal} isPending={formik.isSubmitting}
                             isDisabled={blocked || step.props.isNextDisabled} type="submit">
-                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ? finishIcon : <ArrowRightIcon/>}
+                        {formik.isSubmitting ? <Spinner size="sm" color="current"/> : isLastStep ? finishIcon :
+                            <ArrowRightIcon/>}
                         {modal && (isLastStep ? finishLabel : step.props.nextLabel ?? "Next")}
                     </Button>
                 </div>
@@ -88,7 +93,8 @@ const Wizard = ({children, initialValues, onSubmit, variant = "page", keepStepsM
             </div>;
             return <Form className={modal ? "flex flex-col flex-1 min-h-0" : "flex flex-col h-full"}>
                 <div className={modal ? "px-6 pb-3 shrink-0" : "w-full mb-8"}>
-                    <Stepper steps={stepsMeta} currentStep={stepNumber} disabled={blocked} className={modal ? "px-3" : undefined}
+                    <Stepper steps={stepsMeta} currentStep={stepNumber} disabled={blocked}
+                             className={modal ? "px-3" : undefined}
                              onStepChange={idx => {
                                  // only allow backwards navigation to keep validation flow
                                  if (!blocked && idx <= stepNumber) {
@@ -98,10 +104,12 @@ const Wizard = ({children, initialValues, onSubmit, variant = "page", keepStepsM
                                  }
                              }} hideProgressBars={false}/>
                 </div>
-                <p className="sr-only" aria-live="polite">Step {stepNumber + 1} of {totalSteps}{step.props.title && `: ${step.props.title}`}</p>
+                <p className="sr-only"
+                   aria-live="polite">Step {stepNumber + 1} of {totalSteps}{step.props.title && `: ${step.props.title}`}</p>
                 {modal ? <Modal.Body ref={bodyRef}>{content}</Modal.Body> : <div className="flex grow">{content}</div>}
                 {error && <div className={modal ? "px-6 pt-3" : "mt-4"}>
-                    <Alert status="danger"><Alert.Indicator/><Alert.Content><Alert.Description>{error}</Alert.Description></Alert.Content></Alert>
+                    <Alert
+                        status="danger"><Alert.Indicator/><Alert.Content><Alert.Description>{error}</Alert.Description></Alert.Content></Alert>
                 </div>}
                 {status}
                 {modal ? <Modal.Footer className="flex flex-wrap gap-2">{navigation}</Modal.Footer> :

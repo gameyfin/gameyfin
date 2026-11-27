@@ -240,3 +240,20 @@ databaseChangeLog:
       # Earlier releases can read the canonical CLOB schema created by a fresh installation.
       rollback:
         - empty: {}
+
+  - changeSet:
+      id: 2.8.0-smart-collections
+      author: gameyfin
+      changes:
+        - addColumn:
+            tableName: COLLECTION
+            columns:
+              - column:
+                  name: SMART_ENABLED
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: SMART_RULES
+                  type: clob

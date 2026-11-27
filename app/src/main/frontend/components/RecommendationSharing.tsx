@@ -8,7 +8,12 @@ interface RecommendationSharingProps {
     onChange: (enabled: boolean) => void;
 }
 
-export default function RecommendationSharing({enabled, isSubmitting, loadFailed, onChange}: RecommendationSharingProps) {
+export default function RecommendationSharing({
+                                                  enabled,
+                                                  isSubmitting,
+                                                  loadFailed,
+                                                  onChange
+                                              }: RecommendationSharingProps) {
     const descriptionId = useId();
 
     return <div className="flex flex-col gap-2">

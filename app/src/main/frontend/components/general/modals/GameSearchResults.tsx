@@ -64,7 +64,8 @@ export default function GameSearchResults({results, actions}: {
                     </Table.Header>
                     <Table.Body items={results} renderEmptyState={() => empty}>
                         {item => <Table.Row key={item.id}>
-                            {fields(item).map(field => <Table.Cell key={field.label} className="align-middle">{field.content}</Table.Cell>)}
+                            {fields(item).map(field => <Table.Cell key={field.label}
+                                                                   className="align-middle">{field.content}</Table.Cell>)}
                         </Table.Row>}
                     </Table.Body>
                 </Table.Content>

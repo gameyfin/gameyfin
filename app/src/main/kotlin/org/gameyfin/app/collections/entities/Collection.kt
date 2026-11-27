@@ -3,15 +3,13 @@ package org.gameyfin.app.collections.entities
 import jakarta.persistence.*
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.users.entities.User
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.Formula
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.annotations.UpdateTimestamp
+import org.hibernate.annotations.*
 import org.hibernate.type.SqlTypes
 import java.time.Instant
 
 @Entity
 @EntityListeners(CollectionEntityListener::class)
+@DynamicUpdate
 class Collection(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -51,12 +49,22 @@ class Collection(
     // Member labels can repeat without changing the legacy unique name constraint.
     var memberName: String? = null,
 
-    var favouritesOwnerId: Long? = null
+    var favouritesOwnerId: Long? = null,
+
+    @Column(nullable = false)
+    var smartEnabled: Boolean = false,
+
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+    var smartRules: String? = null
 ) {
     @Formula("coalesce(member_name, name)")
     private var displaySortName: String? = null
 
     val displayName: String get() = memberName ?: name
+
+    fun requireManualMembership() {
+        check(!smartEnabled) { "Smart collection membership is managed by its rules" }
+    }
 
     fun addGame(game: Game) {
         games.add(game)

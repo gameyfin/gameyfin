@@ -16,7 +16,8 @@ class GameStoreLinkService(
 ) {
     companion object {
         const val MAX_EDITION_LENGTH = 100
-        val STANDARD_EDITION = Regex("(standard|base|default|regular)( (edition|game|version))?", RegexOption.IGNORE_CASE)
+        val STANDARD_EDITION =
+            Regex("(standard|base|default|regular)( (edition|game|version))?", RegexOption.IGNORE_CASE)
 
         // Prefer stores that provide real version names over stores that only provide build IDs
         private val TRACKING_PREFERENCE = listOf("gog", "epic", "steam")

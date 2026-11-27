@@ -5,7 +5,7 @@ import {GameEndpoint} from "Frontend/generated/endpoints";
 import ConfirmModal from "Frontend/components/general/modals/ConfirmModal";
 
 interface RemoveGameModalProps {
-    game: {id: number; title: string; path?: string | null};
+    game: { id: number; title: string; path?: string | null };
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     onRemoved?: () => void;
@@ -48,13 +48,14 @@ export default function RemoveGameModal({game, isOpen, onOpenChange, onRemoved}:
             </Checkbox.Content>
             <Description>Leave unchecked to keep the files.</Description>
         </Checkbox>
-        {deleteFiles && <div role="alert" className="flex gap-3 rounded-xl border border-danger/30 bg-danger/10 p-4 text-danger">
-            <WarningIcon className="mt-0.5 size-5 shrink-0" aria-hidden="true"/>
-            <div className="min-w-0 space-y-2 text-sm">
-                <p className="font-semibold">Files will be permanently deleted. This cannot be undone.</p>
-                <p>The game file or folder and all its contents will be removed from disk.</p>
-                {game.path && <p className="break-all font-mono text-xs">{game.path}</p>}
-            </div>
-        </div>}
+        {deleteFiles &&
+            <div role="alert" className="flex gap-3 rounded-xl border border-danger/30 bg-danger/10 p-4 text-danger">
+                <WarningIcon className="mt-0.5 size-5 shrink-0" aria-hidden="true"/>
+                <div className="min-w-0 space-y-2 text-sm">
+                    <p className="font-semibold">Files will be permanently deleted. This cannot be undone.</p>
+                    <p>The game file or folder and all its contents will be removed from disk.</p>
+                    {game.path && <p className="break-all font-mono text-xs">{game.path}</p>}
+                </div>
+            </div>}
     </ConfirmModal>;
 }

@@ -7,8 +7,8 @@ import ComboButton from "Frontend/components/general/input/ComboButton";
 import {downloadSelection} from "Frontend/endpoints/DownloadEndpoint";
 import type DownloadProviderDto from "Frontend/generated/org/gameyfin/app/core/download/provider/DownloadProviderDto";
 
-type FileEntry = {path: string; size: number};
-type ContentsNode = INode<FileEntry> & {metadata: FileEntry};
+type FileEntry = { path: string; size: number };
+type ContentsNode = INode<FileEntry> & { metadata: FileEntry };
 
 function fileTree(files: FileEntry[]): ContentsNode[] {
     const root: ContentsNode = {id: 0, name: "", children: [], parent: null, metadata: {path: "", size: 0}};
@@ -38,13 +38,14 @@ interface Props {
 }
 
 export default function BrowseContentsModal({gameId, providers, onClose}: Props) {
-    const [contents, setContents] = useState<{nodes: ContentsNode[]; fileCount: number; etag: string | null}>();
+    const [contents, setContents] = useState<{ nodes: ContentsNode[]; fileCount: number; etag: string | null }>();
     const nodes = contents?.nodes;
     const [failed, setFailed] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<NodeId>>(new Set());
 
     useEffect(() => {
         const controller = new AbortController();
+
         async function load() {
             try {
                 const response = await fetch(`/download/${gameId}/contents`, {signal: controller.signal});
@@ -55,6 +56,7 @@ export default function BrowseContentsModal({gameId, providers, onClose}: Props)
                 if (!controller.signal.aborted) setFailed(true);
             }
         }
+
         void load();
         return () => controller.abort();
     }, [gameId]);
@@ -81,47 +83,60 @@ export default function BrowseContentsModal({gameId, providers, onClose}: Props)
     }]));
 
     return <Modal>
-        <Modal.Backdrop isOpen onOpenChange={open => { if (!open) onClose(); }}>
+        <Modal.Backdrop isOpen onOpenChange={open => {
+            if (!open) onClose();
+        }}>
             <Modal.Container size="lg">
                 <Modal.Dialog>
                     <Modal.Header><Modal.Heading>Browse contents</Modal.Heading></Modal.Header>
                     <Modal.Body className="max-h-[60vh] overflow-auto">
                         {failed ? <p role="alert">Could not load game contents. Reopen the dialog to try again.</p>
                             : !nodes ? <p role="status">Loading files…</p>
-                            : nodes.length === 1 ? <p>No files in this folder.</p>
-                            : <TreeView data={nodes} aria-label="Game files" multiSelect togglableSelect
-                                        propagateSelect propagateSelectUpwards nodeAction="check"
-                                        onSelect={({treeState}) => setSelectedIds(treeState.selectedIds)}
-                                        nodeRenderer={({element, isBranch, isExpanded, isSelected, isHalfSelected,
-                                                           getNodeProps, handleExpand, handleSelect, level}) => {
-                                            const background = isSelected ? "bg-accent/25 hover:bg-accent/45" :
-                                                isHalfSelected ? "bg-accent/10 hover:bg-accent/30" : "hover:bg-default";
-                                            const select = getNodeProps({onClick: handleSelect}).onClick;
-                                            const Icon = isBranch ? (isExpanded ? FolderOpenIcon : FolderIcon) : FileIcon;
-                                            return <div {...getNodeProps({onClick: isBranch ? handleExpand : handleSelect})}
-                                                        className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1 focus-visible:outline ${background}`}
-                                                        style={{paddingInlineStart: level * 12}}>
-                                                <div className="shrink-0 p-1" onClick={event => {
-                                                    event.stopPropagation();
-                                                    select(event);
-                                                }}>
-                                                    {/* The treeitem owns keyboard focus and announces its checked state. */}
-                                                    <div inert aria-hidden="true">
-                                                        <Checkbox isSelected={isSelected} isIndeterminate={isHalfSelected}
-                                                                  aria-label={element.name}>
-                                                            <Checkbox.Content>
-                                                                <Checkbox.Control><Checkbox.Indicator/></Checkbox.Control>
-                                                            </Checkbox.Content>
-                                                        </Checkbox>
-                                                    </div>
-                                                </div>
-                                                <Icon className="shrink-0" aria-hidden="true"/>
-                                                <span className="min-w-0 break-all">{element.name}</span>
-                                                <span className="ms-auto shrink-0 text-sm tabular-nums text-muted">
+                                : nodes.length === 1 ? <p>No files in this folder.</p>
+                                    : <TreeView data={nodes} aria-label="Game files" multiSelect togglableSelect
+                                                propagateSelect propagateSelectUpwards nodeAction="check"
+                                                onSelect={({treeState}) => setSelectedIds(treeState.selectedIds)}
+                                                nodeRenderer={({
+                                                                   element,
+                                                                   isBranch,
+                                                                   isExpanded,
+                                                                   isSelected,
+                                                                   isHalfSelected,
+                                                                   getNodeProps,
+                                                                   handleExpand,
+                                                                   handleSelect,
+                                                                   level
+                                                               }) => {
+                                                    const background = isSelected ? "bg-accent/25 hover:bg-accent/45" :
+                                                        isHalfSelected ? "bg-accent/10 hover:bg-accent/30" : "hover:bg-default";
+                                                    const select = getNodeProps({onClick: handleSelect}).onClick;
+                                                    const Icon = isBranch ? (isExpanded ? FolderOpenIcon : FolderIcon) : FileIcon;
+                                                    return <div {...getNodeProps({onClick: isBranch ? handleExpand : handleSelect})}
+                                                                className={`flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1 focus-visible:outline ${background}`}
+                                                                style={{paddingInlineStart: level * 12}}>
+                                                        <div className="shrink-0 p-1" onClick={event => {
+                                                            event.stopPropagation();
+                                                            select(event);
+                                                        }}>
+                                                            {/* The treeitem owns keyboard focus and announces its checked state. */}
+                                                            <div inert aria-hidden="true">
+                                                                <Checkbox isSelected={isSelected}
+                                                                          isIndeterminate={isHalfSelected}
+                                                                          aria-label={element.name}>
+                                                                    <Checkbox.Content>
+                                                                        <Checkbox.Control><Checkbox.Indicator/></Checkbox.Control>
+                                                                    </Checkbox.Content>
+                                                                </Checkbox>
+                                                            </div>
+                                                        </div>
+                                                        <Icon className="shrink-0" aria-hidden="true"/>
+                                                        <span className="min-w-0 break-all">{element.name}</span>
+                                                        <span
+                                                            className="ms-auto shrink-0 text-sm tabular-nums text-muted">
                                                     {humanFileSize(nodes[Number(element.id)].metadata.size)}
                                                 </span>
-                                            </div>;
-                                        }}/>}
+                                                    </div>;
+                                                }}/>}
                     </Modal.Body>
                     <Modal.Footer className="flex-wrap">
                         <span role="status" className="me-auto self-center text-sm tabular-nums">

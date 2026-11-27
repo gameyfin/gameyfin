@@ -1,4 +1,5 @@
 import {
+    ChatTextIcon,
     DownloadSimpleIcon,
     EnvelopeIcon,
     GameControllerIcon,
@@ -8,7 +9,6 @@ import {
     PlugIcon,
     ShootingStarIcon,
     TimerIcon,
-    ChatTextIcon,
     UsersIcon,
     WrenchIcon
 } from "@phosphor-icons/react";

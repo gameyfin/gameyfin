@@ -143,6 +143,8 @@ object EntityFieldMappings {
         "name" to CollectionField.NAME,
         "memberName" to CollectionField.NAME,
         "visibility" to CollectionField.VISIBILITY,
+        "smartEnabled" to CollectionField.SMART_SETTINGS,
+        "smartRules" to CollectionField.SMART_SETTINGS,
         "description" to CollectionField.DESCRIPTION,
         "games" to CollectionField.GAME_IDS,
         "metadata" to CollectionField.METADATA,

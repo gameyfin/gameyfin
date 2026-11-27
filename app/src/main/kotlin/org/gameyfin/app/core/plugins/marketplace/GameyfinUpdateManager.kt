@@ -283,7 +283,8 @@ class GameyfinUpdateManager(
             val info = repository.getGameyfinPlugins()[pluginId]
                 ?: error("Plugin '$pluginId' is unavailable in the official marketplace")
             val release = findRelease(info, null)
-            val target = pluginManager.installedPluginsRoot.resolve("${sanitize(pluginId)}-${sanitize(release.version)}.jar")
+            val target =
+                pluginManager.installedPluginsRoot.resolve("${sanitize(pluginId)}-${sanitize(release.version)}.jar")
             check(!Files.exists(target)) { "An existing plugin artifact blocks recovery: $target" }
             val downloaded = download(repository, pluginId, release)
             try {
@@ -414,7 +415,13 @@ class GameyfinUpdateManager(
         return state
     }
 
-    private fun rollback(pluginId: String, loadedId: String?, target: Path, previousPath: Path?, removeTarget: Boolean) {
+    private fun rollback(
+        pluginId: String,
+        loadedId: String?,
+        target: Path,
+        previousPath: Path?,
+        removeTarget: Boolean
+    ) {
         try {
             // The new file may have been loaded under a different ID than expected
             setOfNotNull(pluginId, loadedId).forEach {

@@ -1,7 +1,5 @@
 package org.gameyfin.app.social
 
-import java.time.Instant
-import java.util.UUID
 import org.gameyfin.app.config.ConfigProperties.Social
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.games.repositories.GameRepository
@@ -10,6 +8,8 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+import java.util.*
 
 @Service
 class GameSocialService(

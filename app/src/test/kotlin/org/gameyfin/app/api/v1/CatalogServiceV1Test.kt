@@ -282,6 +282,7 @@ class CatalogServiceV1Test {
         every { collectionService.createReturningId(any()) } returns 3
         val collection = Collection(id = 3, name = "Old", description = "desc")
         every { collectionService.findReadable(3) } returns collection
+        every { collectionService.lockCuratedById(3) } returns collection
         val update = slot<CollectionUpdateDto>()
         every { collectionService.update(capture(update)) } returns mockk(relaxed = true)
 
@@ -303,6 +304,7 @@ class CatalogServiceV1Test {
         val other = testGame(11)
         val collection = Collection(id = 3, name = "C", games = mutableSetOf(member))
         every { collectionService.findReadable(3) } returns collection
+        every { collectionService.lockCuratedById(3) } returns collection
         every { games.findById(10) } returns Optional.of(member)
         every { games.findById(11) } returns Optional.of(other)
 

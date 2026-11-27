@@ -15,8 +15,8 @@ import {
     Tooltip
 } from "@heroui/react";
 import {
-    ArrowRightIcon,
     ArrowClockwiseIcon,
+    ArrowRightIcon,
     CheckIcon,
     FileArrowUpIcon,
     FolderIcon,
@@ -223,8 +223,12 @@ export default function UploadGameButton() {
             const nextDraft = uploadMetadataValues(metadata, libraryId, path);
             // Going back to change files or destination must not discard metadata edits.
             await bag.setValues(draft && preparedSource.current === sourceKey
-                ? {...values, libraryId, platforms: draft.libraryId === libraryId ? values.platforms : nextDraft.platforms,
-                    metadata: {...values.metadata, path}} as GameMetadataFormValues
+                ? {
+                    ...values,
+                    libraryId,
+                    platforms: draft.libraryId === libraryId ? values.platforms : nextDraft.platforms,
+                    metadata: {...values.metadata, path}
+                } as GameMetadataFormValues
                 : nextDraft);
             setDraft(nextDraft);
             preparedFor.current = uploadKey;
@@ -330,9 +334,9 @@ export default function UploadGameButton() {
                             </div>
                         </Modal.Header>
                         <Wizard variant="modal" keepStepsMounted initialValues={initialValues}
-                                           isBusy={busy} onCancel={close} finishLabel="Upload and save"
-                                           finishIcon={<UploadSimpleIcon aria-hidden="true"/>} status={uploadStatus}
-                                           onSubmit={finish}>
+                                isBusy={busy} onCancel={close} finishLabel="Upload and save"
+                                finishIcon={<UploadSimpleIcon aria-hidden="true"/>} status={uploadStatus}
+                                onSubmit={finish}>
                             <WizardStep title="Files" icon={<FileArrowUpIcon aria-hidden="true"/>}
                                         isNextDisabled={!name}>
                                 <section className="flex flex-col gap-3" aria-labelledby="upload-files-heading">
@@ -404,17 +408,20 @@ export default function UploadGameButton() {
                                         <Select.Popover>
                                             <ListBox aria-label="Libraries">
                                                 {libraries.sorted.map(item => <ListBox.Item key={item.id}
-                                                    id={String(item.id)} textValue={item.name}>
+                                                                                            id={String(item.id)}
+                                                                                            textValue={item.name}>
                                                     {item.name}<ListBox.ItemIndicator/>
                                                 </ListBox.Item>)}
                                             </ListBox>
                                         </Select.Popover>
                                         <Description>Choose the library that will contain this game.</Description>
                                     </Select>
-                                    {libraries.isLoaded && libraries.sorted.length === 0 && <p className="text-sm text-muted">
-                                        Create a library in Game Management before uploading games.
-                                    </p>}
-                                    {libraryId !== undefined && !library && <Spinner size="sm" aria-label="Loading library directories"/>}
+                                    {libraries.isLoaded && libraries.sorted.length === 0 &&
+                                        <p className="text-sm text-muted">
+                                            Create a library in Game Management before uploading games.
+                                        </p>}
+                                    {libraryId !== undefined && !library &&
+                                        <Spinner size="sm" aria-label="Loading library directories"/>}
                                     {library && (library.directories.length > 1 ? <Select
                                             aria-label="Library directory" placeholder="Select a library directory"
                                             value={selectedDirectory || null}
@@ -456,17 +463,23 @@ export default function UploadGameButton() {
                                             <Spinner size="sm"/>Checking destination…
                                         </div>}
                                     {destinationCheck?.key === destinationKey && destinationCheck.status === "error" &&
-                                        <Alert status="danger" className="rounded-xl border border-danger/40 bg-danger-soft p-4">
+                                        <Alert status="danger"
+                                               className="rounded-xl border border-danger/40 bg-danger-soft p-4">
                                             <Alert.Indicator/>
                                             <Alert.Content>
-                                                <Alert.Title className="font-semibold">Destination unavailable</Alert.Title>
+                                                <Alert.Title className="font-semibold">Destination
+                                                    unavailable</Alert.Title>
                                                 <Alert.Description className="flex flex-col gap-2">
                                                     <p>{destinationCheck.message}</p>
                                                     <p className="font-mono text-xs wrap-anywhere">{path}</p>
-                                                    <p>Choose another library or path, or go back and select a different file or folder.</p>
+                                                    <p>Choose another library or path, or go back and select a different
+                                                        file or folder.</p>
                                                 </Alert.Description>
-                                                <Button type="button" size="sm" variant="secondary" className="mt-3 w-fit"
-                                                        onPress={() => { void checkDestination(); }}>
+                                                <Button type="button" size="sm" variant="secondary"
+                                                        className="mt-3 w-fit"
+                                                        onPress={() => {
+                                                            void checkDestination();
+                                                        }}>
                                                     <ArrowClockwiseIcon aria-hidden="true"/>Check again
                                                 </Button>
                                             </Alert.Content>
@@ -526,7 +539,8 @@ export default function UploadGameButton() {
                                         <Button isIconOnly size="sm" type="submit"
                                                 variant={metadataSource?.id === result.id ? "secondary" : "primary"}
                                                 aria-label={`Use metadata for ${result.title}`}
-                                                isDisabled={busy || !propertyEnumValues} onPress={() => setMetadataSource(result)}>
+                                                isDisabled={busy || !propertyEnumValues}
+                                                onPress={() => setMetadataSource(result)}>
                                             {metadataSource?.id === result.id ? <CheckIcon/> : <ArrowRightIcon/>}
                                         </Button>
                                         <Tooltip.Content>{metadataSource?.id === result.id ? "Selected" : "Use this metadata"}</Tooltip.Content>

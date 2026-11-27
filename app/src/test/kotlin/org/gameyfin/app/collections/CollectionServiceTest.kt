@@ -26,7 +26,7 @@ class CollectionServiceTest {
     fun setup() {
         repository = mockk()
         gameService = mockk()
-        service = CollectionService(repository, gameService, mockk(relaxed = true), mockk())
+        service = CollectionService(repository, gameService, mockk(relaxed = true), mockk(), mockk())
     }
 
     @AfterEach
@@ -62,11 +62,10 @@ class CollectionServiceTest {
     fun `update should modify name and description`() {
         val existing =
             Collection(name = "RPGs").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findById(1L) } returns Optional.of(existing)
+        every { repository.lockById(1L) } returns existing
         every { repository.findByName("New Name") } returns null
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
-        every { repository.findByIdOrNull(1L) } returns existing
 
         val dto = CollectionUpdateDto(id = 1L, name = "New Name", description = "Updated")
         val result = service.update(dto)
@@ -83,7 +82,7 @@ class CollectionServiceTest {
             metadata = GameMetadata(path = "test")
         )
         game.id = 10L
-        every { repository.findByIdOrNull(1L) } returns existing
+        every { repository.lockById(1L) } returns existing
         every { gameService.getById(10L) } returns game
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
@@ -172,7 +171,7 @@ class CollectionServiceTest {
     fun `update should reject duplicate name`() {
         val existing =
             Collection(name = "Old").apply { id = 3L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findById(3L) } returns Optional.of(existing)
+        every { repository.lockById(3L) } returns existing
         every { repository.findByName("Old") } returns existing
         every { repository.findByName("New") } returns Collection(name = "New")
         assertFailsWith<IllegalArgumentException> { service.update(CollectionUpdateDto(id = 3L, name = "New")) }
@@ -187,12 +186,11 @@ class CollectionServiceTest {
         // pre-populate with one game to ensure replacement
         val old = Game(library = mockk(relaxed = true), metadata = GameMetadata(path = "old")).apply { id = 99L }
         existing.addGame(old)
-        every { repository.findById(4L) } returns Optional.of(existing)
+        every { repository.lockById(4L) } returns existing
         every { gameService.getById(21L) } returns g1
         every { gameService.getById(22L) } returns g2
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
-        every { repository.findByIdOrNull(4L) } returns existing
         val dto = CollectionUpdateDto(id = 4L, gameIds = listOf(21L, 22L))
         val result = service.update(dto)
         assertEquals(listOf(21L, 22L), result.gameIds)
@@ -204,7 +202,7 @@ class CollectionServiceTest {
             Collection(name = "Arcade").apply { id = 6L; createdAt = Instant.now(); updatedAt = createdAt }
         val game = Game(library = mockk(relaxed = true), metadata = GameMetadata(path = "x")).apply { id = 77L }
         existing.addGame(game)
-        every { repository.findByIdOrNull(6L) } returns existing
+        every { repository.lockById(6L) } returns existing
         every { gameService.getById(77L) } returns game
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
@@ -216,9 +214,11 @@ class CollectionServiceTest {
 
     @Test
     fun `delete should delegate to repository`() {
-        every { repository.deleteById(8L) } just Runs
+        val collection = Collection(id = 8L, name = "Old")
+        every { repository.lockById(8L) } returns collection
+        every { repository.delete(collection) } just Runs
         service.delete(8L)
-        verify { repository.deleteById(8L) }
+        verify { repository.delete(collection) }
     }
 
     private fun stubGameIdsFrom(collection: Collection) {

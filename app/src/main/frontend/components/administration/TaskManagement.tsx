@@ -292,7 +292,8 @@ export function TaskManagement() {
                 manually and inspect the logs of previous runs.
             </p>
             {compact ?
-                <CompactRecordList label="Tasks" items={overviewTasks ?? []} itemKey={task => task.key} fields={taskFields}
+                <CompactRecordList label="Tasks" items={overviewTasks ?? []} itemKey={task => task.key}
+                                   fields={taskFields}
                                    empty={tasks ? <p>No tasks available.</p> :
                                        <Spinner aria-label="Loading tasks"/>}/> : <Table variant="secondary">
                     <TableScroller label="Tasks">

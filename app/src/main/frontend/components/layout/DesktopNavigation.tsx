@@ -35,7 +35,7 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
     const isSearchPage = location.pathname.startsWith("/search");
     return (
         <nav aria-label="Desktop navigation"
-             className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 [&_button>svg]:size-5">
+             className="flex flex-wrap items-center justify-between gap-4 shell-gutter py-4 [&_button>svg]:size-5">
             <div className="flex flex-1 items-center gap-2 h-10">
                 {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
                     <div className="flex flex-row gap-2">
@@ -86,7 +86,8 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
                     </Button>
                 </li>}
                 {!auth.state.user && <li>
-                    <Button isIconOnly aria-label="Collections" variant="ghost" onPress={() => navigate("/collections")}>
+                    <Button isIconOnly aria-label="Collections" variant="ghost"
+                            onPress={() => navigate("/collections")}>
                         <FolderSimpleIcon/>
                     </Button>
                 </li>}

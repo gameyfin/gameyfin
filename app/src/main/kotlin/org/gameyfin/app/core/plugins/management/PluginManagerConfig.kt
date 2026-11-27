@@ -2,8 +2,8 @@ package org.gameyfin.app.core.plugins.management
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.context.event.ApplicationReadyEvent
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.ApplicationEventPublisher
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 
@@ -25,4 +25,5 @@ class PluginManagerConfig(
         events.publishEvent(PluginsDiscoveredEvent())
     }
 }
+
 class PluginsDiscoveredEvent

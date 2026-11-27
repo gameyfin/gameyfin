@@ -37,15 +37,26 @@ export function uploadFile(id: string, index: number, file: File, signal: AbortS
             if (request.status === 204) resolve();
             else {
                 let message = `Upload failed (HTTP ${request.status}).`;
-                try { message = JSON.parse(request.responseText).message ?? message; } catch { /* Keep HTTP error. */ }
+                try {
+                    message = JSON.parse(request.responseText).message ?? message;
+                } catch { /* Keep HTTP error. */
+                }
                 reject(new Error(message));
             }
         };
-        request.onerror = () => { cleanup(); reject(new Error("Upload interrupted. Retry starts from the beginning.")); };
-        request.onabort = () => { cleanup(); reject(new Error("Upload cancelled. Retry starts from the beginning.")); };
+        request.onerror = () => {
+            cleanup();
+            reject(new Error("Upload interrupted. Retry starts from the beginning."));
+        };
+        request.onabort = () => {
+            cleanup();
+            reject(new Error("Upload cancelled. Retry starts from the beginning."));
+        };
         signal.addEventListener("abort", abort, {once: true});
-        if (signal.aborted) { cleanup(); reject(new Error("Upload cancelled.")); }
-        else request.send(file);
+        if (signal.aborted) {
+            cleanup();
+            reject(new Error("Upload cancelled."));
+        } else request.send(file);
     });
 }
 
