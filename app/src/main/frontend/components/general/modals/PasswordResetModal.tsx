@@ -46,7 +46,8 @@ export default function PasswordResetModal({
                                                 placeholder="Email"
                                             />
                                             <p className="text-sm text-muted">
-                                                Contact your administrator if your account has no confirmed email address.
+                                                Contact your administrator if your account has no confirmed email
+                                                address.
                                             </p>
                                         </> :
                                         <div className="flex flex-row items-center gap-4 text-warning">

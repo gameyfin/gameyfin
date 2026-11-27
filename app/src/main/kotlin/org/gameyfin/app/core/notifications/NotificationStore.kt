@@ -1,9 +1,6 @@
 package org.gameyfin.app.core.notifications
 
 import jakarta.persistence.EntityManager
-import java.net.URI
-import java.time.Instant
-import java.util.*
 import org.gameyfin.app.users.UserStateChanged
 import org.gameyfin.app.users.persistence.UserRepository
 import org.gameyfin.pluginapi.notifications.*
@@ -14,6 +11,9 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.event.TransactionalEventListener
 import tools.jackson.databind.ObjectMapper
+import java.net.URI
+import java.time.Instant
+import java.util.*
 
 internal data class InboxEntry(
     val id: String, val notificationId: String, val recipient: String, val source: String,

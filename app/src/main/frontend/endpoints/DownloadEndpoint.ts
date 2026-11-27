@@ -34,7 +34,9 @@ export function downloadGame(gameId: number, provider: string) {
     getDownloadFrame().src = `/download/${gameId}?provider=${encodeURIComponent(provider)}&client=browser`;
 }
 
-export function downloadSelection(gameId: number, provider: string, selection: {files: string[]} | {contentsETag: string}) {
+export function downloadSelection(gameId: number, provider: string, selection: { files: string[] } | {
+    contentsETag: string
+}) {
     const form = document.createElement("form");
     form.method = "post";
     form.action = `/download/${gameId}/selection?client=browser`;

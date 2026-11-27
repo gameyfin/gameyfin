@@ -168,7 +168,8 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                             <Button type="button" isIconOnly className="shrink-0" isPending={searching}
                                     isDisabled={!term.trim() || uploading}
                                     aria-label="Search" onPress={() => void search(term)}>
-                                {searching ? <Spinner size="sm" color="current"/> : <MagnifyingGlassIcon aria-hidden="true"/>}
+                                {searching ? <Spinner size="sm" color="current"/> :
+                                    <MagnifyingGlassIcon aria-hidden="true"/>}
                             </Button>
                         </div>
                         {error && <p role="alert" className="text-danger">{error}</p>}

@@ -10,7 +10,6 @@ import org.gameyfin.app.collections.CollectionService
 import org.gameyfin.app.collections.dto.CollectionCreateDto
 import org.gameyfin.app.collections.dto.CollectionUpdateDto
 import org.gameyfin.app.collections.entities.Collection
-import org.gameyfin.app.collections.entities.CollectionKind
 import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.core.plugins.management.PluginManagementEntry
 import org.gameyfin.app.games.GameService
@@ -235,15 +234,17 @@ class CatalogServiceV1(
     @Transactional
     fun membership(collectionId: String, gameId: String, present: Boolean) {
         val collection = writableCuratedCollection(collectionId)
+        collection.requireManualMembership()
         val game = gameEntity(gameId)
         val exists = collection.games.any { it.id == game.id }
         if (present && !exists) collectionService.addGame(collection.id!!, game.id!!)
         if (!present && exists) collectionService.removeGame(collection.id!!, game.id!!)
     }
 
-    private fun writableCuratedCollection(id: String): Collection =
-        collectionEntity(id).takeIf { it.kind == CollectionKind.CURATED }
-            ?: throw NoSuchElementException("Collection not found")
+    private fun writableCuratedCollection(id: String): Collection {
+        collectionService.lockCuratedById(apiId(id))
+        return collectionEntity(id)
+    }
 
     private fun validateDirectories(directories: List<DirectoryV1>) {
         require(directories.size in 1..100 && directories.all { it.internalPath.isNotBlank() }) { "Provide 1 to 100 nonempty directory paths" }

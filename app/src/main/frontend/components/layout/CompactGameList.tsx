@@ -8,6 +8,7 @@ import MetadataCompletenessIndicator from "Frontend/components/general/MetadataC
 interface Props {
     games: GameSummaryDto[];
     label: string;
+    listHeight?: string;
     sortDescriptor: SortDescriptor;
     onSortChange: (value: SortDescriptor) => void;
     sortOptions: { id: string; label: string }[];
@@ -37,7 +38,15 @@ function GameRow({index, style, games, status, actions, onDetails}: RowProps & {
     </div>;
 }
 
-export default function CompactGameList({games, label, sortDescriptor, onSortChange, sortOptions, ...rowProps}: Props) {
+export default function CompactGameList({
+                                            games,
+                                            label,
+                                            sortDescriptor,
+                                            onSortChange,
+                                            sortOptions,
+                                            listHeight = "min(35rem, 65dvh)",
+                                            ...rowProps
+                                        }: Props) {
     const rowHeight = useDynamicRowHeight({defaultRowHeight: 190});
     return <section aria-label={label} className="min-w-0 space-y-3">
         <div className="flex flex-wrap items-end gap-2">
@@ -66,7 +75,7 @@ export default function CompactGameList({games, label, sortDescriptor, onSortCha
         {games.length === 0 ? <p className="p-4 text-muted">Your filters did not match any games.</p> :
             <List<RowProps> aria-label={label} role="list" rowComponent={GameRow} rowCount={games.length}
                             rowHeight={rowHeight} rowProps={{games, ...rowProps}} rowKey={index => games[index].id}
-                            style={{height: "min(35rem, 65dvh)", width: "100%"}}/>}
+                            style={{height: listHeight, width: "100%"}}/>}
     </section>;
 }
 

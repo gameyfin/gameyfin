@@ -55,15 +55,23 @@ interface NotificationRepository : JpaRepository<AppNotification, String> {
     fun removeOrphans()
 }
 
-private const val ARCHIVE_FILTER = "((:archived = true and i.readAt is not null) or (:archived = false and i.readAt is null))"
+private const val ARCHIVE_FILTER =
+    "((:archived = true and i.readAt is not null) or (:archived = false and i.readAt is null))"
 private const val PAGE_FILTER = "i.recipient in :recipients and " + ARCHIVE_FILTER +
         " and (:severity is null or i.notification.severity = :severity)"
 private const val EXPIRED = "i.readAt < :cutoff and i.executionState <> 'RUNNING'"
 
 interface NotificationInboxRepository : JpaRepository<NotificationInbox, String> {
-    @Query("select i from NotificationInbox i join fetch i.notification where " + PAGE_FILTER +
-            " order by i.notification.createdAt desc, i.id desc")
-    fun page(recipients: List<String>, archived: Boolean, severity: NotificationSeverity?, pageable: Pageable): List<NotificationInbox>
+    @Query(
+        "select i from NotificationInbox i join fetch i.notification where " + PAGE_FILTER +
+                " order by i.notification.createdAt desc, i.id desc"
+    )
+    fun page(
+        recipients: List<String>,
+        archived: Boolean,
+        severity: NotificationSeverity?,
+        pageable: Pageable
+    ): List<NotificationInbox>
 
     @Query("select count(i) from NotificationInbox i where " + PAGE_FILTER)
     fun countVisible(recipients: List<String>, archived: Boolean, severity: NotificationSeverity?): Long
@@ -73,8 +81,10 @@ interface NotificationInboxRepository : JpaRepository<NotificationInbox, String>
     fun lockSelected(recipients: List<String>, ids: Set<String>): List<NotificationInbox>
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select i from NotificationInbox i where i.recipient in :recipients and " + ARCHIVE_FILTER +
-            " and i.executionState <> 'RUNNING' order by i.id")
+    @Query(
+        "select i from NotificationInbox i where i.recipient in :recipients and " + ARCHIVE_FILTER +
+                " and i.executionState <> 'RUNNING' order by i.id"
+    )
     fun lockAllEligible(recipients: List<String>, archived: Boolean): List<NotificationInbox>
 
     fun findByIdAndRecipientIn(id: String, recipients: List<String>): NotificationInbox?
@@ -87,8 +97,10 @@ interface NotificationInboxRepository : JpaRepository<NotificationInbox, String>
     fun recoverInterrupted(boot: String)
 
     @Modifying
-    @Query("""update NotificationInbox i set i.executionState = :state, i.readAt = coalesce(i.readAt, :readAt)
-        where i.id = :id and i.executionState = 'RUNNING' and i.executionBoot = :boot""")
+    @Query(
+        """update NotificationInbox i set i.executionState = :state, i.readAt = coalesce(i.readAt, :readAt)
+        where i.id = :id and i.executionState = 'RUNNING' and i.executionBoot = :boot"""
+    )
     fun finish(id: String, boot: String, state: String, readAt: Instant?)
 
     @Query("select distinct i.recipient from NotificationInbox i where " + EXPIRED)

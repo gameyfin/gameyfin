@@ -1,6 +1,11 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {toast} from "@heroui/react";
-import {GameDlcEndpoint, GameStoreEndpoint, GameStoreLinkEndpoint, GameVersionEndpoint} from "Frontend/generated/endpoints";
+import {
+    GameDlcEndpoint,
+    GameStoreEndpoint,
+    GameStoreLinkEndpoint,
+    GameVersionEndpoint
+} from "Frontend/generated/endpoints";
 import IncludedDlcDto from "Frontend/generated/org/gameyfin/app/games/versions/IncludedDlcDto";
 import GameStoreDto from "Frontend/generated/org/gameyfin/app/games/versions/GameStoreDto";
 

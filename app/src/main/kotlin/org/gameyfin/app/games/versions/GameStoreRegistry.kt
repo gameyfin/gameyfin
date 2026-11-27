@@ -6,11 +6,7 @@ import jakarta.annotation.security.RolesAllowed
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.plugins.PluginService
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
-import org.gameyfin.pluginapi.gamestore.GameStoreInfo
-import org.gameyfin.pluginapi.gamestore.GameStoreDlc
-import org.gameyfin.pluginapi.gamestore.GameStoreProduct
-import org.gameyfin.pluginapi.gamestore.GameStoreProvider
-import org.gameyfin.pluginapi.gamestore.GameStoreVersion
+import org.gameyfin.pluginapi.gamestore.*
 import org.springframework.stereotype.Service
 
 private val log = KotlinLogging.logger {}
@@ -69,7 +65,8 @@ class CompositeGameStoreProvider(
 
     override fun search(query: String): List<GameStoreProduct> = firstNonEmpty { it.search(query) }
 
-    override fun fetchVersions(productId: String): List<GameStoreVersion> = firstNonEmpty { it.fetchVersions(productId) }
+    override fun fetchVersions(productId: String): List<GameStoreVersion> =
+        firstNonEmpty { it.fetchVersions(productId) }
 
     override fun fetchDlc(productId: String): List<GameStoreDlc> =
         merge { it.fetchDlc(productId) }.distinctBy { it.id }

@@ -1,9 +1,9 @@
 package org.gameyfin.app.collections.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import java.time.Instant
 import org.gameyfin.app.collections.entities.CollectionKind
 import org.gameyfin.app.collections.entities.CollectionVisibility
+import java.time.Instant
 
 /**
  * Representation of a collection. Collections are small, so this is used both for overview pages and details.
@@ -22,6 +22,7 @@ data class CollectionDto(
     val visibility: CollectionVisibility = CollectionVisibility.PUBLIC,
     val ownerId: Long? = null,
     val ownerName: String? = null,
+    val smartEnabled: Boolean = false,
 )
 
 data class CollectionSyncDto(
@@ -39,14 +40,17 @@ enum class CollectionField {
     DESCRIPTION,
     GAME_IDS,
     METADATA,
-    VISIBILITY
+    VISIBILITY,
+    SMART_SETTINGS
 }
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CollectionCreateDto(
     val name: String,
     val description: String? = null,
-    val gameIds: List<Long>? = null
+    val gameIds: List<Long>? = null,
+    val visibility: CollectionVisibility? = null,
+    val smartRule: SmartRule? = null
 )
 
 @JsonInclude(JsonInclude.Include.NON_NULL)

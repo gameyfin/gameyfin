@@ -3,6 +3,8 @@ package org.gameyfin.app.core.sync
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PreDestroy
 import org.gameyfin.app.collections.CollectionService
+import org.gameyfin.app.collections.SmartCollectionService
+import org.gameyfin.app.collections.dto.CollectionField
 import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.dto.GameEvent
@@ -41,7 +43,8 @@ class EntityChangeProcessor(
     private val gameRepository: GameRepository,
     private val libraryRepository: LibraryRepository,
     private val collectionRepository: CollectionRepository,
-    transactionManager: PlatformTransactionManager
+    transactionManager: PlatformTransactionManager,
+    private val smartCollections: SmartCollectionService
 ) {
 
     companion object {
@@ -103,6 +106,22 @@ class EntityChangeProcessor(
         bumpTimestamps(changes)
         val events = readTransaction.execute { buildEvents(changes) }
         events.emit()
+
+        val changedSettings = changes.collections.filterValues {
+            !it.deleted && CollectionField.SMART_SETTINGS in it.fields
+        }.keys
+        try {
+            smartCollections.reconcileGameChanges(changes.games, changedSettings)
+        } catch (e: Exception) {
+            log.warn(e) { "Smart collection update failed, retrying" }
+            executor.schedule({
+                try {
+                    smartCollections.reconcileGameChanges(changes.games, changedSettings)
+                } catch (retryError: Exception) {
+                    log.error(retryError) { "Smart collection update failed after retry" }
+                }
+            }, 1, TimeUnit.SECONDS)
+        }
     }
 
     /**

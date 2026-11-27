@@ -8,7 +8,7 @@ export type PlayStatuses = Readonly<Partial<Record<number, PlayStatus>>>;
 export function useMyPlayStatuses(enabled = true) {
     const {user} = useAuth().state;
     const memberId = enabled ? user?.id : undefined;
-    const [result, setResult] = useState<{memberId: number; statuses?: PlayStatuses; failed?: boolean}>();
+    const [result, setResult] = useState<{ memberId: number; statuses?: PlayStatuses; failed?: boolean }>();
 
     useEffect(() => {
         setResult(undefined);
@@ -17,7 +17,10 @@ export function useMyPlayStatuses(enabled = true) {
         const request = new AbortController();
         void GameSocialEndpoint.myPlayStatuses({signal: request.signal}).then(entries => {
             if (!request.signal.aborted) {
-                setResult({memberId, statuses: Object.fromEntries(entries.map(({gameId, status}) => [gameId, status]))});
+                setResult({
+                    memberId,
+                    statuses: Object.fromEntries(entries.map(({gameId, status}) => [gameId, status]))
+                });
             }
         }).catch(error => {
             if (!request.signal.aborted) {

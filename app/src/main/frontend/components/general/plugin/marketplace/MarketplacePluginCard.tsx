@@ -23,7 +23,8 @@ export default function MarketplacePluginCard({plugin}: { plugin: MarketplacePlu
 
     return (
         <>
-            <Card className={`flex flex-col gap-3 p-4 h-[min(20rem,100cqw)] min-h-0 min-w-0 overflow-hidden ${hasUpdate ? "border border-accent" : ""}`}>
+            <Card
+                className={`flex flex-col gap-3 p-4 h-[min(20rem,100cqw)] min-h-0 min-w-0 overflow-hidden ${hasUpdate ? "border border-accent" : ""}`}>
                 <button type="button"
                         className="flex flex-col items-center gap-2 grow min-h-0 -mx-4 -mt-4 px-4 pt-4 overflow-y-auto text-left cursor-pointer"
                         aria-label={`Show details for ${plugin.name}`}

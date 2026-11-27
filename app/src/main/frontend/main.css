@@ -190,6 +190,11 @@ body {
     min-width: 0;
 }
 
+@utility shell-gutter {
+    /* Apply the wide-screen gutter only to the width above 96rem. */
+    padding-inline: calc(1rem + max(0px, (100% - 96rem) / 8));
+}
+
 .app-shell main {
     overflow-wrap: anywhere;
 }

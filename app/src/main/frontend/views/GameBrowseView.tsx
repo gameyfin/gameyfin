@@ -4,12 +4,14 @@ import {useEffect} from "react";
 import {useNavigate, useParams} from "react-router";
 import {useSnapshot} from "valtio/react";
 import CoverGrid from "Frontend/components/general/covers/CoverGrid";
+import CollectionKind from "Frontend/generated/org/gameyfin/app/collections/entities/CollectionKind";
 import {collectionState} from "Frontend/state/CollectionState";
 import {useGamesByCollectionId} from "Frontend/state/derived";
 import {gameState} from "Frontend/state/GameState";
 import {libraryState} from "Frontend/state/LibraryState";
 import {useMyPlayStatuses} from "Frontend/state/useMyPlayStatuses";
 import {useAuth} from "Frontend/util/auth";
+import {isAdmin} from "Frontend/util/utils";
 
 export default function GameBrowseView() {
     const {libraryId, collectionId} = useParams();
@@ -18,7 +20,8 @@ export default function GameBrowseView() {
     const collections = useSnapshot(collectionState);
     const catalog = useSnapshot(gameState);
     const collectionGames = useGamesByCollectionId();
-    const memberId = useAuth().state.user?.id;
+    const auth = useAuth();
+    const memberId = auth.state.user?.id;
     const isLibrary = collectionId === undefined;
     const kind = isLibrary ? "library" : "collection";
     const playStatuses = useMyPlayStatuses(isLibrary)?.statuses;
@@ -44,26 +47,35 @@ export default function GameBrowseView() {
     if (isLibrary && !library) return null;
     if (!isLibrary && !collection) return <p className="text-center text-muted">Collection unavailable.</p>;
 
+    let managementPath: string | undefined;
+    if (library) {
+        managementPath = `/administration/games/library/${library.id}`;
+    } else if (collection?.kind === CollectionKind.CURATED) {
+        managementPath = `/administration/games/collection/${collection.id}`;
+    } else if (collection && memberId !== undefined && collection.ownerId === memberId) {
+        managementPath = `/collections/${collection.id}/manage`;
+    }
+
     return (
         <div className="flex min-w-0 flex-col gap-6">
             <Surface className="flex flex-wrap items-start justify-between gap-4 rounded-2xl p-4 sm:p-6">
                 <div className="flex min-w-0 flex-1 basis-48 flex-col gap-2">
                     <h1 className="text-2xl font-semibold wrap-anywhere sm:text-3xl">{name}</h1>
-                    {(catalog.isLoaded || collection?.ownerName) && <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
-                        {catalog.isLoaded && <span className="tabular-nums">
+                    {(catalog.isLoaded || collection?.ownerName) &&
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+                            {catalog.isLoaded && <span className="tabular-nums">
                             {games.length} {games.length === 1 ? "game" : "games"}
                         </span>}
-                        {collection?.ownerName && <span className="wrap-anywhere">By {collection.ownerName}</span>}
-                    </div>}
+                            {collection?.ownerName && <span className="wrap-anywhere">By {collection.ownerName}</span>}
+                        </div>}
                     {collection?.description && <p className="max-w-prose whitespace-pre-wrap wrap-anywhere">
                         {collection.description}
                     </p>}
                 </div>
-                {collection && memberId !== undefined && collection.ownerId === memberId &&
-                    <Button variant="secondary" className="ml-auto"
-                            onPress={() => navigate(`/collections/${collection.id}/manage`)}>
+                {isAdmin(auth) && managementPath &&
+                    <Button variant="secondary" className="ml-auto" onPress={() => navigate(managementPath)}>
                         <SlidersHorizontalIcon aria-hidden="true"/>
-                        Manage collection
+                        Manage {kind}
                     </Button>}
             </Surface>
             {games.length > 0 ? <CoverGrid games={games} playStatuses={playStatuses}/> :

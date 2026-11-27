@@ -38,7 +38,10 @@ class StoreThumbnailProxy {
 
     /** The URL the UI should use for [url]. Unchanged if the host does not need to be proxied. */
     fun rewrite(url: String?): String? =
-        if (url != null && isProxyable(url)) "/images/store-thumbnail?url=" + URLEncoder.encode(url, StandardCharsets.UTF_8)
+        if (url != null && isProxyable(url)) "/images/store-thumbnail?url=" + URLEncoder.encode(
+            url,
+            StandardCharsets.UTF_8
+        )
         else url
 
     fun fetch(url: String): Thumbnail? {

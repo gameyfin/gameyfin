@@ -180,7 +180,8 @@ const GameCoverComponent = ({
         <a href={`/game/${game.id}`} className="block w-fit rounded-md scale-95 hover:scale-100 shine transition-all">
             {coverContent}
             {badge && (
-                <span title={badge.label} className="absolute top-2 right-2 z-10 rounded-full bg-black/80 p-1 text-white">
+                <span title={badge.label}
+                      className="absolute top-2 right-2 z-10 rounded-full bg-black/80 p-1 text-white">
                     <badge.Icon size={18} weight="bold" aria-hidden="true"/>
                     <span className="sr-only">{badge.label}</span>
                 </span>

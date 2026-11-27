@@ -280,7 +280,12 @@ class GameUploadService(
     }
 
     private fun checkDestination(session: Session, library: Library) {
-        require(destination(session.request.directory, library) == session.target.parent) { "Library directory has changed" }
+        require(
+            destination(
+                session.request.directory,
+                library
+            ) == session.target.parent
+        ) { "Library directory has changed" }
     }
 
     private fun checkStaging(session: Session) {

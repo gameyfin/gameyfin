@@ -26,12 +26,20 @@ export default function SignUpModal({
         if (!isOpen) return;
         let active = true;
         RegistrationEndpoint.isEmailRequired().then(
-            required => { if (active) setEmailRequired(required); },
-            () => { if (active) setEmailRequired(true); }
+            required => {
+                if (active) setEmailRequired(required);
+            },
+            () => {
+                if (active) setEmailRequired(true);
+            }
         );
         MessageEndpoint.isEnabled().then(
-            enabled => { if (active) setMessagesEnabled(enabled); },
-            () => { if (active) setMessagesEnabled(false); }
+            enabled => {
+                if (active) setMessagesEnabled(enabled);
+            },
+            () => {
+                if (active) setMessagesEnabled(false);
+            }
         );
         return () => {
             active = false;

@@ -42,7 +42,7 @@ class EntityChangeProcessorTest {
         libraryRepository = mockk(relaxed = true)
         collectionRepository = mockk(relaxed = true)
         val transactionManager = mockk<PlatformTransactionManager>(relaxed = true)
-        processor = EntityChangeProcessor(gameRepository, libraryRepository, collectionRepository, transactionManager)
+        processor = EntityChangeProcessor(gameRepository, libraryRepository, collectionRepository, transactionManager, mockk(relaxed = true))
 
         every { gameRepository.findAllById(any()) } returns emptyList()
         every { libraryRepository.findAllById(any()) } returns emptyList()

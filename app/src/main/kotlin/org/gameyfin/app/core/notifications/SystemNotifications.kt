@@ -90,7 +90,8 @@ class SystemNotifications(
         for ((pluginId, entries) in plugins.groupBy { it.id }) {
             val updates = entries.filter { it.status == MarketplacePluginStatus.UPDATE_AVAILABLE }
             // Match the Marketplace UI's preference for the source the plugin was installed from.
-            val update = updates.firstOrNull { it.marketplaceId == it.installedFromMarketplaceId } ?: updates.firstOrNull()
+            val update =
+                updates.firstOrNull { it.marketplaceId == it.installedFromMarketplaceId } ?: updates.firstOrNull()
             val version = update?.latestCompatibleVersion
             val previous = previousNotices[pluginId]
             if (version != null) updateCount++
@@ -107,7 +108,10 @@ class SystemNotifications(
                         "A compatible plugin update is ready to install.",
                         actions = listOf(
                             NotificationAction(
-                                "marketplace", "Open Marketplace", NotificationActionType.LINK, "/administration/plugins#marketplace"
+                                "marketplace",
+                                "Open Marketplace",
+                                NotificationActionType.LINK,
+                                "/administration/plugins#marketplace"
                             )
                         )
                     )

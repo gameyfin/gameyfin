@@ -91,7 +91,7 @@ export default function MainLayout() {
             {isExploding ? <Confetti {...confettiProps}/> : <></>}
 
             <header ref={headerRef}
-                    className={`2xl:px-[12.5%] ${stickyHeader ? "sm:sticky sm:top-0 sm:z-20 sm:bg-background/75 sm:backdrop-blur-md sm:shadow-sm" : ""}`}>
+                    className={stickyHeader ? "sm:sticky sm:top-0 sm:z-20 sm:bg-background/75 sm:backdrop-blur-md sm:shadow-sm" : undefined}>
                 {compact ? <CompactNavigation sectionMenuRef={setHeaderActions} randomGame={randomGame}
                                               hasGames={games.length > 0} searchValue={quickSearch}
                                               onSearchChange={setQuickSearch}/> :
@@ -100,14 +100,14 @@ export default function MainLayout() {
             </header>
 
             <main id="main-content" tabIndex={-1}
-                  className="flex flex-col grow min-w-0 2xl:px-[12.5%] mt-4 px-4 2xl:mt-4">
+                  className="flex flex-col grow min-w-0 mt-4 shell-gutter">
                 <CompactHeaderActionsContext.Provider value={headerActions}>
                     <Outlet/>
                 </CompactHeaderActionsContext.Provider>
             </main>
 
             <Separator className="mt-8"/>
-            <div className="flex flex-col w-full 2xl:px-[12.5%] px-4">
+            <div className="flex flex-col w-full shell-gutter">
                 <footer className="flex flex-col gap-2 sm:flex-row items-center justify-between py-4">
                     <p>Gameyfin {PackageJson.version}</p>
                     <p className="flex flex-row flex-wrap justify-center gap-1 items-baseline">

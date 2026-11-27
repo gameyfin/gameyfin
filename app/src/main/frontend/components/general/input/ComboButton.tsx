@@ -20,7 +20,15 @@ export interface ComboButtonProps {
     compact?: boolean;
 }
 
-export default function ComboButton({options, preferredOptionKey, description, icon, className, actionLabel, compact}: ComboButtonProps) {
+export default function ComboButton({
+                                        options,
+                                        preferredOptionKey,
+                                        description,
+                                        icon,
+                                        className,
+                                        actionLabel,
+                                        compact
+                                    }: ComboButtonProps) {
     const [selectedOption, setSelectedOption] = useState(new Set([Object.keys(options)[0]]));
     const selectedOptionValue = Array.from(selectedOption)[0];
     const hasMultipleOptions = Object.keys(options).length > 1;

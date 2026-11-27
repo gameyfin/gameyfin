@@ -151,9 +151,9 @@ function GameManagementLayout({getConfig, formik}: any) {
             {collections.length > 0 ?
                 // Aspect ratio of cover = 12/17 -> 5 covers = 60/17 -> 353px * 100px
                 <ul id="collection-cards" aria-label="Collections"
-                    className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,353px),1fr))]">
+                    className="grid gap-4 grid-cols-[repeat(auto-fill,min(100%,353px))]">
                     {collections.map((collection) =>
-                        <CollectionOverviewCard collection={collection} href={`/administration/games/collection/${collection.id}`} key={collection.id}
+                        <CollectionOverviewCard collection={collection} management key={collection.id}
                                                 isSelected={selectedCollections.has(collection.id)}
                                                 onToggleSelection={() => setSelectedCollections(current => toggleSelection(current, collection.id))}/>
                     )}

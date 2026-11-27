@@ -8,13 +8,24 @@ import org.gameyfin.app.api.security.ApiCredentialService
 import org.gameyfin.app.api.security.CredentialKind
 import org.gameyfin.app.collections.CollectionEndpoint
 import org.gameyfin.app.collections.CollectionService
+import org.gameyfin.app.collections.SmartCollectionService
 import org.gameyfin.app.collections.dto.CollectionCreateDto
 import org.gameyfin.app.collections.dto.CollectionUpdateDto
+import org.gameyfin.app.collections.dto.SmartCollectionPreview
+import org.gameyfin.app.collections.dto.SmartCollectionSettings
+import org.gameyfin.app.collections.dto.SmartField
+import org.gameyfin.app.collections.dto.SmartMatch
+import org.gameyfin.app.collections.dto.SmartOperator
+import org.gameyfin.app.collections.dto.SmartRule
+import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.collections.entities.CollectionVisibility
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
 import org.gameyfin.app.core.Role
+import org.gameyfin.app.games.entities.Company
+import org.gameyfin.app.games.entities.CompanyType
 import org.gameyfin.app.games.entities.Game
+import org.gameyfin.app.games.repositories.CompanyRepository
 import org.gameyfin.app.games.entities.GameFieldApiSource
 import org.gameyfin.app.games.entities.GameMetadata
 import org.gameyfin.app.games.repositories.GameRepository
@@ -33,6 +44,7 @@ import org.gameyfin.app.users.entities.User
 import org.gameyfin.app.users.persistence.UserRepository
 import org.gameyfin.pluginapi.gamemetadata.Genre
 import org.gameyfin.pluginapi.gamemetadata.Platform
+import org.gameyfin.pluginapi.gamemetadata.Theme
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,6 +55,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.core.env.Environment
 import org.springframework.core.io.ResourceLoader
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -331,6 +344,181 @@ class PublicApiIntegrationTest {
         }
     }
 
+    @Test
+    fun `collection creation saves visibility and applies smart rules immediately`() {
+        val library = libraries.save(Library(name = "Smart creation library"))
+        val match = games.save(Game(library = library, title = "Smart creation match", metadata = GameMetadata("/smart/create/match")))
+        val miss = games.save(Game(library = library, title = "Other game", metadata = GameMetadata("/smart/create/miss")))
+        val owner = socialMember("smart-create-owner")
+        val reader = socialMember("smart-create-reader")
+        val admin = socialMember("smart-create-admin", Role.ADMIN)
+        val rule = SmartRule(SmartMatch.ALL, listOf(
+            SmartRule(field = SmartField.TITLE, operator = SmartOperator.EQUALS, value = match.title)
+        ))
+        try {
+            val customId = asMember(owner) {
+                collectionEndpoint.createCustomCollection(CollectionCreateDto(
+                    "Smart creation custom", visibility = CollectionVisibility.MEMBERS_ONLY, smartRule = rule
+                ))
+            }
+            val custom = assertNotNull(asMember(reader) { collections.getDtoById(customId) })
+            assertEquals(CollectionVisibility.MEMBERS_ONLY, custom.visibility)
+            assertTrue(custom.smartEnabled)
+            assertEquals(listOf(match.id!!), custom.gameIds)
+            assertNull(collections.getDtoById(customId))
+
+            val curated = asMember(admin) {
+                assertFailsWith<IllegalArgumentException> {
+                    collections.create(CollectionCreateDto("Smart creation curated", smartRule = SmartRule(SmartMatch.ALL)))
+                }
+                collectionEndpoint.createCollection(CollectionCreateDto(
+                    "Smart creation curated", visibility = CollectionVisibility.PRIVATE, smartRule = rule
+                ))
+                collections.sync(null).collections.single { it.name == "Smart creation curated" }
+            }
+            assertEquals(CollectionVisibility.PRIVATE, curated.visibility)
+            assertTrue(curated.smartEnabled)
+            assertEquals(listOf(match.id!!), curated.gameIds)
+            assertNull(asMember(reader) { collections.getDtoById(curated.id) })
+        } finally {
+            games.deleteAllById(listOf(match.id!!, miss.id!!))
+        }
+    }
+
+    @Test
+    fun `smart collections reconcile metadata and retain rules when disabled`() {
+        val library = libraries.save(Library(name = "Smart collection library"))
+        val infinityWard = companies.save(Company(name = "Infinity Ward", type = CompanyType.DEVELOPER))
+        val treyarch = companies.save(Company(name = "Treyarch", type = CompanyType.DEVELOPER))
+        val publisher = companies.save(Company(name = "Activision", type = CompanyType.PUBLISHER))
+        val retained = games.save(Game(library = library, title = "CALL OF DUTY_1",
+            developers = mutableListOf(infinityWard), metadata = GameMetadata("/smart/retained")))
+        val formerPick = games.save(Game(library = library, title = "Call of Duty 2",
+            developers = mutableListOf(treyarch), metadata = GameMetadata("/smart/manual")))
+        val missingMetadata = games.save(Game(library = library, metadata = GameMetadata("/smart/missing")))
+        val owner = socialMember("smart-owner")
+        val other = socialMember("smart-other")
+        val admin = socialMember("smart-admin", Role.ADMIN)
+        val id = asMember(owner) {
+            collections.createCustom(CollectionCreateDto("Call of Duty Games", gameIds = listOf(retained.id!!, formerPick.id!!)))
+        }
+        val curatedId = collections.createReturningId(CollectionCreateDto("Smart curated"))
+        val initialDate = asMember(owner) { collections.getDtoById(id)!!.metadata.gamesAddedAt[retained.id!!] }
+        val rule = SmartRule(SmartMatch.ALL, listOf(
+            SmartRule(field = SmartField.TITLE, operator = SmartOperator.STARTS_WITH, value = "call of duty_"),
+            SmartRule(match = SmartMatch.ANY, rules = listOf(
+                SmartRule(field = SmartField.DEVELOPER, operator = SmartOperator.EQUALS, value = "infinity ward"),
+                SmartRule(field = SmartField.DEVELOPER, operator = SmartOperator.EQUALS, value = "TREYARCH")
+            ))
+        ))
+        val curatedRule = SmartRule(SmartMatch.ALL, listOf(
+            SmartRule(field = SmartField.PUBLISHER, operator = SmartOperator.CONTAINS, value = "vision"),
+            SmartRule(field = SmartField.GENRE, operator = SmartOperator.EQUALS, value = Genre.SHOOTER.name),
+            SmartRule(field = SmartField.THEME, operator = SmartOperator.EQUALS, value = Theme.ACTION.name),
+            SmartRule(field = SmartField.KEYWORD, operator = SmartOperator.CONTAINS, value = "%"),
+            SmartRule(field = SmartField.PLATFORM, operator = SmartOperator.EQUALS, value = Platform.PC_MICROSOFT_WINDOWS.name),
+            SmartRule(field = SmartField.LIBRARY, operator = SmartOperator.EQUALS, value = library.id.toString())
+        ))
+        var addedId: Long? = null
+        try {
+            assertFailsWith<AccessDeniedException> { asMember(other) { smartCollections.settings(id) } }
+            assertFailsWith<AccessDeniedException> { asMember(admin) { smartCollections.settings(id) } }
+            assertFailsWith<AccessDeniedException> { asMember(owner) { smartCollections.settings(curatedId) } }
+            asMember(owner) {
+                assertFailsWith<AccessDeniedException> { smartCollections.settings(collections.ensureFavourites()) }
+                assertFailsWith<IllegalArgumentException> { smartCollections.preview(id, SmartRule(SmartMatch.ALL)) }
+                assertEquals(SmartCollectionPreview(1, 0, 1), smartCollections.preview(id, rule))
+                smartCollections.save(id, SmartCollectionSettings(true, rule))
+                assertTrue(collections.getDtoById(id)!!.smartEnabled)
+                assertEquals(initialDate, collections.getDtoById(id)!!.metadata.gamesAddedAt[retained.id!!])
+                assertFailsWith<IllegalStateException> { collections.setOwnedMembership(id, formerPick.id!!, true) }
+                assertFailsWith<IllegalStateException> { collections.updateOwned(CollectionUpdateDto(id, gameIds = emptyList())) }
+            }
+            asMember(admin) { smartCollections.save(curatedId, SmartCollectionSettings(true, curatedRule)) }
+            val token = key(setOf("collections:write", "collections:read", "games:read"))
+            val blocked = request("/v1/collections/$curatedId/games/${retained.id}", token, "PUT")
+            assertEquals(409, blocked.statusCode(), blocked.body())
+
+            val snapshots = LinkedBlockingQueue<List<Long>>()
+            val curatedSnapshots = LinkedBlockingQueue<List<Long>>()
+            val subscription = asMember(owner) { collectionEndpoint.subscribeToCollections() }
+                .subscribe { snapshot ->
+                    snapshot.find { it.id == id }?.let { snapshots.offer(it.gameIds) }
+                    snapshot.find { it.id == curatedId }?.let { curatedSnapshots.offer(it.gameIds) }
+                }
+            try {
+                val added = games.save(Game(library = library, title = "Call of Duty_3", developers = mutableListOf(treyarch),
+                    publishers = mutableListOf(publisher), genres = listOf(Genre.SHOOTER), themes = listOf(Theme.ACTION),
+                    platforms = mutableListOf(Platform.PC_MICROSOFT_WINDOWS), keywords = listOf("100%"), metadata = GameMetadata("/smart/new")))
+                val newId = added.id!!
+                addedId = newId
+                awaitMembership(snapshots, listOf(retained.id!!, newId))
+                awaitMembership(curatedSnapshots, listOf(newId))
+                TransactionTemplate(transactions).executeWithoutResult {
+                    games.findById(retained.id!!).orElseThrow().title = "Different title"
+                }
+                awaitMembership(snapshots, listOf(newId))
+
+                TransactionTemplate(transactions).executeWithoutResult {
+                    games.findById(newId).orElseThrow().developers.clear()
+                }
+                awaitMembership(snapshots, emptyList())
+
+                TransactionTemplate(transactions).executeWithoutResult {
+                    collectionRows.lockById(id)
+                    // Keep the worker waiting on the collection while the metadata update commits.
+                    TransactionTemplate(transactions).apply {
+                        propagationBehavior = TransactionDefinition.PROPAGATION_REQUIRES_NEW
+                    }.executeWithoutResult {
+                        games.findById(newId).orElseThrow().developers.add(treyarch)
+                    }
+                    asMember(owner) { smartCollections.save(id, SmartCollectionSettings(false)) }
+                }
+                asMember(owner) {
+                    assertEquals(SmartCollectionSettings(false, rule), smartCollections.settings(id))
+                    assertEquals(emptyList(), collections.getDtoById(id)?.gameIds)
+                    collections.setOwnedMembership(id, formerPick.id!!, true)
+                }
+                awaitMembership(snapshots, listOf(formerPick.id!!))
+
+                smartCollections.reconcileAtStartup()
+                asMember(owner) {
+                    assertEquals(listOf(formerPick.id!!), collections.getDtoById(id)?.gameIds)
+                    smartCollections.save(id, SmartCollectionSettings(true))
+                }
+                awaitMembership(snapshots, listOf(newId))
+
+                // Bypass Hibernate events to simulate a catalog change before startup recovery.
+                jdbc.update("update game set title = ? where id = ?", "Changed while offline", newId)
+                smartCollections.reconcileAtStartup()
+                awaitMembership(snapshots, emptyList())
+                jdbc.update("update game set title = ? where id = ?", "Call of Duty_3", newId)
+                smartCollections.reconcileAtStartup()
+                awaitMembership(snapshots, listOf(newId))
+
+                games.deleteById(newId)
+                awaitMembership(snapshots, emptyList())
+                awaitMembership(curatedSnapshots, emptyList())
+            } finally {
+                subscription.dispose()
+            }
+        } finally {
+            asMember(owner) { collections.deleteOwned(id) }
+            collections.delete(curatedId)
+            listOfNotNull(retained.id, formerPick.id, missingMetadata.id, addedId).forEach(games::deleteById)
+            libraries.delete(library)
+        }
+    }
+
+    private fun awaitMembership(queue: LinkedBlockingQueue<List<Long>>, expected: List<Long>) {
+        val end = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+        while (System.nanoTime() < end) {
+            val gameIds = queue.poll(end - System.nanoTime(), TimeUnit.NANOSECONDS) ?: break
+            if (gameIds == expected) return
+        }
+        fail("Collection membership did not become $expected")
+    }
+
     private fun awaitSnapshot(queue: LinkedBlockingQueue<List<Long>>, id: Long, expected: Boolean) {
         val end = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
         while (System.nanoTime() < end) {
@@ -424,6 +612,18 @@ class PublicApiIntegrationTest {
 
     @Autowired
     lateinit var collectionEndpoint: CollectionEndpoint
+
+    @Autowired
+    lateinit var smartCollections: SmartCollectionService
+
+    @Autowired
+    lateinit var collectionRows: CollectionRepository
+
+    @Autowired
+    lateinit var companies: CompanyRepository
+
+    @Autowired
+    lateinit var jdbc: JdbcTemplate
 
     private val client = HttpClient.newHttpClient()
 

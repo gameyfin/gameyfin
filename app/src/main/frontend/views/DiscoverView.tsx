@@ -32,10 +32,16 @@ function Recommendations() {
     useEffect(() => {
         let active = true;
         RecommendationEndpoint.discover().then(
-            value => { if (active) setResult(value); },
-            () => { if (active) setFailed(true); }
+            value => {
+                if (active) setResult(value);
+            },
+            () => {
+                if (active) setFailed(true);
+            }
         );
-        return () => { active = false; };
+        return () => {
+            active = false;
+        };
     }, [attempt]);
 
     if (failed) return <div className="flex flex-wrap items-center gap-4">
@@ -64,9 +70,17 @@ function Recommendations() {
                     description: source ? `Shares ${sharedTag} with ${source.title}.` : `Matching tag: ${sharedTag}.`
                 });
             } else if (similarToGameId === undefined) {
-                badges.push({text: "Similar taste", icon: UsersIcon, description: "Members with similar taste liked this."});
+                badges.push({
+                    text: "Similar taste",
+                    icon: UsersIcon,
+                    description: "Members with similar taste liked this."
+                });
             } else {
-                badges.push({text: "Your preferences", icon: SparkleIcon, description: "Matches your game preferences."});
+                badges.push({
+                    text: "Your preferences",
+                    icon: SparkleIcon,
+                    description: "Matches your game preferences."
+                });
             }
         }
         coverBadges.set(gameId, badges);

@@ -2,7 +2,7 @@ import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 
-type RatedGame = Pick<GameSummaryDto, "criticRating" | "userRating"> & {memberRating?: number};
+type RatedGame = Pick<GameSummaryDto, "criticRating" | "userRating"> & { memberRating?: number };
 
 export function isAdmin(auth: any): boolean {
     return auth.state.user?.roles?.some((a: string) => a?.includes("ADMIN"));

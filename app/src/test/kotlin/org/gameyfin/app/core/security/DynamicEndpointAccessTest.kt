@@ -81,7 +81,7 @@ class DynamicEndpointAccessTest {
     @Test
     fun `all dynamic Hilla endpoint classes reject anonymous calls including subscriptions and writes`() {
         every { config.get(ConfigProperties.Security.AllowPublicAccess) } returns false
-        val collections = guarded(org.gameyfin.app.collections.CollectionEndpoint(mockk(), mockk(), mockk(), mockk()))
+        val collections = guarded(org.gameyfin.app.collections.CollectionEndpoint(mockk(), mockk(), mockk(), mockk(), mockk()))
         val social = guarded(org.gameyfin.app.social.GameSocialEndpoint(mockk()))
         val libraries = guarded(org.gameyfin.app.libraries.LibraryEndpoint(mockk(), mockk(), mockk()))
         val platforms = guarded(org.gameyfin.app.platforms.PlatformEndpoint(mockk()))

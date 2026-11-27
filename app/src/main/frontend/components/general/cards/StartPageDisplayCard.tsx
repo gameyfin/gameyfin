@@ -19,11 +19,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     const navigate = useNavigate();
 
     const isCollection = (libraryOrCollection: LibrarySummaryDto | CollectionDto): libraryOrCollection is CollectionDto => {
-        return 'description' in libraryOrCollection;
-    };
-
-    const isLibrary = (libraryOrCollection: LibrarySummaryDto | CollectionDto): libraryOrCollection is LibrarySummaryDto => {
-        return !('description' in libraryOrCollection);
+        return 'kind' in libraryOrCollection;
     };
 
     const gamesState = useSnapshot(gameState);
@@ -31,6 +27,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     const randomImage = useMemo<ImageDto | null>(() => getRandomImage(), [item, gamesState.state, randomlyOrderedGamesByCollectionId]);
     const link = useMemo<string>(() => getLink(), [item]);
     const type = isCollection(item) ? 'Collection' : 'Library';
+    const smart = isCollection(item) && item.smartEnabled;
 
     /**
      * Gets a screenshot from a random game in the specified library or collection.
@@ -42,7 +39,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
 
         if (isCollection(item)) {
             games = randomlyOrderedGamesByCollectionId[item.id];
-        } else if (isLibrary(item)) {
+        } else {
             games = gamesState.randomlyOrderedGamesByLibraryId[item.id];
         }
 
@@ -53,10 +50,8 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
     function getLink(): string {
         if (isCollection(item)) {
             return `/collection/${item.id}`;
-        } else if (isLibrary(item)) {
-            return `/library/${item.id}`;
         }
-        return '#';
+        return `/library/${item.id}`;
     }
 
     return randomImage && (
@@ -67,6 +62,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
                 onClick={() => navigate(link)}
                 className="relative h-full w-full cursor-pointer text-left"
                 aria-label={`Open ${type.toLowerCase()} ${item.name}`}
+                aria-description={smart ? "Smart collection" : undefined}
             >
                 <BlurhashImage
                     src={`images/cover/${randomImage.id}`}
@@ -79,7 +75,7 @@ export function StartPageDisplayCard({item}: StartPageDisplayCardProps) {
                     <h2 className="text-white text-2xl font-bold text-center px-4">
                         {item.name}
                     </h2>
-                    <Chip size="sm" className="rounded-sm">{type}</Chip>
+                    <Chip size="sm" className="rounded-sm">{smart ? "Smart collection" : type}</Chip>
                 </div>
             </button>
         </Card>

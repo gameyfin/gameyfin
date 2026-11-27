@@ -19,7 +19,9 @@ class GameSocialEndpoint(private val social: GameSocialService) {
     fun memberRatings() = social.memberRatings()
 
     fun subscribeSettings(): Flux<SocialSettings> = Flux.merge(
-        ConfigService.subscribe().filter { updates -> updates.any { it.updates.keys.any { key -> key.startsWith("social.") } } }.map { Unit },
+        ConfigService.subscribe()
+            .filter { updates -> updates.any { it.updates.keys.any { key -> key.startsWith("social.") } } }
+            .map { },
         Flux.just(Unit)
     ).publishOn(Schedulers.boundedElastic()).map { social.settings() }.distinctUntilChanged()
 
@@ -46,5 +48,6 @@ class GameSocialEndpoint(private val social: GameSocialService) {
         social.moderate(gameId, memberId, version, approve)
 
     @RolesAllowed(Role.Names.ADMIN)
-    fun removePublished(gameId: Long, memberId: Long, version: String) = social.removePublished(gameId, memberId, version)
+    fun removePublished(gameId: Long, memberId: Long, version: String) =
+        social.removePublished(gameId, memberId, version)
 }

@@ -8,7 +8,13 @@ import React, {useEffect, useState} from "react";
 import {useAuth} from "Frontend/util/auth";
 import * as Yup from "yup";
 import UserUpdateDto from "Frontend/generated/org/gameyfin/app/users/dto/UserUpdateDto";
-import {EmailConfirmationEndpoint, MessageEndpoint, RecommendationEndpoint, RegistrationEndpoint, UserEndpoint} from "Frontend/generated/endpoints";
+import {
+    EmailConfirmationEndpoint,
+    MessageEndpoint,
+    RecommendationEndpoint,
+    RegistrationEndpoint,
+    UserEndpoint
+} from "Frontend/generated/endpoints";
 import {SmallInfoField} from "Frontend/components/general/SmallInfoField";
 import {removeAvatar, uploadAvatar} from "Frontend/endpoints/AvatarEndpoint";
 import Avatar from "Frontend/components/general/Avatar";
@@ -27,7 +33,7 @@ export default function ProfileManagement() {
     return <ProfileForm key={auth.state.user?.id} auth={auth}/>;
 }
 
-function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
+function ProfileForm({auth}: { auth: ReturnType<typeof useAuth> }) {
     const user = auth.state.user;
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [configSaved, setConfigSaved] = useState(false);
@@ -228,7 +234,8 @@ function ProfileForm({auth}: {auth: ReturnType<typeof useAuth>}) {
                             <div className="flex flex-row gap-2 text-warning -mt-5">
                                 <InfoIcon/>
                                 <small>
-                                    Email confirmation and password recovery emails are unavailable while email services are disabled.
+                                    Email confirmation and password recovery emails are unavailable while email services
+                                    are disabled.
                                 </small>
                             </div>
                         }

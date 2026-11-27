@@ -25,7 +25,10 @@ export default function LoginView() {
     }, [state.user]);
 
     async function tryLogin(values: any, formik: any) {
-        const {error} = await login(values.username, values.password, {navigate: () => {}});
+        const {error} = await login(values.username, values.password, {
+            navigate: () => {
+            }
+        });
         if (error) {
             formik.setFieldError("username", " ");
             formik.setFieldError("password", "Invalid username and/or password.");

@@ -125,7 +125,8 @@ export function GameScores({data, critic, external}: {
                 <dd className="flex flex-col items-end">
                     <RatingScore value={data?.averageRating}
                                  fallback={data ? "No ratings yet" : "Loading…"}/>
-                    <span className={`whitespace-nowrap text-xs text-muted tabular-nums ${votes === 0 ? "invisible" : ""}`}>
+                    <span
+                        className={`whitespace-nowrap text-xs text-muted tabular-nums ${votes === 0 ? "invisible" : ""}`}>
                         {votes} {votes === 1 ? "vote" : "votes"}
                     </span>
                 </dd>
