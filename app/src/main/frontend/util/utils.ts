@@ -2,7 +2,7 @@ import {getCsrfToken} from "Frontend/util/auth";
 import moment from 'moment-timezone';
 import GameSummaryDto from "Frontend/generated/org/gameyfin/app/games/dto/GameSummaryDto";
 
-type RatedGame = Pick<GameSummaryDto, "criticRating" | "userRating">;
+type RatedGame = Pick<GameSummaryDto, "criticRating" | "userRating"> & { memberRating?: number };
 
 export function isAdmin(auth: any): boolean {
     return auth.state.user?.roles?.some((a: string) => a?.includes("ADMIN"));
@@ -251,36 +251,30 @@ function convertRange(value: number, originalRange: number[], targetRange: numbe
 }
 
 /**
- * Calculate a compound rating for a game based on its criticRating and userRating.
- * If both ratings are present, a weighted average is calculated (40% critic, 60% user).
- * If only one rating is present, that rating is returned.
- * If neither rating is present, 0 is returned.
+ * Average the available critic, player and member ratings with equal weight.
+ * External scores are percentages, with zero representing missing data.
+ * Member scores are on a 1–5 scale.
  * @param game The game containing the ratings.
  * @param scale The scale to convert the rating to (default is [0, 100]).
- * @returns The compound rating.
+ * @returns The compound rating, or undefined if no ratings are available.
  */
-export function compoundRating(game: RatedGame, scale = [0, 100]): number {
-    const weights = {
-        critic: 0.4,
-        user: 0.6
-    };
-    const originalRange = [0, 100];
+export function compoundRating(game: RatedGame, scale = [0, 100]): number | undefined {
+    const percentRange = [0, 100];
+    const ratings = [game.criticRating, game.userRating].filter(
+        (rating): rating is number => rating != null && rating > 0
+    );
+    if (game.memberRating != null) {
+        ratings.push(convertRange(game.memberRating, [1, 5], percentRange));
+    }
+    if (ratings.length === 0) return undefined;
 
-    const criticRating = game.criticRating ?? 0;
-    const userRating = game.userRating ?? 0;
-
-    if (criticRating === 0 && userRating === 0) return 0;
-    if (criticRating === 0) return convertRange(userRating, originalRange, scale);
-    if (userRating === 0) return convertRange(criticRating, originalRange, scale);
-
-    const avgRating = Math.round((criticRating * weights.critic + userRating * weights.user) * 10) / 10;
-    return convertRange(avgRating, originalRange, scale);
+    const average = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+    return convertRange(average, percentRange, scale);
 }
 
 /**
  * Convert a game's ratings to a star rating out of 5.
- * If both criticRating and userRating are present, their average is taken.
- * If neither is present, "N/A" is returned.
+ * If no rating is present, "N/A" is returned.
  * @param game The game containing the ratings.
  * @returns A string representing the star rating out of 5, or "N/A" if no ratings are available.
  */
@@ -288,7 +282,7 @@ export function starRatingAsString(game: RatedGame): string {
     const starRange = [1, 5];
 
     const rating = compoundRating(game, starRange);
-    if (rating === 0) return "N/A";
+    if (rating === undefined) return "N/A";
 
     return rating.toFixed(1);
 }

@@ -2,14 +2,14 @@ package org.gameyfin.app.collections.entities
 
 import jakarta.persistence.*
 import org.gameyfin.app.games.entities.Game
-import org.hibernate.annotations.CreationTimestamp
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.annotations.UpdateTimestamp
+import org.gameyfin.app.users.entities.User
+import org.hibernate.annotations.*
 import org.hibernate.type.SqlTypes
 import java.time.Instant
 
 @Entity
 @EntityListeners(CollectionEntityListener::class)
+@DynamicUpdate
 class Collection(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -33,8 +33,39 @@ class Collection(
     var games: MutableSet<Game> = mutableSetOf(),
 
     @Embedded
-    var metadata: CollectionMetadata = CollectionMetadata()
+    var metadata: CollectionMetadata = CollectionMetadata(),
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var kind: CollectionKind = CollectionKind.CURATED,
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    var visibility: CollectionVisibility = CollectionVisibility.PUBLIC,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    var owner: User? = null,
+
+    // Member labels can repeat without changing the legacy unique name constraint.
+    var memberName: String? = null,
+
+    var favouritesOwnerId: Long? = null,
+
+    @Column(nullable = false)
+    var smartEnabled: Boolean = false,
+
+    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+    var smartRules: String? = null
 ) {
+    @Formula("coalesce(member_name, name)")
+    private var displaySortName: String? = null
+
+    val displayName: String get() = memberName ?: name
+
+    fun requireManualMembership() {
+        check(!smartEnabled) { "Smart collection membership is managed by its rules" }
+    }
+
     fun addGame(game: Game) {
         games.add(game)
         if (!game.collections.contains(this)) {
@@ -59,3 +90,7 @@ class Collection(
         updatedAt = Instant.now()
     }
 }
+
+enum class CollectionKind { CURATED, CUSTOM, FAVOURITES }
+
+enum class CollectionVisibility { PRIVATE, MEMBERS_ONLY, PUBLIC }

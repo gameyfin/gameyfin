@@ -1,0 +1,259 @@
+databaseChangeLog:
+  # Preserve the identity used by the original social changelog.
+  - logicalFilePath: db/changelog/db.changelog-social.yaml
+  - changeSet:
+      id: game-social-features
+      author: gameyfin
+      # Checksums of the original H2 and PostgreSQL changes, respectively.
+      validCheckSum:
+        - 9:525382e1719e3a6f4151e13771853a4d
+        - 9:fd8f76692f809599f3a118e348fbdd61
+      changes:
+        - addColumn:
+            tableName: COLLECTION
+            columns:
+              - column:
+                  name: KIND
+                  type: varchar(20)
+                  defaultValue: CURATED
+                  constraints:
+                    nullable: false
+              - column:
+                  name: VISIBILITY
+                  type: varchar(20)
+                  defaultValue: PUBLIC
+                  constraints:
+                    nullable: false
+              - column:
+                  name: OWNER_ID
+                  type: bigint
+              - column:
+                  name: MEMBER_NAME
+                  type: varchar(255)
+              - column:
+                  name: FAVOURITES_OWNER_ID
+                  type: bigint
+        - addForeignKeyConstraint:
+            baseTableName: COLLECTION
+            baseColumnNames: OWNER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_COLLECTION_OWNER
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: COLLECTION
+            columnNames: FAVOURITES_OWNER_ID
+            constraintName: UQ_COLLECTION_FAVOURITES_OWNER
+        - sql:
+            sql: |
+              ALTER TABLE COLLECTION ADD CONSTRAINT CK_COLLECTION_VISIBILITY CHECK (VISIBILITY IN ('PRIVATE', 'MEMBERS_ONLY', 'PUBLIC'));
+              ALTER TABLE COLLECTION ADD CONSTRAINT CK_COLLECTION_OWNERSHIP CHECK (
+                (KIND = 'CURATED' AND OWNER_ID IS NULL AND MEMBER_NAME IS NULL AND FAVOURITES_OWNER_ID IS NULL)
+                OR (KIND = 'CUSTOM' AND OWNER_ID IS NOT NULL AND MEMBER_NAME IS NOT NULL AND FAVOURITES_OWNER_ID IS NULL)
+                OR (KIND = 'FAVOURITES' AND OWNER_ID IS NOT NULL AND MEMBER_NAME IS NOT NULL
+                    AND FAVOURITES_OWNER_ID IS NOT NULL AND FAVOURITES_OWNER_ID = OWNER_ID)
+              );
+        - createTable:
+            tableName: MEMBER_GAME_STATE
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: MEMBER_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RATING
+                  type: int
+              - column:
+                  name: PLAY_STATUS
+                  type: varchar(20)
+        - addPrimaryKey:
+            tableName: MEMBER_GAME_STATE
+            columnNames: GAME_ID, MEMBER_ID
+        - addForeignKeyConstraint:
+            baseTableName: MEMBER_GAME_STATE
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_MEMBER_GAME_STATE_GAME
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: MEMBER_GAME_STATE
+            baseColumnNames: MEMBER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_MEMBER_GAME_STATE_MEMBER
+            onDelete: CASCADE
+        - sql:
+            sql: |
+              ALTER TABLE MEMBER_GAME_STATE ADD CONSTRAINT CK_MEMBER_GAME_STATE_RATING CHECK (RATING BETWEEN 1 AND 5);
+              ALTER TABLE MEMBER_GAME_STATE ADD CONSTRAINT CK_MEMBER_GAME_STATE_PLAY_STATUS CHECK (PLAY_STATUS IN ('WANT_TO_PLAY', 'PLAYING', 'PLAYED'));
+        - createTable:
+            tableName: GAME_REVIEW
+            columns:
+              - column:
+                  name: GAME_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: MEMBER_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PUBLISHED_TEXT
+                  type: text
+              - column:
+                  name: PUBLISHED_AT
+                  type: timestamp with time zone
+              - column:
+                  name: PUBLISHED_VERSION
+                  type: varchar(36)
+              - column:
+                  name: SUBMITTED_TEXT
+                  type: text
+              - column:
+                  name: SUBMITTED_AT
+                  type: timestamp with time zone
+              - column:
+                  name: SUBMITTED_VERSION
+                  type: varchar(36)
+              - column:
+                  name: REJECTED
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: GAME_REVIEW
+            columnNames: GAME_ID, MEMBER_ID
+        - addForeignKeyConstraint:
+            baseTableName: GAME_REVIEW
+            baseColumnNames: GAME_ID
+            referencedTableName: GAME
+            referencedColumnNames: ID
+            constraintName: FK_GAME_REVIEW_GAME
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: GAME_REVIEW
+            baseColumnNames: MEMBER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_GAME_REVIEW_MEMBER
+            onDelete: CASCADE
+      rollback:
+        - sql:
+            sql: |
+              SELECT 1 / CASE WHEN EXISTS (SELECT 1 FROM COLLECTION WHERE KIND <> 'CURATED' OR VISIBILITY <> 'PUBLIC')
+                  OR EXISTS (SELECT 1 FROM MEMBER_GAME_STATE) OR EXISTS (SELECT 1 FROM GAME_REVIEW)
+                  THEN 0 ELSE 1 END;
+        - dropTable:
+            tableName: GAME_REVIEW
+        - dropTable:
+            tableName: MEMBER_GAME_STATE
+        - sql:
+            sql: |
+              ALTER TABLE COLLECTION DROP CONSTRAINT CK_COLLECTION_OWNERSHIP;
+              ALTER TABLE COLLECTION DROP CONSTRAINT CK_COLLECTION_VISIBILITY;
+        - dropUniqueConstraint:
+            tableName: COLLECTION
+            constraintName: UQ_COLLECTION_FAVOURITES_OWNER
+        - dropForeignKeyConstraint:
+            baseTableName: COLLECTION
+            constraintName: FK_COLLECTION_OWNER
+        - dropColumn:
+            tableName: COLLECTION
+            columns:
+              - column:
+                  name: FAVOURITES_OWNER_ID
+              - column:
+                  name: MEMBER_NAME
+              - column:
+                  name: OWNER_ID
+              - column:
+                  name: VISIBILITY
+              - column:
+                  name: KIND
+
+  - changeSet:
+      id: 2.8.0-plugin-recovery-error-text
+      author: gameyfin
+      # Keep the same migration history on both databases for portable backups.
+      preConditions:
+        - onFail: MARK_RAN
+          dbms:
+            type: h2
+      changes:
+        # The original H2 SQL used TEXT, which H2 treats as VARCHAR.
+        - modifyDataType:
+            tableName: PLUGIN_RECOVERY_CANDIDATE
+            columnName: LAST_ERROR
+            newDataType: clob
+      rollback:
+        - sql:
+            sql: ALTER TABLE PLUGIN_RECOVERY_CANDIDATE ALTER COLUMN LAST_ERROR SET DATA TYPE TEXT
+
+  - changeSet:
+      id: 2.8.0-normalize-notification-and-review-text
+      author: gameyfin
+      # Released H2 SQL created VARCHAR from TEXT. The equivalent Liquibase type creates CLOB.
+      preConditions:
+        - onFail: MARK_RAN
+        - dbms:
+            type: h2
+        - sqlCheck:
+            expectedResult: "1"
+            sql: |
+              SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+              FROM INFORMATION_SCHEMA.COLUMNS
+              WHERE TABLE_SCHEMA = CURRENT_SCHEMA AND DATA_TYPE = 'CHARACTER VARYING'
+                AND ((TABLE_NAME = 'APP_NOTIFICATION' AND COLUMN_NAME IN ('ACTIONS', 'BODY'))
+                  OR (TABLE_NAME = 'PLUGIN_UPDATE_NOTICE' AND COLUMN_NAME = 'VERSION')
+                  OR (TABLE_NAME = 'GAME_REVIEW' AND COLUMN_NAME IN ('SUBMITTED_TEXT', 'PUBLISHED_TEXT')))
+      changes:
+        - modifyDataType:
+            tableName: APP_NOTIFICATION
+            columnName: ACTIONS
+            newDataType: clob
+        - modifyDataType:
+            tableName: APP_NOTIFICATION
+            columnName: BODY
+            newDataType: clob
+        - modifyDataType:
+            tableName: PLUGIN_UPDATE_NOTICE
+            columnName: VERSION
+            newDataType: clob
+        - modifyDataType:
+            tableName: GAME_REVIEW
+            columnName: SUBMITTED_TEXT
+            newDataType: clob
+        - modifyDataType:
+            tableName: GAME_REVIEW
+            columnName: PUBLISHED_TEXT
+            newDataType: clob
+      # Earlier releases can read the canonical CLOB schema created by a fresh installation.
+      rollback:
+        - empty: {}
+
+  - changeSet:
+      id: 2.8.0-smart-collections
+      author: gameyfin
+      changes:
+        - addColumn:
+            tableName: COLLECTION
+            columns:
+              - column:
+                  name: SMART_ENABLED
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: SMART_RULES
+                  type: clob

@@ -630,6 +630,41 @@ class UserServiceTest {
     }
 
     @Test
+    fun `selfRegisterUser requires email by default and rejects invalid addresses`() {
+        every { config.get(ConfigProperties.Users.SignUps.Allow) } returns true
+        every { config.get(ConfigProperties.Users.EmailRequired) } returns null
+        every { userRepository.existsByUsername("testuser") } returns false
+        val registration = UserRegistrationDto("testuser", "testpassword")
+
+        assertThrows(IllegalStateException::class.java) { userService.selfRegisterUser(registration) }
+        assertThrows(IllegalArgumentException::class.java) {
+            userService.selfRegisterUser(registration.copy(email = "invalid"))
+        }
+        verify(exactly = 0) { userRepository.save(any()) }
+    }
+
+    @Test
+    fun `selfRegisterUser without email still respects admin approval`() {
+        every { config.get(ConfigProperties.Users.SignUps.Allow) } returns true
+        every { config.get(ConfigProperties.Users.EmailRequired) } returns false
+        every { config.get(ConfigProperties.Users.SignUps.ConfirmationRequired) } returns true
+        every { userRepository.existsByUsername("testuser") } returns false
+        every { passwordEncoder.encode("testpassword") } returns "encoded"
+        val saved = slot<User>()
+        every { userRepository.save(capture(saved)) } answers { firstArg() }
+        every { eventPublisher.publishEvent(any()) } just Runs
+
+        userService.selfRegisterUser(UserRegistrationDto("testuser", "testpassword", " "))
+
+        assertNull(saved.captured.email)
+        assertFalse(saved.captured.emailConfirmed)
+        assertFalse(saved.captured.enabled)
+        verify(exactly = 1) { eventPublisher.publishEvent(ofType<UserRegistrationWaitingForApprovalEvent>()) }
+        verify(exactly = 0) { emailConfirmationService.generate(any()) }
+        verify(exactly = 0) { userRepository.findByEmail(any()) }
+    }
+
+    @Test
     fun `selfRegisterUser should throw exception when sign ups not allowed`() {
         val registration = UserRegistrationDto(
             username = "newuser",
@@ -760,7 +795,7 @@ class UserServiceTest {
         )
         val updates = UserUpdateDto(username = "newusername", password = null, email = null)
 
-        every { userRepository.findByUsername("oldusername") } returns user
+        every { userRepository.findByUsernameForUpdate("oldusername") } returns user
         every { userRepository.save(user) } returns user
 
         userService.updateUser("oldusername", updates)
@@ -780,7 +815,7 @@ class UserServiceTest {
         )
         val updates = UserUpdateDto(username = null, password = "newPassword", email = null)
 
-        every { userRepository.findByUsername("testuser") } returns user
+        every { userRepository.findByUsernameForUpdate("testuser") } returns user
         every { passwordEncoder.encode("newPassword") } returns "encodedNewPassword"
         every { sessionService.logoutAllSessions() } just Runs
         every { userRepository.save(user) } returns user
@@ -803,7 +838,7 @@ class UserServiceTest {
         )
         val updates = UserUpdateDto(username = null, password = null, email = "new@example.com")
 
-        every { userRepository.findByUsername("testuser") } returns user
+        every { userRepository.findByUsernameForUpdate("testuser") } returns user
         every { userRepository.save(user) } returns user
         every { emailConfirmationService.generate(user) } returns mockk()
 
@@ -815,6 +850,39 @@ class UserServiceTest {
         assertFalse(user.emailConfirmed)
         verify(exactly = 1) { emailConfirmationService.generate(user) }
         verify(exactly = 1) { eventPublisher.publishEvent(ofType<EmailNeedsConfirmationEvent>()) }
+    }
+
+    @Test
+    fun `updateUser only clears email when optional and invalidates confirmation`() {
+        val user = User(id = 1L, username = "testuser", email = "old@example.com", emailConfirmed = true)
+        every { userRepository.findByUsernameForUpdate("testuser") } returns user
+        every { config.get(ConfigProperties.Users.EmailRequired) } returns true andThen false
+        every { userRepository.save(user) } returns user
+        every { emailConfirmationService.invalidate(user) } just Runs
+        val updates = UserUpdateDto(username = null, password = null, email = "")
+
+        assertThrows(IllegalStateException::class.java) { userService.updateUser("testuser", updates) }
+        assertEquals("old@example.com", user.email)
+        assertTrue(user.emailConfirmed)
+
+        userService.updateUser("testuser", updates)
+
+        assertNull(user.email)
+        assertFalse(user.emailConfirmed)
+        verify(exactly = 1) { emailConfirmationService.invalidate(user) }
+        verify(exactly = 0) { emailConfirmationService.generate(any()) }
+    }
+
+    @Test
+    fun `updateUser leaves an absent email unchanged when email is required`() {
+        val user = User(id = 1L, username = "testuser", email = null)
+        every { userRepository.findByUsernameForUpdate("testuser") } returns user
+        every { userRepository.save(user) } returns user
+
+        userService.updateUser("testuser", UserUpdateDto(username = "renamed", password = null, email = null))
+
+        assertEquals("renamed", user.username)
+        assertNull(user.email)
     }
 
     @Test

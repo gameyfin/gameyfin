@@ -3,7 +3,9 @@ import {redirectToLogin} from "Frontend/util/login";
 import {useLocation, useNavigate} from "react-router";
 import {
     ArrowLeftIcon,
+    CompassIcon,
     DiceSixIcon,
+    FolderSimpleIcon,
     HouseIcon,
     ListMagnifyingGlassIcon,
     ShootingStarIcon,
@@ -16,6 +18,8 @@ import ProfileMenu from "Frontend/components/ProfileMenu";
 import NotificationPopover from "Frontend/components/general/NotificationPopover";
 import {useAuth} from "Frontend/util/auth";
 import {isAdmin} from "Frontend/util/utils";
+import {useSnapshot} from "valtio/react";
+import {collectionState} from "Frontend/state/CollectionState";
 
 export default function DesktopNavigation({randomGame, hasGames, searchValue, onSearchChange}: {
     randomGame: () => void;
@@ -26,11 +30,12 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
     const location = useLocation();
     const navigate = useNavigate();
     const auth = useAuth();
+    const discover = useSnapshot(collectionState).settings?.recommendationsEnabled;
     const isHomePage = location.pathname === "/";
     const isSearchPage = location.pathname.startsWith("/search");
     return (
         <nav aria-label="Desktop navigation"
-             className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 [&_button>svg]:size-5">
+             className="flex flex-wrap items-center justify-between gap-4 shell-gutter py-4 [&_button>svg]:size-5">
             <div className="flex flex-1 items-center gap-2 h-10">
                 {isHomePage ? <GameyfinLogo className="h-10 fill-foreground"/> :
                     <div className="flex flex-row gap-2">
@@ -74,6 +79,18 @@ export default function DesktopNavigation({randomGame, hasGames, searchValue, on
             )}
 
             <ul className="flex flex-1 items-center justify-end gap-2">
+                {auth.state.user && discover && <li>
+                    <Button variant="ghost" aria-current={location.pathname === "/discover" ? "page" : undefined}
+                            onPress={() => navigate("/discover")}>
+                        <CompassIcon/> Discover
+                    </Button>
+                </li>}
+                {!auth.state.user && <li>
+                    <Button isIconOnly aria-label="Collections" variant="ghost"
+                            onPress={() => navigate("/collections")}>
+                        <FolderSimpleIcon/>
+                    </Button>
+                </li>}
                 <li>
                     <Tooltip>
                         <Tooltip.Trigger>

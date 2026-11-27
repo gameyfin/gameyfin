@@ -143,7 +143,8 @@ const hasCommercialBanner = existsSync(commercialBannerComponent);
 // version. Vite uses this as the cssTarget as well, and an ES year would map to
 // browsers that are much older than these, which makes Lightning CSS rewrite
 // light-dark() into custom properties that only follow the operating system
-// preference.
+// preference. Keep the old browser check in IndexHtmlRequestHandler in line
+// with this list.
 const target = ['chrome152', 'edge152', 'firefox140', 'safari17.6', 'ios17.6'];
 
 // Block debug and trace logs.
@@ -323,6 +324,19 @@ function statsExtracterPlugin(): PluginOption {
           '\n'
         );
         frontendFiles[`index.ts`] = createHash('sha256').update(fileBuffer, 'utf8').digest('hex');
+      }
+      // A service worker in the frontend folder replaces the default one. It is
+      // built separately from the modules collected above, so hash it on its own.
+      if (settings.offlineEnabled) {
+        ['sw.ts', 'sw.js']
+          .filter((file) => existsSync(path.resolve(frontendFolder, file)))
+          .forEach((file) => {
+            const fileBuffer = readFileSync(path.resolve(frontendFolder, file), { encoding: 'utf-8' }).replace(
+              /\r\n/g,
+              '\n'
+            );
+            frontendFiles[file] = createHash('sha256').update(fileBuffer, 'utf8').digest('hex');
+          });
       }
       if (hasCommercialBanner) {
         const fileBuffer = readFileSync(commercialBannerComponent, { encoding: 'utf-8' }).replace(/\r\n/g, '\n');

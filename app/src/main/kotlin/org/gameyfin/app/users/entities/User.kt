@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import org.gameyfin.app.core.Role
 import org.gameyfin.app.core.security.EncryptionConverter
 import org.gameyfin.app.media.Image
+import org.gameyfin.app.users.parseEmailAddress
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 
 
@@ -25,7 +26,7 @@ class User(
 
     @Column(unique = true)
     @Convert(converter = EncryptionConverter::class)
-    var email: String,
+    var email: String?,
 
     var emailConfirmed: Boolean = false,
 
@@ -39,10 +40,14 @@ class User(
     var roles: List<Role> = emptyList()
 ) {
 
-    constructor(oidcUser: OidcUser, resolvedUsername: String) : this(
+    constructor(
+        oidcUser: OidcUser,
+        resolvedUsername: String,
+        email: String? = parseEmailAddress(oidcUser.email)
+    ) : this(
         username = resolvedUsername,
-        email = oidcUser.email ?: error("OidcUser has no email"),
-        emailConfirmed = true,
+        email = email,
+        emailConfirmed = email != null,
         enabled = true,
         oidcProviderId = oidcUser.subject
     )

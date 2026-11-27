@@ -32,8 +32,21 @@ class SecurityErrorDispatchTest {
     @Import(SecurityConfig::class)
     class Config {
         @Bean
-        fun config(): ConfigService = mockk<ConfigService>().also {
-            every { it.get(ConfigProperties.SSO.OIDC.Enabled) } returns false
+        fun config(environment: org.springframework.core.env.Environment): ConfigService = mockk<ConfigService>().also {
+            val enabled = environment.getProperty("test.sso", Boolean::class.java, false)
+            every { it.get(ConfigProperties.SSO.OIDC.Enabled) } returns enabled
+            if (enabled) {
+                every { it.get(ConfigProperties.SSO.OIDC.ClientId) } returns "gameyfin"
+                every { it.get(ConfigProperties.SSO.OIDC.ClientSecret) } returns "test-secret"
+                every { it.get(ConfigProperties.SSO.OIDC.OAuthScopes) } returns arrayOf("openid")
+                every { it.get(ConfigProperties.SSO.OIDC.UsernameClaim) } returns "sub"
+                every { it.get(ConfigProperties.SSO.OIDC.IssuerUrl) } returns "https://id.example"
+                every { it.get(ConfigProperties.SSO.OIDC.AuthorizeUrl) } returns "https://id.example/authorize"
+                every { it.get(ConfigProperties.SSO.OIDC.TokenUrl) } returns "https://id.example/token"
+                every { it.get(ConfigProperties.SSO.OIDC.UserInfoUrl) } returns "https://id.example/userinfo"
+                every { it.get(ConfigProperties.SSO.OIDC.JwksUrl) } returns "https://id.example/keys"
+                every { it.get(ConfigProperties.SSO.OIDC.LogoutUrl) } returns "/login"
+            }
             every { it.get(ConfigProperties.Security.AllowPublicAccess) } returns false
         }
 
@@ -71,6 +84,19 @@ class SecurityErrorDispatchTest {
                     every { it.getMatchingRequest(any(), any()) } returns null
                 })
         }
+
+    @Test
+    fun `enabled SSO registers the configured authorization endpoint`() {
+        runner.withPropertyValues("test.sso=true").run { context ->
+            val response = MockHttpServletResponse()
+            val path = "/oauth2/authorization/oidc"
+            val request = MockHttpServletRequest("GET", path).apply { servletPath = path }
+            context.getBean(FilterChainProxy::class.java).doFilter(request, response) { _, _ -> error("Missing OAuth filter") }
+            assertEquals(302, response.status)
+            assertTrue(response.redirectedUrl.orEmpty().startsWith("https://id.example/authorize?"))
+            assertTrue(response.redirectedUrl.orEmpty().contains("client_id=gameyfin"))
+        }
+    }
 
     @Test
     fun `error dispatch after a committed download reaches error handler without security exception`() {

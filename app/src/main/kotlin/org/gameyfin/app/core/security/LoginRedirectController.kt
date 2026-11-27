@@ -4,8 +4,8 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.gameyfin.app.config.ConfigProperties
 import org.gameyfin.app.config.ConfigService
-import org.gameyfin.app.setup.SetupService
 import org.gameyfin.app.setup.PluginOnboardingService
+import org.gameyfin.app.setup.SetupService
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 

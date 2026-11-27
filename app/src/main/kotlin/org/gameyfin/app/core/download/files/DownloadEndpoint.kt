@@ -9,11 +9,7 @@ import org.gameyfin.app.core.security.getCurrentAuth
 import org.gameyfin.app.games.GameService
 import org.gameyfin.pluginapi.download.FileDownload
 import org.gameyfin.pluginapi.download.LinkDownload
-import org.springframework.http.ContentDisposition
-import org.springframework.http.CacheControl
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
+import org.springframework.http.*
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.context.request.async.DeferredResult
 import org.springframework.web.server.ResponseStatusException
@@ -47,7 +43,8 @@ class DownloadEndpoint(
     @GetMapping("/{gameId}/contents")
     fun listContents(@PathVariable gameId: Long): ResponseEntity<List<DownloadFileEntry>> = selectionRequest {
         val contents = downloadService.listContents(gameService.getDownloadFolder(gameId))
-        ResponseEntity.ok().cacheControl(CacheControl.noStore()).eTag(DownloadSelection.contentsETag(contents)).body(contents)
+        ResponseEntity.ok().cacheControl(CacheControl.noStore()).eTag(DownloadSelection.contentsETag(contents))
+            .body(contents)
     }
 
     @PostMapping("/{gameId}/selection", consumes = ["application/x-www-form-urlencoded"])
@@ -117,8 +114,9 @@ class DownloadEndpoint(
             val transfer = { input: java.io.InputStream, output: java.io.OutputStream ->
                 downloadService.processDownload(input, output, game, username, sessionId, remoteIp)
             }
-            val resource = if (selection != null) null else downloadService.getRangeDownload(game.metadata.path, provider)
-                ?.also { lifetime.own(it) }
+            val resource =
+                if (selection != null) null else downloadService.getRangeDownload(game.metadata.path, provider)
+                    ?.also { lifetime.own(it) }
             val result = if (resource != null) {
                 DownloadResponses.range(
                     resource,
@@ -132,12 +130,16 @@ class DownloadEndpoint(
                 DownloadResponses.head(metadata, disposition(metadata?.fileExtension))
             } else {
                 val download = if (selection != null) selectionRequest(selection)
-                    else downloadService.getDownload(game.metadata.path, provider)
+                else downloadService.getDownload(game.metadata.path, provider)
                 when (download) {
                     is FileDownload -> DownloadResponses.file(
                         download.also { lifetime.own(it.data) },
                         request,
-                        download.fileName?.let { createContentDispositionHeader(it.substringAfterLast('/').substringAfterLast('\\')) }
+                        download.fileName?.let {
+                            createContentDispositionHeader(
+                                it.substringAfterLast('/').substringAfterLast('\\')
+                            )
+                        }
                             ?: disposition(download.fileExtension),
                         onStart,
                         transfer

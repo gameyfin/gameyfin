@@ -28,7 +28,7 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
             .then(([messagesEnabled, canManage]) => {
                 if (cancelled) return;
                 const keys: string[] = [];
-                if (messagesEnabled) keys.push("resetPassword");
+                if (!canManage || (messagesEnabled && user.email && user.emailConfirmed)) keys.push("resetPassword");
                 if (!user.hasAvatar) keys.push("removeAvatar");
                 if (!canManage) keys.push("assignRole", "enableUser", "disableUser", "delete");
                 setDisabledKeys(keys);
@@ -37,7 +37,7 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
         return () => {
             cancelled = true;
         };
-    }, [user.username, user.hasAvatar, user.roles.join(","), auth.state.user?.roles.join(",")]);
+    }, [user.username, user.hasAvatar, user.email, user.emailConfirmed, user.roles.join(","), auth.state.user?.roles.join(",")]);
 
     async function resetPassword() {
         let token = await PasswordResetEndpoint.createPasswordResetTokenForUser(user.username);
@@ -141,7 +141,7 @@ export function UserManagementCard({user, canDelete}: { user: ExtendedUserInfoDt
                             className="gradient-primary size-20 text-background/80 text-5xl"/>
                     <div className="flex flex-col gap-1">
                         <p className="font-semibold">{user.username}</p>
-                        <p className="text-sm max-w-44 truncate" title={user.email}>{user.email}</p>
+                        {user.email && <p className="text-sm max-w-44 truncate" title={user.email}>{user.email}</p>}
                         {user.roles?.map((role) => (
                             <RoleChip key={role} role={role as string}/>
                         ))}

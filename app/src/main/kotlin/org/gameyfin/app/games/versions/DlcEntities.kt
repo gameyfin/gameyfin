@@ -8,6 +8,7 @@ enum class DlcKind {
     /** An edition that is offered as an upgrade of the base product instead of a separate product. */
     EDITION_UPGRADE,
     DLC,
+
     /** Soundtracks, art books and similar material, which stores sell as DLC. */
     BONUS
 }

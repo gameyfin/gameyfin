@@ -25,8 +25,9 @@ internal object DlcInstallerMatcher {
 
     fun match(gameTitle: String, names: Collection<String>, candidates: Collection<StoreDlcInfo>): List<StoreDlcInfo> {
         val gameWords = words(gameTitle)
-        val candidateWords = candidates.associateWith { (words(it.title) - gameWords).filter { w -> w !in IGNORED_WORDS } }
-            .filterValues { it.isNotEmpty() }
+        val candidateWords =
+            candidates.associateWith { (words(it.title) - gameWords).filter { w -> w !in IGNORED_WORDS } }
+                .filterValues { it.isNotEmpty() }
         if (candidateWords.isEmpty()) return emptyList()
 
         val matched = linkedSetOf<StoreDlcInfo>()

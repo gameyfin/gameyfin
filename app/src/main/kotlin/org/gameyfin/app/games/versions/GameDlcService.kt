@@ -17,7 +17,13 @@ data class StoreDlcDto(val dlcId: String, val title: String, val kind: DlcKind =
 
 data class IncludedDlcDto(val dlcId: String, val title: String, val detected: Boolean, val kind: DlcKind = DlcKind.DLC)
 
-data class GameIncludedDlcDto(val linkId: Long, val store: String, val storeName: String, val storeAvailable: Boolean, val dlc: List<IncludedDlcDto>)
+data class GameIncludedDlcDto(
+    val linkId: Long,
+    val store: String,
+    val storeName: String,
+    val storeAvailable: Boolean,
+    val dlc: List<IncludedDlcDto>
+)
 
 /**
  * Which DLC the installer(s) provided for a game include, per store link.
@@ -90,7 +96,15 @@ class GameDlcService(
             val source = if (item.detected) LinkSource.AUTO else LinkSource.MANUAL
             val current = existing[item.dlcId]
             if (current == null) {
-                dlcRepository.save(GameIncludedDlc(linkId = linkId, dlcId = item.dlcId, title = item.title.trim(), source = source, kind = item.kind))
+                dlcRepository.save(
+                    GameIncludedDlc(
+                        linkId = linkId,
+                        dlcId = item.dlcId,
+                        title = item.title.trim(),
+                        source = source,
+                        kind = item.kind
+                    )
+                )
             } else {
                 current.title = item.title.trim()
                 current.source = source

@@ -4,16 +4,14 @@ import io.mockk.*
 import org.gameyfin.app.collections.dto.*
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.collections.repositories.CollectionRepository
-import org.gameyfin.app.core.sync.EntityEventType
-import org.gameyfin.app.core.sync.SYNC_SAFETY_WINDOW
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameMetadata
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.repository.findByIdOrNull
-import java.time.Duration
 import java.time.Instant
 import java.util.*
 import kotlin.test.*
@@ -28,7 +26,7 @@ class CollectionServiceTest {
     fun setup() {
         repository = mockk()
         gameService = mockk()
-        service = CollectionService(repository, gameService)
+        service = CollectionService(repository, gameService, mockk(relaxed = true), mockk(), mockk())
     }
 
     @AfterEach
@@ -64,11 +62,10 @@ class CollectionServiceTest {
     fun `update should modify name and description`() {
         val existing =
             Collection(name = "RPGs").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findById(1L) } returns Optional.of(existing)
+        every { repository.lockById(1L) } returns existing
         every { repository.findByName("New Name") } returns null
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
-        every { repository.findByIdOrNull(1L) } returns existing
 
         val dto = CollectionUpdateDto(id = 1L, name = "New Name", description = "Updated")
         val result = service.update(dto)
@@ -85,7 +82,7 @@ class CollectionServiceTest {
             metadata = GameMetadata(path = "test")
         )
         game.id = 10L
-        every { repository.findByIdOrNull(1L) } returns existing
+        every { repository.lockById(1L) } returns existing
         every { gameService.getById(10L) } returns game
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
@@ -100,7 +97,7 @@ class CollectionServiceTest {
         val c1 =
             Collection(name = "Indie").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
         val c2 = Collection(name = "AAA").apply { id = 2L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findAll() } returns listOf(c1, c2)
+        every { repository.findAll(any<Specification<Collection>>()) } returns listOf(c1, c2)
         every { repository.findGameIdsByCollectionIds(listOf(1L, 2L)) } returns listOf(
             arrayOf<Any>(1L, 12L), arrayOf<Any>(1L, 11L), arrayOf<Any>(2L, 13L)
         )
@@ -118,8 +115,8 @@ class CollectionServiceTest {
     fun `sync with timestamp should return changed collections and all ids`() {
         val since = Instant.parse("2024-01-01T12:00:00Z")
         val c1 = Collection(name = "Indie").apply { id = 1L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findAllByUpdatedAtAfter(since.minus(SYNC_SAFETY_WINDOW)) } returns listOf(c1)
-        every { repository.findAllIds() } returns listOf(1L, 2L)
+        val unchanged = Collection(id = 2L, name = "Old", updatedAt = since.minusSeconds(120))
+        every { repository.findAll(any<Specification<Collection>>()) } returns listOf(c1, unchanged)
         every { repository.findGameIdsByCollectionIds(listOf(1L)) } returns emptyList()
 
         val result = service.sync(since)
@@ -128,14 +125,13 @@ class CollectionServiceTest {
         assertEquals(listOf(1L, 2L), result.allIds)
         assertEquals(1, result.collections.size)
         assertEquals(emptyList(), result.collections[0].gameIds)
-        verify(exactly = 0) { repository.findAll() }
     }
 
     @Test
     fun `sync with timestamp should not query game ids if nothing changed`() {
         val since = Instant.now()
-        every { repository.findAllByUpdatedAtAfter(any()) } returns emptyList()
-        every { repository.findAllIds() } returns listOf(1L)
+        val unchanged = Collection(id = 1L, name = "Old", updatedAt = since.minusSeconds(120))
+        every { repository.findAll(any<Specification<Collection>>()) } returns listOf(unchanged)
 
         val result = service.sync(since)
 
@@ -145,7 +141,7 @@ class CollectionServiceTest {
 
     @Test
     fun `getDtoById should return null when not found`() {
-        every { repository.findByIdOrNull(42L) } returns null
+        every { repository.findOne(any<Specification<Collection>>()) } returns Optional.empty()
         assertNull(service.getDtoById(42L))
     }
 
@@ -175,7 +171,7 @@ class CollectionServiceTest {
     fun `update should reject duplicate name`() {
         val existing =
             Collection(name = "Old").apply { id = 3L; createdAt = Instant.now(); updatedAt = createdAt }
-        every { repository.findById(3L) } returns Optional.of(existing)
+        every { repository.lockById(3L) } returns existing
         every { repository.findByName("Old") } returns existing
         every { repository.findByName("New") } returns Collection(name = "New")
         assertFailsWith<IllegalArgumentException> { service.update(CollectionUpdateDto(id = 3L, name = "New")) }
@@ -190,12 +186,11 @@ class CollectionServiceTest {
         // pre-populate with one game to ensure replacement
         val old = Game(library = mockk(relaxed = true), metadata = GameMetadata(path = "old")).apply { id = 99L }
         existing.addGame(old)
-        every { repository.findById(4L) } returns Optional.of(existing)
+        every { repository.lockById(4L) } returns existing
         every { gameService.getById(21L) } returns g1
         every { gameService.getById(22L) } returns g2
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
-        every { repository.findByIdOrNull(4L) } returns existing
         val dto = CollectionUpdateDto(id = 4L, gameIds = listOf(21L, 22L))
         val result = service.update(dto)
         assertEquals(listOf(21L, 22L), result.gameIds)
@@ -207,7 +202,7 @@ class CollectionServiceTest {
             Collection(name = "Arcade").apply { id = 6L; createdAt = Instant.now(); updatedAt = createdAt }
         val game = Game(library = mockk(relaxed = true), metadata = GameMetadata(path = "x")).apply { id = 77L }
         existing.addGame(game)
-        every { repository.findByIdOrNull(6L) } returns existing
+        every { repository.lockById(6L) } returns existing
         every { gameService.getById(77L) } returns game
         every { repository.saveAndFlush(existing) } returns existing
         stubGameIdsFrom(existing)
@@ -219,22 +214,11 @@ class CollectionServiceTest {
 
     @Test
     fun `delete should delegate to repository`() {
-        every { repository.deleteById(8L) } just Runs
+        val collection = Collection(id = 8L, name = "Old")
+        every { repository.lockById(8L) } returns collection
+        every { repository.delete(collection) } just Runs
         service.delete(8L)
-        verify { repository.deleteById(8L) }
-    }
-
-    @Test
-    fun `companion events emit and subscribe`() {
-        // Integration tests may have emitted other events into the shared broadcaster.
-        val flux = CollectionService.subscribe().flatMapIterable { it }
-            .filter { it.id == -2001L || it.id == -2002L }.take(2).collectList()
-        val now = Instant.now()
-        val dto = CollectionDto(1L, now, now, "n", null, emptyList(), CollectionMetadataDto(true, 1, emptyMap()))
-        CollectionService.emit(CollectionEvent(EntityEventType.CREATED, -2001L, collection = dto))
-        CollectionService.emit(CollectionEvent(EntityEventType.DELETED, -2002L))
-        val batch = flux.block(Duration.ofSeconds(2))
-        assertEquals(2, batch?.size)
+        verify { repository.delete(collection) }
     }
 
     private fun stubGameIdsFrom(collection: Collection) {

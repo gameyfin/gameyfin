@@ -32,17 +32,22 @@ export default function GameVersionEditorModal({gameId, gameTitle, onClose}: Gam
     return (
         <Modal>
             <Modal.Backdrop isOpen isDismissable={false} isKeyboardDismissDisabled={saving}
-                            onOpenChange={(open) => { if (!open && !saving) onClose(); }} variant="opaque">
+                            onOpenChange={(open) => {
+                                if (!open && !saving) onClose();
+                            }} variant="opaque">
                 <ResponsiveDialog size="lg" scroll="inside" className="max-w-3xl">
                     <Modal.Dialog>
                         <Modal.CloseTrigger isDisabled={saving}/>
                         <Modal.Header>
-                            <Modal.Heading className="flex items-center gap-2"><StackIcon/> Versions &amp; Extras</Modal.Heading>
+                            <Modal.Heading
+                                className="flex items-center gap-2"><StackIcon/> Versions &amp; Extras</Modal.Heading>
                             <p className="text-sm text-muted">{gameTitle}</p>
                         </Modal.Header>
                         <Modal.Body inert={saving} aria-busy={saving || editor.loading}>
                             <GameVersionEditor gameId={gameId} gameTitle={gameTitle} editor={editor}/>
-                            {saveError && <p role="alert" className="mt-3 text-danger">Some changes may have been saved. Review the store details before trying again.</p>}
+                            {saveError &&
+                                <p role="alert" className="mt-3 text-danger">Some changes may have been saved. Review
+                                    the store details before trying again.</p>}
                         </Modal.Body>
                         <Modal.Footer>
                             <Button variant="tertiary" isDisabled={saving} onPress={onClose}>Cancel</Button>

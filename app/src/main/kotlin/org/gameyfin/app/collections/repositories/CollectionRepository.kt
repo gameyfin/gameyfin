@@ -1,21 +1,28 @@
 package org.gameyfin.app.collections.repositories
 
+import jakarta.persistence.LockModeType
 import org.gameyfin.app.collections.entities.Collection
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
-import org.springframework.data.jpa.repository.Query
+import org.springframework.data.jpa.repository.*
 import org.springframework.data.repository.query.Param
 import java.time.Instant
 
-interface CollectionRepository : JpaRepository<Collection, Long> {
+interface CollectionRepository : JpaRepository<Collection, Long>, JpaSpecificationExecutor<Collection> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Collection c where c.id = :id")
+    fun lockById(@Param("id") id: Long): Collection?
+
+    @Query("select c.id from Collection c where c.smartEnabled = true order by c.id")
+    fun findSmartIds(): List<Long>
+
+    @Query("select g.id from Collection c join c.games g where c.id = :id and g.id in :gameIds")
+    fun findMatchingMemberIds(@Param("id") id: Long, @Param("gameIds") gameIds: List<Long>): List<Long>
+
+    fun findByFavouritesOwnerId(ownerId: Long): Collection?
+
+    @Query("select c.favouritesOwnerId as memberId, g.id as gameId from Collection c join c.games g where c.favouritesOwnerId in :memberIds")
+    fun favouriteGames(memberIds: List<Long>): List<FavouriteGame>
+
     fun findByName(name: String): Collection?
-
-    /* Synchronization */
-
-    fun findAllByUpdatedAtAfter(since: Instant): List<Collection>
-
-    @Query("SELECT c.id FROM Collection c")
-    fun findAllIds(): List<Long>
 
     /**
      * @return Pairs of `[collectionId, gameId]` for the given collections
@@ -46,3 +53,5 @@ fun CollectionRepository.findGameIdsGroupedByCollectionId(
         .groupBy({ (it[0] as Number).toLong() }, { (it[1] as Number).toLong() })
         .mapValues { (_, gameIds) -> gameIds.sorted() }
 }
+
+data class FavouriteGame(val memberId: Long, val gameId: Long)

@@ -3,12 +3,9 @@ package org.gameyfin.app.core.sync
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PreDestroy
 import org.gameyfin.app.collections.CollectionService
-import org.gameyfin.app.collections.dto.CollectionEvent
+import org.gameyfin.app.collections.SmartCollectionService
 import org.gameyfin.app.collections.dto.CollectionField
-import org.gameyfin.app.collections.extensions.toDto
-import org.gameyfin.app.collections.extensions.toPatchDto
 import org.gameyfin.app.collections.repositories.CollectionRepository
-import org.gameyfin.app.collections.repositories.findGameIdsGroupedByCollectionId
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.dto.GameEvent
 import org.gameyfin.app.games.dto.GameField
@@ -46,7 +43,8 @@ class EntityChangeProcessor(
     private val gameRepository: GameRepository,
     private val libraryRepository: LibraryRepository,
     private val collectionRepository: CollectionRepository,
-    transactionManager: PlatformTransactionManager
+    transactionManager: PlatformTransactionManager,
+    private val smartCollections: SmartCollectionService
 ) {
 
     companion object {
@@ -108,6 +106,22 @@ class EntityChangeProcessor(
         bumpTimestamps(changes)
         val events = readTransaction.execute { buildEvents(changes) }
         events.emit()
+
+        val changedSettings = changes.collections.filterValues {
+            !it.deleted && CollectionField.SMART_SETTINGS in it.fields
+        }.keys
+        try {
+            smartCollections.reconcileGameChanges(changes.games, changedSettings)
+        } catch (e: Exception) {
+            log.warn(e) { "Smart collection update failed, retrying" }
+            executor.schedule({
+                try {
+                    smartCollections.reconcileGameChanges(changes.games, changedSettings)
+                } catch (retryError: Exception) {
+                    log.error(retryError) { "Smart collection update failed after retry" }
+                }
+            }, 1, TimeUnit.SECONDS)
+        }
     }
 
     /**
@@ -216,37 +230,8 @@ class EntityChangeProcessor(
             }
         }
 
-        /* Collections */
-        val collectionChanges = changes.collections.filterValues { !it.isTransient }
-        val collectionIdsToLoad = collectionChanges.idsToLoad()
-        val collections = collectionRepository.findAllById(collectionIdsToLoad).associateBy { it.id!! }
-        val gameIdsByCollection = collectionChanges
-            .filter { (id, change) -> id in collections && (change.created || CollectionField.GAME_IDS in change.fields) }
-            .keys
-            .let { ids ->
-                ids.chunked(MAX_IDS_PER_QUERY)
-                    .flatMap { collectionRepository.findGameIdsGroupedByCollectionId(it).entries }
-            }
-            .associate { it.key to it.value }
-
-        collectionChanges.forEach { (id, change) ->
-            when {
-                change.deleted -> events.collection += CollectionEvent(EntityEventType.DELETED, id)
-
-                change.created -> collections[id]?.let { collection ->
-                    events.collection += CollectionEvent(
-                        EntityEventType.CREATED,
-                        id,
-                        collection = collection.toDto(gameIdsByCollection[id] ?: emptyList())
-                    )
-                }
-
-                else -> collections[id]?.let { collection ->
-                    collection.toPatchDto(change.fields, gameIdsByCollection[id] ?: emptyList())?.let {
-                        events.collection += CollectionEvent(EntityEventType.UPDATED, id, patch = it)
-                    }
-                }
-            }
+        events.collectionsChanged = changes.collections.values.any {
+            !it.isTransient && (it.created || it.deleted || it.fields.isNotEmpty())
         }
 
         return events
@@ -266,14 +251,14 @@ class EntityChangeProcessor(
         val gameAdmin = mutableListOf<GameEvent>()
         val libraryUser = mutableListOf<LibraryEvent>()
         val libraryAdmin = mutableListOf<LibraryEvent>()
-        val collection = mutableListOf<CollectionEvent>()
+        var collectionsChanged = false
 
         fun emit() {
             gameUser.forEach { GameService.emitUser(it) }
             gameAdmin.forEach { GameService.emitAdmin(it) }
             libraryUser.forEach { LibraryService.emitUser(it) }
             libraryAdmin.forEach { LibraryService.emitAdmin(it) }
-            collection.forEach { CollectionService.emit(it) }
+            if (collectionsChanged) CollectionService.invalidate()
         }
     }
 }

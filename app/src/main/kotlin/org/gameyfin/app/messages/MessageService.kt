@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationContext
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
+import org.springframework.transaction.event.TransactionalEventListener
 import java.util.*
 
 @Service
@@ -38,11 +39,12 @@ class MessageService(
     }
 
     fun sendNotification(
-        recipient: String,
+        recipient: String?,
         title: String,
         template: MessageTemplates,
         placeholders: Map<String, String>
     ) {
+        if (recipient.isNullOrBlank()) return
         providers.filter { it.enabled }.forEach {
             val content = templateService.fillMessageTemplate(template, it.supportedTemplateType, placeholders)
             it.sendNotification(recipient, title, content)
@@ -63,8 +65,9 @@ class MessageService(
         try {
             val auth = getCurrentAuth() ?: error("No authentication found")
             val user = userService.getByUsername(auth.name) ?: error("User not found")
+            val email = user.email?.takeIf { it.isNotBlank() } ?: return false
             val template = templateService.getMessageTemplate(templateKey)
-            sendNotification(user.email, "[Gameyfin] Test Notification", template, placeholders)
+            sendNotification(email, "[Gameyfin] Test Notification", template, placeholders)
         } catch (e: Exception) {
             log.error { "Failed to send test message: ${e.message}" }
             log.debug(e) {}
@@ -96,7 +99,7 @@ class MessageService(
     }
 
     @Async
-    @EventListener(UserRegistrationWaitingForApprovalEvent::class)
+    @TransactionalEventListener(fallbackExecution = true)
     fun onUserRegistrationWaitingForApproval(event: UserRegistrationWaitingForApprovalEvent) {
 
         if (!enabled) {
@@ -116,7 +119,7 @@ class MessageService(
     }
 
     @Async
-    @EventListener(AccountStatusChangedEvent::class)
+    @TransactionalEventListener(fallbackExecution = true)
     fun onAccountStatusChanged(event: AccountStatusChangedEvent) {
 
         if (!enabled) {
@@ -166,7 +169,7 @@ class MessageService(
     }
 
     @Async
-    @EventListener(EmailNeedsConfirmationEvent::class)
+    @TransactionalEventListener(fallbackExecution = true)
     fun onEmailNeedsConfirmation(event: EmailNeedsConfirmationEvent) {
 
         if (!enabled) {

@@ -3,6 +3,7 @@ package org.gameyfin.app.core.sync
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import jakarta.persistence.EntityManagerFactory
+import org.gameyfin.app.collections.dto.CollectionField
 import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameFieldMetadata
@@ -59,10 +60,15 @@ class EntityChangeTracker(
 
     override fun onPostInsert(event: PostInsertEvent) {
         val id = event.id as? Long ?: return
-        when (event.entity) {
+        when (val entity = event.entity) {
             is Game -> record { it.game(id).created = true }
             is Library -> record { it.library(id).created = true }
-            is Collection -> record { it.collection(id).created = true }
+            is Collection -> record {
+                it.collection(id).apply {
+                    created = true
+                    if (entity.smartEnabled) fields.add(CollectionField.SMART_SETTINGS)
+                }
+            }
         }
     }
 

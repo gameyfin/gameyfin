@@ -48,7 +48,7 @@ class DeletionTaskService(
     }
 
     fun deleteCollection(id: Long): TaskRunDto {
-        val name = collectionService.getById(id).name
+        val name = collectionService.getCuratedById(id).name
         return runService.start(
             COLLECTION_DELETE,
             TaskTrigger.MANUAL,

@@ -7,7 +7,7 @@ import {DraftImage, IMAGE_ACCEPT, MediaKind, remoteImage, uploadedImages} from "
 import PluginIcon from "Frontend/components/general/plugin/PluginIcon";
 import {useSnapshot} from "valtio/react";
 import {pluginState} from "Frontend/state/PluginState";
-import {ArrowRightIcon, CheckIcon} from "@phosphor-icons/react";
+import {ArrowRightIcon, CheckIcon, MagnifyingGlassIcon} from "@phosphor-icons/react";
 import UploadButton from "Frontend/components/general/input/UploadButton";
 import {useAuth} from "Frontend/util/auth";
 import {GameFieldMetadataDto, GameFieldMetadataType} from "Frontend/dtos/GameDtos";
@@ -165,12 +165,11 @@ export default function GameImagePickerModal({game, kind, searchOnOpen, onSelect
                                            void search(term);
                                        }
                                    }}/>
-                            <Button type="button" isPending={searching}
-                                    isDisabled={!term.trim() || searching || uploading}
-                                    aria-label="Search" onPress={() => {
-                                void search(term);
-                            }}>
-                                {({isPending}) => <>{isPending && <Spinner size="sm" color="current"/>}Search</>}
+                            <Button type="button" isIconOnly className="shrink-0" isPending={searching}
+                                    isDisabled={!term.trim() || uploading}
+                                    aria-label="Search" onPress={() => void search(term)}>
+                                {searching ? <Spinner size="sm" color="current"/> :
+                                    <MagnifyingGlassIcon aria-hidden="true"/>}
                             </Button>
                         </div>
                         {error && <p role="alert" className="text-danger">{error}</p>}

@@ -1,4 +1,5 @@
 import {
+    ChatTextIcon,
     DownloadSimpleIcon,
     EnvelopeIcon,
     GameControllerIcon,
@@ -26,6 +27,11 @@ const menuItems: MenuItem[] = [
         title: "Game Requests",
         url: "requests",
         icon: <ShootingStarIcon/>
+    },
+    {
+        title: "Social",
+        url: "social",
+        icon: <ChatTextIcon/>
     },
     {
         title: "Downloads",

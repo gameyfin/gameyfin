@@ -1,10 +1,20 @@
 package org.gameyfin.app.notifications
 
-import liquibase.integration.spring.SpringLiquibase
+import jakarta.persistence.EntityManager
+import jakarta.persistence.EntityManagerFactory
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.gameyfin.app.config.SsoConfigurationChanged
 import org.gameyfin.app.core.notifications.*
 import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginDto
 import org.gameyfin.app.core.plugins.marketplace.dto.MarketplacePluginStatus
+import org.gameyfin.app.db.ApplicationJpaTestConfig
+import org.gameyfin.app.users.persistence.UserRepository
 import org.gameyfin.pluginapi.notifications.NotificationAudience
 import org.gameyfin.pluginapi.notifications.NotificationRecipients
 import org.gameyfin.pluginapi.notifications.NotificationRequest
@@ -13,52 +23,27 @@ import org.junit.jupiter.api.*
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.io.DefaultResourceLoader
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.jdbc.datasource.DataSourceTransactionManager
-import org.springframework.jdbc.datasource.DriverManagerDataSource
+import org.springframework.context.annotation.Import
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import org.springframework.orm.jpa.JpaTransactionManager
+import org.springframework.orm.jpa.SharedEntityManagerCreator
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.transaction.annotation.EnableTransactionManagement
 import org.springframework.transaction.support.TransactionTemplate
 import tools.jackson.databind.json.JsonMapper
-import java.util.*
-import java.util.concurrent.Callable
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import javax.sql.DataSource
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class NotificationIntegrationTest {
     @Configuration
     @EnableTransactionManagement
+    @EnableJpaRepositories(basePackageClasses = [NotificationRepository::class, UserRepository::class])
+    @Import(NotificationStore::class, ApplicationJpaTestConfig::class)
     class Config {
-        @Bean
-        fun dataSource(): DataSource =
-            DriverManagerDataSource("jdbc:h2:mem:${UUID.randomUUID()};DB_CLOSE_DELAY=-1", "sa", "").also {
-                SpringLiquibase().apply {
-                    dataSource = it
-                    changeLog = "classpath:/db/changelog/db.changelog-master.yaml"
-                    resourceLoader = DefaultResourceLoader()
-                    afterPropertiesSet()
-                }
-            }
-
-        @Bean
-        fun jdbc(ds: DataSource) = NamedParameterJdbcTemplate(ds)
-
-        @Bean
-        fun transactionManager(ds: DataSource) = DataSourceTransactionManager(ds)
-
         @Bean
         fun events() = NotificationEvents()
 
         @Bean
-        fun store(jdbc: NamedParameterJdbcTemplate, events: NotificationEvents) =
-            NotificationStore(jdbc, JsonMapper.builder().findAndAddModules().build(), events)
+        fun mapper() = JsonMapper.builder().findAndAddModules().build()
 
         @Bean
         fun system(store: NotificationStore) = SystemNotifications(store, "2.7.0-preview")
@@ -66,7 +51,8 @@ class NotificationIntegrationTest {
 
     private lateinit var context: AnnotationConfigApplicationContext
     private lateinit var store: NotificationStore
-    private lateinit var jdbc: NamedParameterJdbcTemplate
+    private lateinit var entities: EntityManager
+    private lateinit var notifications: NotificationRepository
     private lateinit var transactions: TransactionTemplate
     private val admin = NotificationActor(1, true)
     private val otherAdmin = NotificationActor(2, true)
@@ -77,8 +63,9 @@ class NotificationIntegrationTest {
     fun start() {
         context = AnnotationConfigApplicationContext(Config::class.java)
         store = context.getBean(NotificationStore::class.java)
-        jdbc = context.getBean(NamedParameterJdbcTemplate::class.java)
-        transactions = TransactionTemplate(context.getBean(DataSourceTransactionManager::class.java))
+        notifications = context.getBean(NotificationRepository::class.java)
+        entities = SharedEntityManagerCreator.createSharedEntityManager(context.getBean(EntityManagerFactory::class.java))
+        transactions = TransactionTemplate(context.getBean(JpaTransactionManager::class.java))
     }
 
     @AfterAll
@@ -86,17 +73,24 @@ class NotificationIntegrationTest {
 
     @BeforeEach
     fun reset() {
-        jdbc.update("DELETE FROM APP_NOTIFICATION", emptyMap<String, Any>())
-        jdbc.update("DELETE FROM PLUGIN_UPDATE_NOTICE", emptyMap<String, Any>())
-        jdbc.update("DELETE FROM USERS", emptyMap<String, Any>())
-        jdbc.update(
-            "UPDATE NOTIFICATION_PRODUCER_STATE SET LAST_VERSION = NULL, BOOT_ID = NULL",
-            emptyMap<String, Any>()
-        )
-        jdbc.update(
-            "INSERT INTO USERS (ID, USERNAME, EMAIL, ENABLED, EMAIL_CONFIRMED) VALUES (1, 'one', 'one@example.com', true, true), (2, 'two', 'two@example.com', true, true)",
-            emptyMap<String, Any>()
-        )
+        transactions.executeWithoutResult {
+            notifications.deleteAllInBatch()
+            context.getBean(PluginUpdateNoticeRepository::class.java).deleteAllInBatch()
+            entities.createQuery("delete from User").executeUpdate()
+            entities.createQuery("update NotificationProducerState set lastVersion = null, bootId = null").executeUpdate()
+            addUser(1, "one")
+            addUser(2, "two")
+        }
+    }
+
+    private fun addUser(id: Long, name: String) {
+        entities.createQuery("""insert into User (id, username, email, enabled, emailConfirmed)
+            values (:id, :name, :email, true, true)""")
+            .setParameter("id", id).setParameter("name", name).setParameter("email", "$name@example.com").executeUpdate()
+    }
+
+    private fun ageEntry(id: String) = transactions.executeWithoutResult {
+        entities.find(NotificationInbox::class.java, id).readAt = java.time.Instant.now().minus(31, java.time.temporal.ChronoUnit.DAYS)
     }
 
     @Test
@@ -119,10 +113,10 @@ class NotificationIntegrationTest {
 
     @Test
     fun `broadcast with no users creates no notification and source resolution removes all matching entries`() {
-        jdbc.update("DELETE FROM USERS", emptyMap<String, Any>())
+        transactions.executeWithoutResult { entities.createQuery("delete from User").executeUpdate() }
         store.publish("plugin:empty", NotificationRequest("Empty", "Body",
             recipients = NotificationRecipients(NotificationAudience.ALL_USERS)))
-        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM APP_NOTIFICATION", emptyMap<String, Any>(), Int::class.java))
+        assertEquals(0, notifications.count())
         repeat(2) { store.publish("plugin:first", NotificationRequest("First $it", "Body")) }
         store.publish("plugin:second", NotificationRequest("Second", "Body"))
         store.resolve("plugin:first")
@@ -136,8 +130,7 @@ class NotificationIntegrationTest {
         store.claim(admin, entry.id, "original")
         store.mutate(admin, null, false)
         assertEquals(null, store.entry(admin, entry.id).readAt)
-        jdbc.update("UPDATE NOTIFICATION_INBOX SET READ_AT = :old WHERE ID = :id",
-            mapOf("id" to entry.id, "old" to java.time.OffsetDateTime.now().minusDays(31)))
+        ageEntry(entry.id)
         store.mutate(admin, null, true)
         assertEquals(0, store.cleanup(30))
         store.finish(entry, false)
@@ -181,7 +174,7 @@ class NotificationIntegrationTest {
         assertEquals(0, store.count(admin, true))
         assertEquals(
             0,
-            jdbc.queryForObject("SELECT COUNT(*) FROM APP_NOTIFICATION", emptyMap<String, Any>(), Int::class.java)
+            notifications.count()
         )
     }
 
@@ -196,18 +189,15 @@ class NotificationIntegrationTest {
         assertEquals(1, store.count(other, false))
         store.mutate(user, null, true)
         assertEquals(1, store.count(other, false))
-        jdbc.update(
-            "INSERT INTO USERS (ID, USERNAME, EMAIL, ENABLED, EMAIL_CONFIRMED) VALUES (3, 'three', 'three@example.com', true, true)",
-            emptyMap<String, Any>()
-        )
+        transactions.executeWithoutResult { addUser(3, "three") }
         assertEquals(0, store.count(NotificationActor(3, false), false))
         transactions.executeWithoutResult {
-            jdbc.update("DELETE FROM USERS WHERE ID = 2", emptyMap<String, Any>())
+            entities.createQuery("delete from User where id = 2").executeUpdate()
             context.publishEvent(org.gameyfin.app.users.UserStateChanged(org.gameyfin.app.users.dto.UserEvent(2)))
         }
         assertEquals(
             0,
-            jdbc.queryForObject("SELECT COUNT(*) FROM APP_NOTIFICATION", emptyMap<String, Any>(), Int::class.java)
+            notifications.count()
         )
     }
 
@@ -244,10 +234,7 @@ class NotificationIntegrationTest {
         store.mutate(admin, null, false)
         assertEquals(27, store.count(admin, true))
         val oldId = store.page(admin, true, 0, 25).first().id
-        jdbc.update(
-            "UPDATE NOTIFICATION_INBOX SET READ_AT = :old WHERE ID = :id",
-            mapOf("id" to oldId, "old" to java.time.OffsetDateTime.now().minusDays(31))
-        )
+        ageEntry(oldId)
         store.publish("core:test", NotificationRequest("Unread", "Body"))
         assertEquals(1, store.cleanup(30))
         assertEquals(26, store.count(admin, true))
@@ -289,7 +276,7 @@ class NotificationIntegrationTest {
         store.publish("core:test", NotificationRequest("Action", "Body"))
         val entry = store.page(admin, false, 0, 25).single()
         store.claim(admin, entry.id, "action")
-        jdbc.update("UPDATE NOTIFICATION_INBOX SET EXECUTION_BOOT = 'previous'", emptyMap<String, Any>())
+        transactions.executeWithoutResult { entities.find(NotificationInbox::class.java, entry.id).executionBoot = "previous" }
         store.recoverInterrupted()
         assertEquals("INTERRUPTED", store.entry(admin, entry.id).executionState)
         assertEquals(entry.executionId, store.claim(admin, entry.id, "action").executionId)
@@ -305,10 +292,7 @@ class NotificationIntegrationTest {
         assertEquals(1, store.count(admin, false))
         system.onReady()
         assertEquals(1, store.count(admin, false))
-        jdbc.update(
-            "UPDATE NOTIFICATION_PRODUCER_STATE SET BOOT_ID = 'previous' WHERE ID = 'sso'",
-            emptyMap<String, Any>()
-        )
+        transactions.executeWithoutResult { store.producerState("sso").bootId = "previous" }
         system.onReady()
         assertEquals(0, store.count(admin, false))
     }

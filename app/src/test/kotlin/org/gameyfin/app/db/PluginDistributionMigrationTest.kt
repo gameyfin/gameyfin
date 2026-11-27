@@ -8,6 +8,7 @@ import liquibase.resource.ClassLoaderResourceAccessor
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assumptions
 import java.sql.DriverManager
+import java.sql.Types
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -44,6 +45,39 @@ class PluginDistributionMigrationTest {
     fun `snapshot is restricted and one time and completion survives reconnect`() {
         val url = "jdbc:h2:mem:plugin-migration-${UUID.randomUUID()};DB_CLOSE_DELAY=-1"
         verifySnapshot(url, "sa", "")
+    }
+
+    @Test
+    fun `H2 upgrade preserves plugin recovery errors from the released schema`() {
+        val url = "jdbc:h2:mem:plugin-error-${UUID.randomUUID()}"
+        DriverManager.getConnection(url, "sa", "").use { connection ->
+            val migration = Liquibase("db/changelog/db.changelog-master.yaml", ClassLoaderResourceAccessor(), JdbcConnection(connection))
+            val changesBeforeConversion = migration.databaseChangeLog.changeSets.indexOfFirst {
+                it.id == "2.8.0-plugin-recovery-error-text"
+            }
+            check(changesBeforeConversion > 0)
+            migration.update(changesBeforeConversion, Contexts(), LabelExpression())
+
+            val error = "Recovery failed ".repeat(250)
+            connection.createStatement().use { sql ->
+                sql.execute("ALTER TABLE PLUGIN_RECOVERY_CANDIDATE ALTER COLUMN LAST_ERROR SET DATA TYPE TEXT")
+            }
+            connection.prepareStatement("INSERT INTO PLUGIN_RECOVERY_CANDIDATE (PLUGIN_ID, LAST_ERROR) VALUES (?, ?)").use { sql ->
+                sql.setString(1, "legacy-plugin")
+                sql.setString(2, error)
+                sql.executeUpdate()
+            }
+            connection.commit()
+
+            migration.update(Contexts(), LabelExpression())
+            connection.createStatement().use { sql ->
+                sql.executeQuery("SELECT LAST_ERROR FROM PLUGIN_RECOVERY_CANDIDATE WHERE PLUGIN_ID = 'legacy-plugin'").use { rows ->
+                    assertEquals(Types.CLOB, rows.metaData.getColumnType(1))
+                    kotlin.test.assertTrue(rows.next())
+                    assertEquals(error, rows.getString(1))
+                }
+            }
+        }
     }
 
     @Test

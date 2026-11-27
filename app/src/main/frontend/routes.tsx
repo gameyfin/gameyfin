@@ -25,15 +25,17 @@ import {SystemManagement} from "Frontend/components/administration/SystemManagem
 import GameView from "Frontend/views/GameView";
 import LibraryManagementView from "Frontend/views/LibraryManagementView";
 import SearchView from "Frontend/views/SearchView";
-import LibraryView from "Frontend/views/LibraryView";
+import GameBrowseView from "Frontend/views/GameBrowseView";
 import {RouterConfigurationBuilder} from "@vaadin/hilla-file-router/runtime.js";
 import NotFoundView from "Frontend/views/NotFoundView.tsx";
 import ErrorView from "Frontend/views/ErrorView";
 import GameRequestView from "Frontend/views/GameRequestView";
+import {ReviewManagement} from "Frontend/components/administration/ReviewManagement";
 import {GameRequestManagement} from "Frontend/components/administration/GameRequestManagement";
 import {DownloadManagement} from "Frontend/components/administration/DownloadManagement";
 import CollectionManagementView from "Frontend/views/CollectionManagementView";
-import CollectionView from "Frontend/views/CollectionView";
+import CollectionsView from "Frontend/views/CollectionsView";
+import DiscoverView from "Frontend/views/DiscoverView";
 
 export const {router, routes} = new RouterConfigurationBuilder()
     .withReactRoutes([
@@ -61,11 +63,17 @@ export const {router, routes} = new RouterConfigurationBuilder()
                         },
                         {
                             path: 'library/:libraryId',
-                            element: <LibraryView/>
+                            element: <GameBrowseView/>
+                        },
+                        {path: 'collections', element: <CollectionsView/>, handle: {title: 'Collections'}},
+                        {path: 'discover', element: <DiscoverView/>, handle: {title: 'Discover', loginRequired: true}},
+                        {
+                            path: 'collections/:collectionId/manage', element: <CollectionManagementView owned/>,
+                            handle: {title: 'Manage Collection', loginRequired: true}
                         },
                         {
                             path: 'collection/:collectionId',
-                            element: <CollectionView/>
+                            element: <GameBrowseView/>
                         },
                         {
                             path: 'game/:gameId',
@@ -122,6 +130,11 @@ export const {router, routes} = new RouterConfigurationBuilder()
                                     path: 'requests',
                                     element: <GameRequestManagement/>,
                                     handle: {title: 'Administration - Game Requests'}
+                                },
+                                {
+                                    path: 'social',
+                                    element: <ReviewManagement/>,
+                                    handle: {title: 'Administration - Social'}
                                 },
                                 {
                                     path: 'downloads',

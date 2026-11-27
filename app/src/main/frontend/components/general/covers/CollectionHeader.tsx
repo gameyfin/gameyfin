@@ -23,7 +23,7 @@ export default function CollectionHeader({collection, className}: CollectionHead
                 {randomGames.map((game, idx) => (
                     <div
                         key={idx}
-                        className="flex-none overflow-hidden -ml-[10%]"
+                        className="flex-none overflow-hidden ml-[-10%]"
                         style={{
                             width: `calc(100% / ${MAX_COVER_COUNT - 2})`,
                             clipPath: 'polygon(15% 0, 100% 0, 85% 100%, 0% 100%)',

@@ -53,6 +53,9 @@ class UserService(
     val selfRegistrationAllowed: Boolean
         get() = config.get(ConfigProperties.Users.SignUps.Allow) == true
 
+    val emailRequired: Boolean
+        get() = config.get(ConfigProperties.Users.EmailRequired) != false
+
     override fun loadUserByUsername(username: String): UserDetails {
         val user = getByUsernameNonNull(username)
 
@@ -164,11 +167,14 @@ class UserService(
         }
     }
 
+    @Transactional
     fun selfRegisterUser(registration: UserRegistrationDto) {
         check(selfRegistrationAllowed) { "Sign ups are not allowed" }
         check(!existsByUsername(registration.username)) { "User with username '${registration.username}' already exists" }
 
-        userRepository.findByEmail(registration.email)?.let {
+        val email = parseEmailAddress(registration.email)
+        check(email != null || !emailRequired) { "Email address is required" }
+        email?.let(userRepository::findByEmail)?.let {
             eventPublisher.publishEvent(
                 RegistrationAttemptWithExistingEmailEvent(
                     this,
@@ -184,7 +190,7 @@ class UserService(
         var user = org.gameyfin.app.users.entities.User(
             username = registration.username,
             password = passwordEncoder.encode(registration.password),
-            email = registration.email,
+            email = email,
             enabled = !adminNeedsToApprove,
             roles = listOf(Role.USER)
         )
@@ -197,7 +203,7 @@ class UserService(
             eventPublisher.publishEvent(AccountStatusChangedEvent(this, user, Utils.getBaseUrl()))
         }
 
-        if (!user.emailConfirmed) {
+        if (email != null) {
             val token = emailConfirmationService.generate(user)
             eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
         }
@@ -223,8 +229,17 @@ class UserService(
         return userRepository.save(user)
     }
 
+    @Transactional
     fun updateUser(username: String, updates: UserUpdateDto) {
-        val user = getByUsernameNonNull(username)
+        val user = userRepository.findByUsernameForUpdate(username)
+            ?: throw UsernameNotFoundException("Unknown user '$username'")
+
+        val email = updates.email?.let(::parseEmailAddress)
+        val emailChanged = updates.email != null && email != user.email
+        if (emailChanged) {
+            check(user.oidcProviderId == null) { "Email address is managed externally" }
+            check(email != null || !emailRequired) { "Email address is required" }
+        }
 
         updates.username?.let { user.username = it }
 
@@ -233,11 +248,15 @@ class UserService(
             sessionService.logoutAllSessions()
         }
 
-        updates.email?.let {
-            user.email = it
+        if (emailChanged) {
+            user.email = email
             user.emailConfirmed = false
-            val token = emailConfirmationService.generate(user)
-            eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
+            if (email == null) {
+                emailConfirmationService.invalidate(user)
+            } else {
+                val token = emailConfirmationService.generate(user)
+                eventPublisher.publishEvent(EmailNeedsConfirmationEvent(this, token, Utils.getBaseUrl()))
+            }
         }
 
         userRepository.save(user)

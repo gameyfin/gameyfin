@@ -2,34 +2,111 @@ databaseChangeLog:
   - changeSet:
       id: 2.7.0-in-app-notifications
       author: gameyfin
+      validCheckSum: 9:6661cce7cbcf7c4defc1cf4a085a756b
       changes:
+        - createTable:
+            tableName: APP_NOTIFICATION
+            columns:
+              - column:
+                  name: ID
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: SOURCE
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: TITLE
+                  type: varchar(250)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: BODY
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: SEVERITY
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ACTIONS
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: CREATED_AT
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: NOTIFICATION_INBOX
+            columns:
+              - column:
+                  name: ID
+                  type: varchar(36)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: NOTIFICATION_ID
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: RECIPIENT
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: USER_ID
+                  type: bigint
+              - column:
+                  name: READ_AT
+                  type: timestamp with time zone
+              - column:
+                  name: EXECUTION_ID
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: EXECUTION_STATE
+                  type: varchar(20)
+                  defaultValue: READY
+                  constraints:
+                    nullable: false
+              - column:
+                  name: EXECUTION_ACTION
+                  type: varchar(100)
+              - column:
+                  name: EXECUTION_BOOT
+                  type: varchar(36)
+        - addForeignKeyConstraint:
+            baseTableName: NOTIFICATION_INBOX
+            baseColumnNames: NOTIFICATION_ID
+            referencedTableName: APP_NOTIFICATION
+            referencedColumnNames: ID
+            constraintName: FK_NOTIFICATION_INBOX_NOTIFICATION
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: NOTIFICATION_INBOX
+            baseColumnNames: USER_ID
+            referencedTableName: USERS
+            referencedColumnNames: ID
+            constraintName: FK_NOTIFICATION_INBOX_USER
+            onDelete: CASCADE
+        - addUniqueConstraint:
+            tableName: NOTIFICATION_INBOX
+            columnNames: NOTIFICATION_ID, RECIPIENT
+            constraintName: UQ_NOTIFICATION_RECIPIENT
         - sql:
             sql: >
-              CREATE TABLE APP_NOTIFICATION (
-                ID VARCHAR(36) PRIMARY KEY,
-                SOURCE VARCHAR(255) NOT NULL,
-                TITLE VARCHAR(250) NOT NULL,
-                BODY TEXT NOT NULL,
-                SEVERITY VARCHAR(20) NOT NULL,
-                ACTIONS TEXT NOT NULL,
-                CREATED_AT TIMESTAMP WITH TIME ZONE NOT NULL
-              )
-        - sql:
-            sql: >
-              CREATE TABLE NOTIFICATION_INBOX (
-                ID VARCHAR(36) PRIMARY KEY,
-                NOTIFICATION_ID VARCHAR(36) NOT NULL REFERENCES APP_NOTIFICATION(ID) ON DELETE CASCADE,
-                RECIPIENT VARCHAR(64) NOT NULL,
-                USER_ID BIGINT REFERENCES USERS(ID) ON DELETE CASCADE,
-                READ_AT TIMESTAMP WITH TIME ZONE,
-                EXECUTION_ID VARCHAR(36) NOT NULL,
-                EXECUTION_STATE VARCHAR(20) NOT NULL DEFAULT 'READY',
-                EXECUTION_ACTION VARCHAR(100),
-                EXECUTION_BOOT VARCHAR(36),
-                CONSTRAINT UQ_NOTIFICATION_RECIPIENT UNIQUE (NOTIFICATION_ID, RECIPIENT),
-                CONSTRAINT CK_NOTIFICATION_RECIPIENT CHECK
-                  ((RECIPIENT = 'admins' AND USER_ID IS NULL) OR (RECIPIENT <> 'admins' AND USER_ID IS NOT NULL))
-              )
+              ALTER TABLE NOTIFICATION_INBOX ADD CONSTRAINT CK_NOTIFICATION_RECIPIENT CHECK
+              ((RECIPIENT = 'admins' AND USER_ID IS NULL) OR (RECIPIENT <> 'admins' AND USER_ID IS NOT NULL))
         - createIndex:
             tableName: NOTIFICATION_INBOX
             indexName: IDX_NOTIFICATION_INBOX_RECIPIENT
@@ -38,15 +115,33 @@ databaseChangeLog:
                   name: RECIPIENT
               - column:
                   name: READ_AT
-        - sql:
-            sql: >
-              CREATE TABLE NOTIFICATION_PRODUCER_STATE (
-                ID VARCHAR(50) PRIMARY KEY,
-                LAST_VERSION VARCHAR(255),
-                BOOT_ID VARCHAR(36)
-              )
-        - sql:
-            sql: INSERT INTO NOTIFICATION_PRODUCER_STATE (ID) VALUES ('sso'), ('release')
+        - createTable:
+            tableName: NOTIFICATION_PRODUCER_STATE
+            columns:
+              - column:
+                  name: ID
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: LAST_VERSION
+                  type: varchar(255)
+              - column:
+                  name: BOOT_ID
+                  type: varchar(36)
+        - insert:
+            tableName: NOTIFICATION_PRODUCER_STATE
+            columns:
+              - column:
+                  name: ID
+                  value: sso
+        - insert:
+            tableName: NOTIFICATION_PRODUCER_STATE
+            columns:
+              - column:
+                  name: ID
+                  value: release
       rollback:
         - dropTable:
             tableName: NOTIFICATION_INBOX
@@ -58,20 +153,40 @@ databaseChangeLog:
   - changeSet:
       id: 2.7.0-marketplace-only-plugins
       author: gameyfin
+      validCheckSum: 9:ea004300317f1e25b42f50b05f338331
       changes:
-        - sql:
-            sql: >
-              CREATE TABLE PLUGIN_ONBOARDING_STATE (
-                ID INTEGER PRIMARY KEY,
-                PENDING BOOLEAN NOT NULL
-              )
-        - sql:
-            sql: >
-              CREATE TABLE PLUGIN_RECOVERY_CANDIDATE (
-                PLUGIN_ID VARCHAR(255) PRIMARY KEY,
-                COMPLETED BOOLEAN NOT NULL DEFAULT FALSE,
-                LAST_ERROR TEXT
-              )
+        - createTable:
+            tableName: PLUGIN_ONBOARDING_STATE
+            columns:
+              - column:
+                  name: ID
+                  type: integer
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: PENDING
+                  type: boolean
+                  constraints:
+                    nullable: false
+        - createTable:
+            tableName: PLUGIN_RECOVERY_CANDIDATE
+            columns:
+              - column:
+                  name: PLUGIN_ID
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: COMPLETED
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: LAST_ERROR
+                  type: text
         # PluginTrustLevel is stored by ordinal; OFFICIAL = 1. Snapshot exactly once,
         # before discovery can update trust/source records. No new installs are candidates.
         - sql:
@@ -95,20 +210,55 @@ databaseChangeLog:
   - changeSet:
       id: 2.7.0-plugin-update-notifications
       author: gameyfin
+      validCheckSum: 9:fd2337231a48cb2aa4c712bf5b0ddb8c
       changes:
-        - sql:
-            sql: INSERT INTO NOTIFICATION_PRODUCER_STATE (ID) VALUES ('plugin-updates')
-        - sql:
-            sql: >
-              CREATE TABLE PLUGIN_UPDATE_NOTICE (
-                PLUGIN_ID VARCHAR(255) PRIMARY KEY,
-                VERSION TEXT NOT NULL,
-                NOTIFICATION_ID VARCHAR(36) NOT NULL
-              )
+        - insert:
+            tableName: NOTIFICATION_PRODUCER_STATE
+            columns:
+              - column:
+                  name: ID
+                  value: plugin-updates
+        - createTable:
+            tableName: PLUGIN_UPDATE_NOTICE
+            columns:
+              - column:
+                  name: PLUGIN_ID
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: VERSION
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: NOTIFICATION_ID
+                  type: varchar(36)
+                  constraints:
+                    nullable: false
       rollback:
-        - sql:
-            sql: DELETE FROM APP_NOTIFICATION WHERE SOURCE = 'core:plugin-update'
+        - delete:
+            tableName: APP_NOTIFICATION
+            where: SOURCE = 'core:plugin-update'
         - dropTable:
             tableName: PLUGIN_UPDATE_NOTICE
-        - sql:
-            sql: DELETE FROM NOTIFICATION_PRODUCER_STATE WHERE ID = 'plugin-updates'
+        - delete:
+            tableName: NOTIFICATION_PRODUCER_STATE
+            where: ID = 'plugin-updates'
+
+  - changeSet:
+      logicalFilePath: db/changelog/db.changelog-master.yaml
+      id: 2.7.1-game-is-directory
+      author: gameyfin
+      changes:
+        - addColumn:
+            tableName: GAME
+            columns:
+              - column:
+                  name: IS_DIRECTORY
+                  type: boolean
+      rollback:
+        - dropColumn:
+            tableName: GAME
+            columnName: IS_DIRECTORY

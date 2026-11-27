@@ -11,6 +11,7 @@ import org.gameyfin.app.collections.entities.Collection
 import org.gameyfin.app.collections.repositories.CollectionRepository
 import org.gameyfin.app.games.GameService
 import org.gameyfin.app.games.dto.GameUpdateDto
+import org.gameyfin.app.games.entities.Game
 import org.gameyfin.app.games.entities.GameFieldApiSource
 import org.gameyfin.app.games.entities.GameFieldMetadata
 import org.gameyfin.app.games.repositories.GameRepository
@@ -43,6 +44,11 @@ class CatalogServiceV1Test {
     private val collectionService = mockk<CollectionService>(relaxed = true)
     private val access = mockk<ApiAccess>(relaxed = true)
     private val mapper = JsonMapper.builder().findAndAddModules().build()
+
+    init {
+        every { collectionService.gameCollectionFilter(any()) } returns
+            org.springframework.data.jpa.domain.Specification<Game> { _, _, _ -> null }
+    }
     private val service = CatalogServiceV1(
         games, libraries, collections, gameService, libraryService, collectionService, mapper, access
     )
@@ -100,8 +106,8 @@ class CatalogServiceV1Test {
         every { games.findById(11) } returns Optional.empty()
         every { libraries.findById(1) } returns Optional.of(testLibrary())
         every { libraries.findById(2) } returns Optional.empty()
-        every { collections.findById(3) } returns Optional.of(Collection(id = 3, name = "C"))
-        every { collections.findById(4) } returns Optional.empty()
+        every { collectionService.findReadable(3) } returns Collection(id = 3, name = "C")
+        every { collectionService.findReadable(4) } returns null
 
         assertEquals("10", service.game("10").id)
         assertEquals("1", service.library("1").id)
@@ -115,7 +121,7 @@ class CatalogServiceV1Test {
     @Test
     fun `lists map to public pages and configuration exposes directories`() {
         every { libraries.findAll(page) } returns PageImpl(listOf(testLibrary()), page, 1)
-        every { collections.findAll(page) } returns PageImpl(listOf(Collection(id = 3, name = "C")), page, 1)
+        every { collectionService.findReadable(page) } returns PageImpl(listOf(Collection(id = 3, name = "C")), page, 1)
         val library = testLibrary().apply {
             directories = mutableListOf(DirectoryMapping(internalPath = "/in", externalPath = "/out"))
             platforms = mutableListOf(Platform.entries.first())
@@ -275,7 +281,8 @@ class CatalogServiceV1Test {
     fun `collections are created and patched`() {
         every { collectionService.createReturningId(any()) } returns 3
         val collection = Collection(id = 3, name = "Old", description = "desc")
-        every { collections.findById(3) } returns Optional.of(collection)
+        every { collectionService.findReadable(3) } returns collection
+        every { collectionService.lockCuratedById(3) } returns collection
         val update = slot<CollectionUpdateDto>()
         every { collectionService.update(capture(update)) } returns mockk(relaxed = true)
 
@@ -296,7 +303,8 @@ class CatalogServiceV1Test {
         val member = testGame()
         val other = testGame(11)
         val collection = Collection(id = 3, name = "C", games = mutableSetOf(member))
-        every { collections.findById(3) } returns Optional.of(collection)
+        every { collectionService.findReadable(3) } returns collection
+        every { collectionService.lockCuratedById(3) } returns collection
         every { games.findById(10) } returns Optional.of(member)
         every { games.findById(11) } returns Optional.of(other)
 

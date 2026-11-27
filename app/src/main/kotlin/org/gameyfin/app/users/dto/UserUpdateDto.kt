@@ -7,6 +7,6 @@ data class UserUpdateDto(
     val username: String?,
     @field:NullOrNotBlank
     val password: String?,
-    @field:NullOrNotBlank
+    // Omission leaves the address unchanged. A blank value requests removal.
     val email: String?
 )

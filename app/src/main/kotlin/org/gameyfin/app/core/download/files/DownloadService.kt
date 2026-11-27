@@ -11,12 +11,7 @@ import org.gameyfin.app.core.metrics.DownloadMetrics
 import org.gameyfin.app.core.plugins.management.GameyfinPluginDescriptor
 import org.gameyfin.app.core.plugins.management.GameyfinPluginManager
 import org.gameyfin.app.games.entities.Game
-import org.gameyfin.pluginapi.download.Download
-import org.gameyfin.pluginapi.download.DownloadMetadata
-import org.gameyfin.pluginapi.download.DownloadProvider
-import org.gameyfin.pluginapi.download.FileDownload
-import org.gameyfin.pluginapi.download.RangeDownload
-import org.gameyfin.pluginapi.download.SelectiveDownloadProvider
+import org.gameyfin.pluginapi.download.*
 import org.springframework.stereotype.Service
 import java.io.IOException
 import java.io.InputStream

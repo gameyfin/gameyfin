@@ -66,7 +66,6 @@ class CatalogServiceV1(
                 predicates += cb.like(cb.lower(root.get("title")), "%$escaped%", '\\')
             }
             library?.let { predicates += cb.equal(root.get<Any>("library").get<Long>("id"), it) }
-            collection?.let { predicates += cb.equal(root.join<Any, Any>("collections").get<Long>("id"), it) }
             platformValue?.let { predicates += cb.equal(root.join<Game, Platform>("platforms"), it) }
             externalProvider?.let {
                 val ids = root.join<Game, Any>("metadata")
@@ -79,7 +78,8 @@ class CatalogServiceV1(
             }
             cb.and(*predicates.toTypedArray())
         }
-        return games.findAll(spec, page).publicPage { it.publicGame() }
+        val filter = collection?.let { spec.and(collectionService.gameCollectionFilter(it)) } ?: spec
+        return games.findAll(filter, page).publicPage { it.publicGame() }
     }
 
     fun gameIndex() = games.findAllIndexEntries().map { GameIndexEntryV1(it.id.toString(), it.updatedAt) }
@@ -92,7 +92,7 @@ class CatalogServiceV1(
         libraries.findById(apiId(id)).orElseThrow { NoSuchElementException("Library not found") }
 
     fun collectionEntity(id: String): Collection =
-        collections.findById(apiId(id)).orElseThrow { NoSuchElementException("Collection not found") }
+        collectionService.findReadable(apiId(id)) ?: throw NoSuchElementException("Collection not found")
 
     fun libraries(page: Pageable) = libraries.findAll(page).publicPage { it.publicLibrary() }
     fun library(id: String) = libraryEntity(id).publicLibrary()
@@ -105,7 +105,7 @@ class CatalogServiceV1(
         }, it.platforms.map { p -> p.name })
     }
 
-    fun collections(page: Pageable) = collections.findAll(page).publicPage { it.publicCollection() }
+    fun collections(page: Pageable) = collectionService.findReadable(page).publicPage { it.publicCollection() }
     fun collection(id: String) = collectionEntity(id).publicCollection()
 
     @Transactional
@@ -217,7 +217,7 @@ class CatalogServiceV1(
     fun patchCollection(id: String, values: Map<String, Any?>): CollectionV1 {
         validatePatch(values, setOf("name", "description"), setOf("description"))
         val patch = convert(values, CollectionPatchV1::class.java)
-        val collection = collectionEntity(id)
+        val collection = writableCuratedCollection(id)
         patch.name?.let(::validateName)
         collectionService.update(
             CollectionUpdateDto(
@@ -233,11 +233,17 @@ class CatalogServiceV1(
 
     @Transactional
     fun membership(collectionId: String, gameId: String, present: Boolean) {
-        val collection = collectionEntity(collectionId)
+        val collection = writableCuratedCollection(collectionId)
+        collection.requireManualMembership()
         val game = gameEntity(gameId)
         val exists = collection.games.any { it.id == game.id }
         if (present && !exists) collectionService.addGame(collection.id!!, game.id!!)
         if (!present && exists) collectionService.removeGame(collection.id!!, game.id!!)
+    }
+
+    private fun writableCuratedCollection(id: String): Collection {
+        collectionService.lockCuratedById(apiId(id))
+        return collectionEntity(id)
     }
 
     private fun validateDirectories(directories: List<DirectoryV1>) {
