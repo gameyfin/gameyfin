@@ -10,6 +10,7 @@ import {
     type ValueSelectorProps
 } from "react-querybuilder";
 import {useSnapshot} from "valtio/react";
+import AutocompleteInput from "Frontend/components/general/input/AutocompleteInput";
 import type SmartCollectionEditor from "Frontend/generated/org/gameyfin/app/collections/dto/SmartCollectionEditor";
 import SmartField from "Frontend/generated/org/gameyfin/app/collections/dto/SmartField";
 import SmartMatch from "Frontend/generated/org/gameyfin/app/collections/dto/SmartMatch";
@@ -36,16 +37,19 @@ const fieldLabels = {
 };
 
 type FieldOptions = Partial<Record<SmartField, SmartRuleOption[]>>;
+const ruleValueClassName = "min-w-32 grow basis-32";
 
-function RuleSelect({label, value, options, onChange, disabled, placeholder}: {
+function RuleSelect({label, value, options, onChange, disabled, placeholder, fullWidth}: {
     label: string;
     value?: string;
     options: SmartRuleOption[];
     onChange: (value: string) => void;
     disabled?: boolean;
     placeholder?: string;
+    fullWidth?: boolean;
 }) {
-    return <Select className="min-w-32 w-full sm:w-auto" aria-label={label}
+    return <Select className={fullWidth ? ruleValueClassName : "min-w-32 w-full sm:w-auto"}
+                   fullWidth={fullWidth} aria-label={label}
                    value={value || null} onChange={key => key != null && onChange(String(key))}
                    isDisabled={disabled} placeholder={placeholder}>
         <Select.Trigger><Select.Value/><Select.Indicator/></Select.Trigger>
@@ -70,12 +74,20 @@ function QueryValue({field, type, value, values, handleOnChange, disabled}: Valu
     if (type === "select") {
         const options: SmartRuleOption[] = values ?? [];
         const selected = value && !options.some(option => option.value === value)
-            ? [...options, {value, label: "Unavailable library"}]
+            ? [...options, {value, label: `Unavailable ${label.toLowerCase()}`}]
             : options;
+        const placeholder = `Choose ${label.toLowerCase()}`;
+        if (field === SmartField.PLATFORM) {
+            return <AutocompleteInput selectionMode="single" value={value ?? ""} onChange={handleOnChange}
+                                      options={selected.map(option => ({id: option.value, label: option.label}))}
+                                      aria-label={`${label} value`} placeholder={placeholder}
+                                      isDisabled={disabled} className={ruleValueClassName}/>;
+        }
         return <RuleSelect label={`${label} value`} value={value} options={selected} onChange={handleOnChange}
-                           disabled={disabled} placeholder={`Choose ${label.toLowerCase()}`}/>;
+                           disabled={disabled} placeholder={placeholder} fullWidth/>;
     }
-    return <TextField className="min-w-32 grow" value={value ?? ""} onChange={handleOnChange} isDisabled={disabled}>
+    return <TextField className={ruleValueClassName} value={value ?? ""} onChange={handleOnChange}
+                      isDisabled={disabled}>
         <Label className="sr-only">{label} value</Label>
         <Input maxLength={255} placeholder={`Enter ${label.toLowerCase()}`}/>
     </TextField>;

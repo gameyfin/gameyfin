@@ -140,8 +140,9 @@ export default function CollectionGamesTable({collectionId, owned}: { collection
                     listHeight={`min(${members.length * 152}px, 35rem, 65dvh)`}
                 />
             ) : (
-                // Virtualize large collections while keeping small collections compact.
-                <Virtualizer layout={TableLayout} layoutOptions={{headingHeight, rowHeight}}>
+                // Rebuild the virtualized collection when its Actions column changes.
+                <Virtualizer key={editable ? "manual" : "smart"} layout={TableLayout}
+                             layoutOptions={{headingHeight, rowHeight}}>
                     <Table variant="secondary">
                         <Table.ScrollContainer>
                             <Table.Content aria-label="Games in collection"

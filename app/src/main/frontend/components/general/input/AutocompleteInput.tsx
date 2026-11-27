@@ -20,13 +20,24 @@ type AutocompleteInputProps = {
     labelSuffix?: React.ReactNode;
     placeholder?: string;
     options: AutocompleteOption[];
-    name: string;
-    defaultSelected?: string[];
-    selectionMode?: "single" | "multiple";
     className?: string;
     triggerPrefix?: React.ReactNode;
     showCount?: boolean;
     showError?: boolean;
+    isDisabled?: boolean;
+    "aria-label"?: string;
+};
+
+type FormikAutocompleteProps = AutocompleteInputProps & {
+    name: string;
+    defaultSelected?: string[];
+    selectionMode?: "single" | "multiple";
+};
+
+type SingleAutocompleteProps = AutocompleteInputProps & {
+    selectionMode: "single";
+    value: string;
+    onChange: (value: string) => void;
 };
 
 function SelectedTags({ids, labelOf, onRemove}: {
@@ -121,26 +132,19 @@ function SelectedTags({ids, labelOf, onRemove}: {
     );
 }
 
-export default function AutocompleteInput({
-                                              options,
-                                              label,
-                                              labelSuffix,
-                                              placeholder = "Select...",
-                                              defaultSelected = [],
-                                              name,
-                                              selectionMode = "multiple",
-                                              className = "flex flex-col flex-1 gap-2",
-                                              triggerPrefix,
-                                              showCount = true,
-                                              showError = true
-                                          }: AutocompleteInputProps) {
-    const [field, meta, helpers] = useField<string[] | string>(name);
-    const {contains} = useFilter({sensitivity: "base"});
-    const multiple = selectionMode === "multiple";
+export default function AutocompleteInput(props: FormikAutocompleteProps | SingleAutocompleteProps) {
+    if ("name" in props) return <FormikAutocompleteInput {...props}/>;
+    return <AutocompleteControl {...props} onChange={keys => props.onChange(keys[0] ?? "")} showError={false}/>;
+}
 
-    const items = options.map((o) => typeof o === "string" ? {id: o, label: o} : o);
-    const labelOf = (id: Key) => items.find((item) => item.id === String(id))?.label ?? String(id);
-    const selectedValues: string[] = multiple ? ((field.value as string[]) || []) : [];
+function FormikAutocompleteInput({
+                                     name,
+                                     defaultSelected = [],
+                                     selectionMode = "multiple",
+                                     ...props
+                                 }: FormikAutocompleteProps) {
+    const [field, meta, helpers] = useField<string[] | string>(name);
+    const multiple = selectionMode === "multiple";
 
     // Initialize field value if undefined or empty
     useEffect(() => {
@@ -153,27 +157,54 @@ export default function AutocompleteInput({
         }
     }, [multiple, defaultSelected, field.value, helpers]);
 
-    const updateValue = (keys: Key[]) => {
-        helpers.setValue(keys.map(String));
-        helpers.setTouched(true, false);
-    };
+    return <AutocompleteControl {...props} selectionMode={selectionMode} value={field.value}
+                                onChange={keys => {
+                                    const selected = multiple ? keys : keys[0];
+                                    if (selected === undefined) return;
+                                    helpers.setValue(selected);
+                                    helpers.setTouched(true, false);
+                                }} error={meta.touched ? meta.error : undefined}/>;
+}
+
+function AutocompleteControl({
+                                 options,
+                                 label,
+                                 labelSuffix,
+                                 placeholder = "Select...",
+                                 selectionMode,
+                                 value,
+                                 onChange,
+                                 error,
+                                 isDisabled,
+                                 "aria-label": ariaLabel,
+                                 className = "flex flex-col flex-1 gap-2",
+                                 triggerPrefix,
+                                 showCount = true,
+                                 showError = true
+                             }: AutocompleteInputProps & {
+    selectionMode: "single" | "multiple";
+    value: string | string[];
+    onChange: (keys: string[]) => void;
+    error?: string;
+}) {
+    const {contains} = useFilter({sensitivity: "base"});
+    const multiple = selectionMode === "multiple";
+    const items = options.map(o => typeof o === "string" ? {id: o, label: o} : o);
+    const labelOf = (id: Key) => items.find(item => item.id === String(id))?.label ?? String(id);
+    const selectedValues: string[] = multiple ? ((value as string[]) || []) : [];
 
     return (
         <div className={className}>
             <Autocomplete
                 fullWidth
+                aria-label={ariaLabel}
+                isDisabled={isDisabled}
                 placeholder={placeholder}
                 selectionMode={selectionMode}
-                value={multiple ? selectedValues : (field.value as string)}
-                onChange={(keys: Key | Key[] | null) => {
-                    if (multiple) {
-                        updateValue(Array.isArray(keys) ? keys : keys == null ? [] : [keys]);
-                    } else if (keys != null) {
-                        helpers.setValue(String(Array.isArray(keys) ? keys[0] : keys));
-                        helpers.setTouched(true, false);
-                    }
-                }}
-                isInvalid={meta.touched && !!meta.error}
+                value={multiple ? selectedValues : (value as string)}
+                onChange={(keys: Key | Key[] | null) =>
+                    onChange((Array.isArray(keys) ? keys : keys == null ? [] : [keys]).map(String))}
+                isInvalid={!!error}
             >
                 {label && (
                     <div className="flex flex-row justify-between">
@@ -196,7 +227,7 @@ export default function AutocompleteInput({
                                 <SelectedTags
                                     ids={state.selectedItems.map((item: any) => item.key)}
                                     labelOf={labelOf}
-                                    onRemove={(keys) => updateValue(selectedValues.filter(v => !keys.has(v)))}
+                                    onRemove={keys => onChange(selectedValues.filter(v => !keys.has(v)))}
                                 />
                             );
                         }}
@@ -232,7 +263,7 @@ export default function AutocompleteInput({
 
             {showError && (
                 <div className="min-h-6 text-danger">
-                    {meta.touched && meta.error && meta.error.trim().length > 0 && meta.error}
+                    {error?.trim() && error}
                 </div>
             )}
         </div>
